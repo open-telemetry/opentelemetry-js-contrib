@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pino",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "OpenTelemetry instrumentation for `pino` logger",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -12,6 +12,7 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../../scripts/lint-readme.js",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-pino --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
@@ -45,8 +46,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/context-async-hooks": "^1.8.0",
-    "@opentelemetry/contrib-test-utils": "^0.39.0",
+    "@opentelemetry/contrib-test-utils": "^0.40.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
@@ -64,7 +64,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.51.0"
+    "@opentelemetry/instrumentation": "^0.52.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pino#readme"
 }

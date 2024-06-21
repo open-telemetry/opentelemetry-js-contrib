@@ -94,13 +94,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'mongodb',
-        ['>=3.3 <4'],
+        ['>=3.3.0 <4'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile(
             'mongodb/lib/core/wireprotocol/index.js',
-            ['>=3.3 <4'],
+            ['>=3.3.0 <4'],
             v3PatchConnection,
             v3UnpatchConnection
           ),
@@ -108,37 +108,37 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ),
       new InstrumentationNodeModuleDefinition(
         'mongodb',
-        ['4.*', '5.*', '6.*'],
+        ['>=4.0.0 <7'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection.js',
-            ['4.*', '5.*', '>=6 <6.4'],
+            ['>=4.0.0 <6.4'],
             v4PatchConnectionCallback,
             v4UnpatchConnection
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection.js',
-            ['>=6.4'],
+            ['>=6.4.0 <7'],
             v4PatchConnectionPromise,
             v4UnpatchConnection
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection_pool.js',
-            ['4.*', '5.*', '>=6 <6.4'],
+            ['>=4.0.0 <6.4'],
             v4PatchConnectionPool,
             v4UnpatchConnectionPool
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connect.js',
-            ['4.*', '5.*', '6.*'],
+            ['>=4.0.0 <7'],
             v4PatchConnect,
             v4UnpatchConnect
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/sessions.js',
-            ['4.*', '5.*', '6.*'],
+            ['>=4.0.0 <7'],
             v4PatchSessions,
             v4UnpatchSessions
           ),
@@ -775,6 +775,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       return MongodbCommandType.IS_MASTER;
     } else if (command.count !== undefined) {
       return MongodbCommandType.COUNT;
+    } else if (command.aggregate !== undefined) {
+      return MongodbCommandType.AGGREGATE;
     } else {
       return MongodbCommandType.UNKNOWN;
     }
@@ -924,11 +926,26 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const enhancedDbReporting = !!this._config?.enhancedDatabaseReporting;
     const resultObj = enhancedDbReporting
       ? commandObj
-      : Object.keys(commandObj).reduce((obj, key) => {
-          obj[key] = '?';
-          return obj;
-        }, {} as { [key: string]: unknown });
+      : this._scrubStatement(commandObj);
     return JSON.stringify(resultObj);
+  }
+
+  private _scrubStatement(value: unknown): unknown {
+    if (Array.isArray(value)) {
+      return value.map(element => this._scrubStatement(element));
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, element]) => [
+          key,
+          this._scrubStatement(element),
+        ])
+      );
+    }
+
+    // A value like string or number, possible contains PII, scrub it
+    return '?';
   }
 
   /**

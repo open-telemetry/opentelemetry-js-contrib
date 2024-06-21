@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-amqplib
 
 ## Supported Versions
 
-- `>=0.5.5`
+- [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <1`
 
 ## Usage
 
@@ -56,8 +56,8 @@ amqplib instrumentation has few options available to choose from. You can set th
 | `publishConfirmHook`                  | `AmqplibPublishConfirmCustomAttributeFunction`    | hook for adding custom attributes after publish message is confirmed by the broker.                                             |
 | `consumeHook`                  | `AmqplibConsumeCustomAttributeFunction`    | hook for adding custom attributes before consumer message is processed.                                             |
 | `consumeEndHook`                  | `AmqplibConsumeEndCustomAttributeFunction`    | hook for adding custom attributes after consumer message is acked to server.                                             |
-| `consumeTimeoutMs`                  | `number`    | read [Consume Timeout](#ConsumeTimeout) below                                             |
-| `useLinksForConsume`                  | `boolean`    | read [Links for Consume](#LinksforConsume) below                                          |
+| `consumeTimeoutMs`                  | `number`    | read [Consume Timeout](#consume-timeout) below                                             |
+| `useLinksForConsume`                  | `boolean`    | read [Links for Consume](#links-for-consume) below                                          |
 
 ### Consume Timeout
 
