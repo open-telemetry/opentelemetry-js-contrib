@@ -1,0 +1,58 @@
+{
+  "name": "@opentelemetry/esbuild-plugin",
+  "version": "0.1.0",
+  "description": "XXX",
+  "main": "lib/index.js",
+  "XXXmain": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-telemetry/opentelemetry-js-contrib.git"
+  },
+  "scripts": {
+    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "clean": "rimraf build/*",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/esbuild-plugin --include-dependencies",
+    "prewatch": "npm run precompile",
+    "prepublishOnly": "npm run compile",
+    "version:update": "node ../../scripts/version-update.js",
+    "compile": "tsc -p ."
+  },
+  "keywords": [
+    "nodejs",
+    "opentelemetry",
+    "esbuild",
+    "bundling"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=16.17.0"
+  },
+  "XXXfiles": [
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/mocha": "7.0.2",
+    "@types/node": "18.6.5",
+    "@types/sinon": "10.0.18",
+    "mocha": "7.2.0",
+    "nyc": "15.1.0",
+    "rimraf": "5.0.5",
+    "sinon": "15.2.0",
+    "ts-mocha": "10.0.0",
+    "typescript": "4.4.4"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/esbuild-plugin",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
+  }
+}
