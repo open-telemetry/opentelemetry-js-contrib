@@ -19,21 +19,29 @@ exports.handler = function (event, context, callback) {
   callback(null, 'ok');
 };
 
+exports.deeply = {
+  nested: {
+    handler: function (event, context, callback) {
+      callback(null, 'ok');
+    },
+  },
+};
+
 exports.error = function (event, context, callback) {
   throw new Error('handler error');
-}
+};
 
 exports.callbackerror = function (event, context, callback) {
   callback(new Error('handler error'));
-}
+};
 
 exports.stringerror = function (event, context, callback) {
   throw 'handler error';
-}
+};
 
 exports.callbackstringerror = function (event, context, callback) {
   callback('handler error');
-}
+};
 
 exports.context = function (event, context, callback) {
   callback(null, api.trace.getSpan(api.context.active()).spanContext().traceId);

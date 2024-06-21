@@ -24,6 +24,8 @@ import {
   AwsLambdaInstrumentationConfig,
   lambdaMaxInitInMilliseconds,
 } from '../../src';
+import { load } from '../vendor/UserFunction';
+import { runTestFixture } from '@opentelemetry/contrib-test-utils';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
@@ -129,8 +131,8 @@ describe('lambda handler', () => {
     return provider;
   };
 
-  const lambdaRequire = (module: string) =>
-    require(path.resolve(__dirname, '..', module));
+  const lambdaLoadHandler = (handler: string = process.env._HANDLER!) =>
+    load(process.env.LAMBDA_TASK_ROOT!, handler);
 
   const sampledAwsSpanContext: SpanContext = {
     traceId: '8a3c60f7d188f8fa79d48a391a778fa6',
@@ -170,10 +172,21 @@ describe('lambda handler', () => {
     it('should export a valid span', async () => {
       initializeHandler('lambda-test/async.handler');
 
-      const result = await lambdaRequire('lambda-test/async').handler(
-        'arg',
-        ctx
-      );
+      const handler = await lambdaLoadHandler();
+      const result = await handler('arg', ctx);
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('should support nested handlers', async () => {
+      initializeHandler('lambda-test/async.deeply.nested.handler');
+
+      const handler = await lambdaLoadHandler();
+      const result = await handler('arg', ctx);
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
@@ -185,9 +198,10 @@ describe('lambda handler', () => {
     it('should record error', async () => {
       initializeHandler('lambda-test/async.error');
 
+      const handler = await lambdaLoadHandler();
       let err: Error;
       try {
-        await lambdaRequire('lambda-test/async').error('arg', ctx);
+        await handler('arg', ctx);
       } catch (e: any) {
         err = e;
       }
@@ -202,9 +216,10 @@ describe('lambda handler', () => {
     it('should record string error', async () => {
       initializeHandler('lambda-test/async.stringerror');
 
+      const handler = await lambdaLoadHandler();
       let err: string;
       try {
-        await lambdaRequire('lambda-test/async').stringerror('arg', ctx);
+        await handler('arg', ctx);
       } catch (e: any) {
         err = e;
       }
@@ -218,10 +233,8 @@ describe('lambda handler', () => {
     it('context should have parent trace', async () => {
       initializeHandler('lambda-test/async.context');
 
-      const result = await lambdaRequire('lambda-test/async').context(
-        'arg',
-        ctx
-      );
+      const handler = await lambdaLoadHandler();
+      const result = await handler('arg', ctx);
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
       assert.strictEqual(span.spanContext().traceId, result);
@@ -230,10 +243,8 @@ describe('lambda handler', () => {
     it('context should have parent trace', async () => {
       initializeHandler('lambda-test/async.context');
 
-      const result = await lambdaRequire('lambda-test/async').context(
-        'arg',
-        ctx
-      );
+      const handler = await lambdaLoadHandler();
+      const result = await handler('arg', ctx);
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
       assert.strictEqual(span.spanContext().traceId, result);
@@ -244,18 +255,36 @@ describe('lambda handler', () => {
     it('should export a valid span', async () => {
       initializeHandler('lambda-test/sync.handler');
 
+      const handler = await lambdaLoadHandler();
       const result = await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').handler(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
+        handler('arg', ctx, (err: Error, res: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
           }
-        );
+        });
+      });
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('should support nested handlers', async () => {
+      initializeHandler('lambda-test/sync.deeply.nested.handler');
+
+      const handler = await lambdaLoadHandler();
+      const result = await new Promise((resolve, reject) => {
+        handler('arg', ctx, (err: Error, res: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
+          }
+        });
       });
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
@@ -268,10 +297,9 @@ describe('lambda handler', () => {
     it('should record coldstart', async () => {
       initializeHandler('lambda-test/sync.handler');
 
-      const handlerModule = lambdaRequire('lambda-test/sync');
-
+      const handler = await lambdaLoadHandler();
       const result1 = await new Promise((resolve, reject) => {
-        handlerModule.handler('arg', ctx, (err: Error, res: any) => {
+        handler('arg', ctx, (err: Error, res: any) => {
           if (err) {
             reject(err);
           } else {
@@ -281,7 +309,7 @@ describe('lambda handler', () => {
       });
 
       const result2 = await new Promise((resolve, reject) => {
-        handlerModule.handler('arg', ctx, (err: Error, res: any) => {
+        handler('arg', ctx, (err: Error, res: any) => {
           if (err) {
             reject(err);
           } else {
@@ -310,18 +338,15 @@ describe('lambda handler', () => {
 
       initializeHandler('lambda-test/sync.handler');
 
+      const handler = await lambdaLoadHandler();
       const result = await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').handler(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
+        handler('arg', ctx, (err: Error, res: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
           }
-        );
+        });
       });
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
@@ -337,18 +362,15 @@ describe('lambda handler', () => {
         lambdaStartTime: Date.now() - 2 * lambdaMaxInitInMilliseconds,
       });
 
+      const handler = await lambdaLoadHandler();
       const result = await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').handler(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
+        handler('arg', ctx, (err: Error, res: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
           }
-        );
+        });
       });
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
@@ -362,13 +384,10 @@ describe('lambda handler', () => {
     it('should record error', async () => {
       initializeHandler('lambda-test/sync.error');
 
+      const handler = await lambdaLoadHandler();
       let err: Error;
       try {
-        lambdaRequire('lambda-test/sync').error(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {}
-        );
+        handler('arg', ctx, (err: Error, res: any) => {});
       } catch (e: any) {
         err = e;
       }
@@ -383,20 +402,17 @@ describe('lambda handler', () => {
     it('should record error in callback', async () => {
       initializeHandler('lambda-test/sync.callbackerror');
 
+      const handler = await lambdaLoadHandler();
       let err: Error;
       try {
         await new Promise((resolve, reject) => {
-          lambdaRequire('lambda-test/sync').callbackerror(
-            'arg',
-            ctx,
-            (err: Error, res: any) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve(res);
-              }
+          handler('arg', ctx, (err: Error, res: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res);
             }
-          );
+          });
         });
       } catch (e: any) {
         err = e;
@@ -412,13 +428,10 @@ describe('lambda handler', () => {
     it('should record string error', async () => {
       initializeHandler('lambda-test/sync.stringerror');
 
+      const handler = await lambdaLoadHandler();
       let err: string;
       try {
-        lambdaRequire('lambda-test/sync').stringerror(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {}
-        );
+        handler('arg', ctx, (err: Error, res: any) => {});
       } catch (e: any) {
         err = e;
       }
@@ -433,18 +446,15 @@ describe('lambda handler', () => {
     it('context should have parent trace', async () => {
       initializeHandler('lambda-test/sync.context');
 
+      const handler = await lambdaLoadHandler();
       const result = await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').context(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
+        handler('arg', ctx, (err: Error, res: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
           }
-        );
+        });
       });
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
@@ -454,18 +464,15 @@ describe('lambda handler', () => {
     it('context should have parent trace', async () => {
       initializeHandler('lambda-test/sync.context');
 
+      const handler = await lambdaLoadHandler();
       const result = await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').context(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
+        handler('arg', ctx, (err: Error, res: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
           }
-        );
+        });
       });
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
@@ -476,20 +483,17 @@ describe('lambda handler', () => {
   it('should record string error in callback', async () => {
     initializeHandler('lambda-test/sync.callbackstringerror');
 
+    const handler = await lambdaLoadHandler();
     let err: string;
     try {
       await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').callbackstringerror(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
+        handler('arg', ctx, (err: Error, res: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
           }
-        );
+        });
       });
     } catch (e: any) {
       err = e;
@@ -517,10 +521,8 @@ describe('lambda handler', () => {
         },
       };
 
-      const result = await lambdaRequire('lambda-test/async').handler(
-        proxyEvent,
-        ctx
-      );
+      const handler = await lambdaLoadHandler();
+      const result = await handler(proxyEvent, ctx);
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
 
@@ -537,10 +539,8 @@ describe('lambda handler', () => {
       propagation.setGlobalPropagator(new AWSXRayLambdaPropagator());
       initializeHandler('lambda-test/async.handler');
 
-      const result = await lambdaRequire('lambda-test/async').handler(
-        'arg',
-        ctx
-      );
+      const handler = await lambdaLoadHandler();
+      const result = handler('arg', ctx);
 
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
@@ -575,10 +575,8 @@ describe('lambda handler', () => {
         },
       };
 
-      const result = await lambdaRequire('lambda-test/async').handler(
-        otherEvent,
-        ctx
-      );
+      const handler = await lambdaLoadHandler();
+      const result = await handler(otherEvent, ctx);
 
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
@@ -605,14 +603,12 @@ describe('lambda handler', () => {
         eventContextExtractor: customExtractor,
       });
 
+      const handler = await lambdaLoadHandler();
       const testSpan = provider.getTracer('test').startSpan('random_span');
       await context.with(
         trace.setSpan(context.active(), testSpan),
         async () => {
-          await lambdaRequire('lambda-test/async').handler(
-            { message: 'event with no context' },
-            ctx
-          );
+          await handler({ message: 'event with no context' }, ctx);
         }
       );
 
@@ -631,7 +627,8 @@ describe('lambda handler', () => {
           },
         });
 
-        await lambdaRequire('lambda-test/async').handler('arg', ctx);
+        const handler = await lambdaLoadHandler();
+        await handler('arg', ctx);
         const spans = memoryExporter.getFinishedSpans();
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
@@ -664,10 +661,8 @@ describe('lambda handler', () => {
       it('async - success', async () => {
         initializeHandler('lambda-test/async.handler', config);
 
-        const res = await lambdaRequire('lambda-test/async').handler(
-          'arg',
-          ctx
-        );
+        const handler = await lambdaLoadHandler();
+        const res = await handler('arg', ctx);
         const [span] = memoryExporter.getFinishedSpans();
         assert.strictEqual(span.attributes[RES_ATTR], res);
       });
@@ -675,9 +670,10 @@ describe('lambda handler', () => {
       it('async - error', async () => {
         initializeHandler('lambda-test/async.error', config);
 
+        const handler = await lambdaLoadHandler();
         let err: Error;
         try {
-          await lambdaRequire('lambda-test/async').error('arg', ctx);
+          await handler('arg', ctx);
         } catch (e: any) {
           err = e;
         }
@@ -688,12 +684,9 @@ describe('lambda handler', () => {
       it('sync - success', async () => {
         initializeHandler('lambda-test/sync.handler', config);
 
+        const handler = await lambdaLoadHandler();
         const result = await new Promise((resolve, _reject) => {
-          lambdaRequire('lambda-test/sync').handler(
-            'arg',
-            ctx,
-            (_err: Error, res: any) => resolve(res)
-          );
+          handler('arg', ctx, (_err: Error, res: any) => resolve(res));
         });
         const [span] = memoryExporter.getFinishedSpans();
         assert.strictEqual(span.attributes[RES_ATTR], result);
@@ -702,9 +695,10 @@ describe('lambda handler', () => {
       it('sync - error', async () => {
         initializeHandler('lambda-test/sync.error', config);
 
+        const handler = await lambdaLoadHandler();
         let err: Error;
         try {
-          lambdaRequire('lambda-test/sync').error('arg', ctx, () => {});
+          handler('arg', ctx, () => {});
         } catch (e: any) {
           err = e;
         }
@@ -715,35 +709,79 @@ describe('lambda handler', () => {
       it('sync - error with callback', async () => {
         initializeHandler('lambda-test/sync.callbackerror', config);
 
+        const handler = await lambdaLoadHandler();
         let error: Error;
         await new Promise((resolve, _reject) => {
-          lambdaRequire('lambda-test/sync').callbackerror(
-            'arg',
-            ctx,
-            (err: Error, _res: any) => {
-              error = err;
-              resolve({});
-            }
-          );
+          handler('arg', ctx, (err: Error, _res: any) => {
+            error = err;
+            resolve({});
+          });
         });
         const [span] = memoryExporter.getFinishedSpans();
         assert.strictEqual(span.attributes[ERR_ATTR], error!.message);
       });
     });
+  });
 
-    describe('.cjs lambda bundle', () => {
-      it('should export a valid span', async () => {
-        initializeHandler('lambda-test/commonjs.handler');
-        const result = await lambdaRequire('lambda-test/commonjs.cjs').handler(
-          'arg',
-          ctx
-        );
-        assert.strictEqual(result, 'ok');
-        const spans = memoryExporter.getFinishedSpans();
-        const [span] = spans;
-        assert.strictEqual(spans.length, 1);
-        assertSpanSuccess(span);
-        assert.strictEqual(span.parentSpanId, undefined);
+  describe('extensionless lambda bundle', () => {
+    it('should export a valid span', async () => {
+      initializeHandler('lambda-test/extensionless.handler');
+      const handler = await lambdaLoadHandler();
+      const result = await handler('arg', ctx);
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+  });
+
+  describe('.cjs lambda bundle', () => {
+    it('should export a valid span', async () => {
+      initializeHandler('lambda-test/commonjs.handler');
+      const handler = await lambdaLoadHandler();
+      const result = await handler('arg', ctx);
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+  });
+
+  describe('.mjs lambda bundle', () => {
+    it('should export a valid span', async () => {
+      await runTestFixture({
+        cwd: path.dirname(__dirname),
+        argv: ['lambda-test/use-lambda.mjs'],
+        env: {
+          NODE_OPTIONS:
+            '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+          NODE_NO_WARNINGS: '1',
+        },
+        checkResult: err => {
+          assert.ifError(err);
+        },
+        checkCollector: collector => {
+          const spans = collector.sortedSpans;
+          assert.strictEqual(spans.length, 1);
+          const span = spans[0];
+          assert.strictEqual(span.kind, 2);
+          assert.strictEqual(span.name, 'my_function');
+          assert.strictEqual(
+            span.attributes.find(a => a.key === SEMATTRS_FAAS_EXECUTION)?.value
+              .stringValue,
+            'aws_request_id'
+          );
+          assert.strictEqual(
+            span.attributes.find(a => a.key === 'faas.id')?.value.stringValue,
+            'my_arn'
+          );
+          assert.strictEqual(span.status.code, 0);
+          assert.strictEqual(span.status.message, undefined);
+        },
       });
     });
   });
@@ -755,10 +793,8 @@ describe('lambda handler', () => {
       });
 
       const otherEvent = {};
-      const result = await lambdaRequire('lambda-test/async').handler(
-        otherEvent,
-        ctx
-      );
+      const handler = await lambdaLoadHandler('lambda-test/async.handler');
+      const result = await handler(otherEvent, ctx);
 
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
@@ -766,6 +802,69 @@ describe('lambda handler', () => {
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
       assert.strictEqual(span.parentSpanId, undefined);
+    });
+  });
+
+  describe('missing handler', () => {
+    it('should skip instrumentation', async () => {
+      const handler = await lambdaLoadHandler('lambda-test/async.handler');
+      const result = await handler('arg', ctx);
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+    });
+  });
+
+  describe('invalid handler string', () => {
+    it('should skip instrumentation', async () => {
+      initializeHandler('lambda-test/async..handler');
+
+      const handler = await lambdaLoadHandler('lambda-test/async.handler');
+      const result = await handler('arg', ctx);
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+    });
+  });
+
+  describe('missing handler function name', () => {
+    it('should skip instrumentation', async () => {
+      initializeHandler('lambda-test/async');
+
+      const handler = await lambdaLoadHandler('lambda-test/async.handler');
+      const result = await handler('arg', ctx);
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+    });
+  });
+
+  describe('non-existent handler function', () => {
+    it('should skip instrumentation', async () => {
+      initializeHandler('lambda-test/async.handle');
+
+      const handler = await lambdaLoadHandler('lambda-test/async.handler');
+      const result = await handler('arg', ctx);
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+    });
+  });
+
+  describe('non-existent nested handler function', () => {
+    it('should skip instrumentation', async () => {
+      initializeHandler('lambda-test/async.nested.handle');
+
+      const handler = await lambdaLoadHandler('lambda-test/async.handler');
+      const result = await handler('arg', ctx);
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
     });
   });
 });

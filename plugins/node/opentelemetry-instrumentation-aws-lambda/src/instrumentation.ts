@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-import * as path from 'path';
-import * as fs from 'fs';
-
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -55,7 +52,13 @@ import {
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { LambdaModule } from './internal-types';
+import {
+  isInvalidHandler,
+  moduleRootAndHandler,
+  resolveHandler,
+  splitHandlerString,
+  tryPath,
+} from './user-function';
 
 const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   keys(carrier): string[] {
@@ -88,69 +91,110 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       );
       return [];
     }
+    if (isInvalidHandler(handlerDef)) {
+      this._diag.debug(
+        'Skipping lambda instrumentation: _HANDLER/lambdaHandler is invalid.',
+        { taskRoot, handlerDef }
+      );
+      return [];
+    }
 
-    const handler = path.basename(handlerDef);
-    const moduleRoot = handlerDef.substr(0, handlerDef.length - handler.length);
+    const [moduleRoot, moduleAndHandler] = moduleRootAndHandler(handlerDef);
+    const [module, handlerPath] = splitHandlerString(moduleAndHandler);
 
-    const [module, functionName] = handler.split('.', 2);
+    if (!module || !handlerPath) {
+      this._diag.debug(
+        'Skipping lambda instrumentation: _HANDLER/lambdaHandler is invalid.',
+        { taskRoot, handlerDef, moduleRoot, module, handlerPath }
+      );
+      return [];
+    }
 
-    // Lambda loads user function using an absolute path.
-    let filename = path.resolve(taskRoot, moduleRoot, module);
-    if (!filename.endsWith('.js')) {
-      // its impossible to know in advance if the user has a cjs or js file.
-      // check that the .js file exists otherwise fallback to next known possibility
-      try {
-        fs.statSync(`${filename}.js`);
-        filename += '.js';
-      } catch (e) {
-        // fallback to .cjs
-        filename += '.cjs';
-      }
+    const filename = tryPath(taskRoot, moduleRoot, module);
+    if (!filename) {
+      this._diag.debug(
+        'Skipping lambda instrumentation: _HANDLER/lambdaHandler and LAMBDA_TASK_ROOT did not resolve to a file.',
+        {
+          taskRoot,
+          handlerDef,
+          moduleRoot,
+          module,
+          handlerPath,
+        }
+      );
+      return [];
     }
 
     diag.debug('Instrumenting lambda handler', {
       taskRoot,
       handlerDef,
-      handler,
+      filename,
       moduleRoot,
       module,
-      filename,
-      functionName,
+      handlerPath,
     });
 
     const lambdaStartTime =
       this.getConfig().lambdaStartTime ||
       Date.now() - Math.floor(1000 * process.uptime());
 
+    const patch = (moduleExports: object) => {
+      const [container, functionName] = resolveHandler(
+        moduleExports,
+        handlerPath
+      );
+      if (
+        container == null ||
+        functionName == null ||
+        typeof container[functionName] !== 'function'
+      ) {
+        this._diag.debug(
+          'Skipping lambda instrumentation: _HANDLER/lambdaHandler did not resolve to a function.',
+          {
+            taskRoot,
+            handlerDef,
+            filename,
+            moduleRoot,
+            module,
+            handlerPath,
+          }
+        );
+        return moduleExports;
+      }
+
+      if (isWrapped(container[functionName])) {
+        this._unwrap(container, functionName);
+      }
+      this._wrap(container, functionName, this._getHandler(lambdaStartTime));
+      return moduleExports;
+    };
+    const unpatch = (moduleExports?: object) => {
+      if (moduleExports == null) return;
+      const [container, functionName] = resolveHandler(
+        moduleExports,
+        handlerPath
+      );
+      if (
+        container == null ||
+        functionName == null ||
+        typeof container[functionName] !== 'function'
+      ) {
+        return;
+      }
+
+      this._unwrap(container, functionName);
+    };
+
     return [
       new InstrumentationNodeModuleDefinition(
-        // NB: The patching infrastructure seems to match names backwards, this must be the filename, while
-        // InstrumentationNodeModuleFile must be the module name.
+        // The patching infrastructure properly supports absolute paths when registering hooks but not when
+        // actually matching against filenames when patching, so we need to provide a file instrumentation
+        // that will actually match by using a relative path.
         filename,
         ['*'],
-        undefined,
-        undefined,
-        [
-          new InstrumentationNodeModuleFile(
-            module,
-            ['*'],
-            (moduleExports: LambdaModule) => {
-              if (isWrapped(moduleExports[functionName])) {
-                this._unwrap(moduleExports, functionName);
-              }
-              this._wrap(
-                moduleExports,
-                functionName,
-                this._getHandler(lambdaStartTime)
-              );
-              return moduleExports;
-            },
-            (moduleExports?: LambdaModule) => {
-              if (moduleExports == null) return;
-              this._unwrap(moduleExports, functionName);
-            }
-          ),
-        ]
+        patch,
+        unpatch,
+        [new InstrumentationNodeModuleFile(module, ['*'], patch, unpatch)]
       ),
     ];
   }
