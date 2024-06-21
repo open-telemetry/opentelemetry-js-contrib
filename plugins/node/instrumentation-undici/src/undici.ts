@@ -84,7 +84,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     this._channelSubs.forEach(sub => sub.channel.unsubscribe(sub.onMessage));
     this._channelSubs.length = 0;
     super.disable();
-    this.setConfig({...this.getConfig(), enabled: false});
+    this.setConfig({ ...this.getConfig(), enabled: false });
   }
 
   override enable(): void {
@@ -92,7 +92,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       return;
     }
     super.enable();
-    this.setConfig({...this.getConfig(), enabled: true});
+    this.setConfig({ ...this.getConfig(), enabled: true });
 
     // This method is called by the `InstrumentationAbstract` constructor before
     // ours is called. So we need to ensure the property is initalized
