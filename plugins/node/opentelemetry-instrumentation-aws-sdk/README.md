@@ -9,6 +9,8 @@ This module provides automatic instrumentation for the [`aws-sdk` v2](https://do
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
@@ -109,18 +111,6 @@ Specific service logic currently implemented for:
 ## Potential Side Effects
 
 The instrumentation is doing best effort to support the trace specification of OpenTelemetry. For SQS, it involves defining new attributes on the `Messages` array, as well as on the manipulated types generated from this array (to set correct trace context for a single SQS message operation). Those properties are defined as [non-enumerable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Enumerability_and_ownership_of_properties) properties, so they have minimum side effect on the app. They will, however, show when using the `Object.getOwnPropertyDescriptors` and `Reflect.ownKeys` functions on SQS `Messages` array and for each `Message` in the array.
-
-## Migration From opentelemetry-instrumentation-aws-sdk
-
-This instrumentation was originally published under the name `"opentelemetry-instrumentation-aws-sdk"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js). Few breaking changes were made during porting to the contrib repo to align with conventions:
-
-### Hook Info
-
-The instrumentation's config `preRequestHook`, `responseHook` and `sqsProcessHook` functions signature changed, so the second function parameter is info object, containing the relevant hook data.
-
-### `moduleVersionAttributeName` config option
-
-The `moduleVersionAttributeName` config option is removed. To add the aws-sdk package version to spans, use the `moduleVersion` attribute in hook info for `preRequestHook` and `responseHook` functions.
 
 ## Semantic Conventions
 

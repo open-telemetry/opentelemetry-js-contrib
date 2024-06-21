@@ -12,6 +12,7 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../../scripts/lint-readme.js",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-lru-memoizer --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
