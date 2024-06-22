@@ -27,7 +27,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "RedisInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

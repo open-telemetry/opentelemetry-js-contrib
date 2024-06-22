@@ -22,7 +22,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "KnexInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

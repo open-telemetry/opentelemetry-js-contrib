@@ -23,7 +23,7 @@ if (!pjson.opentelemetry.components || pjson.opentelemetry.components.length !==
 
 // only instrumentations are supported at the moment
 const componentMetadata = pjson.opentelemetry.components[0];
-if (componentMetadata.componentType !== 'instrumentation') {
+if (componentMetadata.type !== 'instrumentation') {
   throw new Error(
     `package.json should contain a component of type "instrumentation" in "opentelemetry" property.`
   );

@@ -24,7 +24,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "BaseOpenTelemetryComponent",
+        "type": "instrumentation",
         "platforms": [
           "web"
         ]

@@ -21,7 +21,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "BunyanInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

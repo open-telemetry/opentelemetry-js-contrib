@@ -23,7 +23,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "RestifyInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

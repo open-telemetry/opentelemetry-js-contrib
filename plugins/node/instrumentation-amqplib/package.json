@@ -44,7 +44,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "AmqplibInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

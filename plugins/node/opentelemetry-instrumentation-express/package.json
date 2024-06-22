@@ -23,7 +23,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "ExpressInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

@@ -20,7 +20,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "RuntimeNodeInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

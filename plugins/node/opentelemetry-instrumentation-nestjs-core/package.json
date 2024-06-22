@@ -22,7 +22,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "NestInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

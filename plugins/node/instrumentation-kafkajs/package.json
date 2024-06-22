@@ -21,7 +21,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "KafkajsInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

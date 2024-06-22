@@ -22,7 +22,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "SocketIoInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

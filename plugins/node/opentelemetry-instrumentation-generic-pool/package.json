@@ -22,7 +22,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "GenericPoolInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

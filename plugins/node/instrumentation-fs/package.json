@@ -21,7 +21,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "FsInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

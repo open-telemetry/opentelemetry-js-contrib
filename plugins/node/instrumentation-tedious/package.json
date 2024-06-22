@@ -21,7 +21,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "TediousInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

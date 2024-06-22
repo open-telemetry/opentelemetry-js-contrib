@@ -22,7 +22,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "LruMemoizerInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

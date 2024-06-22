@@ -23,7 +23,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "GraphQLInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

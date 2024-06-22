@@ -22,7 +22,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "WinstonInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

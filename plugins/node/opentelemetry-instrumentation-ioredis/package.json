@@ -25,7 +25,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "IORedisInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

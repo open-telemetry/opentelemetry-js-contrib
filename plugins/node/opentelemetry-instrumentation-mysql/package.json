@@ -20,7 +20,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "MySQLInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

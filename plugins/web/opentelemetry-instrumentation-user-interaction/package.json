@@ -24,7 +24,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "UserInteractionInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "web"
         ]

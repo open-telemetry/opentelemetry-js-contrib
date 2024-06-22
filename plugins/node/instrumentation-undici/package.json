@@ -22,7 +22,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "UndiciInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

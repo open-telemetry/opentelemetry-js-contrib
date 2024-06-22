@@ -22,7 +22,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "HapiInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

@@ -27,7 +27,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "MongoDBInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

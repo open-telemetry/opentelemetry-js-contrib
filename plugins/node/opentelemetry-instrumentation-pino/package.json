@@ -22,7 +22,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "PinoInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

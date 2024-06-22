@@ -21,7 +21,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "MySQL2Instrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

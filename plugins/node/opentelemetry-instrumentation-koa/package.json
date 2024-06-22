@@ -23,7 +23,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "KoaInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

@@ -21,7 +21,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "DnsInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]

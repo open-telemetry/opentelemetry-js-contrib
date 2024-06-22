@@ -22,7 +22,8 @@
   "opentelemetry": {
     "components": [
       {
-        "componentType": "instrumentation",
+        "name": "FastifyInstrumentation",
+        "type": "instrumentation",
         "platforms": [
           "node"
         ]
