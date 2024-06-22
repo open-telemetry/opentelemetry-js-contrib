@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+export * from './undici';
+export * from './types';
+
 export { UndiciInstrumentation } from './undici';
 export {
   UndiciRequest,

@@ -23,8 +23,8 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 
-import Instrumentation from '../src';
-const plugin = new Instrumentation({
+import { KnexInstrumentation } from '../src';
+const plugin = new KnexInstrumentation({
   maxQueryLength: 50,
 });
 
