@@ -16,13 +16,3 @@
 
 export * from './undici';
 export * from './types';
-
-export { UndiciInstrumentation } from './undici';
-export {
-  UndiciRequest,
-  UndiciResponse,
-  IgnoreRequestFunction,
-  RequestHookFunction,
-  StartSpanHookFunction,
-  UndiciInstrumentationConfig,
-} from './types';
