@@ -20,8 +20,14 @@
     "compile": "tsc -p ."
   },
   "opentelemetry": {
-    "componentType": "instrumentation",
-    "platforms": ["node"]
+    "components": [
+      {
+        "componentType": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
   },
   "keywords": [
     "cucumber",

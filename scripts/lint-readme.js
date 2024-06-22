@@ -14,9 +14,37 @@ if (!pjson.opentelemetry) {
   );
 }
 
+// only packages that contains one component of type "instrumentation" are supported at the moment
+if (!pjson.opentelemetry.components || pjson.opentelemetry.components.length !== 1) {
+  throw new Error(
+    `package.json should contain only one component in "opentelemetry" property.`
+  );
+}
+
+// only instrumentations are supported at the moment
+const componentMetadata = pjson.opentelemetry.components[0];
+if (componentMetadata.componentType !== 'instrumentation') {
+  throw new Error(
+    `package.json should contain a component of type "instrumentation" in "opentelemetry" property.`
+  );
+}
+
+// each instrumentation should target either node or web
+if (!componentMetadata.platforms || componentMetadata.platforms.length !== 1) {
+  throw new Error(
+    `package.json should contain exactly one of "node" or "web" in "platforms" property of the instrumentation component.`
+  );
+}
+
 // identify if it's node or web
-const isNode = 'node' in pjson.opentelemetry.platforms;
-const isWeb = 'web' in pjson.opentelemetry.platforms;
+const isNode = componentMetadata.platforms.includes('node');
+const isWeb = componentMetadata.platforms.includes('web');
+
+if (isNode === isWeb) {
+  throw new Error(
+    `package.json should populate exactly one of "node" or "web" in "platforms" property of the instrumentation component.`
+  );
+}
 
 // extract info from README.md
 const currentReadmeContent = fs.readFileSync(
