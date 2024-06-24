@@ -33,6 +33,8 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { AttributeNames, NestType } from './enums';
 
+const supportedVersions = ['>=4.0.0 <11'];
+
 export class Instrumentation extends InstrumentationBase {
   static readonly COMPONENT = '@nestjs/core';
   static readonly COMMON_ATTRIBUTES = {
@@ -46,12 +48,12 @@ export class Instrumentation extends InstrumentationBase {
   init() {
     const module = new InstrumentationNodeModuleDefinition(
       Instrumentation.COMPONENT,
-      ['>=4.0.0']
+      supportedVersions
     );
 
     module.files.push(
-      this.getNestFactoryFileInstrumentation(['>=4.0.0']),
-      this.getRouterExecutionContextFileInstrumentation(['>=4.0.0'])
+      this.getNestFactoryFileInstrumentation(supportedVersions),
+      this.getRouterExecutionContextFileInstrumentation(supportedVersions)
     );
 
     return module;

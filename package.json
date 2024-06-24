@@ -15,6 +15,7 @@
     "clean": "lerna run clean",
     "precompile": "tsc --version && npm run version:update",
     "version:update": "lerna run version:update",
+    "lint:readme": "lerna run lint:readme",
     "compile": "lerna run compile",
     "prewatch": "npm run precompile",
     "test": "lerna run test",
@@ -57,7 +58,8 @@
     "minimatch": "^9.0.3",
     "prettier": "2.8.8",
     "semver": "^7.6.0",
-    "typescript": "4.4.4"
+    "process": "0.11.10",
+    "util": "0.12.5"
   },
   "changelog": {
     "labels": {

@@ -9,9 +9,9 @@ This module provides automatic instrumentation and tracing for GraphQL in Node.j
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
-*Note*: graphql plugin instruments graphql directly. it should work with any package that wraps the graphql package (e.g apollo).
-
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
+*Note*: graphql plugin instruments graphql directly. it should work with any package that wraps the graphql package (e.g apollo).
 
 ## Installation
 
@@ -21,7 +21,7 @@ npm install @opentelemetry/instrumentation-graphql
 
 ### Supported Versions
 
-`^14.0 | ^15.0 | ^16.0`
+- [`graphql`](https://www.npmjs.com/package/graphql) versions `>=14.0.0 <17`
 
 ## Usage
 
@@ -131,7 +131,7 @@ This package does not currently generate any attributes from semantic convention
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
-[license-url]: https://github.com/open-telemetry/opentelemetry-js/blob/main/LICENSE
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-graphql
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-graphql.svg
