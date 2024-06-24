@@ -42,10 +42,15 @@
     "@opentelemetry/exporter-trace-otlp-http": "^0.39.1",
     "@opentelemetry/instrumentation": "^0.39.1",
     "@opentelemetry/instrumentation-document-load": "^0.32.2",
+    "@opentelemetry/instrumentation-fetch2": "^0.52.1",
+    "@opentelemetry/instrumentation-resource-timing": "^0.38.0",
+
     "@opentelemetry/instrumentation-user-interaction": "^0.32.3",
     "@opentelemetry/instrumentation-xml-http-request": "^0.39.1",
     "@opentelemetry/propagator-b3": "^1.13.0",
     "@opentelemetry/sdk-trace-web": "^1.13.0",
+    "@opentelemetry/sdk-logs": "^0.52.1",
+    "@opentelemetry/sdk-events": "^0.52.1",
     "@opentelemetry/semantic-conventions": "^1.23.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme"

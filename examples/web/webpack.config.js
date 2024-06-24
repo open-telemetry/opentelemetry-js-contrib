@@ -10,6 +10,7 @@ const common = {
   mode: 'development',
   entry: {
     'document-load': 'examples/document-load/index.js',
+    fetch: 'examples/fetch/index.js',
     meta: 'examples/meta/index.js',
     'user-interaction': 'examples/user-interaction/index.js',
   },
