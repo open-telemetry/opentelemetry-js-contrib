@@ -37,7 +37,7 @@ const sdk = new NodeSDK({
 sdk.start();
 
 const pino = require('pino');
-const logger = pino(});
+const logger = pino();
 
 logger.info('hi');
 // 1. Log records will be sent to the SDK-registered log record processor, if any.
