@@ -270,3 +270,12 @@ pkg:sql-common:
   - changed-files:
       - any-glob-to-any-file:
           - packages/opentelemetry-sql-common/**
+pkg-status:unmaintained:
+  - changed-files:
+      - any-glob-to-any-file:
+          - detectors/node/opentelemetry-resource-detector-github/**
+          - plugins/node/opentelemetry-instrumentation-connect/**
+          - plugins/node/opentelemetry-instrumentation-dns/**
+          - plugins/node/opentelemetry-instrumentation-hapi/**
+          - plugins/node/opentelemetry-instrumentation-koa/**
+          - propagators/opentelemetry-propagator-ot-trace/**
