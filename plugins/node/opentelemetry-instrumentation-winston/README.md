@@ -107,7 +107,7 @@ Log injection can be disabled with the `disableLogCorrelation: true` option.
 ### Using OpenTelemetryTransportV3 without instrumentation
 
 [@opentelemetry/winston-transport](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/winston-transport) package exports the Winston transport class that is used to send records to the
-OpenTelemetry Logs SDK. It can be used directly when configuring a Winston logger. 
+OpenTelemetry Logs SDK. It can be used directly when configuring a Winston logger.
 For example:
 
 ```js
