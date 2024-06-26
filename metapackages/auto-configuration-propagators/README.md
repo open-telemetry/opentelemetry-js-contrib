@@ -27,7 +27,7 @@ Please see the [Supported propagators](#supported-propagators) section for more 
 
 ## Supported propagators
 
-- [@opentelemetry/](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-amqplib)
+The specification defines a list of [known propagators](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/configuration/sdk-environment-variables.md#general-sdk-configuration) for the `OTEL_PROPAGATORS` env variable. Only these propagators are supported.
 
 - "tracecontext": [W3C Trace Context](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core)
 - "baggage": [W3C Baggage](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core)

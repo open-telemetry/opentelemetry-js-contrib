@@ -22,7 +22,7 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/auto-configuration-propagators --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
-    "tdd": "yarn test -- --watch-extensions ts --watch",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",
     "watch": "tsc -w"
   },
