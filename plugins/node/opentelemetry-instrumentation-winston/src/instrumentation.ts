@@ -221,9 +221,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
               args[0].transports = newTransports;
             } catch (err) {
               instrumentation._diag.warn(
-                'OpenTelemetry Winston transport is not available, log records will not be automatically sent.',
-                err
-              );
+                '@opentelemetry/winston-transport is not available, log records will not be automatically sent.');
             }
           }
         }
