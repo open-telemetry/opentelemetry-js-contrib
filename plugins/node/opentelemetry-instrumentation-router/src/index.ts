@@ -14,9 +14,5 @@
  * limitations under the License.
  */
 
-import RouterInstrumentation from './instrumentation';
-
-export { RouterInstrumentation };
-export default RouterInstrumentation;
-
+export * from './instrumentation';
 export * from './enums/AttributeNames';
