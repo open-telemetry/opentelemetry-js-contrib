@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
+import type { RouterParamContext } from '@koa/router';
 import * as KoaRouter from '@koa/router';
 import { context, trace, Span, SpanKind } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -28,6 +30,9 @@ import {
   SEMATTRS_HTTP_METHOD,
   SEMATTRS_HTTP_ROUTE,
 } from '@opentelemetry/semantic-conventions';
+
+type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
+type KoaMiddleware = Middleware<DefaultState, KoaContext>;
 
 import { KoaInstrumentation } from '../src';
 const plugin = new KoaInstrumentation();
@@ -594,7 +599,7 @@ describe('Koa Instrumentation', () => {
         )
       );
 
-      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
+      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
         span.setAttribute(SEMATTRS_HTTP_METHOD, info.context.request.method);
 
         throw Error('error thrown in requestHook');
@@ -645,7 +650,7 @@ describe('Koa Instrumentation', () => {
         )
       );
 
-      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
+      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
         span.setAttribute('http.method', info.context.request.method);
         span.setAttribute('app.env', info.context.app.env);
         span.setAttribute('koa.layer', info.layerType);
