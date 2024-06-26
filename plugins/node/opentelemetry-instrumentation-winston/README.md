@@ -140,7 +140,6 @@ const logger = winston.createLogger({
 
 Duplication of logs could happen if @opentelemetry/winston-transport is added as a transport in Winston logger and @opentelemetry/instrumentation-winston is also enabled with disableLogSending config as false.
 
-
 ## Semantic Conventions
 
 This package does not currently generate any attributes from semantic conventions.
