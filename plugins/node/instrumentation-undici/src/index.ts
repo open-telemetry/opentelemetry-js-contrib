@@ -14,12 +14,5 @@
  * limitations under the License.
  */
 
-export { UndiciInstrumentation } from './undici';
-export {
-  UndiciRequest,
-  UndiciResponse,
-  IgnoreRequestFunction,
-  RequestHookFunction,
-  StartSpanHookFunction,
-  UndiciInstrumentationConfig,
-} from './types';
+export * from './undici';
+export * from './types';

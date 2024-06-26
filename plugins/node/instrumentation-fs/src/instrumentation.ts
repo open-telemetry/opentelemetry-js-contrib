@@ -51,7 +51,7 @@ function patchedFunctionWithOriginalProperties<
   return Object.assign(patchedFunction, original);
 }
 
-export default class FsInstrumentation extends InstrumentationBase {
+export class FsInstrumentation extends InstrumentationBase {
   constructor(config: FsInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
