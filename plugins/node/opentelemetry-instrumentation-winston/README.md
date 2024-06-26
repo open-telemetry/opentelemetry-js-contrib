@@ -138,8 +138,7 @@ const logger = winston.createLogger({
 });
 ```
 
-[!WARNING]  
-> Duplication of logs could happen if @opentelemetry/winston-transport is added as a transport in Winston logger and @opentelemetry/instrumentation-winston is also enabled with disableLogSending config as false.
+Duplication of logs could happen if @opentelemetry/winston-transport is added as a transport in Winston logger and @opentelemetry/instrumentation-winston is also enabled with disableLogSending config as false.
 
 
 ## Semantic Conventions
