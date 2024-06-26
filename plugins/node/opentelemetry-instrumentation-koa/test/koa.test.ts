@@ -599,11 +599,13 @@ describe('Koa Instrumentation', () => {
         )
       );
 
-      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
-        span.setAttribute(SEMATTRS_HTTP_METHOD, info.context.request.method);
+      const requestHook = sinon.spy(
+        (span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
+          span.setAttribute(SEMATTRS_HTTP_METHOD, info.context.request.method);
 
-        throw Error('error thrown in requestHook');
-      });
+          throw Error('error thrown in requestHook');
+        }
+      );
 
       plugin.setConfig({
         requestHook,
@@ -650,11 +652,13 @@ describe('Koa Instrumentation', () => {
         )
       );
 
-      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
-        span.setAttribute('http.method', info.context.request.method);
-        span.setAttribute('app.env', info.context.app.env);
-        span.setAttribute('koa.layer', info.layerType);
-      });
+      const requestHook = sinon.spy(
+        (span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
+          span.setAttribute('http.method', info.context.request.method);
+          span.setAttribute('app.env', info.context.app.env);
+          span.setAttribute('koa.layer', info.layerType);
+        }
+      );
 
       plugin.setConfig({
         requestHook,

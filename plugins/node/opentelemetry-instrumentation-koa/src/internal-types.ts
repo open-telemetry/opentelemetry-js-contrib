@@ -16,7 +16,10 @@
 import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
 import type * as Router from '@koa/router';
 
-export type KoaContext = ParameterizedContext<DefaultState, Router.RouterParamContext>;
+export type KoaContext = ParameterizedContext<
+  DefaultState,
+  Router.RouterParamContext
+>;
 export type KoaMiddleware = Middleware<DefaultState, KoaContext> & {
   router?: Router;
 };
