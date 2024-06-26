@@ -36,7 +36,7 @@ import LayerType from './enums/LayerType';
 
 const supportedVersions = ['>=1.0.0 <2'];
 
-export default class RouterInstrumentation extends InstrumentationBase {
+export class RouterInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
