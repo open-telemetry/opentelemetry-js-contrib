@@ -10,6 +10,7 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../../scripts/lint-readme.js",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-restify --include-dependencies",
     "prepublishOnly": "npm run compile",
     "prewatch": "npm run precompile",
