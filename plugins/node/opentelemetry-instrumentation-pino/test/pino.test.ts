@@ -20,17 +20,28 @@ import { Writable } from 'stream';
 import * as semver from 'semver';
 import * as sinon from 'sinon';
 import { INVALID_SPAN_CONTEXT, context, trace, Span } from '@opentelemetry/api';
+import { diag, DiagLogLevel } from '@opentelemetry/api';
+import { hrTimeToMilliseconds } from '@opentelemetry/core';
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { Resource } from '@opentelemetry/resources';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import {
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+  InMemoryLogRecordExporter,
+} from '@opentelemetry/sdk-logs';
 import {
   runTestFixture,
   TestCollector,
 } from '@opentelemetry/contrib-test-utils';
 
 import { PinoInstrumentation, PinoInstrumentationConfig } from '../src';
+import { PACKAGE_NAME, PACKAGE_VERSION } from '../src/version';
 
 import type { pino as Pino } from 'pino';
 
@@ -40,6 +51,15 @@ tracerProvider.addSpanProcessor(
   new SimpleSpanProcessor(new InMemorySpanExporter())
 );
 const tracer = tracerProvider.getTracer('default');
+
+// Setup LoggerProvider for "log sending" tests.
+const resource = new Resource({
+  [SEMRESATTRS_SERVICE_NAME]: 'test-instrumentation-pino',
+});
+const loggerProvider = new LoggerProvider({ resource });
+const memExporter = new InMemoryLogRecordExporter();
+loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(memExporter));
+logs.setGlobalLoggerProvider(loggerProvider);
 
 const instrumentation = new PinoInstrumentation();
 const pino = require('pino');
@@ -113,6 +133,7 @@ describe('PinoInstrumentation', () => {
 
     beforeEach(() => {
       instrumentation.setConfig({}); // reset to defaults
+      memExporter.getFinishedLogRecords().length = 0; // clear
       stream = new Writable();
       stream._write = () => {};
       writeSpy = sinon.spy(stream, 'write');
@@ -225,6 +246,27 @@ describe('PinoInstrumentation', () => {
         sinon.assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
         assertRecord(record, span);
+      });
+    });
+
+    it('does not inject or call logHook if disableLogCorrelation=true', () => {
+      instrumentation.setConfig({
+        disableLogCorrelation: true,
+        logHook: (_span, record) => {
+          record['resource.service.name'] = 'test-service';
+        },
+      });
+      tracer.startActiveSpan('abc', span => {
+        logger.info('foo');
+        span.end();
+
+        sinon.assert.calledOnce(writeSpy);
+        const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+        assert.strictEqual('foo', record['msg']);
+        assert.strictEqual(record['trace_id'], undefined);
+        assert.strictEqual(record['span_id'], undefined);
+        assert.strictEqual(record['trace_flags'], undefined);
+        assert.strictEqual(record['resource.service.name'], undefined);
       });
     });
 
@@ -346,6 +388,334 @@ describe('PinoInstrumentation', () => {
         assert.strictEqual(record['trace_id'], '123');
         assert.strictEqual(record['span_id'], spanId);
       });
+    });
+  });
+
+  describe('log sending', () => {
+    let logger: Pino.Logger;
+    let stream: Writable;
+    let writeSpy: sinon.SinonSpy;
+
+    before(function () {
+      if (typeof pino.multistream !== 'function') {
+        this.skip();
+      }
+    });
+
+    beforeEach(() => {
+      instrumentation.setConfig({}); // reset to defaults
+      memExporter.getFinishedLogRecords().length = 0; // clear
+      stream = new Writable();
+      stream._write = () => {};
+      writeSpy = sinon.spy(stream, 'write');
+      logger = pino(
+        {
+          name: 'test-logger-name',
+          level: 'debug',
+        },
+        stream
+      );
+    });
+
+    it('emits log records to Logs SDK', () => {
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      // levels
+      logger.silent('silent');
+      logger.trace('at trace level');
+      logger.debug('at debug level');
+      logger.info('at info level');
+      logger.warn('at warn level');
+      logger.error('at error level');
+      logger.fatal('at fatal level');
+      assert.strictEqual(logRecords.length, 5);
+      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
+      assert.strictEqual(logRecords[0].severityText, 'debug');
+      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.INFO);
+      assert.strictEqual(logRecords[1].severityText, 'info');
+      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.WARN);
+      assert.strictEqual(logRecords[2].severityText, 'warn');
+      assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.ERROR);
+      assert.strictEqual(logRecords[3].severityText, 'error');
+      assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.FATAL);
+      assert.strictEqual(logRecords[4].severityText, 'fatal');
+
+      // attributes, resource, instrumentationScope, etc.
+      logger.info({ foo: 'bar' }, 'a message');
+      const rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.body, 'a message');
+      assert.deepStrictEqual(rec.attributes, {
+        name: 'test-logger-name',
+        foo: 'bar',
+      });
+      assert.strictEqual(
+        rec.resource.attributes['service.name'],
+        'test-instrumentation-pino'
+      );
+      assert.strictEqual(rec.instrumentationScope.name, PACKAGE_NAME);
+      assert.strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
+      assert.strictEqual(rec.spanContext, undefined);
+
+      // spanContext
+      tracer.startActiveSpan('abc', span => {
+        logger.info('in active span');
+        span.end();
+
+        const { traceId, spanId, traceFlags } = span.spanContext();
+        const rec = logRecords[logRecords.length - 1];
+        assert.strictEqual(rec.spanContext?.traceId, traceId);
+        assert.strictEqual(rec.spanContext?.spanId, spanId);
+        assert.strictEqual(rec.spanContext?.traceFlags, traceFlags);
+
+        // This rec should *NOT* have the `trace_id` et al attributes.
+        assert.strictEqual(rec.attributes.trace_id, undefined);
+        assert.strictEqual(rec.attributes.span_id, undefined);
+        assert.strictEqual(rec.attributes.trace_flags, undefined);
+      });
+    });
+
+    it('does not emit to the Logs SDK if disableLogSending=true', () => {
+      instrumentation.setConfig({ disableLogSending: true });
+
+      // Changing `disableLogSending` only has an impact on Loggers created
+      // *after* it is set. So we cannot test with the `logger` created in
+      // `beforeEach()` above.
+      logger = pino({ name: 'test-logger-name' }, stream);
+
+      tracer.startActiveSpan('abc', span => {
+        logger.info('foo');
+        span.end();
+
+        assert.strictEqual(memExporter.getFinishedLogRecords().length, 0);
+
+        // Test log correlation still works.
+        const { traceId, spanId } = span.spanContext();
+        sinon.assert.calledOnce(writeSpy);
+        const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+        assert.strictEqual('foo', record['msg']);
+        assert.strictEqual(record['trace_id'], traceId);
+        assert.strictEqual(record['span_id'], spanId);
+      });
+    });
+
+    it('edge case: non-time "time" field is stored in attributes', () => {
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      // Pino will emit a JSON object with two "time" fields, e.g.
+      //    {...,"time":1716933636063,...,"time":"miller"}
+      // JSON *parsing* rules are that the last duplicate key wins, so it
+      // would be nice to maintain that "time" attribute if possible.
+      logger.info({ time: 'miller' }, 'hi');
+      const rec = logRecords[logRecords.length - 1];
+      assert.deepEqual(
+        rec.hrTime.map(n => typeof n),
+        ['number', 'number']
+      );
+      assert.strictEqual(rec.attributes.time, 'miller');
+    });
+
+    it('edge case: custom "timestamp" option', () => {
+      let otelRec, pinoRec;
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      logger = pino({ timestamp: false }, stream);
+      logger.info('using false');
+      otelRec = logRecords[logRecords.length - 1];
+      pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
+      assert.deepEqual(
+        otelRec.hrTime.map(n => typeof n),
+        ['number', 'number']
+      );
+      assert.strictEqual(pinoRec.time, undefined);
+
+      logger = pino({ timestamp: pino.stdTimeFunctions.epochTime }, stream);
+      logger.info('using epochTime');
+      otelRec = logRecords[logRecords.length - 1];
+      pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
+      assert.strictEqual(hrTimeToMilliseconds(otelRec.hrTime), pinoRec.time);
+
+      logger = pino({ timestamp: pino.stdTimeFunctions.unixTime }, stream);
+      logger.info('using unixTime');
+      otelRec = logRecords[logRecords.length - 1];
+      pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
+      assert.strictEqual(
+        hrTimeToMilliseconds(otelRec.hrTime),
+        pinoRec.time * 1e3
+      );
+
+      logger = pino({ timestamp: pino.stdTimeFunctions.isoTime }, stream);
+      logger.info('using isoTime');
+      otelRec = logRecords[logRecords.length - 1];
+      pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
+      assert.strictEqual(
+        hrTimeToMilliseconds(otelRec.hrTime),
+        new Date(pinoRec.time).getTime()
+      );
+
+      logger = pino({ timestamp: () => ',"time":"quittin"' }, stream);
+      logger.info('using custom timestamp fn');
+      otelRec = logRecords[logRecords.length - 1];
+      pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
+      assert.deepEqual(
+        otelRec.hrTime.map(n => typeof n),
+        ['number', 'number']
+      );
+      assert.strictEqual(pinoRec.time, 'quittin');
+      assert.strictEqual(otelRec.attributes.time, 'quittin');
+    });
+
+    // A custom 'timestamp' fn that returns invalid data will result in a Pino
+    // log record line that is invalid JSON. We expect the OTel stream to
+    // gracefully handle this.
+    it('edge case: error parsing pino log line', () => {
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      const diagWarns = [] as any;
+      // This messily leaves the diag logger set for other tests.
+      diag.setLogger(
+        {
+          verbose() {},
+          debug() {},
+          info() {},
+          warn(...args) {
+            diagWarns.push(args);
+          },
+          error() {},
+        },
+        DiagLogLevel.WARN
+      );
+
+      logger = pino({ timestamp: () => 'invalid JSON' }, stream);
+      logger.info('using custom timestamp fn returning bogus result');
+      assert.strictEqual(logRecords.length, 0);
+      assert.ok(writeSpy.lastCall.args[0].toString().includes('invalid JSON'));
+      assert.equal(diagWarns.length, 1);
+      assert.ok(diagWarns[0][1].includes('could not send pino log line'));
+    });
+
+    it('edge case: customLevels', () => {
+      let rec;
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      logger = pino(
+        {
+          customLevels: {
+            foo: pino.levels.values.warn,
+            bar: pino.levels.values.warn - 1, // a little closer to INFO
+            baz: pino.levels.values.warn + 1, // a little above WARN
+          },
+        },
+        stream
+      );
+
+      (logger as any).foo('foomsg');
+      rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.severityNumber, SeverityNumber.WARN);
+      assert.strictEqual(rec.severityText, 'foo');
+
+      (logger as any).bar('barmsg');
+      rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.severityNumber, SeverityNumber.INFO4);
+      assert.strictEqual(rec.severityText, 'bar');
+
+      (logger as any).baz('bazmsg');
+      rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.severityNumber, SeverityNumber.WARN2);
+      assert.strictEqual(rec.severityText, 'baz');
+    });
+
+    it('edge case: customLevels and formatters.level', () => {
+      logger = pino(
+        {
+          customLevels: {
+            foo: pino.levels.values.warn,
+            bar: pino.levels.values.warn - 1, // a little closer to INFO
+          },
+          formatters: {
+            level(label: string, _num: number) {
+              return { level: label };
+            },
+          },
+        },
+        stream
+      );
+
+      const logRecords = memExporter.getFinishedLogRecords();
+      (logger as any).foo('foomsg');
+      const otelRec = logRecords[logRecords.length - 1];
+      assert.strictEqual(otelRec.severityNumber, SeverityNumber.WARN);
+      assert.strictEqual(otelRec.severityText, 'foo');
+
+      sinon.assert.calledOnce(writeSpy);
+      const pinoRec = JSON.parse(writeSpy.firstCall.args[0].toString());
+      assert.equal((pinoRec as any).level, 'foo');
+    });
+
+    it('edge case: customLevels and useOnlyCustomLevels', () => {
+      let rec;
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      logger = pino(
+        {
+          customLevels: {
+            foo: pino.levels.values.warn,
+            bar: pino.levels.values.warn - 1, // a little closer to INFO
+          },
+          useOnlyCustomLevels: true,
+          level: 'bar',
+        },
+        stream
+      );
+
+      (logger as any).foo('foomsg');
+      rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.severityNumber, SeverityNumber.WARN);
+      assert.strictEqual(rec.severityText, 'foo');
+
+      (logger as any).bar('barmsg');
+      rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.severityNumber, SeverityNumber.INFO4);
+      assert.strictEqual(rec.severityText, 'bar');
+    });
+
+    // We use multistream internally to write to the OTel SDK. This test ensures
+    // that multistream wrapping of a multistream works.
+    it('edge case: multistream', () => {
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      const stream2 = new Writable();
+      stream2._write = () => {};
+      const writeSpy2 = sinon.spy(stream2, 'write');
+
+      logger = pino(
+        {},
+        pino.multistream([{ stream: stream }, { stream: stream2 }])
+      );
+      logger.info('using multistream');
+
+      const otelRec = logRecords[logRecords.length - 1];
+      assert.equal(otelRec.body, 'using multistream');
+
+      sinon.assert.calledOnce(writeSpy);
+      const pinoRec = JSON.parse(writeSpy.firstCall.args[0].toString());
+      assert.equal((pinoRec as any).msg, 'using multistream');
+
+      sinon.assert.calledOnce(writeSpy2);
+      const pinoRec2 = JSON.parse(writeSpy2.firstCall.args[0].toString());
+      assert.equal((pinoRec2 as any).msg, 'using multistream');
+    });
+
+    it('edge case: messageKey', () => {
+      logger = pino({ messageKey: 'mymsg' }, stream);
+      logger.info('using messageKey');
+
+      const logRecords = memExporter.getFinishedLogRecords();
+      const otelRec = logRecords[logRecords.length - 1];
+      assert.equal(otelRec.body, 'using messageKey');
+
+      sinon.assert.calledOnce(writeSpy);
+      const pinoRec = JSON.parse(writeSpy.firstCall.args[0].toString());
+      assert.equal((pinoRec as any).mymsg, 'using messageKey');
     });
   });
 
