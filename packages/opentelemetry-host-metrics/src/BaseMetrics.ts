@@ -25,12 +25,8 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 export interface MetricsCollectorConfig {
   // Meter Provider
   meterProvider?: MeterProvider;
-  // Character to be used to join metrics - default is "."
-  metricNameSeparator?: string;
   // Name of component
-  name: string;
-  // metric export endpoint
-  url?: string;
+  name?: string;
 }
 
 const DEFAULT_NAME = PACKAGE_NAME;
@@ -43,12 +39,14 @@ export abstract class BaseMetrics {
   protected _meter: Meter;
   private _name: string;
 
-  constructor(config: MetricsCollectorConfig) {
-    this._name = config.name || DEFAULT_NAME;
-    const meterProvider = config.meterProvider || metrics.getMeterProvider();
-    if (!config.meterProvider) {
+  constructor(config?: MetricsCollectorConfig) {
+    // Do not use `??` operator to allow falling back to default when the
+    // specified name is an empty string.
+    this._name = config?.name || DEFAULT_NAME;
+    if (config?.meterProvider == null) {
       this._logger.warn('No meter provider, using default');
     }
+    const meterProvider = config?.meterProvider ?? metrics.getMeterProvider();
     this._meter = meterProvider.getMeter(this._name, PACKAGE_VERSION);
   }
 

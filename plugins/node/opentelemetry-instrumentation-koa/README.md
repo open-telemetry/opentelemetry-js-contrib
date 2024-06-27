@@ -65,11 +65,18 @@ Note that generator-based middleware are deprecated and won't be instrumented.
 
 Instrumentation configuration accepts a custom "hook" function which will be called for every instrumented Koa middleware layer involved in a request. Custom attributes can be set on the span or run any custom logic per layer.
 
-```javascript
+NOTE: `KoaRequestInfo.context` and `KoaRequestInfo.middlewareLayer` are typed as `any`. If you want type support make sure you have `@types/koa` and `@types/koa__router` installed then you can use the following type definitions:
+
+```typescript
 import { KoaInstrumentation } from "@opentelemetry/instrumentation-koa"
+import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
+import type { RouterParamContext } from '@koa/router';
+
+type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
+type KoaMiddleware = Middleware<DefaultState, KoaContext>;
 
 const koaInstrumentation = new KoaInstrumentation({
-  requestHook: function (span: Span, info: KoaRequestInfo) {
+  requestHook: function (span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) {
     span.setAttribute(
       'http.method',
       info.context.request.method
