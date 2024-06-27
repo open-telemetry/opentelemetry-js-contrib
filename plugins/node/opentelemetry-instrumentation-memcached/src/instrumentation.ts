@@ -31,7 +31,7 @@ import * as utils from './utils';
 import { InstrumentationConfig } from './types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
-export class Instrumentation extends InstrumentationBase {
+export class MemcachedInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'memcached';
   static readonly COMMON_ATTRIBUTES = {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MEMCACHED,
@@ -44,12 +44,16 @@ export class Instrumentation extends InstrumentationBase {
     super(
       PACKAGE_NAME,
       PACKAGE_VERSION,
-      Object.assign({}, Instrumentation.DEFAULT_CONFIG, config)
+      Object.assign({}, MemcachedInstrumentation.DEFAULT_CONFIG, config)
     );
   }
 
   override setConfig(config: InstrumentationConfig = {}) {
-    this._config = Object.assign({}, Instrumentation.DEFAULT_CONFIG, config);
+    this._config = Object.assign(
+      {},
+      MemcachedInstrumentation.DEFAULT_CONFIG,
+      config
+    );
   }
 
   init() {
@@ -97,7 +101,7 @@ export class Instrumentation extends InstrumentationBase {
           kind: api.SpanKind.CLIENT,
           attributes: {
             'memcached.version': moduleVersion,
-            ...Instrumentation.COMMON_ATTRIBUTES,
+            ...MemcachedInstrumentation.COMMON_ATTRIBUTES,
           },
         }
       );
