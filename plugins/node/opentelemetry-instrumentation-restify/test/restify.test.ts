@@ -24,7 +24,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 
-import RestifyInstrumentation from '../src';
+import { RestifyInstrumentation } from '../src';
 import * as types from '../src/internal-types';
 import { RestifyRequestInfo } from '../src/types';
 const plugin = new RestifyInstrumentation();
