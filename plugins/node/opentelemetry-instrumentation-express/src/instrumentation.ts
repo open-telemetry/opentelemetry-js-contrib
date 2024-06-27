@@ -21,6 +21,7 @@ import {
   diag,
   Attributes,
   SpanStatusCode,
+  SpanKind,
 } from '@opentelemetry/api';
 import type * as express from 'express';
 import { ExpressInstrumentationConfig, ExpressRequestInfo } from './types';
@@ -219,6 +220,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
           metadata.name
         );
         const span = instrumentation.tracer.startSpan(spanName, {
+          kind: SpanKind.SERVER,
           attributes: Object.assign(attributes, metadata.attributes),
         });
 
