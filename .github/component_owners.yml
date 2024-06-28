@@ -13,7 +13,7 @@ components:
     - aabmass
     - punya
   detectors/node/opentelemetry-resource-detector-github: []
-    # Unmaintained?
+    # Unmaintained
   detectors/node/opentelemetry-resource-detector-instana:
     - basti1302
     - kirrg001
@@ -56,8 +56,8 @@ components:
     - Ugzuzg
   plugins/node/instrumentation-dataloader:
     - henrinormak
-  plugins/node/instrumentation-fs:
-    - rauno56
+  plugins/node/instrumentation-fs: []
+    # Unmaintained
   plugins/node/instrumentation-kafkajs:
     - seemk
   plugins/node/instrumentation-lru-memoizer:
@@ -66,9 +66,8 @@ components:
     - blumamir
   plugins/node/instrumentation-socket.io:
     - mottibec
-    - rauno56
-  plugins/node/instrumentation-tedious:
-    - rauno56
+  plugins/node/instrumentation-tedious: []
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-aws-lambda:
     - carolabadeer
   plugins/node/opentelemetry-instrumentation-aws-sdk:
@@ -80,54 +79,53 @@ components:
   plugins/node/opentelemetry-instrumentation-cassandra:
     - seemk
   plugins/node/opentelemetry-instrumentation-connect: []
-    # Unmaintained?
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-dns: []
-    # Unmaintained?
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-express:
     - JamieDanielson
     - pkanal
   plugins/node/opentelemetry-instrumentation-fastify:
     - pichlermarc
-  plugins/node/opentelemetry-instrumentation-generic-pool:
-    - rauno56
+  plugins/node/opentelemetry-instrumentation-generic-pool: []
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-graphql:
     - obecny
   plugins/node/opentelemetry-instrumentation-hapi: []
-    # Unmaintained?
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-ioredis:
     - blumamir
     - naseemkullah
-  plugins/node/opentelemetry-instrumentation-knex:
-    - rauno56
+  plugins/node/opentelemetry-instrumentation-knex: []
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-koa: []
-    # Unmaintained?
-  plugins/node/opentelemetry-instrumentation-memcached:
-    - rauno56
+    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-memcached: []
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-mongodb:
     - osherv
   plugins/node/opentelemetry-instrumentation-mysql:
     - haddasbronfman
   plugins/node/opentelemetry-instrumentation-mysql2:
     - haddasbronfman
-  plugins/node/opentelemetry-instrumentation-nestjs-core:
-    - rauno56
+  plugins/node/opentelemetry-instrumentation-nestjs-core: []
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-net:
     - seemk
   plugins/node/instrumentation-runtime-node:
     - d4nyll
   plugins/node/opentelemetry-instrumentation-pg:
     - maryliag
-    - rauno56
   plugins/node/opentelemetry-instrumentation-pino:
     - seemk
   plugins/node/opentelemetry-instrumentation-redis-4:
     - blumamir
   plugins/node/opentelemetry-instrumentation-redis:
     - blumamir
-  plugins/node/opentelemetry-instrumentation-restify:
-    - rauno56
-  plugins/node/opentelemetry-instrumentation-router:
-    - rauno56
+  plugins/node/opentelemetry-instrumentation-restify: []
+    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-router: []
+    # Unmaintained
   plugins/node/instrumentation-undici:
     - david-luna
     - trentm
@@ -147,7 +145,7 @@ components:
     - basti1302
     - kirrg001
   propagators/opentelemetry-propagator-ot-trace: []
-    # Unmaintained?
+    # Unmaintained
 
 ignored-authors:
   - renovate-bot
