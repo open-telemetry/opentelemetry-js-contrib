@@ -15,7 +15,7 @@
  */
 
 import * as assert from 'assert';
-import { context, SpanStatusCode } from '@opentelemetry/api';
+import { context, SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import {
   SEMATTRS_HTTP_ROUTE,
   SEMATTRS_HTTP_METHOD,
@@ -168,6 +168,8 @@ describe('fastify', () => {
       );
       const baseSpan = spans[1];
       assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+      assert.strictEqual(span['kind'], SpanKind.SERVER);
+
     });
 
     it('should generate span for named handler', async () => {
