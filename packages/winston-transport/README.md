@@ -49,6 +49,9 @@ const logger = winston.createLogger({
 });
 ```
 
+> [!IMPORTANT]
+> Logs will be duplicated if `@opentelemetry/winston-transport` is added as a transport in `winston` and `@opentelemetry/instrumentation-winston` is configured with `disableLogSending: false`.
+
 ### Supported versions
 
 - [`winston`](https://www.npmjs.com/package/winston) versions `>=3.0.0 <4`
