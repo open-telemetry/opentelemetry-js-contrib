@@ -419,7 +419,7 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
 
     let field: any;
     let shouldEndSpan = false;
-    if (config.depth! >= 0 && config.depth! < depth) {
+    if (config.depth >= 0 && config.depth < depth) {
       field = getParentField(contextValue, path);
     } else {
       const newField = createFieldIfNotExists(
