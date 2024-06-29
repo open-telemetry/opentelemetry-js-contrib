@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import { SpanKind, context, trace } from '@opentelemetry/api';
+import {
+  INVALID_SPAN_CONTEXT,
+  SpanKind,
+  context,
+  trace,
+} from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -450,6 +455,73 @@ describe('Knex instrumentation', () => {
           );
         }
       );
+    });
+  });
+
+  describe('Setting requireParentSpan=true', () => {
+    beforeEach(() => {
+      plugin.disable();
+      plugin.setConfig({ requireParentSpan: true });
+      plugin.enable();
+    });
+
+    it('should not create new spans when there is no parent', async () => {
+      await client.schema.createTable('testTable1', (table: any) => {
+        table.string('title');
+      });
+      assert.deepEqual(await client('testTable1').select('*'), []);
+      assert.deepEqual(await client.raw('select 1 as result'), [{ result: 1 }]);
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    });
+
+    it('should not create new spans when there is an INVALID_SPAN_CONTEXT parent', async () => {
+      const parentSpan = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client.schema.createTable('testTable1', (table: any) => {
+            table.string('title');
+          });
+          assert.deepEqual(await client('testTable1').select('*'), []);
+          assert.deepEqual(await client.raw('select 1 as result'), [
+            { result: 1 },
+          ]);
+        }
+      );
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    });
+
+    it('should create new spans when there is a parent', async () => {
+      await tracer.startActiveSpan('parentSpan', async parentSpan => {
+        await client.schema.createTable('testTable1', (table: any) => {
+          table.string('title');
+        });
+        assert.deepEqual(await client('testTable1').select('*'), []);
+        assert.deepEqual(await client.raw('select 1 as result'), [
+          { result: 1 },
+        ]);
+        parentSpan.end();
+      });
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
+      const instrumentationSpans = memoryExporter.getFinishedSpans();
+      const last = instrumentationSpans.pop() as any;
+      assertSpans(instrumentationSpans, [
+        {
+          statement: 'create table `testTable1` (`title` varchar(255))',
+          parentSpan: last,
+        },
+        {
+          op: 'select',
+          table: 'testTable1',
+          statement: 'select * from `testTable1`',
+          parentSpan: last,
+        },
+        {
+          op: 'raw',
+          statement: 'select 1 as result',
+          parentSpan: last,
+        },
+      ]);
     });
   });
 });
