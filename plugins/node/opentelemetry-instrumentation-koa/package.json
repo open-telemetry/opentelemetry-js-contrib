@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-koa",
-  "version": "0.41.0",
+  "version": "0.42.0",
   "description": "OpenTelemetry instrumentation for `koa` http web application framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

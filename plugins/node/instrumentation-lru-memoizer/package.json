@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-lru-memoizer",
-  "version": "0.38.0",
+  "version": "0.39.0",
   "description": "OpenTelemetry instrumentation for `lru-memoizer` function memoization using lru-cache",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
