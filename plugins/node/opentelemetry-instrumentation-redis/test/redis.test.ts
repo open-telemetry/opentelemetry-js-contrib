@@ -71,8 +71,7 @@ describe('redis@2.x', () => {
   const provider = new NodeTracerProvider();
   const tracer = provider.getTracer('external');
   let redis: typeof redisTypes;
-  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
-  const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
+  const shouldTest = process.env.RUN_REDIS_TESTS;
 
   let contextManager: AsyncHooksContextManager;
   beforeEach(() => {
@@ -93,20 +92,10 @@ describe('redis@2.x', () => {
       this.skip();
     }
 
-    if (shouldTestLocal) {
-      testUtils.startDocker('redis');
-    }
-
     redis = require('redis');
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
-  });
-
-  after(() => {
-    if (shouldTestLocal) {
-      testUtils.cleanUpDocker('redis');
-    }
   });
 
   describe('#createClient()', () => {
