@@ -1,0 +1,5 @@
+'mongoose':
+  # Test all the latest minor versions in the range ">=7 <8".
+  versions: "7.0.5 || 7.1.2 || 7.2.4 || 7.3.4 || 7.4.5 || 7.5.4 || 7.6.12"
+  commands:
+    - npm run test
