@@ -40,6 +40,7 @@ registerInstrumentations({
       // publishConfirmHook: (span: Span, publishConfirmedInto: PublishConfirmedInfo) => { },
       // consumeHook: (span: Span, consumeInfo: ConsumeInfo) => { },
       // consumeEndHook: (span: Span, consumeEndInfo: ConsumeEndInfo) => { },
+      // useLinksForConsume: boolean,
     }),
   ],
 })
@@ -56,6 +57,7 @@ amqplib instrumentation has few options available to choose from. You can set th
 | `consumeHook`                  | `AmqplibConsumeCustomAttributeFunction`    | hook for adding custom attributes before consumer message is processed.                                             |
 | `consumeEndHook`                  | `AmqplibConsumeEndCustomAttributeFunction`    | hook for adding custom attributes after consumer message is acked to server.                                             |
 | `consumeTimeoutMs`                  | `number`    | read [Consume Timeout](#consume-timeout) below                                             |
+| `useLinksForConsume`                  | `boolean`    | read [Links for Consume](#links-for-consume) below                                          |
 
 ### Consume Timeout
 
@@ -68,6 +70,34 @@ To prevent memory leak, plugin has it's own configuration of timeout, which will
 If timeout is not big enough, span might be closed with 'InstrumentationTimeout', and then received valid ack from the user later which will not be instrumented.
 
 Default is 1 minute
+
+### Links for Consume
+
+By default, consume spans continue the trace where a message was produced. However, per the [spec](https://opentelemetry.io/docs/specs/semconv/messaging/messaging-spans/#consumer-spans), consume spans should be linked to the message's creation context. Setting to true, this will enable the behavior to follow the spec. 
+
+Default is false
+
+## Migration From opentelemetry-instrumentation-amqplib
+
+This instrumentation was originally published under the name `"opentelemetry-instrumentation-amqplib"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js). Few breaking changes were made during porting to the contrib repo to align with conventions:
+
+### Hook Info
+
+The instrumentation's config `publishHook`, `publishConfirmHook`, `consumeHook` and `consumeEndHook` functions signature changed, so the second function parameter is info object, containing the relevant hook data.
+
+### `moduleVersionAttributeName` config option
+
+The `moduleVersionAttributeName` config option is removed. To add the amqplib package version to spans, use the `moduleVersion` attribute in hook info for `publishHook` and `consumeHook` functions.
+
+## Running Tests Locally
+
+To run the tests locally, you need to have a RabbitMQ server running.  You can use the following command to start a RabbitMQ server using Docker:
+
+```bash
+npm run test:docker:run
+```
+
+By default, the tests that connect to RabbitMQ are skipped. To make sure these tests are run, you can set the `RUN_RABBIT_TESTS` environment variable to `true`
 
 ## Semantic Conventions
 

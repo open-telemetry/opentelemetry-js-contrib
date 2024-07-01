@@ -96,10 +96,14 @@ export interface AmqplibInstrumentationConfig extends InstrumentationConfig {
    * Default is 1 minute
    */
   consumeTimeoutMs?: number;
+
+  /** option to use a span link for the consume message instead of continuing a trace */
+  useLinksForConsume?: boolean;
 }
 
 export const DEFAULT_CONFIG: AmqplibInstrumentationConfig = {
   consumeTimeoutMs: 1000 * 60, // 1 minute
+  useLinksForConsume: false,
 };
 
 // The following types are vendored from `@types/amqplib@0.10.1` - commit SHA: 4205e03127692a40b4871709a7134fe4e2ed5510
