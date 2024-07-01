@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { Middleware, DefaultState } from 'koa';
-import { KoaContext } from './types';
+import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
 import type * as Router from '@koa/router';
 
+export type KoaContext = ParameterizedContext<
+  DefaultState,
+  Router.RouterParamContext
+>;
 export type KoaMiddleware = Middleware<DefaultState, KoaContext> & {
   router?: Router;
 };

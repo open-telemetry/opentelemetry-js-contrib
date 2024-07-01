@@ -103,9 +103,7 @@ describe('Host Metrics', () => {
 
   describe('constructor', () => {
     it('should create a new instance', () => {
-      const hostMetrics = new HostMetrics({
-        name: 'opentelemetry-host-metrics',
-      });
+      const hostMetrics = new HostMetrics();
       assert.ok(hostMetrics instanceof HostMetrics);
     });
 
@@ -114,7 +112,6 @@ describe('Host Metrics', () => {
 
       const hostMetrics = new HostMetrics({
         meterProvider,
-        name: 'opentelemetry-host-metrics',
       });
       hostMetrics.start();
       assert.ok(hostMetrics instanceof HostMetrics);
