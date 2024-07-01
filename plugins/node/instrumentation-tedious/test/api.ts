@@ -16,9 +16,23 @@
 
 import * as assert from 'assert';
 import { promisify } from 'util';
-import type { Connection, Request, TYPES, ConnectionConfig } from 'tedious';
+import * as semver from 'semver';
+
+import type {
+  Connection,
+  Request,
+  TYPES,
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  ConnectionConfig as ConnectionConfigLegacy,
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  ConnectionConfiguration as ConnectionConfigNew,
+} from 'tedious';
 
 type Method = keyof Connection & ('execSql' | 'execSqlBatch' | 'prepare');
+type ConnectionConfig = ConnectionConfigLegacy | ConnectionConfigNew;
+
 export type tedious = {
   Connection: typeof Connection;
   Request: typeof Request;
@@ -26,7 +40,7 @@ export type tedious = {
   ConnectionConfig: ConnectionConfig;
 };
 
-export const makeApi = (tedious: tedious) => {
+export const makeApi = (tedious: tedious, tediousVersion: string) => {
   const fullName = (resource: string) => {
     assert.strictEqual(typeof resource, 'string');
     return `[dbo].[${resource}]`;
@@ -268,11 +282,11 @@ export const makeApi = (tedious: tedious) => {
     },
     execute: (connection: Connection): Promise<number> => {
       return new Promise((resolve, reject) => {
-        const requestDoneCb = (err: any, rowCount: number) => {
+        const requestDoneCb = (err: any, rowCount?: number) => {
           if (err) {
             return reject(err);
           }
-          resolve(rowCount);
+          resolve(rowCount!);
         };
         // <2.2.0 didn't take bulkOptions
         const request =
@@ -292,9 +306,18 @@ export const makeApi = (tedious: tedious) => {
 
         if (connection.execBulkLoad.length === 1) {
           // required in <=11.5. not supported in 14
-          request.addRow({ c1: 1 });
-          request.addRow({ c1: 2, c2: 'hello' });
-          return connection.execBulkLoad(request);
+          if (semver.lt(tediousVersion, '18.0.0')) {
+            request.addRow({ c1: 1 });
+            request.addRow({ c1: 2, c2: 'hello' });
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            return connection.execBulkLoad(request);
+          } else {
+            const rows = [{ c1: 1 }, { c1: 2, c2: 'hello' }];
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            return connection.execBulkLoad(request, rows);
+          }
         }
 
         (connection.execBulkLoad as any)(request, [
