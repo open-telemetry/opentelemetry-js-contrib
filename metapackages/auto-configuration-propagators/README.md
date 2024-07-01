@@ -27,7 +27,7 @@ Please see the [Supported propagators](#supported-propagators) section for more 
 
 ## Supported propagators
 
-The specification defines a list of [known propagators](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/configuration/sdk-environment-variables.md#general-sdk-configuration) for the `OTEL_PROPAGATORS` env variable. Only these propagators are supported.
+The specification defines a list of [known propagators](env-var-url) for the `OTEL_PROPAGATORS` env variable. Only these propagators are supported.
 
 - "tracecontext": [W3C Trace Context](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core)
 - "baggage": [W3C Baggage](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core)
@@ -51,3 +51,4 @@ APACHE 2.0 - See [LICENSE][license-url] for more information.
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fauto-instrumentations-node.svg
+[env-var-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/configuration/sdk-environment-variables.md#general-sdk-configuration 
