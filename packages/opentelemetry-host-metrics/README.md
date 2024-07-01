@@ -36,7 +36,7 @@ const meterProvider = new MeterProvider({
   readers: [reader],
 });
 
-const hostMetrics = new HostMetrics({ meterProvider, name: 'example-host-metrics' });
+const hostMetrics = new HostMetrics({ meterProvider });
 hostMetrics.start();
 ```
 
