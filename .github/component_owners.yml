@@ -52,6 +52,9 @@ components:
     - hectorhdzg
   plugins/node/instrumentation-amqplib:
     - blumamir
+  plugins/node/instrumentation-bullmq:
+    - unflxw
+    - luismiramirez
   plugins/node/instrumentation-cucumber:
     - Ugzuzg
   plugins/node/instrumentation-dataloader:
