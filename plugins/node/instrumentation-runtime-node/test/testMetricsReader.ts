@@ -13,9 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import { MetricReader } from '@opentelemetry/sdk-metrics';
+export class TestMetricReader extends MetricReader {
+  constructor() {
+    super();
+  }
 
-export interface RuntimeNodeInstrumentationConfig
-  extends InstrumentationConfig {
-  monitoringPrecision?: number;
+  protected async onForceFlush(): Promise<void> {}
+
+  protected async onShutdown(): Promise<void> {}
 }
