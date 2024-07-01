@@ -5,7 +5,7 @@
 
 ## About
 
-This module provides a way to get a propagator based on the [OTEL_PROPAGATORS environment variable](env-var-url).
+This module provides a way to get a propagator based on the [OTEL_PROPAGATORS environment variable][env-var-url].
 
 ## Installation
 
@@ -27,7 +27,7 @@ Please see the [Supported propagators](#supported-propagators) section for more 
 
 ## Supported propagators
 
-The specification defines a list of [known propagators](env-var-url) for the `OTEL_PROPAGATORS` env variable. Only these propagators are supported.
+The specification defines a list of [known propagators][env-var-url] for the `OTEL_PROPAGATORS` env variable. Only these propagators are supported.
 
 - "tracecontext": [W3C Trace Context](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core)
 - "baggage": [W3C Baggage](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core)
