@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-tedious",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "OpenTelemetry instrumentation for `tedious` database client for Microsoft SQL Server",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

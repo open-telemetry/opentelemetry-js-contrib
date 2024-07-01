@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-connect",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "description": "OpenTelemetry instrumentation for `connect` http middleware framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

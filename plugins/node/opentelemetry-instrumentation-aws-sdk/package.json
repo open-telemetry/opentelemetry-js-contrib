@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-sdk",
-  "version": "0.42.0",
+  "version": "0.43.0",
   "description": "OpenTelemetry instrumentation for `aws-sdk` and `@aws-sdk/client-*` clients for various AWS services",
   "keywords": [
     "aws",
