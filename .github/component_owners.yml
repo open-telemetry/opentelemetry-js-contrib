@@ -19,6 +19,8 @@ components:
     - kirrg001
   incubator/opentelemetry-sampler-aws-xray:
     - carolabadeer
+  metapackages/auto-configuration-propagators:
+    - pichlermarc
   metapackages/auto-instrumentations-node:
     - dyladan
     - pichlermarc
