@@ -51,4 +51,4 @@ APACHE 2.0 - See [LICENSE][license-url] for more information.
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fauto-instrumentations-node.svg
-[env-var-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/configuration/sdk-environment-variables.md#general-sdk-configuration 
+[env-var-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/configuration/sdk-environment-variables.md#general-sdk-configuration
