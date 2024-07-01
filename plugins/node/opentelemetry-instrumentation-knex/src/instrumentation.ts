@@ -123,13 +123,17 @@ export class KnexInstrumentation extends InstrumentationBase {
     return function wrapQuery(original: () => any) {
       return function wrapped_logging_method(this: any, query: any) {
         const config = this.client.config;
+        // connection settings are in config.connection, but since that can
+        // potentially be an async function that resolves to the actual
+        // connection settings, it's easier to access client.connectionSettings
+        const connectionSettings = this.client.connectionSettings;
 
         const table = utils.extractTableName(this.builder);
         // `method` actually refers to the knex API method - Not exactly "operation"
         // in the spec sense, but matches most of the time.
         const operation = query?.method;
         const name =
-          config?.connection?.filename || config?.connection?.database;
+          connectionSettings?.filename || connectionSettings?.database;
         const maxLen = (
           instrumentation._config as types.KnexInstrumentationConfig
         ).maxQueryLength!;
@@ -139,12 +143,12 @@ export class KnexInstrumentation extends InstrumentationBase {
           [SEMATTRS_DB_SYSTEM]: utils.mapSystem(config.client),
           [SEMATTRS_DB_SQL_TABLE]: table,
           [SEMATTRS_DB_OPERATION]: operation,
-          [SEMATTRS_DB_USER]: config?.connection?.user,
+          [SEMATTRS_DB_USER]: connectionSettings?.user,
           [SEMATTRS_DB_NAME]: name,
-          [SEMATTRS_NET_PEER_NAME]: config?.connection?.host,
-          [SEMATTRS_NET_PEER_PORT]: config?.connection?.port,
+          [SEMATTRS_NET_PEER_NAME]: connectionSettings?.host,
+          [SEMATTRS_NET_PEER_PORT]: connectionSettings?.port,
           [SEMATTRS_NET_TRANSPORT]:
-            config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
+            connectionSettings?.filename === ':memory:' ? 'inproc' : undefined,
         };
         if (maxLen !== 0) {
           attributes[SEMATTRS_DB_STATEMENT] = utils.limitLength(
