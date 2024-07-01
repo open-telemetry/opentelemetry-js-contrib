@@ -7,6 +7,8 @@ name: Run Release Please
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       # The logic below handles the npm publication:
       - name: Checkout Repository
@@ -75,4 +77,5 @@ jobs:
         if: ${{ steps.release.outputs.releases_created }}
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          NPM_CONFIG_PROVENANCE: true
         run: npx lerna publish from-package --no-push --no-private --no-git-tag-version --no-verify-access --yes
