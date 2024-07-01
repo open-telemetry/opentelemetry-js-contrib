@@ -79,7 +79,7 @@ export function getPropagator(): TextMapPropagator {
 
     const propagatorFactoryFunction = propagatorMap.get(propagatorName);
     if (propagatorFactoryFunction == null) {
-      diag.error(
+      diag.warn(
         `Invalid propagator "${propagatorName}" specified in the environment variable OTEL_PROPAGATORS`
       );
       return [];
