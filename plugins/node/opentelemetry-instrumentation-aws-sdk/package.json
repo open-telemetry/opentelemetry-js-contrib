@@ -41,6 +41,17 @@
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "AwsInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"
   },

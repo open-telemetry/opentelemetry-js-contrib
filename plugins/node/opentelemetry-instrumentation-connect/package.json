@@ -18,6 +18,17 @@
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "ConnectInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "connect",
     "instrumentation",

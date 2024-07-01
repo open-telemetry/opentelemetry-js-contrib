@@ -41,6 +41,17 @@
     "watch": "tsc -w",
     "test:docker:run": "docker run -d --hostname demo-amqplib-rabbit --name amqplib-unittests -p 22221:5672 --env RABBITMQ_DEFAULT_USER=username --env RABBITMQ_DEFAULT_PASS=password rabbitmq:3"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "AmqplibInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"
   },
