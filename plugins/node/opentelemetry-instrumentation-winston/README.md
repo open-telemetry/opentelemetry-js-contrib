@@ -104,6 +104,43 @@ logHook: (span, record) => {
 
 Log injection can be disabled with the `disableLogCorrelation: true` option.
 
+### Using OpenTelemetryTransportV3 without instrumentation
+
+[@opentelemetry/winston-transport](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/winston-transport) package exports the Winston transport class that is used to send records to the
+OpenTelemetry Logs SDK. It can be used directly when configuring a Winston logger.
+For example:
+
+```js
+const logsAPI = require('@opentelemetry/api-logs');
+const {
+    LoggerProvider,
+    SimpleLogRecordProcessor,
+    ConsoleLogRecordExporter,
+} = require('@opentelemetry/sdk-logs');
+const { OpenTelemetryTransportV3 } = require('@opentelemetry/winston-transport');
+const winston = require('winston');
+
+
+// To start a logger, you first need to initialize the Logger provider.
+const loggerProvider = new LoggerProvider();
+// Add a processor to export log record
+loggerProvider.addLogRecordProcessor(
+    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())
+);
+logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
+
+const logger = winston.createLogger({
+  level: 'info',
+  transports: [
+    new winston.transports.Console(),
+    new OpenTelemetryTransportV3()
+  ]
+});
+```
+
+> [!IMPORTANT]
+> Logs will be duplicated if `@opentelemetry/winston-transport` is added as a transport in `winston` and `@opentelemetry/instrumentation-winston` is configured with `disableLogSending: false`.
+
 ## Semantic Conventions
 
 This package does not currently generate any attributes from semantic conventions.

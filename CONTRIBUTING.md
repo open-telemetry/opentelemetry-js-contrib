@@ -222,8 +222,19 @@ Stable components MUST have their major version set to `1` or greater.
 
 ### Unmaintained
 
-A component which does not have an assigned component owner, or has a component owner who has been unresponsive to issues and pull requests may be marked as unmaintained.
-Unmaintained components may continue to work and receive updates and fixes from contributors, but may not receive immediate attention if there is a problem or feature request.
+A component which does not have an assigned component owner, or has a component owner who has been unresponsive to issues
+and pull requests may be marked as `pkg-status:unmaintained`.
+
+Unmaintained components may continue to work and receive updates and fixes from contributors. An unmaintained component
+is considered feature-freeze and new feature-requests may be closed within two weeks if no new owner is found.
+[@open-telemetry/javascript-approvers](https://github.com/orgs/open-telemetry/teams/javascript-approvers) may sponsor
+features for unmaintained components. At least one sponsor is needed to lift the feature-freeze for the purpose of
+adding the requested feature. Sponsors are expected to provide reviews for that feature and be responsive on the issue.
+
+Components marked as unmaintained still receive semantic conventions updates and bugfixes where possible.
+[@open-telemetry/javascript-triagers](https://github.com/orgs/open-telemetry/teams/javascript-triagers) may add the
+`type:semconv-update` or `bug` label to mark them as exempt from being auto-closed within two weeks.
+
 A component which is unmaintained may be deprecated if there is a problem that is not fixed in a timely manner.
 
 ### Deprecated
