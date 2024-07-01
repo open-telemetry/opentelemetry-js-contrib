@@ -5,6 +5,7 @@
   "detectors/node/opentelemetry-resource-detector-container": "0.3.11",
   "detectors/node/opentelemetry-resource-detector-gcp": "0.29.10",
   "detectors/node/opentelemetry-resource-detector-github": "0.28.2",
+  "packages/esbuild-plugin-node": "0.1.0",
   "detectors/node/opentelemetry-resource-detector-instana": "0.10.0",
   "metapackages/auto-instrumentations-node": "0.47.1",
   "metapackages/auto-instrumentations-web": "0.40.0",
