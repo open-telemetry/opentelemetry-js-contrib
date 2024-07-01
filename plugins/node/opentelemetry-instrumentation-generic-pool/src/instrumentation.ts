@@ -28,7 +28,7 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const MODULE_NAME = 'generic-pool';
 
-export default class Instrumentation extends InstrumentationBase {
+export class GenericPoolInstrumentation extends InstrumentationBase {
   // only used for v2 - v2.3)
   private _isDisabled = false;
 
