@@ -319,7 +319,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
       // in the proptotype. So we use a `for...in` loop to get own properties and also
       // any enumerable prop in the prototype chain
       // ref: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2271
-      for (let key in original) {
+      for (const key in original) {
         Object.defineProperty(patched, key, {
           get() {
             return original[key];
