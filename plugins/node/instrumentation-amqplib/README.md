@@ -77,18 +77,6 @@ By default, consume spans continue the trace where a message was produced. Howev
 
 Default is false
 
-## Migration From opentelemetry-instrumentation-amqplib
-
-This instrumentation was originally published under the name `"opentelemetry-instrumentation-amqplib"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js). Few breaking changes were made during porting to the contrib repo to align with conventions:
-
-### Hook Info
-
-The instrumentation's config `publishHook`, `publishConfirmHook`, `consumeHook` and `consumeEndHook` functions signature changed, so the second function parameter is info object, containing the relevant hook data.
-
-### `moduleVersionAttributeName` config option
-
-The `moduleVersionAttributeName` config option is removed. To add the amqplib package version to spans, use the `moduleVersion` attribute in hook info for `publishHook` and `consumeHook` functions.
-
 ## Running Tests Locally
 
 To run the tests locally, you need to have a RabbitMQ server running.  You can use the following command to start a RabbitMQ server using Docker:
