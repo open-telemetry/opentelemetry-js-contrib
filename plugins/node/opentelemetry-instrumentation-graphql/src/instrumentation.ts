@@ -51,7 +51,10 @@ import {
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as api from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
-import { GraphQLInstrumentationConfig, GraphQLInstrumentationParsedConfig } from './types';
+import {
+  GraphQLInstrumentationConfig,
+  GraphQLInstrumentationParsedConfig,
+} from './types';
 
 const DEFAULT_CONFIG: GraphQLInstrumentationParsedConfig = {
   mergeItems: false,
