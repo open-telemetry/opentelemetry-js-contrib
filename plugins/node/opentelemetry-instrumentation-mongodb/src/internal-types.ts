@@ -176,19 +176,26 @@ export type Document = {
   [key: string]: any;
 };
 
+// https://github.com/mongodb/node-mongodb-native/blob/v6.4.0/src/utils.ts#L281
+interface MongodbNamespace {
+  db: string;
+  collection?: string;
+}
+
 export type V4Connection = {
   command: Function;
   // From version 6.4.0 the method does not expect a callback and returns a promise
   // https://github.com/mongodb/node-mongodb-native/blob/v6.4.2/src/cmap/connection.ts
   commandPromise(
-    ns: any,
+    ns: MongodbNamespace,
     cmd: Document,
-    options: undefined | unknown
+    options: undefined | unknown,
+    responseType: undefined | unknown
   ): Promise<any>;
   // Earlier versions expect a callback param and return void
   // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection.ts
   commandCallback(
-    ns: any,
+    ns: MongodbNamespace,
     cmd: Document,
     options: undefined | unknown,
     callback: any
