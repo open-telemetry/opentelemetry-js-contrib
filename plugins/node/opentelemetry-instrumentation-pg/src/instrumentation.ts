@@ -42,7 +42,7 @@ import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
 
-export class PgInstrumentation extends InstrumentationBase {
+export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   constructor(config: PgInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -111,14 +111,6 @@ export class PgInstrumentation extends InstrumentationBase {
     );
 
     return [modulePG, modulePGPool];
-  }
-
-  override setConfig(config: PgInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
-  }
-
-  override getConfig(): PgInstrumentationConfig {
-    return this._config as PgInstrumentationConfig;
   }
 
   private _getClientConnectPatch() {
@@ -244,10 +236,8 @@ export class PgInstrumentation extends InstrumentationBase {
           }
         }
 
-        if (
-          typeof instrumentationConfig.requestHook === 'function' &&
-          queryConfig
-        ) {
+        const { requestHook } = instrumentationConfig;
+        if (typeof requestHook === 'function' && queryConfig) {
           safeExecuteInTheMiddle(
             () => {
               // pick keys to expose explicitly, so we're not leaking pg package
@@ -255,7 +245,7 @@ export class PgInstrumentation extends InstrumentationBase {
               const { database, host, port, user } = this.connectionParameters;
               const connection = { database, host, port, user };
 
-              instrumentationConfig.requestHook!(span, {
+              requestHook(span, {
                 connection,
                 query: {
                   text: queryConfig.text,

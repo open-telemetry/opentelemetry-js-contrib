@@ -36,9 +36,7 @@ import {
 /**
  * Dns instrumentation for Opentelemetry
  */
-export class DnsInstrumentation extends InstrumentationBase {
-  protected override _config!: DnsInstrumentationConfig;
-
+export class DnsInstrumentation extends InstrumentationBase<DnsInstrumentationConfig> {
   constructor(config: DnsInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -112,8 +110,10 @@ export class DnsInstrumentation extends InstrumentationBase {
       ...args: unknown[]
     ) {
       if (
-        utils.isIgnored(hostname, plugin._config.ignoreHostnames, (e: Error) =>
-          diag.error('caught ignoreHostname error: ', e)
+        utils.isIgnored(
+          hostname,
+          plugin.getConfig().ignoreHostnames,
+          (e: Error) => diag.error('caught ignoreHostname error: ', e)
         )
       ) {
         return original.apply(this, [hostname, ...args]);

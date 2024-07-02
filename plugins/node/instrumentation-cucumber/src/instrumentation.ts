@@ -48,7 +48,7 @@ type Step = (typeof steps)[number];
 
 const supportedVersions = ['>=8.0.0 <11'];
 
-export class CucumberInstrumentation extends InstrumentationBase {
+export class CucumberInstrumentation extends InstrumentationBase<CucumberInstrumentationConfig> {
   private module: Cucumber | undefined;
 
   constructor(config: CucumberInstrumentationConfig = {}) {

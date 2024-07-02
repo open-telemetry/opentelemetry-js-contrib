@@ -39,15 +39,13 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
 };
 
-export class IORedisInstrumentation extends InstrumentationBase {
-  protected override _config!: IORedisInstrumentationConfig;
-
+export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumentationConfig> {
   constructor(config: IORedisInstrumentationConfig = {}) {
-    super(
-      PACKAGE_NAME,
-      PACKAGE_VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+  }
+
+  override setConfig(config: IORedisInstrumentationConfig = {}) {
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   init(): InstrumentationNodeModuleDefinition[] {
@@ -112,13 +110,12 @@ export class IORedisInstrumentation extends InstrumentationBase {
       if (arguments.length < 1 || typeof cmd !== 'object') {
         return original.apply(this, arguments);
       }
-      const config =
-        instrumentation.getConfig() as IORedisInstrumentationConfig;
+      const config = instrumentation.getConfig();
       const dbStatementSerializer =
-        config?.dbStatementSerializer || defaultDbStatementSerializer;
+        config.dbStatementSerializer || defaultDbStatementSerializer;
 
       const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
-      if (config?.requireParentSpan === true && hasNoParentSpan) {
+      if (config.requireParentSpan === true && hasNoParentSpan) {
         return original.apply(this, arguments);
       }
 
@@ -130,10 +127,11 @@ export class IORedisInstrumentation extends InstrumentationBase {
         },
       });
 
-      if (config?.requestHook) {
+      const { requestHook } = config;
+      if (requestHook) {
         safeExecuteInTheMiddle(
           () =>
-            config?.requestHook!(span, {
+            requestHook(span, {
               moduleVersion,
               cmdName: cmd.name,
               cmdArgs: cmd.args,
@@ -162,7 +160,7 @@ export class IORedisInstrumentation extends InstrumentationBase {
         /* eslint-disable @typescript-eslint/no-explicit-any */
         cmd.resolve = function (result: any) {
           safeExecuteInTheMiddle(
-            () => config?.responseHook?.(span, cmd.name, cmd.args, result),
+            () => config.responseHook?.(span, cmd.name, cmd.args, result),
             e => {
               if (e) {
                 diag.error('ioredis instrumentation: response hook failed', e);
@@ -192,10 +190,11 @@ export class IORedisInstrumentation extends InstrumentationBase {
   private _traceConnection(original: Function) {
     const instrumentation = this;
     return function (this: RedisInterface) {
-      const config =
-        instrumentation.getConfig() as IORedisInstrumentationConfig;
       const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
-      if (config?.requireParentSpan === true && hasNoParentSpan) {
+      if (
+        instrumentation.getConfig().requireParentSpan === true &&
+        hasNoParentSpan
+      ) {
         return original.apply(this, arguments);
       }
 

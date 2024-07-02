@@ -50,7 +50,7 @@ type getConnectionCallbackType = (
   connection: mysqlTypes.PoolConnection
 ) => void;
 
-export class MySQLInstrumentation extends InstrumentationBase {
+export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentationConfig> {
   static readonly COMMON_ATTRIBUTES = {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MYSQL,
   };
@@ -317,10 +317,7 @@ export class MySQLInstrumentation extends InstrumentationBase {
 
         span.setAttribute(SEMATTRS_DB_STATEMENT, getDbStatement(query));
 
-        const instrumentationConfig: MySQLInstrumentationConfig =
-          thisPlugin.getConfig();
-
-        if (instrumentationConfig.enhancedDatabaseReporting) {
+        if (thisPlugin.getConfig().enhancedDatabaseReporting) {
           let values;
 
           if (Array.isArray(_valuesOrCallback)) {

@@ -22,12 +22,11 @@ import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 import {
   GraphQLField,
   GraphQLPath,
-  GraphQLInstrumentationParsedConfig,
   ObjectWithGraphQLData,
   OtelPatched,
   Maybe,
 } from './internal-types';
-import { GraphQLInstrumentationConfig } from './types';
+import { GraphQLInstrumentationParsedConfig } from './types';
 
 const OPERATION_VALUES = Object.values(AllowedOperationTypes);
 
@@ -367,12 +366,17 @@ const handleResolveSpanSuccess = (
 
 export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
   tracer: api.Tracer,
-  getConfig: () => Required<GraphQLInstrumentationConfig>,
+  getConfig: () => GraphQLInstrumentationParsedConfig,
   fieldResolver: Maybe<
     graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched
   >,
   isDefaultResolver = false
-): graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched {
+): graphqlTypes.GraphQLFieldResolver<
+  TSource,
+  TContext & ObjectWithGraphQLData,
+  TArgs
+> &
+  OtelPatched {
   if (
     (wrappedFieldResolver as OtelPatched)[OTEL_PATCHED_SYMBOL] ||
     typeof fieldResolver !== 'function'
