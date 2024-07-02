@@ -14,26 +14,37 @@
  * limitations under the License.
  */
 import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
-
-
-import {
-  PerformanceEntries,
-  PerformanceLegacy
-} from '@opentelemetry/sdk-trace-web';
-
-
-export type NavigationTimingCustomEntriesFunction = (
-  pageLoadTimings: Performance | PerformanceLegacy,
-  entries:PerformanceEntries
-) => PerformanceEntries;
+import * as api from '@opentelemetry/api';
 
 export interface ResourceTimingInstrumentationConfig extends InstrumentationConfig {
 
+  //TODO: include/exlcude patterns for URLs of the resources.
 
-  /** supported initiator types */
-  initiatorTypes?: string[];
+  /** additional supported initiator types */
+  additionalInitiatorTypes?: string[];
 
-  /** Function for adding custom attributes on the span */
-  addCustomEntriesCallback?: NavigationTimingCustomEntriesFunction;
+}
 
+// TODO: This type is duplicated in fetch2 instrumenatation, how can it moved to a common place?
+export interface SpanContextData {
+  url: string;
+  initiatorType: string;
+  startTime: api.HrTime;
+  endTime: api.HrTime;
+  traceId: string;
+  spanId: string;
+}
+
+export enum ResourceTimingEventFields {
+  NAME = 'name',
+  INITATOR_TYPE = 'initiatorType',
+  FETCHSTART = 'fetchStart',
+  DOMAINLOOKUPSTART = 'domainLookupStart',
+  DOMAINLOOKUPEND = 'domainLookupEnd',
+  CONNECTSTART = 'connectStart',
+  SECURECONNECTIONSTART = 'secureConnectionStart',
+  CONNECTEND = 'connectEnd',
+  REQUESTSTART = 'requestStart',
+  RESPONSESTART = 'responseStart',
+  RESPONSEEND = 'responseEnd',
 }

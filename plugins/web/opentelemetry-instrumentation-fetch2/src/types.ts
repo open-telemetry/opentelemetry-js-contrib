@@ -33,11 +33,12 @@ export interface FetchError {
   message: string;
 }
 
-/**
- * Interface used to keep information about span between creating and
- * ending span
- */
-export interface SpanData {
-  spanUrl: string;
+// TODO: This type is duplicated in resource-timing instrumenatation, how can it moved to a common place?
+export interface SpanContextData {
+  url: string;
+  initiatorType: string;
   startTime: api.HrTime;
+  endTime: api.HrTime;
+  traceId: string;
+  spanId: string;
 }

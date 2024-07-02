@@ -35,7 +35,7 @@ tracerProvider.register({
 
 registerInstrumentations({
   instrumentations: [
-    new ResourceTimingInstrumentation(provider),
+    new ResourceTimingInstrumentation(),
     new FetchInstrumentation({
       propagateTraceHeaderCorsUrls: [
         'http://localhost:8090',

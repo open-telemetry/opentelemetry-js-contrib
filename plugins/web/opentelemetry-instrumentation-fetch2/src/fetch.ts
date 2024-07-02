@@ -24,12 +24,14 @@ import {
 import * as core from '@opentelemetry/core';
 import * as web from '@opentelemetry/sdk-trace-web';
 import { AttributeNames } from './enums/AttributeNames';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { FetchError, FetchResponse, SpanData } from './types';
+import { SEMATTRS_HTTP_URL, SEMATTRS_HTTP_HOST, SEMATTRS_HTTP_METHOD, SEMATTRS_HTTP_SCHEME, SEMATTRS_HTTP_STATUS_CODE, SEMATTRS_HTTP_USER_AGENT } from '@opentelemetry/semantic-conventions';
+import { FetchError, FetchResponse, SpanContextData } from './types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { _globalThis } from '@opentelemetry/core';
 
 const isNode = typeof process === 'object' && process.release?.name === 'node';
+const RESOURCE_FETCH_INITIATED = '@opentelemetry/ResourceFetchInitiated'; // TODO: duplicated in resource-timing instrumentation
+
 
 export interface FetchCustomAttributeFunction {
   (
@@ -56,12 +58,17 @@ export interface FetchInstrumentationConfig extends InstrumentationConfig {
 }
 
 /**
- * This class represents a fetch plugin for auto instrumentation
+ * This class represents a fetch plugin for auto instrumentation;
+ *
+ * // TODO: This instrumentation doesn't emit any info on the cors preflight request.
+ * // The info about preflight request is only available through `PerformanceResourceTiming`
+ * // which is in a separate `resource-timing` instrumentation. The `resource-timing`
+ * // instrumentation does emit an Event for the preflight request, just there is no span
+ * // for it. Should we leave it at this or a span is required?
  */
 export class FetchInstrumentation extends InstrumentationBase {
-  readonly component: string = 'fetch';
+
   readonly version: string = PACKAGE_VERSION;
-  moduleName = this.component;
   override _config!: FetchInstrumentationConfig;
 
 
@@ -78,6 +85,7 @@ export class FetchInstrumentation extends InstrumentationBase {
    */
   private _createSpan(
     url: string,
+    startTime: api.HrTime,
     options: Partial<Request | RequestInit> = {}
   ): api.Span | undefined {
     if (core.isUrlIgnored(url, this._config.ignoreUrls)) {
@@ -87,34 +95,36 @@ export class FetchInstrumentation extends InstrumentationBase {
     const method = (options.method || 'GET').toUpperCase();
     const spanName = `HTTP ${method}`;
     return this.tracer.startSpan(spanName, {
+      startTime: startTime,
       kind: api.SpanKind.CLIENT,
       attributes: {
-        [AttributeNames.COMPONENT]: this.moduleName,
-        [SemanticAttributes.HTTP_METHOD]: method,
-        [SemanticAttributes.HTTP_URL]: url,
+        [SEMATTRS_HTTP_METHOD]: method,
+        [SEMATTRS_HTTP_URL]: url,
       },
     });
   }
 
-    /**
-   * Finish span, add attributes.
-   * @param span
-   * @param spanData
-   * @param response
-   */
-    private _endSpan(
-      span: api.Span,
-      spanData: SpanData,
-      response: FetchResponse,
-      endTime?: api.HrTime
-    ) {
-      this._addFinalSpanAttributes(span, response);
-  
-      setTimeout(() => {
-        span.end(endTime);
-      }, 0);
-    }
-  
+  /**
+ * Finish span, add attributes.
+ * @param span
+ * @param endTime
+ * @param response
+ */
+  private _endSpan(
+    span: api.Span,
+    response: FetchResponse,
+    spanContextData: SpanContextData,
+    endTime: api.HrTime
+  ) {
+
+    spanContextData.endTime = endTime;
+    document.dispatchEvent(new CustomEvent(RESOURCE_FETCH_INITIATED, {
+      detail: spanContextData
+    }));
+    this._addFinalSpanAttributes(span, response);
+    span.end(endTime);
+  }
+
   /**
    * Adds more attributes to span just before ending it
    * @param span
@@ -125,62 +135,62 @@ export class FetchInstrumentation extends InstrumentationBase {
     response: FetchResponse
   ): void {
     const parsedUrl = web.parseUrl(response.url);
-    span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, response.status);
+    span.setAttribute(SEMATTRS_HTTP_STATUS_CODE, response.status);
     if (response.statusText != null) {
       span.setAttribute(AttributeNames.HTTP_STATUS_TEXT, response.statusText);
     }
-    span.setAttribute(SemanticAttributes.HTTP_HOST, parsedUrl.host);
+    span.setAttribute(SEMATTRS_HTTP_HOST, parsedUrl.host);
     span.setAttribute(
-      SemanticAttributes.HTTP_SCHEME,
+      SEMATTRS_HTTP_SCHEME,
       parsedUrl.protocol.replace(':', '')
     );
     if (typeof navigator !== 'undefined') {
       span.setAttribute(
-        SemanticAttributes.HTTP_USER_AGENT,
+        SEMATTRS_HTTP_USER_AGENT,
         navigator.userAgent
       );
     }
   }
 
 
-    /**
-   * Propagates trace context through request headers
-   * @param options
-   * @param spanUrl
-   */
-    private propagateTraceContext(options: Request | RequestInit, spanUrl: string): void {
-      if (
-        !web.shouldPropagateTraceHeaders(
-          spanUrl,
-          this._config.propagateTraceHeaderCorsUrls
-        )
-      ) {
-        const headers: Partial<Record<string, unknown>> = {};
-        api.propagation.inject(api.context.active(), headers);
-        if (Object.keys(headers).length > 0) {
-          this._diag.debug('headers inject skipped due to CORS policy');
-        }
-        return;
+  /**
+ * Propagates trace context through request headers
+ * @param options
+ * @param spanUrl
+ */
+  private propagateTraceContext(options: Request | RequestInit, spanUrl: string): void {
+    if (
+      !web.shouldPropagateTraceHeaders(
+        spanUrl,
+        this._config.propagateTraceHeaderCorsUrls
+      )
+    ) {
+      const headers: Partial<Record<string, unknown>> = {};
+      api.propagation.inject(api.context.active(), headers);
+      if (Object.keys(headers).length > 0) {
+        this._diag.debug('headers inject skipped due to CORS policy');
       }
-  
-      if (options instanceof Request) {
-        api.propagation.inject(api.context.active(), options.headers, {
-          set: (h, k, v) => h.set(k, typeof v === 'string' ? v : String(v)),
-        });
-      } else if (options.headers instanceof Headers) {
-        api.propagation.inject(api.context.active(), options.headers, {
-          set: (h, k, v) => h.set(k, typeof v === 'string' ? v : String(v)),
-        });
-      } else if (options.headers instanceof Map) {
-        api.propagation.inject(api.context.active(), options.headers, {
-          set: (h, k, v) => h.set(k, typeof v === 'string' ? v : String(v)),
-        });
-      } else {
-        const headers: Partial<Record<string, unknown>> = {};
-        api.propagation.inject(api.context.active(), headers);
-        options.headers = Object.assign({}, headers, options.headers || {});
-      }
+      return;
     }
+
+    if (options instanceof Request) {
+      api.propagation.inject(api.context.active(), options.headers, {
+        set: (h, k, v) => h.set(k, typeof v === 'string' ? v : String(v)),
+      });
+    } else if (options.headers instanceof Headers) {
+      api.propagation.inject(api.context.active(), options.headers, {
+        set: (h, k, v) => h.set(k, typeof v === 'string' ? v : String(v)),
+      });
+    } else if (options.headers instanceof Map) {
+      api.propagation.inject(api.context.active(), options.headers, {
+        set: (h, k, v) => h.set(k, typeof v === 'string' ? v : String(v)),
+      });
+    } else {
+      const headers: Partial<Record<string, unknown>> = {};
+      api.propagation.inject(api.context.active(), headers);
+      options.headers = Object.assign({}, headers, options.headers || {});
+    }
+  }
 
   /**
    * Patches the constructor of fetch
@@ -198,31 +208,42 @@ export class FetchInstrumentation extends InstrumentationBase {
         ).href;
 
         const options = args[0] instanceof Request ? args[0] : args[1] || {};
-        const createdSpan = plugin._createSpan(url, options);
+        const startTime = core.hrTime();
+        const createdSpan = plugin._createSpan(url, startTime, options);
         if (!createdSpan) {
           return original.apply(this, args);
         }
-        const spanData = plugin._prepareSpanData(url);
+
+        const spanContextData: SpanContextData = {
+          initiatorType: "fetch",
+          url: url,
+          startTime: startTime,
+          endTime: undefined as any,
+          traceId: createdSpan.spanContext().traceId,
+          spanId: createdSpan.spanContext().spanId
+        }
+
+
 
         function endSpanOnError(span: api.Span, endTime: api.HrTime, error: FetchError) {
           plugin._applyAttributesAfterFetch(span, options, error);
-          plugin._endSpan(span, spanData, {
+          plugin._endSpan(span, {
             status: error.status || 0,
             statusText: error.message,
             url,
-          }, endTime);
+          }, spanContextData, endTime);
         }
 
         function endSpanOnSuccess(span: api.Span, endTime: api.HrTime, response: Response) {
           plugin._applyAttributesAfterFetch(span, options, response);
           if (response.status >= 200 && response.status < 400) {
-            plugin._endSpan(span, spanData, response);
+            plugin._endSpan(span, response, spanContextData, endTime);
           } else {
-            plugin._endSpan(span, spanData, {
+            plugin._endSpan(span, {
               status: response.status,
               statusText: response.statusText,
               url,
-            }, endTime);
+            }, spanContextData, endTime);
           }
         }
 
@@ -322,16 +343,6 @@ export class FetchInstrumentation extends InstrumentationBase {
         true
       );
     }
-  }
-
-  /**
-   * Prepares a span data - needed later for matching appropriate network
-   *     resources
-   * @param spanUrl
-   */
-  private _prepareSpanData(spanUrl: string): SpanData {
-    const startTime = core.hrTime();
-    return { startTime, spanUrl };
   }
 
   /**
