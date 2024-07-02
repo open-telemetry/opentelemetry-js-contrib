@@ -50,14 +50,14 @@ registerInstrumentations({
 
 amqplib instrumentation has few options available to choose from. You can set the following:
 
-| Options                           | Type                                      | Description                                                                                                                |
-| --------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `publishHook`                  | `AmqplibPublishCustomAttributeFunction`    | hook for adding custom attributes before publish message is sent.                                             |
-| `publishConfirmHook`                  | `AmqplibPublishConfirmCustomAttributeFunction`    | hook for adding custom attributes after publish message is confirmed by the broker.                                             |
-| `consumeHook`                  | `AmqplibConsumeCustomAttributeFunction`    | hook for adding custom attributes before consumer message is processed.                                             |
-| `consumeEndHook`                  | `AmqplibConsumeEndCustomAttributeFunction`    | hook for adding custom attributes after consumer message is acked to server.                                             |
-| `consumeTimeoutMs`                  | `number`    | read [Consume Timeout](#consume-timeout) below                                             |
-| `useLinksForConsume`                  | `boolean`    | read [Links for Consume](#links-for-consume) below                                          |
+| Options              | Type                                           | Description                                                                         |
+| -------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `publishHook`        | `AmqplibPublishCustomAttributeFunction`        | hook for adding custom attributes before publish message is sent.                   |
+| `publishConfirmHook` | `AmqplibPublishConfirmCustomAttributeFunction` | hook for adding custom attributes after publish message is confirmed by the broker. |
+| `consumeHook`        | `AmqplibConsumeCustomAttributeFunction`        | hook for adding custom attributes before consumer message is processed.             |
+| `consumeEndHook`     | `AmqplibConsumeEndCustomAttributeFunction`     | hook for adding custom attributes after consumer message is acked to server.        |
+| `consumeTimeoutMs`   | `number`                                       | read [Consume Timeout](#consume-timeout) below                                      |
+| `useLinksForConsume` | `boolean`                                      | read [Links for Consume](#links-for-consume) below                                  |
 
 ### Consume Timeout
 
@@ -73,7 +73,7 @@ Default is 1 minute
 
 ### Links for Consume
 
-By default, consume spans continue the trace where a message was produced. However, per the [spec](https://opentelemetry.io/docs/specs/semconv/messaging/messaging-spans/#consumer-spans), consume spans should be linked to the message's creation context. Setting to true, this will enable the behavior to follow the spec. 
+By default, consume spans continue the trace where a message was produced. However, per the [spec](https://opentelemetry.io/docs/specs/semconv/messaging/messaging-spans/#consumer-spans), consume spans should be linked to the message's creation context. Setting to true, this will enable the behavior to follow the spec.
 
 Default is false
 
