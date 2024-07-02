@@ -579,14 +579,16 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         this: any,
         ns: any,
         cmd: any,
-        options: undefined | unknown
+        options: undefined | unknown,
+        responseType: any
       ) {
         const currentSpan = trace.getSpan(context.active());
         const commandType = Object.keys(cmd)[0];
         const resultHandler = () => undefined;
 
         if (typeof cmd !== 'object' || cmd.ismaster || cmd.hello) {
-          return original.call(this, ns, cmd, options);
+          // @ts-ignore
+          return original.call(this, ns, cmd, options, responseType);
         }
 
         let span = undefined;
@@ -610,7 +612,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           commandType
         );
 
-        const result = original.call(this, ns, cmd, options);
+        // @ts-ignore
+        const result = original.call(this, ns, cmd, options, responseType);
         result.then(
           (res: any) => patchedCallback(null, res),
           (err: any) => patchedCallback(err)
