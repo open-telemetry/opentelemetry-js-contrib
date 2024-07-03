@@ -508,7 +508,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               span.setAttribute('mongodb_insert_count', result.data.n);
             }
             // from v6.8.0 the cursor preoperty is not an object but an intance of
-            // `CursoResponse`. We need to use the `toObject` method to be able to inspect the data
+            // `CursorResponse`. We need to use the `toObject` method to be able to inspect the data
             const cursorObj = data.cursor.firstBatch
               ? data.cursor
               : data.cursor.toObject();
