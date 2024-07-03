@@ -543,7 +543,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         });
       });
 
-      it.only('should attach response hook data to the resulting span for find function', done => {
+      it('should attach response hook data to the resulting span for find function', done => {
         const span = trace.getTracer('default').startSpan('findRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
           collection
