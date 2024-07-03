@@ -509,8 +509,13 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
             }
             // from v6.8.0 the cursor preoperty is not an object but an intance of
             // `CursoResponse`. We need to use the `toObject` method to be able to inspect the data
-            const cursorObj = data.cursor.firstBatch ? data.cursor : data.cursor.toObject();
-            span.setAttribute('mongodb_first_result', JSON.stringify(cursorObj.firstBatch[0]));
+            const cursorObj = data.cursor.firstBatch
+              ? data.cursor
+              : data.cursor.toObject();
+            span.setAttribute(
+              'mongodb_first_result',
+              JSON.stringify(cursorObj.firstBatch[0])
+            );
           },
         });
       });
