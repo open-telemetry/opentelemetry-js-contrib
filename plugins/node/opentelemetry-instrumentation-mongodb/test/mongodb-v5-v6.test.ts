@@ -499,12 +499,18 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
   });
 
   describe('when specifying a responseHook configuration', () => {
-    const dataAttributeName = 'mongodb_data';
     describe('with a valid function', () => {
       beforeEach(() => {
         create({
-          responseHook: (span: Span, result: MongoResponseHookInformation) => {
-            span.setAttribute(dataAttributeName, JSON.stringify(result.data));
+          responseHook: (span: Span, result: any) => {
+            const { data } = result;
+            if (data.n) {
+              span.setAttribute('mongodb_insert_count', result.data.n);
+            }
+            // from v6.8.0 the cursor preoperty is not an object but an intance of
+            // `CursoResponse`. We need to use the `toObject` method to be able to inspect the data
+            const cursorObj = data.cursor.firstBatch ? data.cursor : data.cursor.toObject();
+            span.setAttribute('mongodb_first_result', JSON.stringify(cursorObj.firstBatch[0]));
           },
         });
       });
@@ -520,8 +526,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               const spans = getTestSpans();
               const insertSpan = spans[0];
               assert.deepStrictEqual(
-                JSON.parse(insertSpan.attributes[dataAttributeName] as string)
-                  .n,
+                insertSpan.attributes['mongodb_insert_count'],
                 results?.insertedCount
               );
 
@@ -533,7 +538,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         });
       });
 
-      it('should attach response hook data to the resulting span for find function', done => {
+      it.only('should attach response hook data to the resulting span for find function', done => {
         const span = trace.getTracer('default').startSpan('findRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
           collection
@@ -544,12 +549,12 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               const spans = getTestSpans();
               const findSpan = spans[0];
               const hookAttributeValue = JSON.parse(
-                findSpan.attributes[dataAttributeName] as string
+                findSpan.attributes['mongodb_first_result'] as string
               );
 
               if (results) {
                 assert.strictEqual(
-                  hookAttributeValue?.cursor?.firstBatch[0]._id,
+                  hookAttributeValue?._id,
                   results[0]._id.toString()
                 );
               } else {

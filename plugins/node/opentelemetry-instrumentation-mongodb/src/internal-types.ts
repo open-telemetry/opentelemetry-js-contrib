@@ -177,7 +177,7 @@ export type Document = {
 };
 
 // https://github.com/mongodb/node-mongodb-native/blob/v6.4.0/src/utils.ts#L281
-interface MongodbNamespace {
+export interface MongodbNamespace {
   db: string;
   collection?: string;
 }
@@ -190,6 +190,8 @@ export type V4Connection = {
     ns: MongodbNamespace,
     cmd: Document,
     options: undefined | unknown,
+    // From v6.6.0 we have this new param which is a constructor function
+    // https://github.com/mongodb/node-mongodb-native/blob/v6.6.0/src/cmap/connection.ts#L588
     responseType: undefined | unknown
   ): Promise<any>;
   // Earlier versions expect a callback param and return void
