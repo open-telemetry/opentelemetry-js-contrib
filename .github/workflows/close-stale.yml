@@ -28,6 +28,7 @@ jobs:
 
           Are you familiar with this package? Consider [becoming a component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#becoming-a-component-owner).'
           close-issue-message: 'This issue was closed because no owner or sponsor has been found after 14 days'
+          stale-issue-label: pkg-status:unmaintained:autoclose-scheduled
           only-labels: pkg-status:unmaintained,feature-request
           exempt-issue-labels: bug,has:sponsor,type:semconv-update
           remove-stale-when-updated: false
@@ -39,6 +40,7 @@ jobs:
 
           Are you familiar with this package? Consider [becoming a component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#becoming-a-component-owner).'
           close-pr-message: 'This issue was closed because no owner or sponsor has been found after 14 days'
+          stale-pr-label: pkg-status:unmaintained:autoclose-scheduled
           only-labels: pkg-status:unmaintained
-          exempt-pr-labels: bug,has:sponsor,type:semconv-update
+          exempt-pr-labels: bug,has:sponsor,type:semconv-update,dependencies,autorelease:pending
           remove-stale-when-updated: false
