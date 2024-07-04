@@ -30,6 +30,7 @@ jobs:
           close-issue-message: 'This issue was closed because no owner or sponsor has been found after 14 days'
           only-labels: pkg-status:unmaintained,feature-request
           exempt-issue-labels: bug,has:sponsor,type:semconv-update
+          remove-stale-when-updated: false
       - uses: actions/stale@v9
         with:
           days-before-pr-stale: 0
@@ -40,3 +41,4 @@ jobs:
           close-pr-message: 'This issue was closed because no owner or sponsor has been found after 14 days'
           only-labels: pkg-status:unmaintained
           exempt-pr-labels: bug,has:sponsor,type:semconv-update
+          remove-stale-when-updated: false
