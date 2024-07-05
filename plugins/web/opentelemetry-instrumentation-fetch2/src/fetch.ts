@@ -18,14 +18,13 @@ import * as api from '@opentelemetry/api';
 import {
   isWrapped,
   InstrumentationBase,
-  InstrumentationConfig,
-  safeExecuteInTheMiddle,
+  safeExecuteInTheMiddle
 } from '@opentelemetry/instrumentation';
 import * as core from '@opentelemetry/core';
 import * as web from '@opentelemetry/sdk-trace-web';
 import { AttributeNames } from './enums/AttributeNames';
 import { SEMATTRS_HTTP_URL, SEMATTRS_HTTP_HOST, SEMATTRS_HTTP_METHOD, SEMATTRS_HTTP_SCHEME, SEMATTRS_HTTP_STATUS_CODE, SEMATTRS_HTTP_USER_AGENT } from '@opentelemetry/semantic-conventions';
-import { FetchError, FetchResponse, SpanContextData } from './types';
+import { FetchError, FetchInstrumentationConfig, FetchResponse, SpanContextData } from './types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { _globalThis } from '@opentelemetry/core';
 
@@ -33,29 +32,7 @@ const isNode = typeof process === 'object' && process.release?.name === 'node';
 const RESOURCE_FETCH_INITIATED = '@opentelemetry/ResourceFetchInitiated'; // TODO: duplicated in resource-timing instrumentation
 
 
-export interface FetchCustomAttributeFunction {
-  (
-    span: api.Span,
-    request: Request | RequestInit,
-    result: Response | FetchError
-  ): void;
-}
 
-/**
- * FetchPlugin Config
- */
-export interface FetchInstrumentationConfig extends InstrumentationConfig {
-  // urls which should include trace headers when origin doesn't match
-  propagateTraceHeaderCorsUrls?: web.PropagateTraceHeaderCorsUrls;
-  /**
-   * URLs that partially match any regex in ignoreUrls will not be traced.
-   * In addition, URLs that are _exact matches_ of strings in ignoreUrls will
-   * also not be traced.
-   */
-  ignoreUrls?: Array<string | RegExp>;
-  /** Function for adding custom attributes on the span */
-  applyCustomAttributesOnSpan?: FetchCustomAttributeFunction;
-}
 
 /**
  * This class represents a fetch plugin for auto instrumentation;
@@ -103,8 +80,7 @@ export class FetchInstrumentation extends InstrumentationBase {
       },
     });
   }
-
-  /**
+    /**
  * Finish span, add attributes.
  * @param span
  * @param endTime
@@ -115,14 +91,45 @@ export class FetchInstrumentation extends InstrumentationBase {
     response: FetchResponse,
     spanContextData: SpanContextData,
     endTime: api.HrTime
-  ) {
+  ): Promise<void> {
 
-    spanContextData.endTime = endTime;
-    document.dispatchEvent(new CustomEvent(RESOURCE_FETCH_INITIATED, {
-      detail: spanContextData
-    }));
-    this._addFinalSpanAttributes(span, response);
-    span.end(endTime);
+    return new Promise((resolve, reject) => {
+      try {
+        spanContextData.endTime = endTime;
+        document.dispatchEvent(new CustomEvent(RESOURCE_FETCH_INITIATED, {
+          detail: spanContextData
+        }));
+        this._addFinalSpanAttributes(span, response);
+        span.end(endTime);
+      } finally {
+        resolve();
+      }
+    });
+  }
+
+  private _executeResponseHook(
+    span: api.Span,
+    request: Request | RequestInit,
+    result: Response | FetchError
+  ) : Promise<void> {
+    if (!this._config.responseHook) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      safeExecuteInTheMiddle(
+        () => {
+            this._config.responseHook?.(span, request, result);
+        },
+        err => {
+          if (err) {
+            this._diag.error('Error running response hook', err);
+          }
+        },
+        true
+      );
+      resolve();
+
+    });
   }
 
   /**
@@ -211,6 +218,7 @@ export class FetchInstrumentation extends InstrumentationBase {
         const startTime = core.hrTime();
         const createdSpan = plugin._createSpan(url, startTime, options);
         if (!createdSpan) {
+          // url was ignored and no span was created, hence no need to wrap fetch
           return original.apply(this, args);
         }
 
@@ -223,81 +231,92 @@ export class FetchInstrumentation extends InstrumentationBase {
           spanId: createdSpan.spanContext().spanId
         }
 
-
-
-        function endSpanOnError(span: api.Span, endTime: api.HrTime, error: FetchError) {
-          plugin._applyAttributesAfterFetch(span, options, error);
-          plugin._endSpan(span, {
-            status: error.status || 0,
-            statusText: error.message,
-            url,
-          }, spanContextData, endTime);
+        function endSpanOnError(span: api.Span, endTime: api.HrTime, error: FetchError): Promise<void> {
+          return plugin._executeResponseHook(span, options, error)
+            .then(() => {
+              plugin._endSpan(span, {
+                status: error.status || 0,
+                statusText: error.message,
+                url,
+              }, spanContextData, endTime);
+            });
         }
 
-        function endSpanOnSuccess(span: api.Span, endTime: api.HrTime, response: Response) {
-          plugin._applyAttributesAfterFetch(span, options, response);
-          if (response.status >= 200 && response.status < 400) {
-            plugin._endSpan(span, response, spanContextData, endTime);
-          } else {
-            plugin._endSpan(span, {
-              status: response.status,
-              statusText: response.statusText,
-              url,
-            }, spanContextData, endTime);
-          }
+        function endSpanOnSuccess(span: api.Span, endTime: api.HrTime, response: Response): Promise<void> {
+          return plugin._executeResponseHook(span, options, response)
+            .then(() => {
+              if (response.status >= 200 && response.status < 400) {
+                plugin._endSpan(span, response, spanContextData, endTime);
+              } else {
+                plugin._endSpan(span, {
+                  status: response.status,
+                  statusText: response.statusText,
+                  url,
+                }, spanContextData, endTime);
+              }
+            })
         }
 
         function onSuccess(
           span: api.Span,
           resolve: (value: Response | PromiseLike<Response>) => void,
           response: Response
-        ): void {
-          // For client spans, the span should end at the earliest when the response is received
-          // and not wait for the body to be read. However, since we need attributes that are based on the
-          // response, we will proceed to read the body and end the span using a endTime that is now.
-          const endTime = core.millisToHrTime(Date.now());
+        ): Promise<void> {
+          return new Promise(() => {
+            // For client spans, the span should end at the earliest when the response is received
+            // and not wait for the body to be read. However, since we need attributes that are based on the
+            // response, we will proceed to read the body and end the span using a endTime that is now.
+            const endTime = core.millisToHrTime(Date.now());
 
-          try {
             const resClone = response.clone();
             const resClone4Hook = response.clone();
             const body = resClone.body;
             if (body) {
               const reader = body.getReader();
               const read = (): void => {
+                // FIXME: Find out the entire body is ready is read; it will buffer the entire body in memory,
+                // which might not be desirable for large responses.
                 reader.read().then(
                   ({ done }) => {
                     if (done) {
-                      endSpanOnSuccess(span, endTime, resClone4Hook);
+                      endSpanOnSuccess(span, endTime, resClone4Hook)
+                      .finally(() => {
+                        resolve(response);
+                      });
                     } else {
                       read();
                     }
                   },
                   error => {
-                    endSpanOnError(span, endTime, error);
+                    endSpanOnError(span, endTime, error)
+                    .finally(() => {
+                      resolve(response);
+                    });
                   }
                 );
               };
               read();
             } else {
               // some older browsers don't have .body implemented
-              endSpanOnSuccess(span, endTime, response);
+              endSpanOnSuccess(span, endTime, response)
+              .finally(() => {
+                resolve(response);
+              });
             }
-          } finally {
-            resolve(response);
-          }
+          })
         }
+
 
         function onError(
           span: api.Span,
           reject: (reason?: unknown) => void,
           error: FetchError
-        ) {
+        ): Promise<void> {
           const endTime = core.millisToHrTime(Date.now());
-          try {
-            endSpanOnError(span, endTime, error);
-          } finally {
-            reject(error);
-          }
+          return endSpanOnError(span, endTime, error)
+            .finally(() => {
+              reject(error);
+            });
         }
 
         return new Promise((resolve, reject) => {
@@ -321,28 +340,6 @@ export class FetchInstrumentation extends InstrumentationBase {
         });
       };
     };
-  }
-
-  private _applyAttributesAfterFetch(
-    span: api.Span,
-    request: Request | RequestInit,
-    result: Response | FetchError
-  ) {
-    const applyCustomAttributesOnSpan =
-      this._config.applyCustomAttributesOnSpan;
-    if (applyCustomAttributesOnSpan) {
-      safeExecuteInTheMiddle(
-        () => applyCustomAttributesOnSpan(span, request, result),
-        error => {
-          if (!error) {
-            return;
-          }
-
-          this._diag.error('applyCustomAttributesOnSpan', error);
-        },
-        true
-      );
-    }
   }
 
   /**

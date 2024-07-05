@@ -15,7 +15,41 @@
  */
 
 import * as api from '@opentelemetry/api';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import * as web from '@opentelemetry/sdk-trace-web';
 
+/**
+ * Hook function to be called after fetch is executed and before ending the span.
+ * FIXME: The hook function doesn't have access to the fetch url if the request
+ * is a RequestInit object
+ */
+export interface FetchInstrumentationExecutionResponseHook {
+  (
+    span: api.Span,
+    request: Request | RequestInit,
+    result: Response | FetchError
+  ): void;
+}
+
+/**
+ * FetchPlugin Config
+ */
+export interface FetchInstrumentationConfig extends InstrumentationConfig {
+  // urls which should include trace headers when origin doesn't match
+  propagateTraceHeaderCorsUrls?: web.PropagateTraceHeaderCorsUrls;
+  /**
+   * URLs that partially match any regex in ignoreUrls will not be traced.
+   * In addition, URLs that are _exact matches_ of strings in ignoreUrls will
+   * also not be traced.
+   */
+  ignoreUrls?: Array<string | RegExp>;
+
+  /** Hook function to be called after fetch is executed and before ending the span.
+    * This is useful for adding custom attributes to the span based on the fetch's
+    * request and response
+    */
+  responseHook?: FetchInstrumentationExecutionResponseHook;
+}
 /**
  * Interface used to provide information to finish span on fetch response
  */

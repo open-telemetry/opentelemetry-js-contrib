@@ -40,6 +40,10 @@ registerInstrumentations({
       propagateTraceHeaderCorsUrls: [
         'http://localhost:8090',
       ],
+      responseHook: (span, request, response) => {
+        span.setAttribute('responseHook.method', request.method);
+        span.setAttribute('responseHook.status_code', response.status);
+      },
     }),
   ],
   tracerProvider: tracerProvider,
