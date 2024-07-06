@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cucumber",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "OpenTelemetry cucumber automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -62,8 +62,8 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.50.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0"
+    "@opentelemetry/instrumentation": "^0.51.0",
+    "@opentelemetry/semantic-conventions": "^1.22.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-cucumber#readme"
 }

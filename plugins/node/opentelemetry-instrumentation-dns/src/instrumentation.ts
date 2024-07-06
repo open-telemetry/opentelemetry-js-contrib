@@ -15,6 +15,8 @@
  */
 
 import { LookupAddress } from 'dns';
+import type * as dns from 'dns';
+import * as dnsPromises from 'dns/promises';
 import { diag, Span, SpanKind } from '@opentelemetry/api';
 import {
   InstrumentationBase,
@@ -27,8 +29,6 @@ import { DnsInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
 import {
-  Dns,
-  DnsPromises,
   LookupCallbackSignature,
   LookupPromiseSignature,
 } from './internal-types';
@@ -36,21 +36,22 @@ import {
 /**
  * Dns instrumentation for Opentelemetry
  */
-export class DnsInstrumentation extends InstrumentationBase<Dns> {
-  constructor(protected override _config: DnsInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-dns', VERSION, _config);
+export class DnsInstrumentation extends InstrumentationBase {
+  protected override _config!: DnsInstrumentationConfig;
+
+  constructor(config: DnsInstrumentationConfig = {}) {
+    super('@opentelemetry/instrumentation-dns', VERSION, config);
   }
 
   init(): (
-    | InstrumentationNodeModuleDefinition<Dns>
-    | InstrumentationNodeModuleDefinition<DnsPromises>
+    | InstrumentationNodeModuleDefinition
+    | InstrumentationNodeModuleDefinition
   )[] {
     return [
-      new InstrumentationNodeModuleDefinition<Dns>(
+      new InstrumentationNodeModuleDefinition(
         'dns',
         ['*'],
-        moduleExports => {
-          diag.debug('Applying patch for dns');
+        (moduleExports: typeof dns) => {
           if (isWrapped(moduleExports.lookup)) {
             this._unwrap(moduleExports, 'lookup');
           }
@@ -66,16 +67,14 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          diag.debug('Removing patch for dns');
           this._unwrap(moduleExports, 'lookup');
           this._unwrap(moduleExports.promises, 'lookup');
         }
       ),
-      new InstrumentationNodeModuleDefinition<DnsPromises>(
+      new InstrumentationNodeModuleDefinition(
         'dns/promises',
         ['*'],
-        moduleExports => {
-          diag.debug('Applying patch for dns/promises');
+        (moduleExports: typeof dnsPromises) => {
           if (isWrapped(moduleExports.lookup)) {
             this._unwrap(moduleExports, 'lookup');
           }
@@ -85,7 +84,6 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          diag.debug('Removing patch for dns/promises');
           this._unwrap(moduleExports, 'lookup');
         }
       ),
@@ -107,7 +105,6 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
   private _getPatchLookupFunction(
     original: (hostname: string, ...args: unknown[]) => void
   ) {
-    diag.debug('patch lookup function');
     const plugin = this;
     return function patchedLookup(
       this: {},

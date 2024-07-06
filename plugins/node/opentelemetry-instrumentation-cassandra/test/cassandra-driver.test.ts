@@ -30,8 +30,13 @@ import {
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
-  SemanticAttributes,
-  DbSystemValues,
+  DBSYSTEMVALUES_CASSANDRA,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_USER,
+  SEMATTRS_EXCEPTION_MESSAGE,
+  SEMATTRS_EXCEPTION_STACKTRACE,
+  SEMATTRS_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
@@ -60,13 +65,13 @@ function assertSpan(
   customAttributes?: Attributes
 ) {
   const attributes: Attributes = {
-    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
-    [SemanticAttributes.DB_USER]: 'cassandra',
+    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_CASSANDRA,
+    [SEMATTRS_DB_USER]: 'cassandra',
     ...customAttributes,
   };
 
   if (query !== undefined) {
-    attributes[SemanticAttributes.DB_STATEMENT] = query;
+    attributes[SEMATTRS_DB_STATEMENT] = query;
   }
 
   const spanStatus =
@@ -98,12 +103,12 @@ function assertErrorSpan(
   const [span] = spans;
 
   const attributes: Attributes = {
-    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
-    [SemanticAttributes.DB_USER]: 'cassandra',
+    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_CASSANDRA,
+    [SEMATTRS_DB_USER]: 'cassandra',
   };
 
   if (query !== undefined) {
-    attributes[SemanticAttributes.DB_STATEMENT] = query;
+    attributes[SEMATTRS_DB_STATEMENT] = query;
   }
 
   const events = [
@@ -111,9 +116,9 @@ function assertErrorSpan(
       name: 'exception',
       droppedAttributesCount: 0,
       attributes: {
-        [SemanticAttributes.EXCEPTION_STACKTRACE]: error.stack,
-        [SemanticAttributes.EXCEPTION_MESSAGE]: error.message,
-        [SemanticAttributes.EXCEPTION_TYPE]: String(error.code),
+        [SEMATTRS_EXCEPTION_STACKTRACE]: error.stack,
+        [SEMATTRS_EXCEPTION_MESSAGE]: error.message,
+        [SEMATTRS_EXCEPTION_TYPE]: String(error.code),
       },
       time: span.events[0].time,
     },

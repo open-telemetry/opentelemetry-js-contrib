@@ -22,17 +22,19 @@ import {
 } from '@opentelemetry/instrumentation';
 import type * as Memcached from 'memcached';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_MEMCACHED,
+  SEMATTRS_DB_OPERATION,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
 import { InstrumentationConfig } from './types';
 import { VERSION } from './version';
 
-export class Instrumentation extends InstrumentationBase<typeof Memcached> {
+export class Instrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'memcached';
   static readonly COMMON_ATTRIBUTES = {
-    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MEMCACHED,
+    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MEMCACHED,
   };
   static readonly DEFAULT_CONFIG: InstrumentationConfig = {
     enhancedDatabaseReporting: false,
@@ -52,25 +54,18 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof Memcached>(
+      new InstrumentationNodeModuleDefinition(
         'memcached',
         ['>=2.2'],
-        (moduleExports, moduleVersion) => {
-          this._diag.debug(
-            `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
-          );
+        (moduleExports: typeof Memcached, moduleVersion) => {
           this.ensureWrapped(
-            moduleVersion,
             moduleExports.prototype,
             'command',
             this.wrapCommand.bind(this, moduleVersion)
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          this._diag.debug(
-            `Unpatching ${Instrumentation.COMPONENT}@${moduleVersion}`
-          );
+        (moduleExports: typeof Memcached) => {
           if (moduleExports === undefined) return;
           // `command` is documented API missing from the types
           this._unwrap(moduleExports.prototype, 'command' as keyof Memcached);
@@ -142,8 +137,8 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
       span.setAttributes({
         'db.memcached.key': query.key,
         'db.memcached.lifetime': query.lifetime,
-        [SemanticAttributes.DB_OPERATION]: query.type,
-        [SemanticAttributes.DB_STATEMENT]: (
+        [SEMATTRS_DB_OPERATION]: query.type,
+        [SEMATTRS_DB_STATEMENT]: (
           instrumentation._config as InstrumentationConfig
         ).enhancedDatabaseReporting
           ? query.command
@@ -175,14 +170,10 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
   }
 
   private ensureWrapped(
-    moduleVersion: string | undefined,
     obj: any,
     methodName: string,
     wrapper: (original: any) => any
   ) {
-    this._diag.debug(
-      `Applying ${methodName} patch for ${Instrumentation.COMPONENT}@${moduleVersion}`
-    );
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);
     }

@@ -51,6 +51,16 @@ registerInstrumentations({
 
 See [examples/connect](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/connect) for a short example.
 
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute    | Short Description                  |
+| ------------ | ---------------------------------- |
+| `http.route` | The matched route (path template). |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
