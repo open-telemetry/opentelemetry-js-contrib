@@ -49,8 +49,7 @@ export class GCCollector extends BaseCollector<null> {
       this._gcDurationByKindHistogram?.record(
         entry.duration / 1000,
         Object.assign(
-          { [`${this.namePrefix}.gc.type`]: kind },
-          this.versionAttribute
+          { [`${this.namePrefix}.gc.type`]: kind }
         )
       );
     });

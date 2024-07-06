@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 export enum ConventionalNamePrefix {
-  NodeJsRuntime = 'nodejsruntime',
-  V8EnjineRuntime = 'v8jsengineruntime',
+  NodeJs = 'nodejs',
+  V8js = 'v8js',
 }

@@ -20,7 +20,7 @@ import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
 import { metricNames } from '../src/metrics/heapSpacesSizeAndUsedCollector';
 import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
-import { V8_HEAP_SIZE_STATE_ATTRIBUTE } from '../src/consts/attributes';
+import { V8_HEAP_SIZE_NAME_ATTRIBUTE } from '../src/consts/attributes';
 
 const MEASUREMENT_INTERVAL = 10;
 
@@ -35,7 +35,7 @@ describe('nodejs.heap_space', function () {
   });
 
   for (const metricName in metricNames) {
-    it(`should write ${ConventionalNamePrefix.V8EnjineRuntime}.${metricName} after monitoringPrecision`, async function () {
+    it(`should write ${ConventionalNamePrefix.V8js}.${metricName} after monitoringPrecision`, async function () {
       // arrange
       const instrumentation = new RuntimeNodeInstrumentation({
         monitoringPrecision: MEASUREMENT_INTERVAL,
@@ -58,13 +58,13 @@ describe('nodejs.heap_space', function () {
       const metric = scopeMetrics[0].metrics.find(
         x =>
           x.descriptor.name ===
-          `${ConventionalNamePrefix.V8EnjineRuntime}.${metricName}`
+          `${ConventionalNamePrefix.V8js}.${metricName}`
       );
 
       assert.notEqual(
         metric,
         undefined,
-        `${ConventionalNamePrefix.V8EnjineRuntime}.${metricName} not found`
+        `${ConventionalNamePrefix.V8js}.${metricName} not found`
       );
 
       assert.strictEqual(
@@ -75,7 +75,7 @@ describe('nodejs.heap_space', function () {
 
       assert.strictEqual(
         metric!.descriptor.name,
-        `${ConventionalNamePrefix.V8EnjineRuntime}.${metricName}`,
+        `${ConventionalNamePrefix.V8js}.${metricName}`,
         'descriptor.name'
       );
     });
@@ -86,7 +86,7 @@ describe('nodejs.heap_space', function () {
       'code_space',
       'large_object_space',
     ]) {
-      it(`should write ${ConventionalNamePrefix.V8EnjineRuntime}.${metricName} ${space} attribute`, async function () {
+      it(`should write ${ConventionalNamePrefix.V8js}.${metricName} ${space} attribute`, async function () {
         // arrange
         const instrumentation = new RuntimeNodeInstrumentation({
           monitoringPrecision: MEASUREMENT_INTERVAL,
@@ -110,19 +110,19 @@ describe('nodejs.heap_space', function () {
         const metric = scopeMetrics[0].metrics.find(
           x =>
             x.descriptor.name ===
-            `${ConventionalNamePrefix.V8EnjineRuntime}.${metricName}`
+            `${ConventionalNamePrefix.V8js}.${metricName}`
         );
         const spaceAttribute = metric!.dataPoints.find(
           x =>
             x.attributes[
-              `${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`
+              `${ConventionalNamePrefix.V8js}.${V8_HEAP_SIZE_NAME_ATTRIBUTE}`
             ] === space
         );
 
         assert.notEqual(
           spaceAttribute,
           undefined,
-          `${ConventionalNamePrefix.V8EnjineRuntime}.${metricName} space: ${space} not found`
+          `${ConventionalNamePrefix.V8js}.${metricName} space: ${space} not found`
         );
       });
     }

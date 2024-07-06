@@ -19,7 +19,7 @@ import { BaseCollector } from './baseCollector';
 import { HeapSizes } from '../types/heapSizes';
 import {
   V8_HEAP_SIZE,
-  V8_HEAP_SIZE_STATE_ATTRIBUTE,
+  V8_HEAP_SIZE_NAME_ATTRIBUTE,
 } from '../consts/attributes';
 
 export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> {
@@ -42,14 +42,12 @@ export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> 
         const data = this._scrapeQueue.shift();
         if (data === undefined) return;
         observableResult.observe(data.heapTotal, {
-          [`${this.namePrefix}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`]:
+          [`${this.namePrefix}.${V8_HEAP_SIZE_NAME_ATTRIBUTE}`]:
             HeapSizes.Total,
-          ...this.versionAttribute,
         });
         observableResult.observe(data.heapUsed, {
-          [`${this.namePrefix}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`]:
+          [`${this.namePrefix}.${V8_HEAP_SIZE_NAME_ATTRIBUTE}`]:
             HeapSizes.Used,
-          ...this.versionAttribute,
         });
       });
   }

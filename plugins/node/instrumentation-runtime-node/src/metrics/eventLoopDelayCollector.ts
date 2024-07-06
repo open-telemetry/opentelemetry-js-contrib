@@ -20,44 +20,40 @@ import {IntervalHistogram} from 'node:perf_hooks';
 import {BaseCollector} from './baseCollector';
 
 enum NodeJsEventLoopDelay {
-  delay = 'eventloop.delay',
   min = 'eventloop.delay.min',
   max = 'eventloop.delay.max',
   mean = 'eventloop.delay.mean',
   stddev = 'eventloop.delay.stddev',
   p50 = 'eventloop.delay.p50',
   p90 = 'eventloop.delay.p90',
-  p99 = 'eventloop.delay.p99',
+  p99 = 'eventloop.delay.p99'
 }
 
 export const metricNames: Record<
   NodeJsEventLoopDelay,
   { description: string }
 > = {
-  [NodeJsEventLoopDelay.delay]: {
-    description: 'Lag of event loop in seconds.',
-  },
   [NodeJsEventLoopDelay.min]: {
-    description: 'The minimum recorded event loop delay.',
+    description: 'Event loop minimum delay.',
   },
   [NodeJsEventLoopDelay.max]: {
-    description: 'The maximum recorded event loop delay.',
+    description: 'Event loop maximum delay.',
   },
   [NodeJsEventLoopDelay.mean]: {
-    description: 'The mean of the recorded event loop delays.',
+    description: 'Event loop mean delay.',
   },
   [NodeJsEventLoopDelay.stddev]: {
-    description: 'The standard deviation of the recorded event loop delays.',
+    description: 'Event loop standard deviation delay.',
   },
   [NodeJsEventLoopDelay.p50]: {
-    description: 'The 50th percentile of the recorded event loop delays.',
+    description: 'Event loop 50 percentile delay.',
   },
   [NodeJsEventLoopDelay.p90]: {
-    description: 'The 90th percentile of the recorded event loop delays.',
+    description: 'Event loop 90 percentile delay.',
   },
   [NodeJsEventLoopDelay.p99]: {
-    description: 'The 99th percentile of the recorded event loop delays.',
-  },
+    description: 'Event loop 99 percentile delay.',
+  }
 };
 
 export interface EventLoopLagInformation {
@@ -84,13 +80,6 @@ export class EventLoopDelayCollector extends BaseCollector<EventLoopLagInformati
   }
 
   updateMetricInstruments(meter: Meter): void {
-    const delay = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelay.delay}`,
-      {
-        description: metricNames[NodeJsEventLoopDelay.delay].description,
-        unit: 's',
-      }
-    );
     const delayMin = meter.createObservableGauge(
       `${this.namePrefix}.${NodeJsEventLoopDelay.min}`,
       {
@@ -148,30 +137,17 @@ export class EventLoopDelayCollector extends BaseCollector<EventLoopLagInformati
         const data = this._scrapeQueue.shift();
         if (data === undefined) return;
 
-        const startHrTime = process.hrtime();
-        const delayResult = await new Promise<number>(res => {
-          setImmediate((start: [number, number]) => {
-            res(this._reportEventloopLag(start));
-          }, startHrTime);
-        });
-
-        observableResult.observe(delay, delayResult, this.versionAttribute);
-        observableResult.observe(delayMin, data.min, this.versionAttribute);
-        observableResult.observe(delayMax, data.max, this.versionAttribute);
-        observableResult.observe(delayMean, data.mean, this.versionAttribute);
-        observableResult.observe(
-          delayStddev,
-          data.stddev,
-          this.versionAttribute
-        );
-        observableResult.observe(delayp50, data.p50, this.versionAttribute);
-        observableResult.observe(delayp90, data.p90, this.versionAttribute);
-        observableResult.observe(delayp99, data.p99, this.versionAttribute);
+        observableResult.observe(delayMin, data.min);
+        observableResult.observe(delayMax, data.max);
+        observableResult.observe(delayMean, data.mean);
+        observableResult.observe(delayStddev, data.stddev);
+        observableResult.observe(delayp50, data.p50);
+        observableResult.observe(delayp90, data.p90);
+        observableResult.observe(delayp99, data.p99);
 
         this._histogram.reset();
       },
       [
-        delay,
         delayMin,
         delayMax,
         delayMean,
@@ -197,17 +173,12 @@ export class EventLoopDelayCollector extends BaseCollector<EventLoopLagInformati
       max: this.checkNan(this._histogram.max / 1e9),
       mean: this.checkNan(this._histogram.mean / 1e9),
       stddev: this.checkNan(this._histogram.stddev / 1e9),
-      p50: this.checkNan(this._histogram.percentile(90) / 1e9),
+      p50: this.checkNan(this._histogram.percentile(50) / 1e9),
       p90: this.checkNan(this._histogram.percentile(90) / 1e9),
       p99: this.checkNan(this._histogram.percentile(99) / 1e9),
     };
   }
 
-  private _reportEventloopLag(start: [number, number]): number {
-    const delta = process.hrtime(start);
-    const nanosec = delta[0] * 1e9 + delta[1];
-    return nanosec / 1e9;
-  }
 
   private checkNan(value: number) {
     return isNaN(value) ? 0 : value;

@@ -41,20 +41,20 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase {
     this._collectors = [
       new EventLoopUtilizationCollector(
         this._config,
-        ConventionalNamePrefix.NodeJsRuntime
+        ConventionalNamePrefix.NodeJs
       ),
       new EventLoopDelayCollector(
         this._config,
-        ConventionalNamePrefix.NodeJsRuntime
+        ConventionalNamePrefix.NodeJs
       ),
-      new GCCollector(this._config, ConventionalNamePrefix.V8EnjineRuntime),
+      new GCCollector(this._config, ConventionalNamePrefix.V8js),
       new HeapSizeAndUsedCollector(
         this._config,
-        ConventionalNamePrefix.V8EnjineRuntime
+        ConventionalNamePrefix.V8js
       ),
       new HeapSpacesSizeAndUsedCollector(
         this._config,
-        ConventionalNamePrefix.V8EnjineRuntime
+        ConventionalNamePrefix.V8js
       ),
     ];
     if (this._config.enabled) {
