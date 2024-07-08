@@ -15,14 +15,18 @@
  */
 
 import * as gcpMetadata from 'gcp-metadata';
-import { diag } from '@opentelemetry/api';
+import { diag, context } from '@opentelemetry/api';
 import {
-  Detector,
+  DetectorSync,
   ResourceDetectionConfig,
   Resource,
   ResourceAttributes,
 } from '@opentelemetry/resources';
-import { getEnv } from '@opentelemetry/core';
+import {
+  getEnv,
+  suppressTracing,
+  unsuppressTracing,
+} from '@opentelemetry/core';
 import {
   CLOUDPROVIDERVALUES_GCP,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
@@ -41,7 +45,7 @@ import {
  * Cloud Platform and return a {@link Resource} populated with metadata about
  * the instance. Returns an empty Resource if detection fails.
  */
-class GcpDetector implements Detector {
+class GcpDetector implements DetectorSync {
   /**
    * Attempts to connect and obtain instance configuration data from the GCP metadata service.
    * If the connection is successful it returns a promise containing a {@link Resource}
@@ -50,10 +54,34 @@ class GcpDetector implements Detector {
    *
    * @param config The resource detection config
    */
-  async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
+  detect(_config?: ResourceDetectionConfig): Resource {
+    return new Resource({}, this._getAttributes());
+  }
+
+  /** Add resource attributes for K8s */
+  private _addK8sAttributes(
+    attributes: ResourceAttributes,
+    clusterName: string
+  ): void {
+    const env = getEnv();
+
+    attributes[SEMRESATTRS_K8S_CLUSTER_NAME] = clusterName;
+    attributes[SEMRESATTRS_K8S_NAMESPACE_NAME] = env.NAMESPACE;
+    attributes[SEMRESATTRS_K8S_POD_NAME] = env.HOSTNAME;
+    attributes[SEMRESATTRS_CONTAINER_NAME] = env.CONTAINER_NAME;
+  }
+
+  private async _getAttributes(): Promise<ResourceAttributes> {
+    // The logic below makes some HTTP requests to gather GCP info
+    // and this results on some spans being exported. That tracing data
+    // does not belong to the instrumented service and shouldn't be sent.
+    // ref: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2320
+    const ctx = context.active();
+    suppressTracing(ctx);
+
     if (!(await gcpMetadata.isAvailable())) {
       diag.debug('GcpDetector failed: GCP Metadata unavailable.');
-      return Resource.empty();
+      return {};
     }
 
     const [projectId, instanceId, zoneId, clusterName, hostname] =
@@ -75,20 +103,8 @@ class GcpDetector implements Detector {
     if (getEnv().KUBERNETES_SERVICE_HOST)
       this._addK8sAttributes(attributes, clusterName);
 
-    return new Resource(attributes);
-  }
-
-  /** Add resource attributes for K8s */
-  private _addK8sAttributes(
-    attributes: ResourceAttributes,
-    clusterName: string
-  ): void {
-    const env = getEnv();
-
-    attributes[SEMRESATTRS_K8S_CLUSTER_NAME] = clusterName;
-    attributes[SEMRESATTRS_K8S_NAMESPACE_NAME] = env.NAMESPACE;
-    attributes[SEMRESATTRS_K8S_POD_NAME] = env.HOSTNAME;
-    attributes[SEMRESATTRS_CONTAINER_NAME] = env.CONTAINER_NAME;
+    unsuppressTracing(ctx);
+    return attributes;
   }
 
   /** Gets project id from GCP project metadata. */
