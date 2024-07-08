@@ -45,11 +45,31 @@ export const storeLayerPath = (request: PatchedRequest, value?: string) => {
 };
 
 /**
+ * Recursively search the router path from layer stack
+ * @param path The path to reconstruct
+ * @param layer The layer to reconstruct from
+ * @returns The reconstructed path
+ */
+export const getRouterPath = (path: string, layer: ExpressLayer): string => {
+  const stackLayer = layer.handle?.stack[0];
+
+  if (stackLayer.route?.path) {
+    path += stackLayer.route.path;
+  } else if (stackLayer.handle?.stack) {
+    path = getRouterPath(path, stackLayer);
+  }
+
+  return path;
+};
+
+/**
  * Parse express layer context to retrieve a name and attributes.
+ * @param route The route of the layer
  * @param layer Express layer
  * @param [layerPath] if present, the path on which the layer has been mounted
  */
 export const getLayerMetadata = (
+  route: string,
   layer: ExpressLayer,
   layerPath?: string
 ): {
@@ -57,20 +77,31 @@ export const getLayerMetadata = (
   name: string;
 } => {
   if (layer.name === 'router') {
+    let extractedRouterPath = '';
+
+    if (layer.handle?.stack) {
+      extractedRouterPath = getRouterPath(extractedRouterPath, layer);
+    }
+
+    if (!extractedRouterPath) {
+      extractedRouterPath = layerPath || route || '/';
+    }
+
     return {
       attributes: {
-        [AttributeNames.EXPRESS_NAME]: layerPath,
+        [AttributeNames.EXPRESS_NAME]: extractedRouterPath,
         [AttributeNames.EXPRESS_TYPE]: ExpressLayerType.ROUTER,
       },
-      name: `router - ${layerPath}`,
+      name: `router - ${extractedRouterPath}`,
     };
   } else if (layer.name === 'bound dispatch') {
     return {
       attributes: {
-        [AttributeNames.EXPRESS_NAME]: layerPath ?? 'request handler',
+        [AttributeNames.EXPRESS_NAME]:
+          (route || layerPath) ?? 'request handler',
         [AttributeNames.EXPRESS_TYPE]: ExpressLayerType.REQUEST_HANDLER,
       },
-      name: `request handler${layer.path ? ` - ${layerPath}` : ''}`,
+      name: `request handler${layer.path ? ` - ${route || layerPath}` : ''}`,
     };
   } else {
     return {
@@ -159,11 +190,13 @@ export const asErrorAndMessage = (
 export const getLayerPath = (
   args: [LayerPathSegment | LayerPathSegment[], ...unknown[]]
 ): string | undefined => {
-  if (Array.isArray(args[0])) {
-    return args[0].map(arg => extractLayerPathSegment(arg) || '').join(',');
+  const firstArg = args[0];
+
+  if (Array.isArray(firstArg)) {
+    return firstArg.map(arg => extractLayerPathSegment(arg) || '').join(',');
   }
 
-  return extractLayerPathSegment(args[0]);
+  return extractLayerPathSegment(firstArg);
 };
 
 const extractLayerPathSegment = (arg: LayerPathSegment) => {

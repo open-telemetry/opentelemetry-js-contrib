@@ -94,6 +94,7 @@ describe('Utils', () => {
     it('should return router metadata', () => {
       assert.deepEqual(
         utils.getLayerMetadata(
+          '/test',
           {
             name: 'router',
           } as ExpressLayer,
@@ -112,6 +113,7 @@ describe('Utils', () => {
     it('should return request handler metadata', () => {
       assert.deepEqual(
         utils.getLayerMetadata(
+          '/:id',
           {
             name: 'bound dispatch',
           } as ExpressLayer,
@@ -129,7 +131,7 @@ describe('Utils', () => {
 
     it('should return middleware metadata', () => {
       assert.deepEqual(
-        utils.getLayerMetadata({
+        utils.getLayerMetadata('', {
           name: 'bodyParser',
         } as ExpressLayer),
         {
@@ -143,6 +145,51 @@ describe('Utils', () => {
     });
   });
 
+  describe('reconstructRouterPath()', () => {
+    it('should reconstruct a simple router path', () => {
+      const layer = {
+        handle: {
+          stack: [
+            {
+              route: {
+                path: '/test',
+              },
+            },
+          ],
+        },
+      };
+
+      assert.strictEqual(
+        utils.getRouterPath('', layer as unknown as ExpressLayer),
+        '/test'
+      );
+    });
+
+    it('should reconstruct a parameterized router path', () => {
+      const layer = {
+        handle: {
+          stack: [
+            {
+              handle: {
+                stack: [
+                  {
+                    route: {
+                      path: '/:id',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      };
+
+      assert.strictEqual(
+        utils.getRouterPath('', layer as unknown as ExpressLayer),
+        '/:id'
+      );
+    });
+  });
   describe('asErrorAndMessage', () => {
     it('should special case Error instances', () => {
       const input = new Error('message');
