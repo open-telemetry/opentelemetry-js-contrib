@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.38.0...instrumentation-winston-v0.39.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196))
+
+### Bug Fixes
+
+* **@opentelemetry/instrumentation-winston:** Removing error details when @opentelemetry/winston-transport is not available ([#2301](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2301)) ([fbf25c5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fbf25c5e14eaa7d13fc3ff213f4648ae22c64cef))
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196)) ([01c28ae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/01c28ae016ed32f9968e52bc91e3e3700dcef82e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/winston-transport bumped from ^0.4.0 to ^0.5.0
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.37.0...instrumentation-winston-v0.38.0) (2024-06-06)
 
 
