@@ -15,7 +15,7 @@
  */
 
 import * as gcpMetadata from 'gcp-metadata';
-import { diag, context } from '@opentelemetry/api';
+import { diag, /*context*/ } from '@opentelemetry/api';
 import {
   DetectorSync,
   ResourceDetectionConfig,
@@ -24,8 +24,8 @@ import {
 } from '@opentelemetry/resources';
 import {
   getEnv,
-  suppressTracing,
-  unsuppressTracing,
+  // suppressTracing,
+  // unsuppressTracing,
 } from '@opentelemetry/core';
 import {
   CLOUDPROVIDERVALUES_GCP,
@@ -76,8 +76,8 @@ class GcpDetector implements DetectorSync {
     // and this results on some spans being exported. That tracing data
     // does not belong to the instrumented service and shouldn't be sent.
     // ref: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2320
-    const ctx = context.active();
-    suppressTracing(ctx);
+    // const ctx = context.active();
+    // suppressTracing(ctx);
 
     if (!(await gcpMetadata.isAvailable())) {
       diag.debug('GcpDetector failed: GCP Metadata unavailable.');
@@ -103,7 +103,7 @@ class GcpDetector implements DetectorSync {
     if (getEnv().KUBERNETES_SERVICE_HOST)
       this._addK8sAttributes(attributes, clusterName);
 
-    unsuppressTracing(ctx);
+    // unsuppressTracing(ctx);
     return attributes;
   }
 

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import * as assert from 'assert';
+
 import {
   BASE_PATH,
   HEADER_NAME,
@@ -30,6 +32,7 @@ import {
   assertK8sResource,
   assertContainerResource,
   assertEmptyResource,
+  runTestFixture,
 } from '@opentelemetry/contrib-test-utils';
 
 const HEADERS = {
@@ -181,4 +184,42 @@ describe('gcpDetector', () => {
       assertEmptyResource(resource);
     });
   });
+  
+  it('should not export traces related to GCP detection', async () => {
+    await runTestFixture({
+      cwd: __dirname,
+      argv: ['../fixtures/use-gcp-detector.js'],
+      timeoutMs: 5000,
+      env: {
+        // This env var makes `gpc-metadata` return true when `isAvailable` API is called.
+        // Setting it makes sure the detector does HTTP calls to medatada endpoints
+        // so we can assert that no spans are created for these requests.
+        // Ref: https://github.com/googleapis/gcp-metadata/blob/d88841db90d7d390eefb0de02b736b41f6adddde/src/index.ts#L351
+        METADATA_SERVER_DETECTION: 'assume-present',
+      },
+      // XXX: weird behavior here, it only passes the check with 2 conditions
+      // - env has set OTEL_LOG_LEVEL: debug
+      // - we `console.log(stdout);` before the assertion
+      // checkResult: (err, stdout, stderr) => {
+      //   assert.ifError(err);
+      // },
+      checkCollector(collector) {
+        // const val = '/computeMetadata/v1/instance/hostname';
+        // const attr = 'http.target';
+
+        const spans = collector.sortedSpans;
+        const httpSpans = spans.filter((s) => s.instrumentationScope.name === '@opentelemetry/instrumentation-http');
+        // const gcpSpans = httpSpans.filter((s) => {
+        //   return s.attributes.find((a) => a.key === attr && a.value.stringValue === val)
+        // });
+
+        httpSpans.forEach((s) => {
+          console.dir(s, {depth:5})
+        });
+        // assert.strictEqual(gcpSpans.length, 0);
+        assert.strictEqual(httpSpans.length, 2);
+      }
+    });
+  }).timeout(5000);
+  
 });

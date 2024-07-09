@@ -31,6 +31,7 @@ import {
 } from '@opentelemetry/otlp-transformer';
 import { NodeSDK, tracing } from '@opentelemetry/sdk-node';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
+import { Detector, DetectorSync } from '@opentelemetry/resources';
 
 /**
  * A utility for scripts that will be run with `runTestFixture()` to create an
@@ -43,7 +44,9 @@ import type { Instrumentation } from '@opentelemetry/instrumentation';
 export function createTestNodeSdk(opts: {
   serviceName?: string;
   instrumentations: (Instrumentation | Instrumentation[])[];
+  resourceDetectors: Array<Detector | DetectorSync>;
 }) {
+  console.log('endpoint is', process.env.OTEL_EXPORTER_OTLP_ENDPOINT);
   const spanProcessor = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
     ? undefined
     : new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter());
@@ -51,6 +54,7 @@ export function createTestNodeSdk(opts: {
     serviceName: opts.serviceName || 'test-service',
     spanProcessor,
     instrumentations: opts.instrumentations,
+    resourceDetectors: opts.resourceDetectors || [],
   });
   return sdk;
 }
