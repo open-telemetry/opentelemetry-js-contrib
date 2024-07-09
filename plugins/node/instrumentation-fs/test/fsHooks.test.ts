@@ -32,9 +32,14 @@ const endHookError = new Error('endHook failed');
 const endHook = sinon.spy((_functionName: string) => {
   throw endHookError;
 });
+const errorHookError = new Error('errorHook failed');
+const errorHook = sinon.spy((_functionName: string) => {
+  throw errorHookError;
+});
 const pluginConfig = {
   createHook,
   endHook,
+  errorHook,
 };
 
 const provider = new BasicTracerProvider();
@@ -45,7 +50,8 @@ const assertNotHookError = (err?: Error | null) => {
   assert.ok(
     err &&
       err.message !== createHookError.message &&
-      err.message !== endHookError.message,
+      err.message !== endHookError.message &&
+      err.message !== errorHookError.message,
     'Hook error shadowed the error from the original call'
   );
 };
@@ -62,6 +68,9 @@ const assertSuccessfulCallHooks = (expectedFunctionName: string) => {
     !(endHookCall.getCall(0).args as any)[1].error,
     'Did not expect an error'
   );
+
+  const errorHookCall = errorHook.withArgs(expectedFunctionName);
+  sinon.assert.notCalled(errorHookCall);
 };
 
 const assertFailingCallHooks = (expectedFunctionName: string) => {
@@ -73,6 +82,10 @@ const assertFailingCallHooks = (expectedFunctionName: string) => {
   sinon.assert.called(endHookCall);
   sinon.assert.threw(endHookCall, endHookError);
   assert((endHookCall.getCall(0).args as any)[1].error, 'Expected an error');
+
+  const errorHookCall = errorHook.withArgs(expectedFunctionName);
+  sinon.assert.called(errorHookCall);
+  sinon.assert.threw(errorHookCall, errorHookError);
 };
 
 describe('fs instrumentation: hooks', () => {
@@ -87,6 +100,7 @@ describe('fs instrumentation: hooks', () => {
     fs = require('fs');
     createHook.resetHistory();
     endHook.resetHistory();
+    errorHook.resetHistory();
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 

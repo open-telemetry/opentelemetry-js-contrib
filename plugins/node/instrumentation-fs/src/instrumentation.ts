@@ -34,6 +34,7 @@ import type {
   CreateHook,
   EndHook,
   FsInstrumentationConfig,
+  ErrorHook,
 } from './types';
 import { promisify } from 'util';
 import { indexFs } from './utils';
@@ -198,11 +199,13 @@ export class FsInstrumentation extends InstrumentationBase {
         instrumentation._runEndHook(functionName, { args: args, span });
         return res;
       } catch (error: any) {
-        span.recordException(error);
-        span.setStatus({
-          message: error.message,
-          code: api.SpanStatusCode.ERROR,
-        });
+        if (instrumentation._runErrorHook(functionName, error)) {
+          span.recordException(error);
+          span.setStatus({
+            message: error.message,
+            code: api.SpanStatusCode.ERROR,
+          });
+        }
         instrumentation._runEndHook(functionName, { args: args, span, error });
         throw error;
       } finally {
@@ -247,7 +250,7 @@ export class FsInstrumentation extends InstrumentationBase {
         args[lastIdx] = api.context.bind(
           activeContext,
           function (this: unknown, error?: Error) {
-            if (error) {
+            if (error && instrumentation._runErrorHook(functionName, error)) {
               span.recordException(error);
               span.setStatus({
                 message: error.message,
@@ -273,11 +276,13 @@ export class FsInstrumentation extends InstrumentationBase {
             ...args
           );
         } catch (error: any) {
-          span.recordException(error);
-          span.setStatus({
-            message: error.message,
-            code: api.SpanStatusCode.ERROR,
-          });
+          if (instrumentation._runErrorHook(functionName, error)) {
+            span.recordException(error);
+            span.setStatus({
+              message: error.message,
+              code: api.SpanStatusCode.ERROR,
+            });
+          }
           instrumentation._runEndHook(functionName, {
             args: args,
             span,
@@ -347,11 +352,13 @@ export class FsInstrumentation extends InstrumentationBase {
             ...args
           );
         } catch (error: any) {
-          span.recordException(error);
-          span.setStatus({
-            message: error.message,
-            code: api.SpanStatusCode.ERROR,
-          });
+          if (instrumentation._runErrorHook(functionName, error)) {
+            span.recordException(error);
+            span.setStatus({
+              message: error.message,
+              code: api.SpanStatusCode.ERROR,
+            });
+          }
           instrumentation._runEndHook(functionName, {
             args: args,
             span,
@@ -421,11 +428,13 @@ export class FsInstrumentation extends InstrumentationBase {
         instrumentation._runEndHook(functionName, { args: args, span });
         return res;
       } catch (error: any) {
-        span.recordException(error);
-        span.setStatus({
-          message: error.message,
-          code: api.SpanStatusCode.ERROR,
-        });
+        if (instrumentation._runErrorHook(functionName, error)) {
+          span.recordException(error);
+          span.setStatus({
+            message: error.message,
+            code: api.SpanStatusCode.ERROR,
+          });
+        }
         instrumentation._runEndHook(functionName, { args: args, span, error });
         throw error;
       } finally {
@@ -458,6 +467,20 @@ export class FsInstrumentation extends InstrumentationBase {
         this._diag.error('caught endHook error', e);
       }
     }
+  }
+
+  protected _runErrorHook(
+    ...args: Parameters<ErrorHook>
+  ): ReturnType<ErrorHook> {
+    const { errorHook } = this.getConfig() as FsInstrumentationConfig;
+    if (typeof errorHook === 'function') {
+      try {
+        return errorHook(...args);
+      } catch (e) {
+        this._diag.error('caught errorHook error', e);
+      }
+    }
+    return true;
   }
 
   protected _shouldTrace(context: api.Context): boolean {
