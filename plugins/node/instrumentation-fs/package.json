@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-fs",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "OpenTelemetry instrumentation for `node:fs` file system interactions module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
