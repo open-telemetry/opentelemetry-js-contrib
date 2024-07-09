@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.3.0...instrumentation-undici-v0.4.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* export instrumentations only as named export ([#2296](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2296))
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196))
+
+### Bug Fixes
+
+* export instrumentations only as named export ([#2296](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2296)) ([0ed4038](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0ed40384287a8d06549c2a9c98a26ea9b068c472))
+* **instr-undici:** respect requireParent flag when INVALID_SPAN_CONTEXT is used ([#2273](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2273)) ([b08f01f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b08f01f2d4604c14334b860e411eb55c58631171))
+* **instr-undici:** wrong user agent reported if no user agent were set ([#2282](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2282)) ([72e3f66](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/72e3f66c2049189172491a166a20c1af3f547ee5))
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196)) ([01c28ae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/01c28ae016ed32f9968e52bc91e3e3700dcef82e))
+
 ## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.2.0...instrumentation-undici-v0.3.0) (2024-06-06)
 
 

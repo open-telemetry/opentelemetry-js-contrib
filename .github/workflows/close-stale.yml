@@ -31,6 +31,7 @@ jobs:
           stale-issue-label: pkg-status:unmaintained:autoclose-scheduled
           only-labels: pkg-status:unmaintained,feature-request
           exempt-issue-labels: bug,has:sponsor,type:semconv-update
+          remove-stale-when-updated: false
       - uses: actions/stale@v9
         with:
           days-before-pr-stale: 0
@@ -42,3 +43,4 @@ jobs:
           stale-pr-label: pkg-status:unmaintained:autoclose-scheduled
           only-labels: pkg-status:unmaintained
           exempt-pr-labels: bug,has:sponsor,type:semconv-update,dependencies,autorelease:pending
+          remove-stale-when-updated: false

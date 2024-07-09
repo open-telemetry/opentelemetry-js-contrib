@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cassandra-driver",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "OpenTelemetry instrumentation for `cassandra-driver` database client library for Apache Cassandra",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
