@@ -188,6 +188,7 @@ describe('gcpDetector', () => {
 
   describe('internal tracing', () => {
     it('should not export traces related to GCP detection', async () => {
+      // Mock server for `gcp-metadata`
       const gcpServer = http.createServer((req,res) => {
         const responseMap: Record<string, string> = {
           [INSTANCE_PATH]: '{}',
@@ -245,6 +246,6 @@ describe('gcpDetector', () => {
 
       gcpServer.close();
     }
-  ).timeout(10000);
+  );
   });
 });
