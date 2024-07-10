@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import * as http from 'http';
+import * as assert from 'assert';
+
 import {
   BASE_PATH,
   HEADER_NAME,
@@ -30,6 +33,7 @@ import {
   assertK8sResource,
   assertContainerResource,
   assertEmptyResource,
+  runTestFixture,
 } from '@opentelemetry/contrib-test-utils';
 
 const HEADERS = {
@@ -180,5 +184,67 @@ describe('gcpDetector', () => {
 
       assertEmptyResource(resource);
     });
+  });
+
+  describe('internal tracing', () => {
+    it('should not export traces related to GCP detection', async () => {
+      const gcpServer = http.createServer((req,res) => {
+        const responseMap: Record<string, string> = {
+          [INSTANCE_PATH]: '{}',
+          [INSTANCE_ID_PATH]: '4520031799277581759',
+          [PROJECT_ID_PATH]: 'my-project-id',
+          [ZONE_PATH]: 'project/zone/my-zone',
+          [CLUSTER_NAME_PATH]: 'my-cluster',
+          [HOSTNAME_PATH]: 'dev.my-project.local',
+        };
+        req.resume();
+        req.on('end', function () {
+          const body = responseMap[req.url!] || '';
+          res.writeHead(200, {...HEADERS, 'content-type': body === '{}' ? 'application/json' : 'text/plain'});
+          res.end(body);
+        });
+      });
+      const port = await new Promise(resolve => {
+        gcpServer.listen(0, '127.0.0.1', function () {
+          resolve((gcpServer.address() as any).port);
+        });
+      });
+
+      await runTestFixture({
+        cwd: __dirname,
+        argv: ['../fixtures/use-gcp-detector.js'],
+        env: {
+          // We setup `gcp-metadata` to request to our own server so we can mock
+          // responses even if the detector is in a different process. It also speeds up the
+          // test because leaving it undefined would try to request to a internal IP which I found
+          // the time to fail is variable
+          // Ref: https://github.com/googleapis/gcp-metadata/blob/d88841db90d7d390eefb0de02b736b41f6adddde/README.md#environment-variables
+          GCE_METADATA_HOST: `127.0.0.1:${port}`,
+        },
+        checkResult: (err, stdout, stderr) => {
+          assert.ifError(err);
+        },
+        checkCollector(collector) {
+          const httpScope = '@opentelemetry/instrumentation-http';
+          const spans = collector.sortedSpans;
+          const httpSpans = spans.filter(s => s.instrumentationScope.name === httpScope);
+          const gcpSpans = httpSpans.filter(s => {
+            return s.attributes.some(
+              a =>
+                a.key === 'http.url' &&
+                a.value.stringValue?.includes('/computeMetadata/v1/')
+            );
+          });
+
+          // SDK collects the 2 spans from the fixture
+          assert.strictEqual(httpSpans.length, 2);
+          // but no spans related to GCP detector
+          assert.strictEqual(gcpSpans.length, 0);
+        },
+      });
+
+      gcpServer.close();
+    }
+  ).timeout(10000);
   });
 });

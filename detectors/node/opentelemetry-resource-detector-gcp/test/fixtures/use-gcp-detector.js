@@ -1,5 +1,3 @@
-console.log(Date.now(), ',XXX: fixture start')
-
 const { createTestNodeSdk } = require ('@opentelemetry/contrib-test-utils');
 const { HttpInstrumentation } = require ('@opentelemetry/instrumentation-http');
 const { gcpDetector } = require ('../../build/src/index.js');
@@ -60,12 +58,7 @@ server.listen(0, '127.0.0.1', async function () {
       clientReq.end();
   });
 
-  // flush any left spans, but this seems not to be enough
-  // trick to wait for async attribs
-  // await gcpDetector.detect().waitForAsyncAttributes();
-  await new Promise(resolve => setTimeout(resolve, 5000));
+  // flush any left spans
   await sdk.shutdown();
   await new Promise(resolve => server.close(resolve));
-
-  console.log(Date.now(), ',XXX: fixture end')
 });
