@@ -46,7 +46,6 @@ export function createTestNodeSdk(opts: {
   instrumentations: (Instrumentation | Instrumentation[])[];
   resourceDetectors: Array<Detector | DetectorSync>;
 }) {
-  console.log('endpoint is', process.env.OTEL_EXPORTER_OTLP_ENDPOINT);
   const spanProcessor = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
     ? undefined
     : new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter());

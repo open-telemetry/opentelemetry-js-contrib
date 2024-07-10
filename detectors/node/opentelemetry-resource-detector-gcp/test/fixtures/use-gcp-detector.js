@@ -1,6 +1,9 @@
+console.log(Date.now(), ',XXX: fixture start')
+
 const { createTestNodeSdk } = require ('@opentelemetry/contrib-test-utils');
 const { HttpInstrumentation } = require ('@opentelemetry/instrumentation-http');
 const { gcpDetector } = require ('../../build/src/index.js');
+
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-detector-gcp',
@@ -32,9 +35,10 @@ server.listen(0, '127.0.0.1', async function () {
   const port = server.address().port;
 
   // First request to show a client error.
+  const startTime = Date.now();
   await new Promise((resolve) => {
       const clientReq = http.request(
-          `http://127.0.0.1:${port}/`,
+          `http://127.0.0.1:${port}/ping`,
           function (cres) {
               console.log(
                   'client response: %s %s',
@@ -54,9 +58,14 @@ server.listen(0, '127.0.0.1', async function () {
       );
       clientReq.write('ping');
       clientReq.end();
-      console.log('client req created and ended');
   });
-  // flush any left spans
+
+  // flush any left spans, but this seems not to be enough
+  // trick to wait for async attribs
+  // await gcpDetector.detect().waitForAsyncAttributes();
+  await new Promise(resolve => setTimeout(resolve, 5000));
   await sdk.shutdown();
-  server.close();
+  await new Promise(resolve => server.close(resolve));
+
+  console.log(Date.now(), ',XXX: fixture end')
 });
