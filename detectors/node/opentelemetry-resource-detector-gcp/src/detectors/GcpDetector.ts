@@ -15,20 +15,14 @@
  */
 
 import * as gcpMetadata from 'gcp-metadata';
-import {
-  diag,
-  context,
-} from '@opentelemetry/api';
+import { diag, context } from '@opentelemetry/api';
 import {
   DetectorSync,
   ResourceDetectionConfig,
   Resource,
   ResourceAttributes,
 } from '@opentelemetry/resources';
-import {
-  getEnv, 
-  suppressTracing,
-} from '@opentelemetry/core';
+import { getEnv, suppressTracing } from '@opentelemetry/core';
 import {
   CLOUDPROVIDERVALUES_GCP,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
@@ -57,7 +51,7 @@ class GcpDetector implements DetectorSync {
    * @param config The resource detection config
    */
   detect(_config?: ResourceDetectionConfig): Resource {
-    return new Resource({}, this._getAttributes())
+    return new Resource({}, this._getAttributes());
   }
 
   /** Gets resource attributtes using `gcp-metadata` */
@@ -72,9 +66,8 @@ class GcpDetector implements DetectorSync {
     // The HTTP instrumetation sees the requests and starts spans for them. Internal tracing
     // info does not belong to the instrumented service and shouldn't be sent.
     // Ref: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2320
-    const [projectId, instanceId, zoneId, clusterName, hostname] = await context.with(
-      suppressTracing(context.active()),
-      () => {
+    const [projectId, instanceId, zoneId, clusterName, hostname] =
+      await context.with(suppressTracing(context.active()), () => {
         return Promise.all([
           this._getProjectId(),
           this._getInstanceId(),
@@ -82,9 +75,8 @@ class GcpDetector implements DetectorSync {
           this._getClusterName(),
           this._getHostname(),
         ]);
-      }
-    )
-    
+      });
+
     const attributes: ResourceAttributes = {};
     attributes[SEMRESATTRS_CLOUD_ACCOUNT_ID] = projectId;
     attributes[SEMRESATTRS_HOST_ID] = instanceId;

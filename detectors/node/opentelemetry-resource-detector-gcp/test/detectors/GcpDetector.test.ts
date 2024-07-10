@@ -189,7 +189,7 @@ describe('gcpDetector', () => {
   describe('internal tracing', () => {
     it('should not export traces related to GCP detection', async () => {
       // Mock server for `gcp-metadata`
-      const gcpServer = http.createServer((req,res) => {
+      const gcpServer = http.createServer((req, res) => {
         const responseMap: Record<string, string> = {
           [INSTANCE_PATH]: '{}',
           [INSTANCE_ID_PATH]: '4520031799277581759',
@@ -201,7 +201,10 @@ describe('gcpDetector', () => {
         req.resume();
         req.on('end', function () {
           const body = responseMap[req.url!] || '';
-          res.writeHead(200, {...HEADERS, 'content-type': body === '{}' ? 'application/json' : 'text/plain'});
+          res.writeHead(200, {
+            ...HEADERS,
+            'content-type': body === '{}' ? 'application/json' : 'text/plain',
+          });
           res.end(body);
         });
       });
@@ -228,7 +231,9 @@ describe('gcpDetector', () => {
         checkCollector(collector) {
           const httpScope = '@opentelemetry/instrumentation-http';
           const spans = collector.sortedSpans;
-          const httpSpans = spans.filter(s => s.instrumentationScope.name === httpScope);
+          const httpSpans = spans.filter(
+            s => s.instrumentationScope.name === httpScope
+          );
           const gcpSpans = httpSpans.filter(s => {
             return s.attributes.some(
               a =>
@@ -245,7 +250,6 @@ describe('gcpDetector', () => {
       });
 
       gcpServer.close();
-    }
-  );
+    });
   });
 });
