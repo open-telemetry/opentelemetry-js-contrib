@@ -114,6 +114,22 @@ describe('utils', () => {
       }
     });
 
+    it('will disable all instrumentations if both OTEL_NODE_ENABLED_INSTRUMENTATIONS and OTEL_NODE_DISABLED_INSTRUMENTATIONS are set', () => {
+      process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS = 'fs';
+      process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS = 'fs';
+      try {
+        const instrumentations = getNodeAutoInstrumentations();
+
+        assert.deepStrictEqual(
+          new Set(instrumentations.map(i => i.instrumentationName)),
+          new Set()
+        );
+      } finally {
+        delete process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS;
+        delete process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
+      }
+    });
+
     it('should show error for none existing instrumentation', () => {
       const spy = sinon.stub(diag, 'error');
       const name = '@opentelemetry/instrumentation-http2';
