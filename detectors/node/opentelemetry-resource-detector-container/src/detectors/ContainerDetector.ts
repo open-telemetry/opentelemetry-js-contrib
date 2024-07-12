@@ -36,7 +36,6 @@ export class ContainerDetector implements DetectorSync {
 
   private static readFileAsync = util.promisify(fs.readFile);
 
-  
   detect(_config?: ResourceDetectionConfig): IResource {
     return new Resource({}, this._getAttributes());
   }

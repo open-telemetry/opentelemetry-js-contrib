@@ -16,7 +16,7 @@
 
 import * as sinon from 'sinon';
 import * as assert from 'assert';
-import { Resource } from '@opentelemetry/resources';
+
 import { containerDetector } from '../src';
 import {
   assertContainerResource,
