@@ -71,7 +71,8 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => mockedClusterResponse);
 
-      const resource: Resource = await awsEksDetector.detect();
+      const resource = awsEksDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       scope.done();
 
@@ -108,7 +109,8 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => mockedClusterResponse);
 
-      const resource: Resource = await awsEksDetector.detect();
+      const resource = awsEksDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       scope.done();
 
@@ -137,7 +139,8 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => '');
 
-      const resource: Resource = await awsEksDetector.detect();
+      const resource = awsEksDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       scope.done();
 
@@ -167,7 +170,8 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => mockedClusterResponse);
 
-      const resource: Resource = await awsEksDetector.detect();
+      const resource = awsEksDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       scope.done();
 
@@ -194,7 +198,8 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => '');
 
-      const resource: Resource = await awsEksDetector.detect();
+      const resource = awsEksDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       scope.done();
 
@@ -237,7 +242,8 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => '');
 
-      const resource: Resource = await awsEksDetector.detect();
+      const resource = awsEksDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       scope.isDone();
 
@@ -264,7 +270,9 @@ describe('awsEksDetector', () => {
         .delayConnection(2500)
         .reply(200, () => mockedAwsAuth);
 
-      const resource: Resource = await awsEksDetector.detect();
+      const resource = awsEksDetector.detect();
+      await resource.waitForAsyncAttributes?.();
+
       scope.done();
 
       assert.ok(resource);
@@ -287,7 +295,9 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(404, () => new Error());
 
-      const resource: Resource = await awsEksDetector.detect();
+      const resource = awsEksDetector.detect();
+      await resource.waitForAsyncAttributes?.();
+
       scope.done();
 
       assert.ok(resource);

@@ -15,8 +15,10 @@
  */
 
 import {
-  Detector,
+  DetectorSync,
+  IResource,
   Resource,
+  ResourceAttributes,
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
@@ -41,7 +43,7 @@ import { diag } from '@opentelemetry/api';
  * for more details about detecting information for Elastic Kubernetes plugins
  */
 
-export class AwsEksDetector implements Detector {
+export class AwsEksDetector implements DetectorSync {
   readonly K8S_SVC_URL = 'kubernetes.default.svc';
   readonly K8S_TOKEN_PATH =
     '/var/run/secrets/kubernetes.io/serviceaccount/token';
@@ -59,37 +61,40 @@ export class AwsEksDetector implements Detector {
   private static readFileAsync = util.promisify(fs.readFile);
   private static fileAccessAsync = util.promisify(fs.access);
 
+  detect(_config?: ResourceDetectionConfig): IResource {
+    return new Resource({}, this._getAttributes());
+  }
+
   /**
    * The AwsEksDetector can be used to detect if a process is running on Amazon
-   * Elastic Kubernetes and returns a promise containing a {@link Resource}
-   * populated with instance metadata. Returns a promise containing an
-   * empty {@link Resource} if the connection to kubernetes process
+   * Elastic Kubernetes and returns a promise containing a {@link ResourceAttributes}
+   * object with instance metadata. Returns a promise containing an
+   * empty {@link ResourceAttributes} if the connection to kubernetes process
    * or aws config maps fails
-   * @param config The resource detection config
    */
-  async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
+  private async _getAttributes(): Promise<ResourceAttributes> {
     try {
       await AwsEksDetector.fileAccessAsync(this.K8S_TOKEN_PATH);
       const k8scert = await AwsEksDetector.readFileAsync(this.K8S_CERT_PATH);
 
       if (!(await this._isEks(k8scert))) {
-        return Resource.empty();
+        return {};
       }
 
       const containerId = await this._getContainerId();
       const clusterName = await this._getClusterName(k8scert);
 
       return !containerId && !clusterName
-        ? Resource.empty()
-        : new Resource({
+        ? {}
+        : {
             [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
             [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_EKS,
             [SEMRESATTRS_K8S_CLUSTER_NAME]: clusterName || '',
             [SEMRESATTRS_CONTAINER_ID]: containerId || '',
-          });
+          };
     } catch (e) {
       diag.warn('Process is not running on K8S', e);
-      return Resource.empty();
+      return {};
     }
   }
 
