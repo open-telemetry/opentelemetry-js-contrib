@@ -235,7 +235,11 @@ function getDisabledInstrumentationsFromEnv() {
 export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
   const resourceDetectors = new Map<
     string,
-    Detector | DetectorSync | Detector[] | DetectorSync[] | Array<Detector | DetectorSync>
+    | Detector
+    | DetectorSync
+    | Detector[]
+    | DetectorSync[]
+    | Array<Detector | DetectorSync>
   >([
     [RESOURCE_DETECTOR_CONTAINER, containerDetector],
     [RESOURCE_DETECTOR_ENVIRONMENT, envDetectorSync],
