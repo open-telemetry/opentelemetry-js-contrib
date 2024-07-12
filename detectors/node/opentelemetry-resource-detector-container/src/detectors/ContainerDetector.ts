@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 import {
-  Detector,
+  DetectorSync,
+  IResource,
   Resource,
+  ResourceAttributes,
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 
@@ -25,7 +27,7 @@ import * as fs from 'fs';
 import * as util from 'util';
 import { diag } from '@opentelemetry/api';
 
-export class ContainerDetector implements Detector {
+export class ContainerDetector implements DetectorSync {
   readonly CONTAINER_ID_LENGTH = 64;
   readonly DEFAULT_CGROUP_V1_PATH = '/proc/self/cgroup';
   readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
@@ -34,20 +36,32 @@ export class ContainerDetector implements Detector {
 
   private static readFileAsync = util.promisify(fs.readFile);
 
-  async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
+  
+  detect(_config?: ResourceDetectionConfig): IResource {
+    return new Resource({}, this._getAttributes());
+  }
+
+  /**
+   * Attempts to obtain the container ID from the file system. If the
+   * file read is successful it returns a promise containing a {@link ResourceAttributes}
+   * object with the container ID. Returns a promise containing an
+   * empty {@link ResourceAttributes} if the paths do not exist or fail
+   * to read.
+   */
+  async _getAttributes(): Promise<ResourceAttributes> {
     try {
       const containerId = await this._getContainerId();
       return !containerId
-        ? Resource.empty()
-        : new Resource({
+        ? {}
+        : {
             [SEMRESATTRS_CONTAINER_ID]: containerId,
-          });
+          };
     } catch (e) {
       diag.info(
         'Container Detector did not identify running inside a supported container, no container attributes will be added to resource: ',
         e
       );
-      return Resource.empty();
+      return {};
     }
   }
 
