@@ -52,7 +52,8 @@ describe('BeanstalkResourceDetector', () => {
       .resolves(JSON.stringify(data));
     sinon.stub(JSON, 'parse').returns(data);
 
-    const resource = await awsBeanstalkDetector.detect();
+    const resource = awsBeanstalkDetector.detect();
+    await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(fileStub);
     sinon.assert.calledOnce(readStub);
@@ -74,7 +75,8 @@ describe('BeanstalkResourceDetector', () => {
       .resolves(JSON.stringify(noisyData));
     sinon.stub(JSON, 'parse').returns(noisyData);
 
-    const resource = await awsBeanstalkDetector.detect();
+    const resource = awsBeanstalkDetector.detect();
+    await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(fileStub);
     sinon.assert.calledOnce(readStub);
@@ -95,7 +97,8 @@ describe('BeanstalkResourceDetector', () => {
       .stub(AwsBeanstalkDetector, 'readFileAsync' as any)
       .rejects(err);
 
-    const resource = await awsBeanstalkDetector.detect();
+    const resource = awsBeanstalkDetector.detect();
+    await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(fileStub);
     sinon.assert.calledOnce(readStub);
@@ -111,7 +114,8 @@ describe('BeanstalkResourceDetector', () => {
       .stub(AwsBeanstalkDetector, 'readFileAsync' as any)
       .resolves(JSON.stringify(data));
 
-    const resource = await awsBeanstalkDetector.detect();
+    const resource = awsBeanstalkDetector.detect();
+    await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(fileStub);
     sinon.assert.notCalled(readStub);

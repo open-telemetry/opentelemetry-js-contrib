@@ -16,8 +16,10 @@
 
 import { diag } from '@opentelemetry/api';
 import {
-  Detector,
+  DetectorSync,
+  IResource,
   Resource,
+  ResourceAttributes,
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
@@ -47,7 +49,7 @@ const DEFAULT_BEANSTALK_CONF_PATH =
 const WIN_OS_BEANSTALK_CONF_PATH =
   'C:\\Program Files\\Amazon\\XRay\\environment.conf';
 
-export class AwsBeanstalkDetector implements Detector {
+export class AwsBeanstalkDetector implements DetectorSync {
   BEANSTALK_CONF_PATH: string;
   private static readFileAsync = util.promisify(fs.readFile);
   private static fileAccessAsync = util.promisify(fs.access);
@@ -60,7 +62,21 @@ export class AwsBeanstalkDetector implements Detector {
     }
   }
 
-  async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
+  detect(config?: ResourceDetectionConfig): IResource {
+    return new Resource({}, this._getAttributes());
+  }
+
+  /**
+   * Attempts to obtain AWS Beanstalk configuration from the file
+   * system. If file is accesible and read succesfully it returns
+   * a promise containing a {@link ResourceAttributes}
+   * object with instance metadata. Returns a promise containing an
+   * empty {@link ResourceAttributes} if the file is not accesible or
+   * fails in the reading process.
+   */
+  async _getAttributes(
+    _config?: ResourceDetectionConfig
+  ): Promise<ResourceAttributes> {
     try {
       await AwsBeanstalkDetector.fileAccessAsync(
         this.BEANSTALK_CONF_PATH,
@@ -73,17 +89,17 @@ export class AwsBeanstalkDetector implements Detector {
       );
       const parsedData = JSON.parse(rawData);
 
-      return new Resource({
+      return {
         [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
         [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_ELASTIC_BEANSTALK,
         [SEMRESATTRS_SERVICE_NAME]: CLOUDPLATFORMVALUES_AWS_ELASTIC_BEANSTALK,
         [SEMRESATTRS_SERVICE_NAMESPACE]: parsedData.environment_name,
         [SEMRESATTRS_SERVICE_VERSION]: parsedData.version_label,
         [SEMRESATTRS_SERVICE_INSTANCE_ID]: parsedData.deployment_id,
-      });
+      };
     } catch (e: any) {
       diag.debug(`AwsBeanstalkDetector failed: ${e.message}`);
-      return Resource.empty();
+      return {};
     }
   }
 }
