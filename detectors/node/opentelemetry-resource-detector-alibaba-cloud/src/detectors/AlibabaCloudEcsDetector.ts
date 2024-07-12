@@ -16,6 +16,7 @@
 
 import {
   DetectorSync,
+  IResource,
   Resource,
   ResourceAttributes,
   ResourceDetectionConfig,
@@ -58,7 +59,7 @@ class AlibabaCloudEcsDetector implements DetectorSync {
    *
    * @param config (unused) The resource detection config
    */
-  detect(_config?: ResourceDetectionConfig): Resource {
+  detect(_config?: ResourceDetectionConfig): IResource {
     return new Resource({}, this._getAttributes());
   }
 
