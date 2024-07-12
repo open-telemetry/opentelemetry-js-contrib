@@ -85,14 +85,14 @@ export class AwsEcsDetector implements DetectorSync {
         [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
         [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_ECS,
       }).merge(await AwsEcsDetector._getContainerIdAndHostnameResource());
-  
+
       const metadataUrl = getEnv().ECS_CONTAINER_METADATA_URI_V4;
       if (metadataUrl) {
         const [containerMetadata, taskMetadata] = await Promise.all([
           AwsEcsDetector._getUrlAsJson(metadataUrl),
           AwsEcsDetector._getUrlAsJson(`${metadataUrl}/task`),
         ]);
-  
+
         const metadatav4Resource = await AwsEcsDetector._getMetadataV4Resource(
           containerMetadata,
           taskMetadata
@@ -100,10 +100,10 @@ export class AwsEcsDetector implements DetectorSync {
         const logsResource = await AwsEcsDetector._getLogResource(
           containerMetadata
         );
-  
+
         resource = resource.merge(metadatav4Resource).merge(logsResource);
       }
-  
+
       return resource.attributes;
     } catch {
       return {};

@@ -420,7 +420,7 @@ describe('AwsEcsResourceDetector', () => {
       it('should return empty resource if when there is an error', async () => {
         const resource = awsEcsDetector.detect();
         await resource.waitForAsyncAttributes?.();
-        
+
         assert.deepStrictEqual(resource.attributes, {});
       });
     });
