@@ -51,7 +51,7 @@
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.1",
-    "glob": "^10.3.10",
+    "glob": "^11.0.0",
     "lerna": "6.6.2",
     "lerna-changelog": "2.2.0",
     "markdownlint-cli2": "0.13.0",
