@@ -165,7 +165,8 @@ describe('AwsEcsResourceDetector', () => {
       .stub(AwsEcsDetector, 'readFileAsync' as any)
       .resolves(noisyCgroupData);
 
-    const resource = await awsEcsDetector.detect();
+    const resource = awsEcsDetector.detect();
+    await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(readStub);
     assert.ok(resource);
@@ -183,7 +184,8 @@ describe('AwsEcsResourceDetector', () => {
       .stub(AwsEcsDetector, 'readFileAsync' as any)
       .resolves(multiValidCgroupData);
 
-    const resource = await awsEcsDetector.detect();
+    const resource = awsEcsDetector.detect();
+    await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(readStub);
     assert.ok(resource);
@@ -200,7 +202,8 @@ describe('AwsEcsResourceDetector', () => {
       .stub(AwsEcsDetector, 'readFileAsync' as any)
       .resolves(correctCgroupData);
 
-    const resource = await awsEcsDetector.detect();
+    const resource = awsEcsDetector.detect();
+    await resource.waitForAsyncAttributes?.();
 
     sinon.assert.notCalled(readStub);
     assert.ok(resource);
@@ -259,7 +262,8 @@ describe('AwsEcsResourceDetector', () => {
             .stub(AwsEcsDetector, 'readFileAsync' as any)
             .resolves(correctCgroupData);
 
-          const resource = await awsEcsDetector.detect();
+          const resource = awsEcsDetector.detect();
+          await resource.waitForAsyncAttributes?.();
 
           sinon.assert.calledOnce(readStub);
           assert.ok(resource);
@@ -276,7 +280,8 @@ describe('AwsEcsResourceDetector', () => {
             .stub(AwsEcsDetector, 'readFileAsync' as any)
             .rejects(errorMsg.fileNotFoundError);
 
-          const resource = await awsEcsDetector.detect();
+          const resource = awsEcsDetector.detect();
+          await resource.waitForAsyncAttributes?.();
 
           sinon.assert.calledOnce(readStub);
           assert.ok(resource);
@@ -292,7 +297,8 @@ describe('AwsEcsResourceDetector', () => {
             .stub(AwsEcsDetector, 'readFileAsync' as any)
             .resolves('');
 
-          const resource = await awsEcsDetector.detect();
+          const resource = awsEcsDetector.detect();
+          await resource.waitForAsyncAttributes?.();
 
           sinon.assert.calledOnce(readStub);
           assert.ok(resource);
@@ -308,7 +314,8 @@ describe('AwsEcsResourceDetector', () => {
             .stub(AwsEcsDetector, 'readFileAsync' as any)
             .resolves(correctCgroupData);
 
-          const resource = await awsEcsDetector.detect();
+          const resource = awsEcsDetector.detect();
+          await resource.waitForAsyncAttributes?.();
 
           sinon.assert.calledOnce(readStub);
           assert.ok(resource);
@@ -324,7 +331,8 @@ describe('AwsEcsResourceDetector', () => {
             .stub(AwsEcsDetector, 'readFileAsync' as any)
             .rejects(errorMsg.fileNotFoundError);
 
-          const resource = await awsEcsDetector.detect();
+          const resource = awsEcsDetector.detect();
+          await resource.waitForAsyncAttributes?.();
 
           sinon.assert.calledOnce(readStub);
           assert.ok(resource);
@@ -409,13 +417,11 @@ describe('AwsEcsResourceDetector', () => {
         sinon.stub(AwsEcsDetector, '_getUrlAsJson' as any).rejects(error);
       });
 
-      it('should reject with an error', async () => {
-        try {
-          await awsEcsDetector.detect();
-          throw new Error('Should not have reached here');
-        } catch (err) {
-          assert.strictEqual(err, error);
-        }
+      it('should return empty resource if when there is an error', async () => {
+        const resource = awsEcsDetector.detect();
+        await resource.waitForAsyncAttributes?.();
+        
+        assert.deepStrictEqual(resource.attributes, {});
       });
     });
   });

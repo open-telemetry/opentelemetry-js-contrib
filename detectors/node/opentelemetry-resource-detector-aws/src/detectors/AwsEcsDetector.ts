@@ -16,7 +16,8 @@
 
 import { diag } from '@opentelemetry/api';
 import {
-  Detector,
+  DetectorSync,
+  IResource,
   Resource,
   ResourceAttributes,
 } from '@opentelemetry/resources';
@@ -62,43 +63,51 @@ interface AwsLogOptions {
  * ECS and return a {@link Resource} populated with data about the ECS
  * plugins of AWS X-Ray. Returns an empty Resource if detection fails.
  */
-export class AwsEcsDetector implements Detector {
+export class AwsEcsDetector implements DetectorSync {
   static readonly CONTAINER_ID_LENGTH = 64;
   static readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
 
   private static readFileAsync = util.promisify(fs.readFile);
 
-  async detect(): Promise<Resource> {
+  detect(): IResource {
+    return new Resource({}, this._getAttributes());
+  }
+
+  private async _getAttributes(): Promise<ResourceAttributes> {
     const env = getEnv();
     if (!env.ECS_CONTAINER_METADATA_URI_V4 && !env.ECS_CONTAINER_METADATA_URI) {
       diag.debug('AwsEcsDetector failed: Process is not on ECS');
-      return Resource.empty();
+      return {};
     }
 
-    let resource = new Resource({
-      [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
-      [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_ECS,
-    }).merge(await AwsEcsDetector._getContainerIdAndHostnameResource());
-
-    const metadataUrl = getEnv().ECS_CONTAINER_METADATA_URI_V4;
-    if (metadataUrl) {
-      const [containerMetadata, taskMetadata] = await Promise.all([
-        AwsEcsDetector._getUrlAsJson(metadataUrl),
-        AwsEcsDetector._getUrlAsJson(`${metadataUrl}/task`),
-      ]);
-
-      const metadatav4Resource = await AwsEcsDetector._getMetadataV4Resource(
-        containerMetadata,
-        taskMetadata
-      );
-      const logsResource = await AwsEcsDetector._getLogResource(
-        containerMetadata
-      );
-
-      resource = resource.merge(metadatav4Resource).merge(logsResource);
+    try {
+      let resource = new Resource({
+        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
+        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_ECS,
+      }).merge(await AwsEcsDetector._getContainerIdAndHostnameResource());
+  
+      const metadataUrl = getEnv().ECS_CONTAINER_METADATA_URI_V4;
+      if (metadataUrl) {
+        const [containerMetadata, taskMetadata] = await Promise.all([
+          AwsEcsDetector._getUrlAsJson(metadataUrl),
+          AwsEcsDetector._getUrlAsJson(`${metadataUrl}/task`),
+        ]);
+  
+        const metadatav4Resource = await AwsEcsDetector._getMetadataV4Resource(
+          containerMetadata,
+          taskMetadata
+        );
+        const logsResource = await AwsEcsDetector._getLogResource(
+          containerMetadata
+        );
+  
+        resource = resource.merge(metadatav4Resource).merge(logsResource);
+      }
+  
+      return resource.attributes;
+    } catch {
+      return {};
     }
-
-    return resource;
   }
 
   /**
