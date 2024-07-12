@@ -64,6 +64,7 @@ describe('alibabaCloudEcsDetector', () => {
         .reply(200, () => mockedHostResponse);
 
       const resource: Resource = await alibabaCloudEcsDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       scope.done();
 
@@ -84,8 +85,7 @@ describe('alibabaCloudEcsDetector', () => {
   });
 
   describe('with unsuccessful request', () => {
-    it('should throw when receiving error response code', async () => {
-      const expectedError = new Error('Failed to load page, status code: 404');
+    it('should return empty resource when receiving error response code', async () => {
       const scope = nock(ALIYUN_HOST)
         .persist()
         .get(ALIYUN_IDENTITY_PATH)
@@ -93,18 +93,15 @@ describe('alibabaCloudEcsDetector', () => {
         .get(ALIYUN_HOST_PATH)
         .reply(404, () => new Error());
 
-      try {
-        await alibabaCloudEcsDetector.detect();
-        assert.ok(false, 'Expected to throw');
-      } catch (err) {
-        assert.deepStrictEqual(err, expectedError);
-      }
+      const resource = await alibabaCloudEcsDetector.detect();
+      await resource.waitForAsyncAttributes?.();
+
+      assert.deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });
 
-    it('should throw when timed out', async () => {
-      const expectedError = new Error('ECS metadata api request timed out.');
+    it('should return empty resource when timed out', async () => {
       const scope = nock(ALIYUN_HOST)
         .get(ALIYUN_IDENTITY_PATH)
         .reply(200, () => mockedIdentityResponse)
@@ -112,28 +109,23 @@ describe('alibabaCloudEcsDetector', () => {
         .delayConnection(2000)
         .reply(200, () => mockedHostResponse);
 
-      try {
-        await alibabaCloudEcsDetector.detect();
-        assert.ok(false, 'Expected to throw');
-      } catch (err) {
-        assert.deepStrictEqual(err, expectedError);
-      }
+      const resource = await alibabaCloudEcsDetector.detect();
+      await resource.waitForAsyncAttributes?.();
+
+      assert.deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });
 
-    it('should throw when replied with an Error', async () => {
-      const expectedError = new Error('NOT FOUND');
+    it('should return empty resource when replied with an Error', async () => {
       const scope = nock(ALIYUN_HOST)
         .get(ALIYUN_IDENTITY_PATH)
-        .replyWithError(expectedError.message);
+        .replyWithError('NOT FOUND');
 
-      try {
-        await alibabaCloudEcsDetector.detect();
-        assert.ok(false, 'Expected to throw');
-      } catch (err) {
-        assert.deepStrictEqual(err, expectedError);
-      }
+      const resource = await alibabaCloudEcsDetector.detect();
+      await resource.waitForAsyncAttributes?.();
+
+      assert.deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });
