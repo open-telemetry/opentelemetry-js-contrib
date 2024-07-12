@@ -15,8 +15,10 @@
  */
 
 import {
-  Detector,
+  DetectorSync,
+  IResource,
   Resource,
+  ResourceAttributes,
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
@@ -38,7 +40,7 @@ import * as http from 'http';
  * and return a {@link Resource} populated with metadata about the EC2
  * instance. Returns an empty Resource if detection fails.
  */
-class AwsEc2Detector implements Detector {
+class AwsEc2Detector implements DetectorSync {
   /**
    * See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-identity-documents.html
    * for documentation about the AWS instance identity document
@@ -53,31 +55,38 @@ class AwsEc2Detector implements Detector {
   readonly AWS_METADATA_TOKEN_HEADER = 'X-aws-ec2-metadata-token';
   readonly MILLISECOND_TIME_OUT = 5000;
 
+  detect(_config?: ResourceDetectionConfig): IResource {
+    return new Resource({}, this._getAttributes());
+  }
+
   /**
    * Attempts to connect and obtain an AWS instance Identity document. If the
-   * connection is successful it returns a promise containing a {@link Resource}
-   * populated with instance metadata. Returns a promise containing an
-   * empty {@link Resource} if the connection or parsing of the identity
+   * connection is successful it returns a promise containing a {@link ResourceAttributes}
+   * object with instance metadata. Returns a promise containing an
+   * empty {@link ResourceAttributes} if the connection or parsing of the identity
    * document fails.
-   *
-   * @param config (unused) The resource detection config
    */
-  async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
-    const token = await this._fetchToken();
-    const { accountId, instanceId, instanceType, region, availabilityZone } =
-      await this._fetchIdentity(token);
-    const hostname = await this._fetchHost(token);
+  async _getAttributes(): Promise<ResourceAttributes> {
+    try {
+      const token = await this._fetchToken();
+      const { accountId, instanceId, instanceType, region, availabilityZone } =
+        await this._fetchIdentity(token);
+      const hostname = await this._fetchHost(token);
 
-    return new Resource({
-      [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
-      [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_EC2,
-      [SEMRESATTRS_CLOUD_ACCOUNT_ID]: accountId,
-      [SEMRESATTRS_CLOUD_REGION]: region,
-      [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
-      [SEMRESATTRS_HOST_ID]: instanceId,
-      [SEMRESATTRS_HOST_TYPE]: instanceType,
-      [SEMRESATTRS_HOST_NAME]: hostname,
-    });
+      return {
+        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
+        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_EC2,
+        [SEMRESATTRS_CLOUD_ACCOUNT_ID]: accountId,
+        [SEMRESATTRS_CLOUD_REGION]: region,
+        [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
+        [SEMRESATTRS_HOST_ID]: instanceId,
+        [SEMRESATTRS_HOST_TYPE]: instanceType,
+        [SEMRESATTRS_HOST_NAME]: hostname,
+      };
+    } catch {
+      return {};
+    }
+    
   }
 
   private async _fetchToken(): Promise<string> {
