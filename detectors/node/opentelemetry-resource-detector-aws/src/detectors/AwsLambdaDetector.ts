@@ -15,7 +15,7 @@
  */
 
 import {
-  Detector,
+  DetectorSync,
   Resource,
   ResourceAttributes,
   ResourceDetectionConfig,
@@ -35,8 +35,8 @@ import {
  * and return a {@link Resource} populated with data about the environment.
  * Returns an empty Resource if detection fails.
  */
-export class AwsLambdaDetector implements Detector {
-  async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
+export class AwsLambdaDetector implements DetectorSync {
+  detect(_config?: ResourceDetectionConfig): Resource {
     const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME;
     if (!functionName) {
       return Resource.empty();
