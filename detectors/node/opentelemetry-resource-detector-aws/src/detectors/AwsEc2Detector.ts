@@ -86,7 +86,6 @@ class AwsEc2Detector implements DetectorSync {
     } catch {
       return {};
     }
-    
   }
 
   private async _fetchToken(): Promise<string> {
