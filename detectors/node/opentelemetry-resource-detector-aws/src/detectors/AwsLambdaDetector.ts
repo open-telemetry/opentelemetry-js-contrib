@@ -16,6 +16,7 @@
 
 import {
   DetectorSync,
+  IResource,
   Resource,
   ResourceAttributes,
   ResourceDetectionConfig,
@@ -36,7 +37,7 @@ import {
  * Returns an empty Resource if detection fails.
  */
 export class AwsLambdaDetector implements DetectorSync {
-  detect(_config?: ResourceDetectionConfig): Resource {
+  detect(_config?: ResourceDetectionConfig): IResource {
     const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME;
     if (!functionName) {
       return Resource.empty();
