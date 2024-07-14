@@ -308,7 +308,11 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
       // some properties holding metadata and state so we need to proxy them
       // through through patched function
       // ref: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1950
-      Object.keys(original).forEach(key => {
+      // Also some apps/libs do their own patching before OTEL and have these properties
+      // in the proptotype. So we use a `for...in` loop to get own properties and also
+      // any enumerable prop in the prototype chain
+      // ref: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2271
+      for (const key in original) {
         Object.defineProperty(patched, key, {
           get() {
             return original[key];
@@ -317,8 +321,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
             original[key] = value;
           },
         });
-      });
-
+      }
       return patched;
     });
   }
