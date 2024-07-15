@@ -16,7 +16,6 @@
 
 import * as nock from 'nock';
 import * as assert from 'assert';
-import { Resource } from '@opentelemetry/resources';
 import { instanaAgentDetector } from '../src';
 
 describe('[UNIT] instanaAgentDetector', () => {
@@ -110,7 +109,6 @@ describe('[UNIT] instanaAgentDetector', () => {
       process.env.INSTANA_AGENT_PORT = '56002';
       process.env.INSTANA_AGENT_HOST = 'instanaagent';
       process.env.INSTANA_AGENT_TIMEOUT_MS = '200';
-      const expectedError = new Error('Instana Agent request timed out.');
 
       nock(
         `http://${process.env.INSTANA_AGENT_HOST}:${process.env.INSTANA_AGENT_PORT}`
