@@ -15,7 +15,7 @@
  */
 
 // Usage:
-//    node use-gcp-detector.js
+//    node use-alibaba-cloud-ecs-detector.js
 
 const { createTestNodeSdk } = require('@opentelemetry/contrib-test-utils');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
