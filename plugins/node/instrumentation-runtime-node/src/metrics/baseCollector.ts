@@ -15,16 +15,13 @@
  */
 import { MetricCollector } from '../types/metricCollector';
 import { Meter } from '@opentelemetry/api';
-import { clearInterval } from 'node:timers';
 import { RuntimeNodeInstrumentationConfig } from '../types';
 
 
-export abstract class BaseCollector<T> implements MetricCollector {
+export abstract class BaseCollector implements MetricCollector {
   protected _config: RuntimeNodeInstrumentationConfig = {};
 
   protected namePrefix: string;
-  private _interval: NodeJS.Timeout | undefined;
-  protected _scrapeQueue: T[] = [];
 
   protected constructor(
     config: RuntimeNodeInstrumentationConfig = {},
@@ -35,43 +32,19 @@ export abstract class BaseCollector<T> implements MetricCollector {
   }
 
   public disable(): void {
-    this._clearQueue();
-    clearInterval(this._interval);
-    this._interval = undefined;
-
+    this._config.enabled = false;
     this.internalDisable();
   }
 
   public enable(): void {
-    this._clearQueue();
-    clearInterval(this._interval);
-    this._interval = setInterval(
-      () => this._addTask(),
-      this._config.monitoringPrecision
-    );
-
-    // unref so that it does not keep the process running if disable() is never called
-    this._interval?.unref();
-
+    this._config.enabled = true;
     this.internalEnable();
   }
 
-  private _clearQueue() {
-    this._scrapeQueue.length = 0;
-  }
-
-  private _addTask() {
-    const taskResult = this.scrape();
-    if (taskResult) {
-      this._scrapeQueue.push(taskResult);
-    }
-  }
 
   public abstract updateMetricInstruments(meter: Meter): void;
 
   protected abstract internalEnable(): void;
 
   protected abstract internalDisable(): void;
-
-  protected abstract scrape(): T;
 }

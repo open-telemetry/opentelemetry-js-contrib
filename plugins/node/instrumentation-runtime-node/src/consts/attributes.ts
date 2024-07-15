@@ -13,6 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export const NODE_JS_VERSION_ATTRIBUTE = 'nodejsruntime.version';
 export const V8_HEAP_SIZE_NAME_ATTRIBUTE = 'heap.space.name';
-export const V8_HEAP_SIZE = 'heap.size';

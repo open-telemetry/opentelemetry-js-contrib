@@ -29,7 +29,7 @@ kinds[perf_hooks.constants.NODE_PERFORMANCE_GC_MINOR] = 'minor';
 kinds[perf_hooks.constants.NODE_PERFORMANCE_GC_INCREMENTAL] = 'incremental';
 kinds[perf_hooks.constants.NODE_PERFORMANCE_GC_WEAKCB] = 'weakcb';
 
-export class GCCollector extends BaseCollector<null> {
+export class GCCollector extends BaseCollector {
   private _gcDurationByKindHistogram?: Histogram;
   private _observer: PerformanceObserver;
 
@@ -39,6 +39,8 @@ export class GCCollector extends BaseCollector<null> {
   ) {
     super(config, namePrefix);
     this._observer = new perf_hooks.PerformanceObserver(list => {
+      if(!this._config.enabled) return
+
       const entry = list.getEntries()[0];
       // Node < 16 uses entry.kind
       // Node >= 16 uses entry.detail.kind
@@ -76,9 +78,5 @@ export class GCCollector extends BaseCollector<null> {
 
   internalDisable(): void {
     this._observer.disconnect();
-  }
-
-  protected scrape(): null {
-    return null;
   }
 }

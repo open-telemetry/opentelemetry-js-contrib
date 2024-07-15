@@ -82,26 +82,4 @@ describe('instrumentation', function () {
       'expected one scope (one meter created by instrumentation)'
     );
   });
-
-  it('should not record result when collecting immediately with custom config', async function () {
-    const instrumentation = new RuntimeNodeInstrumentation({
-      monitoringPrecision: MEASUREMENT_INTERVAL,
-    });
-    instrumentation.setMeterProvider(meterProvider);
-
-    assert.deepEqual(
-      (await metricReader.collect()).resourceMetrics.scopeMetrics,
-      []
-    );
-  });
-
-  it('should not record result when collecting immediately with default config', async function () {
-    const instrumentation = new RuntimeNodeInstrumentation();
-    instrumentation.setMeterProvider(meterProvider);
-
-    assert.deepEqual(
-      (await metricReader.collect()).resourceMetrics.scopeMetrics,
-      []
-    );
-  });
 });

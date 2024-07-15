@@ -43,9 +43,7 @@ export const metricNames: Record<V8HeapSpaceMetrics, { description: string }> =
     },
   };
 
-export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
-  HeapSpaceInfo[]
-> {
+export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
   constructor(
     config: RuntimeNodeInstrumentationConfig = {},
     namePrefix: string
@@ -86,9 +84,9 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
 
     meter.addBatchObservableCallback(
       observableResult => {
-        if (this._scrapeQueue.length === 0) return;
+        if(!this._config.enabled) return
 
-        const data = this._scrapeQueue.shift();
+        const data = this.scrape();
         if (data === undefined) return;
         for (const space of data) {
           const spaceName = space.space_name;

@@ -66,7 +66,7 @@ export interface EventLoopLagInformation {
   p99: number;
 }
 
-export class EventLoopDelayCollector extends BaseCollector<EventLoopLagInformation> {
+export class EventLoopDelayCollector extends BaseCollector {
   private _histogram: IntervalHistogram;
 
   constructor(
@@ -132,9 +132,9 @@ export class EventLoopDelayCollector extends BaseCollector<EventLoopLagInformati
 
     meter.addBatchObservableCallback(
       async observableResult => {
-        if (this._scrapeQueue.length === 0) return;
+        if(!this._config.enabled) return
 
-        const data = this._scrapeQueue.shift();
+        const data = this.scrape();
         if (data === undefined) return;
 
         observableResult.observe(delayMin, data.min);

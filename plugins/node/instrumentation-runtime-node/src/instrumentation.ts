@@ -21,7 +21,6 @@ import { MetricCollector } from './types/metricCollector';
 import { EventLoopUtilizationCollector } from './metrics/eventLoopUtilizationCollector';
 import { EventLoopDelayCollector } from './metrics/eventLoopDelayCollector';
 import { GCCollector } from './metrics/gcCollector';
-import { HeapSizeAndUsedCollector } from './metrics/heapSizeAndUsedCollector';
 import { HeapSpacesSizeAndUsedCollector } from './metrics/heapSpacesSizeAndUsedCollector';
 import { ConventionalNamePrefix } from './types/ConventionalNamePrefix';
 
@@ -48,10 +47,6 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase {
         ConventionalNamePrefix.NodeJs
       ),
       new GCCollector(this._config, ConventionalNamePrefix.V8js),
-      new HeapSizeAndUsedCollector(
-        this._config,
-        ConventionalNamePrefix.V8js
-      ),
       new HeapSpacesSizeAndUsedCollector(
         this._config,
         ConventionalNamePrefix.V8js

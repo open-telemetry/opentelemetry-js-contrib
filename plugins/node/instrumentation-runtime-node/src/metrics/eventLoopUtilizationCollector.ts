@@ -22,7 +22,7 @@ const { eventLoopUtilization: eventLoopUtilizationCollector } = performance;
 
 export const NODEJS_EVENT_LOOP_UTILIZATION = 'eventloop.utilization';
 
-export class EventLoopUtilizationCollector extends BaseCollector<EventLoopUtilization> {
+export class EventLoopUtilizationCollector extends BaseCollector {
   constructor(
     config: RuntimeNodeInstrumentationConfig = {},
     namePrefix: string
@@ -40,15 +40,16 @@ export class EventLoopUtilizationCollector extends BaseCollector<EventLoopUtiliz
         }
       )
       .addCallback(async observableResult => {
-        if (this._scrapeQueue.length === 0) {
-          return;
-        }
-        const elu = eventLoopUtilizationCollector(this._scrapeQueue.shift());
+        if(!this._config.enabled) return
+
+        const elu = eventLoopUtilizationCollector(this.scrape());
         observableResult.observe(elu.utilization);
       });
   }
 
-  protected internalDisable(): void {}
+  protected internalDisable(): void {
+
+  }
 
   protected internalEnable(): void {}
 
