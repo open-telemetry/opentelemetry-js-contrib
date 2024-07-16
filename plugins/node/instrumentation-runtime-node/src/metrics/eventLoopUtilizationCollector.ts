@@ -53,7 +53,7 @@ export class EventLoopUtilizationCollector extends BaseCollector {
 
   protected internalEnable(): void {}
 
-  protected scrape(): EventLoopUtilization {
+  private scrape(): EventLoopUtilization {
     return eventLoopUtilizationCollector();
   }
 }

@@ -25,7 +25,7 @@ import { HeapSpacesSizeAndUsedCollector } from './metrics/heapSpacesSizeAndUsedC
 import { ConventionalNamePrefix } from './types/ConventionalNamePrefix';
 
 const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
-  monitoringPrecision: 5000,
+  monitoringPrecision: 10,
 };
 
 export class RuntimeNodeInstrumentation extends InstrumentationBase {

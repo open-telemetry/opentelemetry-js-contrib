@@ -124,7 +124,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
 
   internalDisable(): void {}
 
-  protected scrape(): HeapSpaceInfo[] {
+  private scrape(): HeapSpaceInfo[] {
     return v8.getHeapSpaceStatistics();
   }
 }

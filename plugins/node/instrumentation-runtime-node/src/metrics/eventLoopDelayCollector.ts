@@ -167,7 +167,7 @@ export class EventLoopDelayCollector extends BaseCollector {
     this._histogram.disable();
   }
 
-  protected scrape(): EventLoopLagInformation {
+  private scrape(): EventLoopLagInformation {
     return {
       min: this.checkNan(this._histogram.min / 1e9),
       max: this.checkNan(this._histogram.max / 1e9),
