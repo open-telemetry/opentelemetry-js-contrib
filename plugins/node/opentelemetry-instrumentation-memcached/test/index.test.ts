@@ -30,14 +30,17 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import type * as Memcached from 'memcached';
 import * as assert from 'assert';
-import Instrumentation from '../src';
+import { MemcachedInstrumentation } from '../src';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_MEMCACHED,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_EXCEPTION_MESSAGE,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import * as util from 'util';
 
-const instrumentation = new Instrumentation();
+const instrumentation = new MemcachedInstrumentation();
 const memoryExporter = new InMemorySpanExporter();
 
 const CONFIG = {
@@ -48,9 +51,9 @@ const CONFIG = {
 };
 
 const DEFAULT_ATTRIBUTES: Attributes = {
-  [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MEMCACHED,
-  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
+  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MEMCACHED,
+  [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
+  [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
 };
 
 interface ExtendedMemcached extends Memcached {
@@ -178,7 +181,7 @@ describe('memcached@2.x', () => {
 
           assertMatch(
             instrumentationSpans?.[0]?.events[0]?.attributes?.[
-              SemanticAttributes.EXCEPTION_MESSAGE
+              SEMATTRS_EXCEPTION_MESSAGE
             ] as 'string',
             /not stored/
           );

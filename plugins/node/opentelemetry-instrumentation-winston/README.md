@@ -15,6 +15,12 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-winston
 ```
 
+### Supported Versions
+
+- [`winston`](https://www.npmjs.com/package/winston) versions `>=1.0.0 <4`
+
+Log sending: [`winston`](https://www.npmjs.com/package/winston) versions `>=3.0.0 <4`
+
 ## Usage
 
 ```js
@@ -79,14 +85,14 @@ npm install --save @opentelemetry/winston-transport
 ### Log correlation
 
 Winston logger calls in the context of a tracing span will have fields
-indentifying the span added to the log record. This allows
+identifying the span added to the log record. This allows
 [correlating](https://opentelemetry.io/docs/specs/otel/logs/#log-correlation)
 log records with tracing data. The added fields are
 ([spec](https://opentelemetry.io/docs/specs/otel/compatibility/logging_trace_context/)):
 
-* `trace_id`
-* `span_id`
-* `trace_flags`
+- `trace_id`
+- `span_id`
+- `trace_flags`
 
 After adding these fields, the optional `logHook` is called to allow injecting additional fields. For example:
 
@@ -98,19 +104,52 @@ logHook: (span, record) => {
 
 Log injection can be disabled with the `disableLogCorrelation: true` option.
 
-### Supported versions
+### Using OpenTelemetryTransportV3 without instrumentation
 
-`1.x`, `2.x`, `3.x`
+[@opentelemetry/winston-transport](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/winston-transport) package exports the Winston transport class that is used to send records to the
+OpenTelemetry Logs SDK. It can be used directly when configuring a Winston logger.
+For example:
 
-Log sending
+```js
+const logsAPI = require('@opentelemetry/api-logs');
+const {
+    LoggerProvider,
+    SimpleLogRecordProcessor,
+    ConsoleLogRecordExporter,
+} = require('@opentelemetry/sdk-logs');
+const { OpenTelemetryTransportV3 } = require('@opentelemetry/winston-transport');
+const winston = require('winston');
 
-`3.x`
+
+// To start a logger, you first need to initialize the Logger provider.
+const loggerProvider = new LoggerProvider();
+// Add a processor to export log record
+loggerProvider.addLogRecordProcessor(
+    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())
+);
+logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
+
+const logger = winston.createLogger({
+  level: 'info',
+  transports: [
+    new winston.transports.Console(),
+    new OpenTelemetryTransportV3()
+  ]
+});
+```
+
+> [!IMPORTANT]
+> Logs will be duplicated if `@opentelemetry/winston-transport` is added as a transport in `winston` and `@opentelemetry/instrumentation-winston` is configured with `disableLogSending: false`.
+
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
 
 ## Useful links
 
-* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 

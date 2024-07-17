@@ -9,15 +9,19 @@ This module provides automatic instrumentation for the [`AWS Lambda`](https://do
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
-This module is currently under active development and not ready for general use.
-
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
+This module is currently under active development and not ready for general use.
 
 ## Installation
 
 ```bash
 npm install --save @opentelemetry/instrumentation-aws-lambda
 ```
+
+## Supported Versions
+
+- This package will instrument the lambda execution regardless of versions.
 
 ## Usage
 
@@ -81,6 +85,18 @@ To better explain when `lambdaHandler` should be specified, consider how some te
 The `lambdaHandler` should be specified as a string in the format `<file>.<handler>`, where `<file>` is the name of the file that contains the handler and `<handler>` is the name of the handler function. For example, if the handler is defined in the file `index.js` and the handler function is named `handler`, the `lambdaHandler` should be specified as `index.handler`.
 
 One way to determine if the `lambdaHandler` option should be used is to check the handler defined on your Lambda. This can be done by determining the value of the `_HANDLER` environment variable or by viewing the **Runtime Settings** of your Lambda in AWS Console. If the handler is what you expect, then the instrumentation should work without the `lambdaHandler` option. If the handler points to something else, then the `lambdaHandler` option should be used to explicitly specify the handler that should be instrumented.
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute          | Short Description                                                         |
+| ------------------ | ------------------------------------------------------------------------- |
+| `cloud.account.id` | The cloud account ID the resource is assigned to.                         |
+| `faas.execution`   | The execution ID of the current function execution.                       |
+| `faas.id`          | The unique ID of the single function that this runtime instance executes. |
 
 ## Useful links
 

@@ -22,7 +22,7 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { BunyanInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { OpenTelemetryBunyanStream } from './OpenTelemetryBunyanStream';
 import type * as BunyanLogger from 'bunyan';
 import { SeverityNumber } from '@opentelemetry/api-logs';
@@ -32,24 +32,21 @@ const DEFAULT_CONFIG: BunyanInstrumentationConfig = {
   disableLogCorrelation: false,
 };
 
-export class BunyanInstrumentation extends InstrumentationBase<
-  typeof BunyanLogger
-> {
+export class BunyanInstrumentation extends InstrumentationBase {
   constructor(config: BunyanInstrumentationConfig = {}) {
     super(
-      '@opentelemetry/instrumentation-bunyan',
-      VERSION,
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof BunyanLogger>(
+      new InstrumentationNodeModuleDefinition(
         'bunyan',
-        ['<2.0'],
-        (module: any, moduleVersion) => {
-          this._diag.debug(`Applying patch for bunyan@${moduleVersion}`);
+        ['>=1.0.0 <2'],
+        (module: any) => {
           const instrumentation = this;
           const Logger =
             module[Symbol.toStringTag] === 'Module'
@@ -106,7 +103,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
     return this._config;
   }
 
-  override setConfig(config: BunyanInstrumentationConfig) {
+  override setConfig(config: BunyanInstrumentationConfig = {}) {
     this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 

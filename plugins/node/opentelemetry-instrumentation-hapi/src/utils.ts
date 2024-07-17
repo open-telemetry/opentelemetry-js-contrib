@@ -15,11 +15,15 @@
  */
 
 import { SpanAttributes } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_HTTP_METHOD,
+  SEMATTRS_HTTP_ROUTE,
+} from '@opentelemetry/semantic-conventions';
 import type * as Hapi from '@hapi/hapi';
 import {
   HapiLayerType,
   HapiLifecycleMethodNames,
+  HapiPluginObject,
   PatchableExtMethod,
   ServerExtDirectInput,
 } from './internal-types';
@@ -76,8 +80,8 @@ export const getRouteMetadata = (
   if (pluginName) {
     return {
       attributes: {
-        [SemanticAttributes.HTTP_ROUTE]: route.path,
-        [SemanticAttributes.HTTP_METHOD]: route.method,
+        [SEMATTRS_HTTP_ROUTE]: route.path,
+        [SEMATTRS_HTTP_METHOD]: route.method,
         [AttributeNames.HAPI_TYPE]: HapiLayerType.PLUGIN,
         [AttributeNames.PLUGIN_NAME]: pluginName,
       },
@@ -86,8 +90,8 @@ export const getRouteMetadata = (
   }
   return {
     attributes: {
-      [SemanticAttributes.HTTP_ROUTE]: route.path,
-      [SemanticAttributes.HTTP_METHOD]: route.method,
+      [SEMATTRS_HTTP_ROUTE]: route.path,
+      [SEMATTRS_HTTP_METHOD]: route.method,
       [AttributeNames.HAPI_TYPE]: HapiLayerType.ROUTER,
     },
     name: `route - ${route.path}`,
@@ -118,4 +122,16 @@ export const getExtMetadata = (
     },
     name: `ext - ${extPoint}`,
   };
+};
+
+export const getPluginFromInput = <T>(
+  pluginObj: HapiPluginObject<T>
+): Hapi.Plugin<T, void> => {
+  if ('plugin' in pluginObj) {
+    if ('plugin' in pluginObj.plugin) {
+      return pluginObj.plugin.plugin;
+    }
+    return pluginObj.plugin;
+  }
+  return pluginObj;
 };

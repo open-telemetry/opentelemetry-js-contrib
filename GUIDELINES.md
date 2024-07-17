@@ -115,7 +115,7 @@ To support this use case, you can choose one of the following options:
     ...
     ```
 
-    If possible, this is the prefered option, as it uses types from a maintained package.
+    If possible, this is the preferred option, as it uses types from a maintained package.
 
     Notice that types may introduce breaking changes in major semver releases, and instrumentation should choose a `@types/` package that is compatible with the version range it supports.
 
@@ -164,3 +164,138 @@ To support this use case, you can choose one of the following options:
     };
     ...
     ```
+
+## Diag Logging
+
+The OpenTelemetry diagnostic logging channel can be used to troubleshoot issues with instrumentation packages.
+
+### Patching Messages
+
+When OpenTelemetry is installed in a user application, and expected spans are missing from generated traces, it is often useful to differentiate between the following scenarios:
+
+- The instrumentation is not auto loaded - due to issue with the require/import interception, an unsupported version of the instrumented package, or some other issue. This knowledge can pin-point the issue to the instrumentation package.
+- The instrumentation patch was applied but expected spans are missing -- this can suggest an issue with instrumented package logic, configuration, limits, otel sdk, or other issues.
+
+It can also be useful to know when the instrumentation is loaded and patched, to understand the order of operations in the application.
+
+Instrumentation packages should use the `@opentelemetry/instrumentation` package `InstrumentationBase` class to register patches and unpatch callbacks for specific require/import of the instrumented package, it's dependency or an internal module file. When this mechanism is used, the base class will automatically emit a debug message on instrumentation diag component logger, looking like this:
+
+```shell
+@opentelemetry/instrumentation-foo Applying instrumentation patch for module on require hook {
+  module: 'foo',
+  version: '1.2.3',
+  baseDir: '<your directory>/node_modules/foo'
+}
+```
+
+Instrumentation should not add additional debug messages for triggering the patching and unpatching callbacks, as the base class will handle this.
+
+Instrumentation may add additional patch/unpatch messages for specific functions if it is expected to help in troubleshooting issues with the instrumentation. Few examples:
+
+- If the patch logic is conditional, and user can benefit from ensuring the condition is met and the patch happened. `koa` patching logic examine an object and branch between patching it as router vs middleware, which is applied at runtime. `aws-lambda` will abort patching if the environment is not configured properly.
+- When the patch is not applied directly on a `moduleExports` object in the `InstrumentationBase` callbacks, but rather from an event in the package, like creating new client instance, registering a listener, etc. `fastify` instrumentation applies a patch when a hook is added to the fastify app instance, which is patched from `moduleExports`.
+- In situations where the patch logic is not trivial and it helps to specify patch events in the right context and nuances. `aws-lambda` logs additional properties extracted from the lambda framework and exposes them for troubleshooting.
+
+The cases above are not covered by the base class and offer additional context to the user troubleshooting an issue with the instrumentation.
+
+## Supported Versions
+
+Supported versions can refer to 2 entities in the context of OpenTelemetry instrumentations:
+
+- `Instrumented Package` - This is the user-facing package/s that the end user has installed in his application and is familiar with.
+- `Patched Package` - These are the packages that are being patched in practice to achieve the instrumentation goals. It may be `Instrumented Package` itself or transitive internal dependencies of the `Instrumented Package`.
+
+### `Instrumented Package` Documentation
+
+Instrumentation should have a "## Supported Versions" section in the README file that lists the supported versions range of the instrumented package. This range should hide and consolidate any internal implementation details like the use of internal modules, different patch logic for different versions, etc. It should focus on the relevance to the human consumer.
+
+### `Patched Package`s Supported Versions
+
+The packages to patch are specified in the `InstrumentationNodeModuleDefinition` and `InstrumentationNodeModuleFile` classes. Instrumentation can specify arrays with different package names and version ranges to use to implement the instrumentation logic. example use:
+
+```js
+const supportedVersions = ['>=1.2.3 <3'];
+
+  protected init() {
+
+    const someModuleFile = new InstrumentationNodeModuleFile(
+      'foo/lib/some-file.js',
+      supportedVersions,
+      myFilePatch,
+      myFileUnpatch,
+    );
+
+    const module = new InstrumentationNodeModuleDefinition(
+      'foo',
+      supportedVersions,
+      myModulePatch,
+      myModuleUnpatch,
+      [someModuleFile]
+    );
+    return module
+  }
+```
+
+### Variations
+
+There can be few variations between the instrumented package and the patched package:
+
+- Single Module - instrumentation patches the same module that is instrumented.
+- Different Modules - instrumentation patches internal modules with different names and version ranges as of the instrumented package.
+- Node.js Core Modules - instrumentation patches a Node.js internal module.
+- Multiple Modules - instrumentation may instrument a set of (potentially large number of) user-facing instrumented packages.
+- Patch Logic - instrumentation may use the `moduleExports` to patch, or hooks up to other mechanisms for recording signals. examples are: Node.js diagnostics channel, patching globals (like `window` being patched in browser instrumentations, or patches arbitrary lambda function handlers, etc.
+
+### Range Specification
+
+For versions that are a closed range, instrumentations should prefer to specify the supported versions of the instrumented package as `>=x.y.z <w` to promote consistency and readability across the code-base.
+
+If an instrumentation supports just one major version of the instrumented package, it can specify the version range as `^x.y.z` or `^x`, which are equivalent but more readable.
+
+Instrumentation should use an upper and lower bounds for the version ranges it uses for patches. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior.
+
+New major versions should be reviewed and tested before being added to the supported versions list.
+
+Specific guidelines for different cases:
+
+- For `Different Modules`, instrumentations can use an upper limit on patched packages but it is unknown which future versions of the instrumented package will continue to use it. Thus it is ok to use an open upper limit, for example `>=1.2.3`, for the instrumented package.
+- For `Node.js Core Modules`, the supported versions range is set to `['*']` to advertise that the instrumentation is compatible with all versions of Node.js that OpenTelemetry supports.
+- For `Multiple Modules`, the supported versions range should be specified for each module in the README file with the supported versions.
+- For `Different Patch Logic`, the use of supported versions can sometimes be more flexible, and the README should specify useful versioning information.
+
+### Add New Supported Versions
+
+When a new major version of the instrumented package is released, renovate bot will open a PR in contrib which helps maintainers to become aware of it. The instrumentation maintainer should review the new version and check compatibility with existing code. It can then be added to the supported versions list to be released in the next version of the instrumentation.
+
+Checklist for adding a new version to the supported versions list:
+
+- [ ] Review which functions are patched by the instrumentation and if they were changed in the new version that need support in code.
+- [ ] Check for breaking changes in the new version that could affect the instrumentation.
+- [ ] Test the instrumentation with the new version to ensure it works as expected.
+- [ ] Update the supported versions list in the instrumentation code, perhaps with different patches and additional `InstrumentationNodeModuleDefinition`s that target the new version.
+- [ ] Update the README file to reflect the support for new versions.
+- [ ] For instrumentations that use test-all-versions `.tav.yml`, add the new version to the list of versions to test.
+
+## package.json
+
+### Description
+
+Instrumentation should include a `description` field in the `package.json` file. The description targets human readers and is an opportunity to communicate the use case for the instrumented package and its semconv namespace. It should help users know whether the package fits their application, which is especially helpful if the package has a shortened or obscure name.
+
+The description should be written with this format when applicable:
+
+```text
+"OpenTelemetry instrumentation for `<instrumented-package-name>` <package short description>"
+```
+
+For example:
+
+```text
+"OpenTelemetry instrumentation for `express` http framework"
+"OpenTelemetry instrumentation for `winston` logger"
+"OpenTelemetry instrumentation for `redis` database client for Redis"
+```
+
+If the package is consumed directly, the description should state the package name in `<instrumented-package-name>`. Tools like `nestjs` and `aws-lambda` are examples of packages that are consumed indirectly.
+
+A short description should follow the package name, like "http framework", "logger", "database client for X", "messaging client", etc as appropriate in each case. It is preferable to use the semconv namespace semantics that are emitted by this instrumentation (`http`, `database`, `messaging`, `rpc`, `net`) to give quick context for the scope of the instrumentation.

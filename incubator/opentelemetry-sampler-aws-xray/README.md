@@ -19,10 +19,7 @@ const { AWSXRayPropagator } = require("@opentelemetry/propagator-aws-xray");
 const { AWSXRayIdGenerator } = require("@opentelemetry/id-generator-aws-xray");
 
 
-// Initialize resource, trace exporter, span processor, and ID generator
-const _resource = Resource.default().merge(new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: "remote-sampler-app",
-    }));
+// Initialize trace exporter, span processor, and ID generator
 const _traceExporter = new OTLPTraceExporter();
 const _spanProcessor = new BatchSpanProcessor(_traceExporter);
 const _tracerConfig = {
@@ -32,25 +29,29 @@ const _tracerConfig = {
 }
 
 const sdk = new opentelemetry.NodeSDK({
-        textMapPropagator: new AWSXRayPropagator(),
-        instrumentations: [
-            new HttpInstrumentation(),
-            new AwsInstrumentation({
-                suppressInternalInstrumentation: true
-            }),
-        ],
-        resource: _resource,
-        spanProcessor: _spanProcessor,
-        traceExporter: _traceExporter,
-    });
+    serviceName: "remote-sampler-app",
+    textMapPropagator: new AWSXRayPropagator(),
+    instrumentations: [
+        new HttpInstrumentation(),
+        new AwsInstrumentation({
+            suppressInternalInstrumentation: true
+        }),
+    ],
+    spanProcessor: _spanProcessor,
+    traceExporter: _traceExporter,
+});
 
-    sdk.configureTracerProvider(_tracerConfig, _spanProcessor);
+sdk.configureTracerProvider(_tracerConfig, _spanProcessor);
 
 ```
 
 For more details on setting up the global tracer provider to send traces to AWS X-Ray, refer to [this documentation](https://aws-otel.github.io/docs/getting-started/js-sdk/trace-manual-instr#setting-up-the-global-tracer).
 
 Please note that AWS Lambda does not support X-Ray remote sampling.
+
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
 
 ## Useful links
 

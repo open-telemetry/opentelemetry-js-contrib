@@ -22,8 +22,8 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 
-import Instrumentation from '../src';
-const plugin = new Instrumentation();
+import { GenericPoolInstrumentation } from '../src';
+const plugin = new GenericPoolInstrumentation();
 
 import * as util from 'util';
 import * as genericPool from 'generic-pool';

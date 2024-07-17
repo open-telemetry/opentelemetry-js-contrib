@@ -15,7 +15,6 @@
  */
 import {
   context,
-  diag,
   trace,
   Span,
   SpanKind,
@@ -45,13 +44,14 @@ import {
   ServerSession,
   MongodbCommandType,
   MongoInternalCommand,
+  MongodbNamespace,
   MongoInternalTopology,
   WireProtocolInternal,
   V4Connection,
   V4ConnectionPool,
 } from './internal-types';
 import { V4Connect, V4Session } from './internal-types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
@@ -59,8 +59,10 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _connectionsUsage!: UpDownCounter;
   private _poolName!: string;
 
-  constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
+  protected override _config!: MongoDBInstrumentationConfig;
+
+  constructor(config: MongoDBInstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   override _updateMetricInstruments() {
@@ -91,53 +93,53 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const { v4PatchSessions, v4UnpatchSessions } = this._getV4SessionsPatches();
 
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'mongodb',
-        ['>=3.3 <4'],
+        ['>=3.3.0 <4'],
         undefined,
         undefined,
         [
-          new InstrumentationNodeModuleFile<WireProtocolInternal>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/core/wireprotocol/index.js',
-            ['>=3.3 <4'],
+            ['>=3.3.0 <4'],
             v3PatchConnection,
             v3UnpatchConnection
           ),
         ]
       ),
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'mongodb',
-        ['4.*', '5.*', '6.*'],
+        ['>=4.0.0 <7'],
         undefined,
         undefined,
         [
-          new InstrumentationNodeModuleFile<V4Connection>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection.js',
-            ['4.*', '5.*', '>=6 <6.4'],
+            ['>=4.0.0 <6.4'],
             v4PatchConnectionCallback,
             v4UnpatchConnection
           ),
-          new InstrumentationNodeModuleFile<V4Connection>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection.js',
-            ['>=6.4'],
+            ['>=6.4.0 <7'],
             v4PatchConnectionPromise,
             v4UnpatchConnection
           ),
-          new InstrumentationNodeModuleFile<V4ConnectionPool>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection_pool.js',
-            ['4.*', '5.*', '>=6 <6.4'],
+            ['>=4.0.0 <6.4'],
             v4PatchConnectionPool,
             v4UnpatchConnectionPool
           ),
-          new InstrumentationNodeModuleFile<V4Connect>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connect.js',
-            ['4.*', '5.*', '6.*'],
+            ['>=4.0.0 <7'],
             v4PatchConnect,
             v4UnpatchConnect
           ),
-          new InstrumentationNodeModuleFile<V4Session>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/sessions.js',
-            ['4.*', '5.*', '6.*'],
+            ['>=4.0.0 <7'],
             v4PatchSessions,
             v4UnpatchSessions
           ),
@@ -148,8 +150,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   private _getV3ConnectionPatches<T extends WireProtocolInternal>() {
     return {
-      v3PatchConnection: (moduleExports: T, moduleVersion?: string) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+      v3PatchConnection: (moduleExports: T) => {
         // patch insert operation
         if (isWrapped(moduleExports.insert)) {
           this._unwrap(moduleExports, 'insert');
@@ -194,9 +195,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         this._wrap(moduleExports, 'getMore', this._getV3PatchCursor());
         return moduleExports;
       },
-      v3UnpatchConnection: (moduleExports?: T, moduleVersion?: string) => {
+      v3UnpatchConnection: (moduleExports?: T) => {
         if (moduleExports === undefined) return;
-        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         this._unwrap(moduleExports, 'insert');
         this._unwrap(moduleExports, 'remove');
         this._unwrap(moduleExports, 'update');
@@ -209,8 +209,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   private _getV4SessionsPatches<T extends V4Session>() {
     return {
-      v4PatchSessions: (moduleExports: any, moduleVersion?: string) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+      v4PatchSessions: (moduleExports: any) => {
         if (isWrapped(moduleExports.acquire)) {
           this._unwrap(moduleExports, 'acquire');
         }
@@ -230,8 +229,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      v4UnpatchSessions: (moduleExports?: T, moduleVersion?: string) => {
-        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
+      v4UnpatchSessions: (moduleExports?: T) => {
         if (moduleExports === undefined) return;
         if (isWrapped(moduleExports.acquire)) {
           this._unwrap(moduleExports, 'acquire');
@@ -294,8 +292,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   private _getV4ConnectionPoolPatches<T extends V4ConnectionPool>() {
     return {
-      v4PatchConnectionPool: (moduleExports: any, moduleVersion?: string) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+      v4PatchConnectionPool: (moduleExports: any) => {
         const poolPrototype = moduleExports.ConnectionPool.prototype;
 
         if (isWrapped(poolPrototype.checkOut)) {
@@ -309,11 +306,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      v4UnpatchConnectionPool: (
-        moduleExports?: any,
-        moduleVersion?: string
-      ) => {
-        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
+      v4UnpatchConnectionPool: (moduleExports?: any) => {
         if (moduleExports === undefined) return;
 
         this._unwrap(moduleExports.ConnectionPool.prototype, 'checkOut');
@@ -323,8 +316,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   private _getV4ConnectPatches<T extends V4Connect>() {
     return {
-      v4PatchConnect: (moduleExports: any, moduleVersion?: string) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+      v4PatchConnect: (moduleExports: any) => {
         if (isWrapped(moduleExports.connect)) {
           this._unwrap(moduleExports, 'connect');
         }
@@ -332,8 +324,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         this._wrap(moduleExports, 'connect', this._getV4ConnectCommand());
         return moduleExports;
       },
-      v4UnpatchConnect: (moduleExports?: T, moduleVersion?: string) => {
-        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
+      v4UnpatchConnect: (moduleExports?: T) => {
         if (moduleExports === undefined) return;
 
         this._unwrap(moduleExports, 'connect');
@@ -402,11 +393,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private _getV4ConnectionPatches<T extends V4Connection>() {
     return {
-      v4PatchConnectionCallback: (
-        moduleExports: any,
-        moduleVersion?: string
-      ) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+      v4PatchConnectionCallback: (moduleExports: any) => {
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
           this._unwrap(moduleExports.Connection.prototype, 'command');
@@ -419,11 +406,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      v4PatchConnectionPromise: (
-        moduleExports: any,
-        moduleVersion?: string
-      ) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+      v4PatchConnectionPromise: (moduleExports: any) => {
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
           this._unwrap(moduleExports.Connection.prototype, 'command');
@@ -436,9 +419,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      v4UnpatchConnection: (moduleExports?: any, moduleVersion?: string) => {
+      v4UnpatchConnection: (moduleExports?: any) => {
         if (moduleExports === undefined) return;
-        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         this._unwrap(moduleExports.Connection.prototype, 'command');
       },
     };
@@ -548,7 +530,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     return (original: V4Connection['commandCallback']) => {
       return function patchedV4ServerCommand(
         this: any,
-        ns: any,
+        ns: MongodbNamespace,
         cmd: any,
         options: undefined | unknown,
         callback: any
@@ -596,16 +578,15 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     return (original: V4Connection['commandPromise']) => {
       return function patchedV4ServerCommand(
         this: any,
-        ns: any,
-        cmd: any,
-        options: undefined | unknown
+        ...args: Parameters<V4Connection['commandPromise']>
       ) {
+        const [ns, cmd] = args;
         const currentSpan = trace.getSpan(context.active());
         const commandType = Object.keys(cmd)[0];
         const resultHandler = () => undefined;
 
         if (typeof cmd !== 'object' || cmd.ismaster || cmd.hello) {
-          return original.call(this, ns, cmd, options);
+          return original.apply(this, args);
         }
 
         let span = undefined;
@@ -629,7 +610,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           commandType
         );
 
-        const result = original.call(this, ns, cmd, options);
+        const result = original.apply(this, args);
         result.then(
           (res: any) => patchedCallback(null, res),
           (err: any) => patchedCallback(err)
@@ -794,6 +775,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       return MongodbCommandType.IS_MASTER;
     } else if (command.count !== undefined) {
       return MongodbCommandType.COUNT;
+    } else if (command.aggregate !== undefined) {
+      return MongodbCommandType.AGGREGATE;
     } else {
       return MongodbCommandType.UNKNOWN;
     }
@@ -809,7 +792,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _populateV4Attributes(
     span: Span,
     connectionCtx: any,
-    ns: any,
+    ns: MongodbNamespace,
     command?: any,
     operation?: string
   ) {
@@ -943,11 +926,26 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const enhancedDbReporting = !!this._config?.enhancedDatabaseReporting;
     const resultObj = enhancedDbReporting
       ? commandObj
-      : Object.keys(commandObj).reduce((obj, key) => {
-          obj[key] = '?';
-          return obj;
-        }, {} as { [key: string]: unknown });
+      : this._scrubStatement(commandObj);
     return JSON.stringify(resultObj);
+  }
+
+  private _scrubStatement(value: unknown): unknown {
+    if (Array.isArray(value)) {
+      return value.map(element => this._scrubStatement(element));
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, element]) => [
+          key,
+          this._scrubStatement(element),
+        ])
+      );
+    }
+
+    // A value like string or number, possible contains PII, scrub it
+    return '?';
   }
 
   /**

@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-bunyan
 
 ## Supported Versions
 
-- `bunyan@^1.0.0`
+- [`bunyan`](https://www.npmjs.com/package/bunyan) versions `>=1.0.0 <2`
 
 ## Usage
 
@@ -117,6 +117,10 @@ const logger = bunyan.createLogger({
   ],
 });
 ```
+
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
 
 ## Useful links
 
