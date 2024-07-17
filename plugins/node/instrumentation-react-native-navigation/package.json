@@ -1,0 +1,73 @@
+{
+  "name": "@opentelemetry/instrumentation-react-native-navigation",
+  "version": "0.39.0",
+  "description": "OpenTelemetry instrumentation for the `@react-navigation/native` views for React Native applications",
+  "keywords": [
+    "opentelemetry"
+  ],
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-react-native-navigation#readme",
+  "license": "Apache-2.0",
+  "author": "OpenTelemetry Authors",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
+  },
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "files": [
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "scripts": {
+    "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../../scripts/lint-readme.js",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-react-native-navigation --include-dependencies",
+    "prewatch": "npm run precompile",
+    "prepublishOnly": "npm run compile",
+    "test": "nyc mocha",
+    "test-all-versions": "tav",
+    "version:update": "node ../../../scripts/version-update.js",
+    "watch": "tsc -w",
+    "postinstall": "rm -rf ./node_modules/react"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.3.0",
+    "react-dom": "18.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.9",
+    "@babel/register": "^7.24.6",
+    "@opentelemetry/sdk-trace-base": "^1.25.1",
+    "@react-navigation/native": "^6.1.18",
+    "@testing-library/react": "^16.0.0",
+    "@types/amqplib": "^0.5.17",
+    "@types/lodash": "4.14.199",
+    "@types/mocha": "8.2.3",
+    "@types/node": "18.6.5",
+    "@types/sinon": "10.0.18",
+    "amqplib": "0.8.0",
+    "babel-plugin-react-native-web": "^0.19.12",
+    "expect": "29.2.0",
+    "jsdom": "^24.1.0",
+    "jsdom-global": "^3.0.2",
+    "lodash": "4.17.21",
+    "metro-react-native-babel-preset": "^0.77.0",
+    "mocha": "10.0.0",
+    "nyc": "15.1.0",
+    "react-native-web": "^0.19.12",
+    "sinon": "15.2.0",
+    "test-all-versions": "6.1.0",
+    "ts-mocha": "10.0.0",
+    "typescript": "4.9.4"
+  },
+  "engines": {
+    "node": ">=14"
+  }
+}

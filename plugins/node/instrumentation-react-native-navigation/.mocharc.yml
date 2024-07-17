@@ -1,0 +1,3 @@
+extension: ["ts", "tsx"]
+spec: ["test/**/*.test.tsx"]
+require: ["jsdom.register.js", "babel.register.js"]
