@@ -19,11 +19,9 @@ import {
   Span,
   propagation,
   trace,
-  context,
   ROOT_CONTEXT,
   Attributes,
 } from '@opentelemetry/api';
-import { pubsubPropagation } from '@opentelemetry/propagation-utils';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 import type { SQS } from 'aws-sdk';
 import {
@@ -33,7 +31,6 @@ import {
 } from '../types';
 import {
   MESSAGINGDESTINATIONKINDVALUES_QUEUE,
-  MESSAGINGOPERATIONVALUES_PROCESS,
   MESSAGINGOPERATIONVALUES_RECEIVE,
   SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
@@ -134,7 +131,7 @@ export class SqsServiceExtension implements ServiceExtension {
   responseHook = (
     response: NormalizedResponse,
     span: Span,
-    tracer: Tracer,
+    _tracer: Tracer,
     config: AwsSdkInstrumentationConfig
   ) => {
     switch (response.request.commandName) {
@@ -150,45 +147,32 @@ export class SqsServiceExtension implements ServiceExtension {
         break;
 
       case 'ReceiveMessage': {
-        const messages: SQS.Message[] = response?.data?.Messages;
-        if (messages) {
-          const queueUrl = this.extractQueueUrl(response.request.commandInput);
-          const queueName = this.extractQueueNameFromUrl(queueUrl);
+        console.log('ReceiveMessage');
+        console.log(span);
+        const messages: SQS.Message[] = response?.data?.Messages || [];
 
-          pubsubPropagation.patchMessagesArrayToStartProcessSpans<SQS.Message>({
-            messages,
-            parentContext: trace.setSpan(context.active(), span),
-            tracer,
-            messageToSpanDetails: (message: SQS.Message) => ({
-              name: queueName ?? 'unknown',
-              parentContext: propagation.extract(
-                ROOT_CONTEXT,
-                extractPropagationContext(
-                  message,
-                  config.sqsExtractContextPropagationFromPayload
-                ),
-                contextGetter
-              ),
-              attributes: {
-                [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sqs',
-                [SEMATTRS_MESSAGING_DESTINATION]: queueName,
-                [SEMATTRS_MESSAGING_DESTINATION_KIND]:
-                  MESSAGINGDESTINATIONKINDVALUES_QUEUE,
-                [SEMATTRS_MESSAGING_MESSAGE_ID]: message.MessageId,
-                [SEMATTRS_MESSAGING_URL]: queueUrl,
-                [SEMATTRS_MESSAGING_OPERATION]:
-                  MESSAGINGOPERATIONVALUES_PROCESS,
-              },
-            }),
-            processHook: (span: Span, message: SQS.Message) =>
-              config.sqsProcessHook?.(span, { message }),
-          });
+        span.setAttribute('messaging.batch.message_count', messages.length);
 
-          pubsubPropagation.patchArrayForProcessSpans(
-            messages,
-            tracer,
-            context.active()
+        for (const message of messages) {
+          const propagatedContext = propagation.extract(
+            ROOT_CONTEXT,
+            extractPropagationContext(
+              message,
+              config.sqsExtractContextPropagationFromPayload
+            ),
+            contextGetter
           );
+
+          const spanContext = trace.getSpanContext(propagatedContext);
+
+          if (spanContext) {
+            span.addLink({
+              context: spanContext,
+              attributes: {
+                [SEMATTRS_MESSAGING_MESSAGE_ID]: message.MessageId,
+              }
+            })
+          }
         }
         break;
       }

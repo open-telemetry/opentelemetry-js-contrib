@@ -60,9 +60,6 @@ export interface AwsSdkResponseCustomAttributeFunction {
 export interface AwsSdkSqsProcessHookInformation {
   message: SQS.Message;
 }
-export interface AwsSdkSqsProcessCustomAttributeFunction {
-  (span: Span, sqsProcessInfo: AwsSdkSqsProcessHookInformation): void;
-}
 
 export type AwsSdkDynamoDBStatementSerializer = (
   operation: string,
@@ -75,9 +72,6 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
 
   /** hook for adding custom attributes when response is received from aws */
   responseHook?: AwsSdkResponseCustomAttributeFunction;
-
-  /** hook for adding custom attribute when an sqs process span is started */
-  sqsProcessHook?: AwsSdkSqsProcessCustomAttributeFunction;
 
   /** custom serializer function for the db.statement attribute in DynamoDB spans */
   dynamoDBStatementSerializer?: AwsSdkDynamoDBStatementSerializer;
