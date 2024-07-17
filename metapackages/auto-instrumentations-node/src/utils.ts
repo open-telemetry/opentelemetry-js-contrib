@@ -151,7 +151,7 @@ export function getNodeAutoInstrumentations(
 
   if (enabledInstrumentationsFromEnv && disabledInstrumentationsFromEnv) {
     diag.debug(
-      'OTEL_NODE_ENABLED_INSTRUMENTATIONS and OTEL_NODE_DISABLED_INSTRUMENTATIONS environment variables are mutually exclusive. All instrumentations are disabled.'
+      'OTEL_NODE_ENABLED_INSTRUMENTATIONS and OTEL_NODE_DISABLED_INSTRUMENTATIONS are both set.\nAny instrumentation that exists in both lists will be disabled.'
     );
   }
 
