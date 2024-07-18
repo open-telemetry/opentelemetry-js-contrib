@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
+import type { RouterParamContext } from '@koa/router';
 import * as KoaRouter from '@koa/router';
 import { context, trace, Span, SpanKind } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -23,7 +25,14 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_EXCEPTION_MESSAGE,
+  SEMATTRS_HTTP_METHOD,
+  SEMATTRS_HTTP_ROUTE,
+} from '@opentelemetry/semantic-conventions';
+
+type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
+type KoaMiddleware = Middleware<DefaultState, KoaContext>;
 
 import { KoaInstrumentation } from '../src';
 const plugin = new KoaInstrumentation();
@@ -175,7 +184,7 @@ describe('Koa Instrumentation', () => {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/post/:id'
           );
 
@@ -226,7 +235,7 @@ describe('Koa Instrumentation', () => {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/^\\/post/'
           );
 
@@ -273,7 +282,7 @@ describe('Koa Instrumentation', () => {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/post/:id'
           );
 
@@ -322,7 +331,7 @@ describe('Koa Instrumentation', () => {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/:first/post/:id'
           );
 
@@ -369,7 +378,7 @@ describe('Koa Instrumentation', () => {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/:first/post/:id'
           );
 
@@ -570,7 +579,7 @@ describe('Koa Instrumentation', () => {
       assert.ok(exceptionEvent, 'There should be an exception event recorded');
       assert.deepStrictEqual(exceptionEvent.name, 'exception');
       assert.deepStrictEqual(
-        exceptionEvent.attributes![SemanticAttributes.EXCEPTION_MESSAGE],
+        exceptionEvent.attributes![SEMATTRS_EXCEPTION_MESSAGE],
         'I failed!'
       );
     });
@@ -590,14 +599,13 @@ describe('Koa Instrumentation', () => {
         )
       );
 
-      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
-        span.setAttribute(
-          SemanticAttributes.HTTP_METHOD,
-          info.context.request.method
-        );
+      const requestHook = sinon.spy(
+        (span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
+          span.setAttribute(SEMATTRS_HTTP_METHOD, info.context.request.method);
 
-        throw Error('error thrown in requestHook');
-      });
+          throw Error('error thrown in requestHook');
+        }
+      );
 
       plugin.setConfig({
         requestHook,
@@ -644,11 +652,13 @@ describe('Koa Instrumentation', () => {
         )
       );
 
-      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
-        span.setAttribute('http.method', info.context.request.method);
-        span.setAttribute('app.env', info.context.app.env);
-        span.setAttribute('koa.layer', info.layerType);
-      });
+      const requestHook = sinon.spy(
+        (span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
+          span.setAttribute('http.method', info.context.request.method);
+          span.setAttribute('app.env', info.context.app.env);
+          span.setAttribute('koa.layer', info.layerType);
+        }
+      );
 
       plugin.setConfig({
         requestHook,

@@ -13,11 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DiagLogger, Span, SpanKind, Tracer } from '@opentelemetry/api';
+import {
+  Attributes,
+  DiagLogger,
+  Span,
+  SpanKind,
+  Tracer,
+} from '@opentelemetry/api';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_DYNAMODB,
+  SEMATTRS_AWS_DYNAMODB_ATTRIBUTE_DEFINITIONS,
+  SEMATTRS_AWS_DYNAMODB_CONSISTENT_READ,
+  SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY,
+  SEMATTRS_AWS_DYNAMODB_COUNT,
+  SEMATTRS_AWS_DYNAMODB_EXCLUSIVE_START_TABLE,
+  SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES,
+  SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEXES,
+  SEMATTRS_AWS_DYNAMODB_INDEX_NAME,
+  SEMATTRS_AWS_DYNAMODB_ITEM_COLLECTION_METRICS,
+  SEMATTRS_AWS_DYNAMODB_LIMIT,
+  SEMATTRS_AWS_DYNAMODB_LOCAL_SECONDARY_INDEXES,
+  SEMATTRS_AWS_DYNAMODB_PROJECTION,
+  SEMATTRS_AWS_DYNAMODB_PROVISIONED_READ_CAPACITY,
+  SEMATTRS_AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY,
+  SEMATTRS_AWS_DYNAMODB_SCAN_FORWARD,
+  SEMATTRS_AWS_DYNAMODB_SCANNED_COUNT,
+  SEMATTRS_AWS_DYNAMODB_SEGMENT,
+  SEMATTRS_AWS_DYNAMODB_SELECT,
+  SEMATTRS_AWS_DYNAMODB_TABLE_COUNT,
+  SEMATTRS_AWS_DYNAMODB_TABLE_NAMES,
+  SEMATTRS_AWS_DYNAMODB_TOTAL_SEGMENTS,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_OPERATION,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import {
   AwsSdkInstrumentationConfig,
@@ -40,10 +70,10 @@ export class DynamodbServiceExtension implements ServiceExtension {
     const isIncoming = false;
     const operation = normalizedRequest.commandName;
 
-    const spanAttributes = {
-      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.DYNAMODB,
-      [SemanticAttributes.DB_NAME]: normalizedRequest.commandInput?.TableName,
-      [SemanticAttributes.DB_OPERATION]: operation,
+    const spanAttributes: Attributes = {
+      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_DYNAMODB,
+      [SEMATTRS_DB_NAME]: normalizedRequest.commandInput?.TableName,
+      [SEMATTRS_DB_OPERATION]: operation,
     };
 
     if (config.dynamoDBStatementSerializer) {
@@ -54,7 +84,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
         );
 
         if (typeof sanitizedStatement === 'string') {
-          spanAttributes[SemanticAttributes.DB_STATEMENT] = sanitizedStatement;
+          spanAttributes[SEMATTRS_DB_STATEMENT] = sanitizedStatement;
         }
       } catch (err) {
         diag.error('failed to sanitize DynamoDB statement', err);
@@ -66,11 +96,11 @@ export class DynamodbServiceExtension implements ServiceExtension {
     if (normalizedRequest.commandInput?.TableName) {
       // Necessary for commands with only 1 table name (example: CreateTable). Attribute is TableName not keys of RequestItems
       // single table name returned for operations like CreateTable
-      spanAttributes[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES] = [
+      spanAttributes[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES] = [
         normalizedRequest.commandInput.TableName,
       ];
     } else if (normalizedRequest.commandInput?.RequestItems) {
-      spanAttributes[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES] = Object.keys(
+      spanAttributes[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES] = Object.keys(
         normalizedRequest.commandInput.RequestItems
       );
     }
@@ -78,13 +108,9 @@ export class DynamodbServiceExtension implements ServiceExtension {
     if (operation === 'CreateTable' || operation === 'UpdateTable') {
       // only check for ProvisionedThroughput since ReadCapacityUnits and WriteCapacity units are required attributes
       if (normalizedRequest.commandInput?.ProvisionedThroughput) {
-        spanAttributes[
-          SemanticAttributes.AWS_DYNAMODB_PROVISIONED_READ_CAPACITY
-        ] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_PROVISIONED_READ_CAPACITY] =
           normalizedRequest.commandInput.ProvisionedThroughput.ReadCapacityUnits;
-        spanAttributes[
-          SemanticAttributes.AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY
-        ] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY] =
           normalizedRequest.commandInput.ProvisionedThroughput.WriteCapacityUnits;
       }
     }
@@ -95,33 +121,31 @@ export class DynamodbServiceExtension implements ServiceExtension {
       operation === 'Query'
     ) {
       if (normalizedRequest.commandInput?.ConsistentRead) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_CONSISTENT_READ] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_CONSISTENT_READ] =
           normalizedRequest.commandInput.ConsistentRead;
       }
     }
 
     if (operation === 'Query' || operation === 'Scan') {
       if (normalizedRequest.commandInput?.ProjectionExpression) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_PROJECTION] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_PROJECTION] =
           normalizedRequest.commandInput.ProjectionExpression;
       }
     }
 
     if (operation === 'CreateTable') {
       if (normalizedRequest.commandInput?.GlobalSecondaryIndexes) {
-        spanAttributes[
-          SemanticAttributes.AWS_DYNAMODB_GLOBAL_SECONDARY_INDEXES
-        ] = this.toArray(
-          normalizedRequest.commandInput.GlobalSecondaryIndexes
-        ).map((x: { [DictionaryKey: string]: any }) => JSON.stringify(x));
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEXES] =
+          this.toArray(
+            normalizedRequest.commandInput.GlobalSecondaryIndexes
+          ).map((x: { [DictionaryKey: string]: any }) => JSON.stringify(x));
       }
 
       if (normalizedRequest.commandInput?.LocalSecondaryIndexes) {
-        spanAttributes[
-          SemanticAttributes.AWS_DYNAMODB_LOCAL_SECONDARY_INDEXES
-        ] = this.toArray(
-          normalizedRequest.commandInput.LocalSecondaryIndexes
-        ).map((x: { [DictionaryKey: string]: any }) => JSON.stringify(x));
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_LOCAL_SECONDARY_INDEXES] =
+          this.toArray(
+            normalizedRequest.commandInput.LocalSecondaryIndexes
+          ).map((x: { [DictionaryKey: string]: any }) => JSON.stringify(x));
       }
     }
 
@@ -131,71 +155,70 @@ export class DynamodbServiceExtension implements ServiceExtension {
       operation === 'Scan'
     ) {
       if (normalizedRequest.commandInput?.Limit) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_LIMIT] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_LIMIT] =
           normalizedRequest.commandInput.Limit;
       }
     }
 
     if (operation === 'ListTables') {
       if (normalizedRequest.commandInput?.ExclusiveStartTableName) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_EXCLUSIVE_START_TABLE] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_EXCLUSIVE_START_TABLE] =
           normalizedRequest.commandInput.ExclusiveStartTableName;
       }
     }
 
     if (operation === 'Query') {
       if (normalizedRequest.commandInput?.ScanIndexForward) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_SCAN_FORWARD] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_SCAN_FORWARD] =
           normalizedRequest.commandInput.ScanIndexForward;
       }
 
       if (normalizedRequest.commandInput?.IndexName) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_INDEX_NAME] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_INDEX_NAME] =
           normalizedRequest.commandInput.IndexName;
       }
 
       if (normalizedRequest.commandInput?.Select) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_SELECT] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_SELECT] =
           normalizedRequest.commandInput.Select;
       }
     }
 
     if (operation === 'Scan') {
       if (normalizedRequest.commandInput?.Segment) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_SEGMENT] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_SEGMENT] =
           normalizedRequest.commandInput?.Segment;
       }
 
       if (normalizedRequest.commandInput?.TotalSegments) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_TOTAL_SEGMENTS] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_TOTAL_SEGMENTS] =
           normalizedRequest.commandInput?.TotalSegments;
       }
 
       if (normalizedRequest.commandInput?.IndexName) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_INDEX_NAME] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_INDEX_NAME] =
           normalizedRequest.commandInput.IndexName;
       }
 
       if (normalizedRequest.commandInput?.Select) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_SELECT] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_SELECT] =
           normalizedRequest.commandInput.Select;
       }
     }
 
     if (operation === 'UpdateTable') {
       if (normalizedRequest.commandInput?.AttributeDefinitions) {
-        spanAttributes[SemanticAttributes.AWS_DYNAMODB_ATTRIBUTE_DEFINITIONS] =
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_ATTRIBUTE_DEFINITIONS] =
           this.toArray(normalizedRequest.commandInput.AttributeDefinitions).map(
             (x: { [DictionaryKey: string]: any }) => JSON.stringify(x)
           );
       }
 
       if (normalizedRequest.commandInput?.GlobalSecondaryIndexUpdates) {
-        spanAttributes[
-          SemanticAttributes.AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES
-        ] = this.toArray(
-          normalizedRequest.commandInput.GlobalSecondaryIndexUpdates
-        ).map((x: { [DictionaryKey: string]: any }) => JSON.stringify(x));
+        spanAttributes[SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES] =
+          this.toArray(
+            normalizedRequest.commandInput.GlobalSecondaryIndexUpdates
+          ).map((x: { [DictionaryKey: string]: any }) => JSON.stringify(x));
       }
     }
 
@@ -215,7 +238,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
   ) {
     if (response.data?.ConsumedCapacity) {
       span.setAttribute(
-        SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY,
+        SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY,
         toArray(response.data.ConsumedCapacity).map(
           (x: { [DictionaryKey: string]: any }) => JSON.stringify(x)
         )
@@ -224,7 +247,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
 
     if (response.data?.ItemCollectionMetrics) {
       span.setAttribute(
-        SemanticAttributes.AWS_DYNAMODB_ITEM_COLLECTION_METRICS,
+        SEMATTRS_AWS_DYNAMODB_ITEM_COLLECTION_METRICS,
         this.toArray(response.data.ItemCollectionMetrics).map(
           (x: { [DictionaryKey: string]: any }) => JSON.stringify(x)
         )
@@ -233,21 +256,18 @@ export class DynamodbServiceExtension implements ServiceExtension {
 
     if (response.data?.TableNames) {
       span.setAttribute(
-        SemanticAttributes.AWS_DYNAMODB_TABLE_COUNT,
+        SEMATTRS_AWS_DYNAMODB_TABLE_COUNT,
         response.data?.TableNames.length
       );
     }
 
     if (response.data?.Count) {
-      span.setAttribute(
-        SemanticAttributes.AWS_DYNAMODB_COUNT,
-        response.data?.Count
-      );
+      span.setAttribute(SEMATTRS_AWS_DYNAMODB_COUNT, response.data?.Count);
     }
 
     if (response.data?.ScannedCount) {
       span.setAttribute(
-        SemanticAttributes.AWS_DYNAMODB_SCANNED_COUNT,
+        SEMATTRS_AWS_DYNAMODB_SCANNED_COUNT,
         response.data?.ScannedCount
       );
     }

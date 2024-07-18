@@ -18,7 +18,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import Instrumentation from '../src';
+import { FsInstrumentation } from '../src';
 import * as assert from 'assert';
 import type * as FSType from 'fs';
 import type { FsInstrumentationConfig } from '../src/types';
@@ -32,14 +32,14 @@ provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 const tracer = provider.getTracer('default');
 
 describe('fs instrumentation: requireParentSpan', () => {
-  let plugin: Instrumentation;
+  let plugin: FsInstrumentation;
   let fs: typeof FSType;
   let ambientContext: api.Context;
   let endRootSpan: () => void;
   let expectedAmbientSpanCount: number;
 
   const initializePlugin = (pluginConfig: FsInstrumentationConfig) => {
-    plugin = new Instrumentation();
+    plugin = new FsInstrumentation();
     plugin.setTracerProvider(provider);
     plugin.setConfig(pluginConfig);
     plugin.enable();

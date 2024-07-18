@@ -94,6 +94,16 @@ describe('ContainerDetector', () => {
       assert.ok(resource);
     });
 
+    it('should return a correctCgroupV2Data resource with v1Detector returns empty string ', async () => {
+      readStub = sinon.stub(ContainerDetector, 'readFileAsync' as any);
+      sinon.stub(containerDetector, '_getContainerIdV1' as any).resolves('');
+      sinon
+        .stub(containerDetector, '_getContainerIdV2' as any)
+        .resolves(correctCgroupV2Data);
+      const containerId = await containerDetector['_getContainerId']();
+      assert.strictEqual(containerId, correctCgroupV2Data);
+    });
+
     it('should return a resource without attribute container.id when cgroup file does not contain valid Container ID', async () => {
       readStub = sinon
         .stub(ContainerDetector, 'readFileAsync' as any)

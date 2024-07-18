@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`redis@^2.6.0`](https://github.com/NodeRedis/node_redis) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`redis`](https://github.com/NodeRedis/node_redis) module versions `>=2.6.0 <4`, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -17,8 +17,9 @@ npm install --save @opentelemetry/instrumentation-redis
 
 ### Supported Versions
 
-This package supports `redis@^2.6.0` and `redis@^3.0.0`
-For version `redis@^4.0.0`, please use `@opentelemetry/instrumentation-redis-4`
+- [`redis`](https://www.npmjs.com/package/redis) versions `>=2.6.0 <4`
+
+For versions `redis@^4.0.0`, please use `@opentelemetry/instrumentation-redis-4`
 
 ## Usage
 
@@ -41,7 +42,7 @@ registerInstrumentations({
 })
 ```
 
-See [examples](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis/examples) for a short example.
+See [examples/redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/redis) for a short example.
 
 ### Redis Instrumentation Options
 
@@ -73,6 +74,20 @@ const redisInstrumentation = new RedisInstrumentation({
   },
 });
 ```
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute              | Short Description                                            |
+|------------------------|--------------------------------------------------------------|
+| `db.connection_string` | URL to Redis server address, of the form `redis://host:port` |
+| `db.statement`         | Executed Redis statement                                     |
+| `db.system`            | Database identifier; always `redis`                          |
+| `net.peer.name`        | Hostname or IP of the connected Redis server                 |
+| `net.peer.port`        | Port of the connected Redis server                           |
 
 ## Useful links
 

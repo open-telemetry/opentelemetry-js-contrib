@@ -19,7 +19,7 @@ npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrument
 
 ### Supported Versions
 
-- `^4.0.0`
+- [`express`](https://www.npmjs.com/package/express) version `>=4.0.0 <5`
 
 ## Usage
 
@@ -45,7 +45,7 @@ registerInstrumentations({
 });
 ```
 
-See [examples](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express/examples) for a short example.
+See [examples/express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/express) for a short example.
 
 ### Caveats
 
@@ -92,7 +92,7 @@ In order to ignore whole traces that represent a given Express route, use
 the `ignoreIncomingRequestHook` option from
 `@opentelemetry/instrumentation-http` against the route path. Ideally, this
 shouldn't be necessary since spans should a have low cardinality and minimize
-interaction between instrumentation libraies but
+interaction between instrumentation libraries but
 `@opentelemetry/instrumentation-express` renames the root span from
 `@opentelemetry/instrumentation-http` in order to get things in order.
 
@@ -141,6 +141,16 @@ const expressInstrumentation = new ExpressInstrumentation({
   }
 });
 ```
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute    | Short Description                  |
+| ------------ | ---------------------------------- |
+| `http.route` | The matched route (path template). |
 
 ## Useful links
 

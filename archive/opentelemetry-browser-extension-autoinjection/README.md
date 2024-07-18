@@ -2,8 +2,15 @@
 
 ## :warning: ARCHIVED PROJECT
 
-> This project has been archived by the maintainers on August 3 2022 because it was causing a failure in the CI and does not have any maintainer.
-> Anyone who would like to maintain this project should open a PR to move it back into the lerna project and add themselves to the component owners file.
+> This project has been archived by the maintainers permanently on June 19 2024.
+> We encourage extensions to be developed and maintained outside this repository.
+> Alternatives can be found in the OpenTelemetry Registry:
+>
+> <https://opentelemetry.io/ecosystem/registry/?component=utilities&s=browserextension>
+>
+> If you are a developer of such an extension you can
+> [add it to the registry](https://opentelemetry.io/ecosystem/registry/adding/)
+> as well.
 
 This browser extension allows you to inject [OpenTelemetry](https://opentelemetry.io/) instrumentation in any web page. It uses the [Web SDK](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-web) and can export data to Zipkin or an OpenTelemetry Collector.
 
@@ -13,9 +20,9 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Supported Environments
 
-* Google Chrome (with [Manifest Version 3](https://developer.chrome.com/docs/extensions/mv3/intro/) support)
-* Chromium (with Manifest Version 2)
-* Firefox (*unstable*, with Manifest Version 2)
+- Google Chrome (with [Manifest Version 3](https://developer.chrome.com/docs/extensions/mv3/intro/) support)
+- Chromium (with Manifest Version 2)
+- Firefox (*unstable*, with Manifest Version 2)
 
 ## Installation
 
@@ -32,9 +39,9 @@ npm run build
 
 This will create a so-called unpacked extension into the `build/` folder you now can load into your browser:
 
-* Open a new browser window and go to chrome://extensions
-* Turn on "Developer Mode"
-* Click on "Load unpacked" and select the `build/mv3` (or `build/mv2`) folder, which contains the extension
+- Open a new browser window and go to chrome://extensions
+- Turn on "Developer Mode"
+- Click on "Load unpacked" and select the `build/mv3` (or `build/mv2`) folder, which contains the extension
 
 If all goes well you should see the extension listed:
 

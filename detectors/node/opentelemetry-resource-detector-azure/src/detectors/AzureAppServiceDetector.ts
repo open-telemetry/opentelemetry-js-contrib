@@ -21,23 +21,28 @@ import {
   WEBSITE_HOME_STAMPNAME,
   WEBSITE_HOSTNAME,
   WEBSITE_INSTANCE_ID,
-  WEBSITE_OWNER_NAME,
-  WEBSITE_RESOURCE_GROUP,
   WEBSITE_SITE_NAME,
   WEBSITE_SLOT_NAME,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
 } from '../types';
 import {
-  CloudProviderValues,
-  CloudPlatformValues,
-  SemanticResourceAttributes,
+  SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+  SEMRESATTRS_HOST_ID,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  CLOUDPROVIDERVALUES_AZURE,
+  CLOUDPLATFORMVALUES_AZURE_APP_SERVICE,
 } from '@opentelemetry/semantic-conventions';
+import { getAzureResourceUri, isAzureFunction } from '../utils';
 
 const APP_SERVICE_ATTRIBUTE_ENV_VARS = {
-  [SemanticResourceAttributes.CLOUD_REGION]: REGION_NAME,
-  [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: WEBSITE_SLOT_NAME,
-  [SemanticResourceAttributes.HOST_ID]: WEBSITE_HOSTNAME,
-  [SemanticResourceAttributes.SERVICE_INSTANCE_ID]: WEBSITE_INSTANCE_ID,
+  [SEMRESATTRS_CLOUD_REGION]: REGION_NAME,
+  [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: WEBSITE_SLOT_NAME,
+  [SEMRESATTRS_HOST_ID]: WEBSITE_HOSTNAME,
+  [SEMRESATTRS_SERVICE_INSTANCE_ID]: WEBSITE_INSTANCE_ID,
   [AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE]: WEBSITE_HOME_STAMPNAME,
 };
 
@@ -49,22 +54,21 @@ class AzureAppServiceDetector implements DetectorSync {
   detect(): IResource {
     let attributes = {};
     const websiteSiteName = process.env[WEBSITE_SITE_NAME];
-    if (websiteSiteName) {
+    if (websiteSiteName && !isAzureFunction()) {
       attributes = {
         ...attributes,
-        [SemanticResourceAttributes.SERVICE_NAME]: websiteSiteName,
+        [SEMRESATTRS_SERVICE_NAME]: websiteSiteName,
       };
       attributes = {
         ...attributes,
-        [SemanticResourceAttributes.CLOUD_PROVIDER]: CloudProviderValues.AZURE,
+        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AZURE,
       };
       attributes = {
         ...attributes,
-        [SemanticResourceAttributes.CLOUD_PLATFORM]:
-          CloudPlatformValues.AZURE_APP_SERVICE,
+        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AZURE_APP_SERVICE,
       };
 
-      const azureResourceUri = this.getAzureResourceUri(websiteSiteName);
+      const azureResourceUri = getAzureResourceUri(websiteSiteName);
       if (azureResourceUri) {
         attributes = {
           ...attributes,
@@ -82,22 +86,6 @@ class AzureAppServiceDetector implements DetectorSync {
       }
     }
     return new Resource(attributes);
-  }
-
-  private getAzureResourceUri(websiteSiteName: string): string | undefined {
-    const websiteResourceGroup = process.env[WEBSITE_RESOURCE_GROUP];
-    const websiteOwnerName = process.env[WEBSITE_OWNER_NAME];
-
-    let subscriptionId = websiteOwnerName;
-    if (websiteOwnerName && websiteOwnerName.indexOf('+') !== -1) {
-      subscriptionId = websiteOwnerName.split('+')[0];
-    }
-
-    if (!subscriptionId && !websiteOwnerName) {
-      return undefined;
-    }
-
-    return `/subscriptions/${subscriptionId}/resourceGroups/${websiteResourceGroup}/providers/Microsoft.Web/sites/${websiteSiteName}`;
   }
 }
 

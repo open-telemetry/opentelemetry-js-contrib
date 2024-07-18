@@ -17,7 +17,8 @@ npm install --save @opentelemetry/instrumentation-redis-4
 
 ### Supported Versions
 
-This package supports `redis@^4.0.0`
+- [`redis`](https://www.npmjs.com/package/redis) versions `>=4.0.0`
+
 For versions `redis@^2.6.0` and `redis@^3.0.0`, please use `@opentelemetry/instrumentation-redis`
 
 ## Usage
@@ -70,6 +71,20 @@ const redisInstrumentation = new RedisInstrumentation({
   },
 });
 ```
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute              | Short Description                                                            |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `db.connection_string` | The connection string used to connect to the database (without credentials). |
+| `db.statement`         | The database statement being executed.                                       |
+| `db.system`            | An identifier for the database management system (DBMS) product being used.  |
+| `net.peer.name`        | Remote hostname or similar, see note below.                                  |
+| `net.peer.port`        | Remote port number.                                                          |
 
 ## Useful links
 

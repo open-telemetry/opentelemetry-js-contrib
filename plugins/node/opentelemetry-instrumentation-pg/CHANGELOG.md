@@ -1,10 +1,129 @@
 # Changelog
 
+## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.42.0...instrumentation-pg-v0.43.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196))
+
+### Bug Fixes
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196)) ([01c28ae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/01c28ae016ed32f9968e52bc91e3e3700dcef82e))
+
+## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.41.0...instrumentation-pg-v0.42.0) (2024-06-06)
+
+
+### Features
+
+* update otel core dependencies ([#2257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2257)) ([71c15d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/71c15d597276773c19c16c1117b8d151892e5366))
+
+
+### Performance Improvements
+
+* **instrumentation-pg:** do not split query to determine operation name ([#2029](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2029)) ([816611e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/816611e47e71ce1478f4749fe7b6ba923b8d473a))
+
+
 ### Dependencies
 
 * The following workspace dependencies were updated
   * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
+    * @opentelemetry/contrib-test-utils bumped from ^0.39.0 to ^0.40.0
+
+## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.40.0...instrumentation-pg-v0.41.0) (2024-04-25)
+
+
+### Features
+
+* **deps:** update otel-js to 0.51.0 ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+* remove generic type from instrumentations ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/sql-common bumped from ^0.40.0 to ^0.40.1
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.38.0 to ^0.39.0
+
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.39.1...instrumentation-pg-v0.40.0) (2024-04-03)
+
+
+### Features
+
+* **deps:** update otel-js to 1.23.0/0.50.0 ([#2076](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2076)) ([d5f079b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d5f079b3992395dcfb3b791c9fdaeefd6d6526f8))
+
+
+### Performance Improvements
+
+* **instrumentation-pg:** reduce temp objects allocations ([#2019](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2019)) ([84ef980](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/84ef980c0be84ca84e9957bb42254cab94185c99))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.37.0 to ^0.38.0
+
+## [0.39.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.39.0...instrumentation-pg-v0.39.1) (2024-03-11)
+
+
+### Bug Fixes
+
+* **instrumentation-pg:** prevent net.peer.port from being NaN ([#1982](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1982)) ([3b2090b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3b2090b5f53ee56e8d06ef7c144588141080804c))
+
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.38.0...instrumentation-pg-v0.39.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.36.0 to ^0.37.0
+
+## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.37.2...instrumentation-pg-v0.38.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+
+### Bug Fixes
+
+* **instrumentation-pg:** remove `@opentelemetry/core` from dependencies ([#1895](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1895)) ([c0d873c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c0d873c360c00cd81a7c2ced74683f8408eabd84))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.1 to ^0.36.0
+
+## [0.37.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.37.1...instrumentation-pg-v0.37.2) (2024-01-04)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.0 to ^0.35.1
 
 ## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.36.2...instrumentation-pg-v0.37.0) (2023-11-13)
 

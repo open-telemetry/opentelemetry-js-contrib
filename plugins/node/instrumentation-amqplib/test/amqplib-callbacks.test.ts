@@ -21,12 +21,22 @@ import {
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
 
-registerInstrumentationTesting(new AmqplibInstrumentation());
+const instrumentation = registerInstrumentationTesting(
+  new AmqplibInstrumentation()
+);
 
 import * as amqpCallback from 'amqplib/callback_api';
 import {
-  MessagingDestinationKindValues,
-  SemanticAttributes,
+  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+  SEMATTRS_MESSAGING_DESTINATION,
+  SEMATTRS_MESSAGING_DESTINATION_KIND,
+  SEMATTRS_MESSAGING_PROTOCOL,
+  SEMATTRS_MESSAGING_PROTOCOL_VERSION,
+  SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY,
+  SEMATTRS_MESSAGING_SYSTEM,
+  SEMATTRS_MESSAGING_URL,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { Baggage, context, propagation, SpanKind } from '@opentelemetry/api';
 import { asyncConfirmSend, asyncConsume, shouldTest } from './utils';
@@ -127,67 +137,63 @@ describe('amqplib instrumentation callback model', () => {
 
         // assert publish span
         expect(publishSpan.kind).toEqual(SpanKind.PRODUCER);
+        expect(publishSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+          'rabbitmq'
+        );
+        expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
+          ''
+        ); // according to spec: "This will be an empty string if the default exchange is used"
         expect(
-          publishSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-        ).toEqual('rabbitmq');
+          publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
+        ).toEqual(MESSAGINGDESTINATIONKINDVALUES_TOPIC);
         expect(
-          publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
-        ).toEqual(''); // according to spec: "This will be an empty string if the default exchange is used"
-        expect(
-          publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]
-        ).toEqual(MessagingDestinationKindValues.TOPIC);
-        expect(
-          publishSpan.attributes[
-            SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY
-          ]
+          publishSpan.attributes[SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]
         ).toEqual(queueName);
+        expect(publishSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL]).toEqual(
+          'AMQP'
+        );
         expect(
-          publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-        ).toEqual('AMQP');
-        expect(
-          publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL_VERSION]
+          publishSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL_VERSION]
         ).toEqual('0.9.1');
-        expect(
-          publishSpan.attributes[SemanticAttributes.MESSAGING_URL]
-        ).toEqual(censoredUrl);
-        expect(
-          publishSpan.attributes[SemanticAttributes.NET_PEER_NAME]
-        ).toEqual(TEST_RABBITMQ_HOST);
-        expect(
-          publishSpan.attributes[SemanticAttributes.NET_PEER_PORT]
-        ).toEqual(TEST_RABBITMQ_PORT);
+        expect(publishSpan.attributes[SEMATTRS_MESSAGING_URL]).toEqual(
+          censoredUrl
+        );
+        expect(publishSpan.attributes[SEMATTRS_NET_PEER_NAME]).toEqual(
+          TEST_RABBITMQ_HOST
+        );
+        expect(publishSpan.attributes[SEMATTRS_NET_PEER_PORT]).toEqual(
+          TEST_RABBITMQ_PORT
+        );
 
         // assert consume span
         expect(consumeSpan.kind).toEqual(SpanKind.CONSUMER);
+        expect(consumeSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+          'rabbitmq'
+        );
+        expect(consumeSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
+          ''
+        ); // according to spec: "This will be an empty string if the default exchange is used"
         expect(
-          consumeSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-        ).toEqual('rabbitmq');
+          consumeSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
+        ).toEqual(MESSAGINGDESTINATIONKINDVALUES_TOPIC);
         expect(
-          consumeSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
-        ).toEqual(''); // according to spec: "This will be an empty string if the default exchange is used"
-        expect(
-          consumeSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]
-        ).toEqual(MessagingDestinationKindValues.TOPIC);
-        expect(
-          consumeSpan.attributes[
-            SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY
-          ]
+          consumeSpan.attributes[SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]
         ).toEqual(queueName);
+        expect(consumeSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL]).toEqual(
+          'AMQP'
+        );
         expect(
-          consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-        ).toEqual('AMQP');
-        expect(
-          consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL_VERSION]
+          consumeSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL_VERSION]
         ).toEqual('0.9.1');
-        expect(
-          consumeSpan.attributes[SemanticAttributes.MESSAGING_URL]
-        ).toEqual(censoredUrl);
-        expect(
-          consumeSpan.attributes[SemanticAttributes.NET_PEER_NAME]
-        ).toEqual(TEST_RABBITMQ_HOST);
-        expect(
-          consumeSpan.attributes[SemanticAttributes.NET_PEER_PORT]
-        ).toEqual(TEST_RABBITMQ_PORT);
+        expect(consumeSpan.attributes[SEMATTRS_MESSAGING_URL]).toEqual(
+          censoredUrl
+        );
+        expect(consumeSpan.attributes[SEMATTRS_NET_PEER_NAME]).toEqual(
+          TEST_RABBITMQ_HOST
+        );
+        expect(consumeSpan.attributes[SEMATTRS_NET_PEER_PORT]).toEqual(
+          TEST_RABBITMQ_PORT
+        );
 
         // assert context propagation
         expect(consumeSpan.spanContext().traceId).toEqual(
@@ -301,75 +307,63 @@ describe('amqplib instrumentation callback model', () => {
 
           // assert publish span
           expect(publishSpan.kind).toEqual(SpanKind.PRODUCER);
+          expect(publishSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+            'rabbitmq'
+          );
           expect(
-            publishSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-          ).toEqual('rabbitmq');
-          expect(
-            publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
+            publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]
           ).toEqual(''); // according to spec: "This will be an empty string if the default exchange is used"
           expect(
-            publishSpan.attributes[
-              SemanticAttributes.MESSAGING_DESTINATION_KIND
-            ]
-          ).toEqual(MessagingDestinationKindValues.TOPIC);
+            publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
+          ).toEqual(MESSAGINGDESTINATIONKINDVALUES_TOPIC);
           expect(
-            publishSpan.attributes[
-              SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY
-            ]
+            publishSpan.attributes[SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]
           ).toEqual(queueName);
+          expect(publishSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL]).toEqual(
+            'AMQP'
+          );
           expect(
-            publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-          ).toEqual('AMQP');
-          expect(
-            publishSpan.attributes[
-              SemanticAttributes.MESSAGING_PROTOCOL_VERSION
-            ]
+            publishSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL_VERSION]
           ).toEqual('0.9.1');
-          expect(
-            publishSpan.attributes[SemanticAttributes.MESSAGING_URL]
-          ).toEqual(censoredUrl);
-          expect(
-            publishSpan.attributes[SemanticAttributes.NET_PEER_NAME]
-          ).toEqual(TEST_RABBITMQ_HOST);
-          expect(
-            publishSpan.attributes[SemanticAttributes.NET_PEER_PORT]
-          ).toEqual(TEST_RABBITMQ_PORT);
+          expect(publishSpan.attributes[SEMATTRS_MESSAGING_URL]).toEqual(
+            censoredUrl
+          );
+          expect(publishSpan.attributes[SEMATTRS_NET_PEER_NAME]).toEqual(
+            TEST_RABBITMQ_HOST
+          );
+          expect(publishSpan.attributes[SEMATTRS_NET_PEER_PORT]).toEqual(
+            TEST_RABBITMQ_PORT
+          );
 
           // assert consume span
           expect(consumeSpan.kind).toEqual(SpanKind.CONSUMER);
+          expect(consumeSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+            'rabbitmq'
+          );
           expect(
-            consumeSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-          ).toEqual('rabbitmq');
-          expect(
-            consumeSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
+            consumeSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]
           ).toEqual(''); // according to spec: "This will be an empty string if the default exchange is used"
           expect(
-            consumeSpan.attributes[
-              SemanticAttributes.MESSAGING_DESTINATION_KIND
-            ]
-          ).toEqual(MessagingDestinationKindValues.TOPIC);
+            consumeSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
+          ).toEqual(MESSAGINGDESTINATIONKINDVALUES_TOPIC);
           expect(
-            consumeSpan.attributes[
-              SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY
-            ]
+            consumeSpan.attributes[SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]
           ).toEqual(queueName);
+          expect(consumeSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL]).toEqual(
+            'AMQP'
+          );
           expect(
-            consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-          ).toEqual('AMQP');
-          expect(
-            consumeSpan.attributes[
-              SemanticAttributes.MESSAGING_PROTOCOL_VERSION
-            ]
+            consumeSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL_VERSION]
           ).toEqual('0.9.1');
-          expect(
-            consumeSpan.attributes[SemanticAttributes.MESSAGING_URL]
-          ).toEqual(censoredUrl);
-          expect(
-            consumeSpan.attributes[SemanticAttributes.NET_PEER_NAME]
-          ).toEqual(TEST_RABBITMQ_HOST);
-          expect(
-            consumeSpan.attributes[SemanticAttributes.NET_PEER_PORT]
-          ).toEqual(TEST_RABBITMQ_PORT);
+          expect(consumeSpan.attributes[SEMATTRS_MESSAGING_URL]).toEqual(
+            censoredUrl
+          );
+          expect(consumeSpan.attributes[SEMATTRS_NET_PEER_NAME]).toEqual(
+            TEST_RABBITMQ_HOST
+          );
+          expect(consumeSpan.attributes[SEMATTRS_NET_PEER_PORT]).toEqual(
+            TEST_RABBITMQ_PORT
+          );
 
           // assert context propagation
           expect(consumeSpan.spanContext().traceId).toEqual(
@@ -406,6 +400,268 @@ describe('amqplib instrumentation callback model', () => {
               done();
             }, 1),
         ]);
+      });
+    });
+  });
+
+  describe('channel with links config', () => {
+    let channel: amqpCallback.Channel;
+    beforeEach(done => {
+      instrumentation.setConfig({
+        useLinksForConsume: true,
+      });
+      conn.createChannel(
+        context.bind(context.active(), (err, c) => {
+          channel = c;
+          // install an error handler, otherwise when we have tests that create error on the channel,
+          // it throws and crash process
+          channel.on('error', () => {});
+          channel.assertQueue(
+            queueName,
+            { durable: false },
+            context.bind(context.active(), (err, ok) => {
+              channel.purgeQueue(
+                queueName,
+                context.bind(context.active(), (err, ok) => {
+                  done();
+                })
+              );
+            })
+          );
+        })
+      );
+    });
+
+    afterEach(done => {
+      try {
+        channel.close(err => {
+          done();
+        });
+      } catch {}
+    });
+
+    it('simple publish and consume from queue callback', done => {
+      const hadSpaceInBuffer = channel.sendToQueue(
+        queueName,
+        Buffer.from(msgPayload)
+      );
+      expect(hadSpaceInBuffer).toBeTruthy();
+
+      asyncConsume(
+        channel,
+        queueName,
+        [msg => expect(msg.content.toString()).toEqual(msgPayload)],
+        {
+          noAck: true,
+        }
+      ).then(() => {
+        const [publishSpan, consumeSpan] = getTestSpans();
+
+        // assert publish span
+        expect(publishSpan.kind).toEqual(SpanKind.PRODUCER);
+        expect(publishSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+          'rabbitmq'
+        );
+        expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
+          ''
+        ); // according to spec: "This will be an empty string if the default exchange is used"
+        expect(
+          publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
+        ).toEqual(MESSAGINGDESTINATIONKINDVALUES_TOPIC);
+        expect(
+          publishSpan.attributes[SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]
+        ).toEqual(queueName);
+        expect(publishSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL]).toEqual(
+          'AMQP'
+        );
+        expect(
+          publishSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL_VERSION]
+        ).toEqual('0.9.1');
+        expect(publishSpan.attributes[SEMATTRS_MESSAGING_URL]).toEqual(
+          censoredUrl
+        );
+        expect(publishSpan.attributes[SEMATTRS_NET_PEER_NAME]).toEqual(
+          TEST_RABBITMQ_HOST
+        );
+        expect(publishSpan.attributes[SEMATTRS_NET_PEER_PORT]).toEqual(
+          TEST_RABBITMQ_PORT
+        );
+
+        // assert consume span
+        expect(consumeSpan.kind).toEqual(SpanKind.CONSUMER);
+        expect(consumeSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+          'rabbitmq'
+        );
+        expect(consumeSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
+          ''
+        ); // according to spec: "This will be an empty string if the default exchange is used"
+        expect(
+          consumeSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
+        ).toEqual(MESSAGINGDESTINATIONKINDVALUES_TOPIC);
+        expect(
+          consumeSpan.attributes[SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]
+        ).toEqual(queueName);
+        expect(consumeSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL]).toEqual(
+          'AMQP'
+        );
+        expect(
+          consumeSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL_VERSION]
+        ).toEqual('0.9.1');
+        expect(consumeSpan.attributes[SEMATTRS_MESSAGING_URL]).toEqual(
+          censoredUrl
+        );
+        expect(consumeSpan.attributes[SEMATTRS_NET_PEER_NAME]).toEqual(
+          TEST_RABBITMQ_HOST
+        );
+        expect(consumeSpan.attributes[SEMATTRS_NET_PEER_PORT]).toEqual(
+          TEST_RABBITMQ_PORT
+        );
+
+        // new trace should be created
+        expect(consumeSpan.spanContext().traceId).not.toEqual(
+          publishSpan.spanContext().traceId
+        );
+        expect(consumeSpan.parentSpanId).toBeUndefined();
+
+        // link back to publish span
+        expect(consumeSpan.links.length).toBe(1);
+        expect(consumeSpan.links[0].context.traceId).toEqual(
+          publishSpan.spanContext().traceId
+        );
+        expect(consumeSpan.links[0].context.spanId).toEqual(
+          publishSpan.spanContext().spanId
+        );
+
+        done();
+      });
+    });
+  });
+
+  describe('confirm channel with links config', () => {
+    let confirmChannel: amqpCallback.ConfirmChannel;
+    beforeEach(done => {
+      instrumentation.setConfig({
+        useLinksForConsume: true,
+      });
+      conn.createConfirmChannel(
+        context.bind(context.active(), (err, c) => {
+          confirmChannel = c;
+          // install an error handler, otherwise when we have tests that create error on the channel,
+          // it throws and crash process
+          confirmChannel.on('error', () => {});
+          confirmChannel.assertQueue(
+            queueName,
+            { durable: false },
+            context.bind(context.active(), (err, ok) => {
+              confirmChannel.purgeQueue(
+                queueName,
+                context.bind(context.active(), (err, ok) => {
+                  done();
+                })
+              );
+            })
+          );
+        })
+      );
+    });
+
+    afterEach(done => {
+      try {
+        confirmChannel.close(err => {
+          done();
+        });
+      } catch {}
+    });
+
+    it('simple publish and consume from queue callback', done => {
+      asyncConfirmSend(confirmChannel, queueName, msgPayload).then(() => {
+        asyncConsume(
+          confirmChannel,
+          queueName,
+          [msg => expect(msg.content.toString()).toEqual(msgPayload)],
+          {
+            noAck: true,
+          }
+        ).then(() => {
+          const [publishSpan, consumeSpan] = getTestSpans();
+
+          // assert publish span
+          expect(publishSpan.kind).toEqual(SpanKind.PRODUCER);
+          expect(publishSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+            'rabbitmq'
+          );
+          expect(
+            publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]
+          ).toEqual(''); // according to spec: "This will be an empty string if the default exchange is used"
+          expect(
+            publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
+          ).toEqual(MESSAGINGDESTINATIONKINDVALUES_TOPIC);
+          expect(
+            publishSpan.attributes[SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]
+          ).toEqual(queueName);
+          expect(publishSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL]).toEqual(
+            'AMQP'
+          );
+          expect(
+            publishSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL_VERSION]
+          ).toEqual('0.9.1');
+          expect(publishSpan.attributes[SEMATTRS_MESSAGING_URL]).toEqual(
+            censoredUrl
+          );
+          expect(publishSpan.attributes[SEMATTRS_NET_PEER_NAME]).toEqual(
+            TEST_RABBITMQ_HOST
+          );
+          expect(publishSpan.attributes[SEMATTRS_NET_PEER_PORT]).toEqual(
+            TEST_RABBITMQ_PORT
+          );
+
+          // assert consume span
+          expect(consumeSpan.kind).toEqual(SpanKind.CONSUMER);
+          expect(consumeSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+            'rabbitmq'
+          );
+          expect(
+            consumeSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]
+          ).toEqual(''); // according to spec: "This will be an empty string if the default exchange is used"
+          expect(
+            consumeSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
+          ).toEqual(MESSAGINGDESTINATIONKINDVALUES_TOPIC);
+          expect(
+            consumeSpan.attributes[SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]
+          ).toEqual(queueName);
+          expect(consumeSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL]).toEqual(
+            'AMQP'
+          );
+          expect(
+            consumeSpan.attributes[SEMATTRS_MESSAGING_PROTOCOL_VERSION]
+          ).toEqual('0.9.1');
+          expect(consumeSpan.attributes[SEMATTRS_MESSAGING_URL]).toEqual(
+            censoredUrl
+          );
+          expect(consumeSpan.attributes[SEMATTRS_NET_PEER_NAME]).toEqual(
+            TEST_RABBITMQ_HOST
+          );
+          expect(consumeSpan.attributes[SEMATTRS_NET_PEER_PORT]).toEqual(
+            TEST_RABBITMQ_PORT
+          );
+
+          // new trace should be created
+          expect(consumeSpan.spanContext().traceId).not.toEqual(
+            publishSpan.spanContext().traceId
+          );
+          expect(consumeSpan.parentSpanId).toBeUndefined();
+
+          // link back to publish span
+          expect(consumeSpan.links.length).toBe(1);
+          expect(consumeSpan.links[0].context.traceId).toEqual(
+            publishSpan.spanContext().traceId
+          );
+          expect(consumeSpan.links[0].context.spanId).toEqual(
+            publishSpan.spanContext().spanId
+          );
+
+          done();
+        });
       });
     });
   });

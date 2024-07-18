@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
+import {
+  Attributes,
+  context,
+  SpanKind,
+  SpanStatusCode,
+  trace,
+} from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
@@ -24,25 +30,30 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import type * as Memcached from 'memcached';
 import * as assert from 'assert';
-import Instrumentation from '../src';
+import { MemcachedInstrumentation } from '../src';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_MEMCACHED,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_EXCEPTION_MESSAGE,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import * as util from 'util';
 
-const instrumentation = new Instrumentation();
+const instrumentation = new MemcachedInstrumentation();
 const memoryExporter = new InMemorySpanExporter();
 
 const CONFIG = {
   host: process.env.OPENTELEMETRY_MEMCACHED_HOST || 'localhost',
-  port: process.env.OPENTELEMETRY_MEMCACHED_PORT || '11211',
+  port: process.env.OPENTELEMETRY_MEMCACHED_PORT
+    ? parseInt(process.env.OPENTELEMETRY_MEMCACHED_PORT)
+    : 27017,
 };
 
-const DEFAULT_ATTRIBUTES = {
-  [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MEMCACHED,
-  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
+const DEFAULT_ATTRIBUTES: Attributes = {
+  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MEMCACHED,
+  [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
+  [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
 };
 
 interface ExtendedMemcached extends Memcached {
@@ -170,7 +181,7 @@ describe('memcached@2.x', () => {
 
           assertMatch(
             instrumentationSpans?.[0]?.events[0]?.attributes?.[
-              SemanticAttributes.EXCEPTION_MESSAGE
+              SEMATTRS_EXCEPTION_MESSAGE
             ] as 'string',
             /not stored/
           );

@@ -7,6 +7,8 @@ This module provides automatic instrumentation for the [Koa](https://github.com/
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Status
 
 | Maturity                                              | [Component Owner](../../../.github/component_owners.yml) | Compatibility         |
@@ -21,8 +23,8 @@ npm install --save @opentelemetry/instrumentation-koa
 
 ### Supported Versions
 
-- `koa`: `^2.0.0`
-- `@koa/router`: `>=8`
+- [`koa`](https://www.npmjs.com/package/koa) versions `>=2.0.0 <3`
+- [`@koa/router`](https://www.npmjs.com/package/@koa/router) versions `>=8.0.0`
 
 ## Usage
 
@@ -43,7 +45,7 @@ registerInstrumentations({
 });
 ```
 
-See [`examples`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa/examples) for a short example using both Koa and @koa/router.
+See [`examples/koa`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/koa) for a short example using both Koa and @koa/router.
 
 Note that generator-based middleware are deprecated and won't be instrumented.
 
@@ -63,11 +65,18 @@ Note that generator-based middleware are deprecated and won't be instrumented.
 
 Instrumentation configuration accepts a custom "hook" function which will be called for every instrumented Koa middleware layer involved in a request. Custom attributes can be set on the span or run any custom logic per layer.
 
-```javascript
+NOTE: `KoaRequestInfo.context` and `KoaRequestInfo.middlewareLayer` are typed as `any`. If you want type support make sure you have `@types/koa` and `@types/koa__router` installed then you can use the following type definitions:
+
+```typescript
 import { KoaInstrumentation } from "@opentelemetry/instrumentation-koa"
+import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
+import type { RouterParamContext } from '@koa/router';
+
+type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
+type KoaMiddleware = Middleware<DefaultState, KoaContext>;
 
 const koaInstrumentation = new KoaInstrumentation({
-  requestHook: function (span: Span, info: KoaRequestInfo) {
+  requestHook: function (span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) {
     span.setAttribute(
       'http.method',
       info.context.request.method

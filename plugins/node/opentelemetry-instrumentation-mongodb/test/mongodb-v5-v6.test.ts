@@ -42,9 +42,9 @@ let instrumentation: MongoDBInstrumentation;
   }
 }
 
-import * as mongodb from 'mongodb';
+import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
 
 describe('MongoDBInstrumentation-Tracing-v5', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -60,13 +60,13 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
   }
 
   const HOST = process.env.MONGODB_HOST || DEFAULT_MONGO_HOST;
-  const PORT = process.env.MONGODB_PORT || '27017';
+  const PORT = process.env.MONGODB_PORT || 27017;
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-traces';
   const COLLECTION_NAME = 'test-traces';
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
 
-  let client: mongodb.MongoClient;
-  let collection: mongodb.Collection;
+  let client: MongoClient;
+  let collection: Collection;
 
   before(done => {
     accessCollection(URL, DB_NAME, COLLECTION_NAME)
@@ -76,9 +76,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         done();
       })
       .catch((err: Error) => {
-        console.log(
-          'Skipping test-mongodb. Could not connect. Run MongoDB to test'
-        );
+        console.log('Skipping test-mongodb. ' + err.message);
         shouldTest = false;
         done();
       });
@@ -306,6 +304,32 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
           });
       });
     });
+
+    it('should create a child span for aggregation', done => {
+      const span = trace.getTracer('default').startSpan('indexRootSpan');
+      context.with(trace.setSpan(context.active(), span), () => {
+        collection
+          .aggregate([
+            { $match: { key: 'value' } },
+            { $group: { _id: '$a', count: { $sum: 1 } } },
+          ])
+          .toArray()
+          .then(() => {
+            span.end();
+            assertSpans(
+              getTestSpans(),
+              'mongodb.aggregate',
+              SpanKind.CLIENT,
+              'aggregate',
+              undefined
+            );
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
   });
 
   describe('when using enhanced database reporting without db statementSerializer', () => {
@@ -339,9 +363,51 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
             );
             const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
             );
             assert.strictEqual(dbStatement[key], '?');
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
+
+    it('should properly collect nested db statement (hide attribute values)', done => {
+      const span = trace.getTracer('default').startSpan('insertRootSpan');
+      context.with(trace.setSpan(context.active(), span), () => {
+        collection
+          .aggregate([
+            { $match: { key: 'value' } },
+            { $group: { _id: '$a', count: { $sum: 1 } } },
+          ])
+          .toArray()
+          .then(() => {
+            span.end();
+            const spans = getTestSpans();
+            const operationName = 'mongodb.aggregate';
+            assertSpans(
+              spans,
+              operationName,
+              SpanKind.CLIENT,
+              'aggregate',
+              undefined,
+              false,
+              false
+            );
+            const mongoSpan = spans.find(s => s.name === operationName);
+            const dbStatement = JSON.parse(
+              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
+            );
+            assert.deepEqual(dbStatement, {
+              aggregate: '?',
+              pipeline: [
+                { $match: { key: '?' } },
+                { $group: { _id: '?', count: { $sum: '?' } } },
+              ],
+              cursor: {},
+            });
             done();
           })
           .catch(err => {
@@ -385,7 +451,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               );
               const mongoSpan = spans.find(s => s.name === operationName);
               const dbStatement = JSON.parse(
-                mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+                mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
               );
               assert.strictEqual(dbStatement[key], value);
               done();
@@ -433,12 +499,23 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
   });
 
   describe('when specifying a responseHook configuration', () => {
-    const dataAttributeName = 'mongodb_data';
     describe('with a valid function', () => {
       beforeEach(() => {
         create({
-          responseHook: (span: Span, result: MongoResponseHookInformation) => {
-            span.setAttribute(dataAttributeName, JSON.stringify(result.data));
+          responseHook: (span: Span, result: any) => {
+            const { data } = result;
+            if (data.n) {
+              span.setAttribute('mongodb_insert_count', result.data.n);
+            }
+            // from v6.8.0 the cursor property is not an object but an instance of
+            // `CursorResponse`. We need to use the `toObject` method to be able to inspect the data
+            const cursorObj = data.cursor.firstBatch
+              ? data.cursor
+              : data.cursor.toObject();
+            span.setAttribute(
+              'mongodb_first_result',
+              JSON.stringify(cursorObj.firstBatch[0])
+            );
           },
         });
       });
@@ -454,8 +531,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               const spans = getTestSpans();
               const insertSpan = spans[0];
               assert.deepStrictEqual(
-                JSON.parse(insertSpan.attributes[dataAttributeName] as string)
-                  .n,
+                insertSpan.attributes['mongodb_insert_count'],
                 results?.insertedCount
               );
 
@@ -478,12 +554,12 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               const spans = getTestSpans();
               const findSpan = spans[0];
               const hookAttributeValue = JSON.parse(
-                findSpan.attributes[dataAttributeName] as string
+                findSpan.attributes['mongodb_first_result'] as string
               );
 
               if (results) {
                 assert.strictEqual(
-                  hookAttributeValue?.cursor?.firstBatch[0]._id,
+                  hookAttributeValue?._id,
                   results[0]._id.toString()
                 );
               } else {

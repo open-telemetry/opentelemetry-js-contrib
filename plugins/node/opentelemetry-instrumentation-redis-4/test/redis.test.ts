@@ -18,6 +18,7 @@ import {
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
 import { RedisInstrumentation } from '../src';
+import type { MultiErrorReply } from '../src/internal-types';
 import * as assert from 'assert';
 
 import {
@@ -40,7 +41,14 @@ import {
   trace,
   context,
 } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_EXCEPTION_MESSAGE,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+} from '@opentelemetry/semantic-conventions';
 import { RedisResponseCustomAttributeFunction } from '../src/types';
 import { hrTimeToMilliseconds, suppressTracing } from '@opentelemetry/core';
 
@@ -71,7 +79,7 @@ describe('redis@^4.0.0', () => {
     client = createClient({
       url: redisTestUrl,
     });
-    context.with(suppressTracing(context.active()), async () => {
+    await context.with(suppressTracing(context.active()), async () => {
       await client.connect();
     });
   });
@@ -93,24 +101,21 @@ describe('redis@^4.0.0', () => {
       assert.ok(setSpan);
       assert.strictEqual(setSpan?.kind, SpanKind.CLIENT);
       assert.strictEqual(setSpan?.name, 'redis-SET');
+      assert.strictEqual(setSpan?.attributes[SEMATTRS_DB_SYSTEM], 'redis');
       assert.strictEqual(
-        setSpan?.attributes[SemanticAttributes.DB_SYSTEM],
-        'redis'
-      );
-      assert.strictEqual(
-        setSpan?.attributes[SemanticAttributes.DB_STATEMENT],
+        setSpan?.attributes[SEMATTRS_DB_STATEMENT],
         'SET key [1 other arguments]'
       );
       assert.strictEqual(
-        setSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
+        setSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
-        setSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
+        setSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
       assert.strictEqual(
-        setSpan?.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        setSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
       );
 
@@ -118,24 +123,18 @@ describe('redis@^4.0.0', () => {
       assert.ok(getSpan);
       assert.strictEqual(getSpan?.kind, SpanKind.CLIENT);
       assert.strictEqual(getSpan?.name, 'redis-GET');
+      assert.strictEqual(getSpan?.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+      assert.strictEqual(getSpan?.attributes[SEMATTRS_DB_STATEMENT], 'GET key');
       assert.strictEqual(
-        getSpan?.attributes[SemanticAttributes.DB_SYSTEM],
-        'redis'
-      );
-      assert.strictEqual(
-        getSpan?.attributes[SemanticAttributes.DB_STATEMENT],
-        'GET key'
-      );
-      assert.strictEqual(
-        getSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
+        getSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
-        getSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
+        getSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
       assert.strictEqual(
-        getSpan?.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        getSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
       );
     });
@@ -148,15 +147,15 @@ describe('redis@^4.0.0', () => {
 
       assert.ok(setSpan);
       assert.strictEqual(
-        setSpan?.attributes[SemanticAttributes.DB_STATEMENT],
+        setSpan?.attributes[SEMATTRS_DB_STATEMENT],
         'SET key [1 other arguments]'
       );
       assert.strictEqual(
-        setSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
+        setSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
-        setSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
+        setSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
     });
@@ -179,7 +178,7 @@ describe('redis@^4.0.0', () => {
       );
       assert.strictEqual(exceptions.length, 1);
       assert.strictEqual(
-        exceptions?.[0].attributes?.[SemanticAttributes.EXCEPTION_MESSAGE],
+        exceptions?.[0].attributes?.[SEMATTRS_EXCEPTION_MESSAGE],
         'ERR value is not an integer or out of range'
       );
     });
@@ -201,20 +200,17 @@ describe('redis@^4.0.0', () => {
 
       assert.strictEqual(span.name, 'redis-connect');
 
+      assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
       assert.strictEqual(
-        span.attributes[SemanticAttributes.DB_SYSTEM],
-        'redis'
-      );
-      assert.strictEqual(
-        span.attributes[SemanticAttributes.NET_PEER_NAME],
+        span.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
-        span.attributes[SemanticAttributes.NET_PEER_PORT],
+        span.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
       assert.strictEqual(
-        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        span.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
       );
     });
@@ -234,7 +230,7 @@ describe('redis@^4.0.0', () => {
       assert.strictEqual(span.name, 'redis-connect');
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
       assert.strictEqual(
-        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        span.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisURL
       );
     });
@@ -257,11 +253,11 @@ describe('redis@^4.0.0', () => {
       assert.strictEqual(span.name, 'redis-connect');
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
       assert.strictEqual(
-        span.attributes[SemanticAttributes.NET_PEER_NAME],
+        span.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
-        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        span.attributes[SEMATTRS_DB_CONNECTION_STRING],
         expectAttributeConnString
       );
     });
@@ -284,11 +280,11 @@ describe('redis@^4.0.0', () => {
       assert.strictEqual(span.name, 'redis-connect');
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
       assert.strictEqual(
-        span.attributes[SemanticAttributes.NET_PEER_NAME],
+        span.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
-        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        span.attributes[SEMATTRS_DB_CONNECTION_STRING],
         expectAttributeConnString
       );
     });
@@ -313,38 +309,38 @@ describe('redis@^4.0.0', () => {
       assert.ok(multiSetSpan);
       assert.strictEqual(multiSetSpan.name, 'redis-SET');
       assert.strictEqual(
-        multiSetSpan.attributes[SemanticAttributes.DB_STATEMENT],
+        multiSetSpan.attributes[SEMATTRS_DB_STATEMENT],
         'SET key [1 other arguments]'
       );
       assert.strictEqual(
-        multiSetSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
+        multiSetSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
-        multiSetSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
+        multiSetSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
       assert.strictEqual(
-        multiSetSpan?.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        multiSetSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
       );
 
       assert.ok(multiGetSpan);
       assert.strictEqual(multiGetSpan.name, 'redis-GET');
       assert.strictEqual(
-        multiGetSpan.attributes[SemanticAttributes.DB_STATEMENT],
+        multiGetSpan.attributes[SEMATTRS_DB_STATEMENT],
         'GET another-key'
       );
       assert.strictEqual(
-        multiGetSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
+        multiGetSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
-        multiGetSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
+        multiGetSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
       assert.strictEqual(
-        multiGetSpan?.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        multiGetSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
       );
     });
@@ -359,29 +355,34 @@ describe('redis@^4.0.0', () => {
       const [multiSetSpan] = getTestSpans();
       assert.ok(multiSetSpan);
       assert.strictEqual(
-        multiSetSpan.attributes[SemanticAttributes.DB_STATEMENT],
+        multiSetSpan.attributes[SEMATTRS_DB_STATEMENT],
         'SET key [1 other arguments]'
       );
       assert.strictEqual(
-        multiSetSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
+        multiSetSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
-        multiSetSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
+        multiSetSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
       assert.strictEqual(
-        multiSetSpan?.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        multiSetSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
       );
     });
 
     it('multi command with error', async () => {
-      const [setReply, incrReply] = await client
-        .multi()
-        .set('key', 'value')
-        .incr('key')
-        .exec(); // ['OK', 'ReplyError']
+      let replies;
+      try {
+        replies = await client.multi().set('key', 'value').incr('key').exec();
+      } catch (err) {
+        // Starting in redis@4.6.12 `multi().exec()` will *throw* a
+        // MultiErrorReply, with `err.replies`, if any of the commands error.
+        replies = (err as MultiErrorReply).replies;
+      }
+      const [setReply, incrReply] = replies;
+
       assert.strictEqual(setReply, 'OK'); // verify we did not screw up the normal functionality
       assert.ok(incrReply instanceof Error); // verify we did not screw up the normal functionality
 
@@ -507,7 +508,7 @@ describe('redis@^4.0.0', () => {
         await client.set('key', 'value');
         const [span] = getTestSpans();
         assert.strictEqual(
-          span.attributes[SemanticAttributes.DB_STATEMENT],
+          span.attributes[SEMATTRS_DB_STATEMENT],
           'SET key value'
         );
       });
@@ -521,7 +522,7 @@ describe('redis@^4.0.0', () => {
         await client.set('key', 'value');
         const [span] = getTestSpans();
         assert.ok(span);
-        assert.ok(!(SemanticAttributes.DB_STATEMENT in span.attributes));
+        assert.ok(!(SEMATTRS_DB_STATEMENT in span.attributes));
       });
     });
 

@@ -15,6 +15,10 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-cucumber
 ```
 
+## Supported Versions
+
+- [`@cucumber/cucumber`](https://www.npmjs.com/package/@cucumber/cucumber) versions `>=8.0.0 <11`
+
 ## Usage
 
 ```js
@@ -42,6 +46,19 @@ Cucumber instrumentation has currently no options.
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute        | Short Description                                                                |
+| ---------------- | -------------------------------------------------------------------------------- |
+| `code.filepath`  | The source code file name that identifies the code unit as uniquely as possible. |
+| `code.function`  | The method or function name, or equivalent.                                      |
+| `code.lineno`    | The line number in `code.filepath` best representing the operation.              |
+| `code.namespace` | The "namespace" within which `code.function` is defined.                         |
 
 ## Useful links
 

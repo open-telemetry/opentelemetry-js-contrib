@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { SpanStatusCode, context, trace } from '@opentelemetry/api';
+import { SpanStatusCode, context, SpanKind, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -25,7 +25,8 @@ import * as assert from 'assert';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
 import { createServer, httpRequest, serverWithMiddleware } from './utils';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
@@ -113,7 +114,7 @@ describe('ExpressInstrumentation', () => {
             .find(span => span.name.includes('request handler'));
           assert.notStrictEqual(requestHandlerSpan, undefined);
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/toto/:id'
           );
           assert.strictEqual(
@@ -454,6 +455,109 @@ describe('ExpressInstrumentation', () => {
         }
       );
     });
+
+    it('should ignore double slashes in routes', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let rpcMetadata: RPCMetadata | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use((req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+          next();
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/double-slashes/foo`
+          );
+          assert.strictEqual(response, 'foo');
+          rootSpan.end();
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('request handler'));
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            '/double-slashes/:id'
+          );
+          assert.strictEqual(rpcMetadata?.route, '/double-slashes/:id');
+        }
+      );
+    });
+
+    it('should keep stack in the router layer handle', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let routerLayer: { name: string; handle: { stack: any[] } };
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.get('/bare_route', (req, res) => {
+          const stack = req.app._router.stack as any[];
+          routerLayer = stack.find(layer => layer.name === 'router');
+          return res.status(200).end('test');
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/bare_route`
+          );
+          assert.strictEqual(response, 'test');
+          rootSpan.end();
+          assert.ok(
+            routerLayer?.handle?.stack?.length === 1,
+            'router layer stack is accessible'
+          );
+        }
+      );
+    });
+
+    it('should keep the handle properties even if router is patched before instrumentation does it', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let routerLayer: { name: string; handle: { stack: any[] } };
+
+      const expressApp = express();
+      const router = express.Router();
+      const CustomRouter: (...p: Parameters<typeof router>) => void = (
+        req,
+        res,
+        next
+      ) => router(req, res, next);
+      router.use('/:slug', (req, res, next) => {
+        const stack = req.app._router.stack as any[];
+        routerLayer = stack.find(router => router.name === 'CustomRouter');
+        return res.status(200).end('bar');
+      });
+      // The patched router now has express router's own properties in its prototype so
+      // they are not accessible through `Object.keys(...)`
+      // https://github.com/TryGhost/Ghost/blob/fefb9ec395df8695d06442b6ecd3130dae374d94/ghost/core/core/frontend/web/site.js#L192
+      Object.setPrototypeOf(CustomRouter, router);
+      expressApp.use(CustomRouter);
+
+      const httpServer = await createServer(expressApp);
+      server = httpServer.server;
+      port = httpServer.port;
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/foo`
+          );
+          assert.strictEqual(response, 'bar');
+          rootSpan.end();
+          assert.ok(
+            routerLayer.handle.stack.length === 1,
+            'router layer stack is accessible'
+          );
+        }
+      );
+    });
   });
 
   describe('Disabling plugin', () => {
@@ -493,4 +597,208 @@ describe('ExpressInstrumentation', () => {
       );
     });
   });
+
+  it('should work with ESM usage', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-express.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        // use-express.mjs creates an express app with a 'GET /post/:id' endpoint and
+        // a `simpleMiddleware`, then makes a single 'GET /post/0' request. We
+        // expect to see spans like this:
+        //    span 'GET /post/:id'
+        //     `- span 'middleware - query'
+        //     `- span 'middleware - expressInit'
+        //     `- span 'middleware - simpleMiddleware'
+        //     `- span 'request handler - /post/:id'
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans[0].name, 'GET /post/:id');
+        assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+        assert.strictEqual(spans[1].name, 'middleware - query');
+        assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'middleware - expressInit');
+        assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
+        assert.strictEqual(spans[3].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[4].name, 'request handler - /post/:id');
+        assert.strictEqual(spans[4].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
+      },
+    });
+  });
+
+  it('should set a correct transaction name for routes specified in RegEx', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-express-regex.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+        TEST_REGEX_ROUTE: '/test/regex',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        const spans = collector.sortedSpans;
+
+        assert.strictEqual(spans[0].name, 'GET /\\/test\\/regex/');
+        assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+        assert.strictEqual(spans[1].name, 'middleware - query');
+        assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'middleware - expressInit');
+        assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
+        assert.strictEqual(spans[3].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
+        assert.strictEqual(
+          spans[4].name,
+          'request handler - /\\/test\\/regex/'
+        );
+        assert.strictEqual(spans[4].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
+      },
+    });
+  });
+
+  it('should set a correct transaction name for routes consisting of array including numbers', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-express-regex.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+        TEST_REGEX_ROUTE: '/test/6/test',
+      },
+      checkResult: err => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        const spans = collector.sortedSpans;
+
+        assert.strictEqual(spans[0].name, 'GET /test,6,/test/');
+        assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+        assert.strictEqual(spans[1].name, 'middleware - query');
+        assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'middleware - expressInit');
+        assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
+        assert.strictEqual(spans[3].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[4].name, 'request handler - /test,6,/test/');
+        assert.strictEqual(spans[4].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
+      },
+    });
+  });
+
+  for (const segment of ['array1', 'array5']) {
+    it('should set a correct transaction name for routes consisting of arrays of routes', async () => {
+      await testUtils.runTestFixture({
+        cwd: __dirname,
+        argv: ['fixtures/use-express-regex.mjs'],
+        env: {
+          NODE_OPTIONS:
+            '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+          NODE_NO_WARNINGS: '1',
+          TEST_REGEX_ROUTE: `/test/${segment}`,
+        },
+        checkResult: err => {
+          assert.ifError(err);
+        },
+        checkCollector: (collector: testUtils.TestCollector) => {
+          const spans = collector.sortedSpans;
+
+          assert.strictEqual(
+            spans[0].name,
+            'GET /test/array1,/\\/test\\/array[2-9]/'
+          );
+          assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+          assert.strictEqual(spans[1].name, 'middleware - query');
+          assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+          assert.strictEqual(spans[2].name, 'middleware - expressInit');
+          assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+          assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
+          assert.strictEqual(spans[3].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
+          assert.strictEqual(
+            spans[4].name,
+            'request handler - /test/array1,/\\/test\\/array[2-9]/'
+          );
+          assert.strictEqual(spans[4].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
+        },
+      });
+    });
+  }
+
+  for (const segment of [
+    'arr/545',
+    'arr/required',
+    'arr/required',
+    'arr/requiredPath',
+    'arr/required/lastParam',
+    'arr55/required/lastParam',
+    'arr/requiredPath/optionalPath/',
+    'arr/requiredPath/optionalPath/lastParam',
+  ]) {
+    it('should handle more complex regexes in route arrays correctly', async () => {
+      await testUtils.runTestFixture({
+        cwd: __dirname,
+        argv: ['fixtures/use-express-regex.mjs'],
+        env: {
+          NODE_OPTIONS:
+            '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+          NODE_NO_WARNINGS: '1',
+          TEST_REGEX_ROUTE: `/test/${segment}`,
+        },
+        checkResult: err => {
+          assert.ifError(err);
+        },
+        checkCollector: (collector: testUtils.TestCollector) => {
+          const spans = collector.sortedSpans;
+
+          assert.strictEqual(
+            spans[0].name,
+            'GET /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/'
+          );
+          assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+          assert.strictEqual(spans[1].name, 'middleware - query');
+          assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+          assert.strictEqual(spans[2].name, 'middleware - expressInit');
+          assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+          assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
+          assert.strictEqual(spans[3].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
+          assert.strictEqual(
+            spans[4].name,
+            'request handler - /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/'
+          );
+          assert.strictEqual(spans[4].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
+        },
+      });
+    });
+  }
 });

@@ -17,12 +17,12 @@ npm install --save @opentelemetry/instrumentation-knex
 
 ### Supported Versions
 
-- `>=0.10.0`
+- [`knex`](https://www.npmjs.com/package/knex) versions `>=0.10.0 <4`
 
 ## Usage
 
 ```js
-const { KnexInstrumentation, KnexInstrumentationConfig } = require('@opentelemetry/instrumentation-knex');
+const { KnexInstrumentation } = require('@opentelemetry/instrumentation-knex');
 const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
@@ -34,11 +34,10 @@ provider.register();
 
 registerInstrumentations({
   instrumentations: [
-    new KnexInstrumentation(
-      new KnexInstrumentationConfig({
+    new KnexInstrumentation({
         maxQueryLength: 100,
       })
-    )],
+  ],
   tracerProvider: provider,
 });
 ```
@@ -48,6 +47,24 @@ registerInstrumentations({
 | Options | Type | Example | Description |
 | ------- | ---- | ------- | ----------- |
 | `maxQueryLength` | `number` | `100` | Truncate `db.statement` attribute to a maximum length. If the statement is truncated `'..'` is added to it's end. Default `1022`. `-1` leaves `db.statement` untouched. |
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute               | Short Description                                                              |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `db.name`               | This attribute is used to report the name of the database being accessed.      |
+| `db.operation`          | The name of the operation being executed.                                      |
+| `db.sql.table`          | The name of the primary table that the operation is acting upon.               |
+| `db.statement`          | The database statement being executed.                                         |
+| `db.system`             | An identifier for the database management system (DBMS) product being used.    |
+| `db.user`               | Username for accessing the database.                                           |
+| `net.peer.name`         | Remote hostname or similar.                                                    |
+| `net.peer.port`         | Remote port number.                                                            |
+| `net.transport`         | Transport protocol used.                                                       |
 
 ## Useful links
 

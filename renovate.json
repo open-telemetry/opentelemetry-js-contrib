@@ -21,18 +21,40 @@
     {
       "groupName": "OTel Core experimental",
       "matchPackageNames": [
+        "@opentelemetry/api-events",
+        "@opentelemetry/api-logs",
+        "@opentelemetry/exporter-logs-otlp-grpc",
+        "@opentelemetry/exporter-logs-otlp-http",
+        "@opentelemetry/exporter-logs-otlp-proto",
+        "@opentelemetry/exporter-trace-otlp-grpc",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/exporter-trace-otlp-proto",
+        "@opentelemetry/browser-detector",
+        "@opentelemetry/exporter-metrics-otlp-grpc",
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/exporter-metrics-otlp-proto",
+        "@opentelemetry/exporter-prometheus",
         "@opentelemetry/instrumentation",
+        "@opentelemetry/instrumentation-fetch",
         "@opentelemetry/instrumentation-grpc",
         "@opentelemetry/instrumentation-http",
-        "@opentelemetry/instrumentation-fetch",
         "@opentelemetry/instrumentation-xml-http-request",
-        "@opentelemetry/exporter-metrics-otlp-grpc",
-        "@opentelemetry/sdk-node"
+        "@opentelemetry/sdk-node",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-grpc-exporter-base",
+        "@opentelemetry/otlp-proto-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/shim-opencensus"
       ],
       "rangeStrategy": "bump",
       "schedule": ["before 3am every weekday"]
     }
   ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 3am on Monday"]
+  },
   "ignoreDeps": ["lerna", "lerna-changelog", "@types/node"],
   "ignorePaths": ["archive/**", "examples/**"],
   "assignees": ["@blumamir", "@dyladan", "@legendecas", "@pichlermarc" ],

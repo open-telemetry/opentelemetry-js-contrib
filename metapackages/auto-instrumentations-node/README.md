@@ -50,7 +50,7 @@ export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="https://your-endpoint"
 export OTEL_EXPORTER_OTLP_HEADERS="x-api-key=your-api-key"
 export OTEL_EXPORTER_OTLP_TRACES_HEADERS="x-api-key=your-api-key"
 export OTEL_RESOURCE_ATTRIBUTES="service.namespace=my-namespace"
-export OTEL_NODE_RESOURCE_DETECTORS="env,host,os"
+export OTEL_NODE_RESOURCE_DETECTORS="env,host,os,serviceinstance"
 export OTEL_SERVICE_NAME="client"
 export NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 node app.js
@@ -62,9 +62,11 @@ By default, all SDK resource detectors are used, but you can use the environment
 - `host`
 - `os`
 - `process`
+- `serviceinstance`
 - `container`
 - `alibaba`
 - `aws`
+- `azure`
 - `gcp`
 - `all` - enable all resource detectors
 - `none` - disable resource detection
@@ -73,6 +75,26 @@ For example, to enable only the `env`, `host` detectors:
 
 ```shell
 export OTEL_NODE_RESOURCE_DETECTORS="env,host"
+```
+
+By default, all [Supported Instrumentations](#supported-instrumentations) are enabled.
+You can use the environment variable `OTEL_NODE_ENABLED_INSTRUMENTATIONS` to enable only certain instrumentations,
+OR the environment variable `OTEL_NODE_DISABLED_INSTRUMENTATIONS` to disable only certain instrumentations,
+by providing a comma-separated list of the instrumentation package names without the `@opentelemetry/instrumentation-` prefix.
+
+For example, to enable only
+[@opentelemetry/instrumentation-http](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-http)
+and [@opentelemetry/instrumentation-nestjs-core](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-nestjs-core)
+instrumentations:
+
+```shell
+export OTEL_NODE_ENABLED_INSTRUMENTATIONS="http,nestjs-core"
+```
+
+To disable only [@opentelemetry/instrumentation-fs](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-fs):
+
+```shell
+export OTEL_NODE_DISABLED_INSTRUMENTATIONS="fs"
 ```
 
 To enable logging for troubleshooting, set the log level by setting the `OTEL_LOG_LEVEL` environment variable to one of the following:
@@ -104,14 +126,14 @@ const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
 const { Resource } = require('@opentelemetry/resources');
-const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
+const { SEMRESATTRS_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
 const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const exporter = new CollectorTraceExporter();
 const provider = new NodeTracerProvider({
   resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: 'basic-service',
+    [SEMRESATTRS_SERVICE_NAME]: 'basic-service',
   }),
 });
 provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
@@ -149,7 +171,7 @@ registerInstrumentations({
 - [@opentelemetry/instrumentation-graphql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-graphql)
 - [@opentelemetry/instrumentation-grpc](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-grpc)
 - [@opentelemetry/instrumentation-hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-hapi)
-- [@opentelemetry/instrumentation-http](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-http)
+- [@opentelemetry/instrumentation-http](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http)
 - [@opentelemetry/instrumentation-ioredis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-ioredis)
 - [@opentelemetry/instrumentation-knex](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-knex)
 - [@opentelemetry/instrumentation-koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa)
@@ -166,6 +188,7 @@ registerInstrumentations({
 - [@opentelemetry/instrumentation-redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis)
 - [@opentelemetry/instrumentation-restify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-restify)
 - [@opentelemetry/instrumentation-socket.io](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-socket.io)
+- [@opentelemetry/instrumentation-undici](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-undici)
 - [@opentelemetry/instrumentation-winston](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-winston)
 
 ## Useful links

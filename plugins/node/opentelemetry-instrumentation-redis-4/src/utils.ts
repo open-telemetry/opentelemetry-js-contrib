@@ -13,18 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DiagLogger } from '@opentelemetry/api';
+import { Attributes, DiagLogger } from '@opentelemetry/api';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+  DBSYSTEMVALUES_REDIS,
 } from '@opentelemetry/semantic-conventions';
 
-export function getClientAttributes(diag: DiagLogger, options: any) {
+export function getClientAttributes(
+  diag: DiagLogger,
+  options: any
+): Attributes {
   return {
-    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-    [SemanticAttributes.NET_PEER_NAME]: options?.socket?.host,
-    [SemanticAttributes.NET_PEER_PORT]: options?.socket?.port,
-    [SemanticAttributes.DB_CONNECTION_STRING]:
+    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+    [SEMATTRS_NET_PEER_NAME]: options?.socket?.host,
+    [SEMATTRS_NET_PEER_PORT]: options?.socket?.port,
+    [SEMATTRS_DB_CONNECTION_STRING]:
       removeCredentialsFromDBConnectionStringAttribute(diag, options?.url),
   };
 }

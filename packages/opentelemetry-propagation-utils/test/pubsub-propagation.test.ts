@@ -83,7 +83,7 @@ describe('Pubsub propagation', () => {
     // @ts-expect-error Typescript thinks this value is used before assignment
     resolve(undefined);
 
-    // We use setTimeout here to make sure our assertations run
+    // We use setTimeout here to make sure our assertions run
     // after the promise resolves
     return new Promise(res => setTimeout(res, 0)).then(() => {
       expect(getTestSpans().length).toBe(1);
@@ -121,7 +121,7 @@ describe('Pubsub propagation', () => {
     // @ts-expect-error Typescript thinks this value is used before assignment
     reject(new Error('Failed'));
 
-    // We use setTimeout here to make sure our assertations run
+    // We use setTimeout here to make sure our assertions run
     // after the promise resolves
     return new Promise(res => setTimeout(res, 0)).then(() => {
       expect(getTestSpans().length).toBe(1);

@@ -17,5 +17,5 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export type IgnoreMatcher = string | RegExp | ((url: string) => boolean);
 export interface DnsInstrumentationConfig extends InstrumentationConfig {
-  ignoreHostnames?: IgnoreMatcher[];
+  ignoreHostnames?: IgnoreMatcher | IgnoreMatcher[];
 }

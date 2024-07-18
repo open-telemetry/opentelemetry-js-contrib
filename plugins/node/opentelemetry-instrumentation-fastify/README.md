@@ -7,6 +7,8 @@ This module provides automatic instrumentation for the [`fastify`](https://www.f
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 This instrumentation relies on HTTP calls to also be instrumented. Make sure you install and enable both, otherwise you will have spans that are not connected with each other.
@@ -17,7 +19,7 @@ npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrument
 
 ### Supported Versions
 
-- fastify: `^3.0.0 || ^4.0.0`
+- [`fastify`](https://www.npmjs.com/package/fastify) versions `>=3.0.0 <5`
 
 ## Usage
 
@@ -67,6 +69,16 @@ const fastifyInstrumentation = new FastifyInstrumentation({
   }
 });
 ```
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute    | Short Description                  |
+| ------------ | ---------------------------------- |
+| `http.route` | The matched route (path template). |
 
 ## Useful links
 

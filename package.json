@@ -15,8 +15,8 @@
     "clean": "lerna run clean",
     "precompile": "tsc --version && npm run version:update",
     "version:update": "lerna run version:update",
+    "lint:readme": "lerna run lint:readme",
     "compile": "lerna run compile",
-    "compile:examples": "lerna run compile:examples",
     "prewatch": "npm run precompile",
     "test": "lerna run test",
     "test:ci:changed": "lerna run test --since origin/main",
@@ -27,7 +27,9 @@
     "lint": "lerna run lint",
     "lint:fix": "lerna run lint:fix",
     "lint:examples": "eslint ./examples/**/*.js",
-    "lint:examples:fix": "eslint ./examples/**/*.js --fix"
+    "lint:examples:fix": "eslint ./examples/**/*.js --fix",
+    "lint:markdown": "markdownlint-cli2 $(git ls-files '*.md')",
+    "lint:markdown:fix": "markdownlint-cli2 --fix $(git ls-files '*.md')"
   },
   "keywords": [
     "opentelemetry",
@@ -49,10 +51,15 @@
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.1",
+    "glob": "^10.3.10",
     "lerna": "6.6.2",
     "lerna-changelog": "2.2.0",
+    "markdownlint-cli2": "0.13.0",
+    "minimatch": "^9.0.3",
     "prettier": "2.8.8",
-    "typescript": "4.4.4"
+    "semver": "^7.6.0",
+    "process": "0.11.10",
+    "util": "0.12.5"
   },
   "changelog": {
     "labels": {
@@ -71,9 +78,7 @@
   "workspaces": [
     "packages/*",
     "plugins/node/*",
-    "plugins/node/*/examples",
     "plugins/web/*",
-    "plugins/web/*/examples",
     "propagators/*",
     "detectors/node/*",
     "metapackages/*"

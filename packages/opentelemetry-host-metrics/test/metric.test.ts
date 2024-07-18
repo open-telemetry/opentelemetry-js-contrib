@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-const SI = require('systeminformation');
+import * as Network from 'systeminformation/lib/network';
+import type { Systeminformation } from 'systeminformation';
 import { Attributes } from '@opentelemetry/api';
 import {
   AggregationTemporality,
@@ -27,10 +28,11 @@ import {
 import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';
-import { METRIC_ATTRIBUTES } from '../src/enum';
+import { ATTRIBUTE_NAMES } from '../src/enum';
 import { HostMetrics } from '../src';
 
 const cpuJson = require('./mocks/cpu.json');
+const processJson = require('./mocks/process.json');
 const networkJson = require('./mocks/network.json');
 
 class TestMetricReader extends MetricReader {
@@ -44,21 +46,23 @@ class TestMetricReader extends MetricReader {
 let countSI = 0;
 const mockedSI = {
   networkStats: function () {
-    return new Promise((resolve, reject) => {
-      countSI++;
-      const stats: any[] = networkJson
-        .slice()
-        .map((obj: any) => Object.assign({}, obj));
+    return new Promise<Systeminformation.NetworkStatsData[]>(
+      (resolve, reject) => {
+        countSI++;
+        const stats: any[] = networkJson
+          .slice()
+          .map((obj: any) => Object.assign({}, obj));
 
-      for (let i = 0, j = networkJson.length; i < j; i++) {
-        Object.keys(stats[i]).forEach(key => {
-          if (typeof stats[i][key] === 'number' && stats[i][key] > 0) {
-            stats[i][key] = stats[i][key] * countSI;
-          }
-        });
+        for (let i = 0, j = networkJson.length; i < j; i++) {
+          Object.keys(stats[i]).forEach(key => {
+            if (typeof stats[i][key] === 'number' && stats[i][key] > 0) {
+              stats[i][key] = stats[i][key] * countSI;
+            }
+          });
+        }
+        resolve(stats);
       }
-      resolve(stats);
-    });
+    );
   },
 };
 
@@ -75,7 +79,20 @@ const mockedOS = {
   },
 };
 
-const INTERVAL = 3000;
+const mockedProcess = {
+  uptime: function () {
+    return 0;
+  },
+  procIdx: 0,
+  cpuUsage: function () {
+    return processJson[this.procIdx++ % 2];
+  },
+  memoryUsage: {
+    rss: function () {
+      return 123456;
+    },
+  },
+};
 
 describe('Host Metrics', () => {
   let meterProvider: MeterProvider;
@@ -86,9 +103,7 @@ describe('Host Metrics', () => {
 
   describe('constructor', () => {
     it('should create a new instance', () => {
-      const hostMetrics = new HostMetrics({
-        name: 'opentelemetry-host-metrics',
-      });
+      const hostMetrics = new HostMetrics();
       assert.ok(hostMetrics instanceof HostMetrics);
     });
 
@@ -97,7 +112,6 @@ describe('Host Metrics', () => {
 
       const hostMetrics = new HostMetrics({
         meterProvider,
-        name: 'opentelemetry-host-metrics',
       });
       hostMetrics.start();
       assert.ok(hostMetrics instanceof HostMetrics);
@@ -113,29 +127,23 @@ describe('Host Metrics', () => {
       sandbox = sinon.createSandbox();
       sandbox.useFakeTimers();
 
-      sandbox.stub(os, 'freemem').callsFake(() => {
-        return mockedOS.freemem();
-      });
-      sandbox.stub(os, 'totalmem').returns(mockedOS.totalmem());
+      sandbox.stub(os, 'freemem').callsFake(mockedOS.freemem);
+      sandbox.stub(os, 'totalmem').callsFake(mockedOS.totalmem);
       sandbox.stub(os, 'cpus').callsFake(() => mockedOS.cpus());
-      sandbox.stub(process, 'uptime').returns(0);
-      sandbox.stub(SI, 'networkStats').callsFake(() => {
-        return mockedSI.networkStats();
-      });
-      sandbox.stub(process, 'cpuUsage').callsFake(() => {
-        return {
-          user: 90713560,
-          system: 63192630,
-        };
-      });
-      sandbox.stub(process.memoryUsage, 'rss').callsFake(() => {
-        return 123456;
-      });
+      sandbox.stub(process, 'uptime').callsFake(mockedProcess.uptime);
+      sandbox
+        .stub(process, 'cpuUsage')
+        .callsFake(() => mockedProcess.cpuUsage());
+      sandbox
+        .stub(process.memoryUsage, 'rss')
+        .callsFake(mockedProcess.memoryUsage.rss);
+      sandbox.stub(Network, 'networkStats').callsFake(mockedSI.networkStats);
 
       reader = new TestMetricReader();
 
-      meterProvider = new MeterProvider();
-      meterProvider.addMetricReader(reader);
+      meterProvider = new MeterProvider({
+        readers: [reader],
+      });
 
       hostMetrics = new HostMetrics({
         meterProvider,
@@ -144,13 +152,9 @@ describe('Host Metrics', () => {
 
       await hostMetrics.start();
 
-      const dateStub = sandbox
-        .stub(Date.prototype, 'getTime')
-        .returns(process.uptime() * 1000 + 1);
       // Drop first frame cpu metrics, see
-      // src/common.ts getCpuUsageData
+      // src/common.ts getCpuUsageData/getProcessCpuUsageData
       await reader.collect();
-      dateStub.returns(process.uptime() * 1000 + INTERVAL);
 
       // advance the clock for the next collection
       sandbox.clock.tick(1000);
@@ -162,8 +166,12 @@ describe('Host Metrics', () => {
       sandbox.restore();
     });
 
-    const sysCpuStateAttr = METRIC_ATTRIBUTES.SYSTEM_CPU_STATE;
-    const sysCpuNumAttr = METRIC_ATTRIBUTES.SYSTEM_CPU_LOGICAL_NUMBER;
+    const sysCpuStateAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_STATE;
+    const sysCpuNumAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_LOGICAL_NUMBER;
+    const sysMemStateAttr = ATTRIBUTE_NAMES.SYSTEM_MEMORY_STATE;
+    const sysDeviceAttr = ATTRIBUTE_NAMES.SYSTEM_DEVICE;
+    const sysNetDirAttr = ATTRIBUTE_NAMES.NETWORK_IO_DIRECTION;
+    const procCpuStateAttr = ATTRIBUTE_NAMES.PROCESS_CPU_STATE;
 
     it('should export CPU time metrics', async () => {
       const metric = await getRecords(reader, 'system.cpu.time');
@@ -280,50 +288,74 @@ describe('Host Metrics', () => {
     it('should export Memory usage metrics', async () => {
       const metric = await getRecords(reader, 'system.memory.usage');
 
-      ensureValue(metric, { state: 'used' }, 1024 * 1024 - 1024);
-      ensureValue(metric, { state: 'free' }, 1024);
+      ensureValue(metric, { [sysMemStateAttr]: 'used' }, 1024 * 1024 - 1024);
+      ensureValue(metric, { [sysMemStateAttr]: 'free' }, 1024);
     });
 
     it('should export Memory utilization metrics', async () => {
       const metric = await getRecords(reader, 'system.memory.utilization');
 
-      ensureValue(metric, { state: 'used' }, 0.9990234375);
-      ensureValue(metric, { state: 'free' }, 0.0009765625);
+      ensureValue(metric, { [sysMemStateAttr]: 'used' }, 0.9990234375);
+      ensureValue(metric, { [sysMemStateAttr]: 'free' }, 0.0009765625);
     });
 
     it('should export Network io dropped', async () => {
       const metric = await getRecords(reader, 'system.network.dropped');
 
-      ensureValue(metric, { direction: 'receive', device: 'eth0' }, 1200);
-      ensureValue(metric, { direction: 'transmit', device: 'eth0' }, 12);
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' },
+        1200
+      );
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' },
+        12
+      );
     });
 
     it('should export Network io errors', async () => {
       const metric = await getRecords(reader, 'system.network.errors');
 
-      ensureValue(metric, { direction: 'receive', device: 'eth0' }, 3);
-      ensureValue(metric, { direction: 'transmit', device: 'eth0' }, 15);
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' },
+        3
+      );
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' },
+        15
+      );
     });
 
     it('should export Network io bytes', async () => {
       const metric = await getRecords(reader, 'system.network.io');
 
-      ensureValue(metric, { direction: 'receive', device: 'eth0' }, 123123);
-      ensureValue(metric, { direction: 'transmit', device: 'eth0' }, 321321);
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' },
+        123123
+      );
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' },
+        321321
+      );
     });
 
     it('should export Process CPU time metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.time');
 
-      ensureValue(metric, { state: 'user' }, 90713.56);
-      ensureValue(metric, { state: 'system' }, 63192.630000000005);
+      ensureValue(metric, { [procCpuStateAttr]: 'user' }, 90.71356);
+      ensureValue(metric, { [procCpuStateAttr]: 'system' }, 63.192629999999994);
     });
 
     it('should export Process CPU utilization metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.utilization');
 
-      ensureValue(metric, { state: 'user' }, 30247.935978659552);
-      ensureValue(metric, { state: 'system' }, 21071.23374458153);
+      ensureValue(metric, { [procCpuStateAttr]: 'user' }, 0.025);
+      ensureValue(metric, { [procCpuStateAttr]: 'system' }, 0.05);
     });
 
     it('should export Process Memory usage metrics', async () => {

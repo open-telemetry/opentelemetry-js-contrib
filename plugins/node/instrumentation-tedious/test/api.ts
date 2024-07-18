@@ -193,8 +193,8 @@ export const makeApi = (tedious: tedious) => {
 
   /*
     Connection has `inTransaction` boolean and `transactionDepth` property, but the
-    reliablility of those are questionable with `abortTransactionOnError` option enabled.
-    Usecases to test for in the future:
+    reliability of those are questionable with `abortTransactionOnError` option enabled.
+    Use cases to test for in the future:
   */
   const transaction = {
     tableName: '[dbo].[test_transact]',

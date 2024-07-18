@@ -17,23 +17,29 @@
 import { DetectorSync, IResource, Resource } from '@opentelemetry/resources';
 
 import {
-  CloudProviderValues,
-  CloudPlatformValues,
-  SemanticResourceAttributes,
+  SEMRESATTRS_FAAS_MAX_MEMORY,
+  SEMRESATTRS_FAAS_INSTANCE,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_CLOUD_REGION,
+  CLOUDPROVIDERVALUES_AZURE,
+  CLOUDPLATFORMVALUES_AZURE_FUNCTIONS,
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_PROCESS_PID,
 } from '@opentelemetry/semantic-conventions';
 import {
   WEBSITE_SITE_NAME,
-  FUNCTIONS_VERSION,
   WEBSITE_INSTANCE_ID,
   FUNCTIONS_MEM_LIMIT,
   REGION_NAME,
+  CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
 } from '../types';
+import { getAzureResourceUri, isAzureFunction } from '../utils';
 
 const AZURE_FUNCTIONS_ATTRIBUTE_ENV_VARS = {
-  [SemanticResourceAttributes.FAAS_NAME]: WEBSITE_SITE_NAME,
-  [SemanticResourceAttributes.FAAS_VERSION]: FUNCTIONS_VERSION,
-  [SemanticResourceAttributes.FAAS_INSTANCE]: WEBSITE_INSTANCE_ID,
-  [SemanticResourceAttributes.FAAS_MAX_MEMORY]: FUNCTIONS_MEM_LIMIT,
+  [SEMRESATTRS_SERVICE_NAME]: WEBSITE_SITE_NAME,
+  [SEMRESATTRS_FAAS_INSTANCE]: WEBSITE_INSTANCE_ID,
+  [SEMRESATTRS_FAAS_MAX_MEMORY]: FUNCTIONS_MEM_LIMIT,
 };
 
 /**
@@ -43,41 +49,47 @@ const AZURE_FUNCTIONS_ATTRIBUTE_ENV_VARS = {
 class AzureFunctionsDetector implements DetectorSync {
   detect(): IResource {
     let attributes = {};
-    const functionName = process.env[WEBSITE_SITE_NAME];
-    const functionVersion = process.env[FUNCTIONS_VERSION];
-    if (functionName && functionVersion) {
+    const serviceName = process.env[WEBSITE_SITE_NAME];
+
+    /**
+     * Checks that we are operating within an Azure Function using the function version since WEBSITE_SITE_NAME
+     * will exist in Azure App Service as well and detectors should be mutually exclusive.
+     * If the function version is not present, we check for the website sku to determine if it is a function.
+     */
+    if (serviceName && isAzureFunction()) {
       const functionInstance = process.env[WEBSITE_INSTANCE_ID];
       const functionMemLimit = process.env[FUNCTIONS_MEM_LIMIT];
 
       attributes = {
-        [SemanticResourceAttributes.CLOUD_PROVIDER]: CloudProviderValues.AZURE,
-        [SemanticResourceAttributes.CLOUD_PLATFORM]:
-          CloudPlatformValues.AZURE_FUNCTIONS,
-        [SemanticResourceAttributes.CLOUD_REGION]: process.env[REGION_NAME],
+        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AZURE,
+        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AZURE_FUNCTIONS,
+        [SEMRESATTRS_CLOUD_REGION]: process.env[REGION_NAME],
+        [SEMRESATTRS_PROCESS_PID]: process.pid,
       };
 
-      if (functionName) {
+      if (serviceName) {
         attributes = {
           ...attributes,
-          [SemanticResourceAttributes.FAAS_NAME]: functionName,
-        };
-      }
-      if (functionVersion) {
-        attributes = {
-          ...attributes,
-          [SemanticResourceAttributes.FAAS_VERSION]: functionVersion,
+          [SEMRESATTRS_SERVICE_NAME]: serviceName,
         };
       }
       if (functionInstance) {
         attributes = {
           ...attributes,
-          [SemanticResourceAttributes.FAAS_INSTANCE]: functionInstance,
+          [SEMRESATTRS_FAAS_INSTANCE]: functionInstance,
         };
       }
       if (functionMemLimit) {
         attributes = {
           ...attributes,
-          [SemanticResourceAttributes.FAAS_MAX_MEMORY]: functionMemLimit,
+          [SEMRESATTRS_FAAS_MAX_MEMORY]: functionMemLimit,
+        };
+      }
+      const azureResourceUri = getAzureResourceUri(serviceName);
+      if (azureResourceUri) {
+        attributes = {
+          ...attributes,
+          ...{ [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: azureResourceUri },
         };
       }
 

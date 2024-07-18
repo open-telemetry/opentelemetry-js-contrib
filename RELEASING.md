@@ -9,15 +9,15 @@ For posterity, or in the event of any failures with release-please, the process 
 
 Manual Release Process Steps:
 
-* [Update to latest locally](#update-to-latest-locally)
-* [Create a new branch](#create-a-new-branch)
-* [Prepare each package for release](#prepare-each-package-for-release)
-* [Use the Changelog to create a GitHub Release](#use-the-changelog-to-create-a-github-release)
-* [Create a new PR](#create-a-new-pr)
-* [Merge and pull](#merge-and-pull)
-* [Publish all packages](#publish-all-packages)
-* [Publish the GitHub Release](#publish-the-github-release)
-* [Update CHANGELOG](#update-changelog)
+- [Update to latest locally](#update-to-latest-locally)
+- [Create a new branch](#create-a-new-branch)
+- [Prepare each package for release](#prepare-each-package-for-release)
+- [Use the Changelog to create a GitHub Release](#use-the-changelog-to-create-a-github-release)
+- [Create a new PR](#create-a-new-pr)
+- [Merge and pull](#merge-and-pull)
+- [Publish all packages](#publish-all-packages)
+- [Publish the GitHub Release](#publish-the-github-release)
+- [Update CHANGELOG](#update-changelog)
 
 ## Update to latest locally
 
@@ -31,9 +31,9 @@ Create a new branch called `x.y.z-proposal` from the current commit.
 
 Decide on the next `major.minor.patch` release number based on [semver](http://semver.org/) guidelines.
 
-* Use `npm install` command to initialize all package directories
-* Use `lerna publish --skip-npm --no-git-tag-version --no-push` to bump the version in all `package.json`
-* Use `npm run bootstrap` to generate latest `version.ts` files
+- Use `npm install` command to initialize all package directories
+- Use `lerna publish --skip-npm --no-git-tag-version --no-push` to bump the version in all `package.json`
+- Use `npm run bootstrap` to generate latest `version.ts` files
 
 ## Use the Changelog to create a GitHub Release
 
@@ -58,10 +58,10 @@ It will print something like:
 ## Unreleased (2018-05-24)
 
 #### :bug: Bug Fix
-* [#198](https://github.com/my-org/my-repo/pull/198) Avoid an infinite loop ([@helpful-hacker](https://github.com/helpful-hacker))
+- [#198](https://github.com/my-org/my-repo/pull/198) Avoid an infinite loop ([@helpful-hacker](https://github.com/helpful-hacker))
 
 #### :house: Internal
-* [#183](https://github.com/my-org/my-repo/pull/183) Standardize error messages ([@careful-coder](https://github.com/careful-coder))
+- [#183](https://github.com/my-org/my-repo/pull/183) Standardize error messages ([@careful-coder](https://github.com/careful-coder))
 
 #### Commiters: 2
 - Helpful Hacker ([@helpful-hacker](https://github.com/helpful-hacker))
@@ -112,10 +112,10 @@ Publish the GitHub release, ensuring that the tag points to the newly landed com
 
 ## Update CHANGELOG
 
-* After releasing is done, update the [CHANGELOG.md](https://github.com/open-telemetry/opentelemetry-js/blob/main/CHANGELOG.md) and start new Unreleased label.
-* Create a new commit with the exact title: `Post Release: update CHANGELOG.md`.
-* Go through PR review and merge it to GitHub main branch.
+- After releasing is done, update the [CHANGELOG.md](https://github.com/open-telemetry/opentelemetry-js/blob/main/CHANGELOG.md) and start new Unreleased label.
+- Create a new commit with the exact title: `Post Release: update CHANGELOG.md`.
+- Go through PR review and merge it to GitHub main branch.
 
 ## Known Issues
 
-* The `examples/` and `getting-started/` folders are not part of lerna packages, we need to manually bump the version in `package.json`.
+- The `examples/` and `getting-started/` folders are not part of lerna packages, we need to manually bump the version in `package.json`.

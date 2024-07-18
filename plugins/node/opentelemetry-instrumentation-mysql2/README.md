@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-mysql2
 
 ## Supported Versions
 
-- `>= 1.4.2, < 4.0`
+- [`mysql2`](https://www.npmjs.com/package/mysql2) versions `>=1.4.2 <4`
 
 ## Usage
 
@@ -48,6 +48,22 @@ You can set the following instrumentation options:
 | ------- | ---- | ----------- |
 | `responseHook` | `MySQL2InstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
 | `addSqlCommenterCommentToQueries` | `boolean` | If true, adds [sqlcommenter](https://github.com/open-telemetry/opentelemetry-sqlcommenter) specification compliant comment to queries with tracing context (default false). _NOTE: A comment will not be added to queries that already contain `--` or `/* ... */` in them, even if these are not actually part of comments_ |
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute               | Short Description                                                              |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `db.connection_string`  | The connection string used to connect to the database.                         |
+| `db.name`               | This attribute is used to report the name of the database being accessed.      |
+| `db.statement`          | The database statement being executed.                                         |
+| `db.system`             | An identifier for the database management system (DBMS) product being used.    |
+| `db.user`               | Username for accessing the database.                                           |
+| `net.peer.name`         | Remote hostname or similar.                                                    |
+| `net.peer.port`         | Remote port number.                                                            |
 
 ## Useful links
 

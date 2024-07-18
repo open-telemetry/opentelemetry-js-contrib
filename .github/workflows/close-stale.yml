@@ -1,13 +1,13 @@
 name: 'Close stale issues and PRs'
 on:
   schedule:
-    - cron: '30 6 * * 1'
+    - cron: '30 6 * * *'
 
 jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v8
+      - uses: actions/stale@v9
         with:
           days-before-stale: 60
           days-before-close: 14
@@ -17,5 +17,30 @@ jobs:
           close-pr-message: 'This PR was closed because it has been stale for 14 days with no activity.'
           stale-issue-label: stale
           stale-pr-label: stale
-          exempt-issue-labels: never-stale,instrumentation-request,bug
+          exempt-issue-labels: never-stale
           exempt-pr-labels: never-stale
+          any-of-labels: information-requested
+      - uses: actions/stale@v9
+        with:
+          days-before-issue-stale: 0
+          days-before-issue-close: 14
+          stale-issue-message: 'This package does not have an assigned [component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#component-ownership) and is considered [unmaintained](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#unmaintained). As such this package is in feature-freeze and this issue will be closed with 14 days unless a new owner or a sponsor (a member of @open-telemetry/javascript-approvers) for the feature is found. It is the responsibility of the author to find a sponsor for this feature.
+
+          Are you familiar with this package? Consider [becoming a component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#becoming-a-component-owner).'
+          close-issue-message: 'This issue was closed because no owner or sponsor has been found after 14 days'
+          stale-issue-label: pkg-status:unmaintained:autoclose-scheduled
+          only-labels: pkg-status:unmaintained,feature-request
+          exempt-issue-labels: bug,has:sponsor,type:semconv-update
+          remove-stale-when-updated: false
+      - uses: actions/stale@v9
+        with:
+          days-before-pr-stale: 0
+          days-before-pr-close: 14
+          stale-pr-message: 'This package does not have an assigned [component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#component-ownership) and is considered [unmaintained](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#unmaintained). As such this package is in feature-freeze and this PR will be closed with 14 days unless a new owner or a sponsor (a member of @open-telemetry/javascript-approvers) for the feature is found. It is the responsibility of the author to find a sponsor for this feature.
+
+          Are you familiar with this package? Consider [becoming a component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#becoming-a-component-owner).'
+          close-pr-message: 'This issue was closed because no owner or sponsor has been found after 14 days'
+          stale-pr-label: pkg-status:unmaintained:autoclose-scheduled
+          only-labels: pkg-status:unmaintained
+          exempt-pr-labels: bug,has:sponsor,type:semconv-update,dependencies,autorelease:pending
+          remove-stale-when-updated: false

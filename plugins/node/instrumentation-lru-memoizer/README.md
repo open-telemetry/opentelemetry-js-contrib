@@ -1,9 +1,9 @@
-# OpenTelemetry lru-memorizer Instrumentation for Node.js
+# OpenTelemetry lru-memoizer Instrumentation for Node.js
 
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`lru-memorizer`](https://github.com/jfromaniello/lru-memoizer) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`lru-memoizer`](https://github.com/jfromaniello/lru-memoizer) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-lru-memoizer
 
 ## Supported Versions
 
-- `>=1.3 <3`
+- [`lru-memorizer`](https://www.npmjs.com/package/lru-memoizer) versions `>=1.3.0 <3`
 
 ## Usage
 
@@ -39,6 +39,10 @@ registerInstrumentations({
   ],
 })
 ```
+
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
 
 ## Useful links
 

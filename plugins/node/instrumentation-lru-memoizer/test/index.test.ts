@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import LruMemoizerInstrumentation from '../src';
+import { LruMemoizerInstrumentation } from '../src';
 import { trace, context } from '@opentelemetry/api';
 import { expect } from 'expect';
 
@@ -53,7 +53,7 @@ describe('lru-memoizer instrumentation', () => {
       memoizerLoadCallback!(null as any, 'result');
     });
 
-    it('should invoke callback with right context when serving 2 parallel async requestes', () => {
+    it('should invoke callback with right context when serving 2 parallel async requests', () => {
       const testTracer = trace
         .getTracerProvider()
         .getTracer('lru-memoize-testing');

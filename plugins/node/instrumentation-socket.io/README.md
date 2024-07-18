@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-socket.io
 
 ## Supported Versions
 
-- `>=2 <5`
+- [socket.io](https://www.npmjs.com/package/socket.io) versions `>=2.0.0 <5`
 
 ## Usage
 
@@ -48,16 +48,22 @@ registerInstrumentations({
 | `onIgnoreEventList` | `string[]` | `[]` | names of listened events to ignore tracing for |
 | `traceReserved` | `boolean` | `false` | set to true if you want to trace socket.io reserved events (see [docs](https://socket.io/docs/v4/emit-cheatsheet/#Reserved-events)) |
 
-## Migration From opentelemetry-instrumentation-socket.io
+## Filter Http Transport
 
-This instrumentation was originally published and maintained under the name `"opentelemetry-instrumentation-socket.io"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js).
+If you do not want to trace the socket.io http requests, add the default socket.io route (`/socket.io/`) to the `HttpInstrumentationConfig.ignoreIncomingPaths` array
 
-Few breaking changes were made during porting to the contrib repo:
+## Semantic Conventions
 
-### filterHttpTransport
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
-The instrumentation's config `filterHttpTransport` option was removed to decouple this instrumentation from the http instrumentation.
-if you do not want to trace the socket.io http requests, add the default socket.io route (`/socket.io/`) to the `HttpInstrumentationConfig.ignoreIncomingPaths` array
+Attributes collected:
+
+| Attribute                    | Short Description                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------------ |
+| `messaging.destination`      | The message destination name. This might be equal to the span name but is required nevertheless. |
+| `messaging.destination_kind` | The kind of message destination.                                                                 |
+| `messaging.operation`        | A string identifying the kind of message consumption.                                            |
+| `messaging.system`           | A string identifying the messaging system.                                                       |
 
 ## Useful links
 

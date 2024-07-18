@@ -1,46 +1,36 @@
 # Changelog
 
-### Dependencies
+## [0.29.10](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.9...resource-detector-gcp-v0.29.10) (2024-06-06)
 
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.30.0 to ^0.31.0
 
 ### Dependencies
 
 * The following workspace dependencies were updated
   * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.31.0 to ^0.32.0
+    * @opentelemetry/contrib-test-utils bumped from ^0.39.0 to ^0.40.0
+
+## [0.29.9](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.8...resource-detector-gcp-v0.29.9) (2024-04-25)
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
 
 ### Dependencies
 
 * The following workspace dependencies were updated
   * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.32.0 to ^0.33.0
+    * @opentelemetry/contrib-test-utils bumped from ^0.38.0 to ^0.39.0
+
+## [0.29.8](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.7...resource-detector-gcp-v0.29.8) (2024-04-03)
+
 
 ### Dependencies
 
 * The following workspace dependencies were updated
   * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.33.0 to ^0.33.1
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.33.3 to ^0.33.4
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
+    * @opentelemetry/contrib-test-utils bumped from ^0.37.0 to ^0.38.0
 
 ## [0.29.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.2...resource-detector-gcp-v0.29.3) (2023-11-13)
 

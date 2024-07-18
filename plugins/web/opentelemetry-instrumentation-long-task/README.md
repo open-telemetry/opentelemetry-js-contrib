@@ -45,7 +45,7 @@ registerInstrumentations({
 
 The `observerCallback` function is passed the created span and the `longtask` `PerformanceEntry`,
 allowing the user to add custom attributes to the span with any logic.
-For example, a webapp with client-side routing can add contextual information on the current page,
+For example, a web app with client-side routing can add contextual information on the current page,
 even if the tracer was instantiated before navigation.
 
 Usage Example:
@@ -69,7 +69,7 @@ longtaskInstrumentationConfig = {
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
-[license-url]: https://github.com/open-telemetry/opentelemetry-js/blob/main/LICENSE
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-long-task
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-long-task.svg

@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-mongoose
 
 ## Supported Versions
 
-- `>=5.9.7 <7`
+- [`mongoose`](https://www.npmjs.com/package/mongoose) versions `>=5.9.7 <7`
 
 ## Usage
 
@@ -38,19 +38,22 @@ registerInstrumentations({
 })
 ```
 
-## Migration From opentelemetry-instrumentation-mongoose
+## Semantic Conventions
 
-This instrumentation was originally published and maintained under the name `"opentelemetry-instrumentation-mongoose"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js).
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
-Few breaking changes were made during porting to the contrib repo to align with conventions:
+Attributes collected:
 
-### Hook Info
-
-The instrumentation's config `responseHook` functions signature changed, so the second function parameter is info object, containing the relevant hook data.
-
-### `moduleVersionAttributeName` config option
-
-The `moduleVersionAttributeName` config option is removed. To add the mongoose package version to spans, use the `moduleVersion` attribute in hook info for `responseHook` function.
+| Attribute               | Short Description                                                           |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `db.mongodb.collection` | The collection being accessed within the database stated in `db.name`.      |
+| `db.name`               | This attribute is used to report the name of the database being accessed.   |
+| `db.operation`          | The name of the operation being executed, or the SQL keyword.               |
+| `db.statement`          | The database statement being executed.                                      |
+| `db.system`             | An identifier for the database management system (DBMS) product being used. |
+| `db.user`               | Username for accessing the database.                                        |
+| `net.peer.name`         | Remote hostname or similar.                                                 |
+| `net.peer.port`         | Remote port number.                                                         |
 
 ## Useful links
 

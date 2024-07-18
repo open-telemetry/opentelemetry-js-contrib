@@ -17,12 +17,17 @@
 import {
   Detector,
   Resource,
+  ResourceAttributes,
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
-  CloudProviderValues,
-  CloudPlatformValues,
-  SemanticResourceAttributes,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_FAAS_VERSION,
+  SEMRESATTRS_FAAS_NAME,
+  CLOUDPROVIDERVALUES_AWS,
+  CLOUDPLATFORMVALUES_AWS_LAMBDA,
 } from '@opentelemetry/semantic-conventions';
 
 /**
@@ -40,23 +45,19 @@ export class AwsLambdaDetector implements Detector {
     const functionVersion = process.env.AWS_LAMBDA_FUNCTION_VERSION;
     const region = process.env.AWS_REGION;
 
-    const attributes = {
-      [SemanticResourceAttributes.CLOUD_PROVIDER]: String(
-        CloudProviderValues.AWS
-      ),
-      [SemanticResourceAttributes.CLOUD_PLATFORM]: String(
-        CloudPlatformValues.AWS_LAMBDA
-      ),
+    const attributes: ResourceAttributes = {
+      [SEMRESATTRS_CLOUD_PROVIDER]: String(CLOUDPROVIDERVALUES_AWS),
+      [SEMRESATTRS_CLOUD_PLATFORM]: String(CLOUDPLATFORMVALUES_AWS_LAMBDA),
     };
     if (region) {
-      attributes[SemanticResourceAttributes.CLOUD_REGION] = region;
+      attributes[SEMRESATTRS_CLOUD_REGION] = region;
     }
 
     if (functionName) {
-      attributes[SemanticResourceAttributes.FAAS_NAME] = functionName;
+      attributes[SEMRESATTRS_FAAS_NAME] = functionName;
     }
     if (functionVersion) {
-      attributes[SemanticResourceAttributes.FAAS_VERSION] = functionVersion;
+      attributes[SEMRESATTRS_FAAS_VERSION] = functionVersion;
     }
 
     return new Resource(attributes);

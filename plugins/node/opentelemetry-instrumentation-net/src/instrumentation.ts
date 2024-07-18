@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { diag, Span, SpanStatusCode, context, trace } from '@opentelemetry/api';
+import { Span, SpanStatusCode, context, trace } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationConfig,
@@ -23,28 +23,33 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  SemanticAttributes,
-  NetTransportValues,
+  SEMATTRS_NET_HOST_IP,
+  SEMATTRS_NET_HOST_PORT,
+  SEMATTRS_NET_PEER_IP,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+  SEMATTRS_NET_TRANSPORT,
+  NETTRANSPORTVALUES_IP_TCP,
 } from '@opentelemetry/semantic-conventions';
 import { TLSAttributes } from './types';
-import { Net, NormalizedOptions, SocketEvent } from './internal-types';
+import { NormalizedOptions, SocketEvent } from './internal-types';
 import { getNormalizedArgs, IPC_TRANSPORT } from './utils';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { Socket } from 'net';
 import { TLSSocket } from 'tls';
+import type * as net from 'net';
 
-export class NetInstrumentation extends InstrumentationBase<Net> {
-  constructor(_config?: InstrumentationConfig) {
-    super('@opentelemetry/instrumentation-net', VERSION, _config);
+export class NetInstrumentation extends InstrumentationBase {
+  constructor(config: InstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<Net>[] {
+  init(): InstrumentationNodeModuleDefinition[] {
     return [
-      new InstrumentationNodeModuleDefinition<Net>(
+      new InstrumentationNodeModuleDefinition(
         'net',
         ['*'],
-        moduleExports => {
-          diag.debug('Applying patch for net module');
+        (moduleExports: typeof net) => {
           if (isWrapped(moduleExports.Socket.prototype.connect)) {
             this._unwrap(moduleExports.Socket.prototype, 'connect');
           }
@@ -56,9 +61,8 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
           );
           return moduleExports;
         },
-        moduleExports => {
+        (moduleExports: typeof net) => {
           if (moduleExports === undefined) return;
-          diag.debug('Removing patch from net module');
           this._unwrap(moduleExports.Socket.prototype, 'connect');
         }
       ),
@@ -185,8 +189,8 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
   private _startIpcSpan(options: NormalizedOptions, socket: Socket) {
     const span = this.tracer.startSpan('ipc.connect', {
       attributes: {
-        [SemanticAttributes.NET_TRANSPORT]: IPC_TRANSPORT,
-        [SemanticAttributes.NET_PEER_NAME]: options.path,
+        [SEMATTRS_NET_TRANSPORT]: IPC_TRANSPORT,
+        [SEMATTRS_NET_PEER_NAME]: options.path,
       },
     });
 
@@ -198,9 +202,9 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
   private _startTcpSpan(options: NormalizedOptions, socket: Socket) {
     const span = this.tracer.startSpan('tcp.connect', {
       attributes: {
-        [SemanticAttributes.NET_TRANSPORT]: NetTransportValues.IP_TCP,
-        [SemanticAttributes.NET_PEER_NAME]: options.host,
-        [SemanticAttributes.NET_PEER_PORT]: options.port,
+        [SEMATTRS_NET_TRANSPORT]: NETTRANSPORTVALUES_IP_TCP,
+        [SEMATTRS_NET_PEER_NAME]: options.host,
+        [SEMATTRS_NET_PEER_PORT]: options.port,
       },
     });
 
@@ -241,9 +245,9 @@ function registerListeners(
 
   const setHostAttributes = () => {
     span.setAttributes({
-      [SemanticAttributes.NET_PEER_IP]: socket.remoteAddress,
-      [SemanticAttributes.NET_HOST_IP]: socket.localAddress,
-      [SemanticAttributes.NET_HOST_PORT]: socket.localPort,
+      [SEMATTRS_NET_PEER_IP]: socket.remoteAddress,
+      [SEMATTRS_NET_HOST_IP]: socket.localAddress,
+      [SEMATTRS_NET_HOST_PORT]: socket.localPort,
     });
   };
 
