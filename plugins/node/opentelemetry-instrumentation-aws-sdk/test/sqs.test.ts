@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AwsInstrumentation, AwsSdkSqsProcessHookInformation } from '../src';
+import { AwsInstrumentation } from '../src';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -27,28 +27,19 @@ import type { SQS } from 'aws-sdk';
 
 import {
   MESSAGINGDESTINATIONKINDVALUES_QUEUE,
-  MESSAGINGOPERATIONVALUES_RECEIVE,
   SEMATTRS_HTTP_STATUS_CODE,
   SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
   SEMATTRS_MESSAGING_MESSAGE_ID,
-  SEMATTRS_MESSAGING_OPERATION,
   SEMATTRS_MESSAGING_SYSTEM,
   SEMATTRS_MESSAGING_URL,
   SEMATTRS_RPC_METHOD,
   SEMATTRS_RPC_SERVICE,
   SEMATTRS_RPC_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
-import {
-  context,
-  SpanKind,
-  SpanStatusCode,
-  trace,
-  Span,
-} from '@opentelemetry/api';
+import { SpanKind, trace } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { mockV2AwsSend } from './testing-utils';
-import { Message } from 'aws-sdk/clients/sqs';
 import { expect } from 'expect';
 import * as sinon from 'sinon';
 import * as messageAttributes from '../src/services/MessageAttributes';
@@ -311,6 +302,78 @@ describe('SQS', () => {
       expect(extractContextSpy.returnValues[0]).toBe(
         traceparentInMessageAttributes
       );
+    });
+  });
+
+  describe('batch receive', () => {
+    it('adds links to the receive span', async () => {
+      mockV2AwsSend(responseMockSuccess, {
+        Messages: [
+          {
+            MessageId: '1',
+            MessageAttributes: {
+              traceparent: {
+                StringValue:
+                  '00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-aaaaaaaaaaaaaaaa-01',
+                DataType: 'String',
+              },
+            },
+            Body: 'a',
+          },
+          {
+            MessageId: '2',
+            MessageAttributes: {
+              traceparent: {
+                StringValue:
+                  '00-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-bbbbbbbbbbbbbbbb-01',
+                DataType: 'String',
+              },
+            },
+            Body: 'b',
+          },
+        ],
+      } as AWS.SQS.Types.ReceiveMessageResult);
+
+      const sqs = new AWS.SQS();
+      await sqs
+        .receiveMessage({
+          QueueUrl: 'queue/url/for/unittests',
+        })
+        .promise();
+
+      const [receiveSpan] = getTestSpans();
+      const links = receiveSpan.links;
+      expect(links.length).toBe(2);
+      expect(links[0].context.traceId).toStrictEqual(
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      );
+      expect(links[0].context.spanId).toStrictEqual('aaaaaaaaaaaaaaaa');
+      expect(
+        links[0].attributes?.[SEMATTRS_MESSAGING_MESSAGE_ID]
+      ).toStrictEqual('1');
+      expect(links[1].context.traceId).toStrictEqual(
+        'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+      );
+      expect(links[1].context.spanId).toStrictEqual('bbbbbbbbbbbbbbbb');
+      expect(
+        links[1].attributes?.[SEMATTRS_MESSAGING_MESSAGE_ID]
+      ).toStrictEqual('2');
+    });
+
+    it('adds message count to the receive span', async () => {
+      mockV2AwsSend(responseMockSuccess, {
+        Messages: [{ Body: 'a' }, { Body: 'b' }, { Body: 'c' }],
+      } as AWS.SQS.Types.ReceiveMessageResult);
+
+      const sqs = new AWS.SQS();
+      await sqs
+        .receiveMessage({
+          QueueUrl: 'queue/url/for/unittests',
+        })
+        .promise();
+
+      const [receiveSpan] = getTestSpans();
+      expect(receiveSpan.attributes['messaging.batch.message_count']).toBe(3);
     });
   });
 });

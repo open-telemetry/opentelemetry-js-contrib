@@ -147,8 +147,6 @@ export class SqsServiceExtension implements ServiceExtension {
         break;
 
       case 'ReceiveMessage': {
-        console.log('ReceiveMessage');
-        console.log(span);
         const messages: SQS.Message[] = response?.data?.Messages || [];
 
         span.setAttribute('messaging.batch.message_count', messages.length);
@@ -170,8 +168,8 @@ export class SqsServiceExtension implements ServiceExtension {
               context: spanContext,
               attributes: {
                 [SEMATTRS_MESSAGING_MESSAGE_ID]: message.MessageId,
-              }
-            })
+              },
+            });
           }
         }
         break;

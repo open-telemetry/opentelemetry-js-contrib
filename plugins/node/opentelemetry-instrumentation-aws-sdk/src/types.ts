@@ -15,7 +15,6 @@
  */
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import { SQS } from './aws-sdk.types';
 
 export type CommandInput = Record<string, any>;
 
@@ -55,10 +54,6 @@ export interface AwsSdkResponseHookInformation {
  */
 export interface AwsSdkResponseCustomAttributeFunction {
   (span: Span, responseInfo: AwsSdkResponseHookInformation): void;
-}
-
-export interface AwsSdkSqsProcessHookInformation {
-  message: SQS.Message;
 }
 
 export type AwsSdkDynamoDBStatementSerializer = (
