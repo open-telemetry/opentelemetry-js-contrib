@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-react-native-navigation",
-  "version": "0.39.0",
+  "version": "0.1.0",
   "description": "OpenTelemetry instrumentation for the `@react-navigation/native` views for React Native applications",
   "keywords": [
     "opentelemetry"
