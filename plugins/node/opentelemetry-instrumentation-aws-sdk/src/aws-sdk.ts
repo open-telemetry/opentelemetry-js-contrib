@@ -539,8 +539,7 @@ export class AwsInstrumentation extends InstrumentationBase {
                     span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
                   }
 
-                  const httpStatusCode =
-                    err?.$metadata?.httpStatusCode;
+                  const httpStatusCode = err?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
                     span.setAttribute(
                       SEMATTRS_HTTP_STATUS_CODE,
