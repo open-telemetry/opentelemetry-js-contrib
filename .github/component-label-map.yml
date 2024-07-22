@@ -32,6 +32,10 @@ pkg:resource-detector-instana:
       - any-glob-to-any-file:
           - detectors/node/opentelemetry-resource-detector-instana/**
           - packages/opentelemetry-test-utils/**
+pkg:auto-configuration-propagators:
+  - changed-files:
+      - any-glob-to-any-file:
+          - metapackages/auto-configuration-propagators/**
 pkg:auto-instrumentations-node:
   - changed-files:
       - any-glob-to-any-file:
