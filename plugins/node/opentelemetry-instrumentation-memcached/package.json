@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-memcached",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "description": "OpenTelemetry instrumentation for `memcached` database client for memcached",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
