@@ -55,7 +55,7 @@
     "@types/sinon": "10.0.18",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "rimraf": "5.0.5",
+    "rimraf": "6.0.1",
     "semver": "7.5.4",
     "sinon": "15.2.0",
     "test-all-versions": "6.1.0",

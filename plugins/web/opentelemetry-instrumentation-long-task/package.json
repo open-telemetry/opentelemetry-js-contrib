@@ -69,7 +69,7 @@
     "karma-webpack": "5.0.1",
     "mocha": "10.2.0",
     "nyc": "15.1.0",
-    "rimraf": "5.0.5",
+    "rimraf": "6.0.1",
     "sinon": "15.1.2",
     "ts-loader": "9.5.1",
     "ts-mocha": "10.0.0",

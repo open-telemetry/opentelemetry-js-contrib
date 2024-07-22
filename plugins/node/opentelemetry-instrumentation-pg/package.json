@@ -64,7 +64,7 @@
     "nyc": "15.1.0",
     "pg": "8.7.1",
     "pg-pool": "3.4.1",
-    "rimraf": "5.0.5",
+    "rimraf": "6.0.1",
     "safe-stable-stringify": "^2.4.1",
     "sinon": "15.2.0",
     "test-all-versions": "6.1.0",
