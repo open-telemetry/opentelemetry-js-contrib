@@ -35,21 +35,21 @@ import {
   SEMATTRS_NET_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
-import * as types from './types';
+import { KnexInstrumentationConfig } from './types';
 
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
-const DEFAULT_CONFIG: types.KnexInstrumentationConfig = {
+const DEFAULT_CONFIG: KnexInstrumentationConfig = {
   maxQueryLength: 1022,
   requireParentSpan: false,
 };
 
-export class KnexInstrumentation extends InstrumentationBase<types.KnexInstrumentationConfig> {
-  constructor(config: types.KnexInstrumentationConfig = {}) {
-    super(
-      PACKAGE_NAME,
-      PACKAGE_VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
-    );
+export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentationConfig> {
+  constructor(config: KnexInstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+  }
+
+  override setConfig(config: KnexInstrumentationConfig = {}) {
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   init() {
@@ -131,9 +131,7 @@ export class KnexInstrumentation extends InstrumentationBase<types.KnexInstrumen
         const operation = query?.method;
         const name =
           config?.connection?.filename || config?.connection?.database;
-        const maxLen = (
-          instrumentation._config as types.KnexInstrumentationConfig
-        ).maxQueryLength!;
+        const { maxQueryLength } = instrumentation.getConfig();
 
         const attributes: api.SpanAttributes = {
           'knex.version': moduleVersion,
@@ -147,10 +145,11 @@ export class KnexInstrumentation extends InstrumentationBase<types.KnexInstrumen
           [SEMATTRS_NET_TRANSPORT]:
             config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
         };
-        if (maxLen !== 0) {
+        if (maxQueryLength) {
+          // filters both undefined and 0
           attributes[SEMATTRS_DB_STATEMENT] = utils.limitLength(
             query?.sql,
-            maxLen
+            maxQueryLength
           );
         }
 
