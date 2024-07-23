@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-express",
-  "version": "0.40.1",
+  "version": "0.41.0",
   "description": "OpenTelemetry instrumentation for `express` http web application framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -12,6 +12,7 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../../scripts/lint-readme.js",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-express --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",

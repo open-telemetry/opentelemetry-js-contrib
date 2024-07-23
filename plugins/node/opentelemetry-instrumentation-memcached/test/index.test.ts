@@ -30,7 +30,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import type * as Memcached from 'memcached';
 import * as assert from 'assert';
-import Instrumentation from '../src';
+import { MemcachedInstrumentation } from '../src';
 import {
   DBSYSTEMVALUES_MEMCACHED,
   SEMATTRS_DB_SYSTEM,
@@ -40,7 +40,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import * as util from 'util';
 
-const instrumentation = new Instrumentation();
+const instrumentation = new MemcachedInstrumentation();
 const memoryExporter = new InMemorySpanExporter();
 
 const CONFIG = {

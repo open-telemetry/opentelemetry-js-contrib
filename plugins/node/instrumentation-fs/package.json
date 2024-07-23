@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-fs",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "OpenTelemetry instrumentation for `node:fs` file system interactions module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,6 +11,7 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../../scripts/lint-readme.js",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-fs --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",

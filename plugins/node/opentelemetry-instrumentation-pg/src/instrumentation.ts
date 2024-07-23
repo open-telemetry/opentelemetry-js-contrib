@@ -50,7 +50,7 @@ export class PgInstrumentation extends InstrumentationBase {
   protected init() {
     const modulePG = new InstrumentationNodeModuleDefinition(
       'pg',
-      ['8.*'],
+      ['>=8.0.0 <9'],
       (module: any) => {
         const moduleExports: typeof pgTypes =
           module[Symbol.toStringTag] === 'Module'
@@ -91,7 +91,7 @@ export class PgInstrumentation extends InstrumentationBase {
 
     const modulePGPool = new InstrumentationNodeModuleDefinition(
       'pg-pool',
-      ['2.*', '3.*'],
+      ['>=2.0.0 <4'],
       (moduleExports: typeof pgPoolTypes) => {
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');

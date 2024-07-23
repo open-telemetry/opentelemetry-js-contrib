@@ -44,6 +44,7 @@ import {
   ServerSession,
   MongodbCommandType,
   MongoInternalCommand,
+  MongodbNamespace,
   MongoInternalTopology,
   WireProtocolInternal,
   V4Connection,
@@ -94,13 +95,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'mongodb',
-        ['>=3.3 <4'],
+        ['>=3.3.0 <4'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile(
             'mongodb/lib/core/wireprotocol/index.js',
-            ['>=3.3 <4'],
+            ['>=3.3.0 <4'],
             v3PatchConnection,
             v3UnpatchConnection
           ),
@@ -108,37 +109,37 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ),
       new InstrumentationNodeModuleDefinition(
         'mongodb',
-        ['4.*', '5.*', '6.*'],
+        ['>=4.0.0 <7'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection.js',
-            ['4.*', '5.*', '>=6 <6.4'],
+            ['>=4.0.0 <6.4'],
             v4PatchConnectionCallback,
             v4UnpatchConnection
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection.js',
-            ['>=6.4'],
+            ['>=6.4.0 <7'],
             v4PatchConnectionPromise,
             v4UnpatchConnection
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection_pool.js',
-            ['4.*', '5.*', '>=6 <6.4'],
+            ['>=4.0.0 <6.4'],
             v4PatchConnectionPool,
             v4UnpatchConnectionPool
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connect.js',
-            ['4.*', '5.*', '6.*'],
+            ['>=4.0.0 <7'],
             v4PatchConnect,
             v4UnpatchConnect
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/sessions.js',
-            ['4.*', '5.*', '6.*'],
+            ['>=4.0.0 <7'],
             v4PatchSessions,
             v4UnpatchSessions
           ),
@@ -529,7 +530,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     return (original: V4Connection['commandCallback']) => {
       return function patchedV4ServerCommand(
         this: any,
-        ns: any,
+        ns: MongodbNamespace,
         cmd: any,
         options: undefined | unknown,
         callback: any
@@ -577,16 +578,15 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     return (original: V4Connection['commandPromise']) => {
       return function patchedV4ServerCommand(
         this: any,
-        ns: any,
-        cmd: any,
-        options: undefined | unknown
+        ...args: Parameters<V4Connection['commandPromise']>
       ) {
+        const [ns, cmd] = args;
         const currentSpan = trace.getSpan(context.active());
         const commandType = Object.keys(cmd)[0];
         const resultHandler = () => undefined;
 
         if (typeof cmd !== 'object' || cmd.ismaster || cmd.hello) {
-          return original.call(this, ns, cmd, options);
+          return original.apply(this, args);
         }
 
         let span = undefined;
@@ -610,7 +610,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           commandType
         );
 
-        const result = original.call(this, ns, cmd, options);
+        const result = original.apply(this, args);
         result.then(
           (res: any) => patchedCallback(null, res),
           (err: any) => patchedCallback(err)
@@ -792,7 +792,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _populateV4Attributes(
     span: Span,
     connectionCtx: any,
-    ns: any,
+    ns: MongodbNamespace,
     command?: any,
     operation?: string
   ) {

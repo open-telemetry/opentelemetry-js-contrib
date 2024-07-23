@@ -205,7 +205,9 @@ export class UndiciInstrumentation extends InstrumentationBase {
       const idx = request.headers.findIndex(
         h => h.toLowerCase() === 'user-agent'
       );
-      userAgent = request.headers[idx + 1];
+      if (idx >= 0) {
+        userAgent = request.headers[idx + 1];
+      }
     } else if (typeof request.headers === 'string') {
       const headers = request.headers.split('\r\n');
       const uaHeader = headers.find(h =>
@@ -239,7 +241,10 @@ export class UndiciInstrumentation extends InstrumentationBase {
     const currentSpan = trace.getSpan(activeCtx);
     let span: Span;
 
-    if (config.requireParentforSpans && !currentSpan) {
+    if (
+      config.requireParentforSpans &&
+      (!currentSpan || !trace.isSpanContextValid(currentSpan.spanContext()))
+    ) {
       span = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
     } else {
       span = this.tracer.startSpan(

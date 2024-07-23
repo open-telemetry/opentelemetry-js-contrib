@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-memcached
 
 ### Supported Versions
 
-- `>=2.2`
+- [`memcached`](https://www.npmjs.com/package/memcached) versions `>=2.2.0 <3`
 
 ## Usage
 

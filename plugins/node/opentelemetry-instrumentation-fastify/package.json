@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-fastify",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "description": "OpenTelemetry instrumentation for `fastify` http web application framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -10,6 +10,7 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../../scripts/lint-readme.js",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-fastify --include-dependencies",
     "prepublishOnly": "npm run compile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",

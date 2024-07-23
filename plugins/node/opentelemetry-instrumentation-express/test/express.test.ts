@@ -517,6 +517,47 @@ describe('ExpressInstrumentation', () => {
         }
       );
     });
+
+    it('should keep the handle properties even if router is patched before instrumentation does it', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let routerLayer: { name: string; handle: { stack: any[] } };
+
+      const expressApp = express();
+      const router = express.Router();
+      const CustomRouter: (...p: Parameters<typeof router>) => void = (
+        req,
+        res,
+        next
+      ) => router(req, res, next);
+      router.use('/:slug', (req, res, next) => {
+        const stack = req.app._router.stack as any[];
+        routerLayer = stack.find(router => router.name === 'CustomRouter');
+        return res.status(200).end('bar');
+      });
+      // The patched router now has express router's own properties in its prototype so
+      // they are not accessible through `Object.keys(...)`
+      // https://github.com/TryGhost/Ghost/blob/fefb9ec395df8695d06442b6ecd3130dae374d94/ghost/core/core/frontend/web/site.js#L192
+      Object.setPrototypeOf(CustomRouter, router);
+      expressApp.use(CustomRouter);
+
+      const httpServer = await createServer(expressApp);
+      server = httpServer.server;
+      port = httpServer.port;
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/foo`
+          );
+          assert.strictEqual(response, 'bar');
+          rootSpan.end();
+          assert.ok(
+            routerLayer.handle.stack.length === 1,
+            'router layer stack is accessible'
+          );
+        }
+      );
+    });
   });
 
   describe('Disabling plugin', () => {

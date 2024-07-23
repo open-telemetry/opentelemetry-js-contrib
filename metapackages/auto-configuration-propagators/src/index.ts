@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export * from './GrpcCensusPropagator';
+export { getPropagator } from './utils';

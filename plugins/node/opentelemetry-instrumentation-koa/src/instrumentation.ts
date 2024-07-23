@@ -23,12 +23,13 @@ import {
 } from '@opentelemetry/instrumentation';
 
 import type * as koa from 'koa';
-import { KoaContext, KoaLayerType, KoaInstrumentationConfig } from './types';
+import { KoaLayerType, KoaInstrumentationConfig } from './types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getMiddlewareMetadata, isLayerIgnored } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
   kLayerPatched,
+  KoaContext,
   KoaMiddleware,
   KoaPatchedMiddleware,
 } from './internal-types';
@@ -50,7 +51,7 @@ export class KoaInstrumentation extends InstrumentationBase {
   protected init() {
     return new InstrumentationNodeModuleDefinition(
       'koa',
-      ['^2.0.0'],
+      ['>=2.0.0 <3'],
       (module: any) => {
         const moduleExports: typeof koa =
           module[Symbol.toStringTag] === 'Module'

@@ -15,9 +15,9 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-dataloader
 ```
 
-### Supported Versions
+## Supported Versions
 
-- `^2.0.0`
+- [`dataloader`](https://www.npmjs.com/package/dataloader) versions `>=2.0.0 <3`
 
 ## Usage
 

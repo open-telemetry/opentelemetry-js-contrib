@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-amqplib",
-  "version": "0.38.0",
+  "version": "0.39.0",
   "description": "OpenTelemetry instrumentation for the `amqplib` messaging client for RabbitMQ",
   "keywords": [
     "amqplib",
@@ -30,6 +30,7 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../../scripts/lint-readme.js",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-amqplib --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",

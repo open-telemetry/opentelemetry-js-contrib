@@ -77,8 +77,9 @@ For example, to enable only the `env`, `host` detectors:
 export OTEL_NODE_RESOURCE_DETECTORS="env,host"
 ```
 
-By default, all [Supported Instrumentations](#supported-instrumentations) are enabled,
-but you can use the environment variable `OTEL_NODE_ENABLED_INSTRUMENTATIONS` to enable only certain instrumentations
+By default, all [Supported Instrumentations](#supported-instrumentations) are enabled.
+You can use the environment variable `OTEL_NODE_ENABLED_INSTRUMENTATIONS` to enable only certain instrumentations,
+OR the environment variable `OTEL_NODE_DISABLED_INSTRUMENTATIONS` to disable only certain instrumentations,
 by providing a comma-separated list of the instrumentation package names without the `@opentelemetry/instrumentation-` prefix.
 
 For example, to enable only
@@ -89,6 +90,15 @@ instrumentations:
 ```shell
 export OTEL_NODE_ENABLED_INSTRUMENTATIONS="http,nestjs-core"
 ```
+
+To disable only [@opentelemetry/instrumentation-fs](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-fs):
+
+```shell
+export OTEL_NODE_DISABLED_INSTRUMENTATIONS="fs"
+```
+
+If both environment variables are set, `OTEL_NODE_ENABLED_INSTRUMENTATIONS` is applied first, and then `OTEL_NODE_DISABLED_INSTRUMENTATIONS` is applied to that list.
+Therefore, if the same instrumentation is included in both lists, that instrumentation will be disabled.
 
 To enable logging for troubleshooting, set the log level by setting the `OTEL_LOG_LEVEL` environment variable to one of the following:
 
@@ -166,6 +176,7 @@ registerInstrumentations({
 - [@opentelemetry/instrumentation-hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-hapi)
 - [@opentelemetry/instrumentation-http](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http)
 - [@opentelemetry/instrumentation-ioredis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-ioredis)
+- [@opentelemetry/instrumentation-kafkajs](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-kafkajs)
 - [@opentelemetry/instrumentation-knex](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-knex)
 - [@opentelemetry/instrumentation-koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa)
 - [@opentelemetry/instrumentation-lru-memoizer](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-lru-memoizer)
