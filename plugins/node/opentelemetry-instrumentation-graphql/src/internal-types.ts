@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type * as graphqlTypes from 'graphql';
 import type * as api from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
@@ -24,16 +23,9 @@ import type {
   GraphQLTypeResolver,
 } from 'graphql/type/definition';
 import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
-import { GraphQLInstrumentationConfig } from './types';
 
 export const OPERATION_NOT_SUPPORTED =
   'Operation$operationName$not' + ' supported';
-
-/**
- * Merged and parsed config of default instrumentation config and GraphQL
- */
-export type GraphQLInstrumentationParsedConfig =
-  Required<GraphQLInstrumentationConfig> & InstrumentationConfig;
 
 export type executeFunctionWithObj = (
   args: graphqlTypes.ExecutionArgs
