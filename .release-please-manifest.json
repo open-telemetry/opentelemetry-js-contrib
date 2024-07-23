@@ -6,6 +6,7 @@
   "detectors/node/opentelemetry-resource-detector-gcp": "0.29.10",
   "detectors/node/opentelemetry-resource-detector-github": "0.28.2",
   "detectors/node/opentelemetry-resource-detector-instana": "0.10.0",
+  "metapackages/auto-configuration-propagators": "0.1.0",
   "metapackages/auto-instrumentations-node": "0.48.0",
   "metapackages/auto-instrumentations-web": "0.40.0",
   "packages/baggage-span-processor": "0.3.1",
