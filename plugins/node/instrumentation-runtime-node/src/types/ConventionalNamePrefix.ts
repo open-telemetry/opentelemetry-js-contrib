@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
-
-export interface RuntimeNodeInstrumentationConfig
-  extends InstrumentationConfig {
-  monitoringPrecision?: number;
+export enum ConventionalNamePrefix {
+  NodeJs = 'nodejs',
+  V8js = 'v8js',
 }
