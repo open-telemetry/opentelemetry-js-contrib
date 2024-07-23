@@ -55,11 +55,9 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
-export class MongoDBInstrumentation extends InstrumentationBase {
+export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumentationConfig> {
   private _connectionsUsage!: UpDownCounter;
   private _poolName!: string;
-
-  protected override _config!: MongoDBInstrumentationConfig;
 
   constructor(config: MongoDBInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -903,9 +901,12 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       }
     }
     if (!commandObj) return;
+
+    const { dbStatementSerializer: configDbStatementSerializer } =
+      this.getConfig();
     const dbStatementSerializer =
-      typeof this._config.dbStatementSerializer === 'function'
-        ? this._config.dbStatementSerializer
+      typeof configDbStatementSerializer === 'function'
+        ? configDbStatementSerializer
         : this._defaultDbStatementSerializer.bind(this);
 
     safeExecuteInTheMiddle(
@@ -923,8 +924,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   }
 
   private _defaultDbStatementSerializer(commandObj: Record<string, unknown>) {
-    const enhancedDbReporting = !!this._config?.enhancedDatabaseReporting;
-    const resultObj = enhancedDbReporting
+    const { enhancedDatabaseReporting } = this.getConfig();
+    const resultObj = enhancedDatabaseReporting
       ? commandObj
       : this._scrubStatement(commandObj);
     return JSON.stringify(resultObj);
@@ -954,11 +955,11 @@ export class MongoDBInstrumentation extends InstrumentationBase {
    * @param result The command result
    */
   private _handleExecutionResult(span: Span, result: CommandResult) {
-    const config: MongoDBInstrumentationConfig = this.getConfig();
-    if (typeof config.responseHook === 'function') {
+    const { responseHook } = this.getConfig();
+    if (typeof responseHook === 'function') {
       safeExecuteInTheMiddle(
         () => {
-          config.responseHook!(span, { data: result });
+          responseHook(span, { data: result });
         },
         err => {
           if (err) {

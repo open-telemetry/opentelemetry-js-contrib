@@ -53,9 +53,7 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 
-export class KafkaJsInstrumentation extends InstrumentationBase {
-  protected override _config!: KafkaJsInstrumentationConfig;
-
+export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumentationConfig> {
   constructor(config: KafkaJsInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -367,9 +365,10 @@ export class KafkaJsInstrumentation extends InstrumentationBase {
       context
     );
 
-    if (this._config?.consumerHook && message) {
+    const { consumerHook } = this.getConfig();
+    if (consumerHook && message) {
       safeExecuteInTheMiddle(
-        () => this._config.consumerHook!(span, { topic, message }),
+        () => consumerHook(span, { topic, message }),
         e => {
           if (e) this._diag.error('consumerHook error', e);
         },
@@ -392,9 +391,10 @@ export class KafkaJsInstrumentation extends InstrumentationBase {
     message.headers = message.headers ?? {};
     propagation.inject(trace.setSpan(context.active(), span), message.headers);
 
-    if (this._config?.producerHook) {
+    const { producerHook } = this.getConfig();
+    if (producerHook) {
       safeExecuteInTheMiddle(
-        () => this._config.producerHook!(span, { topic, message }),
+        () => producerHook(span, { topic, message }),
         e => {
           if (e) this._diag.error('producerHook error', e);
         },

@@ -78,19 +78,13 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const supportedVersions = ['>=0.5.5 <1'];
 
-export class AmqplibInstrumentation extends InstrumentationBase {
-  protected override _config!: AmqplibInstrumentationConfig;
-
+export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumentationConfig> {
   constructor(config: AmqplibInstrumentationConfig = {}) {
-    super(
-      PACKAGE_NAME,
-      PACKAGE_VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
   }
 
   override setConfig(config: AmqplibInstrumentationConfig = {}) {
-    this._config = Object.assign({}, DEFAULT_CONFIG, config);
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   protected init() {
@@ -394,10 +388,11 @@ export class AmqplibInstrumentation extends InstrumentationBase {
       if (
         !Object.prototype.hasOwnProperty.call(channel, CHANNEL_SPANS_NOT_ENDED)
       ) {
-        if (self._config.consumeTimeoutMs) {
+        const { consumeTimeoutMs } = self.getConfig();
+        if (consumeTimeoutMs) {
           const timer = setInterval(() => {
             self.checkConsumeTimeoutOnChannel(channel);
-          }, self._config.consumeTimeoutMs);
+          }, consumeTimeoutMs);
           timer.unref();
           channel[CHANNEL_CONSUME_TIMEOUT_TIMER] = timer;
         }
@@ -455,9 +450,10 @@ export class AmqplibInstrumentation extends InstrumentationBase {
           parentContext
         );
 
-        if (self._config.consumeHook) {
+        const { consumeHook } = self.getConfig();
+        if (consumeHook) {
           safeExecuteInTheMiddle(
-            () => self._config.consumeHook!(span, { moduleVersion, msg }),
+            () => consumeHook(span, { moduleVersion, msg }),
             e => {
               if (e) {
                 diag.error('amqplib instrumentation: consumerHook error', e);
@@ -516,10 +512,11 @@ export class AmqplibInstrumentation extends InstrumentationBase {
         options
       );
 
-      if (self._config.publishHook) {
+      const { publishHook } = self.getConfig();
+      if (publishHook) {
         safeExecuteInTheMiddle(
           () =>
-            self._config.publishHook!(span, {
+            publishHook(span, {
               moduleVersion,
               exchange,
               routingKey,
@@ -544,10 +541,11 @@ export class AmqplibInstrumentation extends InstrumentationBase {
         try {
           callback?.call(this, err, ok);
         } finally {
-          if (self._config.publishConfirmHook) {
+          const { publishConfirmHook } = self.getConfig();
+          if (publishConfirmHook) {
             safeExecuteInTheMiddle(
               () =>
-                self._config.publishConfirmHook!(span, {
+                publishConfirmHook(span, {
                   moduleVersion,
                   exchange,
                   routingKey,
@@ -616,10 +614,11 @@ export class AmqplibInstrumentation extends InstrumentationBase {
           options
         );
 
-        if (self._config.publishHook) {
+        const { publishHook } = self.getConfig();
+        if (publishHook) {
           safeExecuteInTheMiddle(
             () =>
-              self._config.publishHook!(span, {
+              publishHook(span, {
                 moduleVersion,
                 exchange,
                 routingKey,
@@ -731,10 +730,11 @@ export class AmqplibInstrumentation extends InstrumentationBase {
     rejected: boolean | null,
     endOperation: EndOperation
   ) {
-    if (!this._config.consumeEndHook) return;
+    const { consumeEndHook } = this.getConfig();
+    if (!consumeEndHook) return;
 
     safeExecuteInTheMiddle(
-      () => this._config.consumeEndHook!(span, { msg, rejected, endOperation }),
+      () => consumeEndHook(span, { msg, rejected, endOperation }),
       e => {
         if (e) {
           diag.error('amqplib instrumentation: consumerEndHook error', e);
@@ -748,15 +748,14 @@ export class AmqplibInstrumentation extends InstrumentationBase {
     const currentTime = hrTime();
     const spansNotEnded = channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
     let i: number;
+    const { consumeTimeoutMs } = this.getConfig();
     for (i = 0; i < spansNotEnded.length; i++) {
       const currMessage = spansNotEnded[i];
       const timeFromConsume = hrTimeDuration(
         currMessage.timeOfConsume,
         currentTime
       );
-      if (
-        hrTimeToMilliseconds(timeFromConsume) < this._config.consumeTimeoutMs!
-      ) {
+      if (hrTimeToMilliseconds(timeFromConsume) < consumeTimeoutMs!) {
         break;
       }
       this.endConsumerSpan(
