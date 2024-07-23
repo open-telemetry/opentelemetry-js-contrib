@@ -49,7 +49,7 @@ function defaultShouldPreventSpanCreation() {
  * If zone.js is available then it patches the zone otherwise it patches
  * addEventListener of HTMLElement
  */
-export class UserInteractionInstrumentation extends InstrumentationBase {
+export class UserInteractionInstrumentation extends InstrumentationBase<UserInteractionInstrumentationConfig> {
   readonly version = PACKAGE_VERSION;
   readonly moduleName: string = 'user-interaction';
   private _spansData = new WeakMap<api.Span, SpanData>();

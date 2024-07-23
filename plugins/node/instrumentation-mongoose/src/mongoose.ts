@@ -57,15 +57,9 @@ const contextCaptureFunctions = [
 // calls. this bypass the unlinked spans issue on thenables await operations.
 export const _STORED_PARENT_SPAN: unique symbol = Symbol('stored-parent-span');
 
-export class MongooseInstrumentation extends InstrumentationBase {
-  protected override _config!: MongooseInstrumentationConfig;
-
+export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrumentationConfig> {
   constructor(config: MongooseInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-  }
-
-  override setConfig(config: MongooseInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
   }
 
   protected init(): InstrumentationModuleDefinition {
@@ -140,7 +134,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
     return (originalAggregate: Function) => {
       return function exec(this: any, callback?: Function) {
         if (
-          self._config.requireParentSpan &&
+          self.getConfig().requireParentSpan &&
           trace.getSpan(context.active()) === undefined
         ) {
           return originalAggregate.apply(this, arguments);
@@ -148,12 +142,15 @@ export class MongooseInstrumentation extends InstrumentationBase {
 
         const parentSpan = this[_STORED_PARENT_SPAN];
         const attributes: Attributes = {};
-        if (self._config.dbStatementSerializer) {
-          attributes[SEMATTRS_DB_STATEMENT] =
-            self._config.dbStatementSerializer('aggregate', {
+        const { dbStatementSerializer } = self.getConfig();
+        if (dbStatementSerializer) {
+          attributes[SEMATTRS_DB_STATEMENT] = dbStatementSerializer(
+            'aggregate',
+            {
               options: this.options,
               aggregatePipeline: this._pipeline,
-            });
+            }
+          );
         }
 
         const span = self._startSpan(
@@ -181,7 +178,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
     return (originalExec: Function) => {
       return function exec(this: any, callback?: Function) {
         if (
-          self._config.requireParentSpan &&
+          self.getConfig().requireParentSpan &&
           trace.getSpan(context.active()) === undefined
         ) {
           return originalExec.apply(this, arguments);
@@ -189,14 +186,14 @@ export class MongooseInstrumentation extends InstrumentationBase {
 
         const parentSpan = this[_STORED_PARENT_SPAN];
         const attributes: Attributes = {};
-        if (self._config.dbStatementSerializer) {
-          attributes[SEMATTRS_DB_STATEMENT] =
-            self._config.dbStatementSerializer(this.op, {
-              condition: this._conditions,
-              updates: this._update,
-              options: this.options,
-              fields: this._fields,
-            });
+        const { dbStatementSerializer } = self.getConfig();
+        if (dbStatementSerializer) {
+          attributes[SEMATTRS_DB_STATEMENT] = dbStatementSerializer(this.op, {
+            condition: this._conditions,
+            updates: this._update,
+            options: this.options,
+            fields: this._fields,
+          });
         }
         const span = self._startSpan(
           this.mongooseCollection,
@@ -223,7 +220,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
     return (originalOnModelFunction: Function) => {
       return function method(this: any, options?: any, callback?: Function) {
         if (
-          self._config.requireParentSpan &&
+          self.getConfig().requireParentSpan &&
           trace.getSpan(context.active()) === undefined
         ) {
           return originalOnModelFunction.apply(this, arguments);
@@ -234,9 +231,12 @@ export class MongooseInstrumentation extends InstrumentationBase {
           serializePayload.options = options;
         }
         const attributes: Attributes = {};
-        if (self._config.dbStatementSerializer) {
-          attributes[SEMATTRS_DB_STATEMENT] =
-            self._config.dbStatementSerializer(op, serializePayload);
+        const { dbStatementSerializer } = self.getConfig();
+        if (dbStatementSerializer) {
+          attributes[SEMATTRS_DB_STATEMENT] = dbStatementSerializer(
+            op,
+            serializePayload
+          );
         }
         const span = self._startSpan(
           this.constructor.collection,
@@ -331,7 +331,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
           originalThis,
           span,
           args,
-          self._config.responseHook,
+          self.getConfig().responseHook,
           moduleVersion
         )
       );
@@ -342,14 +342,14 @@ export class MongooseInstrumentation extends InstrumentationBase {
       return handlePromiseResponse(
         response,
         span,
-        self._config.responseHook,
+        self.getConfig().responseHook,
         moduleVersion
       );
     }
   }
 
   private _callOriginalFunction<T>(originalFunction: (...args: any[]) => T): T {
-    if (this._config?.suppressInternalInstrumentation) {
+    if (this.getConfig().suppressInternalInstrumentation) {
       return context.with(suppressTracing(context.active()), originalFunction);
     } else {
       return originalFunction();
