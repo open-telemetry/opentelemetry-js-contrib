@@ -97,7 +97,7 @@ For instance, when the application starts and the user navigates to a new sectio
 {
   resource: {
     attributes: {
-      'service.name': 'unknown_service:/Users/testuser/.nvm/versions/node/v18.18.0/bin/node',
+      'service.name': 'navigation',
       'telemetry.sdk.language': 'nodejs',
       'telemetry.sdk.name': 'opentelemetry',
       'telemetry.sdk.version': '1.25.0'
