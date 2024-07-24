@@ -48,7 +48,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   private _connectionsCount!: UpDownCounter;
   private _connectionsCounter: utils.poolConnectionsCounter = {
     used: 0,
-    idle: 0
+    idle: 0,
   };
 
   constructor(config: PgInstrumentationConfig = {}) {
