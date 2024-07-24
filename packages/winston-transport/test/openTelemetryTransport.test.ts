@@ -143,4 +143,34 @@ describe('OpenTelemetryTransportV3', () => {
       assert.strictEqual(logRecords[7].severityNumber, SeverityNumber.DEBUG);
     });
   });
+
+  it('serialized attibutes', () => {
+    const transport = new OpenTelemetryTransportV3();
+    transport.log(
+      {
+        message: 'test',
+        level: 'error',
+        someObject: { test: 'value' },
+        someArray: [{ test: 'value' }],
+        someError: new Error('testError'),
+      },
+      () => {}
+    );
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(
+      logRecords[0].attributes['someObject'],
+      '{"test":"value"}'
+    );
+    assert.strictEqual(
+      logRecords[0].attributes['someArray'],
+      '[{"test":"value"}]'
+    );
+    assert.ok(
+      (logRecords[0].attributes['someError'] as string).startsWith(
+        '[object Error] { message: "testError", name: "Error", stack: "Error: testError'
+      ),
+      'Wrong error serialization'
+    );
+  });
 });
