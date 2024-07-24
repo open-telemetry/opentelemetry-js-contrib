@@ -23,13 +23,22 @@ import spanCreator, {
 } from '../utils/spanCreator';
 import { TracerRef } from '../utils/hooks/useTrace';
 import useSpan from '../utils/hooks/useSpan';
-import { INavigationContainer } from '../types/navigation';
+import {
+  INavigationContainer,
+  NavigationTrackerConfig,
+} from '../types/navigation';
 
 import useAppStateListener from './useAppStateListener';
 
 export type NavRef = INavigationContainer;
 
-const useNavigationTracker = (ref: ForwardedRef<NavRef>, tracer: TracerRef) => {
+const useNavigationTracker = (
+  ref: ForwardedRef<NavRef>,
+  tracer: TracerRef,
+  config?: NavigationTrackerConfig
+) => {
+  const { attributes: customAttributes } = config ?? {};
+
   const navigationElRef = useMemo(() => {
     const isMutableRef = ref !== null && typeof ref !== 'function';
     return isMutableRef ? ref.current : undefined;
@@ -42,31 +51,48 @@ const useNavigationTracker = (ref: ForwardedRef<NavRef>, tracer: TracerRef) => {
   const span = useSpan();
 
   useEffect(() => {
+    if (!navigationElRef) {
+      console.warn(
+        'Navigation ref is not available. Make sure this is properly configured.'
+      );
+
+      return;
+    }
+
     if (navigationElRef) {
       navigationElRef.addListener('state', () => {
         const { name: routeName } = navigationElRef.getCurrentRoute() ?? {};
 
         if (!routeName) {
+          console.warn(
+            'Navigation route name is not available. Make sure this is properly configured.'
+          );
+
           // do nothing in case for some reason there is no route
           return;
         }
 
-        spanCreator(tracer, span, navView, routeName);
+        spanCreator(tracer, span, navView, routeName, customAttributes);
       });
     }
-  }, [navigationElRef, span, tracer]);
+  }, [navigationElRef, span, tracer, customAttributes]);
 
   useEffect(
     () => () => {
       // making sure the final span is ended when the app is unmounted
-      spanEnd(span);
+      const isFinalView = true;
+      spanEnd(span, undefined, isFinalView);
     },
     [span]
   );
 
   const handleAppStateListener = useCallback(
     (currentState: AppStateStatus) => {
-      const appStateHandler = spanCreatorAppState(tracer, span);
+      const appStateHandler = spanCreatorAppState(
+        tracer,
+        span,
+        customAttributes
+      );
 
       if (navView?.current === null) {
         return;
@@ -74,7 +100,7 @@ const useNavigationTracker = (ref: ForwardedRef<NavRef>, tracer: TracerRef) => {
 
       appStateHandler(navView?.current, currentState);
     },
-    [span, tracer]
+    [span, tracer, customAttributes]
   );
 
   useAppStateListener(handleAppStateListener);

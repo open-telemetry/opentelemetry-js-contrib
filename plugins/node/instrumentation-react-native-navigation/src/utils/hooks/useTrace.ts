@@ -13,28 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { MutableRefObject, useLayoutEffect, useRef } from 'react';
-import { trace, Tracer, TracerProvider } from '@opentelemetry/api';
-
-interface ConfigArgs {
-  name: string;
-  version: string;
-}
+import { MutableRefObject, useEffect, useRef } from 'react';
+import {
+  trace,
+  Tracer,
+  TracerOptions,
+  TracerProvider,
+} from '@opentelemetry/api';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './../../version';
 
 export type TracerRef = MutableRefObject<Tracer | null>;
 
-const useTrace = (config: ConfigArgs, provider?: TracerProvider): TracerRef => {
-  const { name, version } = config;
+const useTrace = (
+  provider?: TracerProvider,
+  tracerOptions?: TracerOptions
+): TracerRef => {
   const tracerRef = useRef<Tracer | null>(null);
 
   // using the layout effect to make sure the tracer is initialized before the component is rendered
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (tracerRef.current === null) {
+      if (!provider) {
+        console.info('No TracerProvider found. Using global tracer instead.');
+      } else {
+        console.info('TracerProvider. Using custom tracer.');
+      }
+
       tracerRef.current = provider
-        ? provider.getTracer(name, version)
-        : trace.getTracer(name, version);
+        ? provider.getTracer(PACKAGE_NAME, PACKAGE_VERSION, tracerOptions)
+        : // using global tracer provider
+          trace.getTracer(PACKAGE_NAME, PACKAGE_VERSION);
     }
-  }, [name, provider, version]);
+
+    // this is useful in cases where the provider is passed but it's still `null` or `undefined` (given a re-render or something specific of the lyfecycle of the app that implements the library)
+    if (
+      tracerRef.current !== null &&
+      provider !== undefined &&
+      provider !== null
+    ) {
+      tracerRef.current = provider.getTracer(
+        PACKAGE_NAME,
+        PACKAGE_VERSION,
+        tracerOptions
+      );
+
+      console.info('Updated TracerProvider. Switching to the new instance.');
+    }
+  }, [provider, tracerOptions]);
 
   return tracerRef;
 };

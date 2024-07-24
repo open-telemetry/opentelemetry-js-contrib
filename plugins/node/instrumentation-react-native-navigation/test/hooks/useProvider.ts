@@ -21,13 +21,12 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 
 /**
- * These are only for web, able to see logs coming through DevTools while developing.
- * Example of a trace in console:
+ * Example of a trace shape:
     {
         "resource": {
             "attributes": {
                 "service.name": "unknown_service",
-                "telemetry.sdk.language": "webjs",
+                "telemetry.sdk.language": "nodejs",
                 "telemetry.sdk.name": "opentelemetry",
                 "telemetry.sdk.version": "1.24.1"
             }
@@ -39,8 +38,8 @@ import {
         "timestamp": 1717536927797000,
         "duration": 2820542.167,
         "attributes": {
-            "timestamp": 1717536927797,
-            "initial_view": true
+            "launch": true,
+            "state.end": 'active'
         },
         "status": {
             "code": 0
@@ -58,12 +57,10 @@ const useProvider = (shouldShutDown = false) => {
 
     provider.current.addSpanProcessor(processor);
     provider.current.register();
-    console.log('3 useeffect mount and configure');
   }, []);
 
   useEffect(() => {
     const providerRef = provider.current;
-    console.log('3 main useeffect');
 
     try {
       configure();

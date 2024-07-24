@@ -7,13 +7,13 @@ This module provides instrumentation for [react-native/nagivation](https://react
 
 ## Installation
 ```
-npm i @embrace-io/react-native
+npm i @opentelemetry/instrumentation-react-native-navigation @opentelemetry/api
 ```
 
 or if you use yarn
 
 ```
-yarn add @embrace-io/react-native
+yarn add @opentelemetry/instrumentation-react-native-navigation @opentelemetry/api
 ```
 
 ## Supported Versions
@@ -27,11 +27,14 @@ If you are using `expo-router` or `react-native/navigation` you need to wrap you
 ```javascript
 import {FC} from 'react';
 import {Stack, useNavigationContainerRef} from 'expo-router';
-import {NavigationTracker} from '@embrace/react-native/experimental/navigation';
+import {NavigationTracker} from '@opentelemetry/instrumentation-react-native-navigation';
 
 const App: FC = () => {
-  const navigationRef = useNavigationContainerRef(); // if you do not use `expo-router` the same hook is also available in `@react-navigation/native` since `expo-router` is built on top of it
-  const provider = useProvider(); // the provider is something you need to configure and pass down as prop into the `NavigationTracker` component
+  const navigationRef = useNavigationContainerRef(); // if you do not use `expo-router` the same hook is also available in `@react-navigation/native` since `expo-router` is built on top of it. Just make sure this ref is passed also to the navigation container at the root of your app (if not, the ref would be empty and you will get a console.warn message instead).
+
+  const provider = useProvider(); // the provider is something you need to configure and pass down as prop into the `NavigationTracker` component (this hook is not part of the package, it is just used here as a reference)
+  // If your choise is not to pass any custom tracer provider, the <NavigationTracker /> component will use the global one.
+  // In both cases you have to make sure a tracer provider is registered BEFORE you attempt to record the first span. 
 
   return (
     <NavigationTracker ref={navigationRef} provider={provider}>
@@ -73,7 +76,7 @@ Navigation.events().registerAppLaunchedListener(async () => {
 
 const HomeScreen: FC = () => {
   const navigationRef = useRef(Navigation.events()); // this is the important part. Make sure you pass a reference with the return of Navigation.events();
-  const provider = useProvider(); // again, the provider should be passed down into the `NativeNavigationTracker` with the selected exporter and processor configured
+  const provider = useProvider(); // again, the provider should be passed down into the `NativeNavigationTracker` with the selected exporter and processor configured (this hook is not part of the package, it is just used here as a reference)
 
   return (
     <NativeNavigationTracker ref={navigationRef} provider={provider}>
@@ -103,17 +106,19 @@ For instance, when the application starts and the user navigates to a new sectio
   traceId: 'a3280f7e6afab1e5b7f4ecfc12ec059f',
   parentId: undefined,
   traceState: undefined,
-  name: 'initial-test-view',
+  name: 'home',
   id: '270509763b408343',
   kind: 0,
   timestamp: 1718975153696000,
   duration: 252.375,
-  attributes: { initial_view: true },
+  attributes: { launch: true, state.end: 'active' },
   status: { code: 0 },
   events: [],
   links: []
 }
 ```
+
+If you dig into the attributes, `launch` refers to the moment the app is launched. It will be `true` only the first time the app mounts. Changing the status between background/foreground won't modify this attribute. For this case the `state.end` is used, and will and it can contain two possible values: `active` and `background`.
 
 ### NOTE
 

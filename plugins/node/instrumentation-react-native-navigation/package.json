@@ -1,9 +1,15 @@
 {
   "name": "@opentelemetry/instrumentation-react-native-navigation",
   "version": "0.1.0",
-  "description": "OpenTelemetry instrumentation for the `@react-navigation/native` views for React Native applications",
+  "description": "OpenTelemetry instrumentation for `@react-navigation/native`, `expo-router` and `wix/react-native-navigation` route changes for React Native applications",
   "keywords": [
-    "opentelemetry"
+    "navigation",
+    "react-native",
+    "instrumentation",
+    "nodejs",
+    "opentelemetry",
+    "profiling",
+    "tracing"
   ],
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-react-native-navigation#readme",
   "license": "Apache-2.0",
