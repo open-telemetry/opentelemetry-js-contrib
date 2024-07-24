@@ -281,7 +281,7 @@ export function updateCounter(
 ): poolConnectionsCounter {
   const poolName = getPoolName(pool.options);
   const all = pool.totalCount;
-  const idle = pool.waitingCount;
+  const idle = pool.idleCount;
   const used = all - idle;
 
   if (used !== latestCounter.used) {

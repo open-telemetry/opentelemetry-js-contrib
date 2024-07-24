@@ -395,7 +395,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         });
 
         this.on('release' as any, connection => {
-          console.log("RELEASE FROM PLUGIN!!");
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,

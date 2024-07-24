@@ -248,12 +248,12 @@ describe('utils.ts', () => {
         database: 'database_name',
         idleTimeoutMillis: 10,
         maxClient: 5,
-      }
+      };
 
       assert.strictEqual(
         utils.getPoolName(dummyPool),
         'username@host_name:1234/database_name'
-      )
+      );
     });
   });
 });
