@@ -26,6 +26,8 @@ import {
   Span,
   SpanStatusCode,
   SpanKind,
+  MeterProvider,
+  UpDownCounter,
 } from '@opentelemetry/api';
 import type * as pgTypes from 'pg';
 import type * as pgPoolTypes from 'pg-pool';
@@ -43,8 +45,30 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
 
 export class PgInstrumentation extends InstrumentationBase {
+  private _connectionsCount!: UpDownCounter;
+  private _connectionsCounter: utils.poolConnectionsCounter = {
+    used: 0, idle: 0
+  };
+
   constructor(config: PgInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._setMetricInstruments();
+  }
+
+  override setMeterProvider(meterProvider: MeterProvider) {
+    super.setMeterProvider(meterProvider);
+    this._setMetricInstruments();
+  }
+
+  private _setMetricInstruments() {
+    this._connectionsCount = this.meter.createUpDownCounter(
+      'db.client.connection.count',
+      {
+        description:
+          'The number of connections that are currently in state described by the state attribute.',
+        unit: '{connection}',
+      }
+    );
   }
 
   protected init() {
@@ -96,16 +120,28 @@ export class PgInstrumentation extends InstrumentationBase {
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
+        if (isWrapped(moduleExports.prototype.end)) {
+          this._unwrap(moduleExports.prototype, 'end');
+        }
+
         this._wrap(
           moduleExports.prototype,
           'connect',
           this._getPoolConnectPatch() as any
+        );
+        this._wrap(
+          moduleExports.prototype,
+          'end',
+          this._getPoolEndPatch() as any
         );
         return moduleExports;
       },
       (moduleExports: typeof pgPoolTypes) => {
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
+        }
+        if (isWrapped(moduleExports.prototype.end)) {
+          this._unwrap(moduleExports.prototype, 'end');
         }
       }
     );
@@ -323,7 +359,6 @@ export class PgInstrumentation extends InstrumentationBase {
               });
             });
         }
-
         // else returns void
         return result; // void
       };
@@ -343,6 +378,39 @@ export class PgInstrumentation extends InstrumentationBase {
           kind: SpanKind.CLIENT,
           attributes: utils.getSemanticAttributesFromPool(this.options),
         });
+
+        this.on('connect', connection => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionsCounter,
+          )
+        });
+
+        this.on('acquire', connection => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionsCounter,
+          )
+        });
+
+        this.on('remove', connection => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionsCounter,
+          )
+        });
+
+        // TODO check why is not recognizing release (e.g. version)
+        // this.on('release', connection => {
+        //   plugin._connectionsCounter = utils.updateCounter(
+        //     this,
+        //     plugin._connectionsCount,
+        //     plugin._connectionsCounter,
+        //   )
+        // });
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
@@ -365,6 +433,22 @@ export class PgInstrumentation extends InstrumentationBase {
 
         return handleConnectResult(span, connectResult);
       };
+    };
+  }
+
+  private _getPoolEndPatch() {
+    const plugin = this;
+    return (originalPoolEnd: typeof pgPoolTypes.prototype.end) => {
+      return function end(this: PgPoolExtended, callback?: PgPoolCallback) {
+        if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
+          return originalPoolEnd.call(this, callback as any);
+        }
+        plugin._connectionsCounter = utils.updateCounter(
+          this,
+          plugin._connectionsCount,
+          plugin._connectionsCounter,
+        )
+      }
     };
   }
 }

@@ -22,6 +22,7 @@ import {
   Tracer,
   SpanKind,
   diag,
+  UpDownCounter,
 } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import {
@@ -256,6 +257,51 @@ export function patchCallback(
     span.end();
     cb.call(this, err, res);
   };
+}
+
+export function getPoolName(pool: PgPoolOptionsParams): string {
+  if (!pool) {
+    return "unknown_pool";
+  }
+  let poolName = '';
+  poolName += pool.user ? `${pool.user}@` : 'unknown_user';
+  poolName += pool.host ? `${pool.host}:` : 'unknown_host';
+  poolName += pool.port ? `${pool.port}/` : 'unknown_port';
+  poolName += pool.database ? `${pool.database}` : 'unknown_database';
+
+  return poolName.trim();
+}
+
+export interface poolConnectionsCounter {
+  used: number;
+  idle: number;
+}
+
+export function updateCounter(
+  pool: PgPoolExtended,
+  connectionsCount: UpDownCounter,
+  latestCounter: poolConnectionsCounter,
+): poolConnectionsCounter {
+  const poolName = getPoolName(pool.options);
+  const all = pool.totalCount;
+  const idle = pool.waitingCount;
+  const used = all - idle;
+
+  if (used != latestCounter.used) {
+    connectionsCount.add(used - latestCounter.used, {
+      state: 'used',
+      name: poolName,
+    });
+  }
+
+  if (idle != latestCounter.idle) {
+    connectionsCount.add(idle - latestCounter.idle, {
+      state: 'idle',
+      name: poolName,
+    });
+  }
+
+  return {used: used, idle: idle};
 }
 
 export function patchCallbackPGPool(
