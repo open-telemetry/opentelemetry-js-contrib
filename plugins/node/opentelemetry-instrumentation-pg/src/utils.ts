@@ -261,7 +261,7 @@ export function patchCallback(
 
 export function getPoolName(pool: PgPoolOptionsParams): string {
   if (!pool) {
-    return "unknown_pool";
+    return 'unknown_pool';
   }
   let poolName = '';
   poolName += pool.user ? `${pool.user}@` : 'unknown_user';
@@ -280,28 +280,28 @@ export interface poolConnectionsCounter {
 export function updateCounter(
   pool: PgPoolExtended,
   connectionsCount: UpDownCounter,
-  latestCounter: poolConnectionsCounter,
+  latestCounter: poolConnectionsCounter
 ): poolConnectionsCounter {
   const poolName = getPoolName(pool.options);
   const all = pool.totalCount;
   const idle = pool.waitingCount;
   const used = all - idle;
 
-  if (used != latestCounter.used) {
+  if (used !== latestCounter.used) {
     connectionsCount.add(used - latestCounter.used, {
       state: 'used',
       name: poolName,
     });
   }
 
-  if (idle != latestCounter.idle) {
+  if (idle !== latestCounter.idle) {
     connectionsCount.add(idle - latestCounter.idle, {
       state: 'idle',
       name: poolName,
     });
   }
 
-  return {used: used, idle: idle};
+  return { used: used, idle: idle };
 }
 
 export function patchCallbackPGPool(
