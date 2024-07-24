@@ -394,7 +394,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           );
         });
 
-        // TODO check why is not recognizing release (e.g. version)
         this.on('release' as any, connection => {
           console.log("RELEASE FROM PLUGIN!!");
           plugin._connectionsCounter = utils.updateCounter(
