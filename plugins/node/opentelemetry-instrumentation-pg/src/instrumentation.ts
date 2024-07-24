@@ -45,10 +45,10 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
-
   private _connectionsCount!: UpDownCounter;
   private _connectionsCounter: utils.poolConnectionsCounter = {
-    used: 0, idle: 0
+    used: 0,
+    idle: 0
   };
 
   constructor(config: PgInstrumentationConfig = {}) {
@@ -374,24 +374,24 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
-            plugin._connectionsCounter,
-          )
+            plugin._connectionsCounter
+          );
         });
 
         this.on('acquire', connection => {
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
-            plugin._connectionsCounter,
-          )
+            plugin._connectionsCounter
+          );
         });
 
         this.on('remove', connection => {
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
-            plugin._connectionsCounter,
-          )
+            plugin._connectionsCounter
+          );
         });
 
         // TODO check why is not recognizing release (e.g. version)
@@ -437,9 +437,9 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         plugin._connectionsCounter = utils.updateCounter(
           this,
           plugin._connectionsCount,
-          plugin._connectionsCounter,
-        )
-      }
+          plugin._connectionsCounter
+        );
+      };
     };
   }
 }
