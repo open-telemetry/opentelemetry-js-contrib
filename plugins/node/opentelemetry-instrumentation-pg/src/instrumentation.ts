@@ -439,6 +439,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           plugin._connectionsCount,
           plugin._connectionsCounter
         );
+        return originalPoolEnd.call(this, callback as any);
       };
     };
   }

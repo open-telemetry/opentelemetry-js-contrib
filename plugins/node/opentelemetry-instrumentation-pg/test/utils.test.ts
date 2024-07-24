@@ -26,7 +26,7 @@ import * as assert from 'assert';
 import * as pg from 'pg';
 import { PgInstrumentationConfig } from '../src';
 import { AttributeNames } from '../src/enums/AttributeNames';
-import { PgClientExtended } from '../src/internal-types';
+import { PgClientExtended, PgPoolOptionsParams } from '../src/internal-types';
 import * as utils from '../src/utils';
 import { SEMATTRS_NET_PEER_PORT } from '@opentelemetry/semantic-conventions';
 
@@ -236,6 +236,24 @@ describe('utils.ts', () => {
         })[SEMATTRS_NET_PEER_PORT],
         Number.MAX_VALUE
       );
+    });
+  });
+
+  describe('.getPoolName()', () => {
+    it('creation of pool name based on pool config', () => {
+      const dummyPool: PgPoolOptionsParams = {
+        host: 'host_name',
+        port: 1234,
+        user: 'username',
+        database: 'database_name',
+        idleTimeoutMillis: 10,
+        maxClient: 5,
+      }
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'username@host_name:1234/database_name'
+      )
     });
   });
 });
