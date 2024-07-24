@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as api from '@opentelemetry/api';
-import * as metrics from '@opentelemetry/sdk-metrics';
+import { Meter, diag, metrics } from '@opentelemetry/api';
+import { MeterProvider } from '@opentelemetry/sdk-metrics';
 
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -24,13 +24,9 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
  */
 export interface MetricsCollectorConfig {
   // Meter Provider
-  meterProvider?: metrics.MeterProvider;
-  // Character to be used to join metrics - default is "."
-  metricNameSeparator?: string;
+  meterProvider?: MeterProvider;
   // Name of component
-  name: string;
-  // metric export endpoint
-  url?: string;
+  name?: string;
 }
 
 const DEFAULT_NAME = PACKAGE_NAME;
@@ -39,17 +35,18 @@ const DEFAULT_NAME = PACKAGE_NAME;
  * Base Class for metrics
  */
 export abstract class BaseMetrics {
-  protected _logger = api.diag;
-  protected _meter: api.Meter;
+  protected _logger = diag;
+  protected _meter: Meter;
   private _name: string;
 
-  constructor(config: MetricsCollectorConfig) {
-    this._name = config.name || DEFAULT_NAME;
-    const meterProvider =
-      config.meterProvider || api.metrics.getMeterProvider();
-    if (!config.meterProvider) {
+  constructor(config?: MetricsCollectorConfig) {
+    // Do not use `??` operator to allow falling back to default when the
+    // specified name is an empty string.
+    this._name = config?.name || DEFAULT_NAME;
+    if (config?.meterProvider == null) {
       this._logger.warn('No meter provider, using default');
     }
+    const meterProvider = config?.meterProvider ?? metrics.getMeterProvider();
     this._meter = meterProvider.getMeter(this._name, PACKAGE_VERSION);
   }
 

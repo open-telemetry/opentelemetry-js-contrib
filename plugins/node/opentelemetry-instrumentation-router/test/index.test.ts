@@ -22,9 +22,9 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 
-import Instrumentation from '../src';
+import { RouterInstrumentation } from '../src';
 import { InstrumentationSpan } from '../src/internal-types';
-const plugin = new Instrumentation();
+const plugin = new RouterInstrumentation();
 
 import * as http from 'http';
 import * as Router from 'router';

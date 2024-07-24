@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-knex",
-  "version": "0.36.1",
+  "version": "0.38.0",
   "description": "OpenTelemetry instrumentation for `knex` database SQL query builder",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -14,6 +14,7 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-knex --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
+    "lint:readme": "node ../../../scripts/lint-readme",
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
@@ -57,7 +58,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.51.0",
+    "@opentelemetry/instrumentation": "^0.52.0",
     "@opentelemetry/semantic-conventions": "^1.22.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-knex#readme"

@@ -33,7 +33,6 @@ import {
   executeType,
   parseType,
   validateType,
-  GraphQLInstrumentationParsedConfig,
   OtelExecutionArgs,
   ObjectWithGraphQLData,
   OPERATION_NOT_SUPPORTED,
@@ -52,32 +51,27 @@ import {
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as api from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
-import { GraphQLInstrumentationConfig } from './types';
+import {
+  GraphQLInstrumentationConfig,
+  GraphQLInstrumentationParsedConfig,
+} from './types';
 
-const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
+const DEFAULT_CONFIG: GraphQLInstrumentationParsedConfig = {
   mergeItems: false,
   depth: -1,
   allowValues: false,
   ignoreResolveSpans: false,
 };
 
-const supportedVersions = ['>=14 <17'];
+const supportedVersions = ['>=14.0.0 <17'];
 
-export class GraphQLInstrumentation extends InstrumentationBase {
+export class GraphQLInstrumentation extends InstrumentationBase<GraphQLInstrumentationParsedConfig> {
   constructor(config: GraphQLInstrumentationConfig = {}) {
-    super(
-      PACKAGE_NAME,
-      PACKAGE_VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
-    );
-  }
-
-  private _getConfig(): GraphQLInstrumentationParsedConfig {
-    return this._config as GraphQLInstrumentationParsedConfig;
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
   }
 
   override setConfig(config: GraphQLInstrumentationConfig = {}) {
-    this._config = Object.assign({}, DEFAULT_CONFIG, config);
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   protected init() {
@@ -238,7 +232,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     err?: Error,
     result?: PromiseOrValue<graphqlTypes.ExecutionResult>
   ) {
-    const config = this._getConfig();
+    const config = this.getConfig();
     if (result === undefined || err) {
       endSpan(span, err);
       return;
@@ -270,10 +264,14 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     span: api.Span,
     result: graphqlTypes.ExecutionResult
   ) {
-    const config = this._getConfig();
+    const { responseHook } = this.getConfig();
+    if (!responseHook) {
+      return;
+    }
+
     safeExecuteInTheMiddle(
       () => {
-        config.responseHook(span, result);
+        responseHook(span, result);
       },
       err => {
         if (err) {
@@ -329,7 +327,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     source: string | graphqlTypes.Source,
     options?: graphqlTypes.ParseOptions
   ): graphqlTypes.DocumentNode {
-    const config = this._getConfig();
+    const config = this.getConfig();
     const span = this.tracer.startSpan(SpanNames.PARSE);
 
     return context.with(trace.setSpan(context.active(), span), () => {
@@ -397,7 +395,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     operation: graphqlTypes.DefinitionNode | undefined,
     processedArgs: graphqlTypes.ExecutionArgs
   ): api.Span {
-    const config = this._getConfig();
+    const config = this.getConfig();
 
     const span = this.tracer.startSpan(SpanNames.EXECUTE, {});
     if (operation) {
@@ -457,7 +455,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
 
     if (
       contextValue[OTEL_GRAPHQL_DATA_SYMBOL] ||
-      this._getConfig().ignoreResolveSpans
+      this.getConfig().ignoreResolveSpans
     ) {
       return {
         schema,
@@ -477,22 +475,14 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     const fieldResolverForExecute = fieldResolver ?? defaultFieldResolved;
     fieldResolver = wrapFieldResolver(
       this.tracer,
-      this._getConfig.bind(this),
+      () => this.getConfig(),
       fieldResolverForExecute,
       isUsingDefaultResolver
     );
 
     if (schema) {
-      wrapFields(
-        schema.getQueryType(),
-        this.tracer,
-        this._getConfig.bind(this)
-      );
-      wrapFields(
-        schema.getMutationType(),
-        this.tracer,
-        this._getConfig.bind(this)
-      );
+      wrapFields(schema.getQueryType(), this.tracer, () => this.getConfig());
+      wrapFields(schema.getMutationType(), this.tracer, () => this.getConfig());
     }
 
     return {

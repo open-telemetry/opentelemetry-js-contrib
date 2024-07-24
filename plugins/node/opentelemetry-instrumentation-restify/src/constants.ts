@@ -24,4 +24,3 @@ export const RESTIFY_METHODS = [
   'patch',
 ];
 export const MODULE_NAME = 'restify';
-export const SUPPORTED_VERSIONS = ['>=4.0.0 <12'];

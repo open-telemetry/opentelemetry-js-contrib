@@ -51,17 +51,15 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
   requireParentSpan: false,
 };
 
-export class RedisInstrumentation extends InstrumentationBase {
+export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
 
-  protected override _config!: RedisInstrumentationConfig;
-
   constructor(config: RedisInstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
-    this._config = Object.assign({}, DEFAULT_CONFIG, config);
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   protected init() {
@@ -376,7 +374,7 @@ export class RedisInstrumentation extends InstrumentationBase {
     redisCommandArguments: Array<string | Buffer>
   ) {
     const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
-    if (hasNoParentSpan && this._config?.requireParentSpan) {
+    if (hasNoParentSpan && this.getConfig().requireParentSpan) {
       return origFunction.apply(origThis, origArguments);
     }
 
@@ -386,7 +384,7 @@ export class RedisInstrumentation extends InstrumentationBase {
     const commandArgs = redisCommandArguments.slice(1);
 
     const dbStatementSerializer =
-      this._config?.dbStatementSerializer || defaultDbStatementSerializer;
+      this.getConfig().dbStatementSerializer || defaultDbStatementSerializer;
 
     const attributes = getClientAttributes(this._diag, clientOptions);
 
@@ -474,9 +472,10 @@ export class RedisInstrumentation extends InstrumentationBase {
     response: unknown,
     error: Error | undefined
   ) {
-    if (!error && this._config.responseHook) {
+    const { responseHook } = this.getConfig();
+    if (!error && responseHook) {
       try {
-        this._config.responseHook(span, commandName, commandArgs, response);
+        responseHook(span, commandName, commandArgs, response);
       } catch (err) {
         this._diag.error('responseHook throw an exception', err);
       }

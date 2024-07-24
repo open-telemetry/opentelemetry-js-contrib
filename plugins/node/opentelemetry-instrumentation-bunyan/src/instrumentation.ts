@@ -32,20 +32,16 @@ const DEFAULT_CONFIG: BunyanInstrumentationConfig = {
   disableLogCorrelation: false,
 };
 
-export class BunyanInstrumentation extends InstrumentationBase {
+export class BunyanInstrumentation extends InstrumentationBase<BunyanInstrumentationConfig> {
   constructor(config: BunyanInstrumentationConfig = {}) {
-    super(
-      PACKAGE_NAME,
-      PACKAGE_VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
   }
 
   protected init() {
     return [
       new InstrumentationNodeModuleDefinition(
         'bunyan',
-        ['<2.0'],
+        ['>=1.0.0 <2'],
         (module: any) => {
           const instrumentation = this;
           const Logger =
@@ -99,12 +95,8 @@ export class BunyanInstrumentation extends InstrumentationBase {
     ];
   }
 
-  override getConfig(): BunyanInstrumentationConfig {
-    return this._config;
-  }
-
   override setConfig(config: BunyanInstrumentationConfig = {}) {
-    this._config = Object.assign({}, DEFAULT_CONFIG, config);
+    this._config = { ...DEFAULT_CONFIG, ...config };
   }
 
   private _getPatchedEmit() {
@@ -150,7 +142,7 @@ export class BunyanInstrumentation extends InstrumentationBase {
   }
 
   private _addStream(logger: any) {
-    const config: BunyanInstrumentationConfig = this.getConfig();
+    const config = this.getConfig();
     if (!this.isEnabled() || config.disableLogSending) {
       return;
     }
@@ -168,14 +160,14 @@ export class BunyanInstrumentation extends InstrumentationBase {
   }
 
   private _callHook(span: Span, record: Record<string, string>) {
-    const hook = this.getConfig().logHook;
+    const { logHook } = this.getConfig();
 
-    if (typeof hook !== 'function') {
+    if (typeof logHook !== 'function') {
       return;
     }
 
     safeExecuteInTheMiddle(
-      () => hook(span, record),
+      () => logHook(span, record),
       err => {
         if (err) {
           this._diag.error('error calling logHook', err);

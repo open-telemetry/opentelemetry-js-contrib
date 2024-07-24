@@ -7,6 +7,8 @@ This module provides automatic instrumentation for the [`dns`](http://nodejs.org
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Status
 
 | Maturity                                              | [Component Owner](../../../.github/component_owners.yml) | Compatibility         |
@@ -18,6 +20,10 @@ If total installation size is not constrained, it is recommended to use the [`@o
 ```bash
 npm install --save @opentelemetry/instrumentation-dns
 ```
+
+## Supported Versions
+
+- Node.js `>=14`
 
 ## Usage
 
@@ -44,7 +50,7 @@ DNS instrumentation has currently one option. You can set the following:
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
-| [`ignoreHostnames`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-dns/src/types.ts#L99) | `IgnoreMatcher | IgnoreMatcher[]` | DNS instrumentation will not trace all requests that match hostnames |
+| [`ignoreHostnames`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-dns/src/types.ts#L99) | `IgnoreMatcher \| IgnoreMatcher[]` | DNS instrumentation will not trace all requests that match hostnames |
 
 ## Semantic Conventions
 

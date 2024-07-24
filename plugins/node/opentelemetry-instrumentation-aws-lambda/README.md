@@ -9,15 +9,19 @@ This module provides automatic instrumentation for the [`AWS Lambda`](https://do
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
-This module is currently under active development and not ready for general use.
-
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
+This module is currently under active development and not ready for general use.
 
 ## Installation
 
 ```bash
 npm install --save @opentelemetry/instrumentation-aws-lambda
 ```
+
+## Supported Versions
+
+- This package will instrument the lambda execution regardless of versions.
 
 ## Usage
 

@@ -6,6 +6,12 @@
 This module provides automatic metric instrumentation that exposes measurements from the [Performance measurement APIs](https://nodejs.org/api/perf_hooks.html) (i.e. `perf_hooks`).
 While currently it is limited to metrics, it may be modified to produce other signals in the future.
 
+## Supported Versions
+
+- Node.js `>=14.10`
+
+<!-- - 14.6.0 - this package uses _private properties_ -->
+
 ## Example
 
 ```bash
@@ -57,12 +63,6 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 | name | type | unit | default | description |
 |---|---|---|---|---|
 | [`eventLoopUtilizationMeasurementInterval`](./src/types.ts#L25) | `int` | millisecond | `5000` | The approximate number of milliseconds for which to calculate event loop utilization averages. A larger value will result in more accurate averages at the expense of less granular data. Should be set to below the scrape interval of your metrics collector to avoid duplicated data points. |
-
-## Supported Node.js versions
-
-v14.10.0+
-
-<!-- - 14.6.0 - this package uses _private properties_ -->
 
 ## Useful links
 

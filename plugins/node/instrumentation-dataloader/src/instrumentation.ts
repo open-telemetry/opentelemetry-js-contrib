@@ -43,7 +43,7 @@ type DataloaderInternal = typeof Dataloader.prototype & {
 type LoadFn = (typeof Dataloader.prototype)['load'];
 type LoadManyFn = (typeof Dataloader.prototype)['loadMany'];
 
-export class DataloaderInstrumentation extends InstrumentationBase {
+export class DataloaderInstrumentation extends InstrumentationBase<DataloaderInstrumentationConfig> {
   constructor(config: DataloaderInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -52,7 +52,7 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
-        ['^2.0.0'],
+        ['>=2.0.0 <3'],
         dataloader => {
           this._patchLoad(dataloader.prototype);
           this._patchLoadMany(dataloader.prototype);
@@ -70,14 +70,6 @@ export class DataloaderInstrumentation extends InstrumentationBase {
         }
       ) as InstrumentationNodeModuleDefinition,
     ];
-  }
-
-  override getConfig(): DataloaderInstrumentationConfig {
-    return this._config;
-  }
-
-  override setConfig(config: DataloaderInstrumentationConfig = {}) {
-    this._config = config;
   }
 
   private shouldCreateSpans(): boolean {

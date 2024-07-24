@@ -52,15 +52,11 @@ import {
 /**
  * This class represents a document load plugin
  */
-export class DocumentLoadInstrumentation extends InstrumentationBase {
+export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoadInstrumentationConfig> {
   readonly component: string = 'document-load';
   readonly version: string = '1';
   moduleName = this.component;
 
-  /**
-   *
-   * @param config
-   */
   constructor(config: DocumentLoadInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -120,10 +116,12 @@ export class DocumentLoadInstrumentation extends InstrumentationBase {
         if (fetchSpan) {
           fetchSpan.setAttribute(SEMATTRS_HTTP_URL, location.href);
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
-            addSpanNetworkEvents(fetchSpan, entries);
+            if (!this.getConfig().ignoreNetworkEvents) {
+              addSpanNetworkEvents(fetchSpan, entries);
+            }
             this._addCustomAttributesOnSpan(
               fetchSpan,
-              this._getConfig().applyCustomAttributesOnSpan?.documentFetch
+              this.getConfig().applyCustomAttributesOnSpan?.documentFetch
             );
             this._endSpan(fetchSpan, PTN.RESPONSE_END, entries);
           });
@@ -135,24 +133,33 @@ export class DocumentLoadInstrumentation extends InstrumentationBase {
 
       this._addResourcesSpans(rootSpan);
 
-      addSpanNetworkEvent(rootSpan, PTN.FETCH_START, entries);
-      addSpanNetworkEvent(rootSpan, PTN.UNLOAD_EVENT_START, entries);
-      addSpanNetworkEvent(rootSpan, PTN.UNLOAD_EVENT_END, entries);
-      addSpanNetworkEvent(rootSpan, PTN.DOM_INTERACTIVE, entries);
-      addSpanNetworkEvent(
-        rootSpan,
-        PTN.DOM_CONTENT_LOADED_EVENT_START,
-        entries
-      );
-      addSpanNetworkEvent(rootSpan, PTN.DOM_CONTENT_LOADED_EVENT_END, entries);
-      addSpanNetworkEvent(rootSpan, PTN.DOM_COMPLETE, entries);
-      addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_START, entries);
-      addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_END, entries);
+      if (!this.getConfig().ignoreNetworkEvents) {
+        addSpanNetworkEvent(rootSpan, PTN.FETCH_START, entries);
+        addSpanNetworkEvent(rootSpan, PTN.UNLOAD_EVENT_START, entries);
+        addSpanNetworkEvent(rootSpan, PTN.UNLOAD_EVENT_END, entries);
+        addSpanNetworkEvent(rootSpan, PTN.DOM_INTERACTIVE, entries);
+        addSpanNetworkEvent(
+          rootSpan,
+          PTN.DOM_CONTENT_LOADED_EVENT_START,
+          entries
+        );
+        addSpanNetworkEvent(
+          rootSpan,
+          PTN.DOM_CONTENT_LOADED_EVENT_END,
+          entries
+        );
+        addSpanNetworkEvent(rootSpan, PTN.DOM_COMPLETE, entries);
+        addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_START, entries);
+        addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_END, entries);
+      }
 
-      addSpanPerformancePaintEvents(rootSpan);
+      if (!this.getConfig().ignorePerformancePaintEvents) {
+        addSpanPerformancePaintEvents(rootSpan);
+      }
+
       this._addCustomAttributesOnSpan(
         rootSpan,
-        this._getConfig().applyCustomAttributesOnSpan?.documentLoad
+        this.getConfig().applyCustomAttributesOnSpan?.documentLoad
       );
       this._endSpan(rootSpan, PTN.LOAD_EVENT_END, entries);
     });
@@ -197,11 +204,13 @@ export class DocumentLoadInstrumentation extends InstrumentationBase {
     );
     if (span) {
       span.setAttribute(SEMATTRS_HTTP_URL, resource.name);
-      addSpanNetworkEvents(span, resource);
+      if (!this.getConfig().ignoreNetworkEvents) {
+        addSpanNetworkEvents(span, resource);
+      }
       this._addCustomAttributesOnResourceSpan(
         span,
         resource,
-        this._getConfig().applyCustomAttributesOnSpan?.resourceFetch
+        this.getConfig().applyCustomAttributesOnSpan?.resourceFetch
       );
       this._endSpan(span, PTN.RESPONSE_END, resource);
     }
@@ -248,9 +257,6 @@ export class DocumentLoadInstrumentation extends InstrumentationBase {
     }
   }
 
-  private _getConfig(): DocumentLoadInstrumentationConfig {
-    return this._config;
-  }
   /**
    * adds custom attributes to root span if configured
    */

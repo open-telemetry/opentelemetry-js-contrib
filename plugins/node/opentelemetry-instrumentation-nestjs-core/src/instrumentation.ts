@@ -33,10 +33,12 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { AttributeNames, NestType } from './enums';
 
-export class Instrumentation extends InstrumentationBase {
+const supportedVersions = ['>=4.0.0 <11'];
+
+export class NestInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = '@nestjs/core';
   static readonly COMMON_ATTRIBUTES = {
-    component: Instrumentation.COMPONENT,
+    component: NestInstrumentation.COMPONENT,
   };
 
   constructor(config: InstrumentationConfig = {}) {
@@ -45,13 +47,13 @@ export class Instrumentation extends InstrumentationBase {
 
   init() {
     const module = new InstrumentationNodeModuleDefinition(
-      Instrumentation.COMPONENT,
-      ['>=4.0.0']
+      NestInstrumentation.COMPONENT,
+      supportedVersions
     );
 
     module.files.push(
-      this.getNestFactoryFileInstrumentation(['>=4.0.0']),
-      this.getRouterExecutionContextFileInstrumentation(['>=4.0.0'])
+      this.getNestFactoryFileInstrumentation(supportedVersions),
+      this.getRouterExecutionContextFileInstrumentation(supportedVersions)
     );
 
     return module;
@@ -120,7 +122,7 @@ function createWrapNestFactoryCreate(
     ) {
       const span = tracer.startSpan('Create Nest App', {
         attributes: {
-          ...Instrumentation.COMMON_ATTRIBUTES,
+          ...NestInstrumentation.COMMON_ATTRIBUTES,
           [AttributeNames.TYPE]: NestType.APP_CREATION,
           [AttributeNames.VERSION]: moduleVersion,
           [AttributeNames.MODULE]: nestModule.name,
@@ -169,7 +171,7 @@ function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
       ) {
         const span = tracer.startSpan(spanName, {
           attributes: {
-            ...Instrumentation.COMMON_ATTRIBUTES,
+            ...NestInstrumentation.COMMON_ATTRIBUTES,
             [AttributeNames.VERSION]: moduleVersion,
             [AttributeNames.TYPE]: NestType.REQUEST_CONTEXT,
             [SEMATTRS_HTTP_METHOD]: req.method,
@@ -204,7 +206,7 @@ function createWrapHandler(
   const spanName = handler.name || 'anonymous nest handler';
   const options = {
     attributes: {
-      ...Instrumentation.COMMON_ATTRIBUTES,
+      ...NestInstrumentation.COMMON_ATTRIBUTES,
       [AttributeNames.VERSION]: moduleVersion,
       [AttributeNames.TYPE]: NestType.REQUEST_HANDLER,
       [AttributeNames.CALLBACK]: handler.name,

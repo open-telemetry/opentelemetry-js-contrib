@@ -46,24 +46,16 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 export const ANONYMOUS_NAME = 'anonymous';
 
 /** Fastify instrumentation for OpenTelemetry */
-export class FastifyInstrumentation extends InstrumentationBase {
+export class FastifyInstrumentation extends InstrumentationBase<FastifyInstrumentationConfig> {
   constructor(config: FastifyInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-  }
-
-  override setConfig(config: FastifyInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
-  }
-
-  override getConfig(): FastifyInstrumentationConfig {
-    return this._config as FastifyInstrumentationConfig;
   }
 
   init() {
     return [
       new InstrumentationNodeModuleDefinition(
         'fastify',
-        ['^3.0.0', '^4.0.0'],
+        ['>=3.0.0 <5'],
         moduleExports => {
           return this._patchConstructor(moduleExports);
         }
@@ -281,9 +273,10 @@ export class FastifyInstrumentation extends InstrumentationBase {
         spanAttributes
       );
 
-      if (instrumentation.getConfig().requestHook) {
+      const { requestHook } = instrumentation.getConfig();
+      if (requestHook) {
         safeExecuteInTheMiddle(
-          () => instrumentation.getConfig().requestHook!(span, { request }),
+          () => requestHook(span, { request }),
           e => {
             if (e) {
               instrumentation._diag.error('request hook failed', e);
