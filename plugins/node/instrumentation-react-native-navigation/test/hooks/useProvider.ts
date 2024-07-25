@@ -21,7 +21,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 
 /**
- * Example of a trace shape:
+ * Example of a Span:
     {
         "resource": {
             "attributes": {
