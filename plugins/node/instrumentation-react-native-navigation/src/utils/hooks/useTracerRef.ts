@@ -21,7 +21,7 @@ import { NavigationTrackerConfig } from '../../types/navigation';
 
 export type TracerRef = MutableRefObject<Tracer | null>;
 
-const useTraceRef = (
+const useTracerRef = (
   provider?: TracerProvider,
   config?: NavigationTrackerConfig
 ): TracerRef => {
@@ -63,4 +63,4 @@ const useTraceRef = (
   return tracerRef;
 };
 
-export default useTraceRef;
+export default useTracerRef;

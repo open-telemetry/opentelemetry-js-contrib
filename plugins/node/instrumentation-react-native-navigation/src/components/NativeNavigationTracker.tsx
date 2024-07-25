@@ -16,7 +16,7 @@
 import { forwardRef, ReactNode } from 'react';
 import { TracerProvider } from '@opentelemetry/api';
 
-import useTraceRef from '../utils/hooks/useTraceRef';
+import useTraceRef from '../utils/hooks/useTracerRef';
 import useNativeNavigationTracker, {
   NativeNavRef,
 } from '../hooks/useNativeNavigationTracker';

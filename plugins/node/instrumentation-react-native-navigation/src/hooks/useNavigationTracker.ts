@@ -21,7 +21,7 @@ import spanCreator, {
   spanCreatorAppState,
   spanEnd,
 } from '../utils/spanCreator';
-import { TracerRef } from '../utils/hooks/useTraceRef';
+import { TracerRef } from '../utils/hooks/useTracerRef';
 import useSpanRef from '../utils/hooks/useSpanRef';
 import {
   INavigationContainer,
