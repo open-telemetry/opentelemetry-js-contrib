@@ -398,8 +398,8 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
-            plugin._connectionsCounter,
-          )
+            plugin._connectionsCounter
+          );
         });
 
         if (callback) {
