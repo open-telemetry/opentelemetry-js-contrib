@@ -25,12 +25,12 @@ import { NavigationTracker } from '../src';
 
 import { AppState } from 'react-native';
 import api from '@opentelemetry/api';
-import type { Attributes } from '@opentelemetry/api';
 import * as rnn from './helpers/react-navigation-native';
+import { NavigationTrackerConfig } from '../src/types/navigation';
 
 const AppWithProvider: FC<{
   shouldPassProvider?: boolean;
-  config?: { attributes?: Attributes };
+  config?: NavigationTrackerConfig;
 }> = ({ shouldPassProvider = true, config }) => {
   const { useNavigationContainerRef } = rnn;
   const ref = useNavigationContainerRef();
@@ -82,7 +82,9 @@ describe('NavigationTracker.tsx', function () {
   });
 
   it('should render a component that implements <NavigationTracker /> without passing a provider', function () {
-    const screen = render(<AppWithProvider shouldPassProvider={false} />);
+    const screen = render(
+      <AppWithProvider shouldPassProvider={false} config={{ debug: true }} />
+    );
 
     sandbox.assert.calledOnceWithExactly(
       mockConsoleInfo,

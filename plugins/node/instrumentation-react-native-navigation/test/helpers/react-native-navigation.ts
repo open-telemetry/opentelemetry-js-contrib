@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+// referencing to `wix/react-native-navigation` package
 export const Navigation = {
   events: () => ({
     registerComponentDidAppearListener: () => {},

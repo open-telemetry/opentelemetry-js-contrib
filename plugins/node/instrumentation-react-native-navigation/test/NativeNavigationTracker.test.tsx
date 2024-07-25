@@ -21,12 +21,12 @@ import sinon from 'sinon';
 import { NativeNavigationTracker } from '../src';
 import useProvider from './hooks/useProvider';
 import api from '@opentelemetry/api';
-import type { Attributes } from '@opentelemetry/api';
 import * as rnn from './helpers/react-native-navigation';
+import { NavigationTrackerConfig } from '../src/types/navigation';
 
 const AppWithProvider: FC<{
   shouldPassProvider?: boolean;
-  config?: { attributes?: Attributes };
+  config?: NavigationTrackerConfig;
 }> = ({ shouldPassProvider = true, config }) => {
   const { Navigation } = rnn;
   const provider = useProvider();
@@ -73,7 +73,9 @@ describe('NativeNavigationTracker.tsx', function () {
   });
 
   it('should render a component that implements <NativeNavigationTracker /> without passing a provider', function () {
-    const screen = render(<AppWithProvider shouldPassProvider={false} />);
+    const screen = render(
+      <AppWithProvider shouldPassProvider={false} config={{ debug: true }} />
+    );
 
     sandbox.assert.calledOnceWithExactly(
       mockConsoleInfo,

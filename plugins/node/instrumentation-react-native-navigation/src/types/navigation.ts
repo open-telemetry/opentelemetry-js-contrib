@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Attributes } from '@opentelemetry/api';
+import { Attributes, TracerOptions } from '@opentelemetry/api';
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -49,4 +49,6 @@ export interface INativeNavigationContainer {
 
 export interface NavigationTrackerConfig {
   attributes?: Attributes;
+  tracerOptions?: TracerOptions;
+  debug?: boolean; // enabling `debug` mode will print console messages (info and warns). useful for debugging
 }

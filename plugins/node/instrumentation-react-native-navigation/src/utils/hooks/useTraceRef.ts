@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 import { MutableRefObject, useEffect, useRef } from 'react';
-import {
-  trace,
-  Tracer,
-  TracerOptions,
-  TracerProvider,
-} from '@opentelemetry/api';
-import { PACKAGE_NAME, PACKAGE_VERSION } from './../../version';
+import { trace, Tracer, TracerProvider } from '@opentelemetry/api';
+import { PACKAGE_NAME, PACKAGE_VERSION } from '../../version';
+import useConsole from './useConsole';
+import { NavigationTrackerConfig } from '../../types/navigation';
 
 export type TracerRef = MutableRefObject<Tracer | null>;
 
-const useTrace = (
+const useTraceRef = (
   provider?: TracerProvider,
-  tracerOptions?: TracerOptions
+  config?: NavigationTrackerConfig
 ): TracerRef => {
+  const { debug, tracerOptions } = config ?? {};
   const tracerRef = useRef<Tracer | null>(null);
+  const console = useConsole(!!debug);
 
   // using the layout effect to make sure the tracer is initialized before the component is rendered
   useEffect(() => {
@@ -64,4 +63,4 @@ const useTrace = (
   return tracerRef;
 };
 
-export default useTrace;
+export default useTraceRef;

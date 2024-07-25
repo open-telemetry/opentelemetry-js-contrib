@@ -13,5 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { useNavigationContainerRef as useNavigationContainerRef_orig } from '@react-navigation/native';
 export const useNavigationContainerRef = useNavigationContainerRef_orig;

@@ -20,7 +20,7 @@ yarn add @opentelemetry/instrumentation-react-native-navigation @opentelemetry/a
   - Nodejs `>=14`
 
 ## Usage
-This package is designed to streamline your workflow by requiring minimal setup. To use this package, you only need to pass a reference and a provider.
+This package is designed to streamline your workflow by requiring minimal setup. To use this package, you only need to pass a reference and a optionally provider (the global one will be used by default)
 
 If you are using `expo-router` or `react-native/navigation` you need to wrap your entire application with the `NavigationTracker` component.
 
@@ -34,15 +34,19 @@ const App: FC = () => {
   const navigationRef = useNavigationContainerRef(); // if you do not use `expo-router` the same hook is also available in `@react-navigation/native` since `expo-router` is built on top of it. Just make sure this ref is passed also to the navigation container at the root of your app (if not, the ref would be empty and you will get a console.warn message instead).
 
   const provider = useProvider(); // the provider is something you need to configure and pass down as prop into the `NavigationTracker` component (this hook is not part of the package, it is just used here as a reference)
-  // If your choise is not to pass any custom tracer provider, the <NavigationTracker /> component will use the global one.
+  // If your choice is not to pass any custom tracer provider, the <NavigationTracker /> component will use the global one.
   // In both cases you have to make sure a tracer provider is registered BEFORE you attempt to record the first span.
 
   // you can also pass a config prop that accepts the `attributes` key. these static attributes will be passed into each created span.
   const config = useMemo(() => ({
+    tracerOptions: {
+      schemaUrl: "",
+    },
     attributes: {
       "static.attribute.key": "static.attribute.value",
       "custom.attribute.key": "custom.attribute.value",
     },
+    debug: false, // if set to `true`, it will print console messages (info and warns) for debugging purposes
   }), []);
 
   return (
@@ -88,14 +92,18 @@ const HomeScreen: FC = () => {
   const navigationRef = useRef(Navigation.events()); // this is the important part. Make sure you pass a reference with the return of Navigation.events();
 
   const provider = useProvider(); // again, the provider should be passed down into the `NativeNavigationTracker` with the selected exporter and processor configured (this hook is not part of the package, it is just used here as a reference)
-  // If your choise is not to pass any custom tracer provider, the <NavigationTracker /> component will use the global one.
+  // If your choice is not to pass any custom tracer provider, the <NavigationTracker /> component will use the global one.
   // In both cases you have to make sure a tracer provider is registered BEFORE you attempt to record the first span. 
 
   const config = useMemo(() => ({
+    tracerOptions: {
+      schemaUrl: "",
+    },
     attributes: {
       "static.attribute.key": "static.attribute.value",
       "custom.attribute.key": "custom.attribute.value",
     },
+    debug: false, // if set to `true`, it will print console messages (info and warns) for debugging purposes
   }), []);
 
   return (
@@ -144,7 +152,7 @@ For instance, when the application starts and the user navigates to a new sectio
 }
 ```
 
-If you dig into the attributes, `launch` refers to the moment the app is launched. It will be `true` only the first time the app mounts. Changing the status between background/foreground won't modify this attribute. For this case the `state.end` is used, and will and it can contain two possible values: `active` and `background`.
+If you dig into the attributes, `launch` refers to the moment the app is launched. It will be `true` only the first time the app mounts. Changing the status between background/foreground won't modify this attribute. For this case the `state.end` is used, and it can contain two possible values: `active` and `background`.
 
 Both components (<NavigationTracker /> and <NativeNavigationTracker />) are built on top of third-party libraries and function according to the respective APIs exposed by those libraries.
 

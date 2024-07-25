@@ -18,9 +18,9 @@ import { Span } from '@opentelemetry/api';
 
 export type SpanRef = MutableRefObject<Span | null>;
 
-const useSpan = (): SpanRef => {
+const useSpanRef = (): SpanRef => {
   const spanRef = useRef<Span | null>(null);
   return spanRef;
 };
 
-export default useSpan;
+export default useSpanRef;

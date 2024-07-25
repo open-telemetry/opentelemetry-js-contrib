@@ -16,8 +16,8 @@
 import { AppStateStatus } from 'react-native';
 import { MutableRefObject } from 'react';
 
-import { TracerRef } from './hooks/useTrace';
-import { SpanRef } from './hooks/useSpan';
+import { TracerRef } from './hooks/useTraceRef';
+import { SpanRef } from './hooks/useSpanRef';
 import { Attributes, trace, context } from '@opentelemetry/api';
 
 const ATTRIBUTES = {

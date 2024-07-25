@@ -21,14 +21,15 @@ import spanCreator, {
   spanCreatorAppState,
   spanEnd,
 } from '../utils/spanCreator';
-import { TracerRef } from '../utils/hooks/useTrace';
-import useSpan from '../utils/hooks/useSpan';
+import { TracerRef } from '../utils/hooks/useTraceRef';
+import useSpanRef from '../utils/hooks/useSpanRef';
 import {
   INavigationContainer,
   NavigationTrackerConfig,
 } from '../types/navigation';
 
 import useAppStateListener from './useAppStateListener';
+import useConsole from '../utils/hooks/useConsole';
 
 export type NavRef = INavigationContainer;
 
@@ -37,7 +38,8 @@ const useNavigationTracker = (
   tracer: TracerRef,
   config?: NavigationTrackerConfig
 ) => {
-  const { attributes: customAttributes } = config ?? {};
+  const { attributes: customAttributes, debug } = config ?? {};
+  const console = useConsole(!!debug);
 
   const navigationElRef = useMemo(() => {
     const isMutableRef = ref !== null && typeof ref !== 'function';
@@ -48,7 +50,7 @@ const useNavigationTracker = (
   const navView = useRef<string | null>(null);
 
   // Initializing a Span
-  const span = useSpan();
+  const span = useSpanRef();
 
   useEffect(() => {
     if (!navigationElRef) {
