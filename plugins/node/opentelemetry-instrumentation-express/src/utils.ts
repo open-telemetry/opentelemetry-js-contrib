@@ -56,7 +56,7 @@ export const getRouterPath = (path: string, layer: ExpressLayer): string => {
   if (stackLayer.route?.path) {
     return `${path}${stackLayer.route.path}`;
   }
-  
+
   if (stackLayer.handle?.stack) {
     return getRouterPath(path, stackLayer);
   }
@@ -80,7 +80,9 @@ export const getLayerMetadata = (
 } => {
   if (layer.name === 'router') {
     const maybeRouterPath = getRouterPath('', layer);
-    const extractedRouterPath = maybeRouterPath ? maybeRouterPath : layerPath || route || '/';
+    const extractedRouterPath = maybeRouterPath
+      ? maybeRouterPath
+      : layerPath || route || '/';
 
     return {
       attributes: {
