@@ -51,13 +51,13 @@ export const storeLayerPath = (request: PatchedRequest, value?: string) => {
  * @returns The reconstructed path
  */
 export const getRouterPath = (path: string, layer: ExpressLayer): string => {
-  const stackLayer = layer.handle?.stack[0];
+  const stackLayer = layer.handle?.stack?.[0];
 
-  if (stackLayer.route?.path) {
+  if (stackLayer?.route?.path) {
     return `${path}${stackLayer.route.path}`;
   }
 
-  if (stackLayer.handle?.stack) {
+  if (stackLayer?.handle?.stack) {
     return getRouterPath(path, stackLayer);
   }
 
