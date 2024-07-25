@@ -38,8 +38,9 @@ import {
         "timestamp": 1717536927797000,
         "duration": 2820542.167,
         "attributes": {
-            "launch": true,
-            "state.end": 'active'
+            "view.launch": true,
+            "view.state.end": 'active'
+            "view.name": "index",
         },
         "status": {
             "code": 0

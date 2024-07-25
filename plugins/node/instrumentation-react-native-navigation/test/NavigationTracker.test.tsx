@@ -29,9 +29,9 @@ import * as rnn from './helpers/react-navigation-native';
 import { NavigationTrackerConfig } from '../src/types/navigation';
 
 const AppWithProvider: FC<{
-  shouldPassProvider?: boolean;
+  shouldPassProvider: boolean;
   config?: NavigationTrackerConfig;
-}> = ({ shouldPassProvider = true, config }) => {
+}> = ({ shouldPassProvider, config }) => {
   const { useNavigationContainerRef } = rnn;
   const ref = useNavigationContainerRef();
   const provider = useProvider();
@@ -100,21 +100,22 @@ describe('NavigationTracker.tsx', function () {
     sandbox.assert.calledWith(mockAddListener, 'state', sandbox.match.func);
     const mockNavigationListenerCall = mockAddListener.getCall(0).args[1];
 
-    mockGetCurrentRoute.returns({ name: '1-first-view-test' });
+    mockGetCurrentRoute.returns({ name: 'homeView' });
     mockNavigationListenerCall();
 
-    mockGetCurrentRoute.returns({ name: '1-second-view-test' });
+    mockGetCurrentRoute.returns({ name: 'detailsView' });
     mockNavigationListenerCall();
 
     // after render a view and then navigate to a different one the spanEnd should be called and it should register a complete span
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: '1-first-view-test',
+        name: 'homeView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: true,
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'homeView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -122,21 +123,22 @@ describe('NavigationTracker.tsx', function () {
       sandbox.match({ depth: sandbox.match.number })
     );
 
-    mockGetCurrentRoute.returns({ name: '1-second-view-test' });
+    mockGetCurrentRoute.returns({ name: 'detailsView' });
     mockNavigationListenerCall();
 
-    mockGetCurrentRoute.returns({ name: '1-third-view-test' });
+    mockGetCurrentRoute.returns({ name: 'extraView' });
     mockNavigationListenerCall();
 
     // again after render a view and then navigate to a different one (the third) the spanEnd should be called and it should register a complete span
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: '1-second-view-test',
+        name: 'detailsView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: false,
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'detailsView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -148,7 +150,7 @@ describe('NavigationTracker.tsx', function () {
   });
 
   it('should render a component that implements <NavigationTracker /> passing a provider', function () {
-    const screen = render(<AppWithProvider />);
+    const screen = render(<AppWithProvider shouldPassProvider={true} />);
 
     // should not call the global `getTracer` function since it should get the provider from props
     sandbox.assert.notCalled(mockGlobalTracer);
@@ -156,21 +158,22 @@ describe('NavigationTracker.tsx', function () {
     sandbox.assert.calledWith(mockAddListener, 'state', sandbox.match.func);
     const mockNavigationListenerCall = mockAddListener.getCall(1).args[1];
 
-    mockGetCurrentRoute.returns({ name: '2-first-view-test' });
+    mockGetCurrentRoute.returns({ name: 'homeView' });
     mockNavigationListenerCall();
 
-    mockGetCurrentRoute.returns({ name: '2-second-view-test' });
+    mockGetCurrentRoute.returns({ name: 'detailsView' });
     mockNavigationListenerCall();
 
     // after render a view and then navigate to a different one the spanEnd should be called and it should register a complete span
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: '2-first-view-test',
+        name: 'homeView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: true,
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'homeView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -178,21 +181,22 @@ describe('NavigationTracker.tsx', function () {
       sandbox.match({ depth: sandbox.match.number })
     );
 
-    mockGetCurrentRoute.returns({ name: '2-second-view-test' });
+    mockGetCurrentRoute.returns({ name: 'detailsView' });
     mockNavigationListenerCall();
 
-    mockGetCurrentRoute.returns({ name: '1-third-view-test' });
+    mockGetCurrentRoute.returns({ name: 'extraView' });
     mockNavigationListenerCall();
 
     // again after render a view and then navigate to a different one (the third) the spanEnd should be called and it should register a complete span
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: '2-second-view-test',
+        name: 'detailsView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: false,
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'detailsView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -211,7 +215,7 @@ describe('NavigationTracker.tsx', function () {
     const handleAppStateChange = mockAddEventListener.getCall(0).args[1];
 
     // app launches, navigation listener is called
-    mockGetCurrentRoute.returns({ name: '3-initial-view-after-launch' });
+    mockGetCurrentRoute.returns({ name: 'homeView' });
     // - start the first span
     mockNavigationListenerCall();
 
@@ -222,11 +226,12 @@ describe('NavigationTracker.tsx', function () {
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: '3-initial-view-after-launch',
+        name: 'homeView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: true,
           [ATTRIBUTES.appState]: 'background',
+          [ATTRIBUTES.viewName]: 'homeView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -240,18 +245,19 @@ describe('NavigationTracker.tsx', function () {
     // - start the second span (same view)
 
     // app navigates to a different view
-    mockGetCurrentRoute.returns({ name: '3-next-view' });
+    mockGetCurrentRoute.returns({ name: 'detailsView' });
     mockNavigationListenerCall();
 
     // - end the second span
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: '3-initial-view-after-launch',
+        name: 'homeView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: false,
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'homeView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -266,11 +272,12 @@ describe('NavigationTracker.tsx', function () {
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: '3-next-view',
+        name: 'detailsView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: false,
           [ATTRIBUTES.appState]: 'background',
+          [ATTRIBUTES.viewName]: 'detailsView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -286,6 +293,7 @@ describe('NavigationTracker.tsx', function () {
   it('should create spans with custom attributes', function () {
     const screen = render(
       <AppWithProvider
+        shouldPassProvider={true}
         config={{
           attributes: {
             'custom.attribute': 'custom.value',
@@ -297,22 +305,23 @@ describe('NavigationTracker.tsx', function () {
 
     const mockNavigationListenerCall = mockAddListener.getCall(3).args[1];
 
-    mockGetCurrentRoute.returns({ name: 'home-custom-attributes' });
+    mockGetCurrentRoute.returns({ name: 'homeCustomAttributes' });
     mockNavigationListenerCall();
 
-    mockGetCurrentRoute.returns({ name: 'extra-custom-attributes' });
+    mockGetCurrentRoute.returns({ name: 'extraCustomAttributes' });
     mockNavigationListenerCall();
 
     sandbox.assert.calledOnceWithMatch(
       mockConsoleDir,
       sandbox.match({
-        name: 'home-custom-attributes',
+        name: 'homeCustomAttributes',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: true,
           'custom.attribute': 'custom.value',
           'custom.extra.attribute': 'custom.extra.value',
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'homeCustomAttributes',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,

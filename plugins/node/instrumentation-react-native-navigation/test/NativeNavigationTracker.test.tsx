@@ -25,9 +25,9 @@ import * as rnn from './helpers/react-native-navigation';
 import { NavigationTrackerConfig } from '../src/types/navigation';
 
 const AppWithProvider: FC<{
-  shouldPassProvider?: boolean;
+  shouldPassProvider: boolean;
   config?: NavigationTrackerConfig;
-}> = ({ shouldPassProvider = true, config }) => {
+}> = ({ shouldPassProvider, config }) => {
   const { Navigation } = rnn;
   const provider = useProvider();
   const ref = useRef(Navigation.events());
@@ -92,22 +92,23 @@ describe('NativeNavigationTracker.tsx', function () {
 
     const mockDidAppearListenerCall = mockDidAppearListener.getCall(0).args[0];
 
-    mockDidAppearListenerCall({ componentName: 'initial-test-view' });
+    mockDidAppearListenerCall({ componentName: 'homeView' });
     sandbox.assert.calledWith(mockDidDisappearListener, sandbox.match.func);
 
     const mockDidDisappearListenerCall =
       mockDidDisappearListener.getCall(0).args[0];
 
-    mockDidDisappearListenerCall({ componentName: 'initial-test-view' });
+    mockDidDisappearListenerCall({ componentName: 'homeView' });
 
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: 'initial-test-view',
+        name: 'homeView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: true,
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'homeView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -115,17 +116,18 @@ describe('NativeNavigationTracker.tsx', function () {
       sandbox.match({ depth: sandbox.match.number })
     );
 
-    mockDidAppearListenerCall({ componentName: 'second-test-view' });
-    mockDidDisappearListenerCall({ componentName: 'second-test-view' });
+    mockDidAppearListenerCall({ componentName: 'detailsView' });
+    mockDidDisappearListenerCall({ componentName: 'detailsView' });
 
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: 'second-test-view',
+        name: 'detailsView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: false,
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'detailsView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -137,7 +139,7 @@ describe('NativeNavigationTracker.tsx', function () {
   });
 
   it('should render a component that implements <NativeNavigationTracker /> passing a provider', function () {
-    const screen = render(<AppWithProvider />);
+    const screen = render(<AppWithProvider shouldPassProvider={true} />);
 
     // should not call the global `getTracer` function since it should get the provider from props
     sandbox.assert.notCalled(mockGlobalTracer);
@@ -145,22 +147,23 @@ describe('NativeNavigationTracker.tsx', function () {
     sandbox.assert.calledWith(mockDidAppearListener, sandbox.match.func);
     const mockDidAppearListenerCall = mockDidAppearListener.getCall(1).args[0];
 
-    mockDidAppearListenerCall({ componentName: 'initial-test-view' });
+    mockDidAppearListenerCall({ componentName: 'homeView' });
 
     sandbox.assert.calledWith(mockDidDisappearListener, sandbox.match.func);
     const mockDidDisappearListenerCall =
       mockDidDisappearListener.getCall(1).args[0];
 
-    mockDidDisappearListenerCall({ componentName: 'initial-test-view' });
+    mockDidDisappearListenerCall({ componentName: 'homeView' });
 
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: 'initial-test-view',
+        name: 'homeView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: true,
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'homeView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -168,17 +171,18 @@ describe('NativeNavigationTracker.tsx', function () {
       sandbox.match({ depth: sandbox.match.number })
     );
 
-    mockDidAppearListenerCall({ componentName: 'second-test-view' });
-    mockDidDisappearListenerCall({ componentName: 'second-test-view' });
+    mockDidAppearListenerCall({ componentName: 'detailsView' });
+    mockDidDisappearListenerCall({ componentName: 'detailsView' });
 
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: 'second-test-view',
+        name: 'detailsView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: false,
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'detailsView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -198,18 +202,21 @@ describe('NativeNavigationTracker.tsx', function () {
 
     const handleAppStateChange = mockAddEventListener.getCall(0).args[1];
 
-    mockDidAppearListenerCall({ componentName: 'initial-view-after-launch' });
-
+    // app launches
+    mockDidAppearListenerCall({ componentName: 'homeView' });
+    // app goes to background
     handleAppStateChange('background');
 
+    // at this point it should grab the first span adding 'background' as app state
     sandbox.assert.calledWith(
       mockConsoleDir,
       sandbox.match({
-        name: 'initial-view-after-launch',
+        name: 'homeView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: true,
           [ATTRIBUTES.appState]: 'background',
+          [ATTRIBUTES.viewName]: 'homeView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -217,22 +224,26 @@ describe('NativeNavigationTracker.tsx', function () {
       sandbox.match({ depth: sandbox.match.number })
     );
 
+    // back to foreground
     handleAppStateChange('active');
-
+    // user navigates to another view so the previous one disappears. it should end the previous span
     mockDidDisappearListenerCall({
-      componentName: 'initial-view-after-launch',
+      componentName: 'homeView',
     });
 
-    mockDidAppearListenerCall({ componentName: 'next-view' });
+    // user gets the next view after navigate
+    mockDidAppearListenerCall({ componentName: 'detailsView' });
 
+    // at this point a new span should be created with the same name but saying it's in 'active' state (foreground)
     sandbox.assert.calledWith(
       mockConsoleDir,
       sinon.match({
-        name: 'initial-view-after-launch',
+        name: 'homeView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: false,
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'homeView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -240,16 +251,19 @@ describe('NativeNavigationTracker.tsx', function () {
       sandbox.match({ depth: sandbox.match.number })
     );
 
+    // app goes to background
     handleAppStateChange('background');
 
+    // and for that reason it should create a new span with the same name but in 'background' state
     sandbox.assert.calledWith(
       mockConsoleDir,
       sinon.match({
-        name: 'next-view',
+        name: 'detailsView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: false,
           [ATTRIBUTES.appState]: 'background',
+          [ATTRIBUTES.viewName]: 'detailsView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,
@@ -264,6 +278,7 @@ describe('NativeNavigationTracker.tsx', function () {
   it('should create spans with custom attributes', function () {
     const screen = render(
       <AppWithProvider
+        shouldPassProvider={true}
         config={{
           attributes: {
             'custom.attribute': 'custom.value',
@@ -277,19 +292,20 @@ describe('NativeNavigationTracker.tsx', function () {
     const mockDidDisappearListenerCall =
       mockDidDisappearListener.getCall(3).args[0];
 
-    mockDidAppearListenerCall({ componentName: 'home-custom-attributes' });
-    mockDidDisappearListenerCall({ componentName: 'home-custom-attributes' });
+    mockDidAppearListenerCall({ componentName: 'homeCustomAttributesView' });
+    mockDidDisappearListenerCall({ componentName: 'homeCustomAttributesView' });
 
     sandbox.assert.calledOnceWithMatch(
       mockConsoleDir,
       sandbox.match({
-        name: 'home-custom-attributes',
+        name: 'homeCustomAttributesView',
         traceId: sandbox.match.string,
         attributes: {
           [ATTRIBUTES.initialView]: true,
           'custom.attribute': 'custom.value',
           'custom.extra.attribute': 'custom.extra.value',
           [ATTRIBUTES.appState]: 'active',
+          [ATTRIBUTES.viewName]: 'homeCustomAttributesView',
         },
         timestamp: sandbox.match.number,
         duration: sandbox.match.number,

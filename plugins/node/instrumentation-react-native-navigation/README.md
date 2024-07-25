@@ -141,8 +141,9 @@ For instance, when the application starts and the user navigates to a new sectio
   timestamp: 1718975153696000,
   duration: 252.375,
   attributes: {
-    launch: true,
-    'state.end': 'active',
+    'view.launch': true,
+    'view.state.end': 'active',
+    'view.name': 'Home',
     'static.attribute.key': 'static.attribute.value',
     'custom.attribute.key': 'custom.attribute.value'
   },
@@ -152,7 +153,7 @@ For instance, when the application starts and the user navigates to a new sectio
 }
 ```
 
-If you dig into the attributes, `launch` refers to the moment the app is launched. It will be `true` only the first time the app mounts. Changing the status between background/foreground won't modify this attribute. For this case the `state.end` is used, and it can contain two possible values: `active` and `background`.
+If you dig into the attributes, `view.launch` refers to the moment the app is launched. It will be `true` only the first time the app mounts. Changing the status between background/foreground won't modify this attribute. For this case the `view.state.end` is used, and it can contain two possible values: `active` and `background`.
 
 Both components (<NavigationTracker /> and <NativeNavigationTracker />) are built on top of third-party libraries and function according to the respective APIs exposed by those libraries.
 

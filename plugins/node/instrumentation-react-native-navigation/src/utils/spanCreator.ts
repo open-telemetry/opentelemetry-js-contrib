@@ -18,12 +18,13 @@ import { MutableRefObject } from 'react';
 
 import { TracerRef } from './hooks/useTracerRef';
 import { SpanRef } from './hooks/useSpanRef';
-import { Attributes, trace, context } from '@opentelemetry/api';
+import { Attributes } from '@opentelemetry/api';
 
 const ATTRIBUTES = {
-  initialView: 'launch',
-  finalView: 'unmount',
-  appState: 'state.end',
+  initialView: 'view.launch',
+  finalView: 'view.unmount',
+  viewName: 'view.name',
+  appState: 'view.state.end',
 };
 
 const spanStart = (
@@ -41,10 +42,10 @@ const spanStart = (
   // Starting the span
   span.current = tracer.current.startSpan(currentRouteName);
 
-  trace.setSpan(context.active(), span.current);
-
   // it should create the first span knowing there is not a previous view
   span.current.setAttribute(ATTRIBUTES.initialView, !!isLaunch);
+  // it should set the view name in case it's useful have this as attr
+  span.current.setAttribute(ATTRIBUTES.viewName, currentRouteName);
 
   if (customAttributes) {
     span.current.setAttributes(customAttributes);
