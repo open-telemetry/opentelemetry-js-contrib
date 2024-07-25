@@ -417,9 +417,9 @@ describe('SocketIoInstrumentation', () => {
         });
         sio.on('connection', (socket: Socket) => {
           socket.emit('test');
-          client.close();
-          sio.close();
           setTimeout(() => {
+            client.close();
+            sio.close();
             expectSpan(
               `/[${socket.id}] send`,
               span => {
@@ -435,7 +435,7 @@ describe('SocketIoInstrumentation', () => {
               },
               2
             );
-          });
+          }, 10);
         });
       });
     });
