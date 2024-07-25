@@ -40,6 +40,7 @@ import { KnexInstrumentationConfig } from './types';
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
 const DEFAULT_CONFIG: KnexInstrumentationConfig = {
   maxQueryLength: 1022,
+  requireParentSpan: false,
 };
 
 export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentationConfig> {
@@ -120,7 +121,7 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
 
   private createQueryWrapper(moduleVersion?: string) {
     const instrumentation = this;
-    return function wrapQuery(original: () => any) {
+    return function wrapQuery(original: (...args: any[]) => any) {
       return function wrapped_logging_method(this: any, query: any) {
         const config = this.client.config;
 
@@ -152,14 +153,22 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
           );
         }
 
-        const parent = this.builder[contextSymbol];
+        const parentContext =
+          this.builder[contextSymbol] || api.context.active();
+        const parentSpan = api.trace.getSpan(parentContext);
+        const hasActiveParent =
+          parentSpan && api.trace.isSpanContextValid(parentSpan.spanContext());
+        if (instrumentation._config.requireParentSpan && !hasActiveParent) {
+          return original.bind(this)(...arguments);
+        }
+
         const span = instrumentation.tracer.startSpan(
           utils.getName(name, operation, table),
           {
             kind: api.SpanKind.CLIENT,
             attributes,
           },
-          parent
+          parentContext
         );
         const spanContext = api.trace.setSpan(api.context.active(), span);
 
