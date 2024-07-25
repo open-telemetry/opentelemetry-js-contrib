@@ -54,9 +54,11 @@ export const getRouterPath = (path: string, layer: ExpressLayer): string => {
   const stackLayer = layer.handle?.stack[0];
 
   if (stackLayer.route?.path) {
-    path += stackLayer.route.path;
-  } else if (stackLayer.handle?.stack) {
-    path = getRouterPath(path, stackLayer);
+    return `${path}${stackLayer.route.path}`;
+  }
+  
+  if (stackLayer.handle?.stack) {
+    return getRouterPath(path, stackLayer);
   }
 
   return path;
@@ -77,15 +79,8 @@ export const getLayerMetadata = (
   name: string;
 } => {
   if (layer.name === 'router') {
-    let extractedRouterPath = '';
-
-    if (layer.handle?.stack) {
-      extractedRouterPath = getRouterPath(extractedRouterPath, layer);
-    }
-
-    if (!extractedRouterPath) {
-      extractedRouterPath = layerPath || route || '/';
-    }
+    const maybeRouterPath = getRouterPath('', layer);
+    const extractedRouterPath = maybeRouterPath ? maybeRouterPath : layerPath || route || '/';
 
     return {
       attributes: {
