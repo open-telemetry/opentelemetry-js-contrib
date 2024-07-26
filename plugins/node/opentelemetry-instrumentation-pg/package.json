@@ -63,7 +63,7 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "pg": "8.7.1",
-    "pg-pool": "3.6.2",
+    "pg-pool": "3.4.1",
     "rimraf": "5.0.5",
     "safe-stable-stringify": "^2.4.1",
     "sinon": "15.2.0",

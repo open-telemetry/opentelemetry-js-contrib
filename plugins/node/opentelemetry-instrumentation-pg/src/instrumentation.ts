@@ -46,6 +46,10 @@ import { SpanNames } from './enums/SpanNames';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   private _connectionsCount!: UpDownCounter;
+  // Pool events connect, acquire, release and remove can be called
+  // multiple times without changing the values of total, idle and waiting
+  // connections. The _connectionsCounter is used to keep track of latest
+  // values and only update the metric _connectionsCount when the value change.
   private _connectionsCounter: utils.poolConnectionsCounter = {
     used: 0,
     idle: 0,
