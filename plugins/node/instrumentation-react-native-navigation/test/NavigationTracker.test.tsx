@@ -19,7 +19,7 @@ import React, { render } from '@testing-library/react';
 import useProvider from './hooks/useProvider';
 
 import { NavRef } from '../src/hooks/useNavigationTracker';
-import { ATTRIBUTES } from '../src/utils/spanCreator';
+import { ATTRIBUTES } from '../src/utils/spanFactory';
 import sinon from 'sinon';
 import { NavigationTracker } from '../src';
 

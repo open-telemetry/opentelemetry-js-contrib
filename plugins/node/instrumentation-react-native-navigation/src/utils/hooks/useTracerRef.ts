@@ -29,7 +29,6 @@ const useTracerRef = (
   const tracerRef = useRef<Tracer | null>(null);
   const console = useConsole(!!debug);
 
-  // using the layout effect to make sure the tracer is initialized before the component is rendered
   useEffect(() => {
     if (tracerRef.current === null) {
       if (!provider) {

@@ -16,7 +16,7 @@
 import { AppState } from 'react-native';
 import React, { FC, useRef } from 'react';
 import { render } from '@testing-library/react';
-import { ATTRIBUTES } from '../src/utils/spanCreator';
+import { ATTRIBUTES } from '../src/utils/spanFactory';
 import sinon from 'sinon';
 import { NativeNavigationTracker } from '../src';
 import useProvider from './hooks/useProvider';

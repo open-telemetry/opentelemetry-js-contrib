@@ -16,7 +16,7 @@
 import { forwardRef, ReactNode } from 'react';
 import { TracerProvider } from '@opentelemetry/api';
 
-import useTraceRef from '../utils/hooks/useTracerRef';
+import useTracerRef from '../utils/hooks/useTracerRef';
 import useNativeNavigationTracker, {
   NativeNavRef,
 } from '../hooks/useNativeNavigationTracker';
@@ -36,7 +36,7 @@ const NativeNavigationTracker = forwardRef<
   NativeNavigationTrackerProps
 >(({ children, provider, config }, ref) => {
   // Initializing a Trace instance
-  const tracer = useTraceRef(provider, config);
+  const tracer = useTracerRef(provider, config);
 
   useNativeNavigationTracker(ref, tracer, config);
 

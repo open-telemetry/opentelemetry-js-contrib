@@ -14,14 +14,40 @@
  * limitations under the License.
  */
 import { AppState, AppStateStatus } from 'react-native';
-import { useEffect } from 'react';
+import { MutableRefObject, useCallback, useEffect } from 'react';
+import { spanCreatorAppState } from '../utils/spanFactory';
+import { TracerRef } from '../utils/hooks/useTracerRef';
+import { SpanRef } from '../utils/hooks/useSpanRef';
+import { Attributes } from '@opentelemetry/api';
 
-type CallbackFn = (currentState: AppStateStatus) => void;
+const useAppStateListener = (
+  tracer: TracerRef,
+  span: SpanRef,
+  view: MutableRefObject<string | null>,
+  attributes?: Attributes
+) => {
+  /**
+   * App State Span Factory
+   */
+  const initAppStateSpan = useCallback(
+    (currentState: AppStateStatus) => {
+      const appStateHandler = spanCreatorAppState(tracer, span, attributes);
 
-const useAppStateListener = (callback?: CallbackFn) => {
+      if (view?.current === null) {
+        return;
+      }
+
+      appStateHandler(view?.current, currentState);
+    },
+    [span, tracer, attributes]
+  );
+
+  /**
+   * App State Listener changes
+   */
   useEffect(() => {
     const handleAppStateChange = (currentState: AppStateStatus) => {
-      callback?.(currentState);
+      initAppStateSpan(currentState);
     };
 
     const subscription = AppState.addEventListener(
@@ -32,7 +58,7 @@ const useAppStateListener = (callback?: CallbackFn) => {
     return () => {
       subscription.remove();
     };
-  }, [callback]);
+  }, [initAppStateSpan]);
 };
 
 export default useAppStateListener;

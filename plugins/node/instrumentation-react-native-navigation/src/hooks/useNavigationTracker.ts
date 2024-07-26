@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-import { AppStateStatus } from 'react-native';
-import { ForwardedRef, useCallback, useEffect, useMemo, useRef } from 'react';
+import { ForwardedRef, useEffect, useMemo, useRef } from 'react';
 
-import spanCreator, {
-  spanCreatorAppState,
-  spanEnd,
-} from '../utils/spanCreator';
+import { spanCreator, spanEnd } from '../utils/spanFactory';
 import { TracerRef } from '../utils/hooks/useTracerRef';
 import useSpanRef from '../utils/hooks/useSpanRef';
 import {
@@ -38,20 +34,29 @@ const useNavigationTracker = (
   tracer: TracerRef,
   config?: NavigationTrackerConfig
 ) => {
-  const { attributes: customAttributes, debug } = config ?? {};
-  const console = useConsole(!!debug);
-
   const navigationElRef = useMemo(() => {
     const isMutableRef = ref !== null && typeof ref !== 'function';
     return isMutableRef ? ref.current : undefined;
   }, [ref]);
 
-  // tracking specific (no otel related)
-  const navView = useRef<string | null>(null);
+  const { attributes: customAttributes, debug } = config ?? {};
+  const console = useConsole(!!debug);
 
-  // Initializing a Span
   const span = useSpanRef();
+  const view = useRef<string | null>(null);
 
+  /**
+   * Native Navigation Span Factory
+   */
+  const initNavigationSpan = useMemo(
+    () => spanCreator(tracer, span, view, customAttributes),
+    [customAttributes]
+  );
+
+  /**
+   * Registering the Navigation 'state' Listener
+   * to start and end spans depending on the navigation lifecycle
+   */
   useEffect(() => {
     if (!navigationElRef) {
       console.warn(
@@ -74,38 +79,26 @@ const useNavigationTracker = (
           return;
         }
 
-        spanCreator(tracer, span, navView, routeName, customAttributes);
+        initNavigationSpan(routeName);
       });
     }
-  }, [navigationElRef, span, tracer, customAttributes]);
+  }, [navigationElRef, initNavigationSpan]);
 
+  /**
+   * Start and end spans depending on the app state changes
+   */
+  useAppStateListener(tracer, span, view, customAttributes);
+
+  /**
+   * Ending the final span depending on the app lifecycle
+   */
   useEffect(
     () => () => {
       // making sure the final span is ended when the app is unmounted
-      const isFinalView = true;
-      spanEnd(span, undefined, isFinalView);
+      spanEnd(span, undefined, true);
     },
     [span]
   );
-
-  const handleAppStateListener = useCallback(
-    (currentState: AppStateStatus) => {
-      const appStateHandler = spanCreatorAppState(
-        tracer,
-        span,
-        customAttributes
-      );
-
-      if (navView?.current === null) {
-        return;
-      }
-
-      appStateHandler(navView?.current, currentState);
-    },
-    [span, tracer, customAttributes]
-  );
-
-  useAppStateListener(handleAppStateListener);
 };
 
 export default useNavigationTracker;

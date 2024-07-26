@@ -42,10 +42,12 @@ const spanStart = (
   // Starting the span
   span.current = tracer.current.startSpan(currentRouteName);
 
-  // it should create the first span knowing there is not a previous view
-  span.current.setAttribute(ATTRIBUTES.initialView, !!isLaunch);
-  // it should set the view name in case it's useful have this as attr
-  span.current.setAttribute(ATTRIBUTES.viewName, currentRouteName);
+  span.current.setAttributes({
+    // it should create the first span knowing there is not a previous view
+    [ATTRIBUTES.initialView]: !!isLaunch,
+    // it should set the view name in case it's useful have this as attr
+    [ATTRIBUTES.viewName]: currentRouteName,
+  });
 
   if (customAttributes) {
     span.current.setAttributes(customAttributes);
@@ -71,6 +73,35 @@ const spanEnd = (
   }
 };
 
+const spanCreator =
+  (
+    tracer: TracerRef,
+    span: SpanRef,
+    view: MutableRefObject<string | null>,
+    customAttributes?: Attributes
+  ) =>
+  (currentRouteName: string) => {
+    if (!tracer.current) {
+      // do nothing in case for some reason the tracer is not initialized
+      return;
+    }
+
+    const isInitialView = view.current === null;
+
+    const shouldEndCurrentSpan =
+      view.current !== null && view.current !== currentRouteName;
+
+    // it means the view has changed and we are ending the previous span
+    if (shouldEndCurrentSpan) {
+      spanEnd(span);
+    }
+
+    spanStart(tracer, span, currentRouteName, customAttributes, isInitialView);
+
+    // last step before it changes the view
+    view.current = currentRouteName;
+  };
+
 const spanCreatorAppState =
   (tracer: TracerRef, span: SpanRef, customAttributes?: Attributes) =>
   (currentRouteName: string, currentState: AppStateStatus) => {
@@ -85,33 +116,4 @@ const spanCreatorAppState =
     }
   };
 
-const spanCreator = (
-  tracer: TracerRef,
-  span: SpanRef,
-  view: MutableRefObject<string | null>,
-  currentRouteName: string,
-  customAttributes?: Attributes
-) => {
-  if (!tracer.current) {
-    // do nothing in case for some reason the tracer is not initialized
-    return;
-  }
-
-  const isInitialView = view.current === null;
-
-  const shouldEndCurrentSpan =
-    view.current !== null && view.current !== currentRouteName;
-
-  // it means the view has changed and we are ending the previous span
-  if (shouldEndCurrentSpan) {
-    spanEnd(span);
-  }
-
-  spanStart(tracer, span, currentRouteName, customAttributes, isInitialView);
-
-  // last step before it changes the view
-  view.current = currentRouteName;
-};
-
-export default spanCreator;
-export { spanStart, spanEnd, spanCreatorAppState, ATTRIBUTES };
+export { spanCreator, spanCreatorAppState, spanStart, spanEnd, ATTRIBUTES };
