@@ -19,7 +19,7 @@ import { render } from '@testing-library/react';
 import { ATTRIBUTES } from '../src/utils/spanFactory';
 import sinon from 'sinon';
 import { NativeNavigationTracker } from '../src';
-import useProvider from './hooks/useProvider';
+import useProvider from './helpers/hooks/useProvider';
 import api from '@opentelemetry/api';
 import * as rnn from './helpers/react-native-navigation';
 import { NavigationTrackerConfig } from '../src/types/navigation';
@@ -50,6 +50,7 @@ describe('NativeNavigationTracker.tsx', function () {
 
   let mockConsoleDir: sinon.SinonSpy;
   let mockConsoleInfo: sinon.SinonSpy;
+  let mockConsoleWarn: sinon.SinonSpy;
   let mockAddEventListener: sinon.SinonSpy;
 
   let mockGlobalTracer: sinon.SinonSpy;
@@ -64,12 +65,51 @@ describe('NativeNavigationTracker.tsx', function () {
     mockAddEventListener = sandbox.spy(AppState, 'addEventListener');
     mockConsoleDir = sandbox.spy(console, 'dir');
     mockConsoleInfo = sandbox.spy(console, 'info');
+    mockConsoleWarn = sandbox.spy(console, 'warn');
 
     mockGlobalTracer = sandbox.spy(api.trace, 'getTracer');
   });
 
   afterEach(function () {
     sandbox.restore();
+  });
+
+  it('should not start tracking if the `ref` is not found', function () {
+    const screen = render(
+      <NativeNavigationTracker ref={{ current: null }} config={{ debug: true }}>
+        the app goes here
+      </NativeNavigationTracker>
+    );
+
+    sandbox.assert.calledWithExactly(
+      mockConsoleWarn,
+      'Navigation ref is not available. Make sure this is properly configured.'
+    );
+
+    sandbox.assert.match(!!screen.getByText('the app goes here'), true);
+  });
+
+  it('should render the proper warn messages if the `componentName` is not found', function () {
+    render(
+      <AppWithProvider shouldPassProvider={false} config={{ debug: true }} />
+    );
+
+    const mockDidAppearListenerCall = mockDidAppearListener.getCall(0).args[0];
+    mockDidAppearListenerCall({ componentName: null });
+
+    sandbox.assert.calledWithExactly(
+      mockConsoleWarn,
+      'Navigation component name is not available. Make sure this is properly configured.'
+    );
+
+    const mockDidDisappearListenerCall =
+      mockDidDisappearListener.getCall(0).args[0];
+    mockDidDisappearListenerCall({ componentName: null });
+
+    sandbox.assert.calledWithExactly(
+      mockConsoleWarn,
+      'Navigation component name is not available. Make sure this is properly configured.'
+    );
   });
 
   it('should render a component that implements <NativeNavigationTracker /> without passing a provider', function () {
@@ -90,13 +130,13 @@ describe('NativeNavigationTracker.tsx', function () {
 
     sandbox.assert.calledWith(mockDidAppearListener, sandbox.match.func);
 
-    const mockDidAppearListenerCall = mockDidAppearListener.getCall(0).args[0];
+    const mockDidAppearListenerCall = mockDidAppearListener.getCall(1).args[0];
 
     mockDidAppearListenerCall({ componentName: 'homeView' });
     sandbox.assert.calledWith(mockDidDisappearListener, sandbox.match.func);
 
     const mockDidDisappearListenerCall =
-      mockDidDisappearListener.getCall(0).args[0];
+      mockDidDisappearListener.getCall(1).args[0];
 
     mockDidDisappearListenerCall({ componentName: 'homeView' });
 
@@ -145,13 +185,13 @@ describe('NativeNavigationTracker.tsx', function () {
     sandbox.assert.notCalled(mockGlobalTracer);
 
     sandbox.assert.calledWith(mockDidAppearListener, sandbox.match.func);
-    const mockDidAppearListenerCall = mockDidAppearListener.getCall(1).args[0];
+    const mockDidAppearListenerCall = mockDidAppearListener.getCall(2).args[0];
 
     mockDidAppearListenerCall({ componentName: 'homeView' });
 
     sandbox.assert.calledWith(mockDidDisappearListener, sandbox.match.func);
     const mockDidDisappearListenerCall =
-      mockDidDisappearListener.getCall(1).args[0];
+      mockDidDisappearListener.getCall(2).args[0];
 
     mockDidDisappearListenerCall({ componentName: 'homeView' });
 
@@ -196,9 +236,9 @@ describe('NativeNavigationTracker.tsx', function () {
   it('should start and end spans when the app changes the status between foreground/background', function () {
     const screen = render(<AppWithProvider shouldPassProvider={true} />);
 
-    const mockDidAppearListenerCall = mockDidAppearListener.getCall(2).args[0];
+    const mockDidAppearListenerCall = mockDidAppearListener.getCall(3).args[0];
     const mockDidDisappearListenerCall =
-      mockDidDisappearListener.getCall(2).args[0];
+      mockDidDisappearListener.getCall(3).args[0];
 
     const handleAppStateChange = mockAddEventListener.getCall(0).args[1];
 
@@ -288,9 +328,9 @@ describe('NativeNavigationTracker.tsx', function () {
       />
     );
 
-    const mockDidAppearListenerCall = mockDidAppearListener.getCall(3).args[0];
+    const mockDidAppearListenerCall = mockDidAppearListener.getCall(4).args[0];
     const mockDidDisappearListenerCall =
-      mockDidDisappearListener.getCall(3).args[0];
+      mockDidDisappearListener.getCall(4).args[0];
 
     mockDidAppearListenerCall({ componentName: 'homeCustomAttributesView' });
     mockDidDisappearListenerCall({ componentName: 'homeCustomAttributesView' });

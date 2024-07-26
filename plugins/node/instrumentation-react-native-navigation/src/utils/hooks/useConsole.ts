@@ -18,22 +18,24 @@ import { useMemo } from 'react';
 
 const consoleStub = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  log: (_: string) => {},
+  log: (..._: unknown[]) => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  warn: (_: string) => {},
+  warn: (..._: unknown[]) => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  error: (_: string) => {},
+  error: (..._: unknown[]) => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  info: (_: string) => {},
+  info: (..._: unknown[]) => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  trace: (_: string) => {},
+  trace: (..._: unknown[]) => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  debug: (_: string) => {},
+  debug: (..._: unknown[]) => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   table: () => {},
-  groupEnd: () => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   group: (_?: string) => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  groupCollapsed: (_?: string) => {},
+  groupEnd: () => {},
 };
 
 const useConsole = (debug: boolean) =>

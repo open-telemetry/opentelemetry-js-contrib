@@ -162,7 +162,7 @@ As mentioned before, <NavigationTracker /> relies on `@react-native/navigation` 
 ### Note
 
 `useProvider` hook in this example returns an instance of a configured provided.
-It doesn't matter which provider you choose; you just need to pass down one (if needed) with all your configurations. To create that provider, you may want to refer to the official [OpenTelemetry JS documentation](https://github.com/open-telemetry/opentelemetry-js). You can also review our suggested implementation (`./test/hooks/useProvider.ts`), but keep in mind that this is the simplest provider with minimal configurations.
+It doesn't matter which provider you choose; you just need to pass down one (if needed) with all your configurations. To create that provider, you may want to refer to the official [OpenTelemetry JS documentation](https://github.com/open-telemetry/opentelemetry-js). You can also review our suggested implementation (`./test/helpers/hooks/useProvider.ts`), but keep in mind that this is the simplest provider with minimal configurations.
 
 ## Useful links
 

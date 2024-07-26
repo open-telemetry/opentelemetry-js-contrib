@@ -16,7 +16,7 @@
 import { FC, ForwardedRef } from 'react';
 import React, { render } from '@testing-library/react';
 
-import useProvider from './hooks/useProvider';
+import useProvider from './helpers/hooks/useProvider';
 
 import { NavRef } from '../src/hooks/useNavigationTracker';
 import { ATTRIBUTES } from '../src/utils/spanFactory';
@@ -56,6 +56,7 @@ describe('NavigationTracker.tsx', function () {
   let mockAddEventListener: sinon.SinonSpy;
   let mockConsoleDir: sinon.SinonSpy;
   let mockConsoleInfo: sinon.SinonSpy;
+  let mockConsoleWarn: sinon.SinonSpy;
 
   let mockGlobalTracer: sinon.SinonSpy;
 
@@ -73,12 +74,44 @@ describe('NavigationTracker.tsx', function () {
     mockAddEventListener = sandbox.spy(AppState, 'addEventListener');
     mockConsoleDir = sandbox.spy(console, 'dir');
     mockConsoleInfo = sandbox.spy(console, 'info');
+    mockConsoleWarn = sandbox.spy(console, 'warn');
 
     mockGlobalTracer = sandbox.spy(api.trace, 'getTracer');
   });
 
   afterEach(function () {
     sandbox.restore();
+  });
+
+  it('should not start tracking if the `ref` is not found', function () {
+    const screen = render(
+      <NavigationTracker ref={{ current: null }} config={{ debug: true }}>
+        the app goes here
+      </NavigationTracker>
+    );
+
+    sandbox.assert.calledWithExactly(
+      mockConsoleWarn,
+      'Navigation ref is not available. Make sure this is properly configured.'
+    );
+
+    sandbox.assert.match(!!screen.getByText('the app goes here'), true);
+  });
+
+  it('should render the proper warn messages if the `routeName` is not found', function () {
+    render(
+      <AppWithProvider shouldPassProvider={false} config={{ debug: true }} />
+    );
+
+    const mockNavigationListenerCall = mockAddListener.getCall(0).args[1];
+
+    mockGetCurrentRoute.returns({ name: null });
+    mockNavigationListenerCall();
+
+    sandbox.assert.calledWithExactly(
+      mockConsoleWarn,
+      'Navigation route name is not available. Make sure this is properly configured.'
+    );
   });
 
   it('should render a component that implements <NavigationTracker /> without passing a provider', function () {
@@ -98,7 +131,7 @@ describe('NavigationTracker.tsx', function () {
     );
 
     sandbox.assert.calledWith(mockAddListener, 'state', sandbox.match.func);
-    const mockNavigationListenerCall = mockAddListener.getCall(0).args[1];
+    const mockNavigationListenerCall = mockAddListener.getCall(1).args[1];
 
     mockGetCurrentRoute.returns({ name: 'homeView' });
     mockNavigationListenerCall();
@@ -156,7 +189,7 @@ describe('NavigationTracker.tsx', function () {
     sandbox.assert.notCalled(mockGlobalTracer);
 
     sandbox.assert.calledWith(mockAddListener, 'state', sandbox.match.func);
-    const mockNavigationListenerCall = mockAddListener.getCall(1).args[1];
+    const mockNavigationListenerCall = mockAddListener.getCall(2).args[1];
 
     mockGetCurrentRoute.returns({ name: 'homeView' });
     mockNavigationListenerCall();
@@ -211,7 +244,7 @@ describe('NavigationTracker.tsx', function () {
     // app launches
     const screen = render(<AppWithProvider shouldPassProvider={true} />);
 
-    const mockNavigationListenerCall = mockAddListener.getCall(2).args[1];
+    const mockNavigationListenerCall = mockAddListener.getCall(3).args[1];
     const handleAppStateChange = mockAddEventListener.getCall(0).args[1];
 
     // app launches, navigation listener is called
@@ -303,7 +336,7 @@ describe('NavigationTracker.tsx', function () {
       />
     );
 
-    const mockNavigationListenerCall = mockAddListener.getCall(3).args[1];
+    const mockNavigationListenerCall = mockAddListener.getCall(4).args[1];
 
     mockGetCurrentRoute.returns({ name: 'homeCustomAttributes' });
     mockNavigationListenerCall();

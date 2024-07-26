@@ -36,7 +36,7 @@ const useNavigationTracker = (
 ) => {
   const navigationElRef = useMemo(() => {
     const isMutableRef = ref !== null && typeof ref !== 'function';
-    return isMutableRef ? ref.current : undefined;
+    return isMutableRef ? ref?.current : undefined;
   }, [ref]);
 
   const { attributes: customAttributes, debug } = config ?? {};
