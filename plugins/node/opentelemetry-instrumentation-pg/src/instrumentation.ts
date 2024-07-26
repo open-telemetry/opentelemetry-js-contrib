@@ -370,7 +370,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           attributes: utils.getSemanticAttributesFromPool(this.options),
         });
 
-        this.on('connect', connection => {
+        this.on('connect', () => {
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
@@ -378,7 +378,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           );
         });
 
-        this.on('acquire', connection => {
+        this.on('acquire', () => {
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
@@ -386,7 +386,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           );
         });
 
-        this.on('remove', connection => {
+        this.on('remove', () => {
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
@@ -394,7 +394,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           );
         });
 
-        this.on('release' as any, connection => {
+        this.on('release' as any, () => {
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
