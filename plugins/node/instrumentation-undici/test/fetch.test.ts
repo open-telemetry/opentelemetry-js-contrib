@@ -142,6 +142,9 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         requestHook: () => {
           throw new Error('requestHook error');
         },
+        responseHook: () => {
+          throw new Error('responseHook error');
+        },
         startSpanHook: () => {
           throw new Error('startSpanHook error');
         },
@@ -213,6 +216,9 @@ describe('UndiciInstrumentation `fetch` tests', function () {
             req.headers.push('x-requested-with', 'undici');
           }
         },
+        responseHook: (span, req, res) => {
+          span.setAttribute('test.response-hook.attribute', res.statusText);
+        },
         startSpanHook: request => {
           return {
             'test.hook.attribute': 'hook-value',
@@ -279,6 +285,11 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       assert.strictEqual(
         span.attributes['test.hook.attribute'],
         'hook-value',
+        'startSpanHook is called'
+      );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
         'startSpanHook is called'
       );
     });

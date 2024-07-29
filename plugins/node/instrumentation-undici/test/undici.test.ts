@@ -169,6 +169,9 @@ describe('UndiciInstrumentation `undici` tests', function () {
             req.headers.push('x-requested-with', 'undici');
           }
         },
+        responseHook: (span, req, res) => {
+          span.setAttribute('test.response-hook.attribute', res.statusText);
+        },
         startSpanHook: request => {
           return {
             'test.hook.attribute': 'hook-value',
@@ -357,6 +360,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         'hook-value',
         'startSpanHook is called'
       );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
+      );
     });
 
     it('should create valid spans for "fetch" method', async function () {
@@ -416,6 +424,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
+      );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
       );
     });
 
@@ -484,6 +497,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
+      );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
       );
     });
 
@@ -561,6 +579,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         'hook-value',
         'startSpanHook is called'
       );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
+      );
     });
 
     it('should create valid spans even if the configuration hooks fail', async function () {
@@ -575,6 +598,9 @@ describe('UndiciInstrumentation `undici` tests', function () {
         },
         requestHook: () => {
           throw new Error('requestHook error');
+        },
+        responseHook: () => {
+          throw new Error('responseHook error');
         },
         startSpanHook: () => {
           throw new Error('startSpanHook error');
