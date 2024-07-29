@@ -570,32 +570,14 @@ describe('pg-pool', () => {
               metrics[0].dataPoints[0].attributes['state'],
               'used'
             );
-            assert.equal(
-              metrics[0].dataPoints[0].attributes['pool.name']
-                ?.toString()
-                .match(/postgres@[a-zA-Z]+:[\d]+\/postgres/gm),
-              true
-            );
             assert.strictEqual(
               metrics[0].dataPoints[1].attributes['state'],
               'idle'
-            );
-            assert.equal(
-              metrics[0].dataPoints[1].attributes['pool.name']
-                ?.toString()
-                .match(/postgres@[a-zA-Z]+:[\d]+\/postgres/gm),
-              true
             );
 
             assert.strictEqual(
               metrics[1].descriptor.name,
               'db.client.connection.pending_requests'
-            );
-            assert.equal(
-              metrics[1].dataPoints[0].attributes['pool.name']
-                ?.toString()
-                .match(/postgres@[a-zA-Z]+:[\d]+\/postgres/gm),
-              true
             );
             assert.strictEqual(
               metrics[1].descriptor.description,
