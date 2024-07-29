@@ -97,6 +97,9 @@ To disable only [@opentelemetry/instrumentation-fs](https://github.com/open-tele
 export OTEL_NODE_DISABLED_INSTRUMENTATIONS="fs"
 ```
 
+If both environment variables are set, `OTEL_NODE_ENABLED_INSTRUMENTATIONS` is applied first, and then `OTEL_NODE_DISABLED_INSTRUMENTATIONS` is applied to that list.
+Therefore, if the same instrumentation is included in both lists, that instrumentation will be disabled.
+
 To enable logging for troubleshooting, set the log level by setting the `OTEL_LOG_LEVEL` environment variable to one of the following:
 
 - `none`
@@ -173,6 +176,7 @@ registerInstrumentations({
 - [@opentelemetry/instrumentation-hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-hapi)
 - [@opentelemetry/instrumentation-http](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http)
 - [@opentelemetry/instrumentation-ioredis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-ioredis)
+- [@opentelemetry/instrumentation-kafkajs](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-kafkajs)
 - [@opentelemetry/instrumentation-knex](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-knex)
 - [@opentelemetry/instrumentation-koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa)
 - [@opentelemetry/instrumentation-lru-memoizer](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-lru-memoizer)
