@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.38.0...instrumentation-knex-v0.39.0) (2024-07-23)
+
+
+### Features
+
+* **instr-knex:** implement requireParentSpan config flag ([#2288](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2288)) ([6e8989d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6e8989de4d60c32bc9b3e3ef760e92c68ae7f491))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.37.0...instrumentation-knex-v0.38.0) (2024-07-03)
 
 
