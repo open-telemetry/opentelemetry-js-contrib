@@ -530,7 +530,7 @@ describe('pg-pool', () => {
       inMemoryMetricsExporter.reset();
     });
 
-    it('should generate `db.client.connection.count` metric', async () => {
+    it('should generate `db.client.connection.count` and `db.client.connection.pending_requests` metrics', async () => {
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
       context.with(trace.setSpan(context.active(), span), () => {
         pool.connect((err, client, release) => {
@@ -565,6 +565,41 @@ describe('pg-pool', () => {
             assert.strictEqual(
               metrics[0].descriptor.description,
               'The number of connections that are currently in state described by the state attribute.'
+            );
+            assert.strictEqual(
+              metrics[0].dataPoints[0].attributes['state'],
+              'used'
+            );
+            assert.equal(
+              metrics[0].dataPoints[0].attributes['pool.name']
+                ?.toString()
+                .match(/postgres@[a-zA-Z]+:[\d]+\/postgres/gm),
+              true
+            );
+            assert.strictEqual(
+              metrics[0].dataPoints[1].attributes['state'],
+              'idle'
+            );
+            assert.equal(
+              metrics[0].dataPoints[1].attributes['pool.name']
+                ?.toString()
+                .match(/postgres@[a-zA-Z]+:[\d]+\/postgres/gm),
+              true
+            );
+
+            assert.strictEqual(
+              metrics[1].descriptor.name,
+              'db.client.connection.pending_requests'
+            );
+            assert.equal(
+              metrics[1].dataPoints[0].attributes['pool.name']
+                ?.toString()
+                .match(/postgres@[a-zA-Z]+:[\d]+\/postgres/gm),
+              true
+            );
+            assert.strictEqual(
+              metrics[1].descriptor.description,
+              'The number of current pending requests for an open connection.'
             );
           });
         });

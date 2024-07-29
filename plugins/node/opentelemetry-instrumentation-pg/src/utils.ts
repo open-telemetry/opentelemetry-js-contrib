@@ -272,33 +272,36 @@ export function getPoolName(pool: PgPoolOptionsParams): string {
 export interface poolConnectionsCounter {
   used: number;
   idle: number;
+  pending: number;
 }
 
 export function updateCounter(
   pool: PgPoolExtended,
-  connectionsCount: UpDownCounter,
+  connectionCount: UpDownCounter,
+  connectionPendingRequests: UpDownCounter,
   latestCounter: poolConnectionsCounter
 ): poolConnectionsCounter {
   const poolName = getPoolName(pool.options);
   const all = pool.totalCount;
+  const pending = pool.waitingCount;
   const idle = pool.idleCount;
   const used = all - idle;
 
-  if (used !== latestCounter.used) {
-    connectionsCount.add(used - latestCounter.used, {
-      state: 'used',
-      name: poolName,
-    });
-  }
+  connectionCount.add(used - latestCounter.used, {
+    state: 'used',
+    'pool.name': poolName,
+  });
 
-  if (idle !== latestCounter.idle) {
-    connectionsCount.add(idle - latestCounter.idle, {
-      state: 'idle',
-      name: poolName,
-    });
-  }
+  connectionCount.add(idle - latestCounter.idle, {
+    state: 'idle',
+    'pool.name': poolName,
+  });
 
-  return { used: used, idle: idle };
+  connectionPendingRequests.add(pending - latestCounter.pending, {
+    'pool.name': poolName,
+  });
+
+  return { used: used, idle: idle, pending: pending };
 }
 
 export function patchCallbackPGPool(

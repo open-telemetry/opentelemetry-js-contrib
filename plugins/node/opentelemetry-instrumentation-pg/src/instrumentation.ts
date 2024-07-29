@@ -46,13 +46,16 @@ import { SpanNames } from './enums/SpanNames';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   private _connectionsCount!: UpDownCounter;
+  private _connectionPendingRequests!: UpDownCounter;
   // Pool events connect, acquire, release and remove can be called
   // multiple times without changing the values of total, idle and waiting
   // connections. The _connectionsCounter is used to keep track of latest
-  // values and only update the metric _connectionsCount when the value change.
+  // values and only update the metrics _connectionsCount and _connectionPendingRequests
+  // when the value change.
   private _connectionsCounter: utils.poolConnectionsCounter = {
     used: 0,
     idle: 0,
+    pending: 0,
   };
 
   constructor(config: PgInstrumentationConfig = {}) {
@@ -71,6 +74,14 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',
+        unit: '{connection}',
+      }
+    );
+    this._connectionPendingRequests = this.meter.createUpDownCounter(
+      'db.client.connection.pending_requests',
+      {
+        description:
+          'The number of current pending requests for an open connection.',
         unit: '{connection}',
       }
     );
@@ -378,6 +389,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
+            plugin._connectionPendingRequests,
             plugin._connectionsCounter
           );
         });
@@ -386,6 +398,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
+            plugin._connectionPendingRequests,
             plugin._connectionsCounter
           );
         });
@@ -394,6 +407,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
+            plugin._connectionPendingRequests,
             plugin._connectionsCounter
           );
         });
@@ -402,6 +416,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           plugin._connectionsCounter = utils.updateCounter(
             this,
             plugin._connectionsCount,
+            plugin._connectionPendingRequests,
             plugin._connectionsCounter
           );
         });
@@ -440,6 +455,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         plugin._connectionsCounter = utils.updateCounter(
           this,
           plugin._connectionsCount,
+          plugin._connectionPendingRequests,
           plugin._connectionsCounter
         );
         return originalPoolEnd.call(this, callback as any);
