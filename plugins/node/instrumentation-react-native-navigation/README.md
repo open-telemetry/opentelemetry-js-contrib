@@ -6,20 +6,23 @@
 This module provides instrumentation for [react-native/nagivation](https://reactnavigation.org/docs/getting-started), [expo-router](https://docs.expo.dev/router/introduction/) and [wix/react-native-navigation](https://wix.github.io/react-native-navigation/docs/before-you-start/)
 
 ## Installation
-```
+
+```bash
 npm i @opentelemetry/instrumentation-react-native-navigation @opentelemetry/api
 ```
 
 or if you use yarn
 
-```
+```bash
 yarn add @opentelemetry/instrumentation-react-native-navigation @opentelemetry/api
 ```
 
 ## Supported Versions
-  - Nodejs `>=14`
+
+- Nodejs `>=14`
 
 ## Usage
+
 This package is designed to streamline your workflow by requiring minimal setup. To use this package, you only need to pass a reference and a optionally provider (the global one will be used by default)
 
 If you are using `expo-router` or `react-native/navigation` you need to wrap your entire application with the `NavigationTracker` component.
