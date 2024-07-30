@@ -17,10 +17,6 @@ or if you use yarn
 yarn add @opentelemetry/instrumentation-react-native-navigation @opentelemetry/api
 ```
 
-## Supported Versions
-
-- Nodejs `>=14`
-
 ## Usage
 
 This package is designed to streamline your workflow by requiring minimal setup. To use this package, you only need to pass a reference and a optionally provider (the global one will be used by default)
@@ -125,7 +121,7 @@ The purpose of this package is to intercept changes in the navigation of a React
 
 For instance, when the application starts and the user navigates to a new section, the first Span will be considered finished at that moment. Let’s take a look at the output of this Span:
 
-```
+```bash
 {
   resource: {
     attributes: {

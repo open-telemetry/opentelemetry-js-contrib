@@ -28,6 +28,7 @@
   "plugins/node/instrumentation-socket.io": "0.41.0",
   "plugins/node/instrumentation-tedious": "0.12.0",
   "plugins/node/instrumentation-undici": "0.4.0",
+  "plugins/node/instrumentation-react-native-navigation": "0.1.0",
   "plugins/node/opentelemetry-instrumentation-aws-lambda": "0.43.0",
   "plugins/node/opentelemetry-instrumentation-aws-sdk": "0.43.1",
   "plugins/node/opentelemetry-instrumentation-bunyan": "0.40.0",
