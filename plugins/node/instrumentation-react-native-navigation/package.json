@@ -61,7 +61,7 @@
     "@types/sinon": "10.0.18",
     "amqplib": "0.8.0",
     "babel-plugin-react-native-web": "^0.19.12",
-    "jsdom": "^24.1.0",
+    "jsdom": "^15.2.1",
     "jsdom-global": "^3.0.2",
     "lodash": "4.17.21",
     "metro-react-native-babel-preset": "^0.77.0",
