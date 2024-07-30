@@ -30,7 +30,7 @@ class AlibabaCloudEcsDetector implements Detector {
   /**
    * See https://www.alibabacloud.com/help/doc-detail/67254.htm for
    * documentation about the AlibabaCloud instance identity document.
-   * 
+   *
    * NOTE: kept for testing purposes
    */
   readonly ALIBABA_CLOUD_IDMS_ENDPOINT = '100.100.100.200';
