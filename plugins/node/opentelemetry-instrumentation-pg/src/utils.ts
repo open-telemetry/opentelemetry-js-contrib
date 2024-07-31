@@ -22,6 +22,7 @@ import {
   Tracer,
   SpanKind,
   diag,
+  Attributes,
 } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import {
@@ -236,7 +237,8 @@ export function handleExecutionResult(
 export function patchCallback(
   instrumentationConfig: PgInstrumentationConfig,
   span: Span,
-  cb: PostgresCallback
+  cb: PostgresCallback,
+  attributes: Attributes,
 ): PostgresCallback {
   return function patchedCallback(
     this: PgClientExtended,
@@ -244,7 +246,7 @@ export function patchCallback(
     res: object
   ) {
     if (err) {
-      // span.recordException(err);
+      attributes['error.type'] = err.message;
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: err.message,
@@ -317,3 +319,17 @@ export type ObjectWithText = {
   text: string;
   [k: string]: unknown;
 };
+
+export interface operationInfo {
+  collectionName: string;
+  name: string;
+}
+
+export function getOperationInfo(query?: string): operationInfo {
+  let info: operationInfo = {collectionName: '', name: ''};
+
+  if (query) {
+
+  }
+  return info;
+}
