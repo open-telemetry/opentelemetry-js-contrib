@@ -293,7 +293,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       assert.strictEqual(
         span.attributes['test.response-hook.attribute'],
         'OK',
-        'startSpanHook is called'
+        'responseHook is called'
       );
     });
 
