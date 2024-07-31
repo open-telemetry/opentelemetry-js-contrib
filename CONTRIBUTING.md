@@ -135,7 +135,7 @@ Most unit tests case be run via:
 npm test
 ```
 
-However, some instrumentations require some test-services to be running (e.g. a MongoDB server to test the `instrumentation-mongodb` package). Use the `test-services`-related npm scripts to start test services in Docker and to run the tests with the appropriate configuration to use them:
+However, some instrumentations require test-services to be running (e.g. the `instrumentation-mongodb` package requires a MongoDB server). Use the `test-services`-related npm scripts to start test services in Docker and then run the tests with the appropriate configuration to use those services:
 
 ```sh
 npm run test-services:start     # starts services in Docker
