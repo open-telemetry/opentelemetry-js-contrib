@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.41.0...instrumentation-express-v0.41.1) (2024-07-23)
+
+
+### Bug Fixes
+
+* **instr-express:** fix handler patching for already patched router ([#2294](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2294)) ([2c32e58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2c32e5869ef9b6d582ba4da02623a030309bcaf3))
+
 ## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.40.1...instrumentation-express-v0.41.0) (2024-07-03)
 
 
