@@ -31,17 +31,15 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
   requireParentSpan: false,
 };
 
-export class RedisInstrumentation extends InstrumentationBase {
+export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
 
-  protected override _config!: RedisInstrumentationConfig;
-
   constructor(config: RedisInstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
-    this._config = Object.assign({}, DEFAULT_CONFIG, config);
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   protected init() {
@@ -102,7 +100,7 @@ export class RedisInstrumentation extends InstrumentationBase {
    */
   private _getPatchInternalSendCommand() {
     const tracer = this.tracer;
-    const config = this._config;
+    const config = this.getConfig();
     return function internal_send_command(original: Function) {
       return getTracedInternalSendCommand(tracer, original, config);
     };

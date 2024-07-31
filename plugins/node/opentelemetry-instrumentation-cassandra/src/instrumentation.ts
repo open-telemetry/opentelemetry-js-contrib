@@ -45,9 +45,7 @@ import type * as CassandraDriver from 'cassandra-driver';
 
 const supportedVersions = ['>=4.4.0 <5'];
 
-export class CassandraDriverInstrumentation extends InstrumentationBase {
-  protected override _config!: CassandraDriverInstrumentationConfig;
-
+export class CassandraDriverInstrumentation extends InstrumentationBase<CassandraDriverInstrumentationConfig> {
   constructor(config: CassandraDriverInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -120,13 +118,11 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
   }
 
   private _getMaxQueryLength(): number {
-    const config = this.getConfig() as CassandraDriverInstrumentationConfig;
-    return config.maxQueryLength ?? 65536;
+    return this.getConfig().maxQueryLength ?? 65536;
   }
 
   private _shouldIncludeDbStatement(): boolean {
-    const config = this.getConfig() as CassandraDriverInstrumentationConfig;
-    return config.enhancedDatabaseReporting ?? false;
+    return this.getConfig().enhancedDatabaseReporting ?? false;
   }
 
   private _getPatchedExecute() {
@@ -334,12 +330,13 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
   }
 
   private _callResponseHook(span: Span, response: ResultSet) {
-    if (!this._config.responseHook) {
+    const { responseHook } = this.getConfig();
+    if (!responseHook) {
       return;
     }
 
     safeExecuteInTheMiddle(
-      () => this._config.responseHook!(span, { response: response }),
+      () => responseHook(span, { response: response }),
       e => {
         if (e) {
           this._diag.error('responseHook error', e);
