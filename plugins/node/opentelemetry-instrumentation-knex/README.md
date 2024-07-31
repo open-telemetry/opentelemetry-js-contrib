@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-knex
 
 ### Supported Versions
 
-- `>=0.10.0`
+- [`knex`](https://www.npmjs.com/package/knex) versions `>=0.10.0 <4`
 
 ## Usage
 
@@ -47,6 +47,7 @@ registerInstrumentations({
 | Options | Type | Example | Description |
 | ------- | ---- | ------- | ----------- |
 | `maxQueryLength` | `number` | `100` | Truncate `db.statement` attribute to a maximum length. If the statement is truncated `'..'` is added to it's end. Default `1022`. `-1` leaves `db.statement` untouched. |
+| `requireParentSpan` | `boolean` | `false` | Don't create spans unless they are part of an existing trace. Default is `false`. |
 
 ## Semantic Conventions
 

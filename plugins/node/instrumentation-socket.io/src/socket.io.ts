@@ -37,7 +37,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { SocketIoInstrumentationConfig } from './types';
 import { SocketIoInstrumentationAttributes } from './AttributeNames';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   extractRoomsAttributeValue,
   isPromise,
@@ -53,15 +53,9 @@ const reservedEvents = [
   'removeListener',
 ];
 
-export class SocketIoInstrumentation extends InstrumentationBase {
-  protected override _config!: SocketIoInstrumentationConfig;
-
+export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrumentationConfig> {
   constructor(config: SocketIoInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-socket.io',
-      VERSION,
-      normalizeConfig(config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, normalizeConfig(config));
   }
 
   protected init() {
@@ -290,10 +284,10 @@ export class SocketIoInstrumentation extends InstrumentationBase {
     const self = this;
     return (original: Function) => {
       return function (this: any, ev: any, originalListener: Function) {
-        if (!self._config.traceReserved && reservedEvents.includes(ev)) {
+        if (!self.getConfig().traceReserved && reservedEvents.includes(ev)) {
           return original.apply(this, arguments);
         }
-        if (self._config.onIgnoreEventList?.includes(ev)) {
+        if (self.getConfig().onIgnoreEventList?.includes(ev)) {
           return original.apply(this, arguments);
         }
         const wrappedListener = function (this: any, ...args: any[]) {
@@ -319,10 +313,10 @@ export class SocketIoInstrumentation extends InstrumentationBase {
             }
           );
 
-          if (self._config.onHook) {
+          const { onHook } = self.getConfig();
+          if (onHook) {
             safeExecuteInTheMiddle(
-              () =>
-                self._config?.onHook?.(span, { moduleVersion, payload: args }),
+              () => onHook(span, { moduleVersion, payload: args }),
               e => {
                 if (e) self._diag.error('onHook error', e);
               },
@@ -373,10 +367,10 @@ export class SocketIoInstrumentation extends InstrumentationBase {
     const self = this;
     return (original: Function) => {
       return function (this: any, ev: any, ...args: any[]) {
-        if (!self._config.traceReserved && reservedEvents.includes(ev)) {
+        if (!self.getConfig().traceReserved && reservedEvents.includes(ev)) {
           return original.apply(this, arguments);
         }
-        if (self._config?.emitIgnoreEventList?.includes(ev)) {
+        if (self.getConfig().emitIgnoreEventList?.includes(ev)) {
           return original.apply(this, arguments);
         }
         const messagingSystem = 'socket.io';
@@ -405,10 +399,10 @@ export class SocketIoInstrumentation extends InstrumentationBase {
           attributes,
         });
 
-        if (self._config.emitHook) {
+        const { emitHook } = self.getConfig();
+        if (emitHook) {
           safeExecuteInTheMiddle(
-            () =>
-              self._config.emitHook?.(span, { moduleVersion, payload: args }),
+            () => emitHook(span, { moduleVersion, payload: args }),
             e => {
               if (e) self._diag.error('emitHook error', e);
             },

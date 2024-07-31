@@ -24,7 +24,7 @@ import {
   ConnectTypes,
 } from './enums/AttributeNames';
 import { PatchedRequest, Use, UseArgs, UseArgs2 } from './internal-types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   InstrumentationBase,
   InstrumentationConfig,
@@ -43,14 +43,14 @@ export const ANONYMOUS_NAME = 'anonymous';
 /** Connect instrumentation for OpenTelemetry */
 export class ConnectInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-connect', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init() {
     return [
       new InstrumentationNodeModuleDefinition(
         'connect',
-        ['^3.0.0'],
+        ['>=3.0.0 <4'],
         moduleExports => {
           return this._patchConstructor(moduleExports);
         }

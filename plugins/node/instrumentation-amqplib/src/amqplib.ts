@@ -22,6 +22,8 @@ import {
   SpanKind,
   SpanStatusCode,
   ROOT_CONTEXT,
+  Link,
+  Context,
 } from '@opentelemetry/api';
 import {
   hrTime,
@@ -72,48 +74,44 @@ import {
   normalizeExchange,
   unmarkConfirmChannelTracing,
 } from './utils';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
-export class AmqplibInstrumentation extends InstrumentationBase {
-  protected override _config!: AmqplibInstrumentationConfig;
+const supportedVersions = ['>=0.5.5 <1'];
 
+export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumentationConfig> {
   constructor(config: AmqplibInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-amqplib',
-      VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
   }
 
   override setConfig(config: AmqplibInstrumentationConfig = {}) {
-    this._config = Object.assign({}, DEFAULT_CONFIG, config);
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   protected init() {
     const channelModelModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/channel_model.js',
-      ['>=0.5.5'],
+      supportedVersions,
       this.patchChannelModel.bind(this),
       this.unpatchChannelModel.bind(this)
     );
 
     const callbackModelModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/callback_model.js',
-      ['>=0.5.5'],
+      supportedVersions,
       this.patchChannelModel.bind(this),
       this.unpatchChannelModel.bind(this)
     );
 
     const connectModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/connect.js',
-      ['>=0.5.5'],
+      supportedVersions,
       this.patchConnect.bind(this),
       this.unpatchConnect.bind(this)
     );
 
     const module = new InstrumentationNodeModuleDefinition(
       'amqplib',
-      ['>=0.5.5'],
+      supportedVersions,
       undefined,
       undefined,
       [channelModelModuleFile, connectModuleFile, callbackModelModuleFile]
@@ -390,10 +388,11 @@ export class AmqplibInstrumentation extends InstrumentationBase {
       if (
         !Object.prototype.hasOwnProperty.call(channel, CHANNEL_SPANS_NOT_ENDED)
       ) {
-        if (self._config.consumeTimeoutMs) {
+        const { consumeTimeoutMs } = self.getConfig();
+        if (consumeTimeoutMs) {
           const timer = setInterval(() => {
             self.checkConsumeTimeoutOnChannel(channel);
-          }, self._config.consumeTimeoutMs);
+          }, consumeTimeoutMs);
           timer.unref();
           channel[CHANNEL_CONSUME_TIMEOUT_TIMER] = timer;
         }
@@ -412,8 +411,25 @@ export class AmqplibInstrumentation extends InstrumentationBase {
         }
 
         const headers = msg.properties.headers ?? {};
-        const parentContext = propagation.extract(ROOT_CONTEXT, headers);
+        let parentContext: Context | undefined = propagation.extract(
+          ROOT_CONTEXT,
+          headers
+        );
         const exchange = msg.fields?.exchange;
+        let links: Link[] | undefined;
+        if (self._config.useLinksForConsume) {
+          const parentSpanContext = parentContext
+            ? trace.getSpan(parentContext)?.spanContext()
+            : undefined;
+          parentContext = undefined;
+          if (parentSpanContext) {
+            links = [
+              {
+                context: parentSpanContext,
+              },
+            ];
+          }
+        }
         const span = self.tracer.startSpan(
           `${queue} process`,
           {
@@ -429,13 +445,15 @@ export class AmqplibInstrumentation extends InstrumentationBase {
               [SEMATTRS_MESSAGING_CONVERSATION_ID]:
                 msg?.properties.correlationId,
             },
+            links,
           },
           parentContext
         );
 
-        if (self._config.consumeHook) {
+        const { consumeHook } = self.getConfig();
+        if (consumeHook) {
           safeExecuteInTheMiddle(
-            () => self._config.consumeHook!(span, { moduleVersion, msg }),
+            () => consumeHook(span, { moduleVersion, msg }),
             e => {
               if (e) {
                 diag.error('amqplib instrumentation: consumerHook error', e);
@@ -455,8 +473,10 @@ export class AmqplibInstrumentation extends InstrumentationBase {
           // store the span on the message, so we can end it when user call 'ack' on it
           msg[MESSAGE_STORED_SPAN] = span;
         }
-
-        context.with(trace.setSpan(parentContext, span), () => {
+        const setContext: Context = parentContext
+          ? parentContext
+          : ROOT_CONTEXT;
+        context.with(trace.setSpan(setContext, span), () => {
           onMessage.call(this, msg);
         });
 
@@ -492,10 +512,11 @@ export class AmqplibInstrumentation extends InstrumentationBase {
         options
       );
 
-      if (self._config.publishHook) {
+      const { publishHook } = self.getConfig();
+      if (publishHook) {
         safeExecuteInTheMiddle(
           () =>
-            self._config.publishHook!(span, {
+            publishHook(span, {
               moduleVersion,
               exchange,
               routingKey,
@@ -520,10 +541,11 @@ export class AmqplibInstrumentation extends InstrumentationBase {
         try {
           callback?.call(this, err, ok);
         } finally {
-          if (self._config.publishConfirmHook) {
+          const { publishConfirmHook } = self.getConfig();
+          if (publishConfirmHook) {
             safeExecuteInTheMiddle(
               () =>
-                self._config.publishConfirmHook!(span, {
+                publishConfirmHook(span, {
                   moduleVersion,
                   exchange,
                   routingKey,
@@ -592,10 +614,11 @@ export class AmqplibInstrumentation extends InstrumentationBase {
           options
         );
 
-        if (self._config.publishHook) {
+        const { publishHook } = self.getConfig();
+        if (publishHook) {
           safeExecuteInTheMiddle(
             () =>
-              self._config.publishHook!(span, {
+              publishHook(span, {
                 moduleVersion,
                 exchange,
                 routingKey,
@@ -707,10 +730,11 @@ export class AmqplibInstrumentation extends InstrumentationBase {
     rejected: boolean | null,
     endOperation: EndOperation
   ) {
-    if (!this._config.consumeEndHook) return;
+    const { consumeEndHook } = this.getConfig();
+    if (!consumeEndHook) return;
 
     safeExecuteInTheMiddle(
-      () => this._config.consumeEndHook!(span, { msg, rejected, endOperation }),
+      () => consumeEndHook(span, { msg, rejected, endOperation }),
       e => {
         if (e) {
           diag.error('amqplib instrumentation: consumerEndHook error', e);
@@ -724,15 +748,14 @@ export class AmqplibInstrumentation extends InstrumentationBase {
     const currentTime = hrTime();
     const spansNotEnded = channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
     let i: number;
+    const { consumeTimeoutMs } = this.getConfig();
     for (i = 0; i < spansNotEnded.length; i++) {
       const currMessage = spansNotEnded[i];
       const timeFromConsume = hrTimeDuration(
         currMessage.timeOfConsume,
         currentTime
       );
-      if (
-        hrTimeToMilliseconds(timeFromConsume) < this._config.consumeTimeoutMs!
-      ) {
+      if (hrTimeToMilliseconds(timeFromConsume) < consumeTimeoutMs!) {
         break;
       }
       this.endConsumerSpan(

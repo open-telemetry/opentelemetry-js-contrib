@@ -39,18 +39,18 @@ import {
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
 
-export class PgInstrumentation extends InstrumentationBase {
+export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   constructor(config: PgInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-pg', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
     const modulePG = new InstrumentationNodeModuleDefinition(
       'pg',
-      ['8.*'],
+      ['>=8.0.0 <9'],
       (module: any) => {
         const moduleExports: typeof pgTypes =
           module[Symbol.toStringTag] === 'Module'
@@ -91,7 +91,7 @@ export class PgInstrumentation extends InstrumentationBase {
 
     const modulePGPool = new InstrumentationNodeModuleDefinition(
       'pg-pool',
-      ['2.*', '3.*'],
+      ['>=2.0.0 <4'],
       (moduleExports: typeof pgPoolTypes) => {
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
@@ -111,14 +111,6 @@ export class PgInstrumentation extends InstrumentationBase {
     );
 
     return [modulePG, modulePGPool];
-  }
-
-  override setConfig(config: PgInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
-  }
-
-  override getConfig(): PgInstrumentationConfig {
-    return this._config as PgInstrumentationConfig;
   }
 
   private _getClientConnectPatch() {
@@ -244,10 +236,8 @@ export class PgInstrumentation extends InstrumentationBase {
           }
         }
 
-        if (
-          typeof instrumentationConfig.requestHook === 'function' &&
-          queryConfig
-        ) {
+        const { requestHook } = instrumentationConfig;
+        if (typeof requestHook === 'function' && queryConfig) {
           safeExecuteInTheMiddle(
             () => {
               // pick keys to expose explicitly, so we're not leaking pg package
@@ -255,7 +245,7 @@ export class PgInstrumentation extends InstrumentationBase {
               const { database, host, port, user } = this.connectionParameters;
               const connection = { database, host, port, user };
 
-              instrumentationConfig.requestHook!(span, {
+              requestHook(span, {
                 connection,
                 query: {
                   text: queryConfig.text,

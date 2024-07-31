@@ -21,7 +21,7 @@ import {
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   CALLBACK_FUNCTIONS,
   PROMISE_FUNCTIONS,
@@ -51,9 +51,9 @@ function patchedFunctionWithOriginalProperties<
   return Object.assign(patchedFunction, original);
 }
 
-export default class FsInstrumentation extends InstrumentationBase {
+export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConfig> {
   constructor(config: FsInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-fs', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init(): (
@@ -438,7 +438,7 @@ export default class FsInstrumentation extends InstrumentationBase {
   protected _runCreateHook(
     ...args: Parameters<CreateHook>
   ): ReturnType<CreateHook> {
-    const { createHook } = this.getConfig() as FsInstrumentationConfig;
+    const { createHook } = this.getConfig();
     if (typeof createHook === 'function') {
       try {
         return createHook(...args);
@@ -450,7 +450,7 @@ export default class FsInstrumentation extends InstrumentationBase {
   }
 
   protected _runEndHook(...args: Parameters<EndHook>): ReturnType<EndHook> {
-    const { endHook } = this.getConfig() as FsInstrumentationConfig;
+    const { endHook } = this.getConfig();
     if (typeof endHook === 'function') {
       try {
         endHook(...args);
@@ -467,7 +467,7 @@ export default class FsInstrumentation extends InstrumentationBase {
       return false;
     }
 
-    const { requireParentSpan } = this.getConfig() as FsInstrumentationConfig;
+    const { requireParentSpan } = this.getConfig();
     if (requireParentSpan) {
       const parentSpan = api.trace.getSpan(context);
       if (parentSpan == null) {

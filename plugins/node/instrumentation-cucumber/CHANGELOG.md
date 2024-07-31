@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.8.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.7.0...instrumentation-cucumber-v0.8.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196))
+
+### Bug Fixes
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196)) ([01c28ae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/01c28ae016ed32f9968e52bc91e3e3700dcef82e))
+
+## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.6.0...instrumentation-cucumber-v0.7.0) (2024-06-06)
+
+
+### Features
+
+* update otel core dependencies ([#2257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2257)) ([71c15d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/71c15d597276773c19c16c1117b8d151892e5366))
+
 ## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.5.0...instrumentation-cucumber-v0.6.0) (2024-04-25)
 
 

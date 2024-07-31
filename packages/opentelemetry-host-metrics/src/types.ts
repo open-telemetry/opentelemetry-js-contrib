@@ -15,19 +15,6 @@
  */
 
 /**
- * Network data
- */
-export interface NetworkData {
-  iface: string;
-  rx_bytes: number;
-  rx_dropped: number;
-  rx_errors: number;
-  tx_bytes: number;
-  tx_dropped: number;
-  tx_errors: number;
-}
-
-/**
  * CPU usage data
  */
 export interface CpuUsageData {

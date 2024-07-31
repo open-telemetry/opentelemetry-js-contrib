@@ -38,7 +38,7 @@ import type {
 } from '@cucumber/cucumber/lib/support_code_library_builder/types';
 
 import { AttributeNames, CucumberInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const hooks = ['Before', 'BeforeStep', 'AfterStep', 'After'] as const;
 const steps = ['Given', 'When', 'Then'] as const;
@@ -46,18 +46,20 @@ type Cucumber = typeof cucumber;
 type Hook = (typeof hooks)[number];
 type Step = (typeof steps)[number];
 
-export class CucumberInstrumentation extends InstrumentationBase {
+const supportedVersions = ['>=8.0.0 <11'];
+
+export class CucumberInstrumentation extends InstrumentationBase<CucumberInstrumentationConfig> {
   private module: Cucumber | undefined;
 
   constructor(config: CucumberInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-cucumber', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init(): InstrumentationNodeModuleDefinition[] {
     return [
       new InstrumentationNodeModuleDefinition(
         '@cucumber/cucumber',
-        ['^8.0.0', '^9.0.0', '^10.0.0'],
+        supportedVersions,
         (moduleExports: Cucumber) => {
           this.module = moduleExports;
           steps.forEach(step => {
@@ -83,7 +85,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
         [
           new InstrumentationNodeModuleFile(
             '@cucumber/cucumber/lib/runtime/test_case_runner.js',
-            ['^8.0.0', '^9.0.0', '^10.0.0'],
+            supportedVersions,
             moduleExports => {
               if (isWrapped(moduleExports.default.prototype.run)) {
                 this._unwrap(moduleExports.default.prototype, 'run');

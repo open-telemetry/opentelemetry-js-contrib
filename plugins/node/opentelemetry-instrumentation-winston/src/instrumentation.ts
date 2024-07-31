@@ -31,14 +31,14 @@ import type {
   Winston3LogMethod,
   Winston3Logger,
 } from './internal-types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
 
-export class WinstonInstrumentation extends InstrumentationBase {
+export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumentationConfig> {
   constructor(config: WinstonInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-winston', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
@@ -112,23 +112,15 @@ export class WinstonInstrumentation extends InstrumentationBase {
     ];
   }
 
-  override getConfig(): WinstonInstrumentationConfig {
-    return this._config;
-  }
-
-  override setConfig(config: WinstonInstrumentationConfig = {}) {
-    this._config = config;
-  }
-
   private _callHook(span: Span, record: Record<string, string>) {
-    const hook = this.getConfig().logHook;
+    const { logHook } = this.getConfig();
 
-    if (!hook) {
+    if (!logHook) {
       return;
     }
 
     safeExecuteInTheMiddle(
-      () => hook(span, record),
+      () => logHook(span, record),
       err => {
         if (err) {
           this._diag.error('error calling logHook', err);
@@ -221,8 +213,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
               args[0].transports = newTransports;
             } catch (err) {
               instrumentation._diag.warn(
-                'OpenTelemetry Winston transport is not available, log records will not be automatically sent.',
-                err
+                '@opentelemetry/winston-transport is not available, log records will not be automatically sent.'
               );
             }
           }

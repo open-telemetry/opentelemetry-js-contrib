@@ -18,7 +18,7 @@ const { eventLoopUtilization } = performance;
 
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { RuntimeNodeInstrumentationConfig } from './types';
 
 const ELUS_LENGTH = 2;
@@ -26,14 +26,14 @@ const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
   eventLoopUtilizationMeasurementInterval: 5000,
 };
 
-export class RuntimeNodeInstrumentation extends InstrumentationBase {
+export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeInstrumentationConfig> {
   private _ELUs: EventLoopUtilization[] = [];
   private _interval: NodeJS.Timeout | undefined;
 
   constructor(config: RuntimeNodeInstrumentationConfig = {}) {
     super(
-      '@opentelemetry/instrumentation-runtime-node',
-      VERSION,
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }
@@ -79,8 +79,7 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase {
     clearInterval(this._interval);
     this._interval = setInterval(
       () => this._addELU(),
-      (this._config as RuntimeNodeInstrumentationConfig)
-        .eventLoopUtilizationMeasurementInterval
+      this.getConfig().eventLoopUtilizationMeasurementInterval
     );
 
     // unref so that it does not keep the process running if disable() is never called

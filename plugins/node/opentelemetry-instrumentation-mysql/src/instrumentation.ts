@@ -42,7 +42,7 @@ import {
   getSpanName,
   getPoolName,
 } from './utils';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { UpDownCounter, MeterProvider } from '@opentelemetry/api';
 
 type getConnectionCallbackType = (
@@ -50,14 +50,14 @@ type getConnectionCallbackType = (
   connection: mysqlTypes.PoolConnection
 ) => void;
 
-export class MySQLInstrumentation extends InstrumentationBase {
+export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentationConfig> {
   static readonly COMMON_ATTRIBUTES = {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MYSQL,
   };
   private _connectionsUsage!: UpDownCounter;
 
   constructor(config: MySQLInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mysql', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
     this._setMetricInstruments();
   }
 
@@ -81,7 +81,7 @@ export class MySQLInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'mysql',
-        ['2.*'],
+        ['>=2.0.0 <3'],
         (moduleExports: typeof mysqlTypes) => {
           if (isWrapped(moduleExports.createConnection)) {
             this._unwrap(moduleExports, 'createConnection');
@@ -317,10 +317,7 @@ export class MySQLInstrumentation extends InstrumentationBase {
 
         span.setAttribute(SEMATTRS_DB_STATEMENT, getDbStatement(query));
 
-        const instrumentationConfig: MySQLInstrumentationConfig =
-          thisPlugin.getConfig();
-
-        if (instrumentationConfig.enhancedDatabaseReporting) {
+        if (thisPlugin.getConfig().enhancedDatabaseReporting) {
           let values;
 
           if (Array.isArray(_valuesOrCallback)) {
