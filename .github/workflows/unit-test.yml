@@ -9,9 +9,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14", "16", "18.18.2"]
+        node: ["14", "16", "18", "20"]
         include:
-            - node: 18.18.2
+            - node: 18
               code-coverage: true
     runs-on: ubuntu-latest
     services:
@@ -51,7 +51,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       postgres:
-        image: postgres:15-alpine
+        image: postgres:16-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_DB: otel_pg_database

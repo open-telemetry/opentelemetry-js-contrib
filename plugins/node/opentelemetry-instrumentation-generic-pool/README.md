@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-generic-pool
 
 ### Supported Versions
 
-- `>=2.0.0`
+- [`generic-pool`](https://www.npmjs.com/package/generic-pool) version `>=2.0.0 <4`
 
 ## Usage
 
@@ -37,6 +37,10 @@ registerInstrumentations({
   tracerProvider: provider,
 });
 ```
+
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
 
 ## Useful links
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, diag, Span, SpanOptions } from '@opentelemetry/api';
+import { context, Span, SpanOptions } from '@opentelemetry/api';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { HandleFunction, NextFunction, Server } from 'connect';
 import type { ServerResponse } from 'http';
@@ -24,14 +24,14 @@ import {
   ConnectTypes,
 } from './enums/AttributeNames';
 import { PatchedRequest, Use, UseArgs, UseArgs2 } from './internal-types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   InstrumentationBase,
   InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import {
   replaceCurrentStackRoute,
   addNewStackLayer,
@@ -41,26 +41,18 @@ import {
 export const ANONYMOUS_NAME = 'anonymous';
 
 /** Connect instrumentation for OpenTelemetry */
-export class ConnectInstrumentation extends InstrumentationBase<Server> {
+export class ConnectInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-connect',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'connect',
-        ['^3.0.0'],
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Applying patch for connect@${moduleVersion}`);
+        ['>=3.0.0 <4'],
+        moduleExports => {
           return this._patchConstructor(moduleExports);
-        },
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Removing patch for connect@${moduleVersion}`);
         }
       ),
     ];
@@ -108,7 +100,7 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
     const spanName = `${connectTypeName} - ${connectName}`;
     const options: SpanOptions = {
       attributes: {
-        [SemanticAttributes.HTTP_ROUTE]: routeName.length > 0 ? routeName : '/',
+        [SEMATTRS_HTTP_ROUTE]: routeName.length > 0 ? routeName : '/',
         [AttributeNames.CONNECT_TYPE]: connectType,
         [AttributeNames.CONNECT_NAME]: connectName,
       },

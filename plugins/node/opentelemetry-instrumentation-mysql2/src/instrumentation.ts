@@ -35,30 +35,27 @@ import {
   getSpanName,
   once,
 } from './utils';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
 
-export class MySQL2Instrumentation extends InstrumentationBase<any> {
+export class MySQL2Instrumentation extends InstrumentationBase {
   static readonly COMMON_ATTRIBUTES = {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MYSQL,
   };
 
-  constructor(config?: MySQL2InstrumentationConfig) {
-    super('@opentelemetry/instrumentation-mysql2', VERSION, config);
+  constructor(config: MySQL2InstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'mysql2',
-        ['>= 1.4.2 < 4.0'],
-        (moduleExports: any, moduleVersion) => {
-          api.diag.debug(`Patching mysql2@${moduleVersion}`);
-
+        ['>=1.4.2 <4'],
+        (moduleExports: any) => {
           const ConnectionPrototype: mysqlTypes.Connection =
             moduleExports.Connection.prototype;
-          api.diag.debug('Patching Connection.prototype.query');
           if (isWrapped(ConnectionPrototype.query)) {
             this._unwrap(ConnectionPrototype, 'query');
           }
@@ -93,8 +90,6 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
   private _patchQuery(format: formatType, isPrepared: boolean) {
     return (originalQuery: Function): Function => {
       const thisPlugin = this;
-      api.diag.debug('MySQL2Instrumentation: patched mysql query/execute');
-
       return function query(
         this: mysqlTypes.Connection,
         query: string | mysqlTypes.Query | mysqlTypes.QueryOptions,

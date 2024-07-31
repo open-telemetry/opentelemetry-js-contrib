@@ -14,8 +14,4 @@
  * limitations under the License.
  */
 
-import LruMemoizerInstrumentation from './instrumentation';
-
-export { LruMemoizerInstrumentation };
-
-export default LruMemoizerInstrumentation;
+export * from './instrumentation';

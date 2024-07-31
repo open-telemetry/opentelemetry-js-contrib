@@ -22,6 +22,8 @@ import {
   SpanKind,
   SpanStatusCode,
   ROOT_CONTEXT,
+  Link,
+  Context,
 } from '@opentelemetry/api';
 import {
   hrTime,
@@ -72,15 +74,17 @@ import {
   normalizeExchange,
   unmarkConfirmChannelTracing,
 } from './utils';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+
+const supportedVersions = ['>=0.5.5 <1'];
 
 export class AmqplibInstrumentation extends InstrumentationBase {
   protected override _config!: AmqplibInstrumentationConfig;
 
-  constructor(config?: AmqplibInstrumentationConfig) {
+  constructor(config: AmqplibInstrumentationConfig = {}) {
     super(
-      '@opentelemetry/instrumentation-amqplib',
-      VERSION,
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }
@@ -92,28 +96,28 @@ export class AmqplibInstrumentation extends InstrumentationBase {
   protected init() {
     const channelModelModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/channel_model.js',
-      ['>=0.5.5'],
+      supportedVersions,
       this.patchChannelModel.bind(this),
       this.unpatchChannelModel.bind(this)
     );
 
     const callbackModelModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/callback_model.js',
-      ['>=0.5.5'],
+      supportedVersions,
       this.patchChannelModel.bind(this),
       this.unpatchChannelModel.bind(this)
     );
 
     const connectModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/connect.js',
-      ['>=0.5.5'],
+      supportedVersions,
       this.patchConnect.bind(this),
       this.unpatchConnect.bind(this)
     );
 
     const module = new InstrumentationNodeModuleDefinition(
       'amqplib',
-      ['>=0.5.5'],
+      supportedVersions,
       undefined,
       undefined,
       [channelModelModuleFile, connectModuleFile, callbackModelModuleFile]
@@ -412,8 +416,25 @@ export class AmqplibInstrumentation extends InstrumentationBase {
         }
 
         const headers = msg.properties.headers ?? {};
-        const parentContext = propagation.extract(ROOT_CONTEXT, headers);
+        let parentContext: Context | undefined = propagation.extract(
+          ROOT_CONTEXT,
+          headers
+        );
         const exchange = msg.fields?.exchange;
+        let links: Link[] | undefined;
+        if (self._config.useLinksForConsume) {
+          const parentSpanContext = parentContext
+            ? trace.getSpan(parentContext)?.spanContext()
+            : undefined;
+          parentContext = undefined;
+          if (parentSpanContext) {
+            links = [
+              {
+                context: parentSpanContext,
+              },
+            ];
+          }
+        }
         const span = self.tracer.startSpan(
           `${queue} process`,
           {
@@ -429,6 +450,7 @@ export class AmqplibInstrumentation extends InstrumentationBase {
               [SEMATTRS_MESSAGING_CONVERSATION_ID]:
                 msg?.properties.correlationId,
             },
+            links,
           },
           parentContext
         );
@@ -455,8 +477,10 @@ export class AmqplibInstrumentation extends InstrumentationBase {
           // store the span on the message, so we can end it when user call 'ack' on it
           msg[MESSAGE_STORED_SPAN] = span;
         }
-
-        context.with(trace.setSpan(parentContext, span), () => {
+        const setContext: Context = parentContext
+          ? parentContext
+          : ROOT_CONTEXT;
+        context.with(trace.setSpan(setContext, span), () => {
           onMessage.call(this, msg);
         });
 

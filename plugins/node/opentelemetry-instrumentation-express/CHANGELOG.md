@@ -1,5 +1,64 @@
 # Changelog
 
+## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.40.1...instrumentation-express-v0.41.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196))
+
+### Bug Fixes
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196)) ([01c28ae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/01c28ae016ed32f9968e52bc91e3e3700dcef82e))
+
+## [0.40.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.40.0...instrumentation-express-v0.40.1) (2024-06-10)
+
+
+### Bug Fixes
+
+* **instr-express:** keep hidden properties in layer handlers ([#2137](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2137)) ([ce5f48d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ce5f48d6960726bed69fac0ef07747780fa02a63))
+
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.39.0...instrumentation-express-v0.40.0) (2024-06-06)
+
+
+### Features
+
+* update otel core dependencies ([#2257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2257)) ([71c15d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/71c15d597276773c19c16c1117b8d151892e5366))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.39.0 to ^0.40.0
+
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.38.0...instrumentation-express-v0.39.0) (2024-05-15)
+
+
+### Features
+
+* **instrumentation-express:** Support non-string routes ([#2008](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2008)) ([525bbba](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/525bbba67accc20eeb96899ab7dc9ccb125a4b2d))
+
+## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.37.0...instrumentation-express-v0.38.0) (2024-04-25)
+
+
+### Features
+
+* **deps:** update otel-js to 0.51.0 ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+* remove generic type from instrumentations ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.38.0 to ^0.39.0
+
 ## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.36.1...instrumentation-express-v0.37.0) (2024-04-03)
 
 

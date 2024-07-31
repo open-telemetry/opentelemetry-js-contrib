@@ -39,24 +39,19 @@ import {
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
 
 export class PgInstrumentation extends InstrumentationBase {
   constructor(config: PgInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-pg',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
-    const modulePG = new InstrumentationNodeModuleDefinition<typeof pgTypes>(
+    const modulePG = new InstrumentationNodeModuleDefinition(
       'pg',
-      ['8.*'],
-      (module: any, moduleVersion) => {
-        this._diag.debug(`Applying patch for pg@${moduleVersion}`);
+      ['>=8.0.0 <9'],
+      (module: any) => {
         const moduleExports: typeof pgTypes =
           module[Symbol.toStringTag] === 'Module'
             ? module.default // ESM
@@ -83,25 +78,21 @@ export class PgInstrumentation extends InstrumentationBase {
 
         return module;
       },
-      (module: any, moduleVersion) => {
+      (module: any) => {
         const moduleExports: typeof pgTypes =
           module[Symbol.toStringTag] === 'Module'
             ? module.default // ESM
             : module; // CommonJS
-        this._diag.debug(`Removing patch for pg@${moduleVersion}`);
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');
         }
       }
     );
 
-    const modulePGPool = new InstrumentationNodeModuleDefinition<
-      typeof pgPoolTypes
-    >(
+    const modulePGPool = new InstrumentationNodeModuleDefinition(
       'pg-pool',
-      ['2.*', '3.*'],
-      (moduleExports, moduleVersion) => {
-        this._diag.debug(`Applying patch for pg-pool@${moduleVersion}`);
+      ['>=2.0.0 <4'],
+      (moduleExports: typeof pgPoolTypes) => {
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -112,8 +103,7 @@ export class PgInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      (moduleExports, moduleVersion) => {
-        this._diag.debug(`Removing patch for pg-pool@${moduleVersion}`);
+      (moduleExports: typeof pgPoolTypes) => {
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }

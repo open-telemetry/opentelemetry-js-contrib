@@ -49,15 +49,18 @@ const logger = winston.createLogger({
 });
 ```
 
+> [!IMPORTANT]
+> Logs will be duplicated if `@opentelemetry/winston-transport` is added as a transport in `winston` and `@opentelemetry/instrumentation-winston` is configured with `disableLogSending: false`.
+
 ### Supported versions
 
-Winston `3.x`
+- [`winston`](https://www.npmjs.com/package/winston) versions `>=3.0.0 <4`
 
 ## Useful links
 
-* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 

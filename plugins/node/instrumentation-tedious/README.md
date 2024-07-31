@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-tedious
 
 ## Supported Versions
 
-- `>=1.11.0 <=15`
+- [tedious](https://www.npmjs.com/package/tedious) `>=1.11.0 <18`
 
 ## Usage
 
@@ -39,6 +39,22 @@ registerInstrumentations({
   ],
 })
 ```
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute               | Short Description                                                              |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `db.name`               | This attribute is used to report the name of the database being accessed.      |
+| `db.sql.table`          | The name of the primary table that the operation is acting upon.               |
+| `db.statement`          | The database statement being executed.                                         |
+| `db.system`             | An identifier for the database management system (DBMS) product being used.    |
+| `db.user`               | Username for accessing the database.                                           |
+| `net.peer.name`         | Remote hostname or similar.                                                    |
+| `net.peer.port`         | Remote port number.                                                            |
 
 ## Useful links
 

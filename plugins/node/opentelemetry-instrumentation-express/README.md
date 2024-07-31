@@ -19,7 +19,7 @@ npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrument
 
 ### Supported Versions
 
-- `^4.0.0`
+- [`express`](https://www.npmjs.com/package/express) version `>=4.0.0 <5`
 
 ## Usage
 
@@ -148,9 +148,9 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 
 Attributes collected:
 
-| Attribute    | Short Description                  | Notes                      |
-| ------------ | ---------------------------------- | -------------------------- |
-| `http.route` | The matched route (path template). | Key: `SEMATTRS_HTTP_ROUTE` |
+| Attribute    | Short Description                  |
+| ------------ | ---------------------------------- |
+| `http.route` | The matched route (path template). |
 
 ## Useful links
 

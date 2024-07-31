@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-nestjs-core
 
 ### Supported Versions
 
-- `>=4.0.0`
+- [`@nestjs/core`](https://www.npmjs.com/package/@nestjs/core) versions `>=4.0.0 <11`
 
 ## Usage
 
@@ -42,25 +42,29 @@ registerInstrumentations({
 
 ## Emitted Spans
 
-| Name | `nestjs.type` | Description | Included attributes
-| ---- | ---- | ---- | ----
-`Create Nest App` | `app_creation` | Traces the bootup for the Nest App. The `NestFactory(Static).create` call. | `nestjs.module`
-`<ControllerName>.<memberName>` | `request_context` | Traces the whole request context. | `http.*`, `nestjs.callback`
-`<memberName>` | `handler` | Traces the work of a specific controller member function. | `nestjs.callback`
+| Name | `nestjs.type` | Description | Included attributes |
+| ---- | ---- | ---- | ---- |
+| `Create Nest App` | `app_creation` | Traces the bootup for the Nest App. The `NestFactory(Static).create` call. | `nestjs.module` |
+| `<ControllerName>.<memberName>` | `request_context` | Traces the whole request context. | `http.*`, `nestjs.callback` |
+| `<memberName>` | `handler` | Traces the work of a specific controller member function. | `nestjs.callback` |
 
-### Attributes
+## Semantic Conventions
 
-| Name | Description
-| ---- | ----
-| `component`* | "@nestjs/core"
-| `nestjs.version`* | Version of instrumented `@nestjs/core` package
-| `nestjs.type`* | See [NestType](./src/enums/NestType.ts)
-| `nestjs.module` | Nest module class name
-| `nestjs.controller` | Nest controller class name
-| `nestjs.callback` | The function name of the member in the controller
-| `http.method` | HTTP method
-| `http.url` | Full request URL
-| `http.route` | Route assigned to handler. Ex: `/users/:id`
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute           | Short Description                                  |
+|---------------------|----------------------------------------------------|
+| `component`*        | "@nestjs/core"                                     |
+| `nestjs.version`*   | Version of instrumented `@nestjs/core` package     |
+| `nestjs.type`*      | See [NestType](./src/enums/NestType.ts)            |
+| `nestjs.module`     | Nest module class name                             |
+| `nestjs.controller` | Nest controller class name                         |
+| `nestjs.callback`   | The function name of the member in the controller  |
+| `http.method`       | HTTP method                                        |
+| `http.url`          | Full request URL                                   |
+| `http.route`        | Route assigned to handler. Ex: `/users/:id`        |
 
 \* included in all of the spans.
 
@@ -79,6 +83,4 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-nestjs-core
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-nestjs-core.svg
-[pkg-repo-url]: https://github.com/nestjs/nest
-[pkg-npm-url]: https://www.npmjs.com/package/@nestjs/core
 [pkg-web-url]: https://nestjs.com/

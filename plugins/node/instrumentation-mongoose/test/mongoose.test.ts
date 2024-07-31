@@ -66,8 +66,11 @@ describe('mongoose instrumentation', () => {
   beforeEach(async () => {
     instrumentation.disable();
     instrumentation.setConfig({
-      dbStatementSerializer: (_operation: string, payload) =>
-        JSON.stringify(payload),
+      dbStatementSerializer: (_operation: string, payload) => {
+        return JSON.stringify(payload, (key, value) => {
+          return key === 'session' ? '[Session]' : value;
+        });
+      },
     });
     instrumentation.enable();
     await loadUsers();
@@ -97,23 +100,90 @@ describe('mongoose instrumentation', () => {
     expect(statement.document).toEqual(expect.objectContaining(document));
   });
 
-  it('instrumenting save operation with callback', done => {
-    const document = {
-      firstName: 'Test first name',
-      lastName: 'Test last name',
-      email: 'test@example.com',
-    };
-    const user: IUser = new User(document);
+  describe('when save call does not have callback', async () => {
+    it('instrumenting save operation with option property set', async () => {
+      const document = {
+        firstName: 'Test first name',
+        lastName: 'Test last name',
+        email: 'test@example.com',
+      };
+      const user: IUser = new User(document);
+      await user.save({ wtimeout: 42 });
 
-    user.save(() => {
       const spans = getTestSpans();
-
       expect(spans.length).toBe(1);
       assertSpan(spans[0] as ReadableSpan);
       expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
       const statement = getStatement(spans[0] as ReadableSpan);
       expect(statement.document).toEqual(expect.objectContaining(document));
-      done();
+      expect(statement.options.wtimeout).toEqual(42);
+
+      const createdUser = await User.findById(user._id).lean();
+      expect(createdUser?._id.toString()).toEqual(user._id.toString());
+    });
+  });
+
+  describe('when save call has callback', async () => {
+    it('instrumenting save operation with promise and option property set', done => {
+      const document = {
+        firstName: 'Test first name',
+        lastName: 'Test last name',
+        email: 'test@example.com',
+      };
+      const user: IUser = new User(document);
+      user.save({ wtimeout: 42 }, async () => {
+        const spans = getTestSpans();
+        expect(spans.length).toBe(1);
+        assertSpan(spans[0] as ReadableSpan);
+        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
+        const statement = getStatement(spans[0] as ReadableSpan);
+        expect(statement.document).toEqual(expect.objectContaining(document));
+        expect(statement.options.wtimeout).toEqual(42);
+
+        const createdUser = await User.findById(user._id).lean();
+        expect(createdUser?._id.toString()).toEqual(user._id.toString());
+        done();
+      });
+    });
+
+    it('instrumenting save operation with generic options and callback', done => {
+      const document = {
+        firstName: 'Test first name',
+        lastName: 'Test last name',
+        email: 'test@example.com',
+      };
+      const user: IUser = new User(document);
+
+      user.save({}, () => {
+        const spans = getTestSpans();
+
+        expect(spans.length).toBe(1);
+        assertSpan(spans[0] as ReadableSpan);
+        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
+        const statement = getStatement(spans[0] as ReadableSpan);
+        expect(statement.document).toEqual(expect.objectContaining(document));
+        done();
+      });
+    });
+
+    it('instrumenting save operation with only callback', done => {
+      const document = {
+        firstName: 'Test first name',
+        lastName: 'Test last name',
+        email: 'test@example.com',
+      };
+      const user: IUser = new User(document);
+
+      user.save(() => {
+        const spans = getTestSpans();
+
+        expect(spans.length).toBe(1);
+        assertSpan(spans[0] as ReadableSpan);
+        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
+        const statement = getStatement(spans[0] as ReadableSpan);
+        expect(statement.document).toEqual(expect.objectContaining(document));
+        done();
+      });
     });
   });
 

@@ -24,25 +24,24 @@ import {
 
 import type * as genericPool from 'generic-pool';
 
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const MODULE_NAME = 'generic-pool';
 
-export default class Instrumentation extends InstrumentationBase<any> {
+export class GenericPoolInstrumentation extends InstrumentationBase {
   // only used for v2 - v2.3)
   private _isDisabled = false;
 
   constructor(config: InstrumentationConfig = {}) {
-    super(`@opentelemetry/instrumentation-${MODULE_NAME}`, VERSION);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
-        ['>=3'],
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Applying patch for ${MODULE_NAME}@${moduleVersion}`);
+        ['>=3.0.0 <4'],
+        moduleExports => {
           const Pool: any = moduleExports.Pool;
           if (isWrapped(Pool.prototype.acquire)) {
             this._unwrap(Pool.prototype, 'acquire');
@@ -54,18 +53,16 @@ export default class Instrumentation extends InstrumentationBase<any> {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Removing patch for ${MODULE_NAME}@${moduleVersion}`);
+        moduleExports => {
           const Pool: any = moduleExports.Pool;
           this._unwrap(Pool.prototype, 'acquire');
           return moduleExports;
         }
       ),
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
-        ['^2.4'],
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Applying patch for ${MODULE_NAME}@${moduleVersion}`);
+        ['>=2.4.0 <3'],
+        moduleExports => {
           const Pool: any = moduleExports.Pool;
           if (isWrapped(Pool.prototype.acquire)) {
             this._unwrap(Pool.prototype, 'acquire');
@@ -77,18 +74,16 @@ export default class Instrumentation extends InstrumentationBase<any> {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Removing patch for ${MODULE_NAME}@${moduleVersion}`);
+        moduleExports => {
           const Pool: any = moduleExports.Pool;
           this._unwrap(Pool.prototype, 'acquire');
           return moduleExports;
         }
       ),
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
-        ['2 - 2.3'],
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Applying patch for ${MODULE_NAME}@${moduleVersion}`);
+        ['>=2.0.0 <2.4'],
+        moduleExports => {
           this._isDisabled = false;
           if (isWrapped(moduleExports.Pool)) {
             this._unwrap(moduleExports, 'Pool');
@@ -96,8 +91,7 @@ export default class Instrumentation extends InstrumentationBase<any> {
           this._wrap(moduleExports, 'Pool', this._poolWrapper.bind(this));
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Removing patch for ${MODULE_NAME}@${moduleVersion}`);
+        moduleExports => {
           // since the object is created on the fly every time, we need to use
           // a boolean switch here to disable the instrumentation
           this._isDisabled = true;
