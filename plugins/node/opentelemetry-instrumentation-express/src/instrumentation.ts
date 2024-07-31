@@ -50,17 +50,9 @@ import {
 } from './internal-types';
 
 /** Express instrumentation for OpenTelemetry */
-export class ExpressInstrumentation extends InstrumentationBase {
+export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumentationConfig> {
   constructor(config: ExpressInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-  }
-
-  override setConfig(config: ExpressInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
-  }
-
-  override getConfig(): ExpressInstrumentationConfig {
-    return this._config as ExpressInstrumentationConfig;
   }
 
   init() {
@@ -199,7 +191,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
         }
 
         // verify against the config if the layer should be ignored
-        if (isLayerIgnored(metadata.name, type, instrumentation._config)) {
+        if (isLayerIgnored(metadata.name, type, instrumentation.getConfig())) {
           if (type === ExpressLayerType.MIDDLEWARE) {
             (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
           }
@@ -222,10 +214,11 @@ export class ExpressInstrumentation extends InstrumentationBase {
           attributes: Object.assign(attributes, metadata.attributes),
         });
 
-        if (instrumentation.getConfig().requestHook) {
+        const { requestHook } = instrumentation.getConfig();
+        if (requestHook) {
           safeExecuteInTheMiddle(
             () =>
-              instrumentation.getConfig().requestHook!(span, {
+              requestHook(span, {
                 request: req,
                 layerType: type,
                 route,
@@ -334,14 +327,14 @@ export class ExpressInstrumentation extends InstrumentationBase {
   }
 
   _getSpanName(info: ExpressRequestInfo, defaultName: string) {
-    const hook = this.getConfig().spanNameHook;
+    const { spanNameHook } = this.getConfig();
 
-    if (!(hook instanceof Function)) {
+    if (!(spanNameHook instanceof Function)) {
       return defaultName;
     }
 
     try {
-      return hook(info, defaultName) ?? defaultName;
+      return spanNameHook(info, defaultName) ?? defaultName;
     } catch (err) {
       diag.error(
         'express instrumentation: error calling span name rewrite hook',
