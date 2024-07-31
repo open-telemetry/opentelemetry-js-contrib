@@ -169,8 +169,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
             req.headers.push('x-requested-with', 'undici');
           }
         },
-        responseHook: (span, req, res) => {
-          span.setAttribute('test.response-hook.attribute', res.statusText);
+        responseHook: (span, { response }) => {
+          span.setAttribute(
+            'test.response-hook.attribute',
+            response.statusText
+          );
         },
         startSpanHook: request => {
           return {
