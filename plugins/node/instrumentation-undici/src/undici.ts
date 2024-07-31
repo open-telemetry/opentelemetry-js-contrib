@@ -357,7 +357,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     // Execute the response hook if defined
     safeExecuteInTheMiddle(
-      () => config.responseHook?.(span, request, response),
+      () => config.responseHook?.(span, { request, response }),
       e => e && this._diag.error('caught responseHook error: ', e),
       true
     );

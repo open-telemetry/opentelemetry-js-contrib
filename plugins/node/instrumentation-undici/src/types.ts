@@ -56,7 +56,7 @@ export interface ResponseHookFunction<
   RequestType = UndiciResponse,
   ResponseType = UndiciResponse
 > {
-  (span: Span, request: RequestType, response: ResponseType): void;
+  (span: Span, info: { request: RequestType; response: ResponseType }): void;
 }
 
 export interface StartSpanHookFunction<T = UndiciRequest> {
