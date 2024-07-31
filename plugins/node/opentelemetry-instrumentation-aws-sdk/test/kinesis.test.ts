@@ -66,16 +66,15 @@ describe('Kinesis', () => {
         .promise();
 
       const testSpans = getTestSpans();
-      console.log(testSpans.length);
       const creationSpans = testSpans.filter((s: ReadableSpan) => {
         return s.name === 'Kinesis.CreateStream';
       });
       expect(creationSpans.length).toBe(1);
-      const publishSpan = creationSpans[0];
-      expect(publishSpan.attributes[_AWS_KINESIS_STREAM_NAME]).toBe(
+      const creationSpan = creationSpans[0];
+      expect(creationSpan.attributes[_AWS_KINESIS_STREAM_NAME]).toBe(
         dummyStreamName
       );
-      expect(publishSpan.kind).toBe(SpanKind.CLIENT);
+      expect(creationSpan.kind).toBe(SpanKind.CLIENT);
     });
   });
 });

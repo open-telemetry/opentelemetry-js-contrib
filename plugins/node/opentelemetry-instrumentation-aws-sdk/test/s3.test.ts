@@ -63,14 +63,13 @@ describe('S3', () => {
         .promise();
 
       const testSpans = getTestSpans();
-      console.log(testSpans.length);
-      const creationSpans = testSpans.filter((s: ReadableSpan) => {
+      const listObjectsSpans = testSpans.filter((s: ReadableSpan) => {
         return s.name === 'S3.ListObjects';
       });
-      expect(creationSpans.length).toBe(1);
-      const publishSpan = creationSpans[0];
-      expect(publishSpan.attributes[_AWS_S3_BUCKET]).toBe(dummyBucketName);
-      expect(publishSpan.kind).toBe(SpanKind.CLIENT);
+      expect(listObjectsSpans.length).toBe(1);
+      const listObjectsSpan = listObjectsSpans[0];
+      expect(listObjectsSpan.attributes[_AWS_S3_BUCKET]).toBe(dummyBucketName);
+      expect(listObjectsSpan.kind).toBe(SpanKind.CLIENT);
     });
   });
 });
