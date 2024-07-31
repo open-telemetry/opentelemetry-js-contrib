@@ -143,7 +143,7 @@ npm run test:with-test-services # runs 'npm test' with envvars from test/test-se
 npm run test-services:stop      # stops Docker containers
 ```
 
-This set of commands works in the top-level directory to test all packages, or
+Use this set of commands in the top-level directory to test all packages, or
 in a specific package directory that requires a test service (e.g. `plugins/node/opentelemetry-instrumentation-mongodb`).
 
 ### Benchmarks
