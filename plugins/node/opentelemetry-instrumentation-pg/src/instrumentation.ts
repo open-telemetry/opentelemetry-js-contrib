@@ -53,6 +53,13 @@ import {
 } from '@opentelemetry/core';
 import { DBSYSTEMVALUES_POSTGRESQL, SEMATTRS_DB_SYSTEM } from '@opentelemetry/semantic-conventions';
 
+// TODO: Replace these constants once a new version of the semantic conventions
+// package is created with https://github.com/open-telemetry/opentelemetry-js/pull/4891
+const SEMATTRS_DB_NAMESPACE = 'db.namespace';
+const SEMATTRS_ERROR_TYPE = 'error.type';
+const SEMATTRS_SERVER_PORT = 'server.port';
+const SEMATTRS_SERVER_ADDRESS = 'server.address';
+
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   private _operationDuration!: Histogram;
   constructor(config: PgInstrumentationConfig = {}) {
@@ -186,14 +193,10 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     // Get the attribs already in span attributes
     const keysToCopy = [
       SEMATTRS_DB_SYSTEM,
-      'db.collection.name',
-      'db.namespace',
-      'db.operation.name',
-      'error.type',
-      'server.port',
-      'network.peer.address',
-      'network.peer.port',
-      'server.address',
+      SEMATTRS_DB_NAMESPACE,
+      SEMATTRS_ERROR_TYPE,
+      SEMATTRS_SERVER_PORT,
+      SEMATTRS_SERVER_ADDRESS,
     ];
 
     keysToCopy.forEach(key => {
@@ -245,14 +248,11 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           ? (arg0 as utils.ObjectWithText)
           : undefined;
 
-        const operationInfo = utils.getOperationInfo(queryConfig?.text);
         const attributes: Attributes = {
             [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
-            ['db.namespace']: this.database,
-            ['db.collection.name']: operationInfo.collectionName,
-            ['db.operation.name']: operationInfo.name,
-            ['server.port']: this.connectionParameters.port,
-            ['server.address']: this.connectionParameters.host,
+            [SEMATTRS_DB_NAMESPACE]: this.database,
+            [SEMATTRS_SERVER_PORT]: this.connectionParameters.port,
+            [SEMATTRS_SERVER_ADDRESS]: this.connectionParameters.host,
           };
           this.on('end', () => {
             plugin.recordOperationDuration(attributes, startTime);
@@ -368,6 +368,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             message: utils.getErrorMessage(e),
           });
           span.end();
+          attributes[SEMATTRS_ERROR_TYPE] = utils.getErrorName(e);
           throw e;
         }
 
@@ -389,6 +390,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
                   message: error.message,
                 });
                 span.end();
+                attributes[SEMATTRS_ERROR_TYPE] = error.name;
                 reject(error);
               });
             });
