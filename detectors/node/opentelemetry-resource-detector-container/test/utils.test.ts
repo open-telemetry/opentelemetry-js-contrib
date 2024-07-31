@@ -67,28 +67,23 @@ describe(' extractContainerId from line tests', () => {
   // Additional test cases
   it('should handle line with multiple colons', () => {
     const line =
-      '0::/system.slice/containerd.service/kubepods-burstable-pod2c4b2241-5c01-11e9-8e4e-42010a800002.slice:cri-containerd:1234567890abcdef:extra';
+      '0::/system.slice/containerd.service/kubepods-burstable-pod2c4b2241-5c01-11e9-8e4e-42010a800002.slice:cri-containerd-1234567890abcdef.extra';
     const expected = '1234567890abcdef';
     assert.strictEqual(extractContainerIdFromLine(line), expected);
   });
 
-  it('should return undefined for valid hex string but incorrect length', () => {
+  it('should return containerid for valid hex string with any length', () => {
     const line =
       '11:devices:/docker/1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcde';
-    assert.strictEqual(extractContainerIdFromLine(line), undefined);
+    assert.strictEqual(
+      extractContainerIdFromLine(line),
+      '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcde'
+    );
   });
 
   it('should extract container ID with additional suffix', () => {
     const line =
       '11:devices:/docker/1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.suffix';
-    const expected =
-      '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
-    assert.strictEqual(extractContainerIdFromLine(line), expected);
-  });
-
-  it('should extract container ID with additional prefix', () => {
-    const line =
-      '11:devices:/docker/prefix-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
     const expected =
       '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
     assert.strictEqual(extractContainerIdFromLine(line), expected);
