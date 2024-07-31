@@ -86,7 +86,7 @@ jobs:
     env:
       RUN_CASSANDRA_TESTS: 1
       RUN_MEMCACHED_TESTS: 1
-      RUN_MONGODB_TESTS: 1
+      RUN_MONGODB_TESTS: "true"
       RUN_MYSQL_TESTS: 1
       RUN_MSSQL_TESTS: 1
       RUN_POSTGRES_TESTS: 1

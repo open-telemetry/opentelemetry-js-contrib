@@ -99,7 +99,7 @@ jobs:
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      RUN_MONGODB_TESTS: 1
+      RUN_MONGODB_TESTS: "true"
       RUN_MSSQL_TESTS: 1
       RUN_MYSQL_TESTS: 1
       RUN_POSTGRES_TESTS: 1

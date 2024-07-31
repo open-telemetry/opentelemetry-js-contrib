@@ -21,5 +21,7 @@ export const MONGO_URI = `mongodb://${MONGO_HOST}/${MONGO_PORT}`;
 
 export const shouldTest = process.env.RUN_MONGODB_TESTS != null;
 if (!shouldTest) {
-  console.log('Skipping mongodb tests. Set RUN_MONGODB_TESTS=1 to run them.');
+  console.log(
+    'Skipping mongodb tests. Set RUN_MONGODB_TESTS=true to run them.'
+  );
 }
