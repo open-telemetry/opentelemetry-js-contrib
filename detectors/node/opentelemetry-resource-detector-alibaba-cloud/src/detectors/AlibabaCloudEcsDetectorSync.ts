@@ -33,6 +33,14 @@ import {
   SEMRESATTRS_HOST_NAME,
   SEMRESATTRS_HOST_TYPE,
 } from '@opentelemetry/semantic-conventions';
+
+import {
+  ALIBABA_CLOUD_IDMS_ENDPOINT,
+  ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH,
+  ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH,
+  MILLISECONDS_TIME_OUT,
+} from './constants';
+
 import * as http from 'http';
 
 /**
@@ -41,17 +49,6 @@ import * as http from 'http';
  * the ECS instance. Returns an empty Resource if detection fails.
  */
 class AlibabaCloudEcsDetectorSync implements DetectorSync {
-  /**
-   * See https://www.alibabacloud.com/help/doc-detail/67254.htm for
-   * documentation about the AlibabaCloud instance identity document.
-   */
-  readonly ALIBABA_CLOUD_IDMS_ENDPOINT = '100.100.100.200';
-  readonly ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH =
-    '/latest/dynamic/instance-identity/document';
-  readonly ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH =
-    '/latest/meta-data/hostname';
-  readonly MILLISECONDS_TIME_OUT = 1000;
-
   /**
    * Attempts to connect and obtain an AlibabaCloud instance Identity document.
    * If the connection is successful it returns a promise containing a
@@ -96,10 +93,10 @@ class AlibabaCloudEcsDetectorSync implements DetectorSync {
    */
   private async _fetchIdentity(): Promise<any> {
     const options = {
-      host: this.ALIBABA_CLOUD_IDMS_ENDPOINT,
-      path: this.ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH,
+      host: ALIBABA_CLOUD_IDMS_ENDPOINT,
+      path: ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH,
       method: 'GET',
-      timeout: this.MILLISECONDS_TIME_OUT,
+      timeout: MILLISECONDS_TIME_OUT,
     };
     const identity = await this._fetchString(options);
     return JSON.parse(identity);
@@ -107,10 +104,10 @@ class AlibabaCloudEcsDetectorSync implements DetectorSync {
 
   private async _fetchHost(): Promise<string> {
     const options = {
-      host: this.ALIBABA_CLOUD_IDMS_ENDPOINT,
-      path: this.ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH,
+      host: ALIBABA_CLOUD_IDMS_ENDPOINT,
+      path: ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH,
       method: 'GET',
-      timeout: this.MILLISECONDS_TIME_OUT,
+      timeout: MILLISECONDS_TIME_OUT,
     };
     return await this._fetchString(options);
   }
@@ -119,7 +116,7 @@ class AlibabaCloudEcsDetectorSync implements DetectorSync {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         req.destroy(new Error('ECS metadata api request timed out.'));
-      }, this.MILLISECONDS_TIME_OUT);
+      }, MILLISECONDS_TIME_OUT);
 
       const req = http.request(options, res => {
         clearTimeout(timeoutId);

@@ -18,18 +18,20 @@ import * as nock from 'nock';
 import * as assert from 'assert';
 import { Resource } from '@opentelemetry/resources';
 import { CLOUDPROVIDERVALUES_ALIBABA_CLOUD } from '@opentelemetry/semantic-conventions';
-import { alibabaCloudEcsDetector } from '../../src';
 import {
   assertCloudResource,
   assertHostResource,
 } from '@opentelemetry/contrib-test-utils';
+import {
+  ALIBABA_CLOUD_IDMS_ENDPOINT,
+  ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH,
+  ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH,
+} from '../../src/detectors/constants';
+import { alibabaCloudEcsDetector } from '../../src';
 
-const ALIYUN_HOST =
-  'http://' + alibabaCloudEcsDetector.ALIBABA_CLOUD_IDMS_ENDPOINT;
-const ALIYUN_IDENTITY_PATH =
-  alibabaCloudEcsDetector.ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH;
-const ALIYUN_HOST_PATH =
-  alibabaCloudEcsDetector.ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH;
+const ALIYUN_HOST = 'http://' + ALIBABA_CLOUD_IDMS_ENDPOINT;
+const ALIYUN_IDENTITY_PATH = ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH;
+const ALIYUN_HOST_PATH = ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH;
 
 const mockedIdentityResponse = {
   'image-id': 'my-image-id',

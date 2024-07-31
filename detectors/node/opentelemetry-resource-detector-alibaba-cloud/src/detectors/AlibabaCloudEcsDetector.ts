@@ -28,19 +28,6 @@ import { alibabaCloudEcsDetectorSync } from './AlibabaCloudEcsDetectorSync';
  */
 class AlibabaCloudEcsDetector implements Detector {
   /**
-   * See https://www.alibabacloud.com/help/doc-detail/67254.htm for
-   * documentation about the AlibabaCloud instance identity document.
-   *
-   * NOTE: kept for testing purposes
-   */
-  readonly ALIBABA_CLOUD_IDMS_ENDPOINT = '100.100.100.200';
-  readonly ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH =
-    '/latest/dynamic/instance-identity/document';
-  readonly ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH =
-    '/latest/meta-data/hostname';
-  readonly MILLISECONDS_TIME_OUT = 1000;
-
-  /**
    * Detects an AlibabaCloud instance Identity document.
    */
   detect(_config?: ResourceDetectionConfig): Promise<IResource> {

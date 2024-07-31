@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export {
-  alibabaCloudEcsDetector,
-  alibabaCloudEcsDetectorSync,
-} from './detectors';
+export const ALIBABA_CLOUD_IDMS_ENDPOINT = '100.100.100.200';
+export const ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH =
+  '/latest/dynamic/instance-identity/document';
+export const ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH =
+  '/latest/meta-data/hostname';
+export const MILLISECONDS_TIME_OUT = 1000;
