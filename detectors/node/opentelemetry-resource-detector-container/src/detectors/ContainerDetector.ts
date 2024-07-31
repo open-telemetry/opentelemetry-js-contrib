@@ -24,6 +24,7 @@ import { SEMRESATTRS_CONTAINER_ID } from '@opentelemetry/semantic-conventions';
 import * as fs from 'fs';
 import * as util from 'util';
 import { diag } from '@opentelemetry/api';
+import { extractContainerIdFromLine } from './utils';
 
 export class ContainerDetector implements Detector {
   readonly CONTAINER_ID_LENGTH = 64;
@@ -64,7 +65,7 @@ export class ContainerDetector implements Detector {
     const splitData = rawData.trim().split('\n');
 
     for (const line of splitData) {
-      const containerID = this.extractContainerIdFromLine(line);
+      const containerID = extractContainerIdFromLine(line);
       if (containerID) {
         return containerID;
       }
@@ -82,8 +83,10 @@ export class ContainerDetector implements Detector {
       .split('\n')
       .find(s => s.includes(this.HOSTNAME));
 
+    if (!str) return '';
+
     const strArray = str?.split('/') ?? [];
-    for (let i = 0; i < strArray?.length; i++) {
+    for (let i = 0; i < strArray.length - 1; i++) {
       if (
         strArray[i] === this.MARKING_PREFIX &&
         strArray[i + 1]?.length === this.CONTAINER_ID_LENGTH
@@ -94,42 +97,6 @@ export class ContainerDetector implements Detector {
     return '';
   }
 
-  private truncatePrefix(lastSection: string, prefix: string): string {
-    return lastSection.substring(prefix.length);
-  }
-
-  protected extractContainerIdFromLine(line: string): string | null {
-    if (line) {
-      const sections = line.split('/');
-      if (sections.length > 1) {
-        let lastSection = sections[sections.length - 1];
-
-        // Handle containerd v1.5.0+ format with systemd cgroup driver
-        const colonIndex = lastSection.lastIndexOf(':');
-        if (colonIndex !== -1) {
-          lastSection = lastSection.substring(colonIndex + 1);
-        }
-
-        // Truncate known prefixes from the last section
-        if (lastSection.startsWith(this.CRIO)) {
-          lastSection = this.truncatePrefix(lastSection, this.CRIO);
-        } else if (lastSection.startsWith(this.DOCKER)) {
-          lastSection = this.truncatePrefix(lastSection, this.DOCKER);
-        } else if (lastSection.startsWith(this.CRI_CONTAINERD)) {
-          lastSection = this.truncatePrefix(lastSection, this.CRI_CONTAINERD);
-        }
-        // Remove anything after the first period
-        if (lastSection.includes('.')) {
-          lastSection = lastSection.split('.')[0];
-        }
-        // Check if the remaining string is a valid hex string
-        if (this.HEX_STRING_REGEX.test(lastSection)) {
-          return lastSection;
-        }
-      }
-    }
-    return null;
-  }
   /*
     cgroupv1 path would still exist in case of container running on v2
     but the cgroupv1 path would no longer have the container id and would
