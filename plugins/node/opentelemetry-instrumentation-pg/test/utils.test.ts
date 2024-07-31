@@ -252,7 +252,7 @@ describe('utils.ts', () => {
 
       assert.strictEqual(
         utils.getPoolName(dummyPool),
-        'username@host_name:1234/database_name'
+        'host_name:1234/database_name'
       );
     });
   });
