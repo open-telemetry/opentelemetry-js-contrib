@@ -105,7 +105,7 @@ describe('[UNIT] instanaAgentDetector', () => {
       scope.done();
     });
 
-    it('agent retuen emrty resource if timeout', async () => {
+    it('agent return empty resource if timeout', async () => {
       process.env.INSTANA_AGENT_PORT = '56002';
       process.env.INSTANA_AGENT_HOST = 'instanaagent';
       process.env.INSTANA_AGENT_TIMEOUT_MS = '200';
