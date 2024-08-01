@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.43.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.43.0...instrumentation-aws-sdk-v0.43.1) (2024-07-23)
+
+
+### Bug Fixes
+
+* **aws-sdk:** add http status code attribute to aws sdk span if aws sdk v3 client exception occurs ([#2344](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2344)) ([9a06381](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9a06381afc6a7a27bc49af4ef796a547eafbf6ff))
+
 ## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.42.0...instrumentation-aws-sdk-v0.43.0) (2024-07-03)
 
 
