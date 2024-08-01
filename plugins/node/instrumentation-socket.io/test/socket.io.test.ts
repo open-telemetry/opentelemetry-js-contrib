@@ -205,8 +205,6 @@ describe('SocketIoInstrumentation', () => {
       createServer((sio, port) => {
         const client = io(`http://localhost:${port}`);
         sio.on('connection', () => {
-          client.close();
-          sio.close();
           //trace is created after the listener method is completed
           setTimeout(() => {
             expectSpan('connection receive', span => {
@@ -214,9 +212,11 @@ describe('SocketIoInstrumentation', () => {
               expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
                 'socket.io'
               );
+              client.close();
+              sio.close();
               done();
             });
-          });
+          }, 10);
         });
       });
     });
@@ -417,9 +417,9 @@ describe('SocketIoInstrumentation', () => {
         });
         sio.on('connection', (socket: Socket) => {
           socket.emit('test');
-          client.close();
-          sio.close();
           setTimeout(() => {
+            client.close();
+            sio.close();
             expectSpan(
               `/[${socket.id}] send`,
               span => {
@@ -435,7 +435,7 @@ describe('SocketIoInstrumentation', () => {
               },
               2
             );
-          });
+          }, 10);
         });
       });
     });
