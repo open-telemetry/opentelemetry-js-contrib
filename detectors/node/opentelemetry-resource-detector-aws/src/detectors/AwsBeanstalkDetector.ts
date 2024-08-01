@@ -29,7 +29,7 @@ import { awsBeanstalkDetectorSync } from './AwsBeanstalkDetectorSync';
  *
  * See https://docs.amazonaws.cn/en_us/xray/latest/devguide/xray-guide.pdf
  * for more details about detecting information of Elastic Beanstalk plugins
- * 
+ *
  * @deprecated Use {@link AwsBeanstalkDetectorSync} class instead.
  */
 
