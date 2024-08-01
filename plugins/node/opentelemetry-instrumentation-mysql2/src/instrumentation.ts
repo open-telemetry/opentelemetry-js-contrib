@@ -39,7 +39,7 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
 
-export class MySQL2Instrumentation extends InstrumentationBase {
+export class MySQL2Instrumentation extends InstrumentationBase<MySQL2InstrumentationConfig> {
   static readonly COMMON_ATTRIBUTES = {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MYSQL,
   };
@@ -96,9 +96,6 @@ export class MySQL2Instrumentation extends InstrumentationBase {
         _valuesOrCallback?: unknown[] | Function,
         _callback?: Function
       ) {
-        const thisPluginConfig: MySQL2InstrumentationConfig =
-          thisPlugin._config;
-
         let values;
         if (Array.isArray(_valuesOrCallback)) {
           values = _valuesOrCallback;
@@ -115,7 +112,10 @@ export class MySQL2Instrumentation extends InstrumentationBase {
           },
         });
 
-        if (!isPrepared && thisPluginConfig.addSqlCommenterCommentToQueries) {
+        if (
+          !isPrepared &&
+          thisPlugin.getConfig().addSqlCommenterCommentToQueries
+        ) {
           arguments[0] = query =
             typeof query === 'string'
               ? addSqlCommenterComment(span, query)
@@ -131,10 +131,11 @@ export class MySQL2Instrumentation extends InstrumentationBase {
               message: err.message,
             });
           } else {
-            if (typeof thisPluginConfig.responseHook === 'function') {
+            const { responseHook } = thisPlugin.getConfig();
+            if (typeof responseHook === 'function') {
               safeExecuteInTheMiddle(
                 () => {
-                  thisPluginConfig.responseHook!(span, {
+                  responseHook(span, {
                     queryResults: results,
                   });
                 },
