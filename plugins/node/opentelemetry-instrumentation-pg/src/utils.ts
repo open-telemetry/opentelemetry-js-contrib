@@ -48,6 +48,11 @@ import type * as pgTypes from 'pg';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { SpanNames } from './enums/SpanNames';
 
+// TODO: Replace these constants once a new version of the semantic conventions
+// package is created with https://github.com/open-telemetry/opentelemetry-js/pull/4891
+const SEMATTRS_CLIENT_CONNECTION_POOL_NAME = 'db.client.connection.pool.name';
+const SEMATTRS_CLIENT_CONNECTION_STATE = 'db.client.connection.state';
+
 /**
  * Helper function to get a low cardinality span name from whatever info we have
  * about the query.
@@ -287,17 +292,17 @@ export function updateCounter(
   const used = all - idle;
 
   connectionCount.add(used - latestCounter.used, {
-    state: 'used',
-    'pool.name': poolName,
+    [SEMATTRS_CLIENT_CONNECTION_STATE]: 'used',
+    [SEMATTRS_CLIENT_CONNECTION_POOL_NAME]: poolName,
   });
 
   connectionCount.add(idle - latestCounter.idle, {
-    state: 'idle',
-    'pool.name': poolName,
+    [SEMATTRS_CLIENT_CONNECTION_STATE]: 'idle',
+    [SEMATTRS_CLIENT_CONNECTION_POOL_NAME]: poolName,
   });
 
   connectionPendingRequests.add(pending - latestCounter.pending, {
-    'pool.name': poolName,
+    [SEMATTRS_CLIENT_CONNECTION_POOL_NAME]: poolName,
   });
 
   return { used: used, idle: idle, pending: pending };

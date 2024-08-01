@@ -58,6 +58,10 @@ import {
   SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
 
+// TODO: Replace these constants once a new version of the semantic conventions
+// package is created with https://github.com/open-telemetry/opentelemetry-js/pull/4891
+const SEMATTRS_CLIENT_CONNECTION_STATE = 'db.client.connection.state';
+
 const memoryExporter = new InMemorySpanExporter();
 
 const CONFIG = {
@@ -567,11 +571,15 @@ describe('pg-pool', () => {
               'The number of connections that are currently in state described by the state attribute.'
             );
             assert.strictEqual(
-              metrics[0].dataPoints[0].attributes['state'],
+              metrics[0].dataPoints[0].attributes[
+                SEMATTRS_CLIENT_CONNECTION_STATE
+              ],
               'used'
             );
             assert.strictEqual(
-              metrics[0].dataPoints[1].attributes['state'],
+              metrics[0].dataPoints[1].attributes[
+                SEMATTRS_CLIENT_CONNECTION_STATE
+              ],
               'idle'
             );
 
