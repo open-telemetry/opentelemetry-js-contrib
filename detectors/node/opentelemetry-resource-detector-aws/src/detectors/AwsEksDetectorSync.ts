@@ -75,7 +75,9 @@ export class AwsEksDetectorSync implements DetectorSync {
   private async _getAttributes(): Promise<ResourceAttributes> {
     try {
       await AwsEksDetectorSync.fileAccessAsync(this.K8S_TOKEN_PATH);
-      const k8scert = await AwsEksDetectorSync.readFileAsync(this.K8S_CERT_PATH);
+      const k8scert = await AwsEksDetectorSync.readFileAsync(
+        this.K8S_CERT_PATH
+      );
 
       if (!(await this._isEks(k8scert))) {
         return {};

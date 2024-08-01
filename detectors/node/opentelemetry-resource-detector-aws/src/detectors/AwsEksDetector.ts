@@ -29,7 +29,7 @@ import { awsEksDetectorSync } from './AwsEksDetectorSync';
  *
  * See https://docs.amazonaws.cn/en_us/xray/latest/devguide/xray-guide.pdf
  * for more details about detecting information for Elastic Kubernetes plugins
- * 
+ *
  * @deprecated Use the new {@link AwsEksDetectorSync} class instead.
  */
 export class AwsEksDetector implements Detector {

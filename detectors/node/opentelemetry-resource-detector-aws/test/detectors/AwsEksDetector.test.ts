@@ -18,7 +18,11 @@ import * as nock from 'nock';
 import * as sinon from 'sinon';
 import * as assert from 'assert';
 import { Resource } from '@opentelemetry/resources';
-import { awsEksDetector, awsEksDetectorSync, AwsEksDetectorSync } from '../../src';
+import {
+  awsEksDetector,
+  awsEksDetectorSync,
+  AwsEksDetectorSync,
+} from '../../src';
 import {
   assertK8sResource,
   assertContainerResource,
