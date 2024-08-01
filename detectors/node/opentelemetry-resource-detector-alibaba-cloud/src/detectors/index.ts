@@ -15,4 +15,3 @@
  */
 
 export { alibabaCloudEcsDetector } from './AlibabaCloudEcsDetector';
-export { alibabaCloudEcsDetectorSync } from './AlibabaCloudEcsDetectorSync';

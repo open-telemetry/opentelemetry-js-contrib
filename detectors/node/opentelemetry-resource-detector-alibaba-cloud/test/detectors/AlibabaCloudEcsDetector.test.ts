@@ -22,16 +22,14 @@ import {
   assertCloudResource,
   assertHostResource,
 } from '@opentelemetry/contrib-test-utils';
-import {
-  ALIBABA_CLOUD_IDMS_ENDPOINT,
-  ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH,
-  ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH,
-} from '../../src/detectors/constants';
-import { alibabaCloudEcsDetectorSync } from '../../src';
+import { alibabaCloudEcsDetector } from '../../src';
 
-const ALIYUN_HOST = 'http://' + ALIBABA_CLOUD_IDMS_ENDPOINT;
-const ALIYUN_IDENTITY_PATH = ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH;
-const ALIYUN_HOST_PATH = ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH;
+const ALIYUN_HOST =
+  'http://' + alibabaCloudEcsDetector.ALIBABA_CLOUD_IDMS_ENDPOINT;
+const ALIYUN_IDENTITY_PATH =
+  alibabaCloudEcsDetector.ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH;
+const ALIYUN_HOST_PATH =
+  alibabaCloudEcsDetector.ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH;
 
 const mockedIdentityResponse = {
   'image-id': 'my-image-id',
@@ -65,7 +63,7 @@ describe('alibabaCloudEcsDetectorSync', () => {
         .get(ALIYUN_HOST_PATH)
         .reply(200, () => mockedHostResponse);
 
-      const resource: Resource = await alibabaCloudEcsDetectorSync.detect();
+      const resource: Resource = await alibabaCloudEcsDetector.detect();
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -95,7 +93,7 @@ describe('alibabaCloudEcsDetectorSync', () => {
         .get(ALIYUN_HOST_PATH)
         .reply(404, () => new Error());
 
-      const resource = await alibabaCloudEcsDetectorSync.detect();
+      const resource = await alibabaCloudEcsDetector.detect();
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -111,7 +109,7 @@ describe('alibabaCloudEcsDetectorSync', () => {
         .delayConnection(2000)
         .reply(200, () => mockedHostResponse);
 
-      const resource = await alibabaCloudEcsDetectorSync.detect();
+      const resource = await alibabaCloudEcsDetector.detect();
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -124,7 +122,7 @@ describe('alibabaCloudEcsDetectorSync', () => {
         .get(ALIYUN_IDENTITY_PATH)
         .replyWithError('NOT FOUND');
 
-      const resource = await alibabaCloudEcsDetectorSync.detect();
+      const resource = await alibabaCloudEcsDetector.detect();
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});

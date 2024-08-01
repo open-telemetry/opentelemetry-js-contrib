@@ -14,7 +14,4 @@
  * limitations under the License.
  */
 
-export {
-  alibabaCloudEcsDetector,
-  alibabaCloudEcsDetectorSync,
-} from './detectors';
+export { alibabaCloudEcsDetector } from './detectors';
