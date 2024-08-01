@@ -35,20 +35,21 @@ import {
   SEMATTRS_NET_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
-import * as types from './types';
+import { KnexInstrumentationConfig } from './types';
 
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
-const DEFAULT_CONFIG: types.KnexInstrumentationConfig = {
+const DEFAULT_CONFIG: KnexInstrumentationConfig = {
   maxQueryLength: 1022,
+  requireParentSpan: false,
 };
 
-export class KnexInstrumentation extends InstrumentationBase {
-  constructor(config: types.KnexInstrumentationConfig = {}) {
-    super(
-      PACKAGE_NAME,
-      PACKAGE_VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
-    );
+export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentationConfig> {
+  constructor(config: KnexInstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+  }
+
+  override setConfig(config: KnexInstrumentationConfig = {}) {
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   init() {
@@ -120,7 +121,7 @@ export class KnexInstrumentation extends InstrumentationBase {
 
   private createQueryWrapper(moduleVersion?: string) {
     const instrumentation = this;
-    return function wrapQuery(original: () => any) {
+    return function wrapQuery(original: (...args: any[]) => any) {
       return function wrapped_logging_method(this: any, query: any) {
         const config = this.client.config;
 
@@ -130,9 +131,7 @@ export class KnexInstrumentation extends InstrumentationBase {
         const operation = query?.method;
         const name =
           config?.connection?.filename || config?.connection?.database;
-        const maxLen = (
-          instrumentation._config as types.KnexInstrumentationConfig
-        ).maxQueryLength!;
+        const { maxQueryLength } = instrumentation.getConfig();
 
         const attributes: api.SpanAttributes = {
           'knex.version': moduleVersion,
@@ -146,21 +145,30 @@ export class KnexInstrumentation extends InstrumentationBase {
           [SEMATTRS_NET_TRANSPORT]:
             config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
         };
-        if (maxLen !== 0) {
+        if (maxQueryLength) {
+          // filters both undefined and 0
           attributes[SEMATTRS_DB_STATEMENT] = utils.limitLength(
             query?.sql,
-            maxLen
+            maxQueryLength
           );
         }
 
-        const parent = this.builder[contextSymbol];
+        const parentContext =
+          this.builder[contextSymbol] || api.context.active();
+        const parentSpan = api.trace.getSpan(parentContext);
+        const hasActiveParent =
+          parentSpan && api.trace.isSpanContextValid(parentSpan.spanContext());
+        if (instrumentation._config.requireParentSpan && !hasActiveParent) {
+          return original.bind(this)(...arguments);
+        }
+
         const span = instrumentation.tracer.startSpan(
           utils.getName(name, operation, table),
           {
             kind: api.SpanKind.CLIENT,
             attributes,
           },
-          parent
+          parentContext
         );
         const spanContext = api.trace.setSpan(api.context.active(), span);
 

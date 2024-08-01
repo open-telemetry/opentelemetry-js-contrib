@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-amqplib",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "OpenTelemetry instrumentation for the `amqplib` messaging client for RabbitMQ",
   "keywords": [
     "amqplib",
