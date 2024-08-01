@@ -24,16 +24,11 @@ import type {
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 
-export class LongTaskInstrumentation extends InstrumentationBase {
+export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrumentationConfig> {
   readonly version: string = PACKAGE_VERSION;
 
   private _observer?: PerformanceObserver;
-  override _config!: LongtaskInstrumentationConfig;
 
-  /**
-   *
-   * @param config
-   */
   constructor(config: LongtaskInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -57,9 +52,10 @@ export class LongTaskInstrumentation extends InstrumentationBase {
     const span = this.tracer.startSpan(LONGTASK_PERFORMANCE_TYPE, {
       startTime: hrTime(entry.startTime),
     });
-    if (this._config.observerCallback) {
+    const { observerCallback } = this.getConfig();
+    if (observerCallback) {
       try {
-        this._config.observerCallback(span, { longtaskEntry: entry });
+        observerCallback(span, { longtaskEntry: entry });
       } catch (err) {
         diag.error('longtask instrumentation: observer callback failed', err);
       }
