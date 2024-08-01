@@ -32,6 +32,7 @@ import {
   LookupCallbackSignature,
   LookupPromiseSignature,
 } from './internal-types';
+import { AttributeNames } from './enums/AttributeNames';
 
 /**
  * Dns instrumentation for Opentelemetry
@@ -124,6 +125,7 @@ export class DnsInstrumentation extends InstrumentationBase<DnsInstrumentationCo
       const name = utils.getOperationName('lookup');
       const span = plugin.tracer.startSpan(name, {
         kind: SpanKind.CLIENT,
+        attributes: { [AttributeNames.DNS_HOSTNAME]: hostname },
       });
 
       const originalCallback = args[argsCount - 1];
