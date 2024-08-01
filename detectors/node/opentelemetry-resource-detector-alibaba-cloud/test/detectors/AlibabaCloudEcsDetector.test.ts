@@ -44,7 +44,7 @@ const mockedIdentityResponse = {
 };
 const mockedHostResponse = 'my-hostname';
 
-describe('alibabaCloudEcsDetectorSync', () => {
+describe('alibabaCloudEcsDetector', () => {
   beforeEach(() => {
     nock.disableNetConnect();
     nock.cleanAll();
