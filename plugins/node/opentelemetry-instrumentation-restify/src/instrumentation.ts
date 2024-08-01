@@ -37,21 +37,13 @@ import type { RestifyInstrumentationConfig } from './types';
 
 const supportedVersions = ['>=4.0.0 <12'];
 
-export class RestifyInstrumentation extends InstrumentationBase {
+export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumentationConfig> {
   constructor(config: RestifyInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   private _moduleVersion?: string;
   private _isDisabled = false;
-
-  override setConfig(config: RestifyInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
-  }
-
-  override getConfig(): RestifyInstrumentationConfig {
-    return this._config as RestifyInstrumentationConfig;
-  }
 
   init() {
     const module = new InstrumentationNodeModuleDefinition(
@@ -190,11 +182,11 @@ export class RestifyInstrumentation extends InstrumentationBase {
         );
 
         const instrumentation = this;
-        const requestHook = instrumentation.getConfig().requestHook;
+        const { requestHook } = instrumentation.getConfig();
         if (requestHook) {
           safeExecuteInTheMiddle(
             () => {
-              return requestHook!(span, {
+              return requestHook(span, {
                 request: req,
                 layerType: metadata.type,
               });
