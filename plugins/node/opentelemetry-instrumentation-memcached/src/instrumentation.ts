@@ -31,7 +31,7 @@ import * as utils from './utils';
 import { InstrumentationConfig } from './types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
-export class MemcachedInstrumentation extends InstrumentationBase {
+export class MemcachedInstrumentation extends InstrumentationBase<InstrumentationConfig> {
   static readonly COMPONENT = 'memcached';
   static readonly COMMON_ATTRIBUTES = {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MEMCACHED,
@@ -41,19 +41,14 @@ export class MemcachedInstrumentation extends InstrumentationBase {
   };
 
   constructor(config: InstrumentationConfig = {}) {
-    super(
-      PACKAGE_NAME,
-      PACKAGE_VERSION,
-      Object.assign({}, MemcachedInstrumentation.DEFAULT_CONFIG, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, {
+      ...MemcachedInstrumentation.DEFAULT_CONFIG,
+      ...config,
+    });
   }
 
   override setConfig(config: InstrumentationConfig = {}) {
-    this._config = Object.assign(
-      {},
-      MemcachedInstrumentation.DEFAULT_CONFIG,
-      config
-    );
+    super.setConfig({ ...MemcachedInstrumentation.DEFAULT_CONFIG, ...config });
   }
 
   init() {
@@ -142,9 +137,8 @@ export class MemcachedInstrumentation extends InstrumentationBase {
         'db.memcached.key': query.key,
         'db.memcached.lifetime': query.lifetime,
         [SEMATTRS_DB_OPERATION]: query.type,
-        [SEMATTRS_DB_STATEMENT]: (
-          instrumentation._config as InstrumentationConfig
-        ).enhancedDatabaseReporting
+        [SEMATTRS_DB_STATEMENT]: instrumentation.getConfig()
+          .enhancedDatabaseReporting
           ? query.command
           : undefined,
         ...utils.getPeerAttributes(client, server, query),

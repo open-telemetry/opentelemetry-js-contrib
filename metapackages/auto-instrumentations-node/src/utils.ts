@@ -35,6 +35,7 @@ import { GrpcInstrumentation } from '@opentelemetry/instrumentation-grpc';
 import { HapiInstrumentation } from '@opentelemetry/instrumentation-hapi';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
+import { KafkaJsInstrumentation } from '@opentelemetry/instrumentation-kafkajs';
 import { KnexInstrumentation } from '@opentelemetry/instrumentation-knex';
 import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
 import { LruMemoizerInstrumentation } from '@opentelemetry/instrumentation-lru-memoizer';
@@ -112,6 +113,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-hapi': HapiInstrumentation,
   '@opentelemetry/instrumentation-http': HttpInstrumentation,
   '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
+  '@opentelemetry/instrumentation-kafkajs': KafkaJsInstrumentation,
   '@opentelemetry/instrumentation-knex': KnexInstrumentation,
   '@opentelemetry/instrumentation-koa': KoaInstrumentation,
   '@opentelemetry/instrumentation-lru-memoizer': LruMemoizerInstrumentation,

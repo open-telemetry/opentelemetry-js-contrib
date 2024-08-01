@@ -67,7 +67,7 @@ function setDatabase(this: ApproxConnection, databaseName: string) {
   });
 }
 
-export class TediousInstrumentation extends InstrumentationBase {
+export class TediousInstrumentation extends InstrumentationBase<TediousInstrumentationConfig> {
   static readonly COMPONENT = 'tedious';
 
   constructor(config: TediousInstrumentationConfig = {}) {
