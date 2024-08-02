@@ -46,7 +46,6 @@ import {
   MESSAGINGOPERATIONVALUES_PROCESS,
   SEMATTRS_MESSAGING_MESSAGE_ID,
   SEMATTRS_MESSAGING_CONVERSATION_ID,
-  SEMATTRS_MESSAGING_OPERATION_NAME,
 } from '@opentelemetry/semantic-conventions';
 import type {
   Connection,
@@ -662,7 +661,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
         kind: SpanKind.PRODUCER,
         attributes: {
           ...channel.connection[CONNECTION_ATTRIBUTES],
-          [SEMATTRS_MESSAGING_OPERATION_NAME]: 'publish',
+          [SEMATTRS_MESSAGING_OPERATION]: 'publish',
           [SEMATTRS_MESSAGING_DESTINATION]: exchange,
           [SEMATTRS_MESSAGING_DESTINATION_KIND]:
             MESSAGINGDESTINATIONKINDVALUES_TOPIC,
