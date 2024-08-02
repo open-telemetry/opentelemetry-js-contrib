@@ -137,7 +137,7 @@ describe('amqplib instrumentation callback model', () => {
         const [publishSpan, consumeSpan] = getTestSpans();
 
         // assert publish span
-        expect(publishSpan.name).toMatch(`<default> publish`); // span name needs to be low cardinality
+        expect(publishSpan.name).toMatch('<default> publish'); // span name needs to be low cardinality
         expect(publishSpan.kind).toEqual(SpanKind.PRODUCER);
         expect(publishSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
           'rabbitmq'
