@@ -30,6 +30,7 @@ import {
   MESSAGINGDESTINATIONKINDVALUES_TOPIC,
   SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
+  SEMATTRS_MESSAGING_OPERATION,
   SEMATTRS_MESSAGING_PROTOCOL,
   SEMATTRS_MESSAGING_PROTOCOL_VERSION,
   SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY,
@@ -139,6 +140,9 @@ describe('amqplib instrumentation callback model', () => {
         expect(publishSpan.kind).toEqual(SpanKind.PRODUCER);
         expect(publishSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
           'rabbitmq'
+        );
+        expect(publishSpan.attributes[SEMATTRS_MESSAGING_OPERATION]).toEqual(
+          'publish'
         );
         expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
           ''
