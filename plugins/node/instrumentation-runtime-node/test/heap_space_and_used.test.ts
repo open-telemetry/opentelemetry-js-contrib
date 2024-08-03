@@ -57,8 +57,7 @@ describe('nodejs.heap_space', function () {
       const scopeMetrics = resourceMetrics.scopeMetrics;
       const metric = scopeMetrics[0].metrics.find(
         x =>
-          x.descriptor.name ===
-          `${ConventionalNamePrefix.V8js}.${metricName}`
+          x.descriptor.name === `${ConventionalNamePrefix.V8js}.${metricName}`
       );
 
       assert.notEqual(
@@ -109,8 +108,7 @@ describe('nodejs.heap_space', function () {
         const scopeMetrics = resourceMetrics.scopeMetrics;
         const metric = scopeMetrics[0].metrics.find(
           x =>
-            x.descriptor.name ===
-            `${ConventionalNamePrefix.V8js}.${metricName}`
+            x.descriptor.name === `${ConventionalNamePrefix.V8js}.${metricName}`
         );
         const spaceAttribute = metric!.dataPoints.find(
           x =>

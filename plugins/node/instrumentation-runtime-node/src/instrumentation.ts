@@ -23,6 +23,7 @@ import { EventLoopDelayCollector } from './metrics/eventLoopDelayCollector';
 import { GCCollector } from './metrics/gcCollector';
 import { HeapSpacesSizeAndUsedCollector } from './metrics/heapSpacesSizeAndUsedCollector';
 import { ConventionalNamePrefix } from './types/ConventionalNamePrefix';
+import {EventLoopTimeCollector} from "./metrics/eventLoopTimeCollector";
 
 const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
   monitoringPrecision: 10,
@@ -42,10 +43,11 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase {
         this._config,
         ConventionalNamePrefix.NodeJs
       ),
-      new EventLoopDelayCollector(
+      new EventLoopTimeCollector(
         this._config,
         ConventionalNamePrefix.NodeJs
       ),
+      new EventLoopDelayCollector(this._config, ConventionalNamePrefix.NodeJs),
       new GCCollector(this._config, ConventionalNamePrefix.V8js),
       new HeapSpacesSizeAndUsedCollector(
         this._config,

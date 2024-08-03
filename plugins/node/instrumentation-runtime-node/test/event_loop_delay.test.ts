@@ -21,7 +21,6 @@ import { TestMetricReader } from './testMetricsReader';
 import { metricNames } from '../src/metrics/eventLoopDelayCollector';
 import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
 
-const MEASUREMENT_INTERVAL = 10;
 
 describe(`${ConventionalNamePrefix.NodeJs}.eventloop`, function () {
   let metricReader: TestMetricReader;
@@ -37,13 +36,13 @@ describe(`${ConventionalNamePrefix.NodeJs}.eventloop`, function () {
     it(`should write ${ConventionalNamePrefix.NodeJs}.${metricName} after monitoringPrecision`, async function () {
       // arrange
       const instrumentation = new RuntimeNodeInstrumentation({
-        monitoringPrecision: MEASUREMENT_INTERVAL,
+        monitoringPrecision: 10,
       });
       instrumentation.setMeterProvider(meterProvider);
 
       // act
       await new Promise(resolve =>
-        setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
+        setTimeout(resolve, 100)
       );
       const { resourceMetrics, errors } = await metricReader.collect();
 
@@ -56,8 +55,7 @@ describe(`${ConventionalNamePrefix.NodeJs}.eventloop`, function () {
       const scopeMetrics = resourceMetrics.scopeMetrics;
       const metric = scopeMetrics[0].metrics.find(
         x =>
-          x.descriptor.name ===
-          `${ConventionalNamePrefix.NodeJs}.${metricName}`
+          x.descriptor.name === `${ConventionalNamePrefix.NodeJs}.${metricName}`
       );
 
       assert.notEqual(

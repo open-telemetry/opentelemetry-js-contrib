@@ -20,9 +20,9 @@ import { BaseCollector } from './baseCollector';
 
 const { eventLoopUtilization: eventLoopUtilizationCollector } = performance;
 
-export const NODEJS_EVENT_LOOP_UTILIZATION = 'eventloop.utilization';
+export const NODEJS_EVENT_LOOP_TIME = 'eventloop.time';
 
-export class EventLoopUtilizationCollector extends BaseCollector {
+export class EventLoopTimeCollector extends BaseCollector {
   constructor(
     config: RuntimeNodeInstrumentationConfig = {},
     namePrefix: string
@@ -31,20 +31,31 @@ export class EventLoopUtilizationCollector extends BaseCollector {
   }
 
   public updateMetricInstruments(meter: Meter): void {
-    meter
-      .createObservableGauge(
-        `${this.namePrefix}.${NODEJS_EVENT_LOOP_UTILIZATION}`,
-        {
-          description: 'Event loop utilization',
-          unit: 's',
-        }
-      )
-      .addCallback(async observableResult => {
+    const timeCounter = meter.createObservableCounter(
+      `${this.namePrefix}.${NODEJS_EVENT_LOOP_TIME}`,
+      {
+        description:
+          'Cumulative duration of time the event loop has been in each state.',
+        unit: 's',
+      }
+    );
+
+    meter.addBatchObservableCallback(
+      async observableResult => {
         if (!this._config.enabled) return;
 
-        const elu = eventLoopUtilizationCollector(this.scrape());
-        observableResult.observe(elu.utilization);
-      });
+        const data = this.scrape();
+        if (data === undefined) return;
+
+        observableResult.observe(timeCounter, data.active / 1000, {
+          [`${this.namePrefix}.eventloop.state`]: 'active',
+        });
+        observableResult.observe(timeCounter, data.idle / 1000, {
+          [`${this.namePrefix}.eventloop.state`]: 'idle',
+        });
+      },
+      [timeCounter]
+    );
   }
 
   protected internalDisable(): void {}

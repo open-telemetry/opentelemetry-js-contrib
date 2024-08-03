@@ -19,11 +19,11 @@ import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
 import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
-import { NODEJS_EVENT_LOOP_UTILIZATION } from '../src/metrics/eventLoopUtilizationCollector';
+import { NODEJS_EVENT_LOOP_TIME } from "../src/metrics/eventLoopTimeCollector";
 
 const MEASUREMENT_INTERVAL = 10;
 
-describe(`${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_UTILIZATION}`, function () {
+describe(`${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_TIME}`, function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -51,7 +51,7 @@ describe(`${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_UTILIZATION}`, fu
     assert.strictEqual(scopeMetrics.length, 0);
   });
 
-  it(`should write ${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_UTILIZATION}`, async function () {
+  it(`should write ${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_TIME}`, async function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
@@ -69,36 +69,30 @@ describe(`${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_UTILIZATION}`, fu
       'expected no errors from the callback during collection'
     );
     const scopeMetrics = resourceMetrics.scopeMetrics;
-    const utilizationMetric = scopeMetrics[0].metrics.find(
+    const timeMetric = scopeMetrics[0].metrics.find(
       x =>
         x.descriptor.name ===
-        `${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_UTILIZATION}`
+        `${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_TIME}`
     );
 
-    assert.notEqual(utilizationMetric, undefined, 'metric not found');
+    assert.notEqual(timeMetric, undefined, 'metric not found');
 
 
     assert.strictEqual(
-      utilizationMetric!.descriptor.name,
-      `${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_UTILIZATION}`,
+      timeMetric!.descriptor.name,
+      `${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_TIME}`,
       'descriptor.name'
     );
 
     assert.strictEqual(
-      utilizationMetric!.descriptor.description,
-      'Event loop utilization'
+      timeMetric!.descriptor.description,
+      'Cumulative duration of time the event loop has been in each state.'
     );
 
     assert.strictEqual(
-      utilizationMetric!.descriptor.unit,
+      timeMetric!.descriptor.unit,
       's',
       'expected default unit'
-    );
-
-    assert.strictEqual(
-      utilizationMetric!.dataPoints.length,
-      1,
-      'expected one data point'
     );
   });
 });

@@ -84,7 +84,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
 
     meter.addBatchObservableCallback(
       observableResult => {
-        if(!this._config.enabled) return
+        if (!this._config.enabled) return;
 
         const data = this.scrape();
         if (data === undefined) return;

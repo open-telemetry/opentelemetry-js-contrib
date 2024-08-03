@@ -39,7 +39,7 @@ export class GCCollector extends BaseCollector {
   ) {
     super(config, namePrefix);
     this._observer = new perf_hooks.PerformanceObserver(list => {
-      if(!this._config.enabled) return
+      if (!this._config.enabled) return;
 
       const entry = list.getEntries()[0];
       // Node < 16 uses entry.kind
@@ -50,9 +50,7 @@ export class GCCollector extends BaseCollector {
       const kind = entry.detail ? kinds[entry.detail.kind] : kinds[entry.kind];
       this._gcDurationByKindHistogram?.record(
         entry.duration / 1000,
-        Object.assign(
-          { [`${this.namePrefix}.gc.type`]: kind }
-        )
+        Object.assign({ [`${this.namePrefix}.gc.type`]: kind })
       );
     });
   }

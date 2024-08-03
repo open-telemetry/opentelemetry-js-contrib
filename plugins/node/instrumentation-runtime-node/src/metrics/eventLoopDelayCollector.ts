@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {RuntimeNodeInstrumentationConfig} from '../types';
-import {Meter} from '@opentelemetry/api';
+import { RuntimeNodeInstrumentationConfig } from '../types';
+import { Meter } from '@opentelemetry/api';
 import * as perf_hooks from 'node:perf_hooks';
-import {IntervalHistogram} from 'node:perf_hooks';
-import {BaseCollector} from './baseCollector';
+import { IntervalHistogram } from 'node:perf_hooks';
+import { BaseCollector } from './baseCollector';
 
 enum NodeJsEventLoopDelay {
   min = 'eventloop.delay.min',
@@ -26,7 +26,7 @@ enum NodeJsEventLoopDelay {
   stddev = 'eventloop.delay.stddev',
   p50 = 'eventloop.delay.p50',
   p90 = 'eventloop.delay.p90',
-  p99 = 'eventloop.delay.p99'
+  p99 = 'eventloop.delay.p99',
 }
 
 export const metricNames: Record<
@@ -53,7 +53,7 @@ export const metricNames: Record<
   },
   [NodeJsEventLoopDelay.p99]: {
     description: 'Event loop 99 percentile delay.',
-  }
+  },
 };
 
 export interface EventLoopLagInformation {
@@ -132,10 +132,11 @@ export class EventLoopDelayCollector extends BaseCollector {
 
     meter.addBatchObservableCallback(
       async observableResult => {
-        if(!this._config.enabled) return
+        if (!this._config.enabled) return;
 
         const data = this.scrape();
         if (data === undefined) return;
+        if (this._histogram.count < 5) return; // Don't return histogram data if we have less than 5 samples
 
         observableResult.observe(delayMin, data.min);
         observableResult.observe(delayMax, data.max);
@@ -147,15 +148,7 @@ export class EventLoopDelayCollector extends BaseCollector {
 
         this._histogram.reset();
       },
-      [
-        delayMin,
-        delayMax,
-        delayMean,
-        delayStddev,
-        delayp50,
-        delayp90,
-        delayp99,
-      ]
+      [delayMin, delayMax, delayMean, delayStddev, delayp50, delayp90, delayp99]
     );
   }
 
@@ -178,7 +171,6 @@ export class EventLoopDelayCollector extends BaseCollector {
       p99: this.checkNan(this._histogram.percentile(99) / 1e9),
     };
   }
-
 
   private checkNan(value: number) {
     return isNaN(value) ? 0 : value;

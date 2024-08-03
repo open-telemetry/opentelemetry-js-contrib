@@ -17,7 +17,6 @@ import { MetricCollector } from '../types/metricCollector';
 import { Meter } from '@opentelemetry/api';
 import { RuntimeNodeInstrumentationConfig } from '../types';
 
-
 export abstract class BaseCollector implements MetricCollector {
   protected _config: RuntimeNodeInstrumentationConfig = {};
 
@@ -40,7 +39,6 @@ export abstract class BaseCollector implements MetricCollector {
     this._config.enabled = true;
     this.internalEnable();
   }
-
 
   public abstract updateMetricInstruments(meter: Meter): void;
 
