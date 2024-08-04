@@ -54,7 +54,7 @@ In your Lambda function configuration, add or update the `NODE_OPTIONS` environm
 | --- | --- | --- |
 | `requestHook` | `RequestHook` (function) | Hook for adding custom attributes before lambda starts handling the request. Receives params: `span, { event, context }` |
 | `responseHook` | `ResponseHook` (function) | Hook for adding custom attributes before lambda returns the response. Receives params: `span, { err?, res? }` |
-| `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway). 
+| `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway). |
 | `lambdaHandler` | `string` | By default, this instrumentation automatically determines the Lambda handler function to instrument. This option is used to override that behavior by explicitly specifying the Lambda handler to instrument. See [Specifying the Lambda Handler](#specifying-the-lambda-handler) for additional information. |
 
 The following options are deprecated:
@@ -107,7 +107,7 @@ provider.register({
 });
 ```
 
-Alternatively, you can use the [auto-configuration-propagators](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/metapackages/auto-configuration-propagators/README.md) package, which makes it possible to configure propgators via the `OTEL_PROPAGATORS` environment variable. In order to use the `AWSXRayLambdaPropagator`, se the env variable value to `xray-lambda`. 
+Alternatively, you can use the [auto-configuration-propagators](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/metapackages/auto-configuration-propagators/README.md) package, which makes it possible to configure propgators via the `OTEL_PROPAGATORS` environment variable. In order to use the `AWSXRayLambdaPropagator`, se the env variable value to `xray-lambda`.
 
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
