@@ -370,7 +370,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     context: Context,
     eventContextExtractor: EventContextExtractor
   ): OtelContext {
-    let parent: OtelContext | undefined = undefined;
     const extractedContext = safeExecuteInTheMiddle(
       () => eventContextExtractor(event, context),
       e => {
@@ -385,10 +384,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     if (trace.getSpan(extractedContext)?.spanContext()) {
       return extractedContext;
     }
-    if (!parent) {
-      // No context in Lambda environment or HTTP headers.
-      return ROOT_CONTEXT;
-    }
-    return parent;
+    return ROOT_CONTEXT;
   }
 }

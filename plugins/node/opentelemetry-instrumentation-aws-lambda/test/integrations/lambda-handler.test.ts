@@ -46,7 +46,6 @@ import {
   SpanKind,
   SpanStatusCode,
   TextMapPropagator,
-  ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
@@ -138,39 +137,6 @@ describe('lambda handler', () => {
   const sampledAwsHeader = serializeSpanContext(
     sampledAwsSpanContext,
     new AWSXRayPropagator()
-  );
-
-  const sampledHttpSpanContext: SpanContext = {
-    traceId: '8a3c60f7d188f8fa79d48a391a778fa7',
-    spanId: '0000000000000457',
-    traceFlags: 1,
-    isRemote: true,
-  };
-  const sampledHttpHeader = serializeSpanContext(
-    sampledHttpSpanContext,
-    new W3CTraceContextPropagator()
-  );
-
-  const unsampledAwsSpanContext: SpanContext = {
-    traceId: '8a3c60f7d188f8fa79d48a391a778fa8',
-    spanId: '0000000000000458',
-    traceFlags: 0,
-    isRemote: true,
-  };
-  const unsampledAwsHeader = serializeSpanContext(
-    unsampledAwsSpanContext,
-    new AWSXRayPropagator()
-  );
-
-  const unsampledHttpSpanContext: SpanContext = {
-    traceId: '8a3c60f7d188f8fa79d48a391a778fa9',
-    spanId: '0000000000000459',
-    traceFlags: 0,
-    isRemote: true,
-  };
-  const unsampledHttpHeader = serializeSpanContext(
-    unsampledHttpSpanContext,
-    new W3CTraceContextPropagator()
   );
 
   const sampledGenericSpanContext: SpanContext = {
