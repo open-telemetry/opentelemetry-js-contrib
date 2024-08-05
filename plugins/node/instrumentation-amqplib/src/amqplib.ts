@@ -659,7 +659,6 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
       kind: SpanKind.PRODUCER,
       attributes: {
         ...channel.connection[CONNECTION_ATTRIBUTES],
-        [SEMATTRS_MESSAGING_OPERATION]: 'publish',
         [SEMATTRS_MESSAGING_DESTINATION]: exchange,
         [SEMATTRS_MESSAGING_DESTINATION_KIND]:
           MESSAGINGDESTINATIONKINDVALUES_TOPIC,
