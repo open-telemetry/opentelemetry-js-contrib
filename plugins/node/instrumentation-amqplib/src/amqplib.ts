@@ -655,7 +655,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
   ) {
     const normalizedExchange = normalizeExchange(exchange);
 
-    const span = self.tracer.startSpan(`${normalizedExchange} publish`, {
+    const span = self.tracer.startSpan(`publish ${normalizedExchange}`, {
       kind: SpanKind.PRODUCER,
       attributes: {
         ...channel.connection[CONNECTION_ATTRIBUTES],
