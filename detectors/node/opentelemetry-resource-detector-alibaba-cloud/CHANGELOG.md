@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.28.10...resource-detector-alibaba-cloud-v0.29.0) (2024-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **detector-alibaba:** change implementation to DetectorSync interface ([#2328](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2328))
+
+### Features
+
+* **detector-alibaba:** change implementation to DetectorSync interface ([#2328](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2328)) ([25e85c7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/25e85c7b128f7424b51987e9f4c067e0b538fe2f))
+
 ## [0.28.10](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.28.9...resource-detector-alibaba-cloud-v0.28.10) (2024-06-06)
 
 
