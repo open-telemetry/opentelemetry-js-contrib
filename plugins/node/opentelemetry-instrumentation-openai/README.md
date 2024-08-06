@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`openai`](https://github.com/openai) module, which may be loaded using the [`@opentelemetry/instrumentation-openai`](https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/instrumentation/opentelemetry-instrumentation-openai) package.
+This module provides automatic instrumentation for the [`openai`](https://github.com/openai) module, which may be loaded using the [`@opentelemetry/instrumentation-openai`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-openai) package.
 
 
 ## Installation
