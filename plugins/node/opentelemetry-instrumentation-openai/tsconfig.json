@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base",
+  "compilerOptions": {
+    "target": "es2016",
+    "rootDir": ".",
+    "outDir": "build",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}
