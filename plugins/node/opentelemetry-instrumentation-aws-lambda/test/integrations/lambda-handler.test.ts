@@ -46,9 +46,12 @@ import {
   SpanKind,
   SpanStatusCode,
   TextMapPropagator,
+  ROOT_CONTEXT,
+  defaultTextMapGetter,
 } from '@opentelemetry/api';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
+import { AWSXRayLambdaPropagator } from '@opentelemetry/propagator-aws-xray-lambda';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -405,49 +408,81 @@ describe('lambda handler', () => {
   });
 
   describe('with remote parent', () => {
-    it('passes the lambda context object into the eventContextExtractor for scenarios where it is the otel context carrier', async () => {
+    beforeEach(() => {
+      propagation.disable();
+    });
+
+    it('uses globally registered propagator', async () => {
+      propagation.setGlobalPropagator(new AWSXRayPropagator());
+      initializeHandler('lambda-test/async.handler');
+
+      const proxyEvent = {
+        headers: {
+          'x-amzn-trace-id': sampledAwsHeader,
+        },
+      };
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        proxyEvent,
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 1);
+      assert.equal(
+        spans[0].spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.equal(spans[0].parentSpanId, sampledAwsSpanContext.spanId);
+    });
+
+    it('can extract context from lambda context env variable using a global propagator', async () => {
       process.env[traceContextEnvironmentKey] = sampledAwsHeader;
-      const customExtractor = (
-        event: any,
-        handlerContext: Context
-      ): OtelContext => {
-        const contextCarrier = handlerContext.clientContext?.Custom ?? {};
-        return propagation.extract(context.active(), contextCarrier);
+      propagation.setGlobalPropagator(new AWSXRayLambdaPropagator());
+      initializeHandler('lambda-test/async.handler');
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 1);
+      assert.equal(
+        spans[0].spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.equal(spans[0].parentSpanId, sampledAwsSpanContext.spanId);
+    });
+
+    it('used custom eventContextExtractor over global propagator if defined', async () => {
+      propagation.setGlobalPropagator(new W3CTraceContextPropagator());
+      const customExtractor = (event: any): OtelContext => {
+        const propagator = new AWSXRayPropagator();
+        return propagator.extract(
+          context.active(),
+          event.contextCarrier,
+          defaultTextMapGetter
+        );
       };
 
       initializeHandler('lambda-test/async.handler', {
         eventContextExtractor: customExtractor,
       });
 
-      const otherEvent = {};
-      const ctxWithCustomData = {
-        functionName: 'my_function',
-        invokedFunctionArn: 'my_arn',
-        awsRequestId: 'aws_request_id',
-        clientContext: {
-          client: {
-            installationId: '',
-            appTitle: '',
-            appVersionName: '',
-            appVersionCode: '',
-            appPackageName: '',
-          },
-          Custom: {
-            traceparent: sampledGenericSpan,
-          },
-          env: {
-            platformVersion: '',
-            platform: '',
-            make: '',
-            model: '',
-            locale: '',
-          },
+      const otherEvent = {
+        contextCarrier: {
+          traceparent: sampledGenericSpan,
+          'x-amzn-trace-id': sampledAwsHeader,
         },
-      } as Context;
+      };
 
       const result = await lambdaRequire('lambda-test/async').handler(
         otherEvent,
-        ctxWithCustomData
+        ctx
       );
 
       assert.strictEqual(result, 'ok');
@@ -457,9 +492,38 @@ describe('lambda handler', () => {
       assertSpanSuccess(span);
       assert.strictEqual(
         span.spanContext().traceId,
-        sampledGenericSpanContext.traceId
+        sampledAwsSpanContext.traceId
       );
-      assert.strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
+      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
+    });
+
+    it('creates trace from ROOT_CONTEXT eventContextExtractor is provided, and no custom context is found', async () => {
+      const customExtractor = (event: any): OtelContext => {
+        if (!event.contextCarrier) {
+          return ROOT_CONTEXT;
+        }
+
+        return propagation.extract(context.active(), event.contextCarrier);
+      };
+
+      const provider = initializeHandler('lambda-test/async.handler', {
+        eventContextExtractor: customExtractor,
+      });
+
+      const testSpan = provider.getTracer('test').startSpan('random_span');
+      await context.with(
+        trace.setSpan(context.active(), testSpan),
+        async () => {
+          await lambdaRequire('lambda-test/async').handler(
+            { message: 'event with no context' },
+            ctx
+          );
+        }
+      );
+
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(span.parentSpanId, undefined);
     });
   });
 

@@ -107,7 +107,7 @@ provider.register({
 });
 ```
 
-Alternatively, you can use the [auto-configuration-propagators](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/metapackages/auto-configuration-propagators/README.md) package, which makes it possible to configure propgators via the `OTEL_PROPAGATORS` environment variable. In order to use the `AWSXRayLambdaPropagator`, set the env variable value to `xray-lambda`.
+Alternatively, you can use the [auto-configuration-propagators](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/metapackages/auto-configuration-propagators/README.md) package, which makes it possible to configure propagators via the `OTEL_PROPAGATORS` environment variable. In order to use the `AWSXRayLambdaPropagator`, set the env variable value to `xray-lambda`.
 
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
