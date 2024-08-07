@@ -19,5 +19,6 @@ export { awsEc2DetectorSync } from './AwsEc2DetectorSync';
 export * from './AwsBeanstalkDetector';
 export { AwsEcsDetector, awsEcsDetector } from './AwsEcsDetector';
 export { AwsEcsDetectorSync, awsEcsDetectorSync } from './AwsEcsDetectorSync';
-export * from './AwsEksDetector';
+export { AwsEksDetector, awsEksDetector } from './AwsEksDetector';
+export { AwsEksDetectorSync, awsEksDetectorSync } from './AwsEksDetectorSync';
 export * from './AwsLambdaDetector';
