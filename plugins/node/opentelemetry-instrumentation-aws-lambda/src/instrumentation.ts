@@ -204,6 +204,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
                 context.invokedFunctionArn
               ),
           },
+          links: config.eventSpanLinksExtractor
+            ? config.eventSpanLinksExtractor(event, context)
+            : [],
         },
         parent
       );
