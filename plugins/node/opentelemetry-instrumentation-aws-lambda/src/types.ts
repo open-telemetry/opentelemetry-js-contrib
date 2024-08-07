@@ -38,11 +38,6 @@ export type EventContextExtractor = (
 export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
   requestHook?: RequestHook;
   responseHook?: ResponseHook;
-  /**
-   * Not trace all incoming requests that match paths
-   * @deprecated use the OTEL_PROPAGATORS env variable instead
-   */
-  disableAwsContextPropagation?: boolean;
   eventContextExtractor?: EventContextExtractor;
   lambdaHandler?: string;
 }

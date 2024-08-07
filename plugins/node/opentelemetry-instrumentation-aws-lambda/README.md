@@ -57,12 +57,6 @@ In your Lambda function configuration, add or update the `NODE_OPTIONS` environm
 | `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway). |
 | `lambdaHandler` | `string` | By default, this instrumentation automatically determines the Lambda handler function to instrument. This option is used to override that behavior by explicitly specifying the Lambda handler to instrument. See [Specifying the Lambda Handler](#specifying-the-lambda-handler) for additional information. |
 
-The following options are deprecated:
-
-| Options | Type | Description |
-| ------- | ---- | ----------- |
-| `disableAwsContextPropagation` | `boolean` | By default, this instrumentation will try to read the context from the `_X_AMZN_TRACE_ID` environment variable set by Lambda, set this to `true` or set the environment variable `OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION=true` to disable this behavior |
-
 ### Hooks Usage Example
 
 ```js
