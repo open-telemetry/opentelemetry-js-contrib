@@ -26,10 +26,10 @@ import {
 import { ContainerDetector } from '../src';
 
 describe('ContainerDetector', () => {
-  let readStub;
+  let readStub: sinon.SinonStub;
   const correctCgroupV1Data =
-    '12:pids:/kubepods.slice/bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
-  const correctCgroupV2Data = `tmhdefghijklmnopqrstuvwxyzafgrefghiugkmnopqrstuvwxyzabcdefghijkl/hostname
+    '12:pids:/kubepods.slice/4e6f77206973207468652074696d6520666f7220616c6c20676f6f64206d656e20746f20636f6d6520746f2074686520616964';
+  const correctCgroupV2Data = `containers/tmhdefghijklmnopqrstuvwxyzafgrefghiugkmnopqrstuvwxyzabcdefghijkl/hostname
     fhkjdshgfhsdfjhdsfkjhfkdshkjhfd/host
     sahfhfjkhjhfhjdhfjkdhfkjdhfjkhhdsjfhdfhjdhfkj/somethingelse`;
 
@@ -63,7 +63,7 @@ describe('ContainerDetector', () => {
 
       assert.ok(resource);
       assertContainerResource(resource, {
-        id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
+        id: '4e6f77206973207468652074696d6520666f7220616c6c20676f6f64206d656e20746f20636f6d6520746f2074686520616964',
       });
     });
 
