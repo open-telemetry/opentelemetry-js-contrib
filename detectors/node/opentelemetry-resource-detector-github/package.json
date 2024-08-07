@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-github",
-  "version": "0.28.2",
+  "version": "0.29.0",
   "description": "OpenTelemetry SDK resource detector for GitHub",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
