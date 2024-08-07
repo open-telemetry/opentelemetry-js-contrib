@@ -20,6 +20,17 @@
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "KoaInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "instrumentation",
     "koa",

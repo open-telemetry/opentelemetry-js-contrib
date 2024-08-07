@@ -19,6 +19,17 @@
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "tsc -p ."
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "PinoInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "instrumentation",
     "logging",
