@@ -18,22 +18,18 @@ import * as nock from 'nock';
 import * as sinon from 'sinon';
 import * as assert from 'assert';
 import { Resource } from '@opentelemetry/resources';
-import {
-  awsEksDetector,
-  awsEksDetectorSync,
-  AwsEksDetectorSync,
-} from '../../src';
+import { awsEksDetectorSync, AwsEksDetectorSync } from '../../src';
 import {
   assertK8sResource,
   assertContainerResource,
   assertEmptyResource,
 } from '@opentelemetry/contrib-test-utils';
 
-const K8S_SVC_URL = awsEksDetector.K8S_SVC_URL;
-const AUTH_CONFIGMAP_PATH = awsEksDetector.AUTH_CONFIGMAP_PATH;
-const CW_CONFIGMAP_PATH = awsEksDetector.CW_CONFIGMAP_PATH;
+const K8S_SVC_URL = awsEksDetectorSync.K8S_SVC_URL;
+const AUTH_CONFIGMAP_PATH = awsEksDetectorSync.AUTH_CONFIGMAP_PATH;
+const CW_CONFIGMAP_PATH = awsEksDetectorSync.CW_CONFIGMAP_PATH;
 
-describe('awsEksDetector', () => {
+describe('awsEksDetectorSync', () => {
   const errorMsg = {
     fileNotFoundError: new Error('cannot find cgroup file'),
   };
@@ -75,7 +71,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => mockedClusterResponse);
 
-      const resource = await awsEksDetector.detect();
+      const resource = awsEksDetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -113,7 +109,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => mockedClusterResponse);
 
-      const resource = await awsEksDetector.detect();
+      const resource = awsEksDetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -143,7 +139,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => '');
 
-      const resource = await awsEksDetector.detect();
+      const resource = awsEksDetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -174,7 +170,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => mockedClusterResponse);
 
-      const resource = await awsEksDetector.detect();
+      const resource = awsEksDetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -202,7 +198,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => '');
 
-      const resource = await awsEksDetector.detect();
+      const resource = awsEksDetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -219,7 +215,7 @@ describe('awsEksDetector', () => {
         .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
         .rejects(errorMsg.fileNotFoundError);
 
-      const resource: Resource = await awsEksDetector.detect();
+      const resource: Resource = await awsEksDetectorSync.detect();
 
       assert.ok(resource);
       assertEmptyResource(resource);
@@ -246,7 +242,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => '');
 
-      const resource = await awsEksDetector.detect();
+      const resource = awsEksDetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       scope.isDone();
@@ -274,14 +270,14 @@ describe('awsEksDetector', () => {
         .delayConnection(2500)
         .reply(200, () => mockedAwsAuth);
 
-      const resource = await awsEksDetector.detect();
+      const resource = awsEksDetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
 
       assert.ok(resource);
       assertEmptyResource(resource);
-    }).timeout(awsEksDetector.TIMEOUT_MS + 100);
+    }).timeout(awsEksDetectorSync.TIMEOUT_MS + 100);
 
     it('should return an empty resource when receiving error response code', async () => {
       fileStub = sinon
@@ -299,7 +295,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(404, () => new Error());
 
-      const resource = await awsEksDetector.detect();
+      const resource = awsEksDetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
