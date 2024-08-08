@@ -37,7 +37,7 @@ import {
 import * as assert from 'assert';
 import { TediousInstrumentation } from '../src';
 import makeApi from './api';
-import type { Connection, ConnectionConfig } from 'tedious';
+import type { tedious } from './api';
 import * as semver from 'semver';
 
 const port = Number(process.env.MSSQL_PORT) || 1433;
@@ -50,7 +50,10 @@ const instrumentation = new TediousInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
-const config: ConnectionConfig & { userName: string; password: string } = {
+const config: tedious['ConnectionConfig'] & {
+  userName: string;
+  password: string;
+} = {
   userName: user,
   password,
   server: host,
@@ -84,7 +87,7 @@ const incompatVersions =
 describe('tedious', () => {
   let tedious: any;
   let contextManager: AsyncHooksContextManager;
-  let connection: Connection;
+  let connection: tedious['Connection'];
   const provider = new BasicTracerProvider();
   const shouldTest = process.env.RUN_MSSQL_TESTS; // For CI: assumes local db is already available
   const shouldTestLocally = process.env.RUN_MSSQL_TESTS_LOCAL; // For local: spins up local db via docker
@@ -123,7 +126,7 @@ describe('tedious', () => {
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
-    tedious = makeApi(require('tedious'));
+    tedious = makeApi(require('tedious'), tediousVersion);
     connection = await tedious.createConnection(config).catch((err: any) => {
       console.error('with config:', config);
       throw err;
