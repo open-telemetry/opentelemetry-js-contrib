@@ -35,6 +35,13 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
+import {
+  AggregationTemporality,
+  InMemoryMetricExporter,
+  MeterProvider,
+  PeriodicExportingMetricReader,
+  ResourceMetrics,
+} from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
@@ -50,6 +57,10 @@ import {
   SEMATTRS_DB_USER,
   SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
+
+// TODO: Replace these constants once a new version of the semantic conventions
+// package is created with https://github.com/open-telemetry/opentelemetry-js/pull/4891
+const SEMATTRS_CLIENT_CONNECTION_STATE = 'db.client.connection.state';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -108,6 +119,22 @@ describe('pg-pool', () => {
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
     instrumentation.enable();
+  }
+
+  async function waitForNumberOfExports(
+    exporter: InMemoryMetricExporter,
+    numberOfExports: number
+  ): Promise<ResourceMetrics[]> {
+    if (numberOfExports <= 0) {
+      throw new Error('numberOfExports must be greater than or equal to 0');
+    }
+    let totalExports = 0;
+    while (totalExports < numberOfExports) {
+      await new Promise(resolve => setTimeout(resolve, 20));
+      const exportedMetrics = exporter.getMetrics();
+      totalExports = exportedMetrics.length;
+    }
+    return exporter.getMetrics();
   }
 
   let pool: pgPool<pg.Client>;
@@ -180,7 +207,7 @@ describe('pg-pool', () => {
   describe('#pool.connect()', () => {
     // promise - checkout a client
     it('should intercept pool.connect()', async () => {
-      const pgPoolattributes = {
+      const pgPoolAttributes = {
         ...DEFAULT_PGPOOL_ATTRIBUTES,
       };
       const pgAttributes = {
@@ -191,7 +218,7 @@ describe('pg-pool', () => {
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
       await context.with(trace.setSpan(context.active(), span), async () => {
         const client = await pool.connect();
-        runCallbackTest(span, pgPoolattributes, events, unsetStatus, 2, 1);
+        runCallbackTest(span, pgPoolAttributes, events, unsetStatus, 2, 1);
 
         const [connectSpan, poolConnectSpan] =
           memoryExporter.getFinishedSpans();
@@ -212,7 +239,7 @@ describe('pg-pool', () => {
 
     // callback - checkout a client
     it('should not return a promise if callback is provided', done => {
-      const pgPoolattributes = {
+      const pgPoolAttributes = {
         ...DEFAULT_PGPOOL_ATTRIBUTES,
       };
       const pgAttributes = {
@@ -237,7 +264,7 @@ describe('pg-pool', () => {
           assert.ok(client);
           runCallbackTest(
             parentSpan,
-            pgPoolattributes,
+            pgPoolAttributes,
             events,
             unsetStatus,
             1,
@@ -285,7 +312,7 @@ describe('pg-pool', () => {
   describe('#pool.query()', () => {
     // promise
     it('should call patched client.query()', async () => {
-      const pgPoolattributes = {
+      const pgPoolAttributes = {
         ...DEFAULT_PGPOOL_ATTRIBUTES,
       };
       const pgAttributes = {
@@ -296,7 +323,7 @@ describe('pg-pool', () => {
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
       await context.with(trace.setSpan(context.active(), span), async () => {
         const result = await pool.query('SELECT NOW()');
-        runCallbackTest(span, pgPoolattributes, events, unsetStatus, 2, 0);
+        runCallbackTest(span, pgPoolAttributes, events, unsetStatus, 2, 0);
         runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
         assert.ok(result, 'pool.query() returns a promise');
       });
@@ -304,7 +331,7 @@ describe('pg-pool', () => {
 
     // callback
     it('should not return a promise if callback is provided', done => {
-      const pgPoolattributes = {
+      const pgPoolAttributes = {
         ...DEFAULT_PGPOOL_ATTRIBUTES,
       };
       const pgAttributes = {
@@ -322,7 +349,7 @@ describe('pg-pool', () => {
           }
           runCallbackTest(
             parentSpan,
-            pgPoolattributes,
+            pgPoolAttributes,
             events,
             unsetStatus,
             2,
@@ -341,7 +368,7 @@ describe('pg-pool', () => {
       const events: TimedEvent[] = [];
 
       describe('AND valid responseHook', () => {
-        const pgPoolattributes = {
+        const pgPoolAttributes = {
           ...DEFAULT_PGPOOL_ATTRIBUTES,
         };
         const pgAttributes = {
@@ -375,7 +402,7 @@ describe('pg-pool', () => {
               }
               runCallbackTest(
                 parentSpan,
-                pgPoolattributes,
+                pgPoolAttributes,
                 events,
                 unsetStatus,
                 2,
@@ -409,7 +436,7 @@ describe('pg-pool', () => {
               const result = await pool.query(query);
               runCallbackTest(
                 span,
-                pgPoolattributes,
+                pgPoolAttributes,
                 events,
                 unsetStatus,
                 2,
@@ -423,7 +450,7 @@ describe('pg-pool', () => {
       });
 
       describe('AND invalid responseHook', () => {
-        const pgPoolattributes = {
+        const pgPoolAttributes = {
           ...DEFAULT_PGPOOL_ATTRIBUTES,
         };
         const pgAttributes = {
@@ -456,7 +483,7 @@ describe('pg-pool', () => {
 
               runCallbackTest(
                 parentSpan,
-                pgPoolattributes,
+                pgPoolAttributes,
                 events,
                 unsetStatus,
                 2,
@@ -476,6 +503,93 @@ describe('pg-pool', () => {
               resNoPromise,
               undefined,
               'No promise is returned'
+            );
+          });
+        });
+      });
+    });
+  });
+
+  describe('pg metrics', () => {
+    let otelTestingMeterProvider;
+    let inMemoryMetricsExporter: InMemoryMetricExporter;
+
+    function initMeterProvider() {
+      otelTestingMeterProvider = new MeterProvider();
+      inMemoryMetricsExporter = new InMemoryMetricExporter(
+        AggregationTemporality.CUMULATIVE
+      );
+      const metricReader = new PeriodicExportingMetricReader({
+        exporter: inMemoryMetricsExporter,
+        exportIntervalMillis: 100,
+        exportTimeoutMillis: 100,
+      });
+
+      otelTestingMeterProvider.addMetricReader(metricReader);
+      instrumentation.setMeterProvider(otelTestingMeterProvider);
+    }
+
+    beforeEach(() => {
+      initMeterProvider();
+      inMemoryMetricsExporter.reset();
+    });
+
+    it('should generate `db.client.connection.count` and `db.client.connection.pending_requests` metrics', async () => {
+      const span = provider.getTracer('test-pg-pool').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        pool.connect((err, client, release) => {
+          if (err) {
+            throw new Error(err.message);
+          }
+          if (!release) {
+            throw new Error('Did not receive release function');
+          }
+          if (!client) {
+            throw new Error('No client received');
+          }
+          assert.ok(client);
+
+          client.query('SELECT NOW()', async (err, ret) => {
+            release();
+            if (err) {
+              throw new Error(err.message);
+            }
+            assert.ok(ret);
+
+            const exportedMetrics = await waitForNumberOfExports(
+              inMemoryMetricsExporter,
+              2
+            );
+            const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
+
+            assert.strictEqual(
+              metrics[0].descriptor.name,
+              'db.client.connection.count'
+            );
+            assert.strictEqual(
+              metrics[0].descriptor.description,
+              'The number of connections that are currently in state described by the state attribute.'
+            );
+            assert.strictEqual(
+              metrics[0].dataPoints[0].attributes[
+                SEMATTRS_CLIENT_CONNECTION_STATE
+              ],
+              'used'
+            );
+            assert.strictEqual(
+              metrics[0].dataPoints[1].attributes[
+                SEMATTRS_CLIENT_CONNECTION_STATE
+              ],
+              'idle'
+            );
+
+            assert.strictEqual(
+              metrics[1].descriptor.name,
+              'db.client.connection.pending_requests'
+            );
+            assert.strictEqual(
+              metrics[1].descriptor.description,
+              'The number of current pending requests for an open connection.'
             );
           });
         });

@@ -22,6 +22,7 @@ import {
   Tracer,
   SpanKind,
   diag,
+  UpDownCounter,
 } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import {
@@ -46,6 +47,11 @@ import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { SpanNames } from './enums/SpanNames';
+
+// TODO: Replace these constants once a new version of the semantic conventions
+// package is created with https://github.com/open-telemetry/opentelemetry-js/pull/4891
+const SEMATTRS_CLIENT_CONNECTION_POOL_NAME = 'db.client.connection.pool.name';
+const SEMATTRS_CLIENT_CONNECTION_STATE = 'db.client.connection.state';
 
 /**
  * Helper function to get a low cardinality span name from whatever info we have
@@ -256,6 +262,50 @@ export function patchCallback(
     span.end();
     cb.call(this, err, res);
   };
+}
+
+export function getPoolName(pool: PgPoolOptionsParams): string {
+  let poolName = '';
+  poolName += pool?.host ? `${pool.host}:` : 'unknown_host';
+  poolName += pool?.port ? `${pool.port}/` : 'unknown_port';
+  poolName += pool?.database ? `${pool.database}` : 'unknown_database';
+
+  return poolName.trim();
+}
+
+export interface poolConnectionsCounter {
+  used: number;
+  idle: number;
+  pending: number;
+}
+
+export function updateCounter(
+  pool: PgPoolExtended,
+  connectionCount: UpDownCounter,
+  connectionPendingRequests: UpDownCounter,
+  latestCounter: poolConnectionsCounter
+): poolConnectionsCounter {
+  const poolName = getPoolName(pool.options);
+  const all = pool.totalCount;
+  const pending = pool.waitingCount;
+  const idle = pool.idleCount;
+  const used = all - idle;
+
+  connectionCount.add(used - latestCounter.used, {
+    [SEMATTRS_CLIENT_CONNECTION_STATE]: 'used',
+    [SEMATTRS_CLIENT_CONNECTION_POOL_NAME]: poolName,
+  });
+
+  connectionCount.add(idle - latestCounter.idle, {
+    [SEMATTRS_CLIENT_CONNECTION_STATE]: 'idle',
+    [SEMATTRS_CLIENT_CONNECTION_POOL_NAME]: poolName,
+  });
+
+  connectionPendingRequests.add(pending - latestCounter.pending, {
+    [SEMATTRS_CLIENT_CONNECTION_POOL_NAME]: poolName,
+  });
+
+  return { used: used, idle: idle, pending: pending };
 }
 
 export function patchCallbackPGPool(
