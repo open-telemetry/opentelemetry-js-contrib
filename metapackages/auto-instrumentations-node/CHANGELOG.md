@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.49.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.49.0...auto-instrumentations-node-v0.49.1) (2024-08-05)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-amqplib bumped from ^0.40.0 to ^0.41.0
+    * @opentelemetry/resource-detector-alibaba-cloud bumped from ^0.28.10 to ^0.29.0
+
+## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.48.0...auto-instrumentations-node-v0.49.0) (2024-07-23)
+
+
+### Features
+
+* **auto-instrumentations-node:** enable auto-instrumentation for KafkaJS ([#2340](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2340)) ([8302464](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/830246460beed0ece9c61852675943bb86161692))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-amqplib bumped from ^0.39.0 to ^0.40.0
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.43.0 to ^0.43.1
+    * @opentelemetry/instrumentation-express bumped from ^0.41.0 to ^0.41.1
+    * @opentelemetry/instrumentation-knex bumped from ^0.38.0 to ^0.39.0
+
 ## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.47.1...auto-instrumentations-node-v0.48.0) (2024-07-03)
 
 

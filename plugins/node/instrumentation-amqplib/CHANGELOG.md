@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.40.0...instrumentation-amqplib-v0.41.0) (2024-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **amqplib:** instrumentation produced high cardinality span names ([#2366](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2366))
+
+### Bug Fixes
+
+* **amqplib:** instrumentation produced high cardinality span names ([#2366](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2366)) ([184b19f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/184b19f191635fa8d433eddcc6ed3f7d94a35d8a))
+
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.39.0...instrumentation-amqplib-v0.40.0) (2024-07-23)
+
+
+### Features
+
+* Add the ability to use span links when consuming a message amqp plugin ([#1972](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1972)) ([5f2c160](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5f2c160ac0fd4f6aa76c227537c34329c6c9dfb2))
+
 ## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.38.0...instrumentation-amqplib-v0.39.0) (2024-07-03)
 
 
