@@ -153,6 +153,17 @@ describe('OpenTelemetryTransportV3', () => {
         someObject: { test: 'value' },
         someArray: [{ test: 'value' }],
         someError: new Error('testError'),
+        someInt8Array: new Int8Array(1),
+        someUint8Array: new Uint8Array(1),
+        someUint8ClampedArray: new Uint8ClampedArray(1),
+        someInt16Array: new Int16Array(1),
+        someUint16Array: new Uint16Array(1),
+        someInt32Array: new Int32Array(1),
+        someUint32Array: new Uint32Array(1),
+        someFloat32Array: new Float32Array(1),
+        someFloat64Array: new Float64Array(1),
+        someBigInt64Array: new BigInt64Array(1),
+        someBigUint64Array: new BigUint64Array(1),
       },
       () => {}
     );
@@ -171,6 +182,32 @@ describe('OpenTelemetryTransportV3', () => {
         '[object Error] { message: "testError", name: "Error", stack: "Error: testError'
       ),
       'Wrong error serialization'
+    );
+    assert.ok(logRecords[0].attributes['someInt8Array'] instanceof Int8Array);
+    assert.ok(logRecords[0].attributes['someUint8Array'] instanceof Uint8Array);
+    assert.ok(
+      logRecords[0].attributes['someUint8ClampedArray'] instanceof
+        Uint8ClampedArray
+    );
+    assert.ok(logRecords[0].attributes['someInt16Array'] instanceof Int16Array);
+    assert.ok(
+      logRecords[0].attributes['someUint16Array'] instanceof Uint16Array
+    );
+    assert.ok(logRecords[0].attributes['someInt32Array'] instanceof Int32Array);
+    assert.ok(
+      logRecords[0].attributes['someUint32Array'] instanceof Uint32Array
+    );
+    assert.ok(
+      logRecords[0].attributes['someFloat32Array'] instanceof Float32Array
+    );
+    assert.ok(
+      logRecords[0].attributes['someFloat64Array'] instanceof Float64Array
+    );
+    assert.ok(
+      logRecords[0].attributes['someBigInt64Array'] instanceof BigInt64Array
+    );
+    assert.ok(
+      logRecords[0].attributes['someBigUint64Array'] instanceof BigUint64Array
     );
   });
 });

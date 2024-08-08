@@ -101,8 +101,7 @@ function serializeAttribute(value: any): AnyValue {
       value instanceof BigUint64Array
     ) {
       return value as any; // TODO: Remove as any, when AnyValue type is updated to support TypedArrays
-    }
-    else {
+    } else {
       try {
         return JSON.stringify(value);
       } catch (err: unknown) {
