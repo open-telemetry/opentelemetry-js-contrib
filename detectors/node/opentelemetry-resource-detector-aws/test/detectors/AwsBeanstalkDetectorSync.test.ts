@@ -16,14 +16,14 @@
 
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { awsBeanstalkDetector, AwsBeanstalkDetectorSync } from '../../src';
+import { awsBeanstalkDetectorSync, AwsBeanstalkDetectorSync } from '../../src';
 import {
   assertEmptyResource,
   assertServiceResource,
 } from '@opentelemetry/contrib-test-utils';
 import { CLOUDPLATFORMVALUES_AWS_ELASTIC_BEANSTALK } from '@opentelemetry/semantic-conventions';
 
-describe('BeanstalkResourceDetector', () => {
+describe('BeanstalkResourceDetectorSync', () => {
   const err = new Error('failed to read config file');
   const data = {
     version_label: 'app-5a56-170119_190650-stage-170119_190650',
@@ -52,7 +52,7 @@ describe('BeanstalkResourceDetector', () => {
       .resolves(JSON.stringify(data));
     sinon.stub(JSON, 'parse').returns(data);
 
-    const resource = await awsBeanstalkDetector.detect();
+    const resource = awsBeanstalkDetectorSync.detect();
     await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(fileStub);
@@ -75,7 +75,7 @@ describe('BeanstalkResourceDetector', () => {
       .resolves(JSON.stringify(noisyData));
     sinon.stub(JSON, 'parse').returns(noisyData);
 
-    const resource = await awsBeanstalkDetector.detect();
+    const resource = awsBeanstalkDetectorSync.detect();
     await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(fileStub);
@@ -97,7 +97,7 @@ describe('BeanstalkResourceDetector', () => {
       .stub(AwsBeanstalkDetectorSync, 'readFileAsync' as any)
       .rejects(err);
 
-    const resource = await awsBeanstalkDetector.detect();
+    const resource = awsBeanstalkDetectorSync.detect();
     await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(fileStub);
@@ -114,7 +114,7 @@ describe('BeanstalkResourceDetector', () => {
       .stub(AwsBeanstalkDetectorSync, 'readFileAsync' as any)
       .resolves(JSON.stringify(data));
 
-    const resource = await awsBeanstalkDetector.detect();
+    const resource = awsBeanstalkDetectorSync.detect();
     await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(fileStub);
