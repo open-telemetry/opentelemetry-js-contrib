@@ -82,21 +82,35 @@ export function emitLogRecord(
 
 // Serialize objects and errors
 function serializeAttribute(value: any): AnyValue {
-  if (
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    typeof value === 'boolean'
-  ) {
-    return value;
-  }
-  if (value instanceof Error) {
-    return `[object Error] { message: "${value.message}", name: "${value.name}", stack: "${value.stack}"}`;
-  } else {
-    try {
-      return JSON.stringify(value);
-    } catch (err: unknown) {
-      // Failed to serialize, return string cast
-      return String(value);
+  if (typeof value === 'object') {
+    if (value instanceof Error) {
+      return `[object Error] { message: "${value.message}", name: "${value.name}", stack: "${value.stack}"}`;
+    }
+    // TypedArrays
+    else if (
+      value instanceof Int8Array ||
+      value instanceof Uint8Array ||
+      value instanceof Uint8ClampedArray ||
+      value instanceof Int16Array ||
+      value instanceof Uint16Array ||
+      value instanceof Int32Array ||
+      value instanceof Uint32Array ||
+      value instanceof Float32Array ||
+      value instanceof Float64Array ||
+      value instanceof BigInt64Array ||
+      value instanceof BigUint64Array
+    ) {
+      return value as any; // TODO: Remove as any, when AnyValue type is updated to support TypedArrays
+    }
+    else {
+      try {
+        return JSON.stringify(value);
+      } catch (err: unknown) {
+        // Failed to serialize, return string cast
+        return String(value);
+      }
     }
   }
+  // Return scalar and undefined values without serialization
+  return value;
 }
