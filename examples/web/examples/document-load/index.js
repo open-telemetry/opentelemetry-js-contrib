@@ -1,15 +1,20 @@
 import { context, trace } from '@opentelemetry/api';
 import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { events } from '@opentelemetry/api-events';
+import { EventLoggerProvider } from '@opentelemetry/sdk-events';
+import { LoggerProvider,SimpleLogRecordProcessor,ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import { CompositePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
 import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { PageViewEventInstrumentation } from "@opentelemetry/instrumentation-page-view";
 
 const provider = new WebTracerProvider({
   resource: new Resource({
@@ -17,8 +22,15 @@ const provider = new WebTracerProvider({
   }),
 });
 
+const loggerProvider = new LoggerProvider({resource: new Resource({[SEMRESATTRS_SERVICE_NAME]: 'web-service-dl'})});
+
 provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter()));
+
+loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()));
+loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(new OTLPLogExporter()));
+const eventLoggerProvider = new EventLoggerProvider(loggerProvider);
+events.setGlobalEventLoggerProvider(eventLoggerProvider);
 
 provider.register({
   contextManager: new ZoneContextManager(),
@@ -38,6 +50,7 @@ registerInstrumentations({
         'http://localhost:8090',
       ],
     }),
+    new PageViewEventInstrumentation({enabled:false})
   ],
   tracerProvider: provider,
 });
