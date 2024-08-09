@@ -89,8 +89,7 @@ describe('ioredis', () => {
   const provider = new NodeTracerProvider();
   let ioredis: typeof ioredisTypes.default;
   let instrumentation: IORedisInstrumentation;
-  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
-  const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
+  const shouldTest = process.env.RUN_REDIS_TESTS;
 
   let contextManager: AsyncHooksContextManager;
   beforeEach(() => {
@@ -111,20 +110,10 @@ describe('ioredis', () => {
       this.skip();
     }
 
-    if (shouldTestLocal) {
-      testUtils.startDocker('redis');
-    }
-
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     instrumentation = new IORedisInstrumentation();
     instrumentation.setTracerProvider(provider);
     ioredis = require('ioredis');
-  });
-
-  after(() => {
-    if (shouldTestLocal) {
-      testUtils.cleanUpDocker('redis');
-    }
   });
 
   it('should have correct module name', () => {

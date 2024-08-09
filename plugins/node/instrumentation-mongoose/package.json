@@ -6,9 +6,12 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "docker:start": "docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=127.0.0.1 -p 27017:27017 --rm mongo",
     "test": "ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
+    "test-services:start": "cd ../../.. && npm run test-services:start mongo",
+    "test-services:stop": "cd ../../.. && npm run test-services:stop mongo",
+    "test:with-test-services": "NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../../test/test-services.env npm test",
+    "test-all-versions:with-test-services": "NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../../test/test-services.env npm run test-all-versions",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
