@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.5.2...resource-detector-aws-v1.6.0) (2024-08-09)
+
+
+### Features
+
+* **detector-aws:** add sync version for all detectors ([#2376](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2376)) ([167dced](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/167dced09de0d2104561542b4f83047fa656505f))
+
 ## [1.5.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.5.1...resource-detector-aws-v1.5.2) (2024-07-03)
 
 
