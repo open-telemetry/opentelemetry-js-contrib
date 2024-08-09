@@ -121,6 +121,10 @@ describe('ExpressInstrumentation', () => {
             requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
             'request_handler'
           );
+          assert.strictEqual(
+            requestHandlerSpan?.['kind'],
+            SpanKind.SERVER
+          );          
           assert.strictEqual(rpcMetadata?.route, '/toto/:id');
         }
       );
