@@ -199,7 +199,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
 
   it('instrumenting update operation [deprecated]', async () => {
     // @ts-ignore - v7 removed `update` method
-    // https://mongoosejs.com/docs/migrating_to_7.html#removed-remove
+    // https://mongoosejs.com/docs/migrating_to_7.html#removed-update
     await User.update(
       { email: 'john.doe@example.com' },
       { email: 'john.doe2@example.com' }
