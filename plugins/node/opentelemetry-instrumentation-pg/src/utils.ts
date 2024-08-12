@@ -266,8 +266,8 @@ export function patchCallback(
 
 export function getPoolName(pool: PgPoolOptionsParams): string {
   let poolName = '';
-  poolName += pool?.host ? `${pool.host}:` : 'unknown_host';
-  poolName += pool?.port ? `${pool.port}/` : 'unknown_port';
+  poolName += (pool?.host ? `${pool.host}` : 'unknown_host') + ':';
+  poolName += (pool?.port ? `${pool.port}` : 'unknown_port') + '/';
   poolName += pool?.database ? `${pool.database}` : 'unknown_database';
 
   return poolName.trim();
