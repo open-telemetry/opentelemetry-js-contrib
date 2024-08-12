@@ -14,4 +14,8 @@
  * limitations under the License.
  */
 
-export * from './detectors';
+export {
+  azureAppServiceDetector,
+  azureFunctionsDetector,
+  azureVmDetector,
+} from './detectors';
