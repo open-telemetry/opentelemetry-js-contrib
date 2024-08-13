@@ -51,10 +51,13 @@ import {
   hrTimeDuration,
   hrTimeToMilliseconds,
 } from '@opentelemetry/core';
-import { DBSYSTEMVALUES_POSTGRESQL, SEMATTRS_DB_SYSTEM } from '@opentelemetry/semantic-conventions';
+import {
+  DBSYSTEMVALUES_POSTGRESQL,
+  SEMATTRS_DB_SYSTEM,
+} from '@opentelemetry/semantic-conventions';
 
 // TODO: Replace these constants once a new version of the semantic conventions
-// package is created with https://github.com/open-telemetry/opentelemetry-js/pull/4891
+// package is created
 const SEMATTRS_DB_NAMESPACE = 'db.namespace';
 const SEMATTRS_ERROR_TYPE = 'error.type';
 const SEMATTRS_SERVER_PORT = 'server.port';
@@ -204,14 +207,10 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         metricsAttributes[key] = attributes[key];
       }
     });
-    console.log("METRICS ATTR: ", metricsAttributes);
 
     const durationSeconds =
       hrTimeToMilliseconds(hrTimeDuration(startTime, hrTime())) / 1000;
-    this._operationDuration.record(
-      durationSeconds,
-      metricsAttributes
-    );
+    this._operationDuration.record(durationSeconds, metricsAttributes);
   }
 
   private _getClientQueryPatch() {
@@ -249,14 +248,14 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           : undefined;
 
         const attributes: Attributes = {
-            [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
-            [SEMATTRS_DB_NAMESPACE]: this.database,
-            [SEMATTRS_SERVER_PORT]: this.connectionParameters.port,
-            [SEMATTRS_SERVER_ADDRESS]: this.connectionParameters.host,
-          };
-          this.on('end', () => {
-            plugin.recordOperationDuration(attributes, startTime);
-          });
+          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+          [SEMATTRS_DB_NAMESPACE]: this.database,
+          [SEMATTRS_SERVER_PORT]: this.connectionParameters.port,
+          [SEMATTRS_SERVER_ADDRESS]: this.connectionParameters.host,
+        };
+        this.on('end', () => {
+          plugin.recordOperationDuration(attributes, startTime);
+        });
 
         const instrumentationConfig = plugin.getConfig();
 
@@ -289,7 +288,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               instrumentationConfig,
               span,
               args[args.length - 1] as PostgresCallback, // nb: not type safe.
-              attributes,
+              attributes
             );
 
             // If a parent span exists, bind the callback

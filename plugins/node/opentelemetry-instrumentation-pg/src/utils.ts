@@ -238,7 +238,7 @@ export function patchCallback(
   instrumentationConfig: PgInstrumentationConfig,
   span: Span,
   cb: PostgresCallback,
-  attributes: Attributes,
+  attributes: Attributes
 ): PostgresCallback {
   return function patchedCallback(
     this: PgClientExtended,
