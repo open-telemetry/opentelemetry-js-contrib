@@ -84,4 +84,9 @@ export interface UndiciInstrumentationConfig<
     requestHeaders?: string[];
     responseHeaders?: string[];
   };
+  /** Block the following HTTP headers to be in span attributes. */
+  blockHeadersToSpanAttributes?: {
+    requestHeaders?: string[];
+    responseHeaders?: string[];
+  };
 }

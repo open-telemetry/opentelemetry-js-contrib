@@ -290,7 +290,6 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
   // remote address and port so we can populate some `network.*` attributes into the span
   private onRequestHeaders({ request, socket }: RequestHeadersMessage): void {
     const record = this._recordFromReq.get(request as UndiciRequest);
-
     if (!record) {
       return;
     }
@@ -303,33 +302,45 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       [SemanticAttributes.NETWORK_PEER_PORT]: remotePort,
     };
 
-    // After hooks have been processed (which may modify request headers)
-    // we can collect the headers based on the configuration
-    if (config.headersToSpanAttributes?.requestHeaders) {
-      const headersToAttribs = new Set(
-        config.headersToSpanAttributes.requestHeaders.map(n => n.toLowerCase())
-      );
+    const headersToAdd = config.headersToSpanAttributes?.requestHeaders;
+    const headersToBlock = config.blockHeadersToSpanAttributes?.requestHeaders;
 
+    if (headersToAdd || headersToBlock) {
       // headers could be in form
       // ['name: value', ...] for v5
       // ['name', 'value', ...] for v6
       const rawHeaders = Array.isArray(request.headers)
         ? request.headers
-        : request.headers.split('\r\n');
-      rawHeaders.forEach((h, idx) => {
+        // last header also ends with `\r\n` so array ends with empty item
+        : request.headers.split('\r\n').slice(0, -1);
+
+      for (let idx = 0; idx < rawHeaders.length; idx++) {
+        const h = rawHeaders[idx];
         const sepIndex = h.indexOf(':');
         const hasSeparator = sepIndex !== -1;
-        const name = (
-          hasSeparator ? h.substring(0, sepIndex) : h
-        ).toLowerCase();
-        const value = hasSeparator
-          ? h.substring(sepIndex + 1)
-          : rawHeaders[idx + 1];
+        let name: string, value: string;
 
-        if (headersToAttribs.has(name)) {
+        if (hasSeparator) {
+          name = h.substring(0, sepIndex);
+          value = h.substring(sepIndex + 1);
+        } else {
+          name = h;
+          value = rawHeaders[idx + 1];
+          idx = idx + 1; // Skip the value in next loop
+        }
+
+        // Do not add blocked headers
+        if (
+          headersToBlock &&
+          headersToBlock.find(n => n.toLowerCase() === name)
+        ) {
+          continue;
+        }
+
+        if (!headersToAdd || headersToAdd.find(n => n.toLowerCase() === name)) {
           spanAttributes[`http.request.header.${name}`] = value.trim();
         }
-      });
+      }
     }
 
     span.setAttributes(spanAttributes);
@@ -362,19 +373,27 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       true
     );
 
-    const headersToAttribs = new Set();
-
-    if (config.headersToSpanAttributes?.responseHeaders) {
-      config.headersToSpanAttributes?.responseHeaders.forEach(name =>
-        headersToAttribs.add(name.toLowerCase())
-      );
-    }
+    const headersToAdd = config.headersToSpanAttributes?.responseHeaders;
+    const headersToBlock = config.blockHeadersToSpanAttributes?.responseHeaders;
 
     for (let idx = 0; idx < response.headers.length; idx = idx + 2) {
       const name = response.headers[idx].toString().toLowerCase();
       const value = response.headers[idx + 1];
 
-      if (headersToAttribs.has(name)) {
+      // Skip if present in the block list
+      if (
+        headersToBlock &&
+        headersToBlock.find(n => n.toLowerCase() === name)
+      ) {
+        continue;
+      }
+
+      if (
+        // Header is in the add list
+        (headersToAdd && headersToAdd.find(n => n.toLowerCase() === name)) ||
+        // Only block list is defined
+        (!headersToAdd && headersToBlock)
+      ) {
         spanAttributes[`http.response.header.${name}`] = value.toString();
       }
 

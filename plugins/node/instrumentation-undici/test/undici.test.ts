@@ -835,5 +835,127 @@ describe('UndiciInstrumentation `undici` tests', function () {
         'user-agent is undefined'
       );
     });
+
+    it('should block headers if present in `blockHeadersToSpanAttributes`, overriding `headersToSpanAttributes`', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      instrumentation.setConfig({
+        ...instrumentation.getConfig(),
+        blockHeadersToSpanAttributes: {
+          requestHeaders: ['foo-client'],
+          responseHeaders: ['foo-server'],
+        },
+      });
+
+      // Do some requests
+      const headers = {
+        'foo-client': 'bar',
+        'bar-client': 'baz',
+      };
+
+      const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+      const queryResponse = await undici.request(queryRequestUrl, { headers });
+      await consumeResponseBody(queryResponse.body);
+
+      assert.ok(
+        queryResponse.headers['propagation-error'] == null,
+        'propagation is set for instrumented requests'
+      );
+
+      spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(spans.length, 1);
+      assertSpan(span, {
+        hostname: 'localhost',
+        httpStatusCode: queryResponse.statusCode,
+        httpMethod: 'GET',
+        path: '/',
+        query: '?query=test',
+        reqHeaders: headers,
+        resHeaders: queryResponse.headers,
+      });
+      assert.equal(
+        'http.request.header.foo-client' in span.attributes,
+        false,
+        'request headers in `blockHeadersToSpanAttributes` are blocked'
+      );
+      assert.equal(
+        'http.request.header.bar-client' in span.attributes,
+        false,
+        'request headers not in `headersToSpanAttributes` and `blockHeadersToSpanAttributes` are blocked'
+      );
+      assert.equal(
+        'http.response.header.foo-server' in span.attributes,
+        false,
+        'response headers in `blockHeadersToSpanAttributes` are blocked'
+      );
+    });
+
+    it('should block only headers present in `blockHeadersToSpanAttributes`, if `headersToSpanAttributes` is not defined', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      // Set a configuration with only the block list
+      const config =({
+        ...instrumentation.getConfig(),
+        blockHeadersToSpanAttributes: {
+          requestHeaders: ['foo-client'],
+          responseHeaders: ['foo-server'],
+        },
+      });
+      delete config.headersToSpanAttributes;
+      instrumentation.setConfig(config);
+
+      // Do some requests
+      const headers = {
+        'foo-client': 'bar',
+        'bar-client': 'baz'
+      };
+
+      const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+      const queryResponse = await undici.request(queryRequestUrl, { headers });
+      await consumeResponseBody(queryResponse.body);
+
+      assert.ok(
+        queryResponse.headers['propagation-error'] == null,
+        'propagation is set for instrumented requests'
+      );
+
+      spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(spans.length, 1);
+      assertSpan(span, {
+        hostname: 'localhost',
+        httpStatusCode: queryResponse.statusCode,
+        httpMethod: 'GET',
+        path: '/',
+        query: '?query=test',
+        reqHeaders: headers,
+        resHeaders: queryResponse.headers,
+      });
+      assert.equal(
+        'http.request.header.foo-client' in span.attributes,
+        false,
+        'request headers in `blockHeadersToSpanAttributes` are blocked'
+      );
+      assert.equal(
+        'http.request.header.bar-client' in span.attributes,
+        true,
+        'request headers not in `blockHeadersToSpanAttributes` are captured'
+      );
+      assert.equal(
+        'http.response.header.foo-server' in span.attributes,
+        false,
+        'response headers in `blockHeadersToSpanAttributes` are blocked'
+      );
+      assert.equal(
+        'http.response.header.content-type' in span.attributes,
+        true,
+        'response headers not in `blockHeadersToSpanAttributes` are captured'
+      );
+    });
   });
 });

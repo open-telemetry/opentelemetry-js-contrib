@@ -424,5 +424,150 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         },
       });
     });
+
+    it('should block headers if present in `blockHeadersToSpanAttributes`, overriding `headersToSpanAttributes`', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      // Set configuration
+      instrumentation.setConfig({
+        enabled: true,
+        requestHook: (span, req) => {
+          // We should mind the type of headers
+          if (typeof req.headers === 'string') {
+            req.headers += 'x-requested-with: undici\r\n';
+          } else {
+            req.headers.push('x-requested-with', 'undici');
+          }
+        },
+        headersToSpanAttributes: {
+          requestHeaders: ['foo-client', 'x-requested-with'],
+          responseHeaders: ['foo-server'],
+        },
+        blockHeadersToSpanAttributes: {
+          requestHeaders: ['foo-client'],
+          responseHeaders: ['foo-server'],
+        },
+      });
+
+      // Do some requests
+      const reqInit = {
+        headers: new Headers({
+          'user-agent': 'custom',
+          'foo-client': 'bar',
+          'bar-client': 'baz',
+        }),
+      };
+      const queryResponse = await fetch(
+        `${protocol}://${hostname}:${mockServer.port}/?query=test`,
+        reqInit
+      );
+      assert.ok(
+        queryResponse.headers.get('propagation-error') == null,
+        'propagation is set for instrumented requests'
+      );
+
+      spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(spans.length, 1);
+      assertSpan(span, {
+        hostname: 'localhost',
+        httpStatusCode: queryResponse.status,
+        httpMethod: 'GET',
+        path: '/',
+        query: '?query=test',
+        reqHeaders: reqInit.headers,
+        resHeaders: queryResponse.headers,
+      });
+      assert.equal(
+        'http.request.header.foo-client' in span.attributes,
+        false,
+        'request headers in `blockHeadersToSpanAttributes` are blocked'
+      );
+      assert.equal(
+        'http.request.header.bar-client' in span.attributes,
+        false,
+        'request headers not in `headersToSpanAttributes` and `blockHeadersToSpanAttributes` are blocked'
+      );
+      assert.equal(
+        'http.response.header.foo-server' in span.attributes,
+        false,
+        'response headers in `blockHeadersToSpanAttributes` are blocked'
+      );
+    });
+
+    it('should block only headers present in `blockHeadersToSpanAttributes`, if `headersToSpanAttributes` is not defined', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      // Set configuration
+      instrumentation.setConfig({
+        enabled: true,
+        requestHook: (span, req) => {
+          // We should mind the type of headers
+          if (typeof req.headers === 'string') {
+            req.headers += 'x-requested-with: undici\r\n';
+          } else {
+            req.headers.push('x-requested-with', 'undici');
+          }
+        },
+        blockHeadersToSpanAttributes: {
+          requestHeaders: ['foo-client'],
+          responseHeaders: ['foo-server'],
+        },
+      });
+
+      // Do some requests
+      const reqInit = {
+        headers: new Headers({
+          'user-agent': 'custom',
+          'foo-client': 'bar',
+          'bar-client': 'baz',
+        }),
+      };
+      const queryResponse = await fetch(
+        `${protocol}://${hostname}:${mockServer.port}/?query=test`,
+        reqInit
+      );
+      assert.ok(
+        queryResponse.headers.get('propagation-error') == null,
+        'propagation is set for instrumented requests'
+      );
+
+      spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(spans.length, 1);
+      assertSpan(span, {
+        hostname: 'localhost',
+        httpStatusCode: queryResponse.status,
+        httpMethod: 'GET',
+        path: '/',
+        query: '?query=test',
+        reqHeaders: reqInit.headers,
+        resHeaders: queryResponse.headers,
+      });
+      assert.equal(
+        'http.request.header.foo-client' in span.attributes,
+        false,
+        'request headers in `blockHeadersToSpanAttributes` are blocked'
+      );
+      assert.equal(
+        'http.request.header.bar-client' in span.attributes,
+        true,
+        'request headers not in `blockHeadersToSpanAttributes` are captured'
+      );
+      assert.equal(
+        'http.response.header.foo-server' in span.attributes,
+        false,
+        'response headers in `blockHeadersToSpanAttributes` are blocked'
+      );
+      assert.equal(
+        'http.response.header.content-type' in span.attributes,
+        true,
+        'response headers not in `blockHeadersToSpanAttributes` are captured'
+      );
+    });
   });
 });
