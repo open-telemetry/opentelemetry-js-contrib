@@ -311,8 +311,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       // ['name', 'value', ...] for v6
       const rawHeaders = Array.isArray(request.headers)
         ? request.headers
-        // last header also ends with `\r\n` so array ends with empty item
-        : request.headers.split('\r\n').slice(0, -1);
+        : // last header also ends with `\r\n` so array ends with empty item
+          request.headers.split('\r\n').slice(0, -1);
 
       for (let idx = 0; idx < rawHeaders.length; idx++) {
         const h = rawHeaders[idx];

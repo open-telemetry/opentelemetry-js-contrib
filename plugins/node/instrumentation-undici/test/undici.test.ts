@@ -898,20 +898,20 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.strictEqual(spans.length, 0);
 
       // Set a configuration with only the block list
-      const config =({
+      const config = {
         ...instrumentation.getConfig(),
         blockHeadersToSpanAttributes: {
           requestHeaders: ['foo-client'],
           responseHeaders: ['foo-server'],
         },
-      });
+      };
       delete config.headersToSpanAttributes;
       instrumentation.setConfig(config);
 
       // Do some requests
       const headers = {
         'foo-client': 'bar',
-        'bar-client': 'baz'
+        'bar-client': 'baz',
       };
 
       const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
