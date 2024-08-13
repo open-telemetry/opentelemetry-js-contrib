@@ -330,8 +330,3 @@ export type ObjectWithText = {
   text: string;
   [k: string]: unknown;
 };
-
-export interface operationInfo {
-  collectionName: string;
-  name: string;
-}
