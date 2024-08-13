@@ -452,12 +452,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
           return originalPoolEnd.call(this, callback as any);
         }
-        plugin._connectionsCounter = utils.updateCounter(
-          this,
-          plugin._connectionsCount,
-          plugin._connectionPendingRequests,
-          plugin._connectionsCounter
-        );
         return originalPoolEnd.call(this, callback as any);
       };
     };
