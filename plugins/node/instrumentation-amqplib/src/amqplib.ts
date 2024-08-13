@@ -655,21 +655,18 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
   ) {
     const normalizedExchange = normalizeExchange(exchange);
 
-    const span = self.tracer.startSpan(
-      `${normalizedExchange} -> ${routingKey} send`,
-      {
-        kind: SpanKind.PRODUCER,
-        attributes: {
-          ...channel.connection[CONNECTION_ATTRIBUTES],
-          [SEMATTRS_MESSAGING_DESTINATION]: exchange,
-          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
-            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
-          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
-          [SEMATTRS_MESSAGING_MESSAGE_ID]: options?.messageId,
-          [SEMATTRS_MESSAGING_CONVERSATION_ID]: options?.correlationId,
-        },
-      }
-    );
+    const span = self.tracer.startSpan(`publish ${normalizedExchange}`, {
+      kind: SpanKind.PRODUCER,
+      attributes: {
+        ...channel.connection[CONNECTION_ATTRIBUTES],
+        [SEMATTRS_MESSAGING_DESTINATION]: exchange,
+        [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+          MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+        [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
+        [SEMATTRS_MESSAGING_MESSAGE_ID]: options?.messageId,
+        [SEMATTRS_MESSAGING_CONVERSATION_ID]: options?.correlationId,
+      },
+    });
     const modifiedOptions = options ?? {};
     modifiedOptions.headers = modifiedOptions.headers ?? {};
 

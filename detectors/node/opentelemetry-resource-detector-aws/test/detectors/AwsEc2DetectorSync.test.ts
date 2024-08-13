@@ -17,11 +17,12 @@
 import * as nock from 'nock';
 import * as assert from 'assert';
 
-import { awsEc2Detector, awsEc2DetectorSync } from '../../src';
 import {
   assertCloudResource,
   assertHostResource,
 } from '@opentelemetry/contrib-test-utils';
+
+import { awsEc2DetectorSync } from '../../src';
 
 const AWS_HOST = 'http://' + awsEc2DetectorSync.AWS_IDMS_ENDPOINT;
 const AWS_TOKEN_PATH = awsEc2DetectorSync.AWS_INSTANCE_TOKEN_DOCUMENT_PATH;
@@ -41,7 +42,7 @@ const mockedIdentityResponse = {
 };
 const mockedHostResponse = 'my-hostname';
 
-describe('awsEc2Detector', () => {
+describe('awsEc2DetectorSync', () => {
   beforeEach(() => {
     nock.disableNetConnect();
     nock.cleanAll();
@@ -65,7 +66,7 @@ describe('awsEc2Detector', () => {
         .matchHeader(AWS_METADATA_TOKEN_HEADER, mockedTokenResponse)
         .reply(200, () => mockedHostResponse);
 
-      const resource = await awsEc2Detector.detect();
+      const resource = awsEc2DetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -100,7 +101,7 @@ describe('awsEc2Detector', () => {
         .matchHeader(AWS_METADATA_TOKEN_HEADER, mockedTokenResponse)
         .reply(404, () => new Error());
 
-      const resource = await awsEc2Detector.detect();
+      const resource = awsEc2DetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -122,7 +123,7 @@ describe('awsEc2Detector', () => {
         .delayConnection(5000)
         .reply(200, () => mockedHostResponse);
 
-      const resource = await awsEc2Detector.detect();
+      const resource = awsEc2DetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -140,7 +141,7 @@ describe('awsEc2Detector', () => {
         .matchHeader(AWS_METADATA_TOKEN_HEADER, mockedTokenResponse)
         .replyWithError(expectedError.message);
 
-      const resource = await awsEc2Detector.detect();
+      const resource = awsEc2DetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
