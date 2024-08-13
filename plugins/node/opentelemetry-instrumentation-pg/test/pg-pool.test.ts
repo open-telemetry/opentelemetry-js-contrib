@@ -577,10 +577,18 @@ describe('pg-pool', () => {
               'used'
             );
             assert.strictEqual(
+              metrics[0].dataPoints[0].value,
+              1
+            );
+            assert.strictEqual(
               metrics[0].dataPoints[1].attributes[
                 SEMATTRS_CLIENT_CONNECTION_STATE
               ],
               'idle'
+            );
+            assert.strictEqual(
+              metrics[0].dataPoints[1].value,
+              0
             );
 
             assert.strictEqual(
@@ -590,6 +598,10 @@ describe('pg-pool', () => {
             assert.strictEqual(
               metrics[1].descriptor.description,
               'The number of current pending requests for an open connection.'
+            );
+            assert.strictEqual(
+              metrics[1].dataPoints[0].value,
+              0
             );
           });
         });
