@@ -34,23 +34,56 @@ import {
   SEMATTRS_DB_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 
-const contextCaptureFunctions = [
-  'remove',
+const contextCaptureFunctionsCommon = [
   'deleteOne',
   'deleteMany',
   'find',
   'findOne',
   'estimatedDocumentCount',
   'countDocuments',
-  'count',
   'distinct',
   'where',
   '$where',
   'findOneAndUpdate',
   'findOneAndDelete',
   'findOneAndReplace',
-  'findOneAndRemove',
 ];
+
+const contextCaptureFunctions6 = [
+  'remove',
+  'count',
+  'findOneAndRemove',
+  ...contextCaptureFunctionsCommon,
+];
+const contextCaptureFunctions7 = [
+  'count',
+  'findOneAndRemove',
+  ...contextCaptureFunctionsCommon,
+];
+const contextCaptureFunctions8 = [...contextCaptureFunctionsCommon];
+
+function getContextCaptureFunctions(
+  moduleVersion: string | undefined
+): string[] {
+  /* istanbul ignore next */
+  if (!moduleVersion) {
+    return contextCaptureFunctionsCommon;
+  } else if (moduleVersion.startsWith('6.') || moduleVersion.startsWith('5.')) {
+    return contextCaptureFunctions6;
+  } else if (moduleVersion.startsWith('7.')) {
+    return contextCaptureFunctions7;
+  } else {
+    return contextCaptureFunctions8;
+  }
+}
+
+function instrumentRemove(moduleVersion: string | undefined): boolean {
+  return (
+    (moduleVersion &&
+      (moduleVersion.startsWith('5.') || moduleVersion.startsWith('6.'))) ||
+    false
+  );
+}
 
 // when mongoose functions are called, we store the original call context
 // and then set it as the parent for the spans created by Query/Aggregate exec()
@@ -65,7 +98,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
   protected init(): InstrumentationModuleDefinition {
     const module = new InstrumentationNodeModuleDefinition(
       'mongoose',
-      ['>=5.9.7 <7'],
+      ['>=5.9.7 <9'],
       this.patch.bind(this),
       this.unpatch.bind(this)
     );
@@ -87,11 +120,14 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     // so we need to apply the same logic after instrumenting the save function.
     moduleExports.Model.prototype.$save = moduleExports.Model.prototype.save;
 
-    this._wrap(
-      moduleExports.Model.prototype,
-      'remove',
-      this.patchOnModelMethods('remove', moduleVersion)
-    );
+    if (instrumentRemove(moduleVersion)) {
+      this._wrap(
+        moduleExports.Model.prototype,
+        'remove',
+        this.patchOnModelMethods('remove', moduleVersion)
+      );
+    }
+
     this._wrap(
       moduleExports.Query.prototype,
       'exec',
@@ -102,6 +138,8 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
       'exec',
       this.patchAggregateExec(moduleVersion)
     );
+
+    const contextCaptureFunctions = getContextCaptureFunctions(moduleVersion);
 
     contextCaptureFunctions.forEach((funcName: string) => {
       this._wrap(
@@ -115,11 +153,20 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     return moduleExports;
   }
 
-  private unpatch(moduleExports: typeof mongoose): void {
+  private unpatch(
+    moduleExports: typeof mongoose,
+    moduleVersion: string | undefined
+  ): void {
+    const contextCaptureFunctions = getContextCaptureFunctions(moduleVersion);
+
     this._unwrap(moduleExports.Model.prototype, 'save');
     // revert the patch for $save which we applied by aliasing it to patched `save`
     moduleExports.Model.prototype.$save = moduleExports.Model.prototype.save;
-    this._unwrap(moduleExports.Model.prototype, 'remove');
+
+    if (instrumentRemove(moduleVersion)) {
+      this._unwrap(moduleExports.Model.prototype, 'remove');
+    }
+
     this._unwrap(moduleExports.Query.prototype, 'exec');
     this._unwrap(moduleExports.Aggregate.prototype, 'exec');
 
