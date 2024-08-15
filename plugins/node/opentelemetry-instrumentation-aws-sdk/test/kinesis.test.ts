@@ -19,8 +19,10 @@ import {
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
 import { AwsInstrumentation } from '../src';
+import { AttributeNames } from '../src/enums';
 registerInstrumentationTesting(new AwsInstrumentation());
 
+import { Kinesis } from '@aws-sdk/client-kinesis';
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 import * as nock from 'nock';
@@ -28,11 +30,10 @@ import * as nock from 'nock';
 import { SpanKind } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'expect';
-import { _AWS_KINESIS_STREAM_NAME } from '../src/utils';
 
 const region = 'us-east-1';
 
-describe('Kinesis', () => {
+describe('Kinesis - v2', () => {
   let kinesis: AWS.Kinesis;
   beforeEach(() => {
     AWS.config.credentials = {
@@ -44,7 +45,7 @@ describe('Kinesis', () => {
     };
   });
 
-  describe('CreateStream', () => {
+  describe('DescribeStream', () => {
     it('adds Stream Name', async () => {
       kinesis = new AWS.Kinesis({ region: region });
       const dummyStreamName = 'dummy-stream-name';
@@ -54,10 +55,9 @@ describe('Kinesis', () => {
         .reply(200, 'null');
 
       await kinesis
-        .createStream(
+        .describeStream(
           {
             StreamName: dummyStreamName,
-            ShardCount: 3,
           },
           (err: AWSError) => {
             expect(err).toBeFalsy();
@@ -66,15 +66,55 @@ describe('Kinesis', () => {
         .promise();
 
       const testSpans = getTestSpans();
-      const creationSpans = testSpans.filter((s: ReadableSpan) => {
-        return s.name === 'Kinesis.CreateStream';
+      const describeSpans = testSpans.filter((s: ReadableSpan) => {
+        return s.name === 'Kinesis.DescribeStream';
       });
-      expect(creationSpans.length).toBe(1);
-      const creationSpan = creationSpans[0];
-      expect(creationSpan.attributes[_AWS_KINESIS_STREAM_NAME]).toBe(
-        dummyStreamName
+      expect(describeSpans.length).toBe(1);
+      const describeSpan = describeSpans[0];
+      expect(
+        describeSpan.attributes[AttributeNames.AWS_KINESIS_STREAM_NAME]
+      ).toBe(dummyStreamName);
+      expect(describeSpan.kind).toBe(SpanKind.CLIENT);
+    });
+  });
+});
+
+describe('Kinesis - v3', () => {
+  let kinesis: Kinesis;
+  beforeEach(() => {
+    kinesis = new Kinesis({
+      region: region,
+      credentials: {
+        accessKeyId: 'abcde',
+        secretAccessKey: 'abcde',
+      },
+    });
+  });
+
+  describe('DescribeStream', () => {
+    it('adds Stream Name', async () => {
+      const dummyStreamName = 'dummy-stream-name';
+
+      nock(`https://kinesis.${region}.amazonaws.com/`).post('/').reply(200, {});
+
+      await kinesis
+        .describeStream({
+          StreamName: dummyStreamName,
+        })
+        .catch((err: any) => {});
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const describeSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === 'Kinesis.DescribeStream';
+        }
       );
-      expect(creationSpan.kind).toBe(SpanKind.CLIENT);
+      expect(describeSpans.length).toBe(1);
+      const describeSpan = describeSpans[0];
+      expect(
+        describeSpan.attributes[AttributeNames.AWS_KINESIS_STREAM_NAME]
+      ).toBe(dummyStreamName);
+      expect(describeSpan.kind).toBe(SpanKind.CLIENT);
     });
   });
 });

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NormalizedRequest } from './types';
 import { Attributes, Context, context } from '@opentelemetry/api';
 import {
   SEMATTRS_RPC_METHOD,
@@ -21,12 +20,7 @@ import {
   SEMATTRS_RPC_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from './enums';
-
-// TODO: Add these semantic attributes to:
-// - https://github.com/open-telemetry/opentelemetry-js/blob/main/packages/opentelemetry-semantic-conventions/src/trace/SemanticAttributes.ts
-// For S3, see specification: https://github.com/open-telemetry/semantic-conventions/blob/main/docs/object-stores/s3.md
-export const _AWS_S3_BUCKET = 'aws.s3.bucket';
-export const _AWS_KINESIS_STREAM_NAME = 'aws.kinesis.stream.name';
+import { NormalizedRequest } from './types';
 
 const toPascalCase = (str: string): string =>
   typeof str === 'string' ? str.charAt(0).toUpperCase() + str.slice(1) : str;

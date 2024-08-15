@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Attributes, Span, SpanKind, Tracer } from '@opentelemetry/api';
-import {
-  AwsSdkInstrumentationConfig,
-  NormalizedRequest,
-  NormalizedResponse,
-} from '../types';
-import { _AWS_S3_BUCKET } from '../utils';
+import { Attributes, SpanKind } from '@opentelemetry/api';
+import { AttributeNames } from '../enums';
+import { AwsSdkInstrumentationConfig, NormalizedRequest } from '../types';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 
 export class S3ServiceExtension implements ServiceExtension {
@@ -27,15 +23,12 @@ export class S3ServiceExtension implements ServiceExtension {
     request: NormalizedRequest,
     _config: AwsSdkInstrumentationConfig
   ): RequestMetadata {
-    const bucketName = request.commandInput.Bucket;
-
+    const bucketName = request.commandInput?.Bucket;
     const spanKind: SpanKind = SpanKind.CLIENT;
-    let spanName: string | undefined;
-
     const spanAttributes: Attributes = {};
 
     if (bucketName) {
-      spanAttributes[_AWS_S3_BUCKET] = bucketName;
+      spanAttributes[AttributeNames.AWS_S3_BUCKET] = bucketName;
     }
 
     const isIncoming = false;
@@ -44,16 +37,6 @@ export class S3ServiceExtension implements ServiceExtension {
       isIncoming,
       spanAttributes,
       spanKind,
-      spanName,
     };
   }
-
-  requestPostSpanHook = (request: NormalizedRequest) => {};
-
-  responseHook = (
-    response: NormalizedResponse,
-    span: Span,
-    tracer: Tracer,
-    config: AwsSdkInstrumentationConfig
-  ) => {};
 }

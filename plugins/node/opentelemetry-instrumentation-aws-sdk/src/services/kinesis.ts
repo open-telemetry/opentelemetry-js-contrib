@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Attributes, Span, SpanKind, Tracer } from '@opentelemetry/api';
-import {
-  AwsSdkInstrumentationConfig,
-  NormalizedRequest,
-  NormalizedResponse,
-} from '../types';
-import { _AWS_KINESIS_STREAM_NAME } from '../utils';
+import { Attributes, SpanKind } from '@opentelemetry/api';
+import { AttributeNames } from '../enums';
+import { AwsSdkInstrumentationConfig, NormalizedRequest } from '../types';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 
 export class KinesisServiceExtension implements ServiceExtension {
@@ -27,15 +23,12 @@ export class KinesisServiceExtension implements ServiceExtension {
     request: NormalizedRequest,
     _config: AwsSdkInstrumentationConfig
   ): RequestMetadata {
-    const streamName = request.commandInput.StreamName;
-
+    const streamName = request.commandInput?.StreamName;
     const spanKind: SpanKind = SpanKind.CLIENT;
-    let spanName: string | undefined;
-
     const spanAttributes: Attributes = {};
 
     if (streamName) {
-      spanAttributes[_AWS_KINESIS_STREAM_NAME] = streamName;
+      spanAttributes[AttributeNames.AWS_KINESIS_STREAM_NAME] = streamName;
     }
 
     const isIncoming = false;
@@ -44,16 +37,6 @@ export class KinesisServiceExtension implements ServiceExtension {
       isIncoming,
       spanAttributes,
       spanKind,
-      spanName,
     };
   }
-
-  requestPostSpanHook = (request: NormalizedRequest) => {};
-
-  responseHook = (
-    response: NormalizedResponse,
-    span: Span,
-    tracer: Tracer,
-    config: AwsSdkInstrumentationConfig
-  ) => {};
 }
