@@ -22,7 +22,7 @@ import { AwsInstrumentation } from '../src';
 import { AttributeNames } from '../src/enums';
 registerInstrumentationTesting(new AwsInstrumentation());
 
-import { Kinesis } from '@aws-sdk/client-kinesis';
+import { DescribeStreamCommand, KinesisClient } from '@aws-sdk/client-kinesis';
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 import * as nock from 'nock';
@@ -80,28 +80,19 @@ describe('Kinesis - v2', () => {
 });
 
 describe('Kinesis - v3', () => {
-  let kinesis: Kinesis;
-  beforeEach(() => {
-    kinesis = new Kinesis({
-      region: region,
-      credentials: {
-        accessKeyId: 'abcde',
-        secretAccessKey: 'abcde',
-      },
-    });
-  });
-
   describe('DescribeStream', () => {
     it('adds Stream Name', async () => {
       const dummyStreamName = 'dummy-stream-name';
 
-      nock(`https://kinesis.${region}.amazonaws.com/`).post('/').reply(200, {});
+      nock(`https://kinesis.${region}.amazonaws.com/`)
+        .post('/')
+        .reply(200, 'null');
 
-      await kinesis
-        .describeStream({
-          StreamName: dummyStreamName,
-        })
-        .catch((err: any) => {});
+      const params = {
+        StreamName: dummyStreamName,
+      };
+      const client = new KinesisClient({ region });
+      await client.send(new DescribeStreamCommand(params)).catch(() => {});
 
       const testSpans: ReadableSpan[] = getTestSpans();
       const describeSpans: ReadableSpan[] = testSpans.filter(

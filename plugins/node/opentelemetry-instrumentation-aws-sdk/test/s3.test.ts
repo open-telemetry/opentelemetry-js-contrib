@@ -22,9 +22,10 @@ import { AwsInstrumentation } from '../src';
 import { AttributeNames } from '../src/enums';
 registerInstrumentationTesting(new AwsInstrumentation());
 
-import { S3 } from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
+import * as fs from 'fs';
 import * as nock from 'nock';
 
 import { SpanKind } from '@opentelemetry/api';
@@ -78,33 +79,28 @@ describe('S3 - v2', () => {
 });
 
 describe('S3 - v3', () => {
-  let s3: S3;
-  beforeEach(() => {
-    s3 = new S3({
-      region: region,
-      credentials: {
-        accessKeyId: 'abcde',
-        secretAccessKey: 'abcde',
-      },
-    });
-  });
-
-  describe('ListObjects', () => {
+  describe('PutObject', () => {
     it('adds bucket Name', async () => {
-      const dummyBucketName = 'dummy-bucket-name';
+      const dummyBucketName = 'ot-demo-test';
 
-      nock(`https://s3.${region}.amazonaws.com/`).post('/').reply(200, 'null');
+      nock(`https://${dummyBucketName}.s3.${region}.amazonaws.com/`)
+        .put('/aws-ot-s3-test-object.txt?x-id=PutObject')
+        .reply(
+          200,
+          fs.readFileSync('./test/mock-responses/s3-put-object.xml', 'utf8')
+        );
 
-      await s3
-        .listObjects({
-          Bucket: dummyBucketName,
-        })
-        .catch((err: any) => {});
+      const params = {
+        Bucket: dummyBucketName,
+        Key: 'aws-ot-s3-test-object.txt',
+      };
+      const client = new S3Client({ region });
+      await client.send(new PutObjectCommand(params));
 
       const testSpans: ReadableSpan[] = getTestSpans();
       const listObjectsSpans: ReadableSpan[] = testSpans.filter(
         (s: ReadableSpan) => {
-          return s.name === 'S3.ListObjects';
+          return s.name === 'S3.PutObject';
         }
       );
       expect(listObjectsSpans.length).toBe(1);
