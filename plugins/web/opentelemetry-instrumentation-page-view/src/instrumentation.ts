@@ -29,10 +29,10 @@ import { PageTypes } from './enums/PageTypes';
  * This class represents a page view instrumentation plugin
  */
 
-export class PageViewEventInstrumentation extends InstrumentationBase<PageViewInstrumentationConfig> {
+export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrumentationConfig> {
   static readonly instrumentationName =
     '@opentelemetry/instrumentation-page-view';
-  readonly component: string = 'page-view-event';
+  readonly component: string = 'page-view';
   readonly version: string = '1';
   moduleName = this.component;
   emitter: EventLogger | null = null;

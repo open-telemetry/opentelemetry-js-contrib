@@ -23,14 +23,14 @@ import {
 import { EventLoggerProvider } from '@opentelemetry/sdk-events';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { PageViewEventInstrumentation } from '../src';
+import { PageViewInstrumentation } from '../src';
 import { Attributes } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { events } from '@opentelemetry/api-events';
 import { PageTypes } from '../src/enums/PageTypes';
 
 describe('PageView Instrumentation', () => {
-  let plugin: PageViewEventInstrumentation;
+  let plugin: PageViewInstrumentation;
   const sandbox = sinon.createSandbox();
 
   const exporter = new InMemoryLogRecordExporter();
@@ -48,18 +48,18 @@ describe('PageView Instrumentation', () => {
 
   describe('constructor', () => {
     it('should construct an instance', () => {
-      plugin = new PageViewEventInstrumentation({
+      plugin = new PageViewInstrumentation({
         enabled: false,
       });
 
       assert.strictEqual(exporter.getFinishedLogRecords().length, 0);
-      assert.ok(plugin instanceof PageViewEventInstrumentation);
+      assert.ok(plugin instanceof PageViewInstrumentation);
     });
   });
 
   describe('export page_view LogRecord', () => {
     it("should export LogRecord for page_view event type 0 when 'DOMContentLoaded' event is fired", done => {
-      plugin = new PageViewEventInstrumentation({
+      plugin = new PageViewInstrumentation({
         enabled: false,
       });
 
@@ -95,7 +95,7 @@ describe('PageView Instrumentation', () => {
       const vpStartTime = 16842729000 * 1000000;
       const referrer = location.href;
 
-      plugin = new PageViewEventInstrumentation({
+      plugin = new PageViewInstrumentation({
         enabled: true,
         applyCustomEventData: event => {
           if (event.data) {
@@ -133,7 +133,7 @@ describe('PageView Instrumentation', () => {
       const vpStartTime = 16842729000 * 1000000;
       const referrer = location.href;
 
-      plugin = new PageViewEventInstrumentation({
+      plugin = new PageViewInstrumentation({
         enabled: true,
         applyCustomEventData: event => {
           if (event.data) {
@@ -171,7 +171,7 @@ describe('PageView Instrumentation', () => {
     it('should not export LogRecord for page_view event type 1 if the referrer is not changed.', done => {
       const vpStartTime = 16842729000 * 1000000;
 
-      plugin = new PageViewEventInstrumentation({
+      plugin = new PageViewInstrumentation({
         enabled: true,
         applyCustomEventData: event => {
           if (event.data) {

@@ -1,138 +1,69 @@
-# OpenTelemetry Instrumentation Document Load
+# OpenTelemetry Instrumentation Page View
 
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for *document load* for Web applications, which may be loaded using the [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) package.
-
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-web`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-web) bundle with [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) for the most seamless instrumentation experience.
-
+This module provides automatic instrumentation for *page view* for Web applications. It uses the events sdk to create a page view event and sends it to the configured log processor. The page view event is created when the page is loaded or a route change occurs.
+The event contains the following attributes:
+- `name`: The name of the page view event.
+- `timestamp`: The timestamp of the event.
+- `data`: The data of the event. The data contains the following attributes:
+  - `location`: The location of the page.
+  - `referrer`: The referrer of the page.
+  - `title`: The title of the page.
+  - `url`: The url of the page.
+  - `type`: The type of the page, either `page-load(base_page)` or `route-change(virtual_page)`.
+  - `customAttributes`: The custom attributes added to the event. The custom attributes are added by the user.
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Installation
 
 ```bash
-npm install --save @opentelemetry/instrumentation-document-load
+npm install --save @opentelemetry/instrumentation-page-view
 ```
 
 ## Usage
 
 ```js
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
-import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
-import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
+import { events } from '@opentelemetry/api-events';
+import { EventLoggerProvider } from '@opentelemetry/sdk-events';
+import { ConsoleLogRecordExporter, SimpleLogRecordProcessor, LoggerProvider } from '@opentelemetry/sdk-logs';
+import { PageViewInstrumentation } from '@opentelemetry/instrumentation-page-view';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { B3Propagator } from '@opentelemetry/propagator-b3';
-import { CompositePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
 
-const provider = new WebTracerProvider();
-
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
-
-provider.register({
-  propagator: new CompositePropagator({
-    propagators: [
-      new B3Propagator(),
-      new W3CTraceContextPropagator(),
-    ],
-  }),
-});
+const loggerProvider = new LoggerProvider({resource: new Resource({[SEMRESATTRS_SERVICE_NAME]: '<service-name>'})});
+loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()));
+const eventLoggerProvider = new EventLoggerProvider(loggerProvider);
+events.setGlobalEventLoggerProvider(eventLoggerProvider);
 
 registerInstrumentations({
-  instrumentations: [
-    new DocumentLoadInstrumentation(),
-    new XMLHttpRequestInstrumentation({
-      ignoreUrls: [/localhost/],
-      propagateTraceHeaderCorsUrls: [
-        'http://localhost:8090',
-      ],
-    }),
+  instrumentations : [
+    new PageViewInstrumentation()
   ],
 });
 
 ```
 
-## Optional: Send a trace parent from your server
 
-This instrumentation supports connecting the server side spans for the initial HTML load with the client side span for the load from the browser's timing API. This works by having the server send its parent trace context (trace ID, span ID and trace sampling decision) to the client.
+## Optional : Add custom attributes to events if needed
 
-Because the browser does not send a trace context header for the initial page navigation, the server needs to fake a trace context header in a middleware and then send that trace context header back to the client as a meta tag *traceparent* . The *traceparent* meta tag should be in the [trace context W3C draft format][trace-context-url] . For example:
-
-```html
-  ...
-<head>
-  <!--
-    https://www.w3.org/TR/trace-context/
-    Set the `traceparent` in the server's HTML template code. It should be
-    dynamically generated server side to have the server's request trace Id,
-    a parent span Id that was set on the server's request span, and the trace
-    flags to indicate the server's sampling decision
-    (01 = sampled, 00 = notsampled).
-    '{version}-{traceId}-{spanId}-{sampleDecision}'
-  -->
-  <meta name="traceparent" content="00-ab42124a3c573678d4d8b21ba52df3bf-d21f7bc17caa5aba-01">
-</head>
-<body>
-  ...
-  <script>
-    // and then initialise the WebTracer
-    // var webTracer = new WebTracer({ .......
-  </script>
-</body>
-```
-
-## Optional : Add custom attributes to spans if needed
-
-If it is needed to add custom attributes to the document load span,and/or document fetch span and/or resource fetch spans, respective functions to do so needs to be provided
-as a config to the DocumentLoad Instrumentation as shown below. The attributes will be added to the respective spans
-before the individual are spans are ended. If the function throws an error , no attributes will be added to the span and
+If it is needed to add custom data to the page view event, the following function needs to be provided
+as a config to the Page View Event Instrumentation as shown below. The attributes will be added to the event data. If the function throws an error , no attributes will be added to the event.
 the rest of the process continues.
 
 ```js
-const addCustomAttributesToSpan = (span: Span) => {
-  span.setAttribute('<custom.attribute.key>','<custom-attribute-value>');
+const addCustomDataToEvent = (event: Event) => {
+  event.data['<custom.attribute.key>'] = '<custom-attribute-value>';
 }
-const addCustomAttributesToResourceFetchSpan = (span: Span, resource: PerformanceResourceTiming) => {
-  span.setAttribute('<custom.attribute.key>','<custom-attribute-value>');
-  span.setAttribute('resource.tcp.duration_ms', resource.connectEnd - resource.connectStart);
-}
+
 registerInstrumentations({
   instrumentations: [
-    new DocumentLoadInstrumentation({
-        applyCustomAttributesOnSpan: {
-            documentLoad: addCustomAttributesToSpan,
-            resourceFetch: addCustomAttributesToResourceFetchSpan
-        }
+    new PageViewEventInstrumentation({
+        applyCustomEventData:addCustomDataToEvent
     })
     ]
 })
 ```
-
-See [examples/tracer-web](https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/tracer-web) for a short example.
-
-## Document Load Instrumentation Options
-
-The document load instrumentation plugin has few options available to choose from. You can set the following:
-
-| Options                                                                                                                                                                  | Type                          | Description                                                                             |
-|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|-----------------------------------------------------------------------------------------|
-| `applyCustomAttributesOnSpan.documentLoad`| `DocumentLoadCustomAttributeFunction` | Function for adding custom attributes to `documentLoad` spans.                                                  |
-| `applyCustomAttributesOnSpan.documentFetch`                      | `DocumentLoadCustomAttributeFunction`                     | Function for adding custom attributes to `documentFetch` spans.  |
-| `applyCustomAttributesOnSpan.resourceFetch`                      | `ResourceFetchCustomAttributeFunction`                     | Function for adding custom attributes to `resourceFetch` spans  |
-| `ignoreNetworkEvents`                      | `boolean`                     | Ignore adding [network events as span events](https://github.com/open-telemetry/opentelemetry-js/blob/e49c4c7f42c6c444da3f802687cfa4f2d6983f46/packages/opentelemetry-sdk-trace-web/src/enums/PerformanceTimingNames.ts#L17) for document fetch and resource fetch spans.  |
-| `ignorePerformancePaintEvents`                      | `boolean`                     | Ignore adding performance resource paint span events to document load spans.  |
-
-## Semantic Conventions
-
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
-
-Attributes collected:
-
-| Attribute         | Short Description                                                              |
-| ----------------- | ------------------------------------------------------------------------------ |
-| `http.url`        | Full HTTP request URL in the form `scheme://host[:port]/path?query[#fragment]` |
-| `http.user_agent` | Value of the HTTP User-Agent header sent by the client                         |
 
 ## Useful links
 
