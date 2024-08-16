@@ -132,6 +132,9 @@ components:
     - trentm
   plugins/node/opentelemetry-instrumentation-winston:
     - seemk
+  plugins/node/instrumentation-react-native-navigation:
+    - facostaembrace
+    - jpmunz
   plugins/web/opentelemetry-instrumentation-document-load:
     - pkanal
     - martinkuba
