@@ -9,14 +9,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14", "16", "18", "20"]
+        node: ["14", "16", "18", "20", "22"]
         include:
             - node: 18
               code-coverage: true
     runs-on: ubuntu-latest
     services:
       memcached:
-        image: memcached:1.6.21-alpine
+        image: memcached:1.6.29-alpine
         ports:
         - 11211:11211
       mongo:

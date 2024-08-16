@@ -15,7 +15,8 @@
  */
 
 import {
-  Detector,
+  DetectorSync,
+  IResource,
   Resource,
   ResourceAttributes,
 } from '@opentelemetry/resources';
@@ -30,7 +31,7 @@ import {
  *
  * Returns an empty Resource if detection fails.
  */
-class GitHubDetector implements Detector {
+class GitHubDetector implements DetectorSync {
   private _attributes: ResourceAttributes = {};
 
   /**
@@ -49,12 +50,10 @@ class GitHubDetector implements Detector {
    * environment variables:
    * https://docs.github.com/en/free-pro-team@latest/actions/reference/environment-variables
    *
-   * If successful it returns a promise containing a {@link Resource}
-   * populated with GitHub metadata. Returns a promise containing an
-   * empty {@link Resource} if the connection fails.
-   *
+   * If successful it returns a {@link Resource} populated with GitHub metadata.
+   * Returns an empty {@link Resource} if the env vars are not present.
    */
-  async detect(): Promise<Resource> {
+  detect(): IResource {
     this._attributes = {};
     this.addAttributeIfExists('github.workflow', process.env.GITHUB_WORKFLOW);
     this.addAttributeIfExists('github.run_id', process.env.GITHUB_RUN_ID);

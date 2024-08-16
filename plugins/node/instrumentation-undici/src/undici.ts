@@ -354,6 +354,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     };
 
     const config = this.getConfig();
+
+    // Execute the response hook if defined
+    safeExecuteInTheMiddle(
+      () => config.responseHook?.(span, { request, response }),
+      e => e && this._diag.error('caught responseHook error: ', e),
+      true
+    );
+
     const headersToAttribs = new Set();
 
     if (config.headersToSpanAttributes?.responseHeaders) {

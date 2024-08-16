@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.11.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.10.0...resource-detector-instana-v0.11.0) (2024-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **detector-alibaba:** change implementation to DetectorSync interface ([#2328](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2328))
+
+### Features
+
+* **detector-alibaba:** change implementation to DetectorSync interface ([#2328](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2328)) ([25e85c7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/25e85c7b128f7424b51987e9f4c067e0b538fe2f))
+
 ## [0.10.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.9.0...resource-detector-instana-v0.10.0) (2024-06-06)
 
 

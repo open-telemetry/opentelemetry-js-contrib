@@ -45,7 +45,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { EventNames } from '../src/enums/EventNames';
 
-const { assert } = chai as typeof import('chai');
+const assert = chai.assert;
 
 const exporter = new InMemorySpanExporter();
 const provider = new BasicTracerProvider();
