@@ -136,19 +136,10 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
-        if (isWrapped(moduleExports.prototype.end)) {
-          this._unwrap(moduleExports.prototype, 'end');
-        }
-
         this._wrap(
           moduleExports.prototype,
           'connect',
           this._getPoolConnectPatch() as any
-        );
-        this._wrap(
-          moduleExports.prototype,
-          'end',
-          this._getPoolEndPatch() as any
         );
         return moduleExports;
       },
@@ -441,18 +432,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         );
 
         return handleConnectResult(span, connectResult);
-      };
-    };
-  }
-
-  private _getPoolEndPatch() {
-    const plugin = this;
-    return (originalPoolEnd: typeof pgPoolTypes.prototype.end) => {
-      return function end(this: PgPoolExtended, callback?: PgPoolCallback) {
-        if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
-          return originalPoolEnd.call(this, callback as any);
-        }
-        return originalPoolEnd.call(this, callback as any);
       };
     };
   }
