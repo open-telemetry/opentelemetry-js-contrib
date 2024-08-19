@@ -36,11 +36,10 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import {
-  AggregationTemporality,
   InMemoryMetricExporter,
   MeterProvider,
-  PeriodicExportingMetricReader,
   ResourceMetrics,
+  MetricReader,
 } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import * as pg from 'pg';
@@ -57,6 +56,7 @@ import {
   SEMATTRS_DB_USER,
   SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
 // TODO: Replace these constants once a new version of the semantic conventions
 // package is created with https://github.com/open-telemetry/opentelemetry-js/pull/4891
@@ -116,25 +116,10 @@ const runCallbackTest = (
 };
 
 describe('pg-pool', () => {
+
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
     instrumentation.enable();
-  }
-
-  async function waitForNumberOfExports(
-    exporter: InMemoryMetricExporter,
-    numberOfExports: number
-  ): Promise<ResourceMetrics[]> {
-    if (numberOfExports <= 0) {
-      throw new Error('numberOfExports must be greater than or equal to 0');
-    }
-    let totalExports = 0;
-    while (totalExports < numberOfExports) {
-      await new Promise(resolve => setTimeout(resolve, 20));
-      const exportedMetrics = exporter.getMetrics();
-      totalExports = exportedMetrics.length;
-    }
-    return exporter.getMetrics();
   }
 
   let pool: pgPool<pg.Client>;
@@ -511,27 +496,32 @@ describe('pg-pool', () => {
   });
 
   describe('pg metrics', () => {
-    let otelTestingMeterProvider;
-    let inMemoryMetricsExporter: InMemoryMetricExporter;
-
-    function initMeterProvider() {
-      otelTestingMeterProvider = new MeterProvider();
-      inMemoryMetricsExporter = new InMemoryMetricExporter(
-        AggregationTemporality.CUMULATIVE
-      );
-      const metricReader = new PeriodicExportingMetricReader({
-        exporter: inMemoryMetricsExporter,
-        exportIntervalMillis: 100,
-        exportTimeoutMillis: 100,
-      });
-
-      otelTestingMeterProvider.addMetricReader(metricReader);
-      instrumentation.setMeterProvider(otelTestingMeterProvider);
+    // TODO replace once a new version of opentelemetry-test-utils is created
+    class TestMetricReader extends MetricReader {
+      constructor() {
+        super();
+      }
+    
+      protected async onForceFlush(): Promise<void> {}
+    
+      protected async onShutdown(): Promise<void> {}
     }
+    const initMeterProvider = (
+      instrumentation: InstrumentationBase
+    ): TestMetricReader => {
+      const metricReader = new TestMetricReader();
+      const meterProvider = new MeterProvider({
+        readers: [metricReader],
+      });
+      instrumentation.setMeterProvider(meterProvider);
+    
+      return metricReader;
+    };
+
+    let metricReader: TestMetricReader;
 
     beforeEach(() => {
-      initMeterProvider();
-      inMemoryMetricsExporter.reset();
+      metricReader = initMeterProvider(instrumentation);
     });
 
     it('should generate `db.client.connection.count` and `db.client.connection.pending_requests` metrics', async () => {
@@ -556,12 +546,14 @@ describe('pg-pool', () => {
             }
             assert.ok(ret);
 
-            const exportedMetrics = await waitForNumberOfExports(
-              inMemoryMetricsExporter,
-              2
+            const { resourceMetrics, errors } = await metricReader.collect();
+            assert.deepEqual(
+              errors,
+              [],
+              'expected no errors from the callback during metric collection'
             );
-            const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
 
+            const metrics = resourceMetrics.scopeMetrics[0].metrics;
             assert.strictEqual(
               metrics[0].descriptor.name,
               'db.client.connection.count'
@@ -576,14 +568,22 @@ describe('pg-pool', () => {
               ],
               'used'
             );
-            assert.strictEqual(metrics[0].dataPoints[0].value, 1);
+            assert.strictEqual(
+              metrics[0].dataPoints[0].value,
+              1,
+              "expected to have 1 used connection"
+            );
             assert.strictEqual(
               metrics[0].dataPoints[1].attributes[
                 SEMATTRS_CLIENT_CONNECTION_STATE
               ],
               'idle'
             );
-            assert.strictEqual(metrics[0].dataPoints[1].value, 0);
+            assert.strictEqual(
+              metrics[0].dataPoints[1].value,
+              0,
+              "expected to have 0 idle connections"
+            );
 
             assert.strictEqual(
               metrics[1].descriptor.name,
@@ -593,7 +593,11 @@ describe('pg-pool', () => {
               metrics[1].descriptor.description,
               'The number of current pending requests for an open connection.'
             );
-            assert.strictEqual(metrics[1].dataPoints[0].value, 0);
+            assert.strictEqual(
+              metrics[1].dataPoints[0].value,
+              0,
+              "expected to have 0 pending requests"
+            );
           });
         });
       });
