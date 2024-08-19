@@ -35,10 +35,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import {
-  MeterProvider,
-  MetricReader,
-} from '@opentelemetry/sdk-metrics';
+import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
