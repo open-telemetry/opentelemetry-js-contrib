@@ -37,7 +37,7 @@ import {
 import * as assert from 'assert';
 import { TediousInstrumentation } from '../src';
 import makeApi from './api';
-import type { Connection, ConnectionConfig } from 'tedious';
+import type { Connection } from 'tedious';
 import * as semver from 'semver';
 
 const port = Number(process.env.MSSQL_PORT) || 1433;
@@ -50,7 +50,7 @@ const instrumentation = new TediousInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
-const config: ConnectionConfig & { userName: string; password: string } = {
+const config: any = {
   userName: user,
   password,
   server: host,
