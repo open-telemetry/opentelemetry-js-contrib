@@ -1,5 +1,15 @@
-'mongoose':
-  # Test all the latest minor versions in the range ">=5.9.7 <7".
-  versions: "5.9.7 || 5.9.29 || 5.10.19 || 5.11.20 || 5.12.15 || 5.13.21 || 6.0.15 || 6.1.10 || 6.2.11 || 6.3.9 || 6.4.7 || 6.5.5 || 6.6.7 || 6.7.5 || 6.8.4 || 6.9.3 || 6.10.5 || 6.11.6 || ^6.12.3"
-  commands:
-    - npm run test
+mongoose:
+  - versions:
+      include: ">=5.9.7 <7"
+      mode: latest-minors
+    commands: npm run test-v5-v6
+  - versions:
+      include: ">=7 <8"
+      mode: latest-minors
+    node: '>=14.20.1'
+    commands: npm run test-v7-v8
+  - versions:
+      include: ">=8 <9"
+      mode: latest-minors
+    node: '>=16.20.1'
+    commands: npm run test-v7-v8
