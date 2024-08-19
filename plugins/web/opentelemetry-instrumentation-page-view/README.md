@@ -5,6 +5,7 @@
 
 This module provides automatic instrumentation for *page view* for Web applications. It uses the events sdk to create a page view event and sends it to the configured log processor. The page view event is created when the page is loaded or a route change occurs.
 The event contains the following attributes:
+
 - `name`: The name of the page view event.
 - `timestamp`: The timestamp of the event.
 - `data`: The data of the event. The data contains the following attributes:
@@ -80,4 +81,3 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-document-load
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-document-load.svg
-[trace-context-url]: https://www.w3.org/TR/trace-context
