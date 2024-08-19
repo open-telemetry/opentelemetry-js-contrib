@@ -147,9 +147,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
-        if (isWrapped(moduleExports.prototype.end)) {
-          this._unwrap(moduleExports.prototype, 'end');
-        }
       }
     );
 
@@ -356,6 +353,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               });
             });
         }
+
         // else returns void
         return result; // void
       };

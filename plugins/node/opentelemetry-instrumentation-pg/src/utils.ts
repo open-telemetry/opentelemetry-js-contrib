@@ -49,7 +49,7 @@ import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { SpanNames } from './enums/SpanNames';
 
 // TODO: Replace these constants once a new version of the semantic conventions
-// package is created with https://github.com/open-telemetry/opentelemetry-js/pull/4891
+// package is created
 const SEMATTRS_CLIENT_CONNECTION_POOL_NAME = 'db.client.connection.pool.name';
 const SEMATTRS_CLIENT_CONNECTION_STATE = 'db.client.connection.state';
 
