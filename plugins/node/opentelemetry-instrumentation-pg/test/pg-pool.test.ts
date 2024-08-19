@@ -36,9 +36,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import {
-  InMemoryMetricExporter,
   MeterProvider,
-  ResourceMetrics,
   MetricReader,
 } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
