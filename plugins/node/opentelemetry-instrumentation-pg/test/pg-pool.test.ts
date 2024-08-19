@@ -116,7 +116,6 @@ const runCallbackTest = (
 };
 
 describe('pg-pool', () => {
-
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
     instrumentation.enable();
@@ -501,9 +500,7 @@ describe('pg-pool', () => {
       constructor() {
         super();
       }
-    
       protected async onForceFlush(): Promise<void> {}
-    
       protected async onShutdown(): Promise<void> {}
     }
     const initMeterProvider = (
@@ -514,7 +511,6 @@ describe('pg-pool', () => {
         readers: [metricReader],
       });
       instrumentation.setMeterProvider(meterProvider);
-    
       return metricReader;
     };
 
@@ -571,7 +567,7 @@ describe('pg-pool', () => {
             assert.strictEqual(
               metrics[0].dataPoints[0].value,
               1,
-              "expected to have 1 used connection"
+              'expected to have 1 used connection'
             );
             assert.strictEqual(
               metrics[0].dataPoints[1].attributes[
@@ -582,7 +578,7 @@ describe('pg-pool', () => {
             assert.strictEqual(
               metrics[0].dataPoints[1].value,
               0,
-              "expected to have 0 idle connections"
+              'expected to have 0 idle connections'
             );
 
             assert.strictEqual(
@@ -596,7 +592,7 @@ describe('pg-pool', () => {
             assert.strictEqual(
               metrics[1].dataPoints[0].value,
               0,
-              "expected to have 0 pending requests"
+              'expected to have 0 pending requests'
             );
           });
         });
