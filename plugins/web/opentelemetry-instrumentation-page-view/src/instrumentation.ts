@@ -30,11 +30,6 @@ import { PageTypes } from './enums/PageTypes';
  */
 
 export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrumentationConfig> {
-  static readonly instrumentationName =
-    '@opentelemetry/instrumentation-page-view';
-  readonly component: string = 'page-view';
-  readonly version: string = '1';
-  moduleName = this.component;
   emitter: EventLogger | null = null;
   oldUrl = location.href;
   applyCustomEventData: ApplyCustomEventDataFunction | undefined = undefined;
@@ -77,7 +72,7 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
   private _onVirtualPageView(changeState: string | null | undefined) {
     const title = document.title;
     const referrer = this.oldUrl;
-    // Dont emit an event if the route didn't change
+    // Don't emit an event if the route didn't change
     if (referrer === location.href) {
       return;
     }
@@ -172,7 +167,7 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
   /**
    *
    * @param logRecord
-   * @param applyCustomLogAttributes
+   * @param applyCustomEventData
    * Add custom attributes to the log record
    */
   _applyCustomEventData(
