@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  InstrumentationBase,
-  isWrapped,
-} from '@opentelemetry/instrumentation';
+import { InstrumentationBase, isWrapped } from '@opentelemetry/instrumentation';
 import { Event, events, EventLogger } from '@opentelemetry/api-events';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
@@ -40,10 +37,7 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
    */
   constructor(config: PageViewInstrumentationConfig) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this.emitter = events.getEventLogger(
-      PACKAGE_NAME,
-      PACKAGE_VERSION
-    );
+    this.emitter = events.getEventLogger(PACKAGE_NAME, PACKAGE_VERSION);
     this.applyCustomEventData = config?.applyCustomEventData;
   }
 
