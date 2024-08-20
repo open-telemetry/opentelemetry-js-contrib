@@ -310,17 +310,6 @@ export function getErrorMessage(e: unknown) {
     : undefined;
 }
 
-/**
- * Attempt to get a name string from a thrown value, while being quite
- * defensive, to recognize the fact that, in JS, any kind of value (even
- * primitives) can be thrown.
- */
-export function getErrorName(e: unknown) {
-  return typeof e === 'object' && e !== null && 'name' in e
-    ? String((e as { name?: unknown }).name)
-    : undefined;
-}
-
 export function isObjectWithTextString(it: unknown): it is ObjectWithText {
   return (
     typeof it === 'object' &&
