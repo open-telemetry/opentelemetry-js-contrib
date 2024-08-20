@@ -62,7 +62,6 @@ import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
 // TODO: Replace these constants once a new version of the semantic conventions
 // package is created
-const SEMATTRS_DB_NAMESPACE = 'db.namespace';
 const SEMATTRS_ERROR_TYPE = 'error.type';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -1027,10 +1026,6 @@ describe('pg', () => {
             DBSYSTEMVALUES_POSTGRESQL
           );
           assert.strictEqual(
-            dataPoint.attributes[SEMATTRS_DB_NAMESPACE],
-            'postgres'
-          );
-          assert.strictEqual(
             dataPoint.attributes[SEMATTRS_ERROR_TYPE],
             undefined
           );
@@ -1077,10 +1072,6 @@ describe('pg', () => {
           assert.strictEqual(
             dataPoint.attributes[SEMATTRS_DB_SYSTEM],
             DBSYSTEMVALUES_POSTGRESQL
-          );
-          assert.strictEqual(
-            dataPoint.attributes[SEMATTRS_DB_NAMESPACE],
-            'postgres'
           );
           assert.strictEqual(
             dataPoint.attributes[SEMATTRS_ERROR_TYPE],
