@@ -60,7 +60,7 @@
     "@types/chai": "^4.3.10",
     "@types/mocha": "8.2.3",
     "@types/node": "18.6.5",
-    "@types/sinon": "10.0.18",
+    "@types/sinon": "10.0.20",
     "@web/dev-server-esbuild": "^1.0.1",
     "@web/dev-server-rollup": "^0.6.1",
     "@web/test-runner": "^0.18.0",
