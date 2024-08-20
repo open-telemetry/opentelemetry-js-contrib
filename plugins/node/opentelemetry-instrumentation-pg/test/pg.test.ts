@@ -30,7 +30,12 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
+import {
+  DataPoint,
+  Histogram,
+  MeterProvider,
+  MetricReader,
+} from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import type * as pg from 'pg';
 import * as sinon from 'sinon';
@@ -1029,6 +1034,20 @@ describe('pg', () => {
             dataPoint.attributes[SEMATTRS_ERROR_TYPE],
             undefined
           );
+
+          const v = (dataPoint as DataPoint<Histogram>).value;
+          v.min = v.min ? v.min : 0;
+          v.max = v.max ? v.max : 0;
+          assert.equal(
+            v.min > 0,
+            true,
+            'expect min value for Histogram to be greater than 0'
+          );
+          assert.equal(
+            v.max > 0,
+            true,
+            'expect max value for Histogram to be greater than 0'
+          );
         });
       });
     });
@@ -1066,6 +1085,20 @@ describe('pg', () => {
           assert.strictEqual(
             dataPoint.attributes[SEMATTRS_ERROR_TYPE],
             'function test() does not exist'
+          );
+
+          const v = (dataPoint as DataPoint<Histogram>).value;
+          v.min = v.min ? v.min : 0;
+          v.max = v.max ? v.max : 0;
+          assert.equal(
+            v.min > 0,
+            true,
+            'expect min value for Histogram to be greater than 0'
+          );
+          assert.equal(
+            v.max > 0,
+            true,
+            'expect max value for Histogram to be greater than 0'
           );
         });
       });
