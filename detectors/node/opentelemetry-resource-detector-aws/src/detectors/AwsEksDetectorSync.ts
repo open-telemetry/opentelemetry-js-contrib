@@ -95,7 +95,7 @@ export class AwsEksDetectorSync implements DetectorSync {
             [SEMRESATTRS_CONTAINER_ID]: containerId || '',
           };
     } catch (e) {
-      diag.warn('Process is not running on K8S', e);
+      diag.debug('Process is not running on K8S', e);
       return {};
     }
   }

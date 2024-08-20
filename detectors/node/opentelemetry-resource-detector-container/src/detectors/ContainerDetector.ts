@@ -128,7 +128,7 @@ export class ContainerDetector implements DetectorSync {
     } catch (e) {
       if (e instanceof Error) {
         const errorMessage = e.message;
-        diag.info(
+        diag.debug(
           'Container Detector failed to read the Container ID: ',
           errorMessage
         );
