@@ -62,7 +62,7 @@ export class ContainerDetector implements DetectorSync {
             [SEMRESATTRS_CONTAINER_ID]: containerId,
           };
     } catch (e) {
-      diag.info(
+      diag.debug(
         'Container Detector did not identify running inside a supported container, no container attributes will be added to resource: ',
         e
       );
