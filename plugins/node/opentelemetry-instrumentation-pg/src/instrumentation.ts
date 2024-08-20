@@ -69,6 +69,11 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   private _setMetricInstruments() {
+    this._connectionsCounter = {
+      idle: 0,
+      pending: 0,
+      used: 0,
+    };
     this._connectionsCount = this.meter.createUpDownCounter(
       'db.client.connection.count',
       {
