@@ -19,7 +19,6 @@ import {
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-
 import {
   context,
   trace,
@@ -191,9 +190,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   private recordOperationDuration(attributes: Attributes, startTime: HrTime) {
-    // Time to record metrics
     const metricsAttributes: Attributes = {};
-    // Get the attribs already in span attributes
     const keysToCopy = [
       SEMATTRS_DB_SYSTEM,
       SEMATTRS_DB_NAMESPACE,
@@ -253,9 +250,10 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           [SEMATTRS_SERVER_PORT]: this.connectionParameters.port,
           [SEMATTRS_SERVER_ADDRESS]: this.connectionParameters.host,
         };
-        this.on('end', () => {
+
+        const recordDuration = () => {
           plugin.recordOperationDuration(attributes, startTime);
-        });
+        };
 
         const instrumentationConfig = plugin.getConfig();
 
@@ -288,7 +286,8 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               instrumentationConfig,
               span,
               args[args.length - 1] as PostgresCallback, // nb: not type safe.
-              attributes
+              attributes,
+              recordDuration
             );
 
             // If a parent span exists, bind the callback
@@ -304,7 +303,8 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               plugin.getConfig(),
               span,
               queryConfig.callback as PostgresCallback, // nb: not type safe.
-              attributes
+              attributes,
+              recordDuration
             );
 
             // If a parent span existed, bind the callback
@@ -367,7 +367,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             message: utils.getErrorMessage(e),
           });
           span.end();
-          attributes[SEMATTRS_ERROR_TYPE] = utils.getErrorName(e);
+          attributes[SEMATTRS_ERROR_TYPE] = utils.getErrorMessage(e);
           throw e;
         }
 
@@ -389,7 +389,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
                   message: error.message,
                 });
                 span.end();
-                attributes[SEMATTRS_ERROR_TYPE] = error.name;
+                attributes[SEMATTRS_ERROR_TYPE] = utils.getErrorMessage(error);
                 reject(error);
               });
             });

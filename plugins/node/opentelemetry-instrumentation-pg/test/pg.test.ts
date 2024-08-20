@@ -30,6 +30,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
+import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import type * as pg from 'pg';
 import * as sinon from 'sinon';
@@ -52,6 +53,12 @@ import {
   DBSYSTEMVALUES_POSTGRESQL,
 } from '@opentelemetry/semantic-conventions';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
+
+// TODO: Replace these constants once a new version of the semantic conventions
+// package is created
+const SEMATTRS_DB_NAMESPACE = 'db.namespace';
+const SEMATTRS_ERROR_TYPE = 'error.type';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -957,6 +964,110 @@ describe('pg', () => {
         const spans = memoryExporter.getFinishedSpans();
         assert.strictEqual(spans.length, 0);
         done();
+      });
+    });
+  });
+
+  describe('pg metrics', () => {
+    // TODO replace once a new version of opentelemetry-test-utils is created
+    class TestMetricReader extends MetricReader {
+      constructor() {
+        super();
+      }
+      protected async onForceFlush(): Promise<void> {}
+      protected async onShutdown(): Promise<void> {}
+    }
+    const initMeterProvider = (
+      instrumentation: InstrumentationBase
+    ): TestMetricReader => {
+      const metricReader = new TestMetricReader();
+      const meterProvider = new MeterProvider({
+        readers: [metricReader],
+      });
+      instrumentation.setMeterProvider(meterProvider);
+      return metricReader;
+    };
+
+    let metricReader: TestMetricReader;
+
+    beforeEach(() => {
+      metricReader = initMeterProvider(instrumentation);
+    });
+
+    it('should generate db.client.operation.duration metric', done => {
+      const span = tracer.startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        client.query('SELECT NOW()', async (_, ret) => {
+          assert.ok(ret, 'query should be executed');
+
+          const { resourceMetrics, errors } = await metricReader.collect();
+          assert.deepEqual(
+            errors,
+            [],
+            'expected no errors from the callback during metric collection'
+          );
+
+          const metrics = resourceMetrics.scopeMetrics[0].metrics;
+          assert.strictEqual(
+            metrics[0].descriptor.name,
+            'db.client.operation.duration'
+          );
+          assert.strictEqual(
+            metrics[0].descriptor.description,
+            'Duration of database client operations.'
+          );
+          const dataPoint = metrics[0].dataPoints[0];
+          assert.strictEqual(
+            dataPoint.attributes[SEMATTRS_DB_SYSTEM],
+            DBSYSTEMVALUES_POSTGRESQL
+          );
+          assert.strictEqual(
+            dataPoint.attributes[SEMATTRS_DB_NAMESPACE],
+            'postgres'
+          );
+          assert.strictEqual(
+            dataPoint.attributes[SEMATTRS_ERROR_TYPE],
+            undefined
+          );
+        });
+      });
+    });
+
+    it('should generate db.client.operation.duration metric with error attribute', done => {
+      const span = tracer.startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        client.query('SELECT test()', async (err, ret) => {
+          assert.notEqual(err, null);
+          const { resourceMetrics, errors } = await metricReader.collect();
+          assert.deepEqual(
+            errors,
+            [],
+            'expected no errors from the callback during metric collection'
+          );
+
+          const metrics = resourceMetrics.scopeMetrics[0].metrics;
+          assert.strictEqual(
+            metrics[0].descriptor.name,
+            'db.client.operation.duration'
+          );
+          assert.strictEqual(
+            metrics[0].descriptor.description,
+            'Duration of database client operations.'
+          );
+          const dataPoint = metrics[0].dataPoints[0];
+          assert.strictEqual(
+            dataPoint.attributes[SEMATTRS_DB_SYSTEM],
+            DBSYSTEMVALUES_POSTGRESQL
+          );
+          assert.strictEqual(
+            dataPoint.attributes[SEMATTRS_DB_NAMESPACE],
+            'postgres'
+          );
+          assert.strictEqual(
+            dataPoint.attributes[SEMATTRS_ERROR_TYPE],
+            'function test() does not exist'
+          );
+        });
       });
     });
   });
