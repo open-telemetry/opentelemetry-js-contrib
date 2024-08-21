@@ -26,7 +26,6 @@ import {
   SpanStatusCode,
   SpanKind,
   Histogram,
-  MeterProvider,
   ValueType,
   Attributes,
   HrTime,
@@ -66,15 +65,9 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   private _operationDuration!: Histogram;
   constructor(config: PgInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._setMetricInstruments();
   }
 
-  override setMeterProvider(meterProvider: MeterProvider) {
-    super.setMeterProvider(meterProvider);
-    this._setMetricInstruments();
-  }
-
-  private _setMetricInstruments() {
+  override _updateMetricInstruments() {
     this._operationDuration = this.meter.createHistogram(
       'db.client.operation.duration',
       {

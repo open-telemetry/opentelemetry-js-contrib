@@ -999,99 +999,93 @@ describe('pg', () => {
     });
 
     it('should generate db.client.operation.duration metric', done => {
-      const span = tracer.startSpan('test span');
-      context.with(trace.setSpan(context.active(), span), () => {
-        client.query('SELECT NOW()', async (_, ret) => {
-          assert.ok(ret, 'query should be executed');
+      client.query('SELECT NOW()', async (_, ret) => {
+        assert.ok(ret, 'query should be executed');
 
-          const { resourceMetrics, errors } = await metricReader.collect();
-          assert.deepEqual(
-            errors,
-            [],
-            'expected no errors from the callback during metric collection'
-          );
+        const { resourceMetrics, errors } = await metricReader.collect();
+        assert.deepEqual(
+          errors,
+          [],
+          'expected no errors from the callback during metric collection'
+        );
 
-          const metrics = resourceMetrics.scopeMetrics[0].metrics;
-          assert.strictEqual(
-            metrics[0].descriptor.name,
-            'db.client.operation.duration'
-          );
-          assert.strictEqual(
-            metrics[0].descriptor.description,
-            'Duration of database client operations.'
-          );
-          const dataPoint = metrics[0].dataPoints[0];
-          assert.strictEqual(
-            dataPoint.attributes[SEMATTRS_DB_SYSTEM],
-            DBSYSTEMVALUES_POSTGRESQL
-          );
-          assert.strictEqual(
-            dataPoint.attributes[SEMATTRS_ERROR_TYPE],
-            undefined
-          );
+        const metrics = resourceMetrics.scopeMetrics[0].metrics;
+        assert.strictEqual(
+          metrics[0].descriptor.name,
+          'db.client.operation.duration'
+        );
+        assert.strictEqual(
+          metrics[0].descriptor.description,
+          'Duration of database client operations.'
+        );
+        const dataPoint = metrics[0].dataPoints[0];
+        assert.strictEqual(
+          dataPoint.attributes[SEMATTRS_DB_SYSTEM],
+          DBSYSTEMVALUES_POSTGRESQL
+        );
+        assert.strictEqual(
+          dataPoint.attributes[SEMATTRS_ERROR_TYPE],
+          undefined
+        );
 
-          const v = (dataPoint as DataPoint<Histogram>).value;
-          v.min = v.min ? v.min : 0;
-          v.max = v.max ? v.max : 0;
-          assert.equal(
-            v.min > 0,
-            true,
-            'expect min value for Histogram to be greater than 0'
-          );
-          assert.equal(
-            v.max > 0,
-            true,
-            'expect max value for Histogram to be greater than 0'
-          );
-        });
+        const v = (dataPoint as DataPoint<Histogram>).value;
+        v.min = v.min ? v.min : 0;
+        v.max = v.max ? v.max : 0;
+        assert.equal(
+          v.min > 0,
+          true,
+          'expect min value for Histogram to be greater than 0'
+        );
+        assert.equal(
+          v.max > 0,
+          true,
+          'expect max value for Histogram to be greater than 0'
+        );
       });
     });
 
     it('should generate db.client.operation.duration metric with error attribute', done => {
-      const span = tracer.startSpan('test span');
-      context.with(trace.setSpan(context.active(), span), () => {
-        client.query('SELECT test()', async (err, ret) => {
-          assert.notEqual(err, null);
-          const { resourceMetrics, errors } = await metricReader.collect();
-          assert.deepEqual(
-            errors,
-            [],
-            'expected no errors from the callback during metric collection'
-          );
+      client.query('SELECT test()', async (err, ret) => {
+        assert.notEqual(err, null);
+        const { resourceMetrics, errors } = await metricReader.collect();
+        assert.deepEqual(
+          errors,
+          [],
+          'expected no errors from the callback during metric collection'
+        );
 
-          const metrics = resourceMetrics.scopeMetrics[0].metrics;
-          assert.strictEqual(
-            metrics[0].descriptor.name,
-            'db.client.operation.duration'
-          );
-          assert.strictEqual(
-            metrics[0].descriptor.description,
-            'Duration of database client operations.'
-          );
-          const dataPoint = metrics[0].dataPoints[0];
-          assert.strictEqual(
-            dataPoint.attributes[SEMATTRS_DB_SYSTEM],
-            DBSYSTEMVALUES_POSTGRESQL
-          );
-          assert.strictEqual(
-            dataPoint.attributes[SEMATTRS_ERROR_TYPE],
-            'function test() does not exist'
-          );
+        const metrics = resourceMetrics.scopeMetrics[0].metrics;
+        assert.strictEqual(
+          metrics[0].descriptor.name,
+          'db.client.operation.duration'
+        );
+        assert.strictEqual(
+          metrics[0].descriptor.description,
+          'Duration of database client operations.'
+        );
+        const dataPoint = metrics[0].dataPoints[0];
+        assert.strictEqual(
+          dataPoint.attributes[SEMATTRS_DB_SYSTEM],
+          DBSYSTEMVALUES_POSTGRESQL
+        );
+        assert.strictEqual(
+          dataPoint.attributes[SEMATTRS_ERROR_TYPE],
+          'function test() does not exist'
+        );
 
-          const v = (dataPoint as DataPoint<Histogram>).value;
-          v.min = v.min ? v.min : 0;
-          v.max = v.max ? v.max : 0;
-          assert.equal(
-            v.min > 0,
-            true,
-            'expect min value for Histogram to be greater than 0'
-          );
-          assert.equal(
-            v.max > 0,
-            true,
-            'expect max value for Histogram to be greater than 0'
-          );
-        });
+        const v = (dataPoint as DataPoint<Histogram>).value;
+        v.min = v.min ? v.min : 0;
+        v.max = v.max ? v.max : 0;
+        assert.equal(
+          v.min > 0,
+          true,
+          'expect min value for Histogram to be greater than 0'
+        );
+        assert.equal(
+          v.max > 0,
+          true,
+          'expect max value for Histogram to be greater than 0'
+        );
       });
     });
   });
