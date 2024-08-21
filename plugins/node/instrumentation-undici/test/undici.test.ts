@@ -70,7 +70,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
   const memoryExporter = new InMemorySpanExporter();
   const provider = new NodeTracerProvider();
   provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-  
 
   before(function (done) {
     // Load `undici`. It may fail if nodejs version is <18 because the module uses

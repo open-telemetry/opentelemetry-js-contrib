@@ -31,7 +31,6 @@ import { MockServer } from './utils/mock-server';
 import { MockMetricsReader } from './utils/mock-metrics-reader';
 import { SemanticAttributes } from '../src/enums/SemanticAttributes';
 
-
 describe('UndiciInstrumentation metrics tests', function () {
   let instrumentation: UndiciInstrumentation;
   const protocol = 'http';
@@ -44,7 +43,6 @@ describe('UndiciInstrumentation metrics tests', function () {
   );
   const metricReader = new MockMetricsReader(metricsMemoryExporter);
   meterProvider.addMetricReader(metricReader);
-  
 
   before(function (done) {
     // Do not test if the `fetch` global API is not available

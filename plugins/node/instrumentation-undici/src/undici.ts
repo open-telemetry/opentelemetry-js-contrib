@@ -139,9 +139,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     // - method is 'CONNECT'
     const config = this.getConfig();
     const shouldIgnoreReq = safeExecuteInTheMiddle(
-      () =>
-        request.method === 'CONNECT' ||
-        config.ignoreRequestHook?.(request),
+      () => request.method === 'CONNECT' || config.ignoreRequestHook?.(request),
       e => e && this._diag.error('caught ignoreRequestHook error: ', e),
       true
     );
