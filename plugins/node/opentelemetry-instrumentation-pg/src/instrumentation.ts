@@ -60,15 +60,9 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
   constructor(config: PgInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._setMetricInstruments();
   }
 
-  override setMeterProvider(meterProvider: MeterProvider) {
-    super.setMeterProvider(meterProvider);
-    this._setMetricInstruments();
-  }
-
-  private _setMetricInstruments() {
+  override _updateMetricInstruments() {
     this._connectionsCounter = {
       idle: 0,
       pending: 0,
