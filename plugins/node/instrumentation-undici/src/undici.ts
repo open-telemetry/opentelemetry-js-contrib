@@ -68,7 +68,6 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
   private _httpClientDurationHistogram!: Histogram;
   constructor(config: UndiciInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this.setConfig(config);
   }
 
   // No need to instrument files/modules
@@ -77,23 +76,11 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
   }
 
   override disable(): void {
-    if (!this.getConfig().enabled) {
-      return;
-    }
-
     this._channelSubs.forEach(sub => sub.channel.unsubscribe(sub.onMessage));
     this._channelSubs.length = 0;
-    super.disable();
-    this.setConfig({ ...this.getConfig(), enabled: false });
   }
 
   override enable(): void {
-    if (this.getConfig().enabled) {
-      return;
-    }
-    super.enable();
-    this.setConfig({ ...this.getConfig(), enabled: true });
-
     // This method is called by the `InstrumentationAbstract` constructor before
     // ours is called. So we need to ensure the property is initalized
     this._channelSubs = this._channelSubs || [];
@@ -111,16 +98,6 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     );
     this.subscribeToChannel('undici:request:trailers', this.onDone.bind(this));
     this.subscribeToChannel('undici:request:error', this.onError.bind(this));
-  }
-
-  override setConfig(config: UndiciInstrumentationConfig = {}): void {
-    super.setConfig(config);
-
-    if (config?.enabled) {
-      this.enable();
-    } else {
-      this.disable();
-    }
   }
 
   protected override _updateMetricInstruments() {
@@ -158,13 +135,11 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
   // span processing
   private onRequestCreated({ request }: RequestMessage): void {
     // Ignore if:
-    // - instrumentation is disabled
     // - ignored by config
     // - method is 'CONNECT'
     const config = this.getConfig();
     const shouldIgnoreReq = safeExecuteInTheMiddle(
       () =>
-        !config.enabled ||
         request.method === 'CONNECT' ||
         config.ignoreRequestHook?.(request),
       e => e && this._diag.error('caught ignoreRequestHook error: ', e),
