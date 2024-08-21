@@ -69,7 +69,7 @@ describe('UndiciInstrumentation metrics tests', function () {
   });
 
   after(function (done) {
-    instrumentation.disable();
+    instrumentation?.disable();
     context.disable();
     propagation.disable();
     mockServer.mockListener(undefined);
