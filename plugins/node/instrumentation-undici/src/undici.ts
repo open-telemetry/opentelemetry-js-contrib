@@ -76,7 +76,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
   }
 
   override disable(): void {
-    super.disable()
+    super.disable();
     this._channelSubs.forEach(sub => sub.channel.unsubscribe(sub.onMessage));
     this._channelSubs.length = 0;
   }
@@ -91,7 +91,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     // instrumentation should be generated. This covers the more likely common
     // case of config being given a construction time, rather than later via
     // `instance.enable()`, `.disable()`, or `.setConfig()` calls.
-    super.enable()
+    super.enable();
 
     // This method is called by the super-class constructor before ours is
     // called. So we need to ensure the property is initalized.
