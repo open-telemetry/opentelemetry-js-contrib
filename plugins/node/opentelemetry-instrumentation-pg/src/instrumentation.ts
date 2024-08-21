@@ -26,7 +26,6 @@ import {
   Span,
   SpanStatusCode,
   SpanKind,
-  MeterProvider,
   UpDownCounter,
 } from '@opentelemetry/api';
 import type * as pgTypes from 'pg';
