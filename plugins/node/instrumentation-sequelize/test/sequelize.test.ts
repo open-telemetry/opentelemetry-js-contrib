@@ -102,7 +102,7 @@ describe('instrumentation-sequelize', () => {
       assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'Users');
       assert.match(
         attributes[SEMATTRS_DB_STATEMENT] as string,
-        /INSERT INTO "Users" \("id","firstName","createdAt","updatedAt"\) VALUES \(DEFAULT,\$1,\$2,\$3\) RETURNING (\*|"id","firstName","createdAt","updatedAt");/,
+        /INSERT INTO "Users" \("id","firstName","createdAt","updatedAt"\) VALUES \(DEFAULT,\$1,\$2,\$3\) RETURNING (\*|"id","firstName","createdAt","updatedAt");/
       );
     });
 
