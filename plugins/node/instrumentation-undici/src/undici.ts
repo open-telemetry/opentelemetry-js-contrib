@@ -84,6 +84,12 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     // This method is called by the `InstrumentationAbstract` constructor before
     // ours is called. So we need to ensure the property is initalized
     this._channelSubs = this._channelSubs || [];
+
+    // Avoid to duplicate subscriptions
+    if (this._channelSubs.length > 0) {
+      return;
+    }
+
     this.subscribeToChannel(
       'undici:request:create',
       this.onRequestCreated.bind(this)
