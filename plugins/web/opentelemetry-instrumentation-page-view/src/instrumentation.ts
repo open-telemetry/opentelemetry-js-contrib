@@ -25,7 +25,7 @@ import { PageTypes } from './enums/PageTypes';
 /**
  * This class represents a page view instrumentation plugin
  */
-
+const EVENT_NAME = 'browser.page_view';
 export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrumentationConfig> {
   emitter: EventLogger | null = null;
   oldUrl = location.href;
@@ -48,7 +48,7 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
    */
   private _onPageView() {
     const pageViewEvent: Event = {
-      name: 'page_view',
+      name: EVENT_NAME,
       data: {
         url: document.documentURI as string,
         referrer: document.referrer,
@@ -71,7 +71,7 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
       return;
     }
     const vPageViewEvent: Event = {
-      name: 'page_view',
+      name: EVENT_NAME,
       data: {
         'http.url': window.location.href,
         title,
