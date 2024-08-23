@@ -35,19 +35,16 @@ import { MockPropagation } from './utils/mock-propagation';
 import { MockServer } from './utils/mock-server';
 import { assertSpan } from './utils/assertSpan';
 
-const instrumentation = new UndiciInstrumentation();
-instrumentation.enable();
-instrumentation.disable();
-
-const protocol = 'http';
-const hostname = 'localhost';
-const mockServer = new MockServer();
-const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-instrumentation.setTracerProvider(provider);
-
 describe('UndiciInstrumentation `fetch` tests', function () {
+  let instrumentation: UndiciInstrumentation;
+
+  const protocol = 'http';
+  const hostname = 'localhost';
+  const mockServer = new MockServer();
+  const memoryExporter = new InMemorySpanExporter();
+  const provider = new NodeTracerProvider();
+  provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+
   before(function (done) {
     // Do not test if the `fetch` global API is not available
     // This applies to nodejs < v18 or nodejs < v16.15 wihtout the flag
@@ -56,6 +53,9 @@ describe('UndiciInstrumentation `fetch` tests', function () {
     if (typeof globalThis.fetch !== 'function') {
       this.skip();
     }
+
+    instrumentation = new UndiciInstrumentation();
+    instrumentation.setTracerProvider(provider);
 
     propagation.setGlobalPropagator(new MockPropagation());
     context.setGlobalContextManager(new AsyncHooksContextManager().enable());
@@ -105,8 +105,8 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
 
-      // Disable via config
-      instrumentation.setConfig({ enabled: false });
+      // Disable
+      instrumentation.disable();
 
       const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
       const response = await fetch(fetchUrl);
@@ -126,7 +126,8 @@ describe('UndiciInstrumentation `fetch` tests', function () {
     });
     afterEach(function () {
       // Empty configuration & disable
-      instrumentation.setConfig({ enabled: false });
+      instrumentation.setConfig({});
+      instrumentation.disable();
     });
 
     it('should create valid spans even if the configuration hooks fail', async function () {
@@ -135,12 +136,14 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
       // Set the bad configuration
       instrumentation.setConfig({
-        enabled: true,
         ignoreRequestHook: () => {
           throw new Error('ignoreRequestHook error');
         },
         requestHook: () => {
           throw new Error('requestHook error');
+        },
+        responseHook: () => {
+          throw new Error('responseHook error');
         },
         startSpanHook: () => {
           throw new Error('startSpanHook error');
@@ -201,7 +204,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
       // Set configuration
       instrumentation.setConfig({
-        enabled: true,
         ignoreRequestHook: req => {
           return req.path.indexOf('/ignore/path') !== -1;
         },
@@ -212,6 +214,12 @@ describe('UndiciInstrumentation `fetch` tests', function () {
           } else {
             req.headers.push('x-requested-with', 'undici');
           }
+        },
+        responseHook: (span, { response }) => {
+          span.setAttribute(
+            'test.response-hook.attribute',
+            response.statusText
+          );
         },
         startSpanHook: request => {
           return {
@@ -281,6 +289,11 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         'hook-value',
         'startSpanHook is called'
       );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
+      );
     });
 
     it('should not create spans without parent if required in configuration', async function () {
@@ -288,7 +301,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       assert.strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
-        enabled: true,
         requireParentforSpans: true,
       });
 
@@ -308,7 +320,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       assert.strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
-        enabled: true,
         requireParentforSpans: true,
       });
 

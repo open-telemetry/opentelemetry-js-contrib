@@ -24,12 +24,14 @@ import {
 } from '@opentelemetry/api';
 import * as assert from 'assert';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { MetricReader, MeterProvider } from '@opentelemetry/sdk-metrics';
 import {
   hrTimeToMilliseconds,
   hrTimeToMicroseconds,
 } from '@opentelemetry/core';
 import * as path from 'path';
 import * as fs from 'fs';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
 const dockerRunCmds = {
   cassandra:
@@ -178,4 +180,25 @@ export const getPackageVersion = (packageName: string) => {
     'package.json'
   );
   return JSON.parse(fs.readFileSync(pjPath, 'utf8')).version;
+};
+
+export class TestMetricReader extends MetricReader {
+  constructor() {
+    super();
+  }
+
+  protected async onForceFlush(): Promise<void> {}
+  protected async onShutdown(): Promise<void> {}
+}
+
+export const initMeterProvider = (
+  instrumentation: InstrumentationBase
+): TestMetricReader => {
+  const metricReader = new TestMetricReader();
+  const meterProvider = new MeterProvider({
+    readers: [metricReader],
+  });
+  instrumentation.setMeterProvider(meterProvider);
+
+  return metricReader;
 };
