@@ -15,27 +15,35 @@
  */
 
 import { Span, SpanStatusCode } from '@opentelemetry/api';
-
-type PricingObject = {
-  chat: Record<string, { promptPrice: number; completionPrice: number }>;
-};
+import { encodingForModel, TiktokenModel } from 'js-tiktoken';
+import { PricingObject } from './types';
 
 export default class InstrumentationUtil {
   static readonly PROMPT_TOKEN_FACTOR = 1000;
 
+  static openaiTokens(text: string, model: string): number {
+    try {
+      const encoding = encodingForModel(model as TiktokenModel);
+      return encoding.encode(text).length;
+    } catch (error) {
+      console.error(`Error in openaiTokens: ${error}`);
+      throw error;
+    }
+  }
+
   static getChatModelCost(
     model: string,
-    pricingInfo: Record<string, unknown>,
     promptTokens: number,
-    completionTokens: number
+    completionTokens: number,
+    pricingInfo?: PricingObject
   ): number {
-    const pricingObject: PricingObject = pricingInfo as PricingObject;
     try {
+      if (!pricingInfo) return 0;
       return (
         (promptTokens / InstrumentationUtil.PROMPT_TOKEN_FACTOR) *
-          pricingObject.chat[model].promptPrice +
+          (pricingInfo.chat[model].promptPrice || 0) +
         (completionTokens / InstrumentationUtil.PROMPT_TOKEN_FACTOR) *
-          pricingObject.chat[model].completionPrice
+          pricingInfo.chat[model].completionPrice
       );
     } catch (error) {
       console.error(`Error in getChatModelCost: ${error}`);
@@ -43,55 +51,19 @@ export default class InstrumentationUtil {
     }
   }
 
-  static async fetchPricingInfo(
-    pricingJson: Record<string, unknown> | string
-  ): Promise<Record<string, unknown>> {
-    let pricingUrl =
-      'https://raw.githubusercontent.com/openlit/openlit/main/assets/pricing.json';
-    if (pricingJson) {
-      let isUrl = false;
-      try {
-        isUrl = !!new URL(pricingJson as string);
-      } catch {
-        isUrl = false;
-      }
-
-      if (isUrl) {
-        pricingUrl = pricingJson as string;
-      } else {
-        try {
-          if (typeof pricingJson === 'string') {
-            const json = JSON.parse(pricingJson);
-            return json;
-          } else {
-            const json = JSON.parse(JSON.stringify(pricingJson));
-            return json;
-          }
-        } catch {
-          return {};
-        }
-      }
-    }
-
-    try {
-      const response = await fetch(pricingUrl);
-      if (response.ok) {
-        return response.json();
-      } else {
-        throw new Error(
-          `HTTP error occurred while fetching pricing info: ${response.status}`
-        );
-      }
-    } catch (error) {
-      console.error(
-        `Unexpected error occurred while fetching pricing info: ${error}`
-      );
-      return {};
-    }
-  }
-
   static handleException(span: Span, error: Error): void {
     span.recordException(error);
     span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+  }
+
+  static async createStreamProxy (stream: any, generatorFuncResponse: any): Promise<any> {
+    return new Proxy(stream, {
+      get (target, prop, receiver) {
+        if (prop === Symbol.asyncIterator) {
+          return () => generatorFuncResponse
+        }
+        return Reflect.get(target, prop, receiver)
+      }
+    })
   }
 }

@@ -78,7 +78,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         OpenAIWrapper._patchChatCompletionCreate(this.tracer)
       );
     } catch (e) {
-      console.error('Error in _patch method:', e);
+      this._diag.error('Error in _patch method:', e);
     }
   }
 

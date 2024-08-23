@@ -5,7 +5,6 @@
 
 This module provides automatic instrumentation for the [`openai`](https://github.com/openai) module, which may be loaded using the [`@opentelemetry/instrumentation-openai`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-openai) package.
 
-
 ## Installation
 
 ```bash
@@ -26,13 +25,17 @@ import {
 import openAI from 'openai';
 
 const openAIInstrumentationOptions: InstrumentationHelperConfigInterface = {
-  environment: "production",
-  applicationName: "Example Application",
-  otlpEndpoint: "otlpEndpoint",
-  otlpHeaders: "otlpHeaders",
+  environment: 'production',
+  applicationName: 'Example Application',
+  otlpEndpoint: 'otlpEndpoint',
+  otlpHeaders: 'otlpHeaders',
   traceContent: true,
-  pricing_json: { "chat": { "gpt-4-1106-preview" : 0.04 } }
-}
+  pricing_json: {
+    chat: {
+      'gpt-4-1106-preview': { promptPrice: 0.04, completionPrice: 0.03 },
+    },
+  },
+};
 
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
@@ -40,7 +43,9 @@ const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const provider = new NodeTracerProvider();
 provider.register();
 
-const openAIInstrument = new OpenAIInstrumentation(openAIInstrumentationOptions);
+const openAIInstrument = new OpenAIInstrumentation(
+  openAIInstrumentationOptions
+);
 
 // Auto instrumentation : patch method will only when the "openai" module is required in any trace calls
 registerInstrumentations({
@@ -50,8 +55,8 @@ registerInstrumentations({
 // Or
 
 // Manual patch
-openAIInstrument.setTracerProvider(tracerProvider)
-openAIInstrument.manualPatch(openAI)
+openAIInstrument.setTracerProvider(tracerProvider);
+openAIInstrument.manualPatch(openAI);
 registerInstrumentations({
   tracerProvider,
 });

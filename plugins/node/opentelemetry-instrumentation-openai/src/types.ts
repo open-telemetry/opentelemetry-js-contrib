@@ -16,13 +16,17 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
+export type PricingObject = {
+  chat: Record<string, { promptPrice: number; completionPrice: number }>;
+};
+
 export interface InstrumentationHelperConfigInterface {
   environment?: string;
   applicationName?: string;
   otlpEndpoint?: string;
   otlpHeaders?: Record<string, unknown> | string;
   traceContent?: boolean;
-  pricing_json?: Record<string, unknown> | string;
+  pricing_json?: PricingObject;
 }
 
 export interface OpenAIInstrumentationConfig

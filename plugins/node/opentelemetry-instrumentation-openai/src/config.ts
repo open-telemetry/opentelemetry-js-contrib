@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { InstrumentationHelperConfigInterface } from './types';
-import InstrumentationUtil from './utils';
+import { InstrumentationHelperConfigInterface, PricingObject } from './types';
 
 export default class InstrumentationHelperConfig {
   /**
@@ -39,17 +38,7 @@ export default class InstrumentationHelperConfig {
   static otlpEndpoint: string;
   static otlpHeaders?: Record<string, unknown> | string;
   static traceContent: boolean;
-  static pricing_json: Record<string, unknown>;
-
-  static async updatePricingJson(pricingArg: Record<string, unknown> | string) {
-    try {
-      const response = await InstrumentationUtil.fetchPricingInfo(pricingArg);
-      this.pricingInfo = response;
-    } catch (e) {
-      this.pricingInfo = {};
-    }
-    return this.pricingInfo;
-  }
+  static pricing_json?: PricingObject;
 
   static updateConfig({
     environment = 'production',
@@ -76,6 +65,6 @@ export default class InstrumentationHelperConfig {
     this.otlpEndpoint = otlpEndpoint;
     this.otlpHeaders = otlpHeaders;
     this.traceContent = traceContent;
-    this.pricing_json = pricing_json as Record<string, unknown>;
+    this.pricing_json = pricing_json;
   }
 }
