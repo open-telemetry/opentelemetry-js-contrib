@@ -35,6 +35,7 @@ import * as assert from 'assert';
 import {
   SEMATTRS_EXCEPTION_MESSAGE,
   SEMATTRS_FAAS_EXECUTION,
+  SEMATTRS_HTTP_URL,
   SEMRESATTRS_FAAS_NAME,
 } from '@opentelemetry/semantic-conventions';
 import {
@@ -981,6 +982,30 @@ describe('lambda handler', () => {
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
       assert.strictEqual(span.parentSpanId, undefined);
+    });
+  });
+
+  describe('url parsing', () => {
+    it('pulls url from api gateway events', async () => {
+      initializeHandler('lambda-test/sync.handler');
+      const event = {
+        path: '/lambda/test/path',
+        headers: {
+          host: 'www.example.com',
+          'x-forwarded-proto': 'http',
+        },
+        queryStringParameters: {
+          key: 'value',
+        },
+      };
+
+      await lambdaRequire('lambda-test/sync').handler(event, ctx, () => {});
+      const [span] = memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        span.attributes[SEMATTRS_HTTP_URL],
+        'http://www.example.com/lambda/test/path?key=value'
+      );
+      console.log(span);
     });
   });
 });
