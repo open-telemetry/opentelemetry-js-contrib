@@ -44,6 +44,7 @@ import {
   AWSXRayPropagator,
 } from '@opentelemetry/propagator-aws-xray';
 import {
+  SEMATTRS_FAAS_COLDSTART,
   SEMATTRS_FAAS_EXECUTION,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
   SEMRESATTRS_FAAS_ID,
@@ -72,6 +73,7 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
 };
 
 export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
+export const lambdaMaxInitInMilliseconds = 10_000;
 
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
   private _traceForceFlusher?: () => Promise<void>;
@@ -135,6 +137,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       functionName,
     });
 
+    const lambdaStartTime =
+      this.getConfig().lambdaStartTime ||
+      Date.now() - Math.floor(1000 * process.uptime());
+
     return [
       new InstrumentationNodeModuleDefinition(
         // NB: The patching infrastructure seems to match names backwards, this must be the filename, while
@@ -151,7 +157,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
               if (isWrapped(moduleExports[functionName])) {
                 this._unwrap(moduleExports, functionName);
               }
-              this._wrap(moduleExports, functionName, this._getHandler());
+              this._wrap(
+                moduleExports,
+                functionName,
+                this._getHandler(lambdaStartTime)
+              );
               return moduleExports;
             },
             (moduleExports?: LambdaModule) => {
@@ -164,15 +174,46 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     ];
   }
 
-  private _getHandler() {
+  private _getHandler(handlerLoadStartTime: number) {
     return (original: Handler) => {
-      return this._getPatchHandler(original);
+      return this._getPatchHandler(original, handlerLoadStartTime);
     };
   }
 
-  private _getPatchHandler(original: Handler) {
+  private _getPatchHandler(original: Handler, lambdaStartTime: number) {
     diag.debug('patch handler function');
     const plugin = this;
+
+    let requestHandledBefore = false;
+    let requestIsColdStart = true;
+
+    function _onRequest(): void {
+      if (requestHandledBefore) {
+        // Non-first requests cannot be coldstart.
+        requestIsColdStart = false;
+      } else {
+        if (
+          process.env.AWS_LAMBDA_INITIALIZATION_TYPE ===
+          'provisioned-concurrency'
+        ) {
+          // If sandbox environment is initialized with provisioned concurrency,
+          // even the first requests should not be considered as coldstart.
+          requestIsColdStart = false;
+        } else {
+          // Check whether it is proactive initialization or not:
+          // https://aaronstuyvenberg.com/posts/understanding-proactive-initialization
+          const passedTimeSinceHandlerLoad: number =
+            Date.now() - lambdaStartTime;
+          const proactiveInitialization: boolean =
+            passedTimeSinceHandlerLoad > lambdaMaxInitInMilliseconds;
+
+          // If sandbox has been initialized proactively before the actual request,
+          // even the first requests should not be considered as coldstart.
+          requestIsColdStart = !proactiveInitialization;
+        }
+        requestHandledBefore = true;
+      }
+    }
 
     return function patchedHandler(
       this: never,
@@ -182,6 +223,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       context: Context,
       callback: Callback
     ) {
+      _onRequest();
+
       const config = plugin.getConfig();
       const parent = AwsLambdaInstrumentation._determineParent(
         event,
@@ -203,6 +246,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
               AwsLambdaInstrumentation._extractAccountId(
                 context.invokedFunctionArn
               ),
+            [SEMATTRS_FAAS_COLDSTART]: requestIsColdStart,
           },
         },
         parent
