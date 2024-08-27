@@ -994,10 +994,6 @@ describe('pg', () => {
 
     let metricReader: TestMetricReader;
 
-    before(function () {
-      this.timeout(5000);
-    });
-
     beforeEach(() => {
       metricReader = initMeterProvider(instrumentation);
     });
@@ -1045,6 +1041,7 @@ describe('pg', () => {
           true,
           'expect max value for Histogram to be greater than 0'
         );
+        done();
       });
     });
 
@@ -1090,6 +1087,7 @@ describe('pg', () => {
           true,
           'expect max value for Histogram to be greater than 0'
         );
+        done();
       });
     });
   });
