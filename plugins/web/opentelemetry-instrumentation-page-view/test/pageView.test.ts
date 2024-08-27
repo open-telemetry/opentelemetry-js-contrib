@@ -21,13 +21,13 @@ import {
   ReadableLogRecord,
 } from '@opentelemetry/sdk-logs';
 import { EventLoggerProvider } from '@opentelemetry/sdk-events';
-import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { PageViewInstrumentation } from '../src';
-import { Attributes } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { events } from '@opentelemetry/api-events';
 import { PageTypes } from '../src/enums/PageTypes';
+import * as assert from 'assert';
+import { registerInstrumentations } from "@opentelemetry/instrumentation";
 
 describe('PageView Instrumentation', () => {
   let plugin: PageViewInstrumentation;
@@ -64,31 +64,30 @@ describe('PageView Instrumentation', () => {
       });
 
       const spy = sandbox.spy(document, 'addEventListener');
-      plugin.enable();
+      // plugin.enable();
+      registerInstrumentations({instrumentations: [plugin]})
 
-      assert.ok(spy.calledOnce);
+      setTimeout(() => {
+        assert.ok(spy.calledOnce);
 
-      document.dispatchEvent(new Event('DOMContentLoaded'));
+        document.dispatchEvent(new Event('DOMContentLoaded'));
 
-      assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
+        assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
 
-      const pageViewLogRecord =
-        exporter.getFinishedLogRecords()[0] as ReadableLogRecord;
-      assert.strictEqual(
-        pageViewLogRecord.attributes['event.domain'],
-        'browser'
-      );
-      assert.strictEqual(
-        pageViewLogRecord.attributes['event.name'],
-        'page_view'
-      );
-      assert.deepEqual(pageViewLogRecord.attributes['event.data'], {
-        type: PageTypes.BASE_PAGE,
-        url: document.documentURI as string,
-        referrer: document.referrer,
-        title: document.title,
+        const pageViewLogRecord =
+          exporter.getFinishedLogRecords()[0] as ReadableLogRecord;
+        assert.strictEqual(
+          pageViewLogRecord.attributes['event.name'],
+          'browser.page_view'
+        );
+        assert.deepEqual(pageViewLogRecord.body, {
+          type: PageTypes.BASE_PAGE,
+          url: document.documentURI as string,
+          referrer: document.referrer,
+          title: document.title,
+        });
+        done();
       });
-      done();
     });
 
     it('should export LogRecord for page_view event type 1 when history.pushState() is called', done => {
@@ -110,15 +109,11 @@ describe('PageView Instrumentation', () => {
       const pageViewLogRecord =
         exporter.getFinishedLogRecords()[0] as ReadableLogRecord;
       assert.strictEqual(
-        pageViewLogRecord.attributes['event.domain'],
-        'browser'
-      );
-      assert.strictEqual(
         pageViewLogRecord.attributes['event.name'],
-        'page_view'
+        'browser.page_view'
       );
 
-      assert.deepEqual(pageViewLogRecord.attributes['event.data'], {
+      assert.deepEqual(pageViewLogRecord.body, {
         'http.url': document.documentURI as string,
         referrer: referrer,
         title: document.title,
@@ -149,15 +144,11 @@ describe('PageView Instrumentation', () => {
       const pageViewLogRecord =
         exporter.getFinishedLogRecords()[0] as ReadableLogRecord;
       assert.strictEqual(
-        pageViewLogRecord.attributes['event.domain'],
-        'browser'
-      );
-      assert.strictEqual(
         pageViewLogRecord.attributes['event.name'],
-        'page_view'
+        'browser.page_view'
       );
 
-      assert.deepEqual(pageViewLogRecord.attributes['event.data'], {
+      assert.deepEqual(pageViewLogRecord.body, {
         'http.url': document.documentURI as string,
         referrer: referrer,
         title: document.title,
@@ -187,15 +178,11 @@ describe('PageView Instrumentation', () => {
       const pageViewLogRecord =
         exporter.getFinishedLogRecords()[0] as ReadableLogRecord;
       assert.strictEqual(
-        pageViewLogRecord.attributes['event.domain'],
-        'browser'
-      );
-      assert.strictEqual(
         pageViewLogRecord.attributes['event.name'],
-        'page_view'
+        'browser.page_view'
       );
 
-      assert.deepEqual(pageViewLogRecord.attributes['event.data'], {
+      assert.deepEqual(pageViewLogRecord.body, {
         'http.url': document.documentURI as string,
         referrer: firstReferrer,
         title: document.title,
@@ -212,15 +199,11 @@ describe('PageView Instrumentation', () => {
         exporter.getFinishedLogRecords()[0] as ReadableLogRecord;
 
       assert.strictEqual(
-        pageViewLogRecord2.attributes['event.domain'],
-        'browser'
-      );
-      assert.strictEqual(
         pageViewLogRecord2.attributes['event.name'],
-        'page_view'
+        'browser.page_view'
       );
 
-      assert.deepEqual(pageViewLogRecord2.attributes['event.data'], {
+      assert.deepEqual(pageViewLogRecord2.body, {
         'http.url': document.documentURI as string,
         referrer: firstReferrer,
         title: document.title,
@@ -230,7 +213,7 @@ describe('PageView Instrumentation', () => {
       });
 
       assert.notStrictEqual(
-        (<Attributes>pageViewLogRecord2.attributes['event.data'])['referrer'],
+        (<any>pageViewLogRecord2.body)['referrer'],
         secondReferrer
       );
       done();

@@ -27,7 +27,7 @@ import { PageTypes } from './enums/PageTypes';
  */
 const EVENT_NAME = 'browser.page_view';
 export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrumentationConfig> {
-  emitter: EventLogger | null = null;
+  eventLogger: EventLogger | null = null;
   oldUrl = location.href;
   applyCustomEventData: ApplyCustomEventDataFunction | undefined = undefined;
 
@@ -37,14 +37,14 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
    */
   constructor(config: PageViewInstrumentationConfig) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this.emitter = events.getEventLogger(PACKAGE_NAME, PACKAGE_VERSION);
+    this.eventLogger = events.getEventLogger(PACKAGE_NAME, PACKAGE_VERSION);
     this.applyCustomEventData = config?.applyCustomEventData;
   }
 
   init() {}
 
   /**
-   * callback to be executed when page is viewed
+   * callback to be executed when using hard navigation
    */
   private _onPageView() {
     const pageViewEvent: Event = {
@@ -57,11 +57,11 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
       },
     };
     this._applyCustomEventData(pageViewEvent, this.applyCustomEventData);
-    this.emitter?.emit(pageViewEvent);
+    this.eventLogger?.emit(pageViewEvent);
   }
 
   /**
-   * callback to be executed when page is viewed
+   * callback to be executed when using soft navigation
    */
   private _onVirtualPageView(changeState: string | null | undefined) {
     const title = document.title;
@@ -81,15 +81,15 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
       },
     };
     this._applyCustomEventData(vPageViewEvent, this.applyCustomEventData);
-    this.emitter?.emit(vPageViewEvent);
+    this.eventLogger?.emit(vPageViewEvent);
   }
 
-  public _setEmitter(emitter: EventLogger) {
-    this.emitter = emitter;
+  public _seteventLogger(eventLogger: EventLogger) {
+    this.eventLogger = eventLogger;
   }
 
   /**
-   * executes callback {_onDocumenContentLoaded } when the page is viewed
+   * executes callback {_onDOMContentLoaded } when the page is viewed
    */
   private _waitForPageLoad() {
     document.addEventListener('DOMContentLoaded', this._onPageView.bind(this));
@@ -121,7 +121,7 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
   }
 
   /**
-   * Patches the certain history api method
+   * Patches the history api method
    */
   _patchHistoryMethod(changeState: string) {
     const plugin = this;
@@ -142,7 +142,6 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
   private _patchHistoryApi(): void {
     // unpatching here disables other instrumentation that use the same api to wrap history, commenting it out
     // this._unpatchHistoryApi();
-
     this._wrap(
       history,
       'replaceState',
@@ -162,7 +161,7 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
    *
    * @param logRecord
    * @param applyCustomEventData
-   * Add custom attributes to the log record
+   * Add custom data to the event
    */
   _applyCustomEventData(
     event: Event,
