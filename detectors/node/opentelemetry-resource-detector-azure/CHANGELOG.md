@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.10](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.2.9...resource-detector-azure-v0.2.10) (2024-08-27)
+
+
+### Bug Fixes
+
+* **detector-azure:** suppress tracing for AzureVmDetector ([#2371](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2371)) ([5952127](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/595212739068c16c7ab9e407340983a0784efde6))
+
 ## [0.2.9](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.2.8...resource-detector-azure-v0.2.9) (2024-06-10)
 
 
