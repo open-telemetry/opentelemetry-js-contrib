@@ -79,7 +79,11 @@ const incompatVersions =
   (semver.lt(processVersion, '15.0.0') &&
     semver.gte(tediousVersion, '16.0.0')) ||
   // tedious@17 removed support for node v16 and v19 https://github.com/tediousjs/tedious/releases/tag/v17.0.0
-  (semver.lt(processVersion, '17.0.0') && semver.gte(tediousVersion, '17.0.0'));
+  (semver.lt(processVersion, '17.0.0') &&
+    semver.gte(tediousVersion, '17.0.0')) ||
+  // tedious@19 removed support for node <18.17.0 https://github.com/tediousjs/tedious/releases/tag/v19.0.0
+  (semver.lt(processVersion, '18.17.0') &&
+    semver.gte(tediousVersion, '19.0.0'));
 
 describe('tedious', () => {
   let tedious: any;
