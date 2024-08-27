@@ -994,6 +994,10 @@ describe('pg', () => {
 
     let metricReader: TestMetricReader;
 
+    before(function () {
+      this.timeout(5000);
+    });
+
     beforeEach(() => {
       metricReader = initMeterProvider(instrumentation);
     });
