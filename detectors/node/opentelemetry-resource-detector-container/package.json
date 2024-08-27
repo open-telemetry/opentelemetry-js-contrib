@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-container",
-  "version": "0.3.11",
+  "version": "0.4.0",
   "description": "Opentelemetry resource detector to get container resource attributes",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-generic-pool-v0.38.0...instrumentation-generic-pool-v0.38.1) (2024-08-27)
+
+
+### Bug Fixes
+
+* **instrumentation-generic-pool:** update span name typo ([#2405](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2405)) ([2105609](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2105609ec5ba529fba0317c70f7d9d92f8ce4c8f))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-generic-pool-v0.37.0...instrumentation-generic-pool-v0.38.0) (2024-07-03)
 
 
