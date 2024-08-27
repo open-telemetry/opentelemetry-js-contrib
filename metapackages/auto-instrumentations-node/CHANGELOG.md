@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.49.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.49.1...auto-instrumentations-node-v0.49.2) (2024-08-27)
+
+
+### Bug Fixes
+
+* **auto-instrumentations-node:** shutdown the SDK when the process exits normally ([#2394](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2394)) ([0f90b3d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0f90b3d5c0b16903d23567eb724ce1edf9cf327d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-generic-pool bumped from ^0.38.0 to ^0.38.1
+    * @opentelemetry/instrumentation-mongoose bumped from ^0.40.0 to ^0.41.0
+    * @opentelemetry/instrumentation-redis-4 bumped from ^0.41.0 to ^0.41.1
+    * @opentelemetry/instrumentation-tedious bumped from ^0.12.0 to ^0.13.0
+    * @opentelemetry/instrumentation-undici bumped from ^0.4.0 to ^0.5.0
+    * @opentelemetry/resource-detector-aws bumped from ^1.5.2 to ^1.6.0
+    * @opentelemetry/resource-detector-azure bumped from ^0.2.9 to ^0.2.10
+    * @opentelemetry/resource-detector-container bumped from ^0.3.11 to ^0.4.0
+
 ## [0.49.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.49.0...auto-instrumentations-node-v0.49.1) (2024-08-05)
 
 
