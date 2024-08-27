@@ -68,7 +68,6 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
   private _httpClientDurationHistogram!: Histogram;
   constructor(config: UndiciInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this.setConfig(config);
   }
 
   // No need to instrument files/modules
@@ -77,26 +76,32 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
   }
 
   override disable(): void {
-    if (!this.getConfig().enabled) {
-      return;
-    }
-
+    super.disable();
     this._channelSubs.forEach(sub => sub.channel.unsubscribe(sub.onMessage));
     this._channelSubs.length = 0;
-    super.disable();
-    this.setConfig({ ...this.getConfig(), enabled: false });
   }
 
   override enable(): void {
-    if (this.getConfig().enabled) {
+    // "enabled" handling is currently a bit messy with InstrumentationBase.
+    // If constructed with `{enabled: false}`, this `.enable()` is still called,
+    // and `this.getConfig().enabled !== this.isEnabled()`, creating confusion.
+    //
+    // For now, this class will setup for instrumenting if `.enable()` is
+    // called, but use `this.getConfig().enabled` to determine if
+    // instrumentation should be generated. This covers the more likely common
+    // case of config being given a construction time, rather than later via
+    // `instance.enable()`, `.disable()`, or `.setConfig()` calls.
+    super.enable();
+
+    // This method is called by the super-class constructor before ours is
+    // called. So we need to ensure the property is initalized.
+    this._channelSubs = this._channelSubs || [];
+
+    // Avoid to duplicate subscriptions
+    if (this._channelSubs.length > 0) {
       return;
     }
-    super.enable();
-    this.setConfig({ ...this.getConfig(), enabled: true });
 
-    // This method is called by the `InstrumentationAbstract` constructor before
-    // ours is called. So we need to ensure the property is initalized
-    this._channelSubs = this._channelSubs || [];
     this.subscribeToChannel(
       'undici:request:create',
       this.onRequestCreated.bind(this)
@@ -111,16 +116,6 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     );
     this.subscribeToChannel('undici:request:trailers', this.onDone.bind(this));
     this.subscribeToChannel('undici:request:error', this.onError.bind(this));
-  }
-
-  override setConfig(config: UndiciInstrumentationConfig = {}): void {
-    super.setConfig(config);
-
-    if (config?.enabled) {
-      this.enable();
-    } else {
-      this.disable();
-    }
   }
 
   protected override _updateMetricInstruments() {
@@ -162,9 +157,10 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     // - ignored by config
     // - method is 'CONNECT'
     const config = this.getConfig();
+    const enabled = config.enabled !== false;
     const shouldIgnoreReq = safeExecuteInTheMiddle(
       () =>
-        !config.enabled ||
+        !enabled ||
         request.method === 'CONNECT' ||
         config.ignoreRequestHook?.(request),
       e => e && this._diag.error('caught ignoreRequestHook error: ', e),
