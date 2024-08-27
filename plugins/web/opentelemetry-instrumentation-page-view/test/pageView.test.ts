@@ -27,7 +27,7 @@ import { logs } from '@opentelemetry/api-logs';
 import { events } from '@opentelemetry/api-events';
 import { PageTypes } from '../src/enums/PageTypes';
 import * as assert from 'assert';
-import { registerInstrumentations } from "@opentelemetry/instrumentation";
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
 describe('PageView Instrumentation', () => {
   let plugin: PageViewInstrumentation;
@@ -65,7 +65,7 @@ describe('PageView Instrumentation', () => {
 
       const spy = sandbox.spy(document, 'addEventListener');
       // plugin.enable();
-      registerInstrumentations({instrumentations: [plugin]})
+      registerInstrumentations({ instrumentations: [plugin] });
 
       setTimeout(() => {
         assert.ok(spy.calledOnce);
