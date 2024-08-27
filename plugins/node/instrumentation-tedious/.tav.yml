@@ -24,3 +24,10 @@ tedious:
     # TypeScript v5 to use. This peerDependencies can be removed when this
     # package updates to TypeScript v5.
     peerDependencies: typescript@5
+  - versions:
+      include: ">=19 <20"
+      mode: latest-majors
+    node: '>=18.17'
+    commands: npm run test
+    # See typescript@5 note above.
+    peerDependencies: typescript@5
