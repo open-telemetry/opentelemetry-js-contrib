@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { Channel } from 'diagnostics_channel';
-
 import { UndiciRequest, UndiciResponse } from './types';
 
 export interface ListenerRecord {
   name: string;
-  channel: Channel;
-  onMessage: (message: any, name: string) => void;
+  onMessage: (message: any, name: string | symbol) => void;
+  unsubscribe: () => void;
 }
 
 export interface RequestMessage {
