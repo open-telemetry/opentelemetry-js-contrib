@@ -56,6 +56,7 @@ loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(memExporter));
 logs.setGlobalLoggerProvider(loggerProvider);
 
 const instrumentation = new BunyanInstrumentation();
+instrumentation.enable();
 const Logger = require('bunyan');
 
 describe('BunyanInstrumentation', () => {
