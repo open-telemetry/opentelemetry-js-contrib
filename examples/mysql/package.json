@@ -39,7 +39,7 @@
     "@opentelemetry/instrumentation-mysql": "^0.31.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@opentelemetry/sdk-trace-node": "^1.0.0",
-    "@opentelemetry/semantic-conventions": "^1.23.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@opentelemetry/exporter-metrics-otlp-grpc": "^0.48.0",
     "mysql": "^2.18.1"
   },

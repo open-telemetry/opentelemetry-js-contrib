@@ -57,7 +57,7 @@
   "dependencies": {
     "@opentelemetry/core": "^1.0.0",
     "@opentelemetry/resources": "^1.10.0",
-    "@opentelemetry/semantic-conventions": "^1.22.0"
+    "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-aws#readme"
 }
