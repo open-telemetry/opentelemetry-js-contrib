@@ -55,6 +55,15 @@ export function createTestNodeSdk(opts: {
   return sdk;
 }
 
+export enum OtlpSpanKind {
+  UNSPECIFIED = 0,
+  INTERNAL = 1,
+  SERVER = 2,
+  CLIENT = 3,
+  PRODUCER = 4,
+  CONSUMER = 5
+}
+
 // TestSpan is an OTLP span plus references to `resource` and
 // `instrumentationScope` that are shared between multiple spans in the
 // protocol.
