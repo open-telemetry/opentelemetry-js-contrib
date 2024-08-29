@@ -33,6 +33,10 @@ import {
   SEMATTRS_NET_PEER_PORT,
   SEMATTRS_DB_USER,
   SEMATTRS_DB_STATEMENT,
+  ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
+  ATTR_DB_CLIENT_CONNECTION_STATE,
+  DB_CLIENT_CONNECTION_STATE_VALUE_USED,
+  DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
   DBSYSTEMVALUES_POSTGRESQL,
 } from '@opentelemetry/semantic-conventions';
 import {
@@ -50,8 +54,8 @@ import { SpanNames } from './enums/SpanNames';
 
 // TODO: Replace these constants once a new version of the semantic conventions
 // package is created
-const SEMATTRS_CLIENT_CONNECTION_POOL_NAME = 'db.client.connection.pool.name';
-const SEMATTRS_CLIENT_CONNECTION_STATE = 'db.client.connection.state';
+// const SEMATTRS_CLIENT_CONNECTION_POOL_NAME = 'db.client.connection.pool.name';
+// const SEMATTRS_CLIENT_CONNECTION_STATE = 'db.client.connection.state';
 
 /**
  * Helper function to get a low cardinality span name from whatever info we have
@@ -292,17 +296,17 @@ export function updateCounter(
   const used = all - idle;
 
   connectionCount.add(used - latestCounter.used, {
-    [SEMATTRS_CLIENT_CONNECTION_STATE]: 'used',
-    [SEMATTRS_CLIENT_CONNECTION_POOL_NAME]: poolName,
+    [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_USED,
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
   });
 
   connectionCount.add(idle - latestCounter.idle, {
-    [SEMATTRS_CLIENT_CONNECTION_STATE]: 'idle',
-    [SEMATTRS_CLIENT_CONNECTION_POOL_NAME]: poolName,
+    [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
   });
 
   connectionPendingRequests.add(pending - latestCounter.pending, {
-    [SEMATTRS_CLIENT_CONNECTION_POOL_NAME]: poolName,
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
   });
 
   return { used: used, idle: idle, pending: pending };
