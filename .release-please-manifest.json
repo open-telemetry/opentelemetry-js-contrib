@@ -61,6 +61,6 @@
   "plugins/web/opentelemetry-plugin-react-load": "0.30.1",
   "propagators/opentelemetry-propagator-instana": "0.3.2",
   "propagators/opentelemetry-propagator-ot-trace": "0.27.2",
-  "propagators/opentelemetry-propagator-aws": "1.26.0",
-  "propagators/opentelemetry-propagator-aws-lambda": "0.53.0"
+  "propagators/propagator-aws": "1.26.0",
+  "propagators/propagator-aws-lambda": "0.53.0"
 }
