@@ -182,7 +182,7 @@ export const getPackageVersion = (packageName: string) => {
   return JSON.parse(fs.readFileSync(pjPath, 'utf8')).version;
 };
 
-class TestMetricReader extends MetricReader {
+export class TestMetricReader extends MetricReader {
   constructor() {
     super();
   }
