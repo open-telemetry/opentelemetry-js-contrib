@@ -137,7 +137,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
         }
       }
     } catch (e) {
-      diag.warn('AwsEcsDetector failed to read container ID', e);
+      diag.debug('AwsEcsDetector failed to read container ID', e);
     }
 
     if (hostName || containerId) {
