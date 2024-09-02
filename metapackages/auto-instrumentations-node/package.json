@@ -49,7 +49,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.52.0",
+    "@opentelemetry/instrumentation": "^0.53.0",
     "@opentelemetry/instrumentation-amqplib": "^0.41.0",
     "@opentelemetry/instrumentation-aws-lambda": "^0.43.0",
     "@opentelemetry/instrumentation-aws-sdk": "^0.43.1",
@@ -64,9 +64,9 @@
     "@opentelemetry/instrumentation-fs": "^0.14.0",
     "@opentelemetry/instrumentation-generic-pool": "^0.38.1",
     "@opentelemetry/instrumentation-graphql": "^0.42.0",
-    "@opentelemetry/instrumentation-grpc": "^0.52.0",
+    "@opentelemetry/instrumentation-grpc": "^0.53.0",
     "@opentelemetry/instrumentation-hapi": "^0.40.0",
-    "@opentelemetry/instrumentation-http": "^0.52.0",
+    "@opentelemetry/instrumentation-http": "^0.53.0",
     "@opentelemetry/instrumentation-ioredis": "^0.42.0",
     "@opentelemetry/instrumentation-kafkajs": "^0.2.0",
     "@opentelemetry/instrumentation-knex": "^0.39.0",
@@ -95,7 +95,7 @@
     "@opentelemetry/resource-detector-container": "^0.4.0",
     "@opentelemetry/resource-detector-gcp": "^0.29.10",
     "@opentelemetry/resources": "^1.24.0",
-    "@opentelemetry/sdk-node": "^0.52.0"
+    "@opentelemetry/sdk-node": "^0.53.0"
   },
   "files": [
     "build/src/**/*.js",
