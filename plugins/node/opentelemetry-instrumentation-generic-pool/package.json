@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-generic-pool",
-  "version": "0.38.0",
+  "version": "0.38.1",
   "description": "OpenTelemetry instrumentation for `generic-pool` resource pool for managing expensive resources",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -50,17 +50,17 @@
     "@types/generic-pool": "^3.1.9",
     "@types/mocha": "7.0.2",
     "@types/node": "18.6.5",
-    "@types/semver": "7.5.3",
+    "@types/semver": "7.5.8",
     "generic-pool": "3.8.2",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "rimraf": "5.0.5",
-    "semver": "7.5.4",
+    "rimraf": "5.0.10",
+    "semver": "7.6.3",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.52.0"
+    "@opentelemetry/instrumentation": "^0.53.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-generic-pool#readme"
 }

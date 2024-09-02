@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-amqplib",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "description": "OpenTelemetry instrumentation for the `amqplib` messaging client for RabbitMQ",
   "keywords": [
     "amqplib",
@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.52.0",
+    "@opentelemetry/instrumentation": "^0.53.0",
     "@opentelemetry/semantic-conventions": "^1.22.0"
   },
   "devDependencies": {
@@ -56,7 +56,7 @@
     "@types/lodash": "4.14.199",
     "@types/mocha": "8.2.3",
     "@types/node": "18.6.5",
-    "@types/sinon": "10.0.18",
+    "@types/sinon": "10.0.20",
     "amqplib": "0.8.0",
     "expect": "29.2.0",
     "lodash": "4.17.21",

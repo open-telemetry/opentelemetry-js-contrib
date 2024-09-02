@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 import {
-  Detector,
+  DetectorSync,
+  IResource,
   Resource,
+  ResourceAttributes,
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 
@@ -24,62 +26,61 @@ import { SEMRESATTRS_CONTAINER_ID } from '@opentelemetry/semantic-conventions';
 import * as fs from 'fs';
 import * as util from 'util';
 import { diag } from '@opentelemetry/api';
+import { extractContainerIdFromLine } from './utils';
 
-export class ContainerDetector implements Detector {
+export class ContainerDetector implements DetectorSync {
   readonly CONTAINER_ID_LENGTH = 64;
   readonly DEFAULT_CGROUP_V1_PATH = '/proc/self/cgroup';
   readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
   readonly UTF8_UNICODE = 'utf8';
   readonly HOSTNAME = 'hostname';
+  readonly MARKING_PREFIX = 'containers';
+  readonly CRIO = 'crio-';
+  readonly CRI_CONTAINERD = 'cri-containerd-';
+  readonly DOCKER = 'docker-';
+  readonly HEX_STRING_REGEX: RegExp = /^[a-f0-9]+$/i;
 
   private static readFileAsync = util.promisify(fs.readFile);
 
-  async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
+  detect(_config?: ResourceDetectionConfig): IResource {
+    return new Resource({}, this._getAttributes());
+  }
+
+  /**
+   * Attempts to obtain the container ID from the file system. If the
+   * file read is successful it returns a promise containing a {@link ResourceAttributes}
+   * object with the container ID. Returns a promise containing an
+   * empty {@link ResourceAttributes} if the paths do not exist or fail
+   * to read.
+   */
+  async _getAttributes(): Promise<ResourceAttributes> {
     try {
       const containerId = await this._getContainerId();
       return !containerId
-        ? Resource.empty()
-        : new Resource({
+        ? {}
+        : {
             [SEMRESATTRS_CONTAINER_ID]: containerId,
-          });
+          };
     } catch (e) {
-      diag.info(
+      diag.debug(
         'Container Detector did not identify running inside a supported container, no container attributes will be added to resource: ',
         e
       );
-      return Resource.empty();
+      return {};
     }
   }
 
-  private async _getContainerIdV1() {
+  private async _getContainerIdV1(): Promise<string | undefined> {
     const rawData = await ContainerDetector.readFileAsync(
       this.DEFAULT_CGROUP_V1_PATH,
       this.UTF8_UNICODE
     );
     const splitData = rawData.trim().split('\n');
-    for (const line of splitData) {
-      const lastSlashIdx = line.lastIndexOf('/');
-      if (lastSlashIdx === -1) {
-        continue;
-      }
-      const lastSection = line.substring(lastSlashIdx + 1);
-      const colonIdx = lastSection.lastIndexOf(':');
-      if (colonIdx !== -1) {
-        // since containerd v1.5.0+, containerId is divided by the last colon when the cgroupDriver is systemd:
-        // https://github.com/containerd/containerd/blob/release/1.5/pkg/cri/server/helpers_linux.go#L64
-        return lastSection.substring(colonIdx + 1);
-      } else {
-        let startIdx = lastSection.lastIndexOf('-');
-        let endIdx = lastSection.lastIndexOf('.');
 
-        startIdx = startIdx === -1 ? 0 : startIdx + 1;
-        if (endIdx === -1) {
-          endIdx = lastSection.length;
-        }
-        if (startIdx > endIdx) {
-          continue;
-        }
-        return lastSection.substring(startIdx, endIdx);
+    for (const line of splitData) {
+      const containerID = extractContainerIdFromLine(line);
+      if (containerID) {
+        return containerID;
       }
     }
     return undefined;
@@ -94,10 +95,19 @@ export class ContainerDetector implements Detector {
       .trim()
       .split('\n')
       .find(s => s.includes(this.HOSTNAME));
-    const containerIdStr = str
-      ?.split('/')
-      .find(s => s.length === this.CONTAINER_ID_LENGTH);
-    return containerIdStr || '';
+
+    if (!str) return '';
+
+    const strArray = str?.split('/') ?? [];
+    for (let i = 0; i < strArray.length - 1; i++) {
+      if (
+        strArray[i] === this.MARKING_PREFIX &&
+        strArray[i + 1]?.length === this.CONTAINER_ID_LENGTH
+      ) {
+        return strArray[i + 1];
+      }
+    }
+    return '';
   }
 
   /*
@@ -107,19 +117,24 @@ export class ContainerDetector implements Detector {
   */
   private async _getContainerId(): Promise<string | undefined> {
     try {
-      return (
-        (await this._getContainerIdV1()) || (await this._getContainerIdV2())
-      );
+      const containerIdV1 = await this._getContainerIdV1();
+      if (containerIdV1) {
+        return containerIdV1; // If containerIdV1 is a non-empty string, return it.
+      }
+      const containerIdV2 = await this._getContainerIdV2();
+      if (containerIdV2) {
+        return containerIdV2; // If containerIdV2 is a non-empty string, return it.
+      }
     } catch (e) {
       if (e instanceof Error) {
         const errorMessage = e.message;
-        diag.info(
+        diag.debug(
           'Container Detector failed to read the Container ID: ',
           errorMessage
         );
       }
     }
-    return undefined;
+    return undefined; // Explicitly return undefined if neither ID is found.
   }
 }
 

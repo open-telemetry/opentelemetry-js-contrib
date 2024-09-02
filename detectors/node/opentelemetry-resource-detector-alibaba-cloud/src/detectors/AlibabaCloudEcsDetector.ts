@@ -15,8 +15,10 @@
  */
 
 import {
-  Detector,
+  DetectorSync,
+  IResource,
   Resource,
+  ResourceAttributes,
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
@@ -31,6 +33,7 @@ import {
   SEMRESATTRS_HOST_NAME,
   SEMRESATTRS_HOST_TYPE,
 } from '@opentelemetry/semantic-conventions';
+
 import * as http from 'http';
 
 /**
@@ -38,7 +41,7 @@ import * as http from 'http';
  * AlibabaCloud ECS and return a {@link Resource} populated with metadata about
  * the ECS instance. Returns an empty Resource if detection fails.
  */
-class AlibabaCloudEcsDetector implements Detector {
+class AlibabaCloudEcsDetector implements DetectorSync {
   /**
    * See https://www.alibabacloud.com/help/doc-detail/67254.htm for
    * documentation about the AlibabaCloud instance identity document.
@@ -57,7 +60,14 @@ class AlibabaCloudEcsDetector implements Detector {
    *
    * @param config (unused) The resource detection config
    */
-  async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
+  detect(_config?: ResourceDetectionConfig): IResource {
+    return new Resource({}, this._getAttributes());
+  }
+
+  /** Gets identity and host info and returns them as attribs. Empty object if fails */
+  async _getAttributes(
+    _config?: ResourceDetectionConfig
+  ): Promise<ResourceAttributes> {
     const {
       'owner-account-id': accountId,
       'instance-id': instanceId,
@@ -67,7 +77,7 @@ class AlibabaCloudEcsDetector implements Detector {
     } = await this._fetchIdentity();
     const hostname = await this._fetchHost();
 
-    return new Resource({
+    return {
       [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_ALIBABA_CLOUD,
       [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_ALIBABA_CLOUD_ECS,
       [SEMRESATTRS_CLOUD_ACCOUNT_ID]: accountId,
@@ -76,7 +86,7 @@ class AlibabaCloudEcsDetector implements Detector {
       [SEMRESATTRS_HOST_ID]: instanceId,
       [SEMRESATTRS_HOST_TYPE]: instanceType,
       [SEMRESATTRS_HOST_NAME]: hostname,
-    });
+    };
   }
 
   /**

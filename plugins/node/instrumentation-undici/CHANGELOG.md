@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.4.0...instrumentation-undici-v0.5.0) (2024-08-27)
+
+
+### Features
+
+* **instrumentation-undici:** Add `responseHook` ([#2356](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2356)) ([60a99c9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/60a99c98fd3a5594c7c2234184f06166b375e707))
+
+
+### Bug Fixes
+
+* **instr-undici:** fix issue with config in constructor ([#2395](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2395)) ([ca70bb9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ca70bb9c8cc8128bd202a8a9a29bb5c788ea5332))
+
 ## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.3.0...instrumentation-undici-v0.4.0) (2024-07-03)
 
 

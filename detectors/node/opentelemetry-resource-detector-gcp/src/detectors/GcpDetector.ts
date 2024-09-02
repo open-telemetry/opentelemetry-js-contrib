@@ -17,10 +17,11 @@
 import * as gcpMetadata from 'gcp-metadata';
 import { diag } from '@opentelemetry/api';
 import {
-  Detector,
+  DetectorSync,
   ResourceDetectionConfig,
   Resource,
   ResourceAttributes,
+  IResource,
 } from '@opentelemetry/resources';
 import { getEnv } from '@opentelemetry/core';
 import {
@@ -41,19 +42,21 @@ import {
  * Cloud Platform and return a {@link Resource} populated with metadata about
  * the instance. Returns an empty Resource if detection fails.
  */
-class GcpDetector implements Detector {
+class GcpDetector implements DetectorSync {
+  detect(_config?: ResourceDetectionConfig): IResource {
+    return new Resource({}, this._getAttribures());
+  }
+
   /**
    * Attempts to connect and obtain instance configuration data from the GCP metadata service.
-   * If the connection is successful it returns a promise containing a {@link Resource}
-   * populated with instance metadata. Returns a promise containing an
-   * empty {@link Resource} if the connection or parsing of the metadata fails.
-   *
-   * @param config The resource detection config
+   * If the connection is successful it returns a promise containing a {@link ResourceAttributes}
+   * object with instance metadata. Returns a promise containing an
+   * empty {@link ResourceAttributes} if the connection or parsing of the metadata fails.
    */
-  async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
+  private async _getAttribures(): Promise<ResourceAttributes> {
     if (!(await gcpMetadata.isAvailable())) {
       diag.debug('GcpDetector failed: GCP Metadata unavailable.');
-      return Resource.empty();
+      return {};
     }
 
     const [projectId, instanceId, zoneId, clusterName, hostname] =
@@ -75,7 +78,7 @@ class GcpDetector implements Detector {
     if (getEnv().KUBERNETES_SERVICE_HOST)
       this._addK8sAttributes(attributes, clusterName);
 
-    return new Resource(attributes);
+    return attributes;
   }
 
   /** Add resource attributes for K8s */
