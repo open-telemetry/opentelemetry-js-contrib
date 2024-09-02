@@ -274,6 +274,14 @@ pkg:sql-common:
   - changed-files:
       - any-glob-to-any-file:
           - packages/opentelemetry-sql-common/**
+pkg:propagator-aws-xray:
+  - changed-files:
+      - any-glob-to-any-file:
+          - propagators/propagator-aws-xray/**
+pkg:propagator-aws-xray-lambda:
+  - changed-files:
+      - any-glob-to-any-file:
+          - propagators/propagator-aws-xray-lambda/**
 pkg-status:unmaintained:
   - changed-files:
       - any-glob-to-any-file:
@@ -291,3 +299,5 @@ pkg-status:unmaintained:
           - plugins/node/opentelemetry-instrumentation-restify/**
           - plugins/node/opentelemetry-instrumentation-router/**
           - propagators/opentelemetry-propagator-ot-trace/**
+          - propagators/propagator-aws-xray/**
+          - propagators/propagator-aws-xray-lambda/**

@@ -146,6 +146,10 @@ components:
     - kirrg001
   propagators/opentelemetry-propagator-ot-trace: []
     # Unmaintained
+  propagators/propagator-aws-xray: [ ]
+  # Unmaintained
+  propagators/propagator-aws-xray-lambda: [ ]
+  # Unmaintained
 
 ignored-authors:
   - renovate-bot
