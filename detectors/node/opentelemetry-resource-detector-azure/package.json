@@ -49,7 +49,7 @@
   "dependencies": {
     "@opentelemetry/core": "^1.25.1",
     "@opentelemetry/resources": "^1.10.1",
-    "@opentelemetry/semantic-conventions": "^1.22.0"
+    "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-azure#readme"
 }
