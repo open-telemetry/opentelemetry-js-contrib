@@ -71,7 +71,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.53.0",
-    "@opentelemetry/semantic-conventions": "^1.23.0"
+    "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-nestjs-core#readme"
 }
