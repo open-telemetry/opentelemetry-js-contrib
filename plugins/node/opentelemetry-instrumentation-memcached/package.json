@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.53.0",
-    "@opentelemetry/semantic-conventions": "^1.23.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/memcached": "^2.2.6"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-memcached#readme"
