@@ -51,11 +51,8 @@ import {
   SEMATTRS_DB_USER,
   SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
+import { ATTR_DB_CLIENT_CONNECTION_STATE } from '@opentelemetry/semantic-conventions/incubating';
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
-
-// TODO: Replace these constants once a new version of the semantic conventions
-// package is created with https://github.com/open-telemetry/opentelemetry-js/pull/4891
-const SEMATTRS_CLIENT_CONNECTION_STATE = 'db.client.connection.state';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -553,7 +550,7 @@ describe('pg-pool', () => {
           );
           assert.strictEqual(
             metrics[0].dataPoints[0].attributes[
-              SEMATTRS_CLIENT_CONNECTION_STATE
+              ATTR_DB_CLIENT_CONNECTION_STATE
             ],
             'used'
           );
@@ -564,7 +561,7 @@ describe('pg-pool', () => {
           );
           assert.strictEqual(
             metrics[0].dataPoints[1].attributes[
-              SEMATTRS_CLIENT_CONNECTION_STATE
+              ATTR_DB_CLIENT_CONNECTION_STATE
             ],
             'idle'
           );

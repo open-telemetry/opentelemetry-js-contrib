@@ -42,6 +42,10 @@ import * as utils from './utils';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
+import {
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
+  METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
+} from '@opentelemetry/semantic-conventions/incubating';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   private _connectionsCount!: UpDownCounter;
@@ -68,7 +72,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       used: 0,
     };
     this._connectionsCount = this.meter.createUpDownCounter(
-      'db.client.connection.count',
+      METRIC_DB_CLIENT_CONNECTION_COUNT,
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',
@@ -76,7 +80,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       }
     );
     this._connectionPendingRequests = this.meter.createUpDownCounter(
-      'db.client.connection.pending_requests',
+      METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
       {
         description:
           'The number of current pending requests for an open connection.',

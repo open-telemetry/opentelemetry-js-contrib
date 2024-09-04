@@ -33,12 +33,14 @@ import {
   SEMATTRS_NET_PEER_PORT,
   SEMATTRS_DB_USER,
   SEMATTRS_DB_STATEMENT,
+  DBSYSTEMVALUES_POSTGRESQL,
+} from '@opentelemetry/semantic-conventions';
+import {
   ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
   ATTR_DB_CLIENT_CONNECTION_STATE,
   DB_CLIENT_CONNECTION_STATE_VALUE_USED,
   DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
-  DBSYSTEMVALUES_POSTGRESQL,
-} from '@opentelemetry/semantic-conventions';
+} from '@opentelemetry/semantic-conventions/incubating';
 import {
   PgClientExtended,
   PostgresCallback,
@@ -51,11 +53,6 @@ import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { SpanNames } from './enums/SpanNames';
-
-// TODO: Replace these constants once a new version of the semantic conventions
-// package is created
-// const SEMATTRS_CLIENT_CONNECTION_POOL_NAME = 'db.client.connection.pool.name';
-// const SEMATTRS_CLIENT_CONNECTION_STATE = 'db.client.connection.state';
 
 /**
  * Helper function to get a low cardinality span name from whatever info we have
