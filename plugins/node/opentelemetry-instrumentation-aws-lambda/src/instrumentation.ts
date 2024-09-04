@@ -44,11 +44,11 @@ import {
   AWSXRayPropagator,
 } from '@opentelemetry/propagator-aws-xray';
 import {
-  SEMATTRS_FAAS_COLDSTART,
   SEMATTRS_FAAS_EXECUTION,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
   SEMRESATTRS_FAAS_ID,
 } from '@opentelemetry/semantic-conventions';
+import { ATTR_FAAS_COLDSTART } from '@opentelemetry/semantic-conventions/incubating';
 
 import {
   APIGatewayProxyEventHeaders,
@@ -246,7 +246,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
               AwsLambdaInstrumentation._extractAccountId(
                 context.invokedFunctionArn
               ),
-            [SEMATTRS_FAAS_COLDSTART]: requestIsColdStart,
+            [ATTR_FAAS_COLDSTART]: requestIsColdStart,
           },
         },
         parent
