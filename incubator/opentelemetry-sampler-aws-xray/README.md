@@ -2,7 +2,7 @@
 
 > This component is still in development and has not been released as an npm package.
 
-component owner: @carolabadeer
+component owner: N/A
 
 This module provides the remote/centralized sampler for AWS X-Ray.
 
