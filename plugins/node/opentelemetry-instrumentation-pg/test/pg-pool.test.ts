@@ -35,7 +35,6 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
@@ -52,7 +51,6 @@ import {
   SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
 import { ATTR_DB_CLIENT_CONNECTION_STATE } from '@opentelemetry/semantic-conventions/incubating';
-import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -487,29 +485,10 @@ describe('pg-pool', () => {
   });
 
   describe('pg metrics', () => {
-    // TODO replace once a new version of opentelemetry-test-utils is created
-    class TestMetricReader extends MetricReader {
-      constructor() {
-        super();
-      }
-      protected async onForceFlush(): Promise<void> {}
-      protected async onShutdown(): Promise<void> {}
-    }
-    const initMeterProvider = (
-      instrumentation: InstrumentationBase
-    ): TestMetricReader => {
-      const metricReader = new TestMetricReader();
-      const meterProvider = new MeterProvider({
-        readers: [metricReader],
-      });
-      instrumentation.setMeterProvider(meterProvider);
-      return metricReader;
-    };
-
-    let metricReader: TestMetricReader;
+    let metricReader: testUtils.TestMetricReader;
 
     beforeEach(() => {
-      metricReader = initMeterProvider(instrumentation);
+      metricReader = testUtils.initMeterProvider(instrumentation);
     });
 
     it('should generate `db.client.connection.count` and `db.client.connection.pending_requests` metrics', async () => {
