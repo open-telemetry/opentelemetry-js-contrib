@@ -34,7 +34,7 @@
     "@opentelemetry/resources": "^1.23.0",
     "@opentelemetry/sdk-trace-base": "^0.25.0",
     "@opentelemetry/sdk-trace-node": "^0.25.0",
-    "@opentelemetry/semantic-conventions": "^1.23.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "memcached": "^2.2.2"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme"
