@@ -30,10 +30,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import {
-  DataPoint,
-  Histogram,
-} from '@opentelemetry/sdk-metrics';
+import { DataPoint, Histogram } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import type * as pg from 'pg';
 import * as sinon from 'sinon';
@@ -998,10 +995,7 @@ describe('pg', () => {
           dataPoint.attributes[SEMATTRS_DB_SYSTEM],
           DBSYSTEMVALUES_POSTGRESQL
         );
-        assert.strictEqual(
-          dataPoint.attributes[ATTR_ERROR_TYPE],
-          undefined
-        );
+        assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], undefined);
 
         const v = (dataPoint as DataPoint<Histogram>).value;
         v.min = v.min ? v.min : 0;
