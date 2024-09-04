@@ -52,14 +52,14 @@ import {
 import {
   DBSYSTEMVALUES_POSTGRESQL,
   SEMATTRS_DB_SYSTEM,
+  ATTR_ERROR_TYPE,
+  ATTR_SERVER_PORT,
+  ATTR_SERVER_ADDRESS,
 } from '@opentelemetry/semantic-conventions';
-
-// TODO: Replace these constants once a new version of the semantic conventions
-// package is created
-const SEMATTRS_DB_NAMESPACE = 'db.namespace';
-const SEMATTRS_ERROR_TYPE = 'error.type';
-const SEMATTRS_SERVER_PORT = 'server.port';
-const SEMATTRS_SERVER_ADDRESS = 'server.address';
+import {
+  METRIC_DB_CLIENT_OPERATION_DURATION,
+  ATTR_DB_NAMESPACE,
+} from '@opentelemetry/semantic-conventions/incubating';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   private _operationDuration!: Histogram;
@@ -69,7 +69,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
   override _updateMetricInstruments() {
     this._operationDuration = this.meter.createHistogram(
-      'db.client.operation.duration',
+      METRIC_DB_CLIENT_OPERATION_DURATION,
       {
         description: 'Duration of database client operations.',
         unit: 's',
@@ -186,10 +186,10 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     const metricsAttributes: Attributes = {};
     const keysToCopy = [
       SEMATTRS_DB_SYSTEM,
-      SEMATTRS_DB_NAMESPACE,
-      SEMATTRS_ERROR_TYPE,
-      SEMATTRS_SERVER_PORT,
-      SEMATTRS_SERVER_ADDRESS,
+      ATTR_DB_NAMESPACE,
+      ATTR_ERROR_TYPE,
+      ATTR_SERVER_PORT,
+      ATTR_SERVER_ADDRESS,
     ];
 
     keysToCopy.forEach(key => {
@@ -239,9 +239,9 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
         const attributes: Attributes = {
           [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
-          [SEMATTRS_DB_NAMESPACE]: this.database,
-          [SEMATTRS_SERVER_PORT]: this.connectionParameters.port,
-          [SEMATTRS_SERVER_ADDRESS]: this.connectionParameters.host,
+          [ATTR_DB_NAMESPACE]: this.database,
+          [ATTR_SERVER_PORT]: this.connectionParameters.port,
+          [ATTR_SERVER_ADDRESS]: this.connectionParameters.host,
         };
 
         const recordDuration = () => {
@@ -360,7 +360,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             message: utils.getErrorMessage(e),
           });
           span.end();
-          attributes[SEMATTRS_ERROR_TYPE] = utils.getErrorMessage(e);
+          attributes[ATTR_ERROR_TYPE] = utils.getErrorMessage(e);
           throw e;
         }
 
@@ -382,7 +382,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
                   message: error.message,
                 });
                 span.end();
-                attributes[SEMATTRS_ERROR_TYPE] = utils.getErrorMessage(error);
+                attributes[ATTR_ERROR_TYPE] = utils.getErrorMessage(error);
                 reject(error);
               });
             });

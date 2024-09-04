@@ -33,8 +33,6 @@ import {
 import {
   DataPoint,
   Histogram,
-  MeterProvider,
-  MetricReader,
 } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import type * as pg from 'pg';
@@ -56,13 +54,9 @@ import {
   SEMATTRS_NET_PEER_PORT,
   SEMATTRS_DB_USER,
   DBSYSTEMVALUES_POSTGRESQL,
+  ATTR_ERROR_TYPE,
 } from '@opentelemetry/semantic-conventions';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
-import { InstrumentationBase } from '@opentelemetry/instrumentation';
-
-// TODO: Replace these constants once a new version of the semantic conventions
-// package is created
-const SEMATTRS_ERROR_TYPE = 'error.type';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -973,29 +967,10 @@ describe('pg', () => {
   });
 
   describe('pg metrics', () => {
-    // TODO replace once a new version of opentelemetry-test-utils is created
-    class TestMetricReader extends MetricReader {
-      constructor() {
-        super();
-      }
-      protected async onForceFlush(): Promise<void> {}
-      protected async onShutdown(): Promise<void> {}
-    }
-    const initMeterProvider = (
-      instrumentation: InstrumentationBase
-    ): TestMetricReader => {
-      const metricReader = new TestMetricReader();
-      const meterProvider = new MeterProvider({
-        readers: [metricReader],
-      });
-      instrumentation.setMeterProvider(meterProvider);
-      return metricReader;
-    };
-
-    let metricReader: TestMetricReader;
+    let metricReader: testUtils.TestMetricReader;
 
     beforeEach(() => {
-      metricReader = initMeterProvider(instrumentation);
+      metricReader = testUtils.initMeterProvider(instrumentation);
     });
 
     it('should generate db.client.operation.duration metric', done => {
@@ -1024,7 +999,7 @@ describe('pg', () => {
           DBSYSTEMVALUES_POSTGRESQL
         );
         assert.strictEqual(
-          dataPoint.attributes[SEMATTRS_ERROR_TYPE],
+          dataPoint.attributes[ATTR_ERROR_TYPE],
           undefined
         );
 
@@ -1070,7 +1045,7 @@ describe('pg', () => {
           DBSYSTEMVALUES_POSTGRESQL
         );
         assert.strictEqual(
-          dataPoint.attributes[SEMATTRS_ERROR_TYPE],
+          dataPoint.attributes[ATTR_ERROR_TYPE],
           'function test() does not exist'
         );
 
