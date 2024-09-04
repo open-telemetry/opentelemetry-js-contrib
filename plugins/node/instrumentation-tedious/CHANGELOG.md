@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.14.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.13.0...instrumentation-tedious-v0.14.0) (2024-09-02)
+
+
+### Features
+
+* update deps matching "@opentelemetry/" ([9fa058e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fa058ebb919de4e2a4e1af95b3c792c6ea962ac))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.40.0 to ^0.41.0
+
+## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.12.0...instrumentation-tedious-v0.13.0) (2024-08-27)
+
+
+### Features
+
+* **instr-tedious:** support tedious@18 ([#2381](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2381)) ([0e9791a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0e9791ad7a812268cc3416448316a5f2adeb8f32)), closes [#2266](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2266)
+* **instr-tedious:** support tedious@19 ([#2401](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2401)) ([d30c85c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d30c85ce4fb42dcd8a0f15e79fae1a72bf7578bf)), closes [#2400](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2400)
+
 ## [0.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.11.0...instrumentation-tedious-v0.12.0) (2024-07-03)
 
 
