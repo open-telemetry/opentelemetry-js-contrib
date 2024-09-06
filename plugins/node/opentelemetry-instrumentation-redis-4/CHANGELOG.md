@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.41.1...instrumentation-redis-4-v0.42.0) (2024-09-02)
+
+
+### Features
+
+* update deps matching "@opentelemetry/" ([9fa058e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fa058ebb919de4e2a4e1af95b3c792c6ea962ac))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.40.0 to ^0.41.0
+
+## [0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.41.0...instrumentation-redis-4-v0.41.1) (2024-08-27)
+
+
+### Bug Fixes
+
+* **instrumentation-redis-4:** avoid crash from incorrect this._diag ref ([#2397](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2397)) ([de7a6cb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/de7a6cb77e643ed0de82e514510089fba5ae0405)), closes [#2389](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2389)
+
 ## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.40.0...instrumentation-redis-4-v0.41.0) (2024-07-03)
 
 

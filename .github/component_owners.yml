@@ -2,8 +2,8 @@
 components:
   detectors/node/opentelemetry-resource-detector-alibaba-cloud:
     - legendecas
-  detectors/node/opentelemetry-resource-detector-aws:
-    - carolabadeer
+  detectors/node/opentelemetry-resource-detector-aws: []
+    # Unmaintained
   detectors/node/opentelemetry-resource-detector-azure:
     - jacksonweber
     - hectorhdzg
@@ -16,8 +16,8 @@ components:
     # Unmaintained
   detectors/node/opentelemetry-resource-detector-instana:
     - kirrg001
-  incubator/opentelemetry-sampler-aws-xray:
-    - carolabadeer
+  incubator/opentelemetry-sampler-aws-xray: []
+    # Unmaintained
   metapackages/auto-configuration-propagators:
     - pichlermarc
   metapackages/auto-instrumentations-node:
@@ -35,8 +35,8 @@ components:
     - jamiedanielson
   packages/opentelemetry-host-metrics:
     - legendecas
-  packages/opentelemetry-id-generator-aws-xray:
-    - carolabadeer
+  packages/opentelemetry-id-generator-aws-xray: []
+    # Unmaintained
   packages/opentelemetry-propagation-utils:
     - dyladan
     - pichlermarc
@@ -69,10 +69,9 @@ components:
     - mottibec
   plugins/node/instrumentation-tedious: []
     # Unmaintained
-  plugins/node/opentelemetry-instrumentation-aws-lambda:
-    - carolabadeer
+  plugins/node/opentelemetry-instrumentation-aws-lambda: []
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-aws-sdk:
-    - carolabadeer
     - blumamir
   plugins/node/opentelemetry-instrumentation-bunyan:
     - seemk
