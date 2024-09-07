@@ -40,9 +40,16 @@ try {
   );
 }
 
-process.on('SIGTERM', () => {
-  sdk
-    .shutdown()
-    .then(() => diag.debug('OpenTelemetry SDK terminated'))
-    .catch(error => diag.error('Error terminating OpenTelemetry SDK', error));
-});
+async function shutdown(): Promise<void> {
+  try {
+    await sdk.shutdown();
+    diag.debug('OpenTelemetry SDK terminated');
+  } catch (error) {
+    diag.error('Error terminating OpenTelemetry SDK', error);
+  }
+}
+
+// Gracefully shutdown SDK if a SIGTERM is received
+process.on('SIGTERM', shutdown);
+// Gracefully shutdown SDK if Node.js is exiting normally
+process.once('beforeExit', shutdown);

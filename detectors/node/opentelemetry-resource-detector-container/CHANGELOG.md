@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.4.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.4.0...resource-detector-container-v0.4.1) (2024-09-02)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.40.0 to ^0.41.0
+
+## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.3.11...resource-detector-container-v0.4.0) (2024-08-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* **detector-container:** change implementation to DetectorSync interface ([#2334](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2334))
+
+### Features
+
+* added prefix to look for containerid ([#2341](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2341)) ([1991aed](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1991aed1e23a8def91d067e0ffaf75c2eee8c1b8))
+* **detector-container:** change implementation to DetectorSync interface ([#2334](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2334)) ([18a5731](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/18a5731a409551103bd8c9ed7bd02f2f59fe5536))
+
+
+### Bug Fixes
+
+* **detectors:** reduce diag level on detectors failing to detect ([#2382](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2382)) ([d7a5bd4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d7a5bd45838f34bab45f4ba235093fa686032622))
+
 ## [0.3.11](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.3.10...resource-detector-container-v0.3.11) (2024-06-10)
 
 
