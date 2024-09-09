@@ -18,12 +18,17 @@
 // so SDK cannot instrument them. We make sure we load fresh copies so RITM hook does its work.
 // we remove all the require chain: detector -> gcp-metadata -> gaxios -> node-fetch
 // but kepp other cache entries to not slow down the test more than necessary
-const modules = ['opentelemetry-resource-detector-gcp', 'gcp-metadata', 'gaxios', 'node-fetch']
+const modules = [
+  'opentelemetry-resource-detector-gcp',
+  'gcp-metadata',
+  'gaxios',
+  'node-fetch',
+];
 Object.keys(require.cache)
-.filter((path) => modules.some((m) => path.includes(m)))
-.forEach((key) => {
-  delete require.cache[key];
-});
+  .filter(path => modules.some(m => path.includes(m)))
+  .forEach(key => {
+    delete require.cache[key];
+  });
 
 import * as assert from 'assert';
 
