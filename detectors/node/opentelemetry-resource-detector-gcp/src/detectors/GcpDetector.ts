@@ -51,7 +51,7 @@ class GcpDetector implements DetectorSync {
       );
       return new Resource({}, attributes);
     }
-    
+
     return new Resource({}, this._getAttributes());
   }
 

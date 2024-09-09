@@ -46,9 +46,7 @@ describe('[Integration] GcpDetector', () => {
     // internal tracing any change that delays these request will result in internal
     // tracing being exported. We do the detection outside the SDK constructor to have such
     // scenario.
-    const {
-      gcpDetector,
-    } = require('../../build/src/detectors/GcpDetector');
+    const { gcpDetector } = require('../../build/src/detectors/GcpDetector');
     const resource = gcpDetector.detect() as IResource;
     await resource.waitForAsyncAttributes?.();
 
