@@ -1082,7 +1082,7 @@ describe('lambda handler', () => {
   });
 
   describe('url parsing', () => {
-    it('pulls url from api gateway events', async () => {
+    it('pulls url from api gateway rest events', async () => {
       initializeHandler('lambda-test/sync.handler');
       const event = {
         path: '/lambda/test/path',
@@ -1100,6 +1100,28 @@ describe('lambda handler', () => {
       assert.strictEqual(
         span.attributes[ATTR_URL_FULL],
         'http://www.example.com/lambda/test/path?key=value'
+      );
+      console.log(span);
+    });
+    it('pulls url from api gateway http events', async () => {
+      initializeHandler('lambda-test/sync.handler');
+      const event = {
+        rawPath: '/lambda/test/path',
+        headers: {
+          host: 'www.example.com',
+          'x-forwarded-proto': 'http',
+          'x-forwarded-port': 1234,
+        },
+        queryStringParameters: {
+          key: 'value',
+        },
+      };
+
+      await lambdaRequire('lambda-test/sync').handler(event, ctx, () => {});
+      const [span] = memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        span.attributes[ATTR_URL_FULL],
+        'http://www.example.com:1234/lambda/test/path?key=value'
       );
       console.log(span);
     });

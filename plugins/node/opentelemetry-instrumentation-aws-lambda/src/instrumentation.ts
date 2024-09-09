@@ -443,17 +443,22 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
 
   private static _extractFullUrl(event: any): string | undefined {
     // API gateway encodes a lot of url information in various places to recompute this
-    if (!event.headers || !event.path) {
+    if (
+      !(
+        event.headers &&
+        (event.path || event.rawPath) &&
+        event.headers['host'] &&
+        event.headers['x-forwarded-proto']
+      )
+    ) {
       return undefined;
     }
-    let answer = '';
-    if (event.headers['x-forwarded-proto']) {
-      answer += event.headers['x-forwarded-proto'] + '://';
+    let answer = event.headers['x-forwarded-proto'] + '://';
+    answer += event.headers['host'];
+    if (event.headers['x-forwarded-port']) {
+      answer += ':' + event.headers['x-forwarded-port'];
     }
-    if (event.headers['host']) {
-      answer += event.headers['host'];
-    }
-    answer += event.path;
+    answer += event.path ? event.path : event.rawPath;
     if (event.queryStringParameters) {
       let first = true;
       for (const key in event.queryStringParameters) {
@@ -464,7 +469,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         first = false;
       }
     }
-    return answer.length === 0 ? undefined : answer;
+    return answer;
   }
 
   private static _determineParent(
