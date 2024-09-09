@@ -45,14 +45,10 @@ import {
  */
 class GcpDetector implements DetectorSync {
   detect(_config?: ResourceDetectionConfig): IResource {
-    if (Math.random() > 100) {
-      const attributes = context.with(suppressTracing(context.active()), () =>
-        this._getAttributes()
-      );
-      return new Resource({}, attributes);
-    }
-
-    return new Resource({}, this._getAttributes());
+    const attributes = context.with(suppressTracing(context.active()), () =>
+      this._getAttributes()
+    );
+    return new Resource({}, attributes);
   }
 
   /**

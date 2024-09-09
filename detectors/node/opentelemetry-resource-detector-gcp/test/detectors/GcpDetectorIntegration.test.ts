@@ -14,6 +14,17 @@
  * limitations under the License.
  */
 
+// NOTE: in other test the modules have already been required and cached (`GcpDetector.test.ts`)
+// so SDK cannot instrument them. We make sure we load fresh copies so RITM hook does its work.
+// we remove all the require chain: detector -> gcp-metadata -> gaxios -> node-fetch
+// but kepp other cache entries to not slow down the test more than necessary
+const modules = ['opentelemetry-resource-detector-gcp', 'gcp-metadata', 'gaxios', 'node-fetch']
+Object.keys(require.cache)
+.filter((path) => modules.some((m) => path.includes(m)))
+.forEach((key) => {
+  delete require.cache[key];
+});
+
 import * as assert from 'assert';
 
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
@@ -49,8 +60,6 @@ describe('[Integration] GcpDetector', () => {
     const { gcpDetector } = require('../../build/src/detectors/GcpDetector');
     const resource = gcpDetector.detect() as IResource;
     await resource.waitForAsyncAttributes?.();
-
-    console.log('XXX resource', resource.attributes);
 
     // Wait for the next loop to let the span close properly
     await new Promise(r => setTimeout(r, 0));
