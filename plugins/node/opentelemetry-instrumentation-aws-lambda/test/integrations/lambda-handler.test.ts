@@ -34,10 +34,10 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
+  ATTR_URL_FULL,
   SEMATTRS_EXCEPTION_MESSAGE,
   SEMATTRS_FAAS_COLDSTART,
   SEMATTRS_FAAS_EXECUTION,
-  SEMATTRS_HTTP_URL,
   SEMRESATTRS_FAAS_NAME,
 } from '@opentelemetry/semantic-conventions';
 import {
@@ -1098,7 +1098,7 @@ describe('lambda handler', () => {
       await lambdaRequire('lambda-test/sync').handler(event, ctx, () => {});
       const [span] = memoryExporter.getFinishedSpans();
       assert.strictEqual(
-        span.attributes[SEMATTRS_HTTP_URL],
+        span.attributes[ATTR_URL_FULL],
         'http://www.example.com/lambda/test/path?key=value'
       );
       console.log(span);

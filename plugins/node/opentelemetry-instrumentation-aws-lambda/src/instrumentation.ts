@@ -45,8 +45,8 @@ import {
   AWSXRayPropagator,
 } from '@opentelemetry/propagator-aws-xray';
 import {
+  ATTR_URL_FULL,
   SEMATTRS_FAAS_EXECUTION,
-  SEMATTRS_HTTP_URL,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
   SEMRESATTRS_FAAS_ID,
 } from '@opentelemetry/semantic-conventions';
@@ -436,7 +436,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     const answer: Attributes = {};
     const fullUrl = this._extractFullUrl(event);
     if (fullUrl) {
-      answer[SEMATTRS_HTTP_URL] = fullUrl;
+      answer[ATTR_URL_FULL] = fullUrl;
     }
     return answer;
   }
