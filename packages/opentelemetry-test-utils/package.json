@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/contrib-test-utils",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "description": "Test utilities for opentelemetry components",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

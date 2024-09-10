@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.5.0...instrumentation-undici-v0.6.0) (2024-09-02)
+
+
+### Features
+
+* update deps matching "@opentelemetry/" ([9fa058e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fa058ebb919de4e2a4e1af95b3c792c6ea962ac))
+
 ## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.4.0...instrumentation-undici-v0.5.0) (2024-08-27)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-runtime-node",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "OpenTelemetry instrumentation for Node.js Performance measurement API",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
