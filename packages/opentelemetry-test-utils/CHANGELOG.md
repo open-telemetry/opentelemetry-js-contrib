@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.40.0...contrib-test-utils-v0.41.0) (2024-09-02)
+
+
+### Features
+
+* **opentelemetry-test-utils:** export class TestMetricReader ([7054bc1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7054bc14001843d32b2cc044ebc77caa3c94d1dd))
+* **opentelemetry-test-utils:** export class TestMetricReader ([7e27039](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7e270395feca8a1b9a703491b189df41bcef5b79))
+* update deps matching "@opentelemetry/" ([9fa058e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fa058ebb919de4e2a4e1af95b3c792c6ea962ac))
+
 ## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.39.0...contrib-test-utils-v0.40.0) (2024-06-06)
 
 

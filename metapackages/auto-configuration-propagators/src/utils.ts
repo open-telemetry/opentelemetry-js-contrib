@@ -30,7 +30,7 @@ type PropagatorFactoryFunction = () => TextMapPropagator;
 
 const propagatorMap = new Map<string, PropagatorFactoryFunction>([
   ['tracecontext', () => new W3CTraceContextPropagator()],
-  ['baggage', () => new W3CTraceContextPropagator()],
+  ['baggage', () => new W3CBaggagePropagator()],
   [
     'b3',
     () => new B3Propagator({ injectEncoding: B3InjectEncoding.SINGLE_HEADER }),

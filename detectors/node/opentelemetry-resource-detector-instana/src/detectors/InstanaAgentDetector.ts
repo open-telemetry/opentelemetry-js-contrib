@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Detector, Resource, IResource } from '@opentelemetry/resources';
+import {
+  DetectorSync,
+  Resource,
+  IResource,
+  ResourceAttributes,
+} from '@opentelemetry/resources';
 import { diag } from '@opentelemetry/api';
 import {
   SEMRESATTRS_PROCESS_PID,
@@ -21,23 +26,31 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import * as http from 'http';
 
-class InstanaAgentDetector implements Detector {
+class InstanaAgentDetector implements DetectorSync {
   readonly INSTANA_AGENT_DEFAULT_HOST = 'localhost';
   readonly INSTANA_AGENT_DEFAULT_PORT = 42699;
 
-  async detect(): Promise<IResource> {
+  detect(): IResource {
+    return new Resource({}, this._getAttributes());
+  }
+
+  private async _getAttributes(): Promise<ResourceAttributes> {
     const host =
       process.env.INSTANA_AGENT_HOST || this.INSTANA_AGENT_DEFAULT_HOST;
     const port = Number(
       process.env.INSTANA_AGENT_PORT || this.INSTANA_AGENT_DEFAULT_PORT
     );
 
-    const data = await this._retryHandler(host, port, 0);
+    try {
+      const data = await this._retryHandler(host, port, 0);
 
-    return new Resource({
-      [SEMRESATTRS_PROCESS_PID]: data.pid,
-      [SEMRESATTRS_SERVICE_INSTANCE_ID]: data.agentUuid,
-    });
+      return {
+        [SEMRESATTRS_PROCESS_PID]: data.pid,
+        [SEMRESATTRS_SERVICE_INSTANCE_ID]: data.agentUuid,
+      };
+    } catch {
+      return {};
+    }
   }
 
   private timeout(ms: number) {
