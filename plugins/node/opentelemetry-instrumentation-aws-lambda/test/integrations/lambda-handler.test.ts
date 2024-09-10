@@ -1101,7 +1101,6 @@ describe('lambda handler', () => {
         span.attributes[ATTR_URL_FULL],
         'http://www.example.com/lambda/test/path?key=value'
       );
-      console.log(span);
     });
     it('pulls url from api gateway http events', async () => {
       initializeHandler('lambda-test/sync.handler');
@@ -1123,7 +1122,6 @@ describe('lambda handler', () => {
         span.attributes[ATTR_URL_FULL],
         'http://www.example.com:1234/lambda/test/path?key=value'
       );
-      console.log(span);
     });
   });
 });
