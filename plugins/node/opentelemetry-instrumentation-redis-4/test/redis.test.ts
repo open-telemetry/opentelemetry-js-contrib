@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import { diag, DiagLogLevel } from '@opentelemetry/api';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -287,6 +289,36 @@ describe('redis@^4.0.0', () => {
         span.attributes[SEMATTRS_DB_CONNECTION_STRING],
         expectAttributeConnString
       );
+    });
+
+    it('with empty string for client URL, there is no crash and no diag.error', async () => {
+      // Note: This messily leaves the diag logger set for other tests.
+      const diagErrors = [] as any;
+      diag.setLogger(
+        {
+          verbose() {},
+          debug() {},
+          info() {},
+          warn() {},
+          error(...args) {
+            diagErrors.push(args);
+          },
+        },
+        DiagLogLevel.WARN
+      );
+
+      const newClient = createClient({ url: '' });
+      try {
+        await newClient.connect();
+      } catch (_err) {
+        // Ignore. If the test Redis is not at the default port we expect this
+        // to error.
+      }
+      await newClient.disconnect();
+
+      const [span] = getTestSpans();
+      assert.strictEqual(span.name, 'redis-connect');
+      assert.strictEqual(diagErrors.length, 0, "no diag.error's");
     });
   });
 

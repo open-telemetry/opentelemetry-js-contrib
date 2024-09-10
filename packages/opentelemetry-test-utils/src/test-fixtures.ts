@@ -110,14 +110,38 @@ export class TestCollector {
     return this._http.close();
   }
 
-  // Return the spans sorted by start time for testing convenience.
+  /**
+   * Return the spans sorted by which started first, for testing convenience.
+   *
+   * Note: This sorting is a *best effort*. `span.startTimeUnixNano` has
+   * millisecond accuracy, so if multiple spans start in the same millisecond
+   * then this cannot know the start ordering. If `startTimeUnixNano` are the
+   * same, this attempts to get the correct ordering using `parentSpanId` -- a
+   * parent span starts before any of its direct children. This isn't perfect.
+   */
   get sortedSpans(): Array<TestSpan> {
     return this.spans.slice().sort((a, b) => {
       assert(typeof a.startTimeUnixNano === 'string');
       assert(typeof b.startTimeUnixNano === 'string');
       const aStartInt = BigInt(a.startTimeUnixNano);
       const bStartInt = BigInt(b.startTimeUnixNano);
-      return aStartInt < bStartInt ? -1 : aStartInt > bStartInt ? 1 : 0;
+      if (aStartInt < bStartInt) {
+        return -1;
+      } else if (aStartInt > bStartInt) {
+        return 1;
+      } else {
+        // Same startTimeUnixNano, which has millisecond accuracy. This is
+        // common for Express middleware spans on a fast enough dev machine.
+        // Attempt to use spanId/parentSpanId to decide on span ordering.
+        if (a.traceId === b.traceId) {
+          if (a.spanId === b.parentSpanId) {
+            return -1;
+          } else if (a.parentSpanId === b.spanId) {
+            return 1;
+          }
+        }
+        return 0;
+      }
     });
   }
 
