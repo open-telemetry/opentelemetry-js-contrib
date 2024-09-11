@@ -23,6 +23,7 @@ import {
   AwsLambdaInstrumentation,
   AwsLambdaInstrumentationConfig,
   traceContextEnvironmentKey,
+  lambdaMaxInitInMilliseconds,
 } from '../../src';
 import {
   BatchSpanProcessor,
@@ -34,6 +35,7 @@ import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
   SEMATTRS_EXCEPTION_MESSAGE,
+  SEMATTRS_FAAS_COLDSTART,
   SEMATTRS_FAAS_EXECUTION,
   SEMRESATTRS_FAAS_NAME,
 } from '@opentelemetry/semantic-conventions';
@@ -293,6 +295,100 @@ describe('lambda handler', () => {
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
       assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('should record coldstart', async () => {
+      initializeHandler('lambda-test/sync.handler');
+
+      const handlerModule = lambdaRequire('lambda-test/sync');
+
+      const result1 = await new Promise((resolve, reject) => {
+        handlerModule.handler('arg', ctx, (err: Error, res: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
+          }
+        });
+      });
+
+      const result2 = await new Promise((resolve, reject) => {
+        handlerModule.handler('arg', ctx, (err: Error, res: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
+          }
+        });
+      });
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 2);
+      const [span1, span2] = spans;
+
+      assert.strictEqual(result1, 'ok');
+      assertSpanSuccess(span1);
+      assert.strictEqual(span1.parentSpanId, undefined);
+      assert.strictEqual(span1.attributes[SEMATTRS_FAAS_COLDSTART], true);
+
+      assert.strictEqual(result2, 'ok');
+      assertSpanSuccess(span2);
+      assert.strictEqual(span2.parentSpanId, undefined);
+      assert.strictEqual(span2.attributes[SEMATTRS_FAAS_COLDSTART], false);
+    });
+
+    it('should record coldstart with provisioned concurrency', async () => {
+      process.env.AWS_LAMBDA_INITIALIZATION_TYPE = 'provisioned-concurrency';
+
+      initializeHandler('lambda-test/sync.handler');
+
+      const result = await new Promise((resolve, reject) => {
+        lambdaRequire('lambda-test/sync').handler(
+          'arg',
+          ctx,
+          (err: Error, res: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res);
+            }
+          }
+        );
+      });
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.attributes[SEMATTRS_FAAS_COLDSTART], false);
+    });
+
+    it('should record coldstart with proactive initialization', async () => {
+      initializeHandler('lambda-test/sync.handler', {
+        lambdaStartTime: Date.now() - 2 * lambdaMaxInitInMilliseconds,
+      });
+
+      const result = await new Promise((resolve, reject) => {
+        lambdaRequire('lambda-test/sync').handler(
+          'arg',
+          ctx,
+          (err: Error, res: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res);
+            }
+          }
+        );
+      });
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.attributes[SEMATTRS_FAAS_COLDSTART], false);
     });
 
     it('should record error', async () => {
