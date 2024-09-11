@@ -26,6 +26,7 @@ import {
   Span,
   SpanStatusCode,
   SpanKind,
+  UpDownCounter,
 } from '@opentelemetry/api';
 import type * as pgTypes from 'pg';
 import type * as pgPoolTypes from 'pg-pool';
@@ -41,10 +42,51 @@ import * as utils from './utils';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
+import {
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
+  METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
+} from '@opentelemetry/semantic-conventions/incubating';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
+  private _connectionsCount!: UpDownCounter;
+  private _connectionPendingRequests!: UpDownCounter;
+  // Pool events connect, acquire, release and remove can be called
+  // multiple times without changing the values of total, idle and waiting
+  // connections. The _connectionsCounter is used to keep track of latest
+  // values and only update the metrics _connectionsCount and _connectionPendingRequests
+  // when the value change.
+  private _connectionsCounter: utils.poolConnectionsCounter = {
+    used: 0,
+    idle: 0,
+    pending: 0,
+  };
+
   constructor(config: PgInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+  }
+
+  override _updateMetricInstruments() {
+    this._connectionsCounter = {
+      idle: 0,
+      pending: 0,
+      used: 0,
+    };
+    this._connectionsCount = this.meter.createUpDownCounter(
+      METRIC_DB_CLIENT_CONNECTION_COUNT,
+      {
+        description:
+          'The number of connections that are currently in state described by the state attribute.',
+        unit: '{connection}',
+      }
+    );
+    this._connectionPendingRequests = this.meter.createUpDownCounter(
+      METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
+      {
+        description:
+          'The number of current pending requests for an open connection.',
+        unit: '{connection}',
+      }
+    );
   }
 
   protected init() {
@@ -332,6 +374,42 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         const span = plugin.tracer.startSpan(SpanNames.POOL_CONNECT, {
           kind: SpanKind.CLIENT,
           attributes: utils.getSemanticAttributesFromPool(this.options),
+        });
+
+        this.on('connect', () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
+        });
+
+        this.on('acquire', () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
+        });
+
+        this.on('remove', () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
+        });
+
+        this.on('release' as any, () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
         });
 
         if (callback) {
