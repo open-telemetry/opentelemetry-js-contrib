@@ -46,7 +46,9 @@ describe('[Integration] AlibabaCloudEcsDetector', () => {
     // internal tracing any change that delays these request will result in internal
     // tracing being exported. We do the detection outside the SDK constructor to have such
     // scenario.
-    const { alibabaCloudEcsDetector } = require('../../build/src/detectors/AlibabaCloudEcsDetector');
+    const {
+      alibabaCloudEcsDetector,
+    } = require('../../build/src/detectors/AlibabaCloudEcsDetector');
     const resource = alibabaCloudEcsDetector.detect() as IResource;
     await resource.waitForAsyncAttributes?.();
 
