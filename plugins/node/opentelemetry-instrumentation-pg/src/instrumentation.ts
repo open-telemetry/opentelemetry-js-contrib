@@ -29,6 +29,7 @@ import {
   ValueType,
   Attributes,
   HrTime,
+  UpDownCounter,
 } from '@opentelemetry/api';
 import type * as pgTypes from 'pg';
 import type * as pgPoolTypes from 'pg-pool';
@@ -57,12 +58,27 @@ import {
   ATTR_SERVER_ADDRESS,
 } from '@opentelemetry/semantic-conventions';
 import {
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
+  METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
   METRIC_DB_CLIENT_OPERATION_DURATION,
   ATTR_DB_NAMESPACE,
 } from '@opentelemetry/semantic-conventions/incubating';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   private _operationDuration!: Histogram;
+  private _connectionsCount!: UpDownCounter;
+  private _connectionPendingRequests!: UpDownCounter;
+  // Pool events connect, acquire, release and remove can be called
+  // multiple times without changing the values of total, idle and waiting
+  // connections. The _connectionsCounter is used to keep track of latest
+  // values and only update the metrics _connectionsCount and _connectionPendingRequests
+  // when the value change.
+  private _connectionsCounter: utils.poolConnectionsCounter = {
+    used: 0,
+    idle: 0,
+    pending: 0,
+  };
+
   constructor(config: PgInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -79,6 +95,28 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10,
           ],
         },
+      }
+    );
+
+    this._connectionsCounter = {
+      idle: 0,
+      pending: 0,
+      used: 0,
+    };
+    this._connectionsCount = this.meter.createUpDownCounter(
+      METRIC_DB_CLIENT_CONNECTION_COUNT,
+      {
+        description:
+          'The number of connections that are currently in state described by the state attribute.',
+        unit: '{connection}',
+      }
+    );
+    this._connectionPendingRequests = this.meter.createUpDownCounter(
+      METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
+      {
+        description:
+          'The number of current pending requests for an open connection.',
+        unit: '{connection}',
       }
     );
   }
@@ -406,6 +444,42 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         const span = plugin.tracer.startSpan(SpanNames.POOL_CONNECT, {
           kind: SpanKind.CLIENT,
           attributes: utils.getSemanticAttributesFromPool(this.options),
+        });
+
+        this.on('connect', () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
+        });
+
+        this.on('acquire', () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
+        });
+
+        this.on('remove', () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
+        });
+
+        this.on('release' as any, () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
         });
 
         if (callback) {
