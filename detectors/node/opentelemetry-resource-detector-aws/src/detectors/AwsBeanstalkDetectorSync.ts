@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-import { diag } from '@opentelemetry/api';
+import { context, diag } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
+
 import {
   DetectorSync,
   IResource,
@@ -63,7 +65,8 @@ export class AwsBeanstalkDetectorSync implements DetectorSync {
   }
 
   detect(config?: ResourceDetectionConfig): IResource {
-    return new Resource({}, this._getAttributes());
+    const attributes = context.with(suppressTracing(context.active()), () => this._getAttributes());
+    return new Resource({}, attributes);
   }
 
   /**
