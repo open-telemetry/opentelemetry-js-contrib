@@ -34,8 +34,6 @@ describe('[Integration] AlibabaCloudEcsDetector', () => {
 
     sdk.start();
 
-    process.env.METADATA_SERVER_DETECTION = 'assume-present';
-
     // NOTE: detectors implementing the `DetectorSync` interface and starting
     // HTTP requests within the `detect` method will produce Noop Spans since
     // the SDK resolves the trace provider after resource detectors are triggered.
