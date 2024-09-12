@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.0.0",
-    "@opentelemetry/resources": "^1.0.0",
+    "@opentelemetry/resources": "^1.10.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "gcp-metadata": "^6.0.0"
   },
