@@ -41,6 +41,7 @@ export interface UndiciRequest {
 export interface UndiciResponse {
   headers: Buffer[];
   statusCode: number;
+  statusText: string;
 }
 
 export interface IgnoreRequestFunction<T = UndiciRequest> {
@@ -51,18 +52,29 @@ export interface RequestHookFunction<T = UndiciRequest> {
   (span: Span, request: T): void;
 }
 
+export interface ResponseHookFunction<
+  RequestType = UndiciResponse,
+  ResponseType = UndiciResponse
+> {
+  (span: Span, info: { request: RequestType; response: ResponseType }): void;
+}
+
 export interface StartSpanHookFunction<T = UndiciRequest> {
   (request: T): Attributes;
 }
 
 // This package will instrument HTTP requests made through `undici` or  `fetch` global API
 // so it seems logical to have similar options than the HTTP instrumentation
-export interface UndiciInstrumentationConfig<RequestType = UndiciRequest>
-  extends InstrumentationConfig {
+export interface UndiciInstrumentationConfig<
+  RequestType = UndiciRequest,
+  ResponseType = UndiciResponse
+> extends InstrumentationConfig {
   /** Not trace all outgoing requests that matched with custom function */
   ignoreRequestHook?: IgnoreRequestFunction<RequestType>;
   /** Function for adding custom attributes before request is handled */
   requestHook?: RequestHookFunction<RequestType>;
+  /** Function called once response headers have been received */
+  responseHook?: ResponseHookFunction<RequestType, ResponseType>;
   /** Function for adding custom attributes before a span is started */
   startSpanHook?: StartSpanHookFunction<RequestType>;
   /** Require parent to create span for outgoing requests */

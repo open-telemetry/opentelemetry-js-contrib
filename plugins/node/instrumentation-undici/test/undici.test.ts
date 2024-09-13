@@ -39,26 +39,6 @@ import { assertSpan } from './utils/assertSpan';
 
 import type { fetch, stream, request, Client, Dispatcher } from 'undici';
 
-const instrumentation = new UndiciInstrumentation();
-instrumentation.enable();
-instrumentation.disable();
-
-// Reference to the `undici` module
-let undici: {
-  fetch: typeof fetch;
-  request: typeof request;
-  stream: typeof stream;
-  Client: typeof Client;
-};
-
-const protocol = 'http';
-const hostname = 'localhost';
-const mockServer = new MockServer();
-const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-instrumentation.setTracerProvider(provider);
-
 // Undici docs (https://github.com/nodejs/undici#garbage-collection) suggest
 // that an undici response body should always be consumed.
 async function consumeResponseBody(body: Dispatcher.ResponseData['body']) {
@@ -74,6 +54,23 @@ async function consumeResponseBody(body: Dispatcher.ResponseData['body']) {
 }
 
 describe('UndiciInstrumentation `undici` tests', function () {
+  let instrumentation: UndiciInstrumentation;
+
+  // Reference to the `undici` module
+  let undici: {
+    fetch: typeof fetch;
+    request: typeof request;
+    stream: typeof stream;
+    Client: typeof Client;
+  };
+
+  const protocol = 'http';
+  const hostname = 'localhost';
+  const mockServer = new MockServer();
+  const memoryExporter = new InMemorySpanExporter();
+  const provider = new NodeTracerProvider();
+  provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+
   before(function (done) {
     // Load `undici`. It may fail if nodejs version is <18 because the module uses
     // features only available from that version. In that case skip the test.
@@ -82,6 +79,9 @@ describe('UndiciInstrumentation `undici` tests', function () {
     } catch (loadErr) {
       this.skip();
     }
+
+    instrumentation = new UndiciInstrumentation();
+    instrumentation.setTracerProvider(provider);
 
     propagation.setGlobalPropagator(new MockPropagation());
     context.setGlobalContextManager(new AsyncHooksContextManager().enable());
@@ -136,7 +136,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.strictEqual(spans.length, 0);
 
       // Disable via config
-      instrumentation.setConfig({ enabled: false });
+      instrumentation.disable();
 
       const requestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
       const { headers, body } = await undici.request(requestUrl);
@@ -157,7 +157,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
       instrumentation.enable();
       // Set configuration
       instrumentation.setConfig({
-        enabled: true,
         ignoreRequestHook: req => {
           return req.path.indexOf('/ignore/path') !== -1;
         },
@@ -168,6 +167,12 @@ describe('UndiciInstrumentation `undici` tests', function () {
           } else {
             req.headers.push('x-requested-with', 'undici');
           }
+        },
+        responseHook: (span, { response }) => {
+          span.setAttribute(
+            'test.response-hook.attribute',
+            response.statusText
+          );
         },
         startSpanHook: request => {
           return {
@@ -182,7 +187,8 @@ describe('UndiciInstrumentation `undici` tests', function () {
     });
     afterEach(function () {
       // Empty configuration & disable
-      instrumentation.setConfig({ enabled: false });
+      instrumentation.setConfig({});
+      instrumentation.disable();
     });
 
     it('should ignore requests based on the result of ignoreRequestHook', async function () {
@@ -357,6 +363,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         'hook-value',
         'startSpanHook is called'
       );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
+      );
     });
 
     it('should create valid spans for "fetch" method', async function () {
@@ -416,6 +427,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
+      );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
       );
     });
 
@@ -484,6 +500,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
+      );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
       );
     });
 
@@ -561,6 +582,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         'hook-value',
         'startSpanHook is called'
       );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
+      );
     });
 
     it('should create valid spans even if the configuration hooks fail', async function () {
@@ -569,12 +595,14 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
       // Set the bad configuration
       instrumentation.setConfig({
-        enabled: true,
         ignoreRequestHook: () => {
           throw new Error('ignoreRequestHook error');
         },
         requestHook: () => {
           throw new Error('requestHook error');
+        },
+        responseHook: () => {
+          throw new Error('responseHook error');
         },
         startSpanHook: () => {
           throw new Error('startSpanHook error');
@@ -610,7 +638,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
-        enabled: true,
         requireParentforSpans: true,
       });
 
@@ -632,7 +659,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
-        enabled: true,
         requireParentforSpans: true,
       });
 
@@ -656,7 +682,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
-        enabled: true,
         requireParentforSpans: true,
       });
 

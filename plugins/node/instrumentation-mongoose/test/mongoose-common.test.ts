@@ -37,7 +37,7 @@ import { assertSpan, getStatement } from './asserts';
 import { DB_NAME, MONGO_URI } from './config';
 
 // Please run mongodb in the background: docker run -d -p 27017:27017 -v ~/data:/data/db mongo
-describe('mongoose instrumentation', () => {
+describe('mongoose instrumentation [common]', () => {
   before(async () => {
     try {
       await mongoose.connect(MONGO_URI, {
@@ -82,25 +82,25 @@ describe('mongoose instrumentation', () => {
     await User.collection.drop().catch();
   });
 
-  it('instrumenting save operation with promise', async () => {
-    const document = {
-      firstName: 'Test first name',
-      lastName: 'Test last name',
-      email: 'test@example.com',
-    };
-    const user: IUser = new User(document);
+  describe('instrumenting save operation', async () => {
+    it('instrumenting save operation with promise', async () => {
+      const document = {
+        firstName: 'Test first name',
+        lastName: 'Test last name',
+        email: 'test@example.com',
+      };
+      const user: IUser = new User(document);
 
-    await user.save();
+      await user.save();
 
-    const spans = getTestSpans();
-    expect(spans.length).toBe(1);
-    assertSpan(spans[0] as ReadableSpan);
-    expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
-    const statement = getStatement(spans[0] as ReadableSpan);
-    expect(statement.document).toEqual(expect.objectContaining(document));
-  });
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      assertSpan(spans[0] as ReadableSpan);
+      expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
+      const statement = getStatement(spans[0] as ReadableSpan);
+      expect(statement.document).toEqual(expect.objectContaining(document));
+    });
 
-  describe('when save call does not have callback', async () => {
     it('instrumenting save operation with option property set', async () => {
       const document = {
         firstName: 'Test first name',
@@ -119,71 +119,9 @@ describe('mongoose instrumentation', () => {
       expect(statement.options.wtimeout).toEqual(42);
 
       const createdUser = await User.findById(user._id).lean();
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore - v8 made `._id` optional
       expect(createdUser?._id.toString()).toEqual(user._id.toString());
-    });
-  });
-
-  describe('when save call has callback', async () => {
-    it('instrumenting save operation with promise and option property set', done => {
-      const document = {
-        firstName: 'Test first name',
-        lastName: 'Test last name',
-        email: 'test@example.com',
-      };
-      const user: IUser = new User(document);
-      user.save({ wtimeout: 42 }, async () => {
-        const spans = getTestSpans();
-        expect(spans.length).toBe(1);
-        assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
-        const statement = getStatement(spans[0] as ReadableSpan);
-        expect(statement.document).toEqual(expect.objectContaining(document));
-        expect(statement.options.wtimeout).toEqual(42);
-
-        const createdUser = await User.findById(user._id).lean();
-        expect(createdUser?._id.toString()).toEqual(user._id.toString());
-        done();
-      });
-    });
-
-    it('instrumenting save operation with generic options and callback', done => {
-      const document = {
-        firstName: 'Test first name',
-        lastName: 'Test last name',
-        email: 'test@example.com',
-      };
-      const user: IUser = new User(document);
-
-      user.save({}, () => {
-        const spans = getTestSpans();
-
-        expect(spans.length).toBe(1);
-        assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
-        const statement = getStatement(spans[0] as ReadableSpan);
-        expect(statement.document).toEqual(expect.objectContaining(document));
-        done();
-      });
-    });
-
-    it('instrumenting save operation with only callback', done => {
-      const document = {
-        firstName: 'Test first name',
-        lastName: 'Test last name',
-        email: 'test@example.com',
-      };
-      const user: IUser = new User(document);
-
-      user.save(() => {
-        const spans = getTestSpans();
-
-        expect(spans.length).toBe(1);
-        assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
-        const statement = getStatement(spans[0] as ReadableSpan);
-        expect(statement.document).toEqual(expect.objectContaining(document));
-        done();
-      });
     });
   });
 
@@ -234,31 +172,6 @@ describe('mongoose instrumentation', () => {
     });
   });
 
-  it('instrumenting remove operation [deprecated]', async () => {
-    const user = await User.findOne({ email: 'john.doe@example.com' });
-    await user!.remove();
-
-    const spans = getTestSpans();
-    expect(spans.length).toBe(2);
-    assertSpan(spans[1] as ReadableSpan);
-    expect(spans[1].attributes[SEMATTRS_DB_OPERATION]).toBe('remove');
-  });
-
-  it('instrumenting remove operation with callbacks [deprecated]', done => {
-    User.findOne({ email: 'john.doe@example.com' }).then(user =>
-      user!.remove({ overwrite: true }, () => {
-        const spans = getTestSpans();
-        expect(spans.length).toBe(2);
-        assertSpan(spans[1] as ReadableSpan);
-        expect(spans[1].attributes[SEMATTRS_DB_OPERATION]).toBe('remove');
-        expect(getStatement(spans[1] as ReadableSpan).options).toEqual({
-          overwrite: true,
-        });
-        done();
-      })
-    );
-  });
-
   it('instrumenting deleteOne operation', async () => {
     await User.deleteOne({ email: 'john.doe@example.com' });
 
@@ -299,18 +212,6 @@ describe('mongoose instrumentation', () => {
     expect(statement.options).toEqual({ skip: 0 });
     expect(statement.updates).toEqual({ $inc: { age: 1 } });
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
-  });
-
-  it('instrumenting count operation [deprecated]', async () => {
-    await User.count({});
-
-    const spans = getTestSpans();
-    expect(spans.length).toBe(1);
-    assertSpan(spans[0] as ReadableSpan);
-    expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('count');
-    const statement = getStatement(spans[0] as ReadableSpan);
-    expect(statement.options).toEqual({});
-    expect(statement.condition).toEqual({});
   });
 
   it('instrumenting countDocuments operation', async () => {
@@ -363,22 +264,6 @@ describe('mongoose instrumentation', () => {
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
   });
 
-  it('instrumenting update operation [deprecated]', async () => {
-    await User.update(
-      { email: 'john.doe@example.com' },
-      { email: 'john.doe2@example.com' }
-    );
-
-    const spans = getTestSpans();
-    expect(spans.length).toBe(1);
-    assertSpan(spans[0] as ReadableSpan);
-    expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('update');
-    const statement = getStatement(spans[0] as ReadableSpan);
-    expect(statement.options).toEqual({});
-    expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
-    expect(statement.updates).toEqual({ email: 'john.doe2@example.com' });
-  });
-
   it('instrumenting updateOne operation', async () => {
     await User.updateOne({ email: 'john.doe@example.com' }, { age: 55 });
 
@@ -417,36 +302,6 @@ describe('mongoose instrumentation', () => {
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
   });
 
-  it('instrumenting findOneAndUpdate operation', async () => {
-    await User.findOneAndUpdate(
-      { email: 'john.doe@example.com' },
-      { isUpdated: true }
-    );
-
-    const spans = getTestSpans();
-    expect(spans.length).toBe(2);
-    assertSpan(spans[0] as ReadableSpan);
-    assertSpan(spans[1] as ReadableSpan);
-    expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('findOne');
-    expect(spans[1].attributes[SEMATTRS_DB_OPERATION]).toBe('findOneAndUpdate');
-    const statement = getStatement(spans[1] as ReadableSpan);
-    expect(statement.options).toEqual({});
-    expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
-    expect(statement.updates).toEqual({ isUpdated: true });
-  });
-
-  it('instrumenting findOneAndRemove operation', async () => {
-    await User.findOneAndRemove({ email: 'john.doe@example.com' });
-
-    const spans = getTestSpans();
-    expect(spans.length).toBe(1);
-    assertSpan(spans[0] as ReadableSpan);
-    expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('findOneAndRemove');
-    const statement = getStatement(spans[0] as ReadableSpan);
-    expect(statement.options).toEqual({});
-    expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
-  });
-
   it('instrumenting create operation', async () => {
     const document = {
       firstName: 'John',
@@ -479,27 +334,6 @@ describe('mongoose instrumentation', () => {
       { $match: { firstName: 'John' } },
       { $group: { _id: 'John', total: { $sum: '$amount' } } },
     ]);
-  });
-
-  it('instrumenting aggregate operation with callback', done => {
-    User.aggregate(
-      [
-        { $match: { firstName: 'John' } },
-        { $group: { _id: 'John', total: { $sum: '$amount' } } },
-      ],
-      () => {
-        const spans = getTestSpans();
-        expect(spans.length).toBe(1);
-        assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('aggregate');
-        const statement = getStatement(spans[0] as ReadableSpan);
-        expect(statement.aggregatePipeline).toEqual([
-          { $match: { firstName: 'John' } },
-          { $group: { _id: 'John', total: { $sum: '$amount' } } },
-        ]);
-        done();
-      }
-    );
   });
 
   it('instrumenting combined operation with async/await', async () => {
@@ -572,20 +406,6 @@ describe('mongoose instrumentation', () => {
       );
     });
 
-    it('responseHook works with callback in exec patch', done => {
-      User.deleteOne({ email: 'john.doe@example.com' }, { lean: 1 }, () => {
-        const spans = getTestSpans();
-        expect(spans.length).toBe(1);
-        assertSpan(spans[0] as ReadableSpan);
-        expect(
-          JSON.parse(spans[0].attributes[RESPONSE] as string)
-        ).toMatchObject({
-          deletedCount: 1,
-        });
-        done();
-      });
-    });
-
     it('responseHook works with async/await in model methods patch', async () => {
       const document = {
         firstName: 'Test first name',
@@ -602,24 +422,6 @@ describe('mongoose instrumentation', () => {
       );
     });
 
-    it('responseHook works with callback in model methods patch', done => {
-      const document = {
-        firstName: 'Test first name',
-        lastName: 'Test last name',
-        email: 'test@example.com',
-      };
-      const user: IUser = new User(document);
-      user.save((_err, createdUser) => {
-        const spans = getTestSpans();
-        expect(spans.length).toBe(1);
-        assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[RESPONSE]).toEqual(
-          JSON.stringify(createdUser)
-        );
-        done();
-      });
-    });
-
     it('responseHook works with async/await in aggregate patch', async () => {
       await User.aggregate([
         { $match: { firstName: 'John' } },
@@ -632,24 +434,6 @@ describe('mongoose instrumentation', () => {
       expect(JSON.parse(spans[0].attributes[RESPONSE] as string)).toEqual([
         { _id: 'John', total: 0 },
       ]);
-    });
-
-    it('responseHook works with callback in aggregate patch', done => {
-      User.aggregate(
-        [
-          { $match: { firstName: 'John' } },
-          { $group: { _id: 'John', total: { $sum: '$amount' } } },
-        ],
-        () => {
-          const spans = getTestSpans();
-          expect(spans.length).toBe(1);
-          assertSpan(spans[0] as ReadableSpan);
-          expect(JSON.parse(spans[0].attributes[RESPONSE] as string)).toEqual([
-            { _id: 'John', total: 0 },
-          ]);
-          done();
-        }
-      );
     });
 
     it('error in response hook does not fail anything', async () => {

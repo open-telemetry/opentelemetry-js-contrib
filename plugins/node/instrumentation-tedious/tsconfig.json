@@ -2,7 +2,12 @@
   "extends": "../../../tsconfig.base",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "build"
+    "outDir": "build",
+    // When testing with tedious@18, skipLibCheck:true is needed to avoid
+    // checking its types. They require AggregateError that is only available
+    // with `"target": "es2022"`, which, IIUC we don't want with our regular TS
+    // v4 build for release.
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts",

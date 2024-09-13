@@ -372,7 +372,7 @@ const AZURE_VM_METADATA_HOST = 'http://169.254.169.254';
 const AZURE_VM_METADATA_PATH =
   '/metadata/instance/compute?api-version=2021-12-13&format=json';
 
-describe('AzureAppServiceDetector', () => {
+describe('AzureVmServiceDetector', () => {
   beforeEach(() => {
     nock.disableNetConnect();
     nock.cleanAll();

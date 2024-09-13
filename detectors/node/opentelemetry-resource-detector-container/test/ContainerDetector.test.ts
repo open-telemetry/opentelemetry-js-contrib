@@ -16,7 +16,7 @@
 
 import * as sinon from 'sinon';
 import * as assert from 'assert';
-import { Resource } from '@opentelemetry/resources';
+
 import { containerDetector } from '../src';
 import {
   assertContainerResource,
@@ -26,10 +26,10 @@ import {
 import { ContainerDetector } from '../src';
 
 describe('ContainerDetector', () => {
-  let readStub;
+  let readStub: sinon.SinonStub;
   const correctCgroupV1Data =
-    '12:pids:/kubepods.slice/bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
-  const correctCgroupV2Data = `tmhdefghijklmnopqrstuvwxyzafgrefghiugkmnopqrstuvwxyzabcdefghijkl/hostname
+    '12:pids:/kubepods.slice/4e6f77206973207468652074696d6520666f7220616c6c20676f6f64206d656e20746f20636f6d6520746f2074686520616964';
+  const correctCgroupV2Data = `containers/tmhdefghijklmnopqrstuvwxyzafgrefghiugkmnopqrstuvwxyzabcdefghijkl/hostname
     fhkjdshgfhsdfjhdsfkjhfkdshkjhfd/host
     sahfhfjkhjhfhjdhfjkdhfkjdhfjkhhdsjfhdfhjdhfkj/somethingelse`;
 
@@ -46,7 +46,8 @@ describe('ContainerDetector', () => {
         .stub(ContainerDetector, 'readFileAsync' as any)
         .resolves(undefined);
 
-      const resource: Resource = await containerDetector.detect();
+      const resource = containerDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
       assert.ok(resource);
@@ -57,13 +58,14 @@ describe('ContainerDetector', () => {
         .stub(ContainerDetector, 'readFileAsync' as any)
         .resolves(correctCgroupV1Data);
 
-      const resource: Resource = await containerDetector.detect();
+      const resource = containerDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       sinon.assert.calledOnce(readStub);
 
       assert.ok(resource);
       assertContainerResource(resource, {
-        id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
+        id: '4e6f77206973207468652074696d6520666f7220616c6c20676f6f64206d656e20746f20636f6d6520746f2074686520616964',
       });
     });
 
@@ -73,7 +75,8 @@ describe('ContainerDetector', () => {
       readStub.onFirstCall().resolves('');
       readStub.onSecondCall().resolves(correctCgroupV2Data);
 
-      const resource: Resource = await containerDetector.detect();
+      const resource = containerDetector.detect();
+      await resource.waitForAsyncAttributes?.();
       sinon.assert.calledTwice(readStub);
 
       assert.ok(resource);
@@ -88,7 +91,8 @@ describe('ContainerDetector', () => {
       readStub.onFirstCall().resolves('');
       readStub.onSecondCall().resolves(wrongCgroupV2Data);
 
-      const resource: Resource = await containerDetector.detect();
+      const resource = containerDetector.detect();
+      await resource.waitForAsyncAttributes?.();
       sinon.assert.calledTwice(readStub);
 
       assert.ok(resource);
@@ -109,7 +113,8 @@ describe('ContainerDetector', () => {
         .stub(ContainerDetector, 'readFileAsync' as any)
         .resolves('');
 
-      const resource: Resource = await containerDetector.detect();
+      const resource = containerDetector.detect();
+      await resource.waitForAsyncAttributes?.();
       assert.deepStrictEqual(resource.attributes, {});
 
       sinon.assert.calledTwice(readStub);
@@ -125,7 +130,8 @@ describe('ContainerDetector', () => {
         .stub(ContainerDetector, 'readFileAsync' as any)
         .rejects(errorMsg.fileNotFoundError);
 
-      const resource: Resource = await containerDetector.detect();
+      const resource = containerDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       sinon.assert.calledOnce(readStub);
       assertEmptyResource(resource);
@@ -142,7 +148,8 @@ describe('ContainerDetector', () => {
         .stub(ContainerDetector, 'readFileAsync' as any)
         .rejects(errorMsg.fileNotFoundError);
 
-      const resource: Resource = await containerDetector.detect();
+      const resource = containerDetector.detect();
+      await resource.waitForAsyncAttributes?.();
       sinon.assert.calledOnce(readStub);
       assertEmptyResource(resource);
     });

@@ -109,7 +109,7 @@ export class GenericPoolInstrumentation extends InstrumentationBase {
     ) {
       const parent = api.context.active();
       const span = instrumentation.tracer.startSpan(
-        'generic-pool.aquire',
+        'generic-pool.acquire',
         {},
         parent
       );
@@ -156,7 +156,7 @@ export class GenericPoolInstrumentation extends InstrumentationBase {
       }
       const parent = api.context.active();
       const span = instrumentation.tracer.startSpan(
-        'generic-pool.aquire',
+        'generic-pool.acquire',
         {},
         parent
       );

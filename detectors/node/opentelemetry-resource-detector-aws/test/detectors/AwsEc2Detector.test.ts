@@ -16,19 +16,20 @@
 
 import * as nock from 'nock';
 import * as assert from 'assert';
-import { Resource } from '@opentelemetry/resources';
-import { awsEc2Detector } from '../../src';
+
+import { awsEc2Detector, awsEc2DetectorSync } from '../../src';
 import {
   assertCloudResource,
   assertHostResource,
 } from '@opentelemetry/contrib-test-utils';
 
-const AWS_HOST = 'http://' + awsEc2Detector.AWS_IDMS_ENDPOINT;
-const AWS_TOKEN_PATH = awsEc2Detector.AWS_INSTANCE_TOKEN_DOCUMENT_PATH;
-const AWS_IDENTITY_PATH = awsEc2Detector.AWS_INSTANCE_IDENTITY_DOCUMENT_PATH;
-const AWS_HOST_PATH = awsEc2Detector.AWS_INSTANCE_HOST_DOCUMENT_PATH;
-const AWS_METADATA_TTL_HEADER = awsEc2Detector.AWS_METADATA_TTL_HEADER;
-const AWS_METADATA_TOKEN_HEADER = awsEc2Detector.AWS_METADATA_TOKEN_HEADER;
+const AWS_HOST = 'http://' + awsEc2DetectorSync.AWS_IDMS_ENDPOINT;
+const AWS_TOKEN_PATH = awsEc2DetectorSync.AWS_INSTANCE_TOKEN_DOCUMENT_PATH;
+const AWS_IDENTITY_PATH =
+  awsEc2DetectorSync.AWS_INSTANCE_IDENTITY_DOCUMENT_PATH;
+const AWS_HOST_PATH = awsEc2DetectorSync.AWS_INSTANCE_HOST_DOCUMENT_PATH;
+const AWS_METADATA_TTL_HEADER = awsEc2DetectorSync.AWS_METADATA_TTL_HEADER;
+const AWS_METADATA_TOKEN_HEADER = awsEc2DetectorSync.AWS_METADATA_TOKEN_HEADER;
 
 const mockedTokenResponse = 'my-token';
 const mockedIdentityResponse = {
@@ -64,7 +65,8 @@ describe('awsEc2Detector', () => {
         .matchHeader(AWS_METADATA_TOKEN_HEADER, mockedTokenResponse)
         .reply(200, () => mockedHostResponse);
 
-      const resource: Resource = await awsEc2Detector.detect();
+      const resource = await awsEc2Detector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       scope.done();
 
@@ -85,8 +87,7 @@ describe('awsEc2Detector', () => {
   });
 
   describe('with unsuccessful request', () => {
-    it('should throw when receiving error response code', async () => {
-      const expectedError = new Error('Failed to load page, status code: 404');
+    it('should return empty resource when receiving error response code', async () => {
       const scope = nock(AWS_HOST)
         .persist()
         .put(AWS_TOKEN_PATH)
@@ -99,19 +100,16 @@ describe('awsEc2Detector', () => {
         .matchHeader(AWS_METADATA_TOKEN_HEADER, mockedTokenResponse)
         .reply(404, () => new Error());
 
-      try {
-        await awsEc2Detector.detect();
-        assert.ok(false, 'Expected to throw');
-      } catch (err) {
-        assert.deepStrictEqual(err, expectedError);
-      }
+      const resource = await awsEc2Detector.detect();
+      await resource.waitForAsyncAttributes?.();
+
+      assert.deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });
 
-    it('should throw when timed out', function (done) {
+    it('should return empty resource when timed out', async function () {
       this.timeout(6000);
-      const expectedError = new Error('EC2 metadata api request timed out.');
       const scope = nock(AWS_HOST)
         .put(AWS_TOKEN_PATH)
         .matchHeader(AWS_METADATA_TTL_HEADER, '60')
@@ -124,21 +122,15 @@ describe('awsEc2Detector', () => {
         .delayConnection(5000)
         .reply(200, () => mockedHostResponse);
 
-      awsEc2Detector
-        .detect()
-        .then(() => {
-          assert.ok(false, 'Expected to throw');
-        })
-        .catch(err => {
-          assert.deepStrictEqual(err, expectedError);
-        })
-        .finally(() => {
-          scope.done();
-          done();
-        });
+      const resource = await awsEc2Detector.detect();
+      await resource.waitForAsyncAttributes?.();
+
+      assert.deepStrictEqual(resource.attributes, {});
+
+      scope.done();
     });
 
-    it('should throw when replied with an Error', async () => {
+    it('should return empty resource when replied with an Error', async () => {
       const expectedError = new Error('NOT FOUND');
       const scope = nock(AWS_HOST)
         .put(AWS_TOKEN_PATH)
@@ -148,12 +140,10 @@ describe('awsEc2Detector', () => {
         .matchHeader(AWS_METADATA_TOKEN_HEADER, mockedTokenResponse)
         .replyWithError(expectedError.message);
 
-      try {
-        await awsEc2Detector.detect();
-        assert.ok(false, 'Expected to throw');
-      } catch (err) {
-        assert.deepStrictEqual(err, expectedError);
-      }
+      const resource = await awsEc2Detector.detect();
+      await resource.waitForAsyncAttributes?.();
+
+      assert.deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });
