@@ -17,21 +17,25 @@
 import * as assert from 'assert';
 
 import { FsInstrumentation } from '@opentelemetry/instrumentation-fs';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { IResource } from '@opentelemetry/resources';
+import { DetectorSync } from '@opentelemetry/resources';
 
-describe('[Integration] ContainerDetector', () => {
-  it('should not start spans for detector reads to filesystem', async () => {
+describe.only('[Integration] Internal tracing', () => {
+  it('should not start spans for any network or fs operation in any detector', async () => {
+    // For ECS detector we setup a mock URL to fetch metadata
+    process.env.ECS_CONTAINER_METADATA_URI_V4 =
+      'http://169.254.169.254/metadata';
+
     const memoryExporter = new InMemorySpanExporter();
     const sdk = new NodeSDK({
-      instrumentations: [new FsInstrumentation()],
+      instrumentations: [new FsInstrumentation(), new HttpInstrumentation()],
       spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
     });
-
     sdk.start();
 
     // NOTE: detectors implementing the `DetectorSync` interface and starting
@@ -46,15 +50,29 @@ describe('[Integration] ContainerDetector', () => {
     // scenario.
     const {
       awsBeanstalkDetectorSync,
-    } = require('../../build/src/detectors/AwsBeanstalkDetectorSync');
+      awsEc2DetectorSync,
+      awsEcsDetectorSync,
+      awsEksDetectorSync,
+      awsLambdaDetectorSync,
+    } = require('../../build/src');
 
     // NOTE: the require process makes use of the fs API so spans are being exported.
-    // We need to check no new spans are exported when `detect` is called.
+    // We reset the exporter to have a clean state for assertions
     await new Promise(r => setTimeout(r, 0));
-    const numSpansAfterRequire = memoryExporter.getFinishedSpans().length;
+    memoryExporter.reset();
 
-    const resource = awsBeanstalkDetectorSync.detect() as IResource;
-    await resource.waitForAsyncAttributes?.();
+    const detectors = [
+      awsBeanstalkDetectorSync,
+      awsEc2DetectorSync,
+      awsEcsDetectorSync,
+      awsEksDetectorSync,
+      awsLambdaDetectorSync,
+    ] as DetectorSync[];
+
+    for (const d of detectors) {
+      const r = d.detect();
+      await r.waitForAsyncAttributes?.();
+    }
 
     // Wait for the next loop to let the span close properly
     await new Promise(r => setTimeout(r, 0));
@@ -62,10 +80,11 @@ describe('[Integration] ContainerDetector', () => {
 
     assert.equal(
       spans.length,
-      numSpansAfterRequire,
-      'no spans exported for AwsBeanstalkDetectorSync'
+      0,
+      'no spans exported from any AWS resource detector'
     );
 
     await sdk.shutdown();
-  });
+    delete process.env.ECS_CONTAINER_METADATA_URI_V4;
+  }).timeout(10000);
 });

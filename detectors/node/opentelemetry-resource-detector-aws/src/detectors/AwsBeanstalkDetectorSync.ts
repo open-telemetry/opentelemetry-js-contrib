@@ -65,7 +65,9 @@ export class AwsBeanstalkDetectorSync implements DetectorSync {
   }
 
   detect(config?: ResourceDetectionConfig): IResource {
-    const attributes = context.with(suppressTracing(context.active()), () => this._getAttributes());
+    const attributes = context.with(suppressTracing(context.active()), () =>
+      this._getAttributes()
+    );
     return new Resource({}, attributes);
   }
 
