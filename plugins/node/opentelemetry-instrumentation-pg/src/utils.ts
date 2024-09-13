@@ -27,6 +27,7 @@ import {
 } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import {
+  ATTR_ERROR_TYPE,
   SEMATTRS_DB_SYSTEM,
   SEMATTRS_DB_NAME,
   SEMATTRS_DB_CONNECTION_STRING,
@@ -245,7 +246,6 @@ export function patchCallback(
   instrumentationConfig: PgInstrumentationConfig,
   span: Span,
   cb: PostgresCallback,
-  attributes: Attributes,
   recordDuration: { (): void }
 ): PostgresCallback {
   return function patchedCallback(
@@ -254,7 +254,6 @@ export function patchCallback(
     res: object
   ) {
     if (err) {
-      attributes['error.type'] = getErrorMessage(err);
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: err.message,

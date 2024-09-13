@@ -317,7 +317,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               instrumentationConfig,
               span,
               args[args.length - 1] as PostgresCallback, // nb: not type safe.
-              attributes,
               recordDuration
             );
 
@@ -334,7 +333,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               plugin.getConfig(),
               span,
               queryConfig.callback as PostgresCallback, // nb: not type safe.
-              attributes,
               recordDuration
             );
 
@@ -398,7 +396,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             message: utils.getErrorMessage(e),
           });
           span.end();
-          attributes[ATTR_ERROR_TYPE] = utils.getErrorMessage(e);
           throw e;
         }
 
@@ -420,7 +417,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
                   message: error.message,
                 });
                 span.end();
-                attributes[ATTR_ERROR_TYPE] = utils.getErrorMessage(error);
                 reject(error);
               });
             });
