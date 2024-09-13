@@ -25,7 +25,7 @@ import {
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { DetectorSync } from '@opentelemetry/resources';
 
-describe.only('[Integration] Internal tracing', () => {
+describe('[Integration] Internal tracing', () => {
   it('should not start spans for any network or fs operation in any detector', async () => {
     // For ECS detector we setup a mock URL to fetch metadata
     process.env.ECS_CONTAINER_METADATA_URI_V4 =
