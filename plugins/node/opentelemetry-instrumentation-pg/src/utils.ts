@@ -22,12 +22,10 @@ import {
   Tracer,
   SpanKind,
   diag,
-  Attributes,
   UpDownCounter,
 } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import {
-  ATTR_ERROR_TYPE,
   SEMATTRS_DB_SYSTEM,
   SEMATTRS_DB_NAME,
   SEMATTRS_DB_CONNECTION_STRING,
