@@ -15,7 +15,8 @@
  */
 
 import * as gcpMetadata from 'gcp-metadata';
-import { diag } from '@opentelemetry/api';
+import { context, diag } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import {
   DetectorSync,
   ResourceDetectionConfig,
@@ -44,7 +45,10 @@ import {
  */
 class GcpDetector implements DetectorSync {
   detect(_config?: ResourceDetectionConfig): IResource {
-    return new Resource({}, this._getAttribures());
+    const attributes = context.with(suppressTracing(context.active()), () =>
+      this._getAttributes()
+    );
+    return new Resource({}, attributes);
   }
 
   /**
@@ -53,7 +57,7 @@ class GcpDetector implements DetectorSync {
    * object with instance metadata. Returns a promise containing an
    * empty {@link ResourceAttributes} if the connection or parsing of the metadata fails.
    */
-  private async _getAttribures(): Promise<ResourceAttributes> {
+  private async _getAttributes(): Promise<ResourceAttributes> {
     if (!(await gcpMetadata.isAvailable())) {
       diag.debug('GcpDetector failed: GCP Metadata unavailable.');
       return {};
