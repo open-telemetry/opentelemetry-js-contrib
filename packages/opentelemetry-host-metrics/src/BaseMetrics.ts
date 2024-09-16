@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { Meter, diag, metrics } from '@opentelemetry/api';
-import { MeterProvider } from '@opentelemetry/sdk-metrics';
+import { Meter, MeterProvider, diag, metrics } from '@opentelemetry/api';
 
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 

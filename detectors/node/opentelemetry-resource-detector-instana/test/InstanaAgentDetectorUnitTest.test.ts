@@ -16,7 +16,6 @@
 
 import * as nock from 'nock';
 import * as assert from 'assert';
-import { Resource } from '@opentelemetry/resources';
 import { instanaAgentDetector } from '../src';
 
 describe('[UNIT] instanaAgentDetector', () => {
@@ -54,7 +53,8 @@ describe('[UNIT] instanaAgentDetector', () => {
         .put('/com.instana.plugin.nodejs.discovery')
         .reply(200, () => mockedReply);
 
-      const resource: Resource = await instanaAgentDetector.detect();
+      const resource = instanaAgentDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       scope.done();
 
@@ -80,7 +80,8 @@ describe('[UNIT] instanaAgentDetector', () => {
         .put('/com.instana.plugin.nodejs.discovery')
         .reply(200, () => mockedReply);
 
-      const resource: Resource = await instanaAgentDetector.detect();
+      const resource = instanaAgentDetector.detect();
+      await resource.waitForAsyncAttributes?.();
 
       scope.done();
 
@@ -90,28 +91,24 @@ describe('[UNIT] instanaAgentDetector', () => {
       });
     });
 
-    it('agent throws error', async () => {
-      const expectedError = new Error('Instana Agent returned status code 500');
+    it('agent returns empty resource if request error', async () => {
       const scope = nock('http://localhost:42699')
         .persist()
         .put('/com.instana.plugin.nodejs.discovery')
         .reply(500, () => new Error());
 
-      try {
-        await instanaAgentDetector.detect();
-        assert.ok(false, 'Expected to throw');
-      } catch (err) {
-        assert.deepStrictEqual(err, expectedError);
-      }
+      const resource = instanaAgentDetector.detect();
+      await resource.waitForAsyncAttributes?.();
+
+      assert.deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });
 
-    it('agent timeout', async () => {
+    it('agent return empty resource if timeout', async () => {
       process.env.INSTANA_AGENT_PORT = '56002';
       process.env.INSTANA_AGENT_HOST = 'instanaagent';
       process.env.INSTANA_AGENT_TIMEOUT_MS = '200';
-      const expectedError = new Error('Instana Agent request timed out.');
 
       nock(
         `http://${process.env.INSTANA_AGENT_HOST}:${process.env.INSTANA_AGENT_PORT}`
@@ -121,28 +118,23 @@ describe('[UNIT] instanaAgentDetector', () => {
         .delay(500)
         .reply(200, {});
 
-      try {
-        await instanaAgentDetector.detect();
-        assert.ok(false, 'Expected to throw');
-      } catch (err) {
-        console.log(err);
-        assert.deepStrictEqual(err, expectedError);
-      }
+      const resource = instanaAgentDetector.detect();
+      await resource.waitForAsyncAttributes?.();
+
+      assert.deepStrictEqual(resource.attributes, {});
     });
   });
 
   describe('when agent is not running', () => {
-    it('should not return agent resource', async () => {
+    it('should return empty resource', async () => {
       process.env.INSTANA_AGENT_PORT = '1111';
       process.env.INSTANA_AGENT_TIMEOUT_MS = '100';
       process.env.INSTANA_RETRY_TIMEOUT_MS = '100';
 
-      try {
-        await instanaAgentDetector.detect();
-        assert.ok(false, 'Expected to throw');
-      } catch (err: any) {
-        assert.equal(err.code, 'ECONNREFUSED');
-      }
+      const resource = instanaAgentDetector.detect();
+      await resource.waitForAsyncAttributes?.();
+
+      assert.deepStrictEqual(resource.attributes, {});
     });
   });
 });
