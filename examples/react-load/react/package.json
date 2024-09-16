@@ -43,7 +43,7 @@
     "@opentelemetry/plugin-react-load": "^0.23.0",
     "@opentelemetry/sdk-trace-base": "^0.25.0",
     "@opentelemetry/sdk-trace-web": "^0.25.0",
-    "@opentelemetry/semantic-conventions": "^1.23.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.2.0",
