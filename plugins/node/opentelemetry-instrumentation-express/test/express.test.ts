@@ -662,16 +662,16 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
         assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
         assert.strictEqual(spans[2].name, 'middleware - query');
-        assert.strictEqual(spans[3].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
         assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
         assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[4].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
         assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
         assert.strictEqual(spans[5].name, 'router - /api/user/:id');
-        assert.strictEqual(spans[5].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
         assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
         assert.strictEqual(spans[6].name, 'request handler - /api/user/:id');
-        assert.strictEqual(spans[6].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[6].kind, testUtils.OtlpSpanKind.INTERNAL);
         assert.strictEqual(spans[6].parentSpanId, spans[1].spanId);
       },
     });
