@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { context } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import {
   DetectorSync,
   IResource,
@@ -62,7 +64,10 @@ export class AwsEksDetectorSync implements DetectorSync {
   private static fileAccessAsync = util.promisify(fs.access);
 
   detect(_config?: ResourceDetectionConfig): IResource {
-    return new Resource({}, this._getAttributes());
+    const attributes = context.with(suppressTracing(context.active()), () =>
+      this._getAttributes()
+    );
+    return new Resource({}, attributes);
   }
 
   /**
