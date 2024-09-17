@@ -22,8 +22,8 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import { AttributeNames } from '../src/enums/AttributeNames';
-import { ExpressInstrumentation } from '../src';
+import { AttributeNames } from '../../src/enums/AttributeNames';
+import { ExpressInstrumentation } from '../../src';
 import { createServer, httpRequest, serverWithMiddleware } from './utils';
 import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as testUtils from '@opentelemetry/contrib-test-utils';

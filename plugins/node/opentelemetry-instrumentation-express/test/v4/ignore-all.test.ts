@@ -23,8 +23,8 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
-import { AttributeNames } from '../src/enums/AttributeNames';
-import { ExpressInstrumentation, ExpressLayerType } from '../src';
+import { AttributeNames } from '../../src/enums/AttributeNames';
+import { ExpressInstrumentation, ExpressLayerType } from '../../src';
 import { createServer, httpRequest } from './utils';
 
 const instrumentation = new ExpressInstrumentation({
