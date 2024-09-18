@@ -28,6 +28,12 @@ import { createServer, httpRequest, serverWithMiddleware } from './utils';
 import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 
+const nodeVersionNotSupported = process.version.startsWith('14');
+if (nodeVersionNotSupported) {
+  console.log('Skipping express v5 tests for node version 14');
+  process.exit(0);
+}
+
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
 instrumentation.disable();

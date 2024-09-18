@@ -29,6 +29,12 @@ import { ExpressRequestInfo, SpanNameHook } from '../../src/types';
 import { ExpressLayerType } from '../../src/enums/ExpressLayerType';
 import { SEMATTRS_HTTP_METHOD } from '@opentelemetry/semantic-conventions';
 
+const nodeVersionNotSupported = process.version.startsWith('14');
+if (nodeVersionNotSupported) {
+  console.log('Skipping express v5 tests for node version 14');
+  process.exit(0);
+}
+
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
