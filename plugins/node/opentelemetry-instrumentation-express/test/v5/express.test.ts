@@ -812,15 +812,18 @@ describe('ExpressInstrumentation', () => {
     });
   }
 
-  for (const segment of [
-    'arr/545',
-    'arr/required',
-    'arr/required',
-    'arr/requiredPath',
-    'arr/required/lastParam',
-    'arr55/required/lastParam',
-    'arr/requiredPath/optionalPath/',
-    'arr/requiredPath/optionalPath/lastParam',
+  const COMMON_PATH =
+    '/test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/';
+
+  for (const [segment, path] of [
+    ['arr/545', COMMON_PATH],
+    ['arr/required', COMMON_PATH],
+    ['arr/required', COMMON_PATH],
+    ['arr/requiredPath', COMMON_PATH],
+    ['arr/required/lastParam', COMMON_PATH],
+    ['arr55/required/lastParam', COMMON_PATH],
+    ['arr/requiredPath/optionalPath/', '/test,6,/test/'],
+    ['arr/requiredPath/optionalPath/lastParam', '/test,6,/test/'],
   ]) {
     it('should handle more complex regexes in route arrays correctly', async () => {
       await testUtils.runTestFixture({
@@ -840,18 +843,12 @@ describe('ExpressInstrumentation', () => {
 
           assert.strictEqual(spans[0].name, 'GET');
           assert.strictEqual(spans[0].kind, testUtils.OtlpSpanKind.CLIENT);
-          // assert.strictEqual(
-          //   spans[1].name,
-          //   'GET /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/'
-          // );
+          assert.strictEqual(spans[1].name, `GET ${path}`);
           assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
           assert.strictEqual(spans[2].name, 'middleware - simpleMiddleware');
           assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
           assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-          // assert.strictEqual(
-          //   spans[3].name,
-          //   'request handler - /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/'
-          // );
+          assert.strictEqual(spans[3].name, `request handler - ${path}`);
           assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
           assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
         },
