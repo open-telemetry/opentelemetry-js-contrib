@@ -641,6 +641,86 @@ describe('ExpressInstrumentation', () => {
     });
   });
 
+  it('should work with Express routers', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-express-router.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        const spans = collector.sortedSpans;
+
+        assert.strictEqual(spans[0].name, 'GET');
+        assert.strictEqual(spans[0].kind, testUtils.OtlpSpanKind.CLIENT);
+        assert.strictEqual(spans[1].name, 'GET /api/user/:id');
+        assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'middleware - query');
+        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
+        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
+        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
+        assert.strictEqual(spans[5].name, 'router - /api/user/:id');
+        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+        assert.strictEqual(spans[6].name, 'request handler - /api/user/:id');
+        assert.strictEqual(spans[6].kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(spans[6].parentSpanId, spans[1].spanId);
+      },
+    });
+  });
+
+  it('should work with nested Express routers', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-express-nested-router.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        const spans = collector.sortedSpans;
+
+        assert.strictEqual(spans[0].name, 'GET');
+        assert.strictEqual(spans[0].kind, testUtils.OtlpSpanKind.CLIENT);
+        assert.strictEqual(spans[1].name, 'GET /api/user/:id/posts/:postId');
+        assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
+        assert.strictEqual(spans[2].name, 'middleware - query');
+        assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
+        assert.strictEqual(spans[3].name, 'middleware - expressInit');
+        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
+        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
+        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
+        assert.strictEqual(spans[5].name, 'router - /api/user/:id');
+        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+        assert.strictEqual(spans[6].name, 'router - /:postId');
+        assert.strictEqual(spans[6].kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(spans[6].parentSpanId, spans[1].spanId);
+        assert.strictEqual(
+          spans[7].name,
+          'request handler - /api/user/:id/posts/:postId'
+        );
+        assert.strictEqual(spans[7].kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(spans[7].parentSpanId, spans[1].spanId);
+      },
+    });
+  });
+
   it('should set a correct transaction name for routes specified in RegEx', async () => {
     await testUtils.runTestFixture({
       cwd: __dirname,
