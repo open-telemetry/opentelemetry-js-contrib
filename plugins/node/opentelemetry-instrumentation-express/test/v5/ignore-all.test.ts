@@ -27,7 +27,7 @@ import { AttributeNames } from '../../src/enums/AttributeNames';
 import { ExpressInstrumentation, ExpressLayerType } from '../../src';
 import { createServer, httpRequest } from './utils';
 
-const nodeVersionNotSupported = process.version.startsWith('14');
+const nodeVersionNotSupported = process.version.startsWith('v14');
 if (nodeVersionNotSupported) {
   console.log('Skipping express v5 tests for node version 14');
   process.exit(0);
