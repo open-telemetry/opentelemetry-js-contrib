@@ -49,11 +49,6 @@ import {
   _LAYERS_STORE_PROPERTY,
 } from './internal-types';
 
-function getRouterProto(router: express.Router) {
-  // in express 5.x it's on the prototype
-  return 'Route' in router ? router.prototype : router;
-}
-
 /** Express instrumentation for OpenTelemetry */
 export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumentationConfig> {
   constructor(config: ExpressInstrumentationConfig = {}) {
@@ -67,7 +62,9 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         ['>=4.0.0 <6'],
         moduleExports => {
           const isExpressV5 = 'Route' in moduleExports.Router;
-          const routerProto = getRouterProto(moduleExports.Router);
+          const routerProto = isExpressV5
+            ? moduleExports.Router.prototype
+            : moduleExports.Router;
           // patch express.Router.route
           if (isWrapped(routerProto.route)) {
             this._unwrap(routerProto, 'route');
@@ -93,7 +90,10 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          const routerProto = getRouterProto(moduleExports.Router);
+          const isExpressV5 = 'Route' in moduleExports.Router;
+          const routerProto = isExpressV5
+            ? moduleExports.Router.prototype
+            : moduleExports.Router;
           this._unwrap(routerProto, 'route');
           this._unwrap(routerProto, 'use');
           this._unwrap(moduleExports.application, 'use');

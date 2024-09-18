@@ -7,8 +7,11 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "test-all-versions": "tav",
-    "pretest": "cd test/v5 && npm install",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "npm run test:common && npm run test:v4 && npm run test:v5",
+    "test:common": "nyc ts-mocha -p tsconfig.json 'test/utils.test.ts'",
+    "test:v4": "nyc ts-mocha -p tsconfig.json 'test/v4/*.test.ts'",
+    "pretest:v5": "cd test/v5 && npm install",
+    "test:v5": "nyc ts-mocha -p tsconfig.json 'test/v5/*.test.ts'",
     "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
