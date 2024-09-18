@@ -64,7 +64,7 @@ export const getLayerMetadata = (
       },
       name: `router - ${layerPath}`,
     };
-  } else if (layer.name === 'bound dispatch') {
+  } else if (layer.name === 'bound dispatch' || layer.name === 'handle') {
     return {
       attributes: {
         [AttributeNames.EXPRESS_NAME]: layerPath ?? 'request handler',

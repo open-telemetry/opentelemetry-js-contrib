@@ -49,6 +49,11 @@ import {
   _LAYERS_STORE_PROPERTY,
 } from './internal-types';
 
+function getRouterProto(router: express.Router) {
+  // in express 5.x it's on the prototype
+  return 'Route' in router ? router.prototype : router;
+}
+
 /** Express instrumentation for OpenTelemetry */
 export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumentationConfig> {
   constructor(config: ExpressInstrumentationConfig = {}) {
@@ -59,9 +64,10 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
     return [
       new InstrumentationNodeModuleDefinition(
         'express',
-        ['>=4.0.0 <5'],
+        ['>=4.0.0 <6'],
         moduleExports => {
-          const routerProto = moduleExports.Router as unknown as express.Router;
+          const isExpressV5 = 'Route' in moduleExports.Router;
+          const routerProto = getRouterProto(moduleExports.Router);
           // patch express.Router.route
           if (isWrapped(routerProto.route)) {
             this._unwrap(routerProto, 'route');
@@ -81,13 +87,13 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
             moduleExports.application,
             'use',
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this._getAppUsePatch() as any
+            this._getAppUsePatch(isExpressV5) as any
           );
           return moduleExports;
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          const routerProto = moduleExports.Router as unknown as express.Router;
+          const routerProto = getRouterProto(moduleExports.Router);
           this._unwrap(routerProto, 'route');
           this._unwrap(routerProto, 'use');
           this._unwrap(moduleExports.application, 'use');
@@ -135,16 +141,22 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
   /**
    * Get the patch for Application.use function
    */
-  private _getAppUsePatch() {
+  private _getAppUsePatch(isExpressV5: boolean) {
     const instrumentation = this;
     return function (original: express.Application['use']) {
       return function use(
-        this: { _router: ExpressRouter },
+        // In express 5.x the router is stored in `router` whereas in 4.x it's stored in `_router`
+        this: { _router?: ExpressRouter; router?: ExpressRouter },
         ...args: Parameters<typeof original>
       ) {
+        // if we access app.router in express 4.x we trigger an assertion error
+        // This property existed in v3, was removed in v4 and then re-added in v5
+        const router = isExpressV5 ? this.router : this._router;
         const route = original.apply(this, args);
-        const layer = this._router.stack[this._router.stack.length - 1];
-        instrumentation._applyPatch(layer, getLayerPath(args));
+        if (router) {
+          const layer = router.stack[router.stack.length - 1];
+          instrumentation._applyPatch(layer, getLayerPath(args));
+        }
         return route;
       };
     };

@@ -15,7 +15,6 @@
  */
 
 import type { Request } from 'express';
-import { Attributes } from '@opentelemetry/api';
 
 /**
  * This symbol is used to mark express layer as being already instrumented
@@ -48,11 +47,6 @@ export type PathParams = string | RegExp | Array<string | RegExp>;
 
 // https://github.com/expressjs/express/blob/main/lib/router/index.js#L53
 export type ExpressRouter = {
-  params: { [key: string]: string };
-  _params: string[];
-  caseSensitive: boolean;
-  mergeParams: boolean;
-  strict: boolean;
   stack: ExpressLayer[];
 };
 
@@ -61,12 +55,5 @@ export type ExpressLayer = {
   handle: Function & Record<string, any>;
   [kLayerPatched]?: boolean;
   name: string;
-  params: { [key: string]: string };
   path: string;
-  regexp: RegExp;
-};
-
-export type LayerMetadata = {
-  attributes: Attributes;
-  name: string;
 };
