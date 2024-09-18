@@ -56,4 +56,5 @@ export type ExpressLayer = {
   [kLayerPatched]?: boolean;
   name: string;
   path: string;
+  route?: ExpressLayer;
 };
