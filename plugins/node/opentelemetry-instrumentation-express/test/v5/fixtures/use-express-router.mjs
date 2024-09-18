@@ -22,11 +22,8 @@ import { ExpressInstrumentation } from '../../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-express-nested',
-  instrumentations: [
-    new HttpInstrumentation(),
-    new ExpressInstrumentation()
-  ]
-})
+  instrumentations: [new HttpInstrumentation(), new ExpressInstrumentation()],
+});
 
 sdk.start();
 
