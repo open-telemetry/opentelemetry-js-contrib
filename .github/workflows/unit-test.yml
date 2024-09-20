@@ -13,7 +13,7 @@ jobs:
         include:
             - node: 18
               code-coverage: true
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04:20240908.1.0
     services:
       memcached:
         image: memcached:1.6.29-alpine
