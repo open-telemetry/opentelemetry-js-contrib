@@ -64,6 +64,7 @@ export type ExpressLayer = {
   params: { [key: string]: string };
   path: string;
   regexp: RegExp;
+  route?: ExpressLayer;
 };
 
 export type LayerMetadata = {

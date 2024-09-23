@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-// Use express from an ES module:
-//    node --experimental-loader=@opentelemetry/instrumentation/hook.mjs use-express-regex.mjs
-
 import { promisify } from 'util';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
@@ -24,9 +21,13 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { ExpressInstrumentation } from '../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
-  serviceName: 'use-express-regex',
-  instrumentations: [new HttpInstrumentation(), new ExpressInstrumentation()],
-});
+  serviceName: 'use-express-nested',
+  instrumentations: [
+    new HttpInstrumentation(),
+    new ExpressInstrumentation()
+  ]
+})
+
 sdk.start();
 
 import express from 'express';
@@ -43,42 +44,28 @@ app.use(async function simpleMiddleware(req, res, next) {
   next();
 });
 
-app.get(
-  [
-    '/test/arr/:id',
-    /\/test\/arr[0-9]*\/required(path)?(\/optionalPath)?\/(lastParam)?/,
-  ],
-  (_req, res) => {
-    res.send({ response: 'response' });
-  }
-);
+const router = express.Router();
 
-app.get(/\/test\/regex/, (_req, res) => {
-  res.send({ response: 'response 2' });
+router.get('/api/user/:id', (req, res, next) => {
+  res.json({ hello: 'yes' });
+  res.end();
+  next();
 });
 
-app.get(['/test/array1', /\/test\/array[2-9]/], (_req, res) => {
-  res.send({ response: 'response 3' });
-});
-
-app.get(['/test', '6', /test/], (_req, res) => {
-  res.send({ response: 'response 4' });
-});
+app.use(router);
 
 const server = http.createServer(app);
 await new Promise(resolve => server.listen(0, resolve));
 const port = server.address().port;
 
+
 await new Promise(resolve => {
-  http.get(
-    `http://localhost:${port}${process.env.TEST_REGEX_ROUTE}`,
-    res => {
-      res.resume();
-      res.on('end', () => {
-        resolve();
-      });
-    }
-  );
+  http.get(`http://localhost:${port}/api/user/123`, (res) => {
+    res.resume();
+    res.on('end', data => {
+      resolve(data);
+    });
+  })
 });
 
 await new Promise(resolve => server.close(resolve));
