@@ -52,7 +52,7 @@
     "@types/node": "18.6.5",
     "@types/semver": "7.5.8",
     "mocha": "7.2.0",
-    "mysql2": "2.3.3",
+    "mysql2": "3.11.3",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "semver": "7.6.3",
