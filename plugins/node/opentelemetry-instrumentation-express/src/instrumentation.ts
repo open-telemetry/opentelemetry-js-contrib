@@ -180,7 +180,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         const attributes: Attributes = {
           [SEMATTRS_HTTP_ROUTE]: route.length > 0 ? route : '/',
         };
-        const metadata = getLayerMetadata(layer, layerPath);
+        const metadata = getLayerMetadata(route, layer, layerPath);
         const type = metadata.attributes[
           AttributeNames.EXPRESS_TYPE
         ] as ExpressLayerType;
