@@ -282,6 +282,7 @@ pkg-status:unmaintained:
           - plugins/node/instrumentation-tedious/**
           - plugins/node/opentelemetry-instrumentation-connect/**
           - plugins/node/opentelemetry-instrumentation-dns/**
+          - plugins/node/opentelemetry-instrumentation-fastify/**
           - plugins/node/opentelemetry-instrumentation-generic-pool/**
           - plugins/node/opentelemetry-instrumentation-hapi/**
           - plugins/node/opentelemetry-instrumentation-knex/**
