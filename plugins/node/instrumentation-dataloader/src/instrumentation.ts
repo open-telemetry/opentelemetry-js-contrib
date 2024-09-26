@@ -186,13 +186,6 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
         const result = original
           .call(this, ...args)
           .then(value => {
-            span.setAttribute('cache.key', [args[0]]);
-            span.setAttribute('cache.hit', value !== undefined);
-            span.setAttribute(
-              'cache.item_size',
-              value ? JSON.stringify(value).length : 0
-            );
-
             span.end();
             return value;
           })
@@ -251,19 +244,6 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
         // .loadMany never rejects, as errors from internal .load
         // calls are caught by dataloader lib
         return original.call(this, ...args).then(value => {
-          span.setAttribute('cache.key', Array.from(args[0]));
-          span.setAttribute(
-            'cache.hit',
-            value.every((v: unknown) => v !== undefined)
-          );
-          span.setAttribute(
-            'cache.item_size',
-            value.reduce(
-              (acc: number, v: unknown) => acc + JSON.stringify(v).length,
-              0
-            )
-          );
-
           span.end();
           return value;
         });
@@ -301,12 +281,6 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
         return original.call(this, ...args);
       });
 
-      span.setAttribute('cache.key', [args[0]]);
-      span.setAttribute(
-        'cache.item_size',
-        args[1] ? JSON.stringify(args[1]).length : 0
-      );
-
       span.end();
 
       return ret;
@@ -340,8 +314,6 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
       );
 
       const ret = context.with(trace.setSpan(parent, span), () => {
-        span.setAttribute('cache.key', [args[0]]);
-
         return original.call(this, ...args);
       });
 

@@ -184,38 +184,6 @@ describe('DataloaderInstrumentation', () => {
         assert.strictEqual(batchSpan.name, 'dataloader.batch test-name');
       }
     });
-
-    it('correctly sets cache.key, cache.hit and cache.item_size attributes when data is available', async () => {
-      assert.strictEqual(await dataloader.load('test'), getMd5HashFromIdx(0));
-
-      // We should have exactly two spans (one for .load and one for the batch)
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
-      const [_batchSpan, loadSpan] = memoryExporter.getFinishedSpans();
-
-      assert.deepStrictEqual(loadSpan.attributes, {
-        'cache.key': ['test'],
-        'cache.hit': true,
-        'cache.item_size': 34,
-      });
-    });
-
-    it('correctly sets cache.key, cache.hit and cache.item_size attributes when data is not available', async () => {
-      const namedDataloader = new Dataloader(async keys => {
-        return keys.map(() => undefined);
-      });
-
-      assert.strictEqual(await namedDataloader.load('unavailable'), undefined);
-
-      // We should have exactly two spans (one for .load and one for the batch)
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
-      const [_batchSpan, loadSpan] = memoryExporter.getFinishedSpans();
-
-      assert.deepStrictEqual(loadSpan.attributes, {
-        'cache.key': ['unavailable'],
-        'cache.hit': false,
-        'cache.item_size': 0,
-      });
-    });
   });
 
   describe('loadMany', () => {
@@ -429,18 +397,6 @@ describe('DataloaderInstrumentation', () => {
         assert.strictEqual(clearSpan.name, 'dataloader.clear test-name');
       }
     });
-
-    it('correctly sets attributes for clearing', async () => {
-      dataloader.clear('test');
-
-      // We should have exactly one span
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-      const [clearSpan] = memoryExporter.getFinishedSpans();
-
-      assert.deepStrictEqual(clearSpan.attributes, {
-        'cache.key': ['test'],
-      });
-    });
   });
 
   describe('clearAll', () => {
@@ -592,19 +548,6 @@ describe('DataloaderInstrumentation', () => {
 
       assert.strictEqual(primeSpan1.name, 'dataloader.prime');
       assert.strictEqual(primeSpan2.name, 'dataloader.prime');
-    });
-
-    it('correctly creates attributes for priming', async () => {
-      dataloader.prime('test', '1');
-
-      // We should have exactly one span
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-      const [primeSpan] = memoryExporter.getFinishedSpans();
-
-      assert.deepStrictEqual(primeSpan.attributes, {
-        'cache.key': ['test'],
-        'cache.item_size': 3,
-      });
     });
   });
 
