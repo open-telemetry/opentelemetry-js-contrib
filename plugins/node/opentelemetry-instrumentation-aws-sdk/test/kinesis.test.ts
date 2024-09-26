@@ -23,8 +23,8 @@ import { AttributeNames } from '../src/enums';
 registerInstrumentationTesting(new AwsInstrumentation());
 
 import { DescribeStreamCommand, KinesisClient } from '@aws-sdk/client-kinesis';
-import * as AWS from 'aws-sdk';
-import { AWSError } from 'aws-sdk';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
+import * as fs from 'fs';
 import * as nock from 'nock';
 
 import { SpanKind } from '@opentelemetry/api';
@@ -33,66 +33,31 @@ import { expect } from 'expect';
 
 const region = 'us-east-1';
 
-describe('Kinesis - v2', () => {
-  let kinesis: AWS.Kinesis;
-  beforeEach(() => {
-    AWS.config.credentials = {
-      accessKeyId: 'test key id',
-      expired: false,
-      expireTime: new Date(),
-      secretAccessKey: 'test acc key',
-      sessionToken: 'test token',
-    };
-  });
-
+describe('Kinesis - v3', () => {
   describe('DescribeStream', () => {
-    it('adds Stream Name', async () => {
-      kinesis = new AWS.Kinesis({ region: region });
+    it('Request span attributes - adds Stream Name', async () => {
       const dummyStreamName = 'dummy-stream-name';
 
       nock(`https://kinesis.${region}.amazonaws.com`)
-        .get('/')
-        .reply(200, 'null');
-
-      await kinesis
-        .describeStream(
-          {
-            StreamName: dummyStreamName,
-          },
-          (err: AWSError) => {
-            expect(err).toBeFalsy();
-          }
-        )
-        .promise();
-
-      const testSpans = getTestSpans();
-      const describeSpans = testSpans.filter((s: ReadableSpan) => {
-        return s.name === 'Kinesis.DescribeStream';
-      });
-      expect(describeSpans.length).toBe(1);
-      const describeSpan = describeSpans[0];
-      expect(
-        describeSpan.attributes[AttributeNames.AWS_KINESIS_STREAM_NAME]
-      ).toBe(dummyStreamName);
-      expect(describeSpan.kind).toBe(SpanKind.CLIENT);
-    });
-  });
-});
-
-describe('Kinesis - v3', () => {
-  describe('DescribeStream', () => {
-    it('adds Stream Name', async () => {
-      const dummyStreamName = 'dummy-stream-name';
-
-      nock(`https://kinesis.${region}.amazonaws.com/`)
         .post('/')
-        .reply(200, 'null');
+        .reply(
+          200,
+          fs.readFileSync(
+            './test/mock-responses/kinesis-describe-stream.json',
+            'utf8'
+          )
+        );
 
       const params = {
         StreamName: dummyStreamName,
       };
-      const client = new KinesisClient({ region });
-      await client.send(new DescribeStreamCommand(params)).catch(() => {});
+
+      // Use NodeHttpHandler to use HTTP instead of HTTP2 because nock does not support HTTP2
+      const client = new KinesisClient({
+        region: region,
+        requestHandler: new NodeHttpHandler(),
+      });
+      await client.send(new DescribeStreamCommand(params));
 
       const testSpans: ReadableSpan[] = getTestSpans();
       const describeSpans: ReadableSpan[] = testSpans.filter(

@@ -23,8 +23,6 @@ import { AttributeNames } from '../src/enums';
 registerInstrumentationTesting(new AwsInstrumentation());
 
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import * as AWS from 'aws-sdk';
-import { AWSError } from 'aws-sdk';
 import * as fs from 'fs';
 import * as nock from 'nock';
 
@@ -34,53 +32,9 @@ import { expect } from 'expect';
 
 const region = 'us-east-1';
 
-describe('S3 - v2', () => {
-  let s3: AWS.S3;
-  beforeEach(() => {
-    AWS.config.credentials = {
-      accessKeyId: 'test key id',
-      expired: false,
-      expireTime: new Date(),
-      secretAccessKey: 'test acc key',
-      sessionToken: 'test token',
-    };
-  });
-
-  describe('ListObjects', () => {
-    it('adds bucket Name', async () => {
-      s3 = new AWS.S3({ region: region });
-      const dummyBucketName = 'dummy-bucket-name';
-
-      nock(`https://s3.${region}.amazonaws.com`).get('/').reply(200, 'null');
-
-      await s3
-        .listObjects(
-          {
-            Bucket: dummyBucketName,
-          },
-          (err: AWSError) => {
-            expect(err).toBeFalsy();
-          }
-        )
-        .promise();
-
-      const testSpans = getTestSpans();
-      const listObjectsSpans = testSpans.filter((s: ReadableSpan) => {
-        return s.name === 'S3.ListObjects';
-      });
-      expect(listObjectsSpans.length).toBe(1);
-      const listObjectsSpan = listObjectsSpans[0];
-      expect(listObjectsSpan.attributes[AttributeNames.AWS_S3_BUCKET]).toBe(
-        dummyBucketName
-      );
-      expect(listObjectsSpan.kind).toBe(SpanKind.CLIENT);
-    });
-  });
-});
-
 describe('S3 - v3', () => {
   describe('PutObject', () => {
-    it('adds bucket Name', async () => {
+    it('Request span attributes - adds bucket Name', async () => {
       const dummyBucketName = 'ot-demo-test';
 
       nock(`https://${dummyBucketName}.s3.${region}.amazonaws.com/`)
