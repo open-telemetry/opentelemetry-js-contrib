@@ -243,7 +243,8 @@ export function handleExecutionResult(
 export function patchCallback(
   instrumentationConfig: PgInstrumentationConfig,
   span: Span,
-  cb: PostgresCallback
+  cb: PostgresCallback,
+  recordDuration: { (): void }
 ): PostgresCallback {
   return function patchedCallback(
     this: PgClientExtended,
@@ -251,7 +252,6 @@ export function patchCallback(
     res: object
   ) {
     if (err) {
-      // span.recordException(err);
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: err.message,
@@ -260,6 +260,7 @@ export function patchCallback(
       handleExecutionResult(instrumentationConfig, span, res);
     }
 
+    recordDuration();
     span.end();
     cb.call(this, err, res);
   };
