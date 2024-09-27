@@ -297,10 +297,11 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
         // Modify query text w/ a tracing comment before invoking original for
         // tracing, but only if args[0] has one of our expected shapes.
+        // Also omit the tracing comment if args[0] is a prepared query object.
         if (instrumentationConfig.addSqlCommenterCommentToQueries) {
           args[0] = firstArgIsString
             ? addSqlCommenterComment(span, arg0)
-            : firstArgIsQueryObjectWithText
+            : firstArgIsQueryObjectWithText && !('name' in arg0)
             ? {
                 ...arg0,
                 text: addSqlCommenterComment(span, arg0.text),
