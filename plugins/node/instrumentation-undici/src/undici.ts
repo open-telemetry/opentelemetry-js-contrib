@@ -37,6 +37,7 @@ import {
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 import {
+  DiagnosticChannelApi,
   ListenerRecord,
   RequestHeadersMessage,
   RequestMessage,
@@ -77,7 +78,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
   override disable(): void {
     super.disable();
-    this._channelSubs.forEach(sub => sub.channel.unsubscribe(sub.onMessage));
+    this._channelSubs.forEach(sub => sub.unsubscribe());
     this._channelSubs.length = 0;
   }
 
@@ -139,12 +140,35 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     diagnosticChannel: string,
     onMessage: ListenerRecord['onMessage']
   ) {
-    const channel = diagch.channel(diagnosticChannel);
-    channel.subscribe(onMessage);
+    // NOTE: later versions of `@types/node` include proper type definitions
+    // for diagnostics channel. However updating it breaks compilation :(
+    // Hence we have a helper interface to deal with it
+    const diagchApi = diagch as unknown as DiagnosticChannelApi;
+
+    // NOTE: diagnostic channel had an issue tht was solved in v18.19.0 so
+    // instrumentation is going to use the new API when the process version is
+    // greater or equal
+    // ref: https://github.com/nodejs/node/pull/47520
+    const [major, minor] = process.version
+      .replace('v', '')
+      .split('.')
+      .map(n => Number(n));
+    const isCompatible = major > 18 || (major === 18 && minor >= 19);
+
+    let unsubscribe: () => void;
+    if (typeof diagchApi.subscribe === 'function' && isCompatible) {
+      diagchApi.subscribe(diagnosticChannel, onMessage);
+      unsubscribe = () => diagchApi.unsubscribe?.(diagnosticChannel, onMessage);
+    } else {
+      const channel = diagchApi.channel(diagnosticChannel);
+      channel.subscribe(onMessage);
+      unsubscribe = () => channel.unsubscribe(onMessage);
+    }
+
     this._channelSubs.push({
       name: diagnosticChannel,
-      channel,
       onMessage,
+      unsubscribe,
     });
   }
 
