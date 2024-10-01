@@ -73,7 +73,7 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
     const vPageViewEvent: Event = {
       name: EVENT_NAME,
       data: {
-        'http.url': window.location.href,
+        'url': window.location.href,
         title,
         changeState: changeState || '',
         referrer,
