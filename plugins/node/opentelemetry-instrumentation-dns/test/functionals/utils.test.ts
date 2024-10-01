@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { diag, ROOT_CONTEXT, SpanKind, TraceFlags } from '@opentelemetry/api';
+import { diag, ROOT_CONTEXT, SpanKind } from '@opentelemetry/api';
 import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
@@ -154,13 +154,14 @@ describe('Utility', () => {
   describe('setError()', () => {
     it('should have error attributes', () => {
       const errorMessage = 'test error';
-      const span = new Span(
-        new BasicTracerProvider().getTracer('default'),
-        ROOT_CONTEXT,
+      const tracer = new BasicTracerProvider().getTracer('default');
+      const span = tracer.startSpan(
         'test',
-        { spanId: '', traceId: '', traceFlags: TraceFlags.NONE },
-        SpanKind.INTERNAL
-      );
+        {
+          kind: SpanKind.INTERNAL,
+        },
+        ROOT_CONTEXT
+      ) as unknown as Span;
       utils.setError(new Error(errorMessage), span);
       const attributes = span.attributes;
       assert.strictEqual(
