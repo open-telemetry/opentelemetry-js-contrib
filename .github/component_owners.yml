@@ -87,8 +87,8 @@ components:
   plugins/node/opentelemetry-instrumentation-express:
     - JamieDanielson
     - pkanal
-  plugins/node/opentelemetry-instrumentation-fastify:
-    - pichlermarc
+  plugins/node/opentelemetry-instrumentation-fastify: []
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-generic-pool: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-graphql:
