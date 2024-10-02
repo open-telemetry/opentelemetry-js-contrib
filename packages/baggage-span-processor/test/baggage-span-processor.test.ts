@@ -41,14 +41,14 @@ describe('BaggageSpanProcessor with all keys filter', () => {
         kind: SpanKind.SERVER,
       },
       ROOT_CONTEXT
-    ) as unknown as Span;
+    ) as Span;
   });
 
   it('onStart adds current Baggage entries to a span as attributes', () => {
     expect(span.attributes).toEqual({});
     const ctx = propagation.setBaggage(ROOT_CONTEXT, bag);
 
-    baggageProcessor.onStart(span as Span, ctx);
+    baggageProcessor.onStart(span, ctx);
 
     expect(span.attributes).toEqual(expectedAttrs);
   });
@@ -90,7 +90,7 @@ describe('BaggageSpanProcessor with startWith key filter', () => {
         kind: SpanKind.SERVER,
       },
       ROOT_CONTEXT
-    ) as unknown as Span;
+    ) as Span;
   });
 
   it('should only add baggage entries that match filter', () => {
@@ -127,7 +127,7 @@ describe('BaggageSpanProcessor with regex key filter', () => {
         kind: SpanKind.SERVER,
       },
       ROOT_CONTEXT
-    ) as unknown as Span;
+    ) as Span;
   });
 
   it('should only add baggage entries that match filter', () => {
