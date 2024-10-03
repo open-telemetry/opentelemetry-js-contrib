@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Span, SpanStatusCode, SpanAttributes } from '@opentelemetry/api';
+import { Span, SpanStatusCode, Attributes } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import { AddressFamily } from './enums/AddressFamily';
 import * as dns from 'dns';
@@ -31,7 +31,7 @@ export const setError = (err: NodeJS.ErrnoException, span: Span) => {
   const attributes = {
     [AttributeNames.DNS_ERROR_MESSAGE]: message,
     [AttributeNames.DNS_ERROR_NAME]: name,
-  } as SpanAttributes;
+  } as Attributes;
 
   span.setAttributes(attributes);
 
@@ -70,7 +70,7 @@ export const setLookupAttributes = (
   address: string | dns.LookupAddress[] | dns.LookupAddress,
   family?: number
 ) => {
-  const attributes = {} as SpanAttributes;
+  const attributes = {} as Attributes;
   const isObject = typeof address === 'object';
   let addresses = address;
 
