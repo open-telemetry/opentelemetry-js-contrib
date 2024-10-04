@@ -37,7 +37,6 @@ import {
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 import {
-  DiagnosticChannelApi,
   ListenerRecord,
   RequestHeadersMessage,
   RequestMessage,
@@ -138,36 +137,28 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
   private subscribeToChannel(
     diagnosticChannel: string,
-    onMessage: ListenerRecord['onMessage']
+    onMessage: (message: any, name: string | symbol) => void,
   ) {
-    // NOTE: later versions of `@types/node` include proper type definitions
-    // for diagnostics channel. However updating it breaks compilation :(
-    // Hence we have a helper interface to deal with it
-    const diagchApi = diagch as unknown as DiagnosticChannelApi;
-
-    // NOTE: diagnostic channel had an issue tht was solved in v18.19.0 so
-    // instrumentation is going to use the new API when the process version is
-    // greater or equal
-    // ref: https://github.com/nodejs/node/pull/47520
+    // `diagnostics_channel` had a ref counting bug until v18.19.0.
+    // https://github.com/nodejs/node/pull/47520
     const [major, minor] = process.version
       .replace('v', '')
       .split('.')
       .map(n => Number(n));
-    const isCompatible = major > 18 || (major === 18 && minor >= 19);
+      const useNewSubscribe = major > 18 || (major === 18 && minor >= 19);
 
     let unsubscribe: () => void;
-    if (typeof diagchApi.subscribe === 'function' && isCompatible) {
-      diagchApi.subscribe(diagnosticChannel, onMessage);
-      unsubscribe = () => diagchApi.unsubscribe?.(diagnosticChannel, onMessage);
+    if (useNewSubscribe) {
+      diagch.subscribe?.(diagnosticChannel, onMessage);
+      unsubscribe = () => diagch.unsubscribe?.(diagnosticChannel, onMessage);
     } else {
-      const channel = diagchApi.channel(diagnosticChannel);
+      const channel = diagch.channel(diagnosticChannel);
       channel.subscribe(onMessage);
       unsubscribe = () => channel.unsubscribe(onMessage);
     }
 
     this._channelSubs.push({
       name: diagnosticChannel,
-      onMessage,
       unsubscribe,
     });
   }

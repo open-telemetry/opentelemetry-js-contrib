@@ -14,19 +14,10 @@
  * limitations under the License.
  */
 
-import type { Channel, ChannelListener } from 'diagnostics_channel';
-
 import { UndiciRequest, UndiciResponse } from './types';
-
-export interface DiagnosticChannelApi {
-  subscribe?: (channel: string, listener: ChannelListener) => void;
-  unsubscribe?: (channel: string, listener: ChannelListener) => void;
-  channel: (name: string) => Channel;
-}
 
 export interface ListenerRecord {
   name: string;
-  onMessage: (message: any, name: string | symbol) => void;
   unsubscribe: () => void;
 }
 
