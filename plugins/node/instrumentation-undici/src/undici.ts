@@ -137,7 +137,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
   private subscribeToChannel(
     diagnosticChannel: string,
-    onMessage: (message: any, name: string | symbol) => void,
+    onMessage: (message: any, name: string | symbol) => void
   ) {
     // `diagnostics_channel` had a ref counting bug until v18.19.0.
     // https://github.com/nodejs/node/pull/47520
@@ -145,7 +145,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       .replace('v', '')
       .split('.')
       .map(n => Number(n));
-      const useNewSubscribe = major > 18 || (major === 18 && minor >= 19);
+    const useNewSubscribe = major > 18 || (major === 18 && minor >= 19);
 
     let unsubscribe: () => void;
     if (useNewSubscribe) {
