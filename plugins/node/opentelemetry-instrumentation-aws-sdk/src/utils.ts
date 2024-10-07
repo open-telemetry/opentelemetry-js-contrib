@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NormalizedRequest } from './types';
 import { Attributes, Context, context } from '@opentelemetry/api';
 import {
   SEMATTRS_RPC_METHOD,
@@ -21,6 +20,7 @@ import {
   SEMATTRS_RPC_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from './enums';
+import { NormalizedRequest } from './types';
 
 const toPascalCase = (str: string): string =>
   typeof str === 'string' ? str.charAt(0).toUpperCase() + str.slice(1) : str;
