@@ -15,7 +15,6 @@
  */
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
-import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { RuntimeNodeInstrumentationConfig } from './types';
 import { MetricCollector } from './types/metricCollector';
 import { EventLoopUtilizationCollector } from './metrics/eventLoopUtilizationCollector';
@@ -23,17 +22,15 @@ import { EventLoopDelayCollector } from './metrics/eventLoopDelayCollector';
 import { GCCollector } from './metrics/gcCollector';
 import { HeapSpacesSizeAndUsedCollector } from './metrics/heapSpacesSizeAndUsedCollector';
 import { ConventionalNamePrefix } from './types/ConventionalNamePrefix';
-import {EventLoopTimeCollector} from "./metrics/eventLoopTimeCollector";
+import { EventLoopTimeCollector } from './metrics/eventLoopTimeCollector';
+import { PACKAGE_VERSION, PACKAGE_NAME } from './version';
 
 const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
   monitoringPrecision: 10,
 };
 
 export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeInstrumentationConfig> {
-  private _ELUs: EventLoopUtilization[] = [];
-  private _interval: NodeJS.Timeout | undefined;
-  private _collectors: MetricCollector[] = [];
-
+  private readonly _collectors: MetricCollector[] = [];
 
   constructor(config: RuntimeNodeInstrumentationConfig = {}) {
     super(
@@ -46,10 +43,7 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
         this._config,
         ConventionalNamePrefix.NodeJs
       ),
-      new EventLoopTimeCollector(
-        this._config,
-        ConventionalNamePrefix.NodeJs
-      ),
+      new EventLoopTimeCollector(this._config, ConventionalNamePrefix.NodeJs),
       new EventLoopDelayCollector(this._config, ConventionalNamePrefix.NodeJs),
       new GCCollector(this._config, ConventionalNamePrefix.V8js),
       new HeapSpacesSizeAndUsedCollector(
@@ -79,15 +73,6 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
 
   override enable() {
     if (!this._collectors) return;
-
-    this._clearELU();
-    this._addELU();
-    clearInterval(this._interval);
-    this._interval = setInterval(
-      () => this._addELU(),
-      this.getConfig().eventLoopUtilizationMeasurementInterval
-    );
-
 
     for (const collector of this._collectors) {
       collector.enable();

@@ -77,7 +77,6 @@ describe(`${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_UTILIZATION}`, fu
 
     assert.notEqual(utilizationMetric, undefined, 'metric not found');
 
-
     assert.strictEqual(
       utilizationMetric!.descriptor.name,
       `${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_UTILIZATION}`,

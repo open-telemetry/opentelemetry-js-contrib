@@ -19,7 +19,7 @@ import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
 import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
-import { NODEJS_EVENT_LOOP_TIME } from "../src/metrics/eventLoopTimeCollector";
+import { NODEJS_EVENT_LOOP_TIME } from '../src/metrics/eventLoopTimeCollector';
 
 const MEASUREMENT_INTERVAL = 10;
 
@@ -76,7 +76,6 @@ describe(`${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_TIME}`, function 
     );
 
     assert.notEqual(timeMetric, undefined, 'metric not found');
-
 
     assert.strictEqual(
       timeMetric!.descriptor.name,

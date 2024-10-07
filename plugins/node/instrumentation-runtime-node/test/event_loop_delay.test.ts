@@ -21,7 +21,6 @@ import { TestMetricReader } from './testMetricsReader';
 import { metricNames } from '../src/metrics/eventLoopDelayCollector';
 import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
 
-
 describe(`${ConventionalNamePrefix.NodeJs}.eventloop`, function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
@@ -41,9 +40,7 @@ describe(`${ConventionalNamePrefix.NodeJs}.eventloop`, function () {
       instrumentation.setMeterProvider(meterProvider);
 
       // act
-      await new Promise(resolve =>
-        setTimeout(resolve, 100)
-      );
+      await new Promise(resolve => setTimeout(resolve, 100));
       const { resourceMetrics, errors } = await metricReader.collect();
 
       // assert
