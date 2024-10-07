@@ -37,7 +37,8 @@ import {
 import * as assert from 'assert';
 import { TediousInstrumentation } from '../src';
 import makeApi from './api';
-import type { Connection, ConnectionConfig } from 'tedious';
+import type { Connection } from 'tedious';
+import * as semver from 'semver';
 
 const port = Number(process.env.MSSQL_PORT) || 1433;
 const database = process.env.MSSQL_DATABASE || 'master';
@@ -49,7 +50,7 @@ const instrumentation = new TediousInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
-const config: ConnectionConfig & { userName: string; password: string } = {
+const config: any = {
   userName: user,
   password,
   server: host,
@@ -71,6 +72,19 @@ const config: ConnectionConfig & { userName: string; password: string } = {
   },
 };
 
+const processVersion = process.version;
+const tediousVersion = testUtils.getPackageVersion('tedious');
+const incompatVersions =
+  // tedious@16 removed support for node v14 https://github.com/tediousjs/tedious/releases/tag/v16.0.0
+  (semver.lt(processVersion, '15.0.0') &&
+    semver.gte(tediousVersion, '16.0.0')) ||
+  // tedious@17 removed support for node v16 and v19 https://github.com/tediousjs/tedious/releases/tag/v17.0.0
+  (semver.lt(processVersion, '17.0.0') &&
+    semver.gte(tediousVersion, '17.0.0')) ||
+  // tedious@19 removed support for node <18.17.0 https://github.com/tediousjs/tedious/releases/tag/v19.0.0
+  (semver.lt(processVersion, '18.17.0') &&
+    semver.gte(tediousVersion, '19.0.0'));
+
 describe('tedious', () => {
   let tedious: any;
   let contextManager: AsyncHooksContextManager;
@@ -81,7 +95,7 @@ describe('tedious', () => {
   const memoryExporter = new InMemorySpanExporter();
 
   before(function (done) {
-    if (!(shouldTest || shouldTestLocally)) {
+    if (!(shouldTest || shouldTestLocally) || incompatVersions) {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
@@ -100,7 +114,7 @@ describe('tedious', () => {
 
   after(function () {
     if (shouldTestLocally) {
-      this.timeout(5000);
+      this.timeout(15000);
       testUtils.cleanUpDocker('mssql');
     }
   });

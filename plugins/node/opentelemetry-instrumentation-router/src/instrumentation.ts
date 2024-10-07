@@ -28,19 +28,17 @@ import * as http from 'http';
 import type * as Router from 'router';
 
 import * as types from './internal-types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import * as utils from './utils';
 import AttributeNames from './enums/AttributeNames';
 import LayerType from './enums/LayerType';
 
-export default class RouterInstrumentation extends InstrumentationBase {
+const supportedVersions = ['>=1.0.0 <2'];
+
+export class RouterInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
-    super(
-      `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
-      VERSION,
-      config
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   private _moduleVersion?: string;
@@ -48,7 +46,7 @@ export default class RouterInstrumentation extends InstrumentationBase {
   init() {
     const module = new InstrumentationNodeModuleDefinition(
       constants.MODULE_NAME,
-      constants.SUPPORTED_VERSIONS,
+      supportedVersions,
       (moduleExports, moduleVersion) => {
         this._moduleVersion = moduleVersion;
         return moduleExports;
@@ -58,7 +56,7 @@ export default class RouterInstrumentation extends InstrumentationBase {
     module.files.push(
       new InstrumentationNodeModuleFile(
         'router/lib/layer.js',
-        constants.SUPPORTED_VERSIONS,
+        supportedVersions,
         moduleExports => {
           const Layer: any = moduleExports;
           if (isWrapped(Layer.prototype.handle_request)) {

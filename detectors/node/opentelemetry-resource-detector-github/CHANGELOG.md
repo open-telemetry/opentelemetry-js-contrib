@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.28.2...resource-detector-github-v0.29.0) (2024-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **detector-github:** change implementation to DetectorSync interface ([#2336](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2336))
+
+### Features
+
+* **detector-github:** change implementation to DetectorSync interface ([#2336](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2336)) ([d52d421](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d52d4218235528dcecc706867425b86bac49b1f0))
+
 ## [0.28.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.28.1...resource-detector-github-v0.28.2) (2024-04-25)
 
 

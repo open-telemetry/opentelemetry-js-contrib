@@ -58,12 +58,13 @@ export type ExpressRouter = {
 
 // https://github.com/expressjs/express/blob/main/lib/router/layer.js#L33
 export type ExpressLayer = {
-  handle: Function;
+  handle: Function & Record<string, any>;
   [kLayerPatched]?: boolean;
   name: string;
   params: { [key: string]: string };
   path: string;
   regexp: RegExp;
+  route?: ExpressLayer;
 };
 
 export type LayerMetadata = {

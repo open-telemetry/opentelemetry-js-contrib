@@ -19,7 +19,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import Instrumentation from '../src';
+import { FsInstrumentation } from '../src';
 import * as sinon from 'sinon';
 import type * as FSType from 'fs';
 import type { FsInstrumentationConfig } from '../src/types';
@@ -76,11 +76,11 @@ const assertFailingCallHooks = (expectedFunctionName: string) => {
 };
 
 describe('fs instrumentation: hooks', () => {
-  let plugin: Instrumentation;
+  let plugin: FsInstrumentation;
   let fs: typeof FSType;
 
   beforeEach(async () => {
-    plugin = new Instrumentation(pluginConfig);
+    plugin = new FsInstrumentation(pluginConfig);
     plugin.setTracerProvider(provider);
     plugin.setConfig(pluginConfig as FsInstrumentationConfig);
     plugin.enable();

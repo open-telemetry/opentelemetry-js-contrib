@@ -48,6 +48,7 @@ import {
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
   SEMRESATTRS_FAAS_ID,
 } from '@opentelemetry/semantic-conventions';
+import { ATTR_FAAS_COLDSTART } from '@opentelemetry/semantic-conventions/incubating';
 
 import {
   APIGatewayProxyEventHeaders,
@@ -57,7 +58,7 @@ import {
 } from 'aws-lambda';
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { env } from 'process';
 import { LambdaModule } from './internal-types';
 
@@ -72,16 +73,14 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
 };
 
 export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
+export const lambdaMaxInitInMilliseconds = 10_000;
 
-export class AwsLambdaInstrumentation extends InstrumentationBase {
+export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
   private _traceForceFlusher?: () => Promise<void>;
   private _metricForceFlusher?: () => Promise<void>;
 
-  protected override _config!: AwsLambdaInstrumentationConfig;
-
   constructor(config: AwsLambdaInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-aws-lambda', VERSION, config);
-    if (this._config.disableAwsContextPropagation == null) {
+    if (config.disableAwsContextPropagation == null) {
       if (
         typeof env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] ===
           'string' &&
@@ -89,18 +88,16 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
           'OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'
         ].toLocaleLowerCase() === 'true'
       ) {
-        this._config.disableAwsContextPropagation = true;
+        config = { ...config, disableAwsContextPropagation: true };
       }
     }
-  }
 
-  override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
-    this._config = config;
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init() {
     const taskRoot = process.env.LAMBDA_TASK_ROOT;
-    const handlerDef = this._config.lambdaHandler ?? process.env._HANDLER;
+    const handlerDef = this.getConfig().lambdaHandler ?? process.env._HANDLER;
 
     // _HANDLER and LAMBDA_TASK_ROOT are always defined in Lambda but guard bail out if in the future this changes.
     if (!taskRoot || !handlerDef) {
@@ -140,6 +137,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       functionName,
     });
 
+    const lambdaStartTime =
+      this.getConfig().lambdaStartTime ||
+      Date.now() - Math.floor(1000 * process.uptime());
+
     return [
       new InstrumentationNodeModuleDefinition(
         // NB: The patching infrastructure seems to match names backwards, this must be the filename, while
@@ -156,7 +157,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
               if (isWrapped(moduleExports[functionName])) {
                 this._unwrap(moduleExports, functionName);
               }
-              this._wrap(moduleExports, functionName, this._getHandler());
+              this._wrap(
+                moduleExports,
+                functionName,
+                this._getHandler(lambdaStartTime)
+              );
               return moduleExports;
             },
             (moduleExports?: LambdaModule) => {
@@ -169,15 +174,46 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     ];
   }
 
-  private _getHandler() {
+  private _getHandler(handlerLoadStartTime: number) {
     return (original: Handler) => {
-      return this._getPatchHandler(original);
+      return this._getPatchHandler(original, handlerLoadStartTime);
     };
   }
 
-  private _getPatchHandler(original: Handler) {
+  private _getPatchHandler(original: Handler, lambdaStartTime: number) {
     diag.debug('patch handler function');
     const plugin = this;
+
+    let requestHandledBefore = false;
+    let requestIsColdStart = true;
+
+    function _onRequest(): void {
+      if (requestHandledBefore) {
+        // Non-first requests cannot be coldstart.
+        requestIsColdStart = false;
+      } else {
+        if (
+          process.env.AWS_LAMBDA_INITIALIZATION_TYPE ===
+          'provisioned-concurrency'
+        ) {
+          // If sandbox environment is initialized with provisioned concurrency,
+          // even the first requests should not be considered as coldstart.
+          requestIsColdStart = false;
+        } else {
+          // Check whether it is proactive initialization or not:
+          // https://aaronstuyvenberg.com/posts/understanding-proactive-initialization
+          const passedTimeSinceHandlerLoad: number =
+            Date.now() - lambdaStartTime;
+          const proactiveInitialization: boolean =
+            passedTimeSinceHandlerLoad > lambdaMaxInitInMilliseconds;
+
+          // If sandbox has been initialized proactively before the actual request,
+          // even the first requests should not be considered as coldstart.
+          requestIsColdStart = !proactiveInitialization;
+        }
+        requestHandledBefore = true;
+      }
+    }
 
     return function patchedHandler(
       this: never,
@@ -187,7 +223,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       context: Context,
       callback: Callback
     ) {
-      const config = plugin._config;
+      _onRequest();
+
+      const config = plugin.getConfig();
       const parent = AwsLambdaInstrumentation._determineParent(
         event,
         context,
@@ -208,14 +246,16 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
               AwsLambdaInstrumentation._extractAccountId(
                 context.invokedFunctionArn
               ),
+            [ATTR_FAAS_COLDSTART]: requestIsColdStart,
           },
         },
         parent
       );
 
-      if (config.requestHook) {
+      const { requestHook } = config;
+      if (requestHook) {
         safeExecuteInTheMiddle(
-          () => config.requestHook!(span, { event, context }),
+          () => requestHook(span, { event, context }),
           e => {
             if (e)
               diag.error('aws-lambda instrumentation: requestHook error', e);
@@ -362,9 +402,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     err?: Error | string | null,
     res?: any
   ) {
-    if (this._config?.responseHook) {
+    const { responseHook } = this.getConfig();
+    if (responseHook) {
       safeExecuteInTheMiddle(
-        () => this._config.responseHook!(span, { err, res }),
+        () => responseHook(span, { err, res }),
         e => {
           if (e)
             diag.error('aws-lambda instrumentation: responseHook error', e);

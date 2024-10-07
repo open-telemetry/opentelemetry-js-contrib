@@ -15,3 +15,4 @@
  */
 
 export { BaggageSpanProcessor } from './baggage-span-processor';
+export { ALLOW_ALL_BAGGAGE_KEYS, BaggageKeyPredicate } from './types';

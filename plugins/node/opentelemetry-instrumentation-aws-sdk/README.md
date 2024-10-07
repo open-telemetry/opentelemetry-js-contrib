@@ -9,11 +9,18 @@ This module provides automatic instrumentation for the [`aws-sdk` v2](https://do
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
 npm install --save @opentelemetry/instrumentation-aws-sdk
 ```
+
+## Supported Versions
+
+- [`aws-sdk`](https://www.npmjs.com/package/aws-sdk) versions `>=2.308.0 <3`
+- `@aws-sdk/client-*` versions `>=3.0.0 <4`
 
 ## Usage
 
@@ -56,7 +63,7 @@ aws-sdk instrumentation has few options available to choose from. You can set th
 Both V2 and V3 instrumentations are collecting the following attributes:
 | Attribute Name | Type | Description | Example |
 | -------------- | ---- | ----------- | ------- |
-| `rpc.system` | string | Always equals "aws-api" |
+| `rpc.system` | string | Always equals "aws-api" | |
 | `rpc.method` | string | he name of the operation corresponding to the request, as returned by the AWS SDK. If the SDK does not provide a way to retrieve a name, the name of the command SHOULD be used, removing the suffix `Command` if present, resulting in a PascalCase name with no spaces. | `PutObject` |
 | `rpc.service` | string | The name of the service to which a request is made, as returned by the AWS SDK. If the SDK does not provide a away to retrieve a name, the name of the SDK's client interface for a service SHOULD be used, removing the suffix `Client` if present, resulting in a PascalCase name with no spaces. | `S3`, `DynamoDB`, `Route53` |
 | `aws.region` | string | Region name for the request | "eu-west-1" |
@@ -104,18 +111,6 @@ Specific service logic currently implemented for:
 ## Potential Side Effects
 
 The instrumentation is doing best effort to support the trace specification of OpenTelemetry. For SQS, it involves defining new attributes on the `Messages` array, as well as on the manipulated types generated from this array (to set correct trace context for a single SQS message operation). Those properties are defined as [non-enumerable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Enumerability_and_ownership_of_properties) properties, so they have minimum side effect on the app. They will, however, show when using the `Object.getOwnPropertyDescriptors` and `Reflect.ownKeys` functions on SQS `Messages` array and for each `Message` in the array.
-
-## Migration From opentelemetry-instrumentation-aws-sdk
-
-This instrumentation was originally published under the name `"opentelemetry-instrumentation-aws-sdk"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js). Few breaking changes were made during porting to the contrib repo to align with conventions:
-
-### Hook Info
-
-The instrumentation's config `preRequestHook`, `responseHook` and `sqsProcessHook` functions signature changed, so the second function parameter is info object, containing the relevant hook data.
-
-### `moduleVersionAttributeName` config option
-
-The `moduleVersionAttributeName` config option is removed. To add the aws-sdk package version to spans, use the `moduleVersion` attribute in hook info for `preRequestHook` and `responseHook` functions.
 
 ## Semantic Conventions
 

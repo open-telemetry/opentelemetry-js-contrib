@@ -21,12 +21,9 @@ import {
   WEBSITE_HOME_STAMPNAME,
   WEBSITE_HOSTNAME,
   WEBSITE_INSTANCE_ID,
-  WEBSITE_OWNER_NAME,
-  WEBSITE_RESOURCE_GROUP,
   WEBSITE_SITE_NAME,
   WEBSITE_SLOT_NAME,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
-  FUNCTIONS_VERSION,
 } from '../types';
 import {
   SEMRESATTRS_CLOUD_REGION,
@@ -39,6 +36,7 @@ import {
   CLOUDPROVIDERVALUES_AZURE,
   CLOUDPLATFORMVALUES_AZURE_APP_SERVICE,
 } from '@opentelemetry/semantic-conventions';
+import { getAzureResourceUri, isAzureFunction } from '../utils';
 
 const APP_SERVICE_ATTRIBUTE_ENV_VARS = {
   [SEMRESATTRS_CLOUD_REGION]: REGION_NAME,
@@ -56,8 +54,7 @@ class AzureAppServiceDetector implements DetectorSync {
   detect(): IResource {
     let attributes = {};
     const websiteSiteName = process.env[WEBSITE_SITE_NAME];
-    const isAzureFunction = !!process.env[FUNCTIONS_VERSION];
-    if (websiteSiteName && !isAzureFunction) {
+    if (websiteSiteName && !isAzureFunction()) {
       attributes = {
         ...attributes,
         [SEMRESATTRS_SERVICE_NAME]: websiteSiteName,
@@ -71,7 +68,7 @@ class AzureAppServiceDetector implements DetectorSync {
         [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AZURE_APP_SERVICE,
       };
 
-      const azureResourceUri = this.getAzureResourceUri(websiteSiteName);
+      const azureResourceUri = getAzureResourceUri(websiteSiteName);
       if (azureResourceUri) {
         attributes = {
           ...attributes,
@@ -89,22 +86,6 @@ class AzureAppServiceDetector implements DetectorSync {
       }
     }
     return new Resource(attributes);
-  }
-
-  private getAzureResourceUri(websiteSiteName: string): string | undefined {
-    const websiteResourceGroup = process.env[WEBSITE_RESOURCE_GROUP];
-    const websiteOwnerName = process.env[WEBSITE_OWNER_NAME];
-
-    let subscriptionId = websiteOwnerName;
-    if (websiteOwnerName && websiteOwnerName.indexOf('+') !== -1) {
-      subscriptionId = websiteOwnerName.split('+')[0];
-    }
-
-    if (!subscriptionId && !websiteOwnerName) {
-      return undefined;
-    }
-
-    return `/subscriptions/${subscriptionId}/resourceGroups/${websiteResourceGroup}/providers/Microsoft.Web/sites/${websiteSiteName}`;
   }
 }
 

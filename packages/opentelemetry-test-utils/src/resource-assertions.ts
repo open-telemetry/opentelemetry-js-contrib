@@ -18,7 +18,6 @@ import { SDK_INFO } from '@opentelemetry/core';
 import * as assert from 'assert';
 import { Resource } from '@opentelemetry/resources';
 import {
-  SemanticResourceAttributes,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
   SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
   SEMRESATTRS_CLOUD_PROVIDER,
@@ -49,6 +48,7 @@ import {
   SEMRESATTRS_TELEMETRY_SDK_NAME,
   SEMRESATTRS_TELEMETRY_SDK_VERSION,
 } from '@opentelemetry/semantic-conventions';
+import * as semconv from '@opentelemetry/semantic-conventions';
 
 /**
  * Test utility method to validate a cloud resource
@@ -65,7 +65,7 @@ export const assertCloudResource = (
     zone?: string;
   }
 ) => {
-  assertHasOneLabel('CLOUD', resource);
+  assertHasOneLabel('cloud', resource);
   if (validations.provider)
     assert.strictEqual(
       resource.attributes[SEMRESATTRS_CLOUD_PROVIDER],
@@ -103,7 +103,7 @@ export const assertContainerResource = (
     imageTag?: string;
   }
 ) => {
-  assertHasOneLabel('CONTAINER', resource);
+  assertHasOneLabel('container', resource);
   if (validations.name)
     assert.strictEqual(
       resource.attributes[SEMRESATTRS_CONTAINER_NAME],
@@ -143,7 +143,7 @@ export const assertHostResource = (
     imageVersion?: string;
   }
 ) => {
-  assertHasOneLabel('HOST', resource);
+  assertHasOneLabel('host', resource);
   if (validations.id)
     assert.strictEqual(
       resource.attributes[SEMRESATTRS_HOST_ID],
@@ -191,7 +191,7 @@ export const assertK8sResource = (
     deploymentName?: string;
   }
 ) => {
-  assertHasOneLabel('K8S', resource);
+  assertHasOneLabel('k8s', resource);
   if (validations.clusterName)
     assert.strictEqual(
       resource.attributes[SEMRESATTRS_K8S_CLUSTER_NAME],
@@ -335,26 +335,26 @@ export const assertEmptyResource = (resource: Resource) => {
   assert.strictEqual(Object.keys(resource.attributes).length, 0);
 };
 
+/**
+ * Assert that the `resource` has at least one known attribute with the given
+ * `prefix`. By "known", we mean it is an attribute defined in semconv.
+ */
 const assertHasOneLabel = (prefix: string, resource: Resource): void => {
-  const hasOne = Object.entries(SemanticResourceAttributes).find(
-    ([key, value]) => {
-      return (
-        key.startsWith(prefix) &&
-        Object.prototype.hasOwnProperty.call(resource.attributes, value)
-      );
-    }
+  const semconvModPrefix = `SEMRESATTRS_${prefix.toUpperCase()}_`;
+  const knownAttrs: Set<string> = new Set(
+    Object.entries(semconv)
+      .filter(
+        ([k, v]) => typeof v === 'string' && k.startsWith(semconvModPrefix)
+      )
+      .map(([, v]) => v as string)
   );
 
+  const hasAttrs = Object.keys(resource.attributes).filter(k =>
+    knownAttrs.has(k)
+  );
   assert.ok(
-    hasOne,
+    hasAttrs.length > 0,
     'Resource must have one of the following attributes: ' +
-      Object.entries(SemanticResourceAttributes)
-        .reduce((result, [key, value]) => {
-          if (key.startsWith(prefix)) {
-            result.push(value);
-          }
-          return result;
-        })
-        .join(', ')
+      Array.from(knownAttrs).join(', ')
   );
 };

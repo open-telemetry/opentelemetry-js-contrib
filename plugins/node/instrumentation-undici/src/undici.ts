@@ -34,7 +34,7 @@ import {
   ValueType,
 } from '@opentelemetry/api';
 
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 import {
   ListenerRecord,
@@ -59,7 +59,7 @@ interface InstrumentationRecord {
 
 // A combination of https://github.com/elastic/apm-agent-nodejs and
 // https://github.com/gadget-inc/opentelemetry-instrumentations/blob/main/packages/opentelemetry-instrumentation-undici/src/index.ts
-export class UndiciInstrumentation extends InstrumentationBase {
+export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumentationConfig> {
   // Keep ref to avoid https://github.com/nodejs/node/issues/42170 bug and for
   // unsubscribing.
   private _channelSubs!: Array<ListenerRecord>;
@@ -67,8 +67,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
 
   private _httpClientDurationHistogram!: Histogram;
   constructor(config: UndiciInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-undici', VERSION, config);
-    this.setConfig(config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   // No need to instrument files/modules
@@ -77,24 +76,32 @@ export class UndiciInstrumentation extends InstrumentationBase {
   }
 
   override disable(): void {
-    if (!this._config.enabled) {
-      return;
-    }
-
+    super.disable();
     this._channelSubs.forEach(sub => sub.channel.unsubscribe(sub.onMessage));
     this._channelSubs.length = 0;
-    this._config.enabled = false;
   }
 
   override enable(): void {
-    if (this._config.enabled) {
+    // "enabled" handling is currently a bit messy with InstrumentationBase.
+    // If constructed with `{enabled: false}`, this `.enable()` is still called,
+    // and `this.getConfig().enabled !== this.isEnabled()`, creating confusion.
+    //
+    // For now, this class will setup for instrumenting if `.enable()` is
+    // called, but use `this.getConfig().enabled` to determine if
+    // instrumentation should be generated. This covers the more likely common
+    // case of config being given a construction time, rather than later via
+    // `instance.enable()`, `.disable()`, or `.setConfig()` calls.
+    super.enable();
+
+    // This method is called by the super-class constructor before ours is
+    // called. So we need to ensure the property is initalized.
+    this._channelSubs = this._channelSubs || [];
+
+    // Avoid to duplicate subscriptions
+    if (this._channelSubs.length > 0) {
       return;
     }
-    this._config.enabled = true;
 
-    // This method is called by the `InstrumentationAbstract` constructor before
-    // ours is called. So we need to ensure the property is initalized
-    this._channelSubs = this._channelSubs || [];
     this.subscribeToChannel(
       'undici:request:create',
       this.onRequestCreated.bind(this)
@@ -109,16 +116,6 @@ export class UndiciInstrumentation extends InstrumentationBase {
     );
     this.subscribeToChannel('undici:request:trailers', this.onDone.bind(this));
     this.subscribeToChannel('undici:request:error', this.onError.bind(this));
-  }
-
-  override setConfig(config: UndiciInstrumentationConfig = {}): void {
-    super.setConfig(config);
-
-    if (config?.enabled) {
-      this.enable();
-    } else {
-      this.disable();
-    }
   }
 
   protected override _updateMetricInstruments() {
@@ -136,10 +133,6 @@ export class UndiciInstrumentation extends InstrumentationBase {
         },
       }
     );
-  }
-
-  private _getConfig(): UndiciInstrumentationConfig {
-    return this._config as UndiciInstrumentationConfig;
   }
 
   private subscribeToChannel(
@@ -163,10 +156,11 @@ export class UndiciInstrumentation extends InstrumentationBase {
     // - instrumentation is disabled
     // - ignored by config
     // - method is 'CONNECT'
-    const config = this._getConfig();
+    const config = this.getConfig();
+    const enabled = config.enabled !== false;
     const shouldIgnoreReq = safeExecuteInTheMiddle(
       () =>
-        !config.enabled ||
+        !enabled ||
         request.method === 'CONNECT' ||
         config.ignoreRequestHook?.(request),
       e => e && this._diag.error('caught ignoreRequestHook error: ', e),
@@ -205,7 +199,9 @@ export class UndiciInstrumentation extends InstrumentationBase {
       const idx = request.headers.findIndex(
         h => h.toLowerCase() === 'user-agent'
       );
-      userAgent = request.headers[idx + 1];
+      if (idx >= 0) {
+        userAgent = request.headers[idx + 1];
+      }
     } else if (typeof request.headers === 'string') {
       const headers = request.headers.split('\r\n');
       const uaHeader = headers.find(h =>
@@ -239,7 +235,10 @@ export class UndiciInstrumentation extends InstrumentationBase {
     const currentSpan = trace.getSpan(activeCtx);
     let span: Span;
 
-    if (config.requireParentforSpans && !currentSpan) {
+    if (
+      config.requireParentforSpans &&
+      (!currentSpan || !trace.isSpanContextValid(currentSpan.spanContext()))
+    ) {
       span = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
     } else {
       span = this.tracer.startSpan(
@@ -292,7 +291,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
       return;
     }
 
-    const config = this._getConfig();
+    const config = this.getConfig();
     const { span } = record;
     const { remoteAddress, remotePort } = socket;
     const spanAttributes: Attributes = {
@@ -350,7 +349,15 @@ export class UndiciInstrumentation extends InstrumentationBase {
       [SemanticAttributes.HTTP_RESPONSE_STATUS_CODE]: response.statusCode,
     };
 
-    const config = this._getConfig();
+    const config = this.getConfig();
+
+    // Execute the response hook if defined
+    safeExecuteInTheMiddle(
+      () => config.responseHook?.(span, { request, response }),
+      e => e && this._diag.error('caught responseHook error: ', e),
+      true
+    );
+
     const headersToAttribs = new Set();
 
     if (config.headersToSpanAttributes?.responseHeaders) {

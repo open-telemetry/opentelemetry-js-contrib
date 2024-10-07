@@ -15,6 +15,9 @@
  */
 
 import * as http from 'http';
+
+import { context } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import {
   DetectorSync,
   IResource,
@@ -47,7 +50,10 @@ import {
  */
 class AzureVmResourceDetector implements DetectorSync {
   detect(): IResource {
-    return new Resource({}, this.getAzureVmMetadata());
+    const attributes = context.with(suppressTracing(context.active()), () =>
+      this.getAzureVmMetadata()
+    );
+    return new Resource({}, attributes);
   }
 
   async getAzureVmMetadata(): Promise<ResourceAttributes> {

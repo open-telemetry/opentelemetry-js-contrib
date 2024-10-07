@@ -98,16 +98,23 @@ export function handleCallbackResponse(
   exec: Function,
   originalThis: any,
   span: Span,
+  args: IArguments,
   responseHook?: MongooseResponseCustomAttributesFunction,
   moduleVersion: string | undefined = undefined
 ) {
-  return exec.apply(originalThis, [
-    (err: Error, response: any) => {
-      err
-        ? setErrorStatus(span, err)
-        : applyResponseHook(span, response, responseHook, moduleVersion);
-      span.end();
-      return callback!(err, response);
-    },
-  ]);
+  let callbackArgumentIndex = 0;
+  if (args.length === 2) {
+    callbackArgumentIndex = 1;
+  }
+
+  args[callbackArgumentIndex] = (err: Error, response: any): any => {
+    err
+      ? setErrorStatus(span, err)
+      : applyResponseHook(span, response, responseHook, moduleVersion);
+
+    span.end();
+    return callback!(err, response);
+  };
+
+  return exec.apply(originalThis, args);
 }

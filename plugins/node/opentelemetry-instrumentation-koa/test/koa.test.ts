@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
+import type { RouterParamContext } from '@koa/router';
 import * as KoaRouter from '@koa/router';
-import { context, trace, Span, SpanKind } from '@opentelemetry/api';
+import { context, trace, Span } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
@@ -28,6 +30,9 @@ import {
   SEMATTRS_HTTP_METHOD,
   SEMATTRS_HTTP_ROUTE,
 } from '@opentelemetry/semantic-conventions';
+
+type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
+type KoaMiddleware = Middleware<DefaultState, KoaContext>;
 
 import { KoaInstrumentation } from '../src';
 const plugin = new KoaInstrumentation();
@@ -594,11 +599,13 @@ describe('Koa Instrumentation', () => {
         )
       );
 
-      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
-        span.setAttribute(SEMATTRS_HTTP_METHOD, info.context.request.method);
+      const requestHook = sinon.spy(
+        (span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
+          span.setAttribute(SEMATTRS_HTTP_METHOD, info.context.request.method);
 
-        throw Error('error thrown in requestHook');
-      });
+          throw Error('error thrown in requestHook');
+        }
+      );
 
       plugin.setConfig({
         requestHook,
@@ -645,11 +652,13 @@ describe('Koa Instrumentation', () => {
         )
       );
 
-      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
-        span.setAttribute('http.method', info.context.request.method);
-        span.setAttribute('app.env', info.context.app.env);
-        span.setAttribute('koa.layer', info.layerType);
-      });
+      const requestHook = sinon.spy(
+        (span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
+          span.setAttribute('http.method', info.context.request.method);
+          span.setAttribute('app.env', info.context.app.env);
+          span.setAttribute('koa.layer', info.layerType);
+        }
+      );
 
       plugin.setConfig({
         requestHook,
@@ -732,14 +741,16 @@ describe('Koa Instrumentation', () => {
         //    `- span 'middleware - simpleMiddleware'
         //       `- span 'router - /post/:id'
         const spans = collector.sortedSpans;
-        assert.strictEqual(spans[0].name, 'GET /post/:id');
-        assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
-        assert.strictEqual(spans[1].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[1].kind, SpanKind.SERVER);
-        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
-        assert.strictEqual(spans[2].name, 'router - /post/:id');
-        assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[0].name, 'GET');
+        assert.strictEqual(spans[0].kind, testUtils.OtlpSpanKind.CLIENT);
+        assert.strictEqual(spans[1].name, 'GET /post/:id');
+        assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
+        assert.strictEqual(spans[2].name, 'middleware - simpleMiddleware');
+        assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
         assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
+        assert.strictEqual(spans[3].name, 'router - /post/:id');
+        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(spans[3].parentSpanId, spans[2].spanId);
       },
     });
   });

@@ -15,4 +15,4 @@
  */
 
 export * from './types';
-export { DataloaderInstrumentation } from './instrumentation';
+export * from './instrumentation';

@@ -15,7 +15,13 @@
  */
 
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_DB_OPERATION,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_NET_PEER_NAME,
+} from '@opentelemetry/semantic-conventions';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import type { MongoClient, MongoClientOptions, Collection } from 'mongodb';
@@ -93,28 +99,25 @@ export function assertSpans(
   assert.strictEqual(mongoSpan.name, expectedName);
   assert.strictEqual(mongoSpan.kind, expectedKind);
   assert.strictEqual(
-    mongoSpan.attributes[SemanticAttributes.DB_OPERATION],
+    mongoSpan.attributes[SEMATTRS_DB_OPERATION],
     expectedOperation
   );
+  assert.strictEqual(mongoSpan.attributes[SEMATTRS_DB_SYSTEM], 'mongodb');
   assert.strictEqual(
-    mongoSpan.attributes[SemanticAttributes.DB_SYSTEM],
-    'mongodb'
-  );
-  assert.strictEqual(
-    mongoSpan.attributes[SemanticAttributes.NET_PEER_NAME],
+    mongoSpan.attributes[SEMATTRS_NET_PEER_NAME],
     process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
   );
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
   if (expectedConnString) {
     assert.strictEqual(
-      mongoSpan.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+      mongoSpan.attributes[SEMATTRS_DB_CONNECTION_STRING],
       expectedConnString
     );
   }
 
   if (isEnhancedDatabaseReportingEnabled) {
     const dbStatement = JSON.parse(
-      mongoSpan.attributes[SemanticAttributes.DB_STATEMENT] as string
+      mongoSpan.attributes[SEMATTRS_DB_STATEMENT] as string
     );
     for (const key in dbStatement) {
       assert.notStrictEqual(dbStatement[key], '?');

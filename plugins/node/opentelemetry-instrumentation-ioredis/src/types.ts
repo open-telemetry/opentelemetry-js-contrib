@@ -55,7 +55,7 @@ export interface RedisResponseCustomAttributeFunction {
 }
 
 /**
- * Options available for the IORedis Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-ioredis#ioredis-instrumentation-options))
+ * Options available for the IORedis Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-ioredis/README.md#ioredis-instrumentation-options))
  */
 export interface IORedisInstrumentationConfig extends InstrumentationConfig {
   /** Custom serializer function for the db.statement tag */

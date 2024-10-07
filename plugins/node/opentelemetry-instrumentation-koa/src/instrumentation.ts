@@ -23,34 +23,27 @@ import {
 } from '@opentelemetry/instrumentation';
 
 import type * as koa from 'koa';
-import { KoaContext, KoaLayerType, KoaInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { KoaLayerType, KoaInstrumentationConfig } from './types';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getMiddlewareMetadata, isLayerIgnored } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
   kLayerPatched,
+  KoaContext,
   KoaMiddleware,
   KoaPatchedMiddleware,
 } from './internal-types';
 
 /** Koa instrumentation for OpenTelemetry */
-export class KoaInstrumentation extends InstrumentationBase {
+export class KoaInstrumentation extends InstrumentationBase<KoaInstrumentationConfig> {
   constructor(config: KoaInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-koa', VERSION, config);
-  }
-
-  override setConfig(config: KoaInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
-  }
-
-  override getConfig(): KoaInstrumentationConfig {
-    return this._config as KoaInstrumentationConfig;
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
     return new InstrumentationNodeModuleDefinition(
       'koa',
-      ['^2.0.0'],
+      ['>=2.0.0 <3'],
       (module: any) => {
         const moduleExports: typeof koa =
           module[Symbol.toStringTag] === 'Module'
@@ -178,10 +171,11 @@ export class KoaInstrumentation extends InstrumentationBase {
         rpcMetadata.route = context._matchedRoute.toString();
       }
 
-      if (this.getConfig().requestHook) {
+      const { requestHook } = this.getConfig();
+      if (requestHook) {
         safeExecuteInTheMiddle(
           () =>
-            this.getConfig().requestHook!(span, {
+            requestHook(span, {
               context,
               middlewareLayer,
               layerType,

@@ -27,7 +27,8 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { PinoInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { getTimeConverter, OTelPinoStream } from './log-sending-utils';
 
 const pinoVersions = ['>=5.14.0 <10'];
 
@@ -37,9 +38,9 @@ const DEFAULT_LOG_KEYS = {
   traceFlags: 'trace_flags',
 };
 
-export class PinoInstrumentation extends InstrumentationBase {
+export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentationConfig> {
   constructor(config: PinoInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-pino', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
@@ -48,30 +49,73 @@ export class PinoInstrumentation extends InstrumentationBase {
         const isESM = module[Symbol.toStringTag] === 'Module';
         const moduleExports = isESM ? module.default : module;
         const instrumentation = this;
+
         const patchedPino = Object.assign((...args: unknown[]) => {
-          if (args.length === 0) {
-            return moduleExports({
-              mixin: instrumentation._getMixinFunction(),
+          const config = instrumentation.getConfig();
+          const isEnabled = instrumentation.isEnabled();
+
+          const logger = moduleExports(...args);
+
+          // Setup "log correlation" -- injection of `trace_id` et al fields.
+          // Note: If the Pino logger is configured with `nestedKey`, then
+          // the `trace_id` et al fields added by `otelMixin` will be nested
+          // as well. https://getpino.io/#/docs/api?id=mixin-function
+          const otelMixin = instrumentation._getMixinFunction();
+          const mixinSym = moduleExports.symbols.mixinSym;
+          const origMixin = logger[mixinSym];
+          if (origMixin === undefined) {
+            logger[mixinSym] = otelMixin;
+          } else {
+            logger[mixinSym] = (ctx: object, level: number) => {
+              return Object.assign(
+                otelMixin(ctx, level),
+                origMixin(ctx, level)
+              );
+            };
+          }
+
+          // Setup "log sending" -- sending log records to the Logs API.
+          // This depends on `pino.multistream`, which was added in v7.0.0.
+          if (
+            isEnabled &&
+            !config.disableLogSending &&
+            typeof moduleExports.multistream === 'function'
+          ) {
+            const otelTimestampFromTime = getTimeConverter(
+              logger,
+              moduleExports
+            );
+            const otelStream = new OTelPinoStream({
+              messageKey: logger[moduleExports.symbols.messageKeySym],
+              levels: logger.levels,
+              otelTimestampFromTime,
             });
+            (otelStream as any)[Symbol.for('pino.metadata')] = true; // for `stream.lastLevel`
+
+            // An error typically indicates a Pino bug, or logger configuration
+            // bug. `diag.warn` *once* for the first error on the assumption
+            // subsequent ones stem from the same bug.
+            otelStream.once('unknown', (line, err) => {
+              instrumentation._diag.warn(
+                'could not send pino log line (will only log first occurrence)',
+                { line, err }
+              );
+            });
+
+            // Use pino's own `multistream` to send to the original stream and
+            // to the OTel Logs API/SDK.
+            // https://getpino.io/#/docs/api?id=pinomultistreamstreamsarray-opts-gt-multistreamres
+            const origStream = logger[moduleExports.symbols.streamSym];
+            logger[moduleExports.symbols.streamSym] = moduleExports.multistream(
+              [
+                { level: logger.level, stream: origStream },
+                { level: logger.level, stream: otelStream },
+              ],
+              { levels: logger.levels.values }
+            );
           }
 
-          if (args.length === 1) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const optsOrStream = args[0] as any;
-            if (
-              typeof optsOrStream === 'string' ||
-              typeof optsOrStream?.write === 'function'
-            ) {
-              args.splice(0, 0, {
-                mixin: instrumentation._getMixinFunction(),
-              });
-              return moduleExports(...args);
-            }
-          }
-
-          args[0] = instrumentation._combineOptions(args[0]);
-
-          return moduleExports(...args);
+          return logger;
         }, moduleExports);
 
         if (typeof patchedPino.pino === 'function') {
@@ -80,6 +124,7 @@ export class PinoInstrumentation extends InstrumentationBase {
         if (typeof patchedPino.default === 'function') {
           patchedPino.default = patchedPino;
         }
+        /* istanbul ignore if */
         if (isESM) {
           if (module.pino) {
             // This was added in pino@6.8.0 (https://github.com/pinojs/pino/pull/936).
@@ -93,23 +138,15 @@ export class PinoInstrumentation extends InstrumentationBase {
     ];
   }
 
-  override getConfig(): PinoInstrumentationConfig {
-    return this._config;
-  }
-
-  override setConfig(config: PinoInstrumentationConfig = {}) {
-    this._config = config;
-  }
-
   private _callHook(span: Span, record: Record<string, string>, level: number) {
-    const hook = this.getConfig().logHook;
+    const { logHook } = this.getConfig();
 
-    if (!hook) {
+    if (!logHook) {
       return;
     }
 
     safeExecuteInTheMiddle(
-      () => hook(span, record, level),
+      () => logHook(span, record, level),
       err => {
         if (err) {
           diag.error('pino instrumentation: error calling logHook', err);
@@ -122,7 +159,10 @@ export class PinoInstrumentation extends InstrumentationBase {
   private _getMixinFunction() {
     const instrumentation = this;
     return function otelMixin(_context: object, level: number) {
-      if (!instrumentation.isEnabled()) {
+      if (
+        !instrumentation.isEnabled() ||
+        instrumentation.getConfig().disableLogCorrelation
+      ) {
         return {};
       }
 
@@ -150,28 +190,5 @@ export class PinoInstrumentation extends InstrumentationBase {
 
       return record;
     };
-  }
-
-  private _combineOptions(options?: any) {
-    if (options === undefined) {
-      return { mixin: this._getMixinFunction() };
-    }
-
-    if (options.mixin === undefined) {
-      options.mixin = this._getMixinFunction();
-      return options;
-    }
-
-    const originalMixin = options.mixin;
-    const otelMixin = this._getMixinFunction();
-
-    options.mixin = (context: object, level: number) => {
-      return Object.assign(
-        otelMixin(context, level),
-        originalMixin(context, level)
-      );
-    };
-
-    return options;
   }
 }

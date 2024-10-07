@@ -56,6 +56,7 @@ export type MongoInternalCommand = {
   findandmodify: boolean;
   createIndexes: boolean;
   count: boolean;
+  aggregate: boolean;
   ismaster: boolean;
   indexes?: unknown[];
   query?: Record<string, unknown>;
@@ -166,6 +167,7 @@ export enum MongodbCommandType {
   FIND_AND_MODIFY = 'findAndModify',
   IS_MASTER = 'isMaster',
   COUNT = 'count',
+  AGGREGATE = 'aggregate',
   UNKNOWN = 'unknown',
 }
 
@@ -174,19 +176,28 @@ export type Document = {
   [key: string]: any;
 };
 
+// https://github.com/mongodb/node-mongodb-native/blob/v6.4.0/src/utils.ts#L281
+export interface MongodbNamespace {
+  db: string;
+  collection?: string;
+}
+
 export type V4Connection = {
   command: Function;
   // From version 6.4.0 the method does not expect a callback and returns a promise
   // https://github.com/mongodb/node-mongodb-native/blob/v6.4.2/src/cmap/connection.ts
   commandPromise(
-    ns: any,
+    ns: MongodbNamespace,
     cmd: Document,
-    options: undefined | unknown
+    options: undefined | unknown,
+    // From v6.6.0 we have this new param which is a constructor function
+    // https://github.com/mongodb/node-mongodb-native/blob/v6.6.0/src/cmap/connection.ts#L588
+    responseType: undefined | unknown
   ): Promise<any>;
   // Earlier versions expect a callback param and return void
   // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection.ts
   commandCallback(
-    ns: any,
+    ns: MongodbNamespace,
     cmd: Document,
     options: undefined | unknown,
     callback: any

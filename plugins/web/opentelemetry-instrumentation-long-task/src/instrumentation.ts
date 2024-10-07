@@ -16,7 +16,7 @@
 import { hrTime } from '@opentelemetry/core';
 import { diag } from '@opentelemetry/api';
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import type {
   PerformanceLongTaskTiming,
   LongtaskInstrumentationConfig,
@@ -24,18 +24,13 @@ import type {
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 
-export class LongTaskInstrumentation extends InstrumentationBase {
-  readonly version: string = VERSION;
+export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrumentationConfig> {
+  readonly version: string = PACKAGE_VERSION;
 
   private _observer?: PerformanceObserver;
-  override _config!: LongtaskInstrumentationConfig;
 
-  /**
-   *
-   * @param config
-   */
   constructor(config: LongtaskInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-long-task', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init() {}
@@ -57,9 +52,10 @@ export class LongTaskInstrumentation extends InstrumentationBase {
     const span = this.tracer.startSpan(LONGTASK_PERFORMANCE_TYPE, {
       startTime: hrTime(entry.startTime),
     });
-    if (this._config.observerCallback) {
+    const { observerCallback } = this.getConfig();
+    if (observerCallback) {
       try {
-        this._config.observerCallback(span, { longtaskEntry: entry });
+        observerCallback(span, { longtaskEntry: entry });
       } catch (err) {
         diag.error('longtask instrumentation: observer callback failed', err);
       }

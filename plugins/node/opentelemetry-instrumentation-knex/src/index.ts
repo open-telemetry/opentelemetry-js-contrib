@@ -14,9 +14,5 @@
  * limitations under the License.
  */
 
-import { KnexInstrumentation } from './instrumentation';
-
 export * from './instrumentation';
-export default KnexInstrumentation;
-
 export * from './types';

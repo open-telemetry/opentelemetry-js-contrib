@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { KoaContext, KoaLayerType, KoaInstrumentationConfig } from './types';
-import { KoaMiddleware } from './internal-types';
+import { KoaLayerType, KoaInstrumentationConfig } from './types';
+import { KoaContext, KoaMiddleware } from './internal-types';
 import { AttributeNames } from './enums/AttributeNames';
 import { Attributes } from '@opentelemetry/api';
 import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';

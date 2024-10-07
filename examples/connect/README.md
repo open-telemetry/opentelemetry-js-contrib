@@ -47,7 +47,7 @@ npm install
 
 Go to Zipkin with your browser <http://localhost:9411/>
 
-<p align="center"><img src="images/trace1.png?raw=true"/></p>
+<p align="center"><img alt="Zipkin UI with trace" src="images/trace1.png?raw=true"/></p>
 
 ## Useful links
 

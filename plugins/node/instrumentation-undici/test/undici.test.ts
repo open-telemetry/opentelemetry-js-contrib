@@ -17,6 +17,7 @@ import * as assert from 'assert';
 import { Writable } from 'stream';
 
 import {
+  INVALID_SPAN_CONTEXT,
   SpanKind,
   SpanStatusCode,
   context,
@@ -38,26 +39,6 @@ import { assertSpan } from './utils/assertSpan';
 
 import type { fetch, stream, request, Client, Dispatcher } from 'undici';
 
-const instrumentation = new UndiciInstrumentation();
-instrumentation.enable();
-instrumentation.disable();
-
-// Reference to the `undici` module
-let undici: {
-  fetch: typeof fetch;
-  request: typeof request;
-  stream: typeof stream;
-  Client: typeof Client;
-};
-
-const protocol = 'http';
-const hostname = 'localhost';
-const mockServer = new MockServer();
-const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-instrumentation.setTracerProvider(provider);
-
 // Undici docs (https://github.com/nodejs/undici#garbage-collection) suggest
 // that an undici response body should always be consumed.
 async function consumeResponseBody(body: Dispatcher.ResponseData['body']) {
@@ -73,6 +54,23 @@ async function consumeResponseBody(body: Dispatcher.ResponseData['body']) {
 }
 
 describe('UndiciInstrumentation `undici` tests', function () {
+  let instrumentation: UndiciInstrumentation;
+
+  // Reference to the `undici` module
+  let undici: {
+    fetch: typeof fetch;
+    request: typeof request;
+    stream: typeof stream;
+    Client: typeof Client;
+  };
+
+  const protocol = 'http';
+  const hostname = 'localhost';
+  const mockServer = new MockServer();
+  const memoryExporter = new InMemorySpanExporter();
+  const provider = new NodeTracerProvider();
+  provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+
   before(function (done) {
     // Load `undici`. It may fail if nodejs version is <18 because the module uses
     // features only available from that version. In that case skip the test.
@@ -81,6 +79,9 @@ describe('UndiciInstrumentation `undici` tests', function () {
     } catch (loadErr) {
       this.skip();
     }
+
+    instrumentation = new UndiciInstrumentation();
+    instrumentation.setTracerProvider(provider);
 
     propagation.setGlobalPropagator(new MockPropagation());
     context.setGlobalContextManager(new AsyncHooksContextManager().enable());
@@ -135,7 +136,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.strictEqual(spans.length, 0);
 
       // Disable via config
-      instrumentation.setConfig({ enabled: false });
+      instrumentation.disable();
 
       const requestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
       const { headers, body } = await undici.request(requestUrl);
@@ -156,7 +157,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
       instrumentation.enable();
       // Set configuration
       instrumentation.setConfig({
-        enabled: true,
         ignoreRequestHook: req => {
           return req.path.indexOf('/ignore/path') !== -1;
         },
@@ -167,6 +167,12 @@ describe('UndiciInstrumentation `undici` tests', function () {
           } else {
             req.headers.push('x-requested-with', 'undici');
           }
+        },
+        responseHook: (span, { response }) => {
+          span.setAttribute(
+            'test.response-hook.attribute',
+            response.statusText
+          );
         },
         startSpanHook: request => {
           return {
@@ -181,7 +187,8 @@ describe('UndiciInstrumentation `undici` tests', function () {
     });
     afterEach(function () {
       // Empty configuration & disable
-      instrumentation.setConfig({ enabled: false });
+      instrumentation.setConfig({});
+      instrumentation.disable();
     });
 
     it('should ignore requests based on the result of ignoreRequestHook', async function () {
@@ -356,6 +363,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         'hook-value',
         'startSpanHook is called'
       );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
+      );
     });
 
     it('should create valid spans for "fetch" method', async function () {
@@ -415,6 +427,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
+      );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
       );
     });
 
@@ -483,6 +500,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
+      );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
       );
     });
 
@@ -560,6 +582,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         'hook-value',
         'startSpanHook is called'
       );
+      assert.strictEqual(
+        span.attributes['test.response-hook.attribute'],
+        'OK',
+        'responseHook is called'
+      );
     });
 
     it('should create valid spans even if the configuration hooks fail', async function () {
@@ -568,12 +595,14 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
       // Set the bad configuration
       instrumentation.setConfig({
-        enabled: true,
         ignoreRequestHook: () => {
           throw new Error('ignoreRequestHook error');
         },
         requestHook: () => {
           throw new Error('requestHook error');
+        },
+        responseHook: () => {
+          throw new Error('responseHook error');
         },
         startSpanHook: () => {
           throw new Error('startSpanHook error');
@@ -609,7 +638,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
-        enabled: true,
         requireParentforSpans: true,
       });
 
@@ -626,12 +654,34 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.strictEqual(spans.length, 0, 'no spans are created');
     });
 
+    it('should not create spans with INVALID_SPAN_CONTEXT parent if required in configuration', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      instrumentation.setConfig({
+        requireParentforSpans: true,
+      });
+
+      const root = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
+      await context.with(trace.setSpan(context.active(), root), async () => {
+        const requestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+        const response = await undici.request(requestUrl);
+        await consumeResponseBody(response.body);
+        assert.ok(
+          response.headers['propagation-error'] == null,
+          'propagation is set for instrumented requests'
+        );
+      });
+
+      spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0, 'no spans are created');
+    });
+
     it('should create spans with parent if required in configuration', function (done) {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
-        enabled: true,
         requireParentforSpans: true,
       });
 
@@ -742,6 +792,44 @@ describe('UndiciInstrumentation `undici` tests', function () {
           message: requestError?.message,
         },
       });
+    });
+
+    it('should not report an user-agent if it was not defined', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      // Do some requests
+      const headers = {
+        'foo-client': 'bar',
+      };
+
+      const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+      const queryResponse = await undici.request(queryRequestUrl, { headers });
+      await consumeResponseBody(queryResponse.body);
+
+      assert.ok(
+        queryResponse.headers['propagation-error'] == null,
+        'propagation is set for instrumented requests'
+      );
+
+      spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(spans.length, 1);
+      assertSpan(span, {
+        hostname: 'localhost',
+        httpStatusCode: queryResponse.statusCode,
+        httpMethod: 'GET',
+        path: '/',
+        query: '?query=test',
+        reqHeaders: headers,
+        resHeaders: queryResponse.headers,
+      });
+      assert.strictEqual(
+        span.attributes['user_agent.original'],
+        undefined,
+        'user-agent is undefined'
+      );
     });
   });
 });

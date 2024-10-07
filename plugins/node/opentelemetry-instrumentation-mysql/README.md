@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-mysql
 
 ## Supported Versions
 
-- `2.x`
+- [`mysql`](https://www.npmjs.com/package/mysql) versions `>=2.0.0 <3`
 
 ## Usage
 
@@ -47,7 +47,7 @@ See [examples/mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/
 | Options | Type | Default | Description |
 | ------- | ---- | --------| ----------- |
 | [`enhancedDatabaseReporting`](./src/types.ts#L24) | `boolean` | `false` | If true, an attribute containing the query's parameters will be attached the spans generated to represent the query |
-|
+
 
 ## Semantic Conventions
 

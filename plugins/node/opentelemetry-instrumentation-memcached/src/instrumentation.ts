@@ -29,9 +29,9 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
 import { InstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
-export class Instrumentation extends InstrumentationBase {
+export class MemcachedInstrumentation extends InstrumentationBase<InstrumentationConfig> {
   static readonly COMPONENT = 'memcached';
   static readonly COMMON_ATTRIBUTES = {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MEMCACHED,
@@ -41,22 +41,21 @@ export class Instrumentation extends InstrumentationBase {
   };
 
   constructor(config: InstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-memcached',
-      VERSION,
-      Object.assign({}, Instrumentation.DEFAULT_CONFIG, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, {
+      ...MemcachedInstrumentation.DEFAULT_CONFIG,
+      ...config,
+    });
   }
 
   override setConfig(config: InstrumentationConfig = {}) {
-    this._config = Object.assign({}, Instrumentation.DEFAULT_CONFIG, config);
+    super.setConfig({ ...MemcachedInstrumentation.DEFAULT_CONFIG, ...config });
   }
 
   init() {
     return [
       new InstrumentationNodeModuleDefinition(
         'memcached',
-        ['>=2.2'],
+        ['>=2.2.0 <3'],
         (moduleExports: typeof Memcached, moduleVersion) => {
           this.ensureWrapped(
             moduleExports.prototype,
@@ -97,7 +96,7 @@ export class Instrumentation extends InstrumentationBase {
           kind: api.SpanKind.CLIENT,
           attributes: {
             'memcached.version': moduleVersion,
-            ...Instrumentation.COMMON_ATTRIBUTES,
+            ...MemcachedInstrumentation.COMMON_ATTRIBUTES,
           },
         }
       );
@@ -138,9 +137,8 @@ export class Instrumentation extends InstrumentationBase {
         'db.memcached.key': query.key,
         'db.memcached.lifetime': query.lifetime,
         [SEMATTRS_DB_OPERATION]: query.type,
-        [SEMATTRS_DB_STATEMENT]: (
-          instrumentation._config as InstrumentationConfig
-        ).enhancedDatabaseReporting
+        [SEMATTRS_DB_STATEMENT]: instrumentation.getConfig()
+          .enhancedDatabaseReporting
           ? query.command
           : undefined,
         ...utils.getPeerAttributes(client, server, query),

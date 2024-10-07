@@ -50,7 +50,7 @@ After a short time, the generated traces should be available in the Zipkin UI.
 Visit <http://localhost:9411/zipkin> and click the "RUN QUERY" button to view
 recent traces, then click "SHOW" on a given trace.
 
-<p align="center"><img src="./images/zipkin.png?raw=true"/></p>
+<p align="center"><img alt="Zipkin UI with trace" src="./images/zipkin.png?raw=true"/></p>
 
 ### Jaeger
 
@@ -79,7 +79,7 @@ recent traces, then click "SHOW" on a given trace.
 
 Visit the Jaeger UI at <http://localhost:16686/search>, select a service (e.g. "example-express-client"), click "Find Traces", then click on a trace to view it.
 
-<p align="center"><img src="images/jaeger-ui.png?raw=true"/></p>
+<p align="center"><img alt="Jaeger UI with trace" src="images/jaeger-ui.png?raw=true"/></p>
 
 ## Useful links
 

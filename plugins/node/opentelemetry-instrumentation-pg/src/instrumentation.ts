@@ -19,13 +19,17 @@ import {
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-
 import {
   context,
   trace,
   Span,
   SpanStatusCode,
   SpanKind,
+  Histogram,
+  ValueType,
+  Attributes,
+  HrTime,
+  UpDownCounter,
 } from '@opentelemetry/api';
 import type * as pgTypes from 'pg';
 import type * as pgPoolTypes from 'pg-pool';
@@ -39,18 +43,88 @@ import {
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
+import {
+  hrTime,
+  hrTimeDuration,
+  hrTimeToMilliseconds,
+} from '@opentelemetry/core';
+import {
+  DBSYSTEMVALUES_POSTGRESQL,
+  SEMATTRS_DB_SYSTEM,
+  ATTR_ERROR_TYPE,
+  ATTR_SERVER_PORT,
+  ATTR_SERVER_ADDRESS,
+} from '@opentelemetry/semantic-conventions';
+import {
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
+  METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
+  METRIC_DB_CLIENT_OPERATION_DURATION,
+  ATTR_DB_NAMESPACE,
+} from '@opentelemetry/semantic-conventions/incubating';
 
-export class PgInstrumentation extends InstrumentationBase {
+export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
+  private _operationDuration!: Histogram;
+  private _connectionsCount!: UpDownCounter;
+  private _connectionPendingRequests!: UpDownCounter;
+  // Pool events connect, acquire, release and remove can be called
+  // multiple times without changing the values of total, idle and waiting
+  // connections. The _connectionsCounter is used to keep track of latest
+  // values and only update the metrics _connectionsCount and _connectionPendingRequests
+  // when the value change.
+  private _connectionsCounter: utils.poolConnectionsCounter = {
+    used: 0,
+    idle: 0,
+    pending: 0,
+  };
+
   constructor(config: PgInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-pg', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
+  }
+
+  override _updateMetricInstruments() {
+    this._operationDuration = this.meter.createHistogram(
+      METRIC_DB_CLIENT_OPERATION_DURATION,
+      {
+        description: 'Duration of database client operations.',
+        unit: 's',
+        valueType: ValueType.DOUBLE,
+        advice: {
+          explicitBucketBoundaries: [
+            0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10,
+          ],
+        },
+      }
+    );
+
+    this._connectionsCounter = {
+      idle: 0,
+      pending: 0,
+      used: 0,
+    };
+    this._connectionsCount = this.meter.createUpDownCounter(
+      METRIC_DB_CLIENT_CONNECTION_COUNT,
+      {
+        description:
+          'The number of connections that are currently in state described by the state attribute.',
+        unit: '{connection}',
+      }
+    );
+    this._connectionPendingRequests = this.meter.createUpDownCounter(
+      METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
+      {
+        description:
+          'The number of current pending requests for an open connection.',
+        unit: '{connection}',
+      }
+    );
   }
 
   protected init() {
     const modulePG = new InstrumentationNodeModuleDefinition(
       'pg',
-      ['8.*'],
+      ['>=8.0.0 <9'],
       (module: any) => {
         const moduleExports: typeof pgTypes =
           module[Symbol.toStringTag] === 'Module'
@@ -91,7 +165,7 @@ export class PgInstrumentation extends InstrumentationBase {
 
     const modulePGPool = new InstrumentationNodeModuleDefinition(
       'pg-pool',
-      ['2.*', '3.*'],
+      ['>=2.0.0 <4'],
       (moduleExports: typeof pgPoolTypes) => {
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
@@ -111,14 +185,6 @@ export class PgInstrumentation extends InstrumentationBase {
     );
 
     return [modulePG, modulePGPool];
-  }
-
-  override setConfig(config: PgInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
-  }
-
-  override getConfig(): PgInstrumentationConfig {
-    return this._config as PgInstrumentationConfig;
   }
 
   private _getClientConnectPatch() {
@@ -154,6 +220,27 @@ export class PgInstrumentation extends InstrumentationBase {
     };
   }
 
+  private recordOperationDuration(attributes: Attributes, startTime: HrTime) {
+    const metricsAttributes: Attributes = {};
+    const keysToCopy = [
+      SEMATTRS_DB_SYSTEM,
+      ATTR_DB_NAMESPACE,
+      ATTR_ERROR_TYPE,
+      ATTR_SERVER_PORT,
+      ATTR_SERVER_ADDRESS,
+    ];
+
+    keysToCopy.forEach(key => {
+      if (key in attributes) {
+        metricsAttributes[key] = attributes[key];
+      }
+    });
+
+    const durationSeconds =
+      hrTimeToMilliseconds(hrTimeDuration(startTime, hrTime())) / 1000;
+    this._operationDuration.record(durationSeconds, metricsAttributes);
+  }
+
   private _getClientQueryPatch() {
     const plugin = this;
     return (original: typeof pgTypes.Client.prototype.query) => {
@@ -162,6 +249,7 @@ export class PgInstrumentation extends InstrumentationBase {
         if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
           return original.apply(this, args as never);
         }
+        const startTime = hrTime();
 
         // client.query(text, cb?), client.query(text, values, cb?), and
         // client.query(configObj, cb?) are all valid signatures. We construct
@@ -186,6 +274,17 @@ export class PgInstrumentation extends InstrumentationBase {
           : firstArgIsQueryObjectWithText
           ? (arg0 as utils.ObjectWithText)
           : undefined;
+
+        const attributes: Attributes = {
+          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+          [ATTR_DB_NAMESPACE]: this.database,
+          [ATTR_SERVER_PORT]: this.connectionParameters.port,
+          [ATTR_SERVER_ADDRESS]: this.connectionParameters.host,
+        };
+
+        const recordDuration = () => {
+          plugin.recordOperationDuration(attributes, startTime);
+        };
 
         const instrumentationConfig = plugin.getConfig();
 
@@ -217,7 +316,8 @@ export class PgInstrumentation extends InstrumentationBase {
             args[args.length - 1] = utils.patchCallback(
               instrumentationConfig,
               span,
-              args[args.length - 1] as PostgresCallback // nb: not type safe.
+              args[args.length - 1] as PostgresCallback, // nb: not type safe.
+              recordDuration
             );
 
             // If a parent span exists, bind the callback
@@ -232,7 +332,8 @@ export class PgInstrumentation extends InstrumentationBase {
             let callback = utils.patchCallback(
               plugin.getConfig(),
               span,
-              queryConfig.callback as PostgresCallback // nb: not type safe.
+              queryConfig.callback as PostgresCallback, // nb: not type safe.
+              recordDuration
             );
 
             // If a parent span existed, bind the callback
@@ -244,10 +345,8 @@ export class PgInstrumentation extends InstrumentationBase {
           }
         }
 
-        if (
-          typeof instrumentationConfig.requestHook === 'function' &&
-          queryConfig
-        ) {
+        const { requestHook } = instrumentationConfig;
+        if (typeof requestHook === 'function' && queryConfig) {
           safeExecuteInTheMiddle(
             () => {
               // pick keys to expose explicitly, so we're not leaking pg package
@@ -255,7 +354,7 @@ export class PgInstrumentation extends InstrumentationBase {
               const { database, host, port, user } = this.connectionParameters;
               const connection = { database, host, port, user };
 
-              instrumentationConfig.requestHook!(span, {
+              requestHook(span, {
                 connection,
                 query: {
                   text: queryConfig.text,
@@ -292,7 +391,6 @@ export class PgInstrumentation extends InstrumentationBase {
         try {
           result = original.apply(this, args as never);
         } catch (e: unknown) {
-          // span.recordException(e);
           span.setStatus({
             code: SpanStatusCode.ERROR,
             message: utils.getErrorMessage(e),
@@ -342,6 +440,42 @@ export class PgInstrumentation extends InstrumentationBase {
         const span = plugin.tracer.startSpan(SpanNames.POOL_CONNECT, {
           kind: SpanKind.CLIENT,
           attributes: utils.getSemanticAttributesFromPool(this.options),
+        });
+
+        this.on('connect', () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
+        });
+
+        this.on('acquire', () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
+        });
+
+        this.on('remove', () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
+        });
+
+        this.on('release' as any, () => {
+          plugin._connectionsCounter = utils.updateCounter(
+            this,
+            plugin._connectionsCount,
+            plugin._connectionPendingRequests,
+            plugin._connectionsCounter
+          );
         });
 
         if (callback) {
