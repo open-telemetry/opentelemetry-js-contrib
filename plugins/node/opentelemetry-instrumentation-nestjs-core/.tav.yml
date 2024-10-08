@@ -1,5 +1,7 @@
 "@nestjs/core":
-  - versions: "^8.2.0 || 8.1.2 || 8.1.1 || 8.0.11 || 8.0.9 || 8.0.6"
+  - versions:
+      include: ">=8.0.0 <11"
+      mode: latest-minors
     peerDependencies:
         - "@nestjs/common@^8.0.0"
         - "@nestjs/microservices@^8.0.0"

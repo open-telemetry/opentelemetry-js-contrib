@@ -1,6 +1,8 @@
 "aws-sdk":
   # A small subset of releases in the range [2.308.0, 3) to reduce testing time.
-  versions: "2.308.0 || 2.556.0 || 2.801.0 || 2.1049.0 || 2.1297.0 || 2.1546.0 || >=2.1548.0"
+  versions:
+    include: "^2.308.0"
+    mode: max-7
   commands:
     - npm run test
 
@@ -8,12 +10,17 @@
   # A small subset of releases in the range [3.6.1, 4) to reduce testing time.
   # - 3.377.0 was a bad release (see issue #1828).
   # - 3.529.0 was missing the fast-xml-parser dependency (https://github.com/aws/aws-sdk-js-v3/releases/tag/v3.529.1)
-  versions: "3.6.1 || 3.55.0 || 3.180.0 || 3.289.0 || 3.385.0 || 3.498.0 || >=3.529.1"
+  versions:
+    include: "^3.6.1"
+    exclude: "3.377.0 || 3.529.0"
+    mode: "max-7"
   commands:
     - npm run test
 
 "@aws-sdk/client-sqs":
   # A small subset of releases in the range [3.24.0, 4) to reduce testing time.
-  versions: "3.24.0 || 3.94.0 || 3.202.0 || 3.296.0 || 3.388.0 || 3.496.0 || >=3.503.1"
+  versions:
+    include: "^3.24.0"
+    mode: "max-7"
   commands:
     - npm run test
