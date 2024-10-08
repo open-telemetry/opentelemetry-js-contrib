@@ -25,7 +25,8 @@ import { SEMRESATTRS_CONTAINER_ID } from '@opentelemetry/semantic-conventions';
 
 import * as fs from 'fs';
 import * as util from 'util';
-import { diag } from '@opentelemetry/api';
+import { context, diag } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import { extractContainerIdFromLine } from './utils';
 
 export class ContainerDetector implements DetectorSync {
@@ -43,7 +44,10 @@ export class ContainerDetector implements DetectorSync {
   private static readFileAsync = util.promisify(fs.readFile);
 
   detect(_config?: ResourceDetectionConfig): IResource {
-    return new Resource({}, this._getAttributes());
+    const attributes = context.with(suppressTracing(context.active()), () =>
+      this._getAttributes()
+    );
+    return new Resource({}, attributes);
   }
 
   /**
@@ -62,7 +66,7 @@ export class ContainerDetector implements DetectorSync {
             [SEMRESATTRS_CONTAINER_ID]: containerId,
           };
     } catch (e) {
-      diag.info(
+      diag.debug(
         'Container Detector did not identify running inside a supported container, no container attributes will be added to resource: ',
         e
       );
@@ -128,7 +132,7 @@ export class ContainerDetector implements DetectorSync {
     } catch (e) {
       if (e instanceof Error) {
         const errorMessage = e.message;
-        diag.info(
+        diag.debug(
           'Container Detector failed to read the Container ID: ',
           errorMessage
         );

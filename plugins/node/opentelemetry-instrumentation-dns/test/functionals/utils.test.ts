@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { diag, ROOT_CONTEXT, SpanKind, TraceFlags } from '@opentelemetry/api';
-import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base';
+import { diag, Span, SpanStatusCode } from '@opentelemetry/api';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { AttributeNames } from '../../src/enums/AttributeNames';
@@ -153,21 +152,28 @@ describe('Utility', () => {
 
   describe('setError()', () => {
     it('should have error attributes', () => {
+      // Prepare
       const errorMessage = 'test error';
-      const span = new Span(
-        new BasicTracerProvider().getTracer('default'),
-        ROOT_CONTEXT,
-        'test',
-        { spanId: '', traceId: '', traceFlags: TraceFlags.NONE },
-        SpanKind.INTERNAL
-      );
+      const span = {
+        setAttributes(attrs) {},
+        setStatus(status) {},
+      } as Span;
+      const mockSpan = sinon.mock(span);
+
+      mockSpan.expects('setAttributes').withExactArgs({
+        [AttributeNames.DNS_ERROR_NAME]: 'Error',
+        [AttributeNames.DNS_ERROR_MESSAGE]: errorMessage,
+      });
+      mockSpan.expects('setStatus').withExactArgs({
+        code: SpanStatusCode.ERROR,
+        message: errorMessage,
+      });
+
+      // Act
       utils.setError(new Error(errorMessage), span);
-      const attributes = span.attributes;
-      assert.strictEqual(
-        attributes[AttributeNames.DNS_ERROR_MESSAGE],
-        errorMessage
-      );
-      assert.ok(attributes[AttributeNames.DNS_ERROR_NAME]);
+
+      // Assert
+      mockSpan.verify();
     });
   });
 });

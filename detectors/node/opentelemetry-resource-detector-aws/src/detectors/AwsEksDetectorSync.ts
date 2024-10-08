@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { context } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import {
   DetectorSync,
   IResource,
@@ -62,7 +64,10 @@ export class AwsEksDetectorSync implements DetectorSync {
   private static fileAccessAsync = util.promisify(fs.access);
 
   detect(_config?: ResourceDetectionConfig): IResource {
-    return new Resource({}, this._getAttributes());
+    const attributes = context.with(suppressTracing(context.active()), () =>
+      this._getAttributes()
+    );
+    return new Resource({}, attributes);
   }
 
   /**
@@ -95,7 +100,7 @@ export class AwsEksDetectorSync implements DetectorSync {
             [SEMRESATTRS_CONTAINER_ID]: containerId || '',
           };
     } catch (e) {
-      diag.warn('Process is not running on K8S', e);
+      diag.debug('Process is not running on K8S', e);
       return {};
     }
   }
@@ -138,7 +143,7 @@ export class AwsEksDetectorSync implements DetectorSync {
     try {
       return JSON.parse(response).data['cluster.name'];
     } catch (e) {
-      diag.warn('Cannot get cluster name on EKS', e);
+      diag.debug('Cannot get cluster name on EKS', e);
     }
     return '';
   }
@@ -154,7 +159,7 @@ export class AwsEksDetectorSync implements DetectorSync {
       );
       return 'Bearer ' + content;
     } catch (e) {
-      diag.warn('Unable to read Kubernetes client token.', e);
+      diag.debug('Unable to read Kubernetes client token.', e);
     }
     return '';
   }
@@ -189,7 +194,7 @@ export class AwsEksDetectorSync implements DetectorSync {
         }
       }
     } catch (e: any) {
-      diag.warn(`AwsEksDetector failed to read container ID: ${e.message}`);
+      diag.debug(`AwsEksDetector failed to read container ID: ${e.message}`);
     }
     return undefined;
   }

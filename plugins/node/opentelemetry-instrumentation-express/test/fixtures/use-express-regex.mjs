@@ -61,7 +61,7 @@ app.get(['/test/array1', /\/test\/array[2-9]/], (_req, res) => {
   res.send({ response: 'response 3' });
 });
 
-app.get(['/test', 6, /test/], (_req, res) => {
+app.get(['/test', '6', /test/], (_req, res) => {
   res.send({ response: 'response 4' });
 });
 

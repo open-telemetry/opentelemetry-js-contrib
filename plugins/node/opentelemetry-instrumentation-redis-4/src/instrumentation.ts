@@ -335,7 +335,7 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
       return function patchedConnect(this: any): Promise<void> {
         const options = this.options;
 
-        const attributes = getClientAttributes(this._diag, options);
+        const attributes = getClientAttributes(plugin._diag, options);
 
         const span = plugin.tracer.startSpan(
           `${RedisInstrumentation.COMPONENT}-connect`,

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.44.0...instrumentation-aws-lambda-v0.45.0) (2024-10-08)
+
+
+### Features
+
+* Record AWS Lambda coldstarts ([#2403](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2403)) ([bc69fff](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bc69fffc106142ed4c8333d3f6122329f51e4039))
+
+## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.43.0...instrumentation-aws-lambda-v0.44.0) (2024-09-02)
+
+
+### Features
+
+* update deps matching "@opentelemetry/" ([9fa058e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fa058ebb919de4e2a4e1af95b3c792c6ea962ac))
+
 ## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.42.0...instrumentation-aws-lambda-v0.43.0) (2024-07-03)
 
 

@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.44.0...instrumentation-pg-v0.45.0) (2024-10-08)
+
+
+### Features
+
+* **instrumentation-pg:** implementation of metric operation duration ([#2380](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2380)) ([050fee0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/050fee0551ccf0fa593b84030ab73e2701372b4b))
+* **instrumentation-pg:** initial implementation of DB metrics ([#2349](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2349)) ([12adb43](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/12adb4354f09ade438cd96340bdfd1f715b5fed3))
+
+## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.43.0...instrumentation-pg-v0.44.0) (2024-09-02)
+
+
+### Features
+
+* update deps matching "@opentelemetry/" ([9fa058e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fa058ebb919de4e2a4e1af95b3c792c6ea962ac))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.40.0 to ^0.41.0
+
 ## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.42.0...instrumentation-pg-v0.43.0) (2024-07-03)
 
 

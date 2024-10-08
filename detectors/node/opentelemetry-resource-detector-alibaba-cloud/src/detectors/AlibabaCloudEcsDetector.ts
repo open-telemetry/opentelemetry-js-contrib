@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { context } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import {
   DetectorSync,
   IResource,
@@ -61,7 +63,10 @@ class AlibabaCloudEcsDetector implements DetectorSync {
    * @param config (unused) The resource detection config
    */
   detect(_config?: ResourceDetectionConfig): IResource {
-    return new Resource({}, this._getAttributes());
+    const attributes = context.with(suppressTracing(context.active()), () =>
+      this._getAttributes()
+    );
+    return new Resource({}, attributes);
   }
 
   /** Gets identity and host info and returns them as attribs. Empty object if fails */

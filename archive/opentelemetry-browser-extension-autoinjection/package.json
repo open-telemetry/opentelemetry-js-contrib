@@ -76,7 +76,7 @@
     "@opentelemetry/resources": "^1.8.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-web": "^1.8.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "change-case": "4.1.2",
     "json5": "2.2.0",
     "react": "17.0.2",

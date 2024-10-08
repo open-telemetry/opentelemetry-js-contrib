@@ -10,7 +10,7 @@ jobs:
   rp-validate:
     runs-on: ubuntu-latest
     container:
-      image: node:14
+      image: node:20
     steps:
       - name: Checkout
         uses: actions/checkout@v4

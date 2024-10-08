@@ -50,6 +50,7 @@ import {
   SEMATTRS_DB_USER,
   SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
+import { ATTR_DB_CLIENT_CONNECTION_STATE } from '@opentelemetry/semantic-conventions/incubating';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -180,7 +181,7 @@ describe('pg-pool', () => {
   describe('#pool.connect()', () => {
     // promise - checkout a client
     it('should intercept pool.connect()', async () => {
-      const pgPoolattributes = {
+      const pgPoolAttributes = {
         ...DEFAULT_PGPOOL_ATTRIBUTES,
       };
       const pgAttributes = {
@@ -191,7 +192,7 @@ describe('pg-pool', () => {
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
       await context.with(trace.setSpan(context.active(), span), async () => {
         const client = await pool.connect();
-        runCallbackTest(span, pgPoolattributes, events, unsetStatus, 2, 1);
+        runCallbackTest(span, pgPoolAttributes, events, unsetStatus, 2, 1);
 
         const [connectSpan, poolConnectSpan] =
           memoryExporter.getFinishedSpans();
@@ -212,7 +213,7 @@ describe('pg-pool', () => {
 
     // callback - checkout a client
     it('should not return a promise if callback is provided', done => {
-      const pgPoolattributes = {
+      const pgPoolAttributes = {
         ...DEFAULT_PGPOOL_ATTRIBUTES,
       };
       const pgAttributes = {
@@ -237,7 +238,7 @@ describe('pg-pool', () => {
           assert.ok(client);
           runCallbackTest(
             parentSpan,
-            pgPoolattributes,
+            pgPoolAttributes,
             events,
             unsetStatus,
             1,
@@ -285,7 +286,7 @@ describe('pg-pool', () => {
   describe('#pool.query()', () => {
     // promise
     it('should call patched client.query()', async () => {
-      const pgPoolattributes = {
+      const pgPoolAttributes = {
         ...DEFAULT_PGPOOL_ATTRIBUTES,
       };
       const pgAttributes = {
@@ -296,7 +297,7 @@ describe('pg-pool', () => {
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
       await context.with(trace.setSpan(context.active(), span), async () => {
         const result = await pool.query('SELECT NOW()');
-        runCallbackTest(span, pgPoolattributes, events, unsetStatus, 2, 0);
+        runCallbackTest(span, pgPoolAttributes, events, unsetStatus, 2, 0);
         runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
         assert.ok(result, 'pool.query() returns a promise');
       });
@@ -304,7 +305,7 @@ describe('pg-pool', () => {
 
     // callback
     it('should not return a promise if callback is provided', done => {
-      const pgPoolattributes = {
+      const pgPoolAttributes = {
         ...DEFAULT_PGPOOL_ATTRIBUTES,
       };
       const pgAttributes = {
@@ -322,7 +323,7 @@ describe('pg-pool', () => {
           }
           runCallbackTest(
             parentSpan,
-            pgPoolattributes,
+            pgPoolAttributes,
             events,
             unsetStatus,
             2,
@@ -341,7 +342,7 @@ describe('pg-pool', () => {
       const events: TimedEvent[] = [];
 
       describe('AND valid responseHook', () => {
-        const pgPoolattributes = {
+        const pgPoolAttributes = {
           ...DEFAULT_PGPOOL_ATTRIBUTES,
         };
         const pgAttributes = {
@@ -375,7 +376,7 @@ describe('pg-pool', () => {
               }
               runCallbackTest(
                 parentSpan,
-                pgPoolattributes,
+                pgPoolAttributes,
                 events,
                 unsetStatus,
                 2,
@@ -409,7 +410,7 @@ describe('pg-pool', () => {
               const result = await pool.query(query);
               runCallbackTest(
                 span,
-                pgPoolattributes,
+                pgPoolAttributes,
                 events,
                 unsetStatus,
                 2,
@@ -423,7 +424,7 @@ describe('pg-pool', () => {
       });
 
       describe('AND invalid responseHook', () => {
-        const pgPoolattributes = {
+        const pgPoolAttributes = {
           ...DEFAULT_PGPOOL_ATTRIBUTES,
         };
         const pgAttributes = {
@@ -456,7 +457,7 @@ describe('pg-pool', () => {
 
               runCallbackTest(
                 parentSpan,
-                pgPoolattributes,
+                pgPoolAttributes,
                 events,
                 unsetStatus,
                 2,
@@ -478,6 +479,90 @@ describe('pg-pool', () => {
               'No promise is returned'
             );
           });
+        });
+      });
+    });
+  });
+
+  describe('pg metrics', () => {
+    let metricReader: testUtils.TestMetricReader;
+
+    beforeEach(() => {
+      metricReader = testUtils.initMeterProvider(instrumentation);
+    });
+
+    it('should generate `db.client.connection.count` and `db.client.connection.pending_requests` metrics', async () => {
+      pool.connect((err, client, release) => {
+        if (err) {
+          throw new Error(err.message);
+        }
+        if (!release) {
+          throw new Error('Did not receive release function');
+        }
+        if (!client) {
+          throw new Error('No client received');
+        }
+        assert.ok(client);
+
+        client.query('SELECT NOW()', async (err, ret) => {
+          release();
+          if (err) {
+            throw new Error(err.message);
+          }
+          assert.ok(ret);
+
+          const { resourceMetrics, errors } = await metricReader.collect();
+          assert.deepEqual(
+            errors,
+            [],
+            'expected no errors from the callback during metric collection'
+          );
+
+          const metrics = resourceMetrics.scopeMetrics[0].metrics;
+          assert.strictEqual(
+            metrics[1].descriptor.name,
+            'db.client.connection.count'
+          );
+          assert.strictEqual(
+            metrics[1].descriptor.description,
+            'The number of connections that are currently in state described by the state attribute.'
+          );
+          assert.strictEqual(
+            metrics[1].dataPoints[0].attributes[
+              ATTR_DB_CLIENT_CONNECTION_STATE
+            ],
+            'used'
+          );
+          assert.strictEqual(
+            metrics[1].dataPoints[0].value,
+            1,
+            'expected to have 1 used connection'
+          );
+          assert.strictEqual(
+            metrics[1].dataPoints[1].attributes[
+              ATTR_DB_CLIENT_CONNECTION_STATE
+            ],
+            'idle'
+          );
+          assert.strictEqual(
+            metrics[1].dataPoints[1].value,
+            0,
+            'expected to have 0 idle connections'
+          );
+
+          assert.strictEqual(
+            metrics[2].descriptor.name,
+            'db.client.connection.pending_requests'
+          );
+          assert.strictEqual(
+            metrics[2].descriptor.description,
+            'The number of current pending requests for an open connection.'
+          );
+          assert.strictEqual(
+            metrics[2].dataPoints[0].value,
+            0,
+            'expected to have 0 pending requests'
+          );
         });
       });
     });

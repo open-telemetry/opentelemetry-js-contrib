@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import { diag } from '@opentelemetry/api';
+import { context, diag } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import {
   DetectorSync,
   IResource,
@@ -70,7 +71,10 @@ export class AwsEcsDetectorSync implements DetectorSync {
   private static readFileAsync = util.promisify(fs.readFile);
 
   detect(): IResource {
-    return new Resource({}, this._getAttributes());
+    const attributes = context.with(suppressTracing(context.active()), () =>
+      this._getAttributes()
+    );
+    return new Resource({}, attributes);
   }
 
   private async _getAttributes(): Promise<ResourceAttributes> {
@@ -137,7 +141,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
         }
       }
     } catch (e) {
-      diag.warn('AwsEcsDetector failed to read container ID', e);
+      diag.debug('AwsEcsDetector failed to read container ID', e);
     }
 
     if (hostName || containerId) {

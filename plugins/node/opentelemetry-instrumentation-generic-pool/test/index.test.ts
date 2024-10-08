@@ -94,7 +94,7 @@ describe('GenericPool instrumentation', () => {
     assert.strictEqual(await acquire(), CLIENT);
     const [span] = memoryExporter.getFinishedSpans();
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-    assert.strictEqual(span.name, 'generic-pool.aquire');
+    assert.strictEqual(span.name, 'generic-pool.acquire');
   });
 
   it('should attach it to the parent span', async () => {
@@ -107,7 +107,7 @@ describe('GenericPool instrumentation', () => {
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
 
       const [span] = memoryExporter.getFinishedSpans();
-      assert.strictEqual(span.name, 'generic-pool.aquire');
+      assert.strictEqual(span.name, 'generic-pool.acquire');
       assert.strictEqual(span.parentSpanId, rootSpan.spanContext().spanId);
     });
   });

@@ -55,7 +55,7 @@ export type InstrumentationConsumeChannel = amqp.Channel & {
     msg: amqp.ConsumeMessage;
     timeOfConsume: HrTime;
   }[];
-  [CHANNEL_CONSUME_TIMEOUT_TIMER]?: NodeJS.Timer;
+  [CHANNEL_CONSUME_TIMEOUT_TIMER]?: NodeJS.Timeout;
 };
 export type InstrumentationMessage = amqp.Message & {
   [MESSAGE_STORED_SPAN]?: Span;

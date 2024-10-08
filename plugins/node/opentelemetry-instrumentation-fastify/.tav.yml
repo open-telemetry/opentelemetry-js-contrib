@@ -3,6 +3,10 @@
   # releases.
   - versions: "4.0.0 || >=4.24.3 <5"
     commands: npm run test
+  - versions: ">=5 <6"
+    commands: npm run test
+    peerDependencies: "@fastify/express@4.0.1"
+    node: '>=20'
 
 # Fastify versions after 4.18.0 require a typescript greater than 4.4.4.
 "typescript":

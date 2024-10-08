@@ -31,24 +31,19 @@ import { MockServer } from './utils/mock-server';
 import { MockMetricsReader } from './utils/mock-metrics-reader';
 import { SemanticAttributes } from '../src/enums/SemanticAttributes';
 
-const instrumentation = new UndiciInstrumentation();
-instrumentation.enable();
-instrumentation.disable();
-
-const protocol = 'http';
-const hostname = 'localhost';
-const mockServer = new MockServer();
-const provider = new NodeTracerProvider();
-const meterProvider = new MeterProvider();
-const metricsMemoryExporter = new InMemoryMetricExporter(
-  AggregationTemporality.DELTA
-);
-const metricReader = new MockMetricsReader(metricsMemoryExporter);
-meterProvider.addMetricReader(metricReader);
-instrumentation.setTracerProvider(provider);
-instrumentation.setMeterProvider(meterProvider);
-
 describe('UndiciInstrumentation metrics tests', function () {
+  let instrumentation: UndiciInstrumentation;
+  const protocol = 'http';
+  const hostname = 'localhost';
+  const mockServer = new MockServer();
+  const provider = new NodeTracerProvider();
+  const meterProvider = new MeterProvider();
+  const metricsMemoryExporter = new InMemoryMetricExporter(
+    AggregationTemporality.DELTA
+  );
+  const metricReader = new MockMetricsReader(metricsMemoryExporter);
+  meterProvider.addMetricReader(metricReader);
+
   before(function (done) {
     // Do not test if the `fetch` global API is not available
     // This applies to nodejs < v18 or nodejs < v16.15 without the flag
@@ -57,6 +52,10 @@ describe('UndiciInstrumentation metrics tests', function () {
     if (typeof globalThis.fetch !== 'function') {
       this.skip();
     }
+
+    instrumentation = new UndiciInstrumentation();
+    instrumentation.setTracerProvider(provider);
+    instrumentation.setMeterProvider(meterProvider);
 
     context.setGlobalContextManager(new AsyncHooksContextManager().enable());
     mockServer.start(done);
@@ -67,13 +66,10 @@ describe('UndiciInstrumentation metrics tests', function () {
       res.write(JSON.stringify({ success: true }));
       res.end();
     });
-
-    // enable instrumentation for all tests
-    instrumentation.enable();
   });
 
   after(function (done) {
-    instrumentation.disable();
+    instrumentation?.disable();
     context.disable();
     propagation.disable();
     mockServer.mockListener(undefined);

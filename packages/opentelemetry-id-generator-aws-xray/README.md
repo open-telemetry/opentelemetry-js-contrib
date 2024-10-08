@@ -10,9 +10,9 @@ enabling compatibility with AWS X-Ray.
 
 ## Status
 
-| Maturity                               | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
-| -------------------------------------- | ----------------------------------------------------- | --------------------- |
-| [Stable](../../CONTRIBUTING.md#stable) | @carolabadeer                                         | API 1.0+<br/>SDK 1.0+ |
+| Maturity                                              | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
+|-------------------------------------------------------|-------------------------------------------------------|-----------------------|
+| [Unmaintained](../../../CONTRIBUTING.md#unmaintained) | N/A                                                   | API 1.0+<br/>SDK 1.0+ |
 
 ## Installation
 

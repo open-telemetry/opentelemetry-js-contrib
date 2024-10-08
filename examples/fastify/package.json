@@ -45,7 +45,7 @@
     "@opentelemetry/instrumentation-fastify": "^0.32.6",
     "@opentelemetry/sdk-trace-node": "~1.19.0",
     "@opentelemetry/resources": "~1.19.0",
-    "@opentelemetry/semantic-conventions": "~1.19.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@opentelemetry/sdk-trace-base": "~1.19.0",
     "cross-env": "^7.0.3",
     "axios": "^1.6.4",
