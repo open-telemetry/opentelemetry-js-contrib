@@ -23,6 +23,8 @@ const { eventLoopUtilization: eventLoopUtilizationCollector } = performance;
 export const NODEJS_EVENT_LOOP_UTILIZATION = 'eventloop.utilization';
 
 export class EventLoopUtilizationCollector extends BaseCollector {
+  private _lastValue?: EventLoopUtilization;
+
   constructor(
     config: RuntimeNodeInstrumentationConfig = {},
     namePrefix: string
@@ -42,16 +44,13 @@ export class EventLoopUtilizationCollector extends BaseCollector {
       .addCallback(async observableResult => {
         if (!this._config.enabled) return;
 
-        const elu = eventLoopUtilizationCollector(this.scrape());
+        const elu = eventLoopUtilizationCollector(this._lastValue);
         observableResult.observe(elu.utilization);
+        this._lastValue = elu;
       });
   }
 
   protected internalDisable(): void {}
 
   protected internalEnable(): void {}
-
-  private scrape(): EventLoopUtilization {
-    return eventLoopUtilizationCollector();
-  }
 }
