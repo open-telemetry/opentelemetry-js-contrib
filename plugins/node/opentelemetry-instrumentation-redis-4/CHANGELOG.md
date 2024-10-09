@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.42.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.42.0...instrumentation-redis-4-v0.42.1) (2024-10-08)
+
+
+### Bug Fixes
+
+* **instrumentation-redis-4:** avoid diag.error spam when configured client URL is the empty string ([#2399](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2399)) ([ec3b9c8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ec3b9c87aa2c79dc8cdcb4023df71dcafc6f08a4)), closes [#2389](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2389)
+
 ## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.41.1...instrumentation-redis-4-v0.42.0) (2024-09-02)
 
 
