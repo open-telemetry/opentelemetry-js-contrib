@@ -39,7 +39,7 @@ const dockerRunCmds = {
   memcached:
     'docker run --rm -d --name otel-memcached -p 11211:11211 memcached:1.6.9-alpine',
   mssql:
-    'docker run --rm -d --name otel-mssql -p 1433:1433 -e SA_PASSWORD=mssql_passw0rd -e ACCEPT_EULA=Y mcr.microsoft.com/mssql/server:2017-latest',
+    'docker run --rm -d --name otel-mssql -p 1433:1433 -e MSSQL_SA_PASSWORD=mssql_passw0rd -e ACCEPT_EULA=Y mcr.microsoft.com/mssql/server:2022-latest',
   mysql:
     'docker run --rm -d --name otel-mysql -p 33306:3306 -e MYSQL_ROOT_PASSWORD=rootpw -e MYSQL_DATABASE=test_db -e MYSQL_USER=otel -e MYSQL_PASSWORD=secret mysql:5.7 --log_output=TABLE --general_log=ON',
   postgres:

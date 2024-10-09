@@ -20,7 +20,7 @@ import { UndiciRequest, UndiciResponse } from './types';
 export interface ListenerRecord {
   name: string;
   channel: Channel;
-  onMessage: (message: any, name: string) => void;
+  onMessage: (message: any, name: string | symbol) => void;
 }
 
 export interface RequestMessage {
