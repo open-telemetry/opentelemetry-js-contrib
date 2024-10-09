@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { MeterProvider, DataPointType } from '@opentelemetry/sdk-metrics';
+import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
 
 import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
@@ -21,6 +21,7 @@ import { TestMetricReader } from './testMetricsReader';
 import { metricNames } from '../src/metrics/heapSpacesSizeAndUsedCollector';
 import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
 import { V8_HEAP_SIZE_NAME_ATTRIBUTE } from '../src/consts/attributes';
+import { GaugeMetricData } from '@opentelemetry/sdk-metrics/build/src/export/MetricData';
 
 const MEASUREMENT_INTERVAL = 10;
 
@@ -106,11 +107,15 @@ describe('nodejs.heap_space', function () {
           'expected no errors from the callback during collection'
         );
         const scopeMetrics = resourceMetrics.scopeMetrics;
-        const metric = scopeMetrics[0].metrics.find(
+        let metric: GaugeMetricData | undefined = undefined;
+        const foundMetric = scopeMetrics[0].metrics.find(
           x =>
             x.descriptor.name === `${ConventionalNamePrefix.V8js}.${metricName}`
         );
-        const spaceAttribute = metric!.dataPoints.find(
+        if (foundMetric?.dataPointType === DataPointType.GAUGE) {
+          metric = foundMetric;
+        }
+        const spaceAttribute = metric?.dataPoints.find(
           x =>
             x.attributes[
               `${ConventionalNamePrefix.V8js}.${V8_HEAP_SIZE_NAME_ATTRIBUTE}`
