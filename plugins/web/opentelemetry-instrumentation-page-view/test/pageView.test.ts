@@ -38,8 +38,7 @@ describe('PageView Instrumentation', () => {
   const logRecordProcessor = new SimpleLogRecordProcessor(exporter);
   provider.addLogRecordProcessor(logRecordProcessor);
   logs.setGlobalLoggerProvider(provider);
-  const eventEmitterProvider = new EventLoggerProvider(provider);
-  events.setGlobalEventLoggerProvider(eventEmitterProvider);
+  events.setGlobalEventLoggerProvider(new EventLoggerProvider(provider));
 
   afterEach(() => {
     exporter.reset();
@@ -114,7 +113,7 @@ describe('PageView Instrumentation', () => {
       );
 
       assert.deepEqual(pageViewLogRecord.body, {
-        'http.url': document.documentURI as string,
+        url: document.documentURI as string,
         referrer: referrer,
         title: document.title,
         changeState: 'pushState',
@@ -149,7 +148,7 @@ describe('PageView Instrumentation', () => {
       );
 
       assert.deepEqual(pageViewLogRecord.body, {
-        'http.url': document.documentURI as string,
+        url: document.documentURI as string,
         referrer: referrer,
         title: document.title,
         changeState: 'replaceState',
@@ -183,7 +182,7 @@ describe('PageView Instrumentation', () => {
       );
 
       assert.deepEqual(pageViewLogRecord.body, {
-        'http.url': document.documentURI as string,
+        url: document.documentURI as string,
         referrer: firstReferrer,
         title: document.title,
         changeState: 'pushState',
@@ -204,7 +203,7 @@ describe('PageView Instrumentation', () => {
       );
 
       assert.deepEqual(pageViewLogRecord2.body, {
-        'http.url': document.documentURI as string,
+        url: document.documentURI as string,
         referrer: firstReferrer,
         title: document.title,
         changeState: 'pushState',
