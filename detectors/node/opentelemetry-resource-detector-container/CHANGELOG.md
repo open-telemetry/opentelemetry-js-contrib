@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.4.1...resource-detector-container-v0.4.2) (2024-10-08)
+
+
+### Bug Fixes
+
+* **detector-container:** suppress internal tracing ([#2430](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2430)) ([80c2f1a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80c2f1af6139e43522a944ab496fed68ef912fb2))
+
 ## [0.4.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.4.0...resource-detector-container-v0.4.1) (2024-09-02)
 
 
