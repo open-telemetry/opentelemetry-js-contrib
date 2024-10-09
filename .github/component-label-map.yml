@@ -278,6 +278,7 @@ pkg-status:unmaintained:
   - changed-files:
       - any-glob-to-any-file:
           - detectors/node/opentelemetry-resource-detector-github/**
+          - packages/opentelemetry-redis-common/**
           - plugins/node/instrumentation-fs/**
           - plugins/node/instrumentation-tedious/**
           - plugins/node/opentelemetry-instrumentation-connect/**
@@ -287,6 +288,9 @@ pkg-status:unmaintained:
           - plugins/node/opentelemetry-instrumentation-knex/**
           - plugins/node/opentelemetry-instrumentation-koa/**
           - plugins/node/opentelemetry-instrumentation-memcached/**
+          - plugins/node/opentelemetry-instrumentation-mongodb/**
+          - plugins/node/opentelemetry-instrumentation-mysql/**
+          - plugins/node/opentelemetry-instrumentation-mysql2/**
           - plugins/node/opentelemetry-instrumentation-nestjs-core/**
           - plugins/node/opentelemetry-instrumentation-restify/**
           - plugins/node/opentelemetry-instrumentation-router/**

@@ -42,8 +42,8 @@ components:
     - pichlermarc
     - legendecas
     - blumamir
-  packages/opentelemetry-redis-common:
-    - haddasbronfman
+  packages/opentelemetry-redis-common: []
+    # Unmaintained
   packages/opentelemetry-test-utils:
     - dyladan
     - pichlermarc
@@ -102,12 +102,12 @@ components:
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-memcached: []
     # Unmaintained
-  plugins/node/opentelemetry-instrumentation-mongodb:
-    - osherv
-  plugins/node/opentelemetry-instrumentation-mysql:
-    - haddasbronfman
-  plugins/node/opentelemetry-instrumentation-mysql2:
-    - haddasbronfman
+  plugins/node/opentelemetry-instrumentation-mongodb: []
+    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-mysql: []
+    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-mysql2: []
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-nestjs-core: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-net:
