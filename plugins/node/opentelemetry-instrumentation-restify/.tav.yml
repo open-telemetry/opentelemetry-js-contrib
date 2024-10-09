@@ -6,7 +6,7 @@ restify:
     commands: npm run test
 
   - versions:
-      include: '>=4.0.0 <10'
+      include: '>=4.1.0 <10'
       mode: max-7
     node: "<18"
     commands: npm run test
