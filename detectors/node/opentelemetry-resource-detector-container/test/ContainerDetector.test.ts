@@ -33,7 +33,7 @@ describe('ContainerDetector', () => {
     fhkjdshgfhsdfjhdsfkjhfkdshkjhfd/host
     sahfhfjkhjhfhjdhfjkdhfkjdhfjkhhdsjfhdfhjdhfkj/somethingelse`;
   const correctCgroupV2PodmanData =
-    `4245 4237 0:94 /containers/overlay-containers/4e9dc37d00ebd2daea029d84bb37764ce12d746a6f3a33c5969cee15c4fc4418/userdata/hostname /etc/hostname rw - tmpfs tmpfs rw`
+    '4245 4237 0:94 /containers/overlay-containers/4e9dc37d00ebd2daea029d84bb37764ce12d746a6f3a33c5969cee15c4fc4418/userdata/hostname /etc/hostname rw - tmpfs tmpfs rw';
 
   const wrongCgroupV2Data =
     'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/wrongkeyword';
