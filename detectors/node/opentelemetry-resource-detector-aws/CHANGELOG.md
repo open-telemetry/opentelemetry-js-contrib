@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.6.1...resource-detector-aws-v1.6.2) (2024-10-08)
+
+
+### Bug Fixes
+
+* **detector-aws:** suppress internal tracing for all detectors ([#2433](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2433)) ([aa9710f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/aa9710f73697f684f01140a3bdad495b705618b6))
+
 ## [1.6.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.6.0...resource-detector-aws-v1.6.1) (2024-09-02)
 
 
