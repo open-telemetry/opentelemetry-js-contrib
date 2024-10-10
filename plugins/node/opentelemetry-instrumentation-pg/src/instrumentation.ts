@@ -62,6 +62,7 @@ import {
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
   METRIC_DB_CLIENT_OPERATION_DURATION,
   ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
 } from '@opentelemetry/semantic-conventions/incubating';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
@@ -228,6 +229,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       ATTR_ERROR_TYPE,
       ATTR_SERVER_PORT,
       ATTR_SERVER_ADDRESS,
+      ATTR_DB_OPERATION_NAME,
     ];
 
     keysToCopy.forEach(key => {
@@ -281,6 +283,11 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           [ATTR_SERVER_PORT]: this.connectionParameters.port,
           [ATTR_SERVER_ADDRESS]: this.connectionParameters.host,
         };
+
+        if (queryConfig?.text) {
+          attributes[ATTR_DB_OPERATION_NAME] =
+            utils.parseNormalizedOperationName(queryConfig?.text);
+        }
 
         const recordDuration = () => {
           plugin.recordOperationDuration(attributes, startTime);
