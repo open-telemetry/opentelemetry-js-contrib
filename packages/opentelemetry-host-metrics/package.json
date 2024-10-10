@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
+    "@opentelemetry/sdk-metrics": "^1.8.0",
     "@types/mocha": "8.2.3",
     "@types/node": "18.18.14",
     "@types/sinon": "10.0.20",
@@ -55,7 +56,6 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/sdk-metrics": "^1.8.0",
     "systeminformation": "5.22.9"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/opentelemetry-host-metrics#readme"
