@@ -38,6 +38,7 @@ import {
   fakeEventInteraction,
   getData,
 } from './helper.test';
+import { TRACE_PARENT_HEADER } from '@opentelemetry/core';
 
 const FILE_URL =
   'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
@@ -620,6 +621,31 @@ describe('UserInteractionInstrumentation', () => {
         false,
         'go should be unwrapped'
       );
+    });
+
+    it('should use the traceparent trace id as parent id', () => {
+      registerTestInstrumentations({
+        eventNames: ['click'],
+      });
+
+      const version = '00';
+      const idGenerator = new tracing.RandomIdGenerator();
+      const traceId = idGenerator.generateTraceId();
+      const spanId = idGenerator.generateSpanId();
+      const samplingFlags = '01';
+
+      const traceparent = `${version}-${traceId}-${spanId}-${samplingFlags}`;
+
+      const metaElement = document.createElement('meta');
+      metaElement.setAttribute('name', TRACE_PARENT_HEADER);
+      metaElement.setAttribute('content', traceparent);
+      document.head.appendChild(metaElement);
+
+      fakeEventInteraction('click');
+      assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+      const span = exportSpy.args[0][0][0];
+      assert.strictEqual(span.parentSpanId, spanId);
+      assertInteractionSpan(span, { name: 'click' });
     });
   });
 });
