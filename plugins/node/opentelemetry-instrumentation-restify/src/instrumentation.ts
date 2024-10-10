@@ -35,7 +35,7 @@ import { isPromise, isAsyncFunction } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { RestifyInstrumentationConfig } from './types';
 
-const supportedVersions = ['>=4.0.0 <12'];
+const supportedVersions = ['>=4.1.0 <12'];
 
 export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumentationConfig> {
   constructor(config: RestifyInstrumentationConfig = {}) {

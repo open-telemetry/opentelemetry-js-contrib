@@ -1,3 +1,5 @@
 redis:
-  versions: ^2.6.0 || ^3.0.0
+  versions:
+    include: '>=2.6.0 <4'
+    mode: latest-minors
   commands: npm run test

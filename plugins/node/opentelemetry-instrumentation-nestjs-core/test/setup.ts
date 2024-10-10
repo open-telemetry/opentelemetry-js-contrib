@@ -232,7 +232,7 @@ export const setup = async (version: string): Promise<App> => {
     );
   }
 
-  const app = await core.NestFactory.create(AppModule);
+  const app = await core.NestFactory.create(AppModule, { logger: false });
   if (app.listenAsync) {
     await app.listenAsync(0, 'localhost');
   } else {
