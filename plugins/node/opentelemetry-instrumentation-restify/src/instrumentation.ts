@@ -21,6 +21,7 @@ import * as api from '@opentelemetry/api';
 import type { Server } from 'restify';
 import { LayerType } from './types';
 import { AttributeNames } from './enums/AttributeNames';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import {

@@ -20,6 +20,7 @@ import {
   InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export class LruMemoizerInstrumentation extends InstrumentationBase {

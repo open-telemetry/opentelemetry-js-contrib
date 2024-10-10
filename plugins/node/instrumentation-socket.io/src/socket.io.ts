@@ -37,6 +37,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { SocketIoInstrumentationConfig } from './types';
 import { SocketIoInstrumentationAttributes } from './AttributeNames';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   extractRoomsAttributeValue,

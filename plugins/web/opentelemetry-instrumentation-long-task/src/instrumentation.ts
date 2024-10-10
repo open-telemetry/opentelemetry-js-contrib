@@ -16,6 +16,7 @@
 import { hrTime } from '@opentelemetry/core';
 import { diag } from '@opentelemetry/api';
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import type {
   PerformanceLongTaskTiming,

@@ -18,6 +18,7 @@ const { eventLoopUtilization } = performance;
 
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { RuntimeNodeInstrumentationConfig } from './types';
 

@@ -58,6 +58,7 @@ import {
 } from 'aws-lambda';
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { env } from 'process';
 import { LambdaModule } from './internal-types';

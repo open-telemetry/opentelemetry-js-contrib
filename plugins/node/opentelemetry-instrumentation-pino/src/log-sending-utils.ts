@@ -17,6 +17,7 @@
 import { Writable } from 'stream';
 
 import { logs, Logger, SeverityNumber } from '@opentelemetry/api-logs';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { millisToHrTime } from '@opentelemetry/core';
 

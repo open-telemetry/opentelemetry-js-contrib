@@ -22,6 +22,7 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { BunyanInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { OpenTelemetryBunyanStream } from './OpenTelemetryBunyanStream';
 import type * as BunyanLogger from 'bunyan';

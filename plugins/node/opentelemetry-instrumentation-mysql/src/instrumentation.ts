@@ -42,6 +42,7 @@ import {
   getSpanName,
   getPoolName,
 } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { UpDownCounter, MeterProvider } from '@opentelemetry/api';
 

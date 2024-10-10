@@ -24,6 +24,7 @@ import {
 
 import type * as koa from 'koa';
 import { KoaLayerType, KoaInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getMiddlewareMetadata, isLayerIgnored } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';

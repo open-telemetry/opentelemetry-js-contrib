@@ -34,6 +34,7 @@ import {
 import { TLSAttributes } from './types';
 import { NormalizedOptions, SocketEvent } from './internal-types';
 import { getNormalizedArgs, IPC_TRANSPORT } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { Socket } from 'net';
 import { TLSSocket } from 'tls';

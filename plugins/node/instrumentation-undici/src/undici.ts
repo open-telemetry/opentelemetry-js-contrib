@@ -34,6 +34,7 @@ import {
   ValueType,
 } from '@opentelemetry/api';
 
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 import {

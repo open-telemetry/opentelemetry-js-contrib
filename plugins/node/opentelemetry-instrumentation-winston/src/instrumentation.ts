@@ -31,6 +31,7 @@ import type {
   Winston3LogMethod,
   Winston3Logger,
 } from './internal-types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const winston3Versions = ['>=3 <4'];

@@ -28,6 +28,7 @@ import * as http from 'http';
 import type * as Router from 'router';
 
 import * as types from './internal-types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import * as utils from './utils';

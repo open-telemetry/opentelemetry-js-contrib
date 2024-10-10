@@ -25,6 +25,7 @@ import {
 import type { NestFactory } from '@nestjs/core/nest-factory.js';
 import type { RouterExecutionContext } from '@nestjs/core/router/router-execution-context.js';
 import type { Controller } from '@nestjs/common/interfaces';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   SEMATTRS_HTTP_METHOD,

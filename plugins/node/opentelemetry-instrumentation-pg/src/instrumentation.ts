@@ -43,6 +43,7 @@ import {
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
 import {
