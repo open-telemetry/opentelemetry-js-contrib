@@ -248,6 +248,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
               ),
             [ATTR_FAAS_COLDSTART]: requestIsColdStart,
           },
+          links: config.eventSpanLinksExtractor
+            ? config.eventSpanLinksExtractor(event, context)
+            : [],
         },
         parent
       );
