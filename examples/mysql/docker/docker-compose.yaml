@@ -1,9 +1,9 @@
-version: "2"
 services:
 
 # mysql
   mysql:
     image: mysql:5.7
+    platform: linux/amd64
     command: --init-file /etc/mysql/init.sql
     volumes:
         - ./mysql/init.sql:/etc/mysql/init.sql
@@ -11,15 +11,6 @@ services:
       - MYSQL_ROOT_PASSWORD=secret
     ports:
       - "3306:3306"
-
-# Jaeger
-
-  jaeger-all-in-one:
-    image: jaegertracing/all-in-one:latest
-    ports:
-      - "16686:16686"
-      - "14268"
-      - "14250"
 
 # Zipkin
 
@@ -31,7 +22,7 @@ services:
 # Collector
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.61.0
+    image: otel/opentelemetry-collector-contrib:0.111.0
     command: ["--config=/etc/otel-collector-config.yaml", ""]
     volumes:
       - ./collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
@@ -43,7 +34,6 @@ services:
       - "4317:4317"   # OTLP gRPC receiver
       - "55679:55679" # zpages extension
     depends_on:
-      - jaeger-all-in-one
       - zipkin-all-in-one
 
 # Prometheus
