@@ -317,6 +317,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               instrumentationConfig,
               span,
               args[args.length - 1] as PostgresCallback, // nb: not type safe.
+              attributes,
               recordDuration
             );
 
@@ -333,6 +334,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               plugin.getConfig(),
               span,
               queryConfig.callback as PostgresCallback, // nb: not type safe.
+              attributes,
               recordDuration
             );
 
