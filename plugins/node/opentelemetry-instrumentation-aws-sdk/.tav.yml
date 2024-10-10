@@ -21,6 +21,8 @@
   # A small subset of releases in the range [3.24.0, 4) to reduce testing time.
   versions:
     include: "^3.24.0"
+    # These were bad releases of client-sqs.
+    exclude: ">=3.363.0 <=3.377.0"
     mode: "max-7"
   commands:
     - npm run test
