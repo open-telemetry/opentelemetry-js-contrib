@@ -520,46 +520,46 @@ describe('pg-pool', () => {
 
           const metrics = resourceMetrics.scopeMetrics[0].metrics;
           assert.strictEqual(
-            metrics[0].descriptor.name,
+            metrics[1].descriptor.name,
             'db.client.connection.count'
           );
           assert.strictEqual(
-            metrics[0].descriptor.description,
+            metrics[1].descriptor.description,
             'The number of connections that are currently in state described by the state attribute.'
           );
           assert.strictEqual(
-            metrics[0].dataPoints[0].attributes[
+            metrics[1].dataPoints[0].attributes[
               ATTR_DB_CLIENT_CONNECTION_STATE
             ],
             'used'
           );
           assert.strictEqual(
-            metrics[0].dataPoints[0].value,
+            metrics[1].dataPoints[0].value,
             1,
             'expected to have 1 used connection'
           );
           assert.strictEqual(
-            metrics[0].dataPoints[1].attributes[
+            metrics[1].dataPoints[1].attributes[
               ATTR_DB_CLIENT_CONNECTION_STATE
             ],
             'idle'
           );
           assert.strictEqual(
-            metrics[0].dataPoints[1].value,
+            metrics[1].dataPoints[1].value,
             0,
             'expected to have 0 idle connections'
           );
 
           assert.strictEqual(
-            metrics[1].descriptor.name,
+            metrics[2].descriptor.name,
             'db.client.connection.pending_requests'
           );
           assert.strictEqual(
-            metrics[1].descriptor.description,
+            metrics[2].descriptor.description,
             'The number of current pending requests for an open connection.'
           );
           assert.strictEqual(
-            metrics[1].dataPoints[0].value,
+            metrics[2].dataPoints[0].value,
             0,
             'expected to have 0 pending requests'
           );

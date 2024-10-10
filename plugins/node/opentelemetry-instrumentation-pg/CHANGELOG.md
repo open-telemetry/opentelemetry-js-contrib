@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.44.0...instrumentation-pg-v0.45.0) (2024-10-08)
+
+
+### Features
+
+* **instrumentation-pg:** implementation of metric operation duration ([#2380](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2380)) ([050fee0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/050fee0551ccf0fa593b84030ab73e2701372b4b))
+* **instrumentation-pg:** initial implementation of DB metrics ([#2349](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2349)) ([12adb43](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/12adb4354f09ade438cd96340bdfd1f715b5fed3))
+
 ## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.43.0...instrumentation-pg-v0.44.0) (2024-09-02)
 
 
