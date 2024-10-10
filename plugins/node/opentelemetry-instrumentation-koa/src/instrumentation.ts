@@ -25,7 +25,11 @@ import {
 import type * as koa from 'koa';
 import { KoaLayerType, KoaInstrumentationConfig } from './types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { getMiddlewareMetadata, isLayerIgnored } from './utils';
+import {
+  getMiddlewareMetadata,
+  isLayerIgnored,
+  isLayerNameIgnored,
+} from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
   kLayerPatched,
@@ -161,6 +165,11 @@ export class KoaInstrumentation extends InstrumentationBase<KoaInstrumentationCo
         isRouter,
         layerPath
       );
+
+      if (isLayerNameIgnored(metadata.layerName, this.getConfig())) {
+        return middlewareLayer(context, next);
+      }
+
       const span = this.tracer.startSpan(metadata.name, {
         attributes: metadata.attributes,
       });
