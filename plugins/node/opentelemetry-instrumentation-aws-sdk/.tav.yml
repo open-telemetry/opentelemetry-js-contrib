@@ -6,22 +6,22 @@
   commands:
     - npm run test
 
+# Versions [3.363.0, 3.377.0] of all @aws-sdk/client-* were bad releases. See:
+# - https://github.com/open-telemetry/opentelemetry-js-contrib/pull/2464#issuecomment-2403652552
+# - https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1828#issuecomment-1834276719
+
 "@aws-sdk/client-s3":
-  # A small subset of releases in the range [3.6.1, 4) to reduce testing time.
-  # - 3.377.0 was a bad release (see issue #1828).
   # - 3.529.0 was missing the fast-xml-parser dependency (https://github.com/aws/aws-sdk-js-v3/releases/tag/v3.529.1)
   versions:
     include: "^3.6.1"
-    exclude: "3.377.0 || 3.529.0"
+    exclude: "3.529.0 || >=3.363.0 <=3.377.0"
     mode: "max-7"
   commands:
     - npm run test
 
 "@aws-sdk/client-sqs":
-  # A small subset of releases in the range [3.24.0, 4) to reduce testing time.
   versions:
     include: "^3.24.0"
-    # These were bad releases of client-sqs.
     exclude: ">=3.363.0 <=3.377.0"
     mode: "max-7"
   commands:
