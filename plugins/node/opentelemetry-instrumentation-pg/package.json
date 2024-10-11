@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pg",
-  "version": "0.45.0",
+  "version": "0.45.1",
   "description": "OpenTelemetry instrumentation for `pg` and `pg-pool` database client for PostgreSQL",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -73,8 +73,9 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.53.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0",
+    "@opentelemetry/semantic-conventions": "1.27.0",
     "@opentelemetry/sql-common": "^0.40.1",
+    "@opentelemetry/core": "^1.26.0",
     "@types/pg": "8.6.1",
     "@types/pg-pool": "2.0.6"
   },
