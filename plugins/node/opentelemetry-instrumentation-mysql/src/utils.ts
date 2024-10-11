@@ -115,7 +115,11 @@ export function getSpanName(query: string | Query | QueryOptions): string {
   if (typeof query === 'object') {
     return query.sql;
   }
-  return query.split(' ')[0];
+  const firstSpace = query?.indexOf(' ');
+  if (typeof firstSpace === 'number' && firstSpace !== -1) {
+    return query?.substring(0, firstSpace);
+  }
+  return query;
 }
 
 export function arrayStringifyHelper(arr: Array<unknown> | undefined): string {

@@ -132,7 +132,7 @@ export function getSpanName(query: string | Query | QueryOptions): string {
   const rawQuery = typeof query === 'object' ? query.sql : query;
   // Extract the SQL verb
   const firstSpace = rawQuery?.indexOf(' ');
-  if (typeof firstSpace === "number" && firstSpace !== -1) {
+  if (typeof firstSpace === 'number' && firstSpace !== -1) {
     return rawQuery?.substring(0, firstSpace);
   }
   return rawQuery;
