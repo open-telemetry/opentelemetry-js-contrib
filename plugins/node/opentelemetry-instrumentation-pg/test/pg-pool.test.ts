@@ -277,6 +277,7 @@ describe('pg-pool', () => {
         await client.query('SELECT NOW()');
       } finally {
         client.release();
+        await newPool.end();
       }
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
@@ -492,77 +493,80 @@ describe('pg-pool', () => {
     });
 
     it('should generate `db.client.connection.count` and `db.client.connection.pending_requests` metrics', async () => {
-      pool.connect((err, client, release) => {
-        if (err) {
-          throw new Error(err.message);
-        }
-        if (!release) {
-          throw new Error('Did not receive release function');
-        }
-        if (!client) {
-          throw new Error('No client received');
-        }
-        assert.ok(client);
-
-        client.query('SELECT NOW()', async (err, ret) => {
-          release();
+      return new Promise(resolve => {
+        pool.connect((err, client, release) => {
           if (err) {
             throw new Error(err.message);
           }
-          assert.ok(ret);
+          if (!release) {
+            throw new Error('Did not receive release function');
+          }
+          if (!client) {
+            throw new Error('No client received');
+          }
+          assert.ok(client);
 
-          const { resourceMetrics, errors } = await metricReader.collect();
-          assert.deepEqual(
-            errors,
-            [],
-            'expected no errors from the callback during metric collection'
-          );
+          client.query('SELECT NOW()', async (err, ret) => {
+            release();
+            if (err) {
+              throw new Error(err.message);
+            }
+            assert.ok(ret);
 
-          const metrics = resourceMetrics.scopeMetrics[0].metrics;
-          assert.strictEqual(
-            metrics[1].descriptor.name,
-            'db.client.connection.count'
-          );
-          assert.strictEqual(
-            metrics[1].descriptor.description,
-            'The number of connections that are currently in state described by the state attribute.'
-          );
-          assert.strictEqual(
-            metrics[1].dataPoints[0].attributes[
-              ATTR_DB_CLIENT_CONNECTION_STATE
-            ],
-            'used'
-          );
-          assert.strictEqual(
-            metrics[1].dataPoints[0].value,
-            1,
-            'expected to have 1 used connection'
-          );
-          assert.strictEqual(
-            metrics[1].dataPoints[1].attributes[
-              ATTR_DB_CLIENT_CONNECTION_STATE
-            ],
-            'idle'
-          );
-          assert.strictEqual(
-            metrics[1].dataPoints[1].value,
-            0,
-            'expected to have 0 idle connections'
-          );
+            const { resourceMetrics, errors } = await metricReader.collect();
+            assert.deepEqual(
+              errors,
+              [],
+              'expected no errors from the callback during metric collection'
+            );
 
-          assert.strictEqual(
-            metrics[2].descriptor.name,
-            'db.client.connection.pending_requests'
-          );
-          assert.strictEqual(
-            metrics[2].descriptor.description,
-            'The number of current pending requests for an open connection.'
-          );
-          assert.strictEqual(
-            metrics[2].dataPoints[0].value,
-            0,
-            'expected to have 0 pending requests'
-          );
+            const metrics = resourceMetrics.scopeMetrics[0].metrics;
+            assert.strictEqual(
+              metrics[1].descriptor.name,
+              'db.client.connection.count'
+            );
+            assert.strictEqual(
+              metrics[1].descriptor.description,
+              'The number of connections that are currently in state described by the state attribute.'
+            );
+            assert.strictEqual(
+              metrics[1].dataPoints[0].attributes[
+                ATTR_DB_CLIENT_CONNECTION_STATE
+              ],
+              'used'
+            );
+            assert.strictEqual(
+              metrics[1].dataPoints[0].value,
+              1,
+              'expected to have 1 used connection'
+            );
+            assert.strictEqual(
+              metrics[1].dataPoints[1].attributes[
+                ATTR_DB_CLIENT_CONNECTION_STATE
+              ],
+              'idle'
+            );
+            assert.strictEqual(
+              metrics[1].dataPoints[1].value,
+              0,
+              'expected to have 0 idle connections'
+            );
+
+            assert.strictEqual(
+              metrics[2].descriptor.name,
+              'db.client.connection.pending_requests'
+            );
+            assert.strictEqual(
+              metrics[2].descriptor.description,
+              'The number of current pending requests for an open connection.'
+            );
+            assert.strictEqual(
+              metrics[2].dataPoints[0].value,
+              0,
+              'expected to have 0 pending requests'
+            );
+            resolve();
+          });
         });
       });
     });

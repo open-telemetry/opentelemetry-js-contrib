@@ -124,7 +124,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   protected init() {
     const modulePG = new InstrumentationNodeModuleDefinition(
       'pg',
-      ['>=8.0.0 <9'],
+      ['>=8.0.3 <9'],
       (module: any) => {
         const moduleExports: typeof pgTypes =
           module[Symbol.toStringTag] === 'Module'
