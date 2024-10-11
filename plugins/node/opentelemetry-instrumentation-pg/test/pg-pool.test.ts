@@ -277,6 +277,7 @@ describe('pg-pool', () => {
         await client.query('SELECT NOW()');
       } finally {
         client.release();
+        await newPool.end();
       }
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
@@ -520,6 +521,11 @@ describe('pg-pool', () => {
 
           const metrics = resourceMetrics.scopeMetrics[0].metrics;
           assert.strictEqual(
+            metrics[0].descriptor.name,
+            'db.client.operation.duration'
+          );
+
+          assert.strictEqual(
             metrics[1].descriptor.name,
             'db.client.connection.count'
           );
@@ -566,6 +572,40 @@ describe('pg-pool', () => {
           done();
         });
       });
+    });
+
+    it('should generate `db.client.*` metrics (Promises-style)', async (...args) => {
+      const client = await pool.connect();
+
+      try {
+        const ret = await client.query('SELECT NOW()');
+        assert.ok(ret);
+      } finally {
+        client.release();
+      }
+
+      const { resourceMetrics, errors } = await metricReader.collect();
+      assert.deepEqual(
+        errors,
+        [],
+        'expected no errors from the callback during metric collection'
+      );
+
+      // We just test the expected metric *names* here. The particulars of the
+      // metric values are already tested in other test cases.
+      const metrics = resourceMetrics.scopeMetrics[0].metrics;
+      assert.strictEqual(
+        metrics[0].descriptor.name,
+        'db.client.operation.duration'
+      );
+      assert.strictEqual(
+        metrics[1].descriptor.name,
+        'db.client.connection.count'
+      );
+      assert.strictEqual(
+        metrics[2].descriptor.name,
+        'db.client.connection.pending_requests'
+      );
     });
   });
 });
