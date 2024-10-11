@@ -255,7 +255,7 @@ export function patchCallback(
     res: object
   ) {
     if (err) {
-      if (err.hasOwnProperty('code')) {
+      if (Object.prototype.hasOwnProperty.call(err, 'code')) {
         attributes[ATTR_ERROR_TYPE] = (err as any)['code'];
       }
 
