@@ -25,7 +25,7 @@
     "bump": "lerna publish",
     "changelog": "lerna-changelog",
     "lint": "lerna run lint && npm run lint:deps",
-    "lint:deps": "npx knip --dependencies --production --tags=-knipignore",
+    "lint:deps": "npx --yes knip@5.33.3 --dependencies --production --tags=-knipignore",
     "lint:fix": "lerna run lint:fix",
     "lint:examples": "eslint ./examples/**/*.js",
     "lint:examples:fix": "eslint ./examples/**/*.js --fix",
