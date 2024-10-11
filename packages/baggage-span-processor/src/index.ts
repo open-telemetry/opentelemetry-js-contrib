@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './baggage-span-processor';
-export * from './types';
+export { BaggageSpanProcessor } from './baggage-span-processor';
+export { ALLOW_ALL_BAGGAGE_KEYS, BaggageKeyPredicate } from './types';
