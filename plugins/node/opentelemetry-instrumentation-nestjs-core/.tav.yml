@@ -2,6 +2,9 @@
   - versions:
       include: ">=10.0.0 <11"
       mode: latest-minors
+    # NestJS 10 requires Node.js v16 or later.
+    # https://docs.nestjs.com/migration-guide#dropping-support-for-nodejs-v12
+    node: ">=16"
     peerDependencies:
         - "@nestjs/common@^10.0.0"
         - "rxjs@^7.1.0"
