@@ -491,7 +491,7 @@ describe('pg-pool', () => {
       metricReader = testUtils.initMeterProvider(instrumentation);
     });
 
-    it('should generate `db.client.connection.count` and `db.client.connection.pending_requests` metrics', async () => {
+    it('should generate `db.client.connection.count` and `db.client.connection.pending_requests` metrics', done => {
       pool.connect((err, client, release) => {
         if (err) {
           throw new Error(err.message);
@@ -563,6 +563,7 @@ describe('pg-pool', () => {
             0,
             'expected to have 0 pending requests'
           );
+          done();
         });
       });
     });
