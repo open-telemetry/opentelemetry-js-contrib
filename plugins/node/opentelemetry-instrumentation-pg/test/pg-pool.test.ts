@@ -51,9 +51,10 @@ import {
   SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_DB_CLIENT_CONNECTION_STATE,
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
-  ATTR_DB_CLIENT_CONNECTION_STATE,
+  METRIC_DB_CLIENT_OPERATION_DURATION,
 } from '@opentelemetry/semantic-conventions/incubating';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -600,15 +601,15 @@ describe('pg-pool', () => {
       const metrics = resourceMetrics.scopeMetrics[0].metrics;
       assert.strictEqual(
         metrics[0].descriptor.name,
-        'db.client.operation.duration'
+        METRIC_DB_CLIENT_OPERATION_DURATION,
       );
       assert.strictEqual(
         metrics[1].descriptor.name,
-        'db.client.connection.count'
+        METRIC_DB_CLIENT_CONNECTION_COUNT,
       );
       assert.strictEqual(
         metrics[2].descriptor.name,
-        'db.client.connection.pending_requests'
+        METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
       );
     });
   });
