@@ -1,5 +1,7 @@
 mongodb:
-  - versions: ">=3.3 <4"
+  - versions:
+      include: ">=3.3 <4"
+      mode: max-7
     commands: npm run test-v3
   - versions:
       include: ">=4 <5"
@@ -9,9 +11,14 @@ mongodb:
       # tests for the wrong version.
       # Ref: https://github.com/open-telemetry/opentelemetry-js-contrib/pull/2001#issuecomment-1992202942
       exclude: "4.17.2"
+      mode: max-7
     commands: npm run test-v4
-  - versions: ">=5 <6"
+  - versions:
+      include: ">=5 <6"
+      mode: max-7
     commands: npm run test-v5-v6
-  - versions: ">=6 <7"
+  - versions:
+      include: ">=6 <7"
+      mode: max-7
     node: '>=15.0.0'
     commands: npm run test-v5-v6
