@@ -439,9 +439,11 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
   private setPoolConnectEventListeners(pgPool: PgPoolExtended) {
     if (this._pgPoolListenersSet) return;
+    const poolName = utils.getPoolName(pgPool.options);
 
     pgPool.on('connect', () => {
       this._connectionsCounter = utils.updateCounter(
+        poolName,
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
@@ -451,6 +453,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
     pgPool.on('acquire', () => {
       this._connectionsCounter = utils.updateCounter(
+        poolName,
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
@@ -460,6 +463,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
     pgPool.on('remove', () => {
       this._connectionsCounter = utils.updateCounter(
+        poolName,
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
@@ -469,6 +473,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
     pgPool.on('release' as any, () => {
       this._connectionsCounter = utils.updateCounter(
+        poolName,
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
