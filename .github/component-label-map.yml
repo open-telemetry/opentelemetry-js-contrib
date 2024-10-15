@@ -274,6 +274,10 @@ pkg:sql-common:
   - changed-files:
       - any-glob-to-any-file:
           - packages/opentelemetry-sql-common/**
+pkg:instrumentation-page-view:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/web/opentelemetry-instrumentation-page-view/**
 pkg-status:unmaintained:
   - changed-files:
       - any-glob-to-any-file:
