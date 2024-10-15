@@ -281,6 +281,7 @@ describe('pg-pool', () => {
         await client.query('SELECT NOW()');
       } finally {
         client.release();
+        await newPool.end();
       }
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
