@@ -1,8 +1,12 @@
 restify:
-  - versions: "^10.0.0 || ^11.1.0"
+  - versions:
+      include: '>=10.0.0 <12'
+      mode: latest-minors
     node: ">=18"
     commands: npm run test
 
-  - versions: "4.3.4 || 5.2.0 || 6.4.0 || 7.7.0 || ^8.4.0 || 9.1.0 || ^10.0.0 || ^11.1.0"
+  - versions:
+      include: '>=4.1.0 <10'
+      mode: max-7
     node: "<18"
     commands: npm run test
