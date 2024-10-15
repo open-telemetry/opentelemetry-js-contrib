@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/* eslint-disable-next-line @typescript-eslint/triple-slash-reference */
 /// <reference path="../src/router.d.ts" />
 
 import { context, trace } from '@opentelemetry/api';
