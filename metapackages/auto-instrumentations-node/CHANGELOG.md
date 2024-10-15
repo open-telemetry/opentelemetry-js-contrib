@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.50.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.50.1...auto-instrumentations-node-v0.50.2) (2024-10-10)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-pg bumped from ^0.45.0 to ^0.45.1
+    * @opentelemetry/resource-detector-alibaba-cloud bumped from ^0.29.2 to ^0.29.3
+    * @opentelemetry/resource-detector-container bumped from ^0.4.2 to ^0.4.3
+
 ## [0.50.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.50.0...auto-instrumentations-node-v0.50.1) (2024-10-08)
 
 

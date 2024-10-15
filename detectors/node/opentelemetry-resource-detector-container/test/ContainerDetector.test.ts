@@ -32,6 +32,8 @@ describe('ContainerDetector', () => {
   const correctCgroupV2Data = `containers/tmhdefghijklmnopqrstuvwxyzafgrefghiugkmnopqrstuvwxyzabcdefghijkl/hostname
     fhkjdshgfhsdfjhdsfkjhfkdshkjhfd/host
     sahfhfjkhjhfhjdhfjkdhfkjdhfjkhhdsjfhdfhjdhfkj/somethingelse`;
+  const correctCgroupV2PodmanData =
+    '4245 4237 0:94 /containers/overlay-containers/4e9dc37d00ebd2daea029d84bb37764ce12d746a6f3a33c5969cee15c4fc4418/userdata/hostname /etc/hostname rw - tmpfs tmpfs rw';
 
   const wrongCgroupV2Data =
     'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/wrongkeyword';
@@ -82,6 +84,22 @@ describe('ContainerDetector', () => {
       assert.ok(resource);
       assertContainerResource(resource, {
         id: 'tmhdefghijklmnopqrstuvwxyzafgrefghiugkmnopqrstuvwxyzabcdefghijkl',
+      });
+    });
+
+    it('should return a resource with container ID with a valid container ID present for v2 (Podman)', async () => {
+      readStub = sinon.stub(ContainerDetector, 'readFileAsync' as any);
+
+      readStub.onFirstCall().resolves('');
+      readStub.onSecondCall().resolves(correctCgroupV2PodmanData);
+
+      const resource = containerDetector.detect();
+      await resource.waitForAsyncAttributes?.();
+      sinon.assert.calledTwice(readStub);
+
+      assert.ok(resource);
+      assertContainerResource(resource, {
+        id: '4e9dc37d00ebd2daea029d84bb37764ce12d746a6f3a33c5969cee15c4fc4418',
       });
     });
 

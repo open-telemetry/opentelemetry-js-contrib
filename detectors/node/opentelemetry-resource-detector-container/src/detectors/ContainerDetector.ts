@@ -35,7 +35,7 @@ export class ContainerDetector implements DetectorSync {
   readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
   readonly UTF8_UNICODE = 'utf8';
   readonly HOSTNAME = 'hostname';
-  readonly MARKING_PREFIX = 'containers';
+  readonly MARKING_PREFIX = ['containers', 'overlay-containers'];
   readonly CRIO = 'crio-';
   readonly CRI_CONTAINERD = 'cri-containerd-';
   readonly DOCKER = 'docker-';
@@ -105,7 +105,7 @@ export class ContainerDetector implements DetectorSync {
     const strArray = str?.split('/') ?? [];
     for (let i = 0; i < strArray.length - 1; i++) {
       if (
-        strArray[i] === this.MARKING_PREFIX &&
+        this.MARKING_PREFIX.includes(strArray[i]) &&
         strArray[i + 1]?.length === this.CONTAINER_ID_LENGTH
       ) {
         return strArray[i + 1];

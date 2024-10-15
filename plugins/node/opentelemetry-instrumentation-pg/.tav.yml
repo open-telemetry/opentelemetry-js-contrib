@@ -1,5 +1,6 @@
 pg:
-    # a sample from supported versions
-  - versions: "8.5.1 || 8.6.0 || 8.7.1"
-    peerDependencies: pg-pool@^3
-    commands: npm run test
+  versions:
+    include: '>=8.0.3 <9'
+    mode: max-7
+  peerDependencies: pg-pool@^3
+  commands: npm run test

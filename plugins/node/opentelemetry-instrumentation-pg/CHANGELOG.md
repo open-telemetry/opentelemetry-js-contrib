@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.45.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.45.0...instrumentation-pg-v0.45.1) (2024-10-10)
+
+
+### Bug Fixes
+
+* add missing @opentelemetry/core dependency ([#2473](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2473)) ([4d66431](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4d66431a2ad480720bf6c33663a419ec1404cd33))
+
 ## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.44.0...instrumentation-pg-v0.45.0) (2024-10-08)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.4.2...resource-detector-container-v0.4.3) (2024-10-10)
+
+
+### Bug Fixes
+
+* add missing @opentelemetry/core dependency ([#2473](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2473)) ([4d66431](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4d66431a2ad480720bf6c33663a419ec1404cd33))
+
 ## [0.4.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.4.1...resource-detector-container-v0.4.2) (2024-10-08)
 
 

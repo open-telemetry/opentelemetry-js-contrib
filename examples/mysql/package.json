@@ -9,8 +9,6 @@
     "docker:stop": "docker stop example-mysql && docker rm example-mysql",
     "zipkin:server": "cross-env EXPORTER=zipkin ts-node src/server.ts",
     "zipkin:client": "cross-env EXPORTER=zipkin ts-node src/client.ts",
-    "jaeger:server": "cross-env EXPORTER=jaeger ts-node src/server.ts",
-    "jaeger:client": "cross-env EXPORTER=jaeger ts-node src/client.ts",
     "compile": "tsc -p ."
   },
   "repository": {
@@ -32,7 +30,7 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/exporter-jaeger": "^1.0.0",
+    "@opentelemetry/exporter-metrics-otlp-grpc": "^0.48.0",
     "@opentelemetry/exporter-zipkin": "^1.0.0",
     "@opentelemetry/instrumentation": "^0.48.0",
     "@opentelemetry/instrumentation-http": "^0.48.0",
@@ -40,7 +38,7 @@
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@opentelemetry/sdk-trace-node": "^1.0.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
-    "@opentelemetry/exporter-metrics-otlp-grpc": "^0.48.0",
+    "@types/node": "^18.18.14",
     "mysql": "^2.18.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/mysql#readme",
