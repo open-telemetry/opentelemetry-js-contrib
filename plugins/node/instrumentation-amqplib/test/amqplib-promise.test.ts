@@ -15,7 +15,7 @@
  */
 import 'mocha';
 import { expect } from 'expect';
-import * as sinon from 'sinon';
+import { spy, SinonSpy } from 'sinon';
 import * as lodash from 'lodash';
 import {
   AmqplibInstrumentation,
@@ -56,7 +56,6 @@ import {
   TEST_RABBITMQ_HOST,
   TEST_RABBITMQ_PORT,
 } from './config';
-import { SinonSpy } from 'sinon';
 
 const msgPayload = 'payload from test';
 const queueName = 'queue-name-from-unittest';
@@ -112,7 +111,7 @@ describe('amqplib instrumentation promise model', () => {
   describe('channel', () => {
     let channel: amqp.Channel & { [CHANNEL_CLOSED_IN_TEST]?: boolean };
     beforeEach(async () => {
-      endHookSpy = sinon.spy();
+      endHookSpy = spy();
       instrumentation.setConfig({
         consumeEndHook: endHookSpy,
       });
@@ -651,7 +650,7 @@ describe('amqplib instrumentation promise model', () => {
       [CHANNEL_CLOSED_IN_TEST]?: boolean;
     };
     beforeEach(async () => {
-      endHookSpy = sinon.spy();
+      endHookSpy = spy();
       instrumentation.setConfig({
         consumeEndHook: endHookSpy,
       });
@@ -1249,7 +1248,7 @@ describe('amqplib instrumentation promise model', () => {
   describe('channel using links config', () => {
     let channel: amqp.Channel & { [CHANNEL_CLOSED_IN_TEST]?: boolean };
     beforeEach(async () => {
-      endHookSpy = sinon.spy();
+      endHookSpy = spy();
       instrumentation.setConfig({
         consumeEndHook: endHookSpy,
         useLinksForConsume: true,
@@ -1452,7 +1451,7 @@ describe('amqplib instrumentation promise model', () => {
       [CHANNEL_CLOSED_IN_TEST]?: boolean;
     };
     beforeEach(async () => {
-      endHookSpy = sinon.spy();
+      endHookSpy = spy();
       instrumentation.setConfig({
         consumeEndHook: endHookSpy,
         useLinksForConsume: true,

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import { equal } from 'assert';
 
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import {
@@ -53,7 +53,7 @@ describe('[Integration] AzureVmServiceDetector', () => {
     await new Promise(r => setTimeout(r, 0));
     const spans = memoryExporter.getFinishedSpans();
 
-    assert.equal(spans.length, 0, 'no spans exported for AzureVmDetector');
+    equal(spans.length, 0, 'no spans exported for AzureVmDetector');
 
     await sdk.shutdown();
   });

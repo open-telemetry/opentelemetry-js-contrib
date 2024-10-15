@@ -29,7 +29,7 @@ import {
   ReadableSpan,
 } from '@opentelemetry/sdk-trace-base';
 import { StackContextManager } from '@opentelemetry/sdk-trace-web';
-import * as assert from 'assert';
+import { strictEqual, ok, equal } from 'assert';
 import * as sinon from 'sinon';
 import AllLifecycles from './test-react-components/AllLifecycles';
 import MissingRender from './test-react-components/MissingRender';
@@ -132,145 +132,139 @@ describe('ReactLoad Instrumentation', () => {
       });
 
       it('should always have defined lifecycle methods', () => {
-        assert.ok(constructed.render, 'render is not defined');
-        assert.ok(
-          constructed.componentDidMount,
-          'componentDidMount is not defined'
-        );
+        ok(constructed.render, 'render is not defined');
+        ok(constructed.componentDidMount, 'componentDidMount is not defined');
 
-        assert.ok(
+        ok(
           constructed.shouldComponentUpdate,
           'shouldComponentUpdate is not defined'
         );
-        assert.ok(
+        ok(
           constructed.getSnapshotBeforeUpdate,
           'getSnapshotBeforeUpdate is not defined'
         );
-        assert.ok(
-          constructed.componentDidUpdate,
-          'componentDidUpdate is not defined'
-        );
+        ok(constructed.componentDidUpdate, 'componentDidUpdate is not defined');
       });
 
       it('should wrap functions', () => {
-        assert.ok(
+        ok(
           isWrapped(constructed.render),
           'render function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.componentDidMount),
           'componentDidMount function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.shouldComponentUpdate),
           'shouldComponentUpdate function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.getSnapshotBeforeUpdate),
           'getSnapshotBeforeUpdate function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.componentDidUpdate),
           'componentDidUpdate function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.setState),
           'setState function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.forceUpdate),
           'forceUpdate function is not wrapped before'
         );
 
         constructed.patch();
 
-        assert.ok(
+        ok(
           isWrapped(constructed.render),
           'render function is not wrapped after'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.componentDidMount),
           'componentDidMount function is not wrapped after'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.shouldComponentUpdate),
           'shouldComponentUpdate function is not wrapped after'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.getSnapshotBeforeUpdate),
           'getSnapshotBeforeUpdate function is not wrapped after'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.componentDidUpdate),
           'componentDidUpdate function is not wrapped after'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.setState),
           'setState function is not wrapped after'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.forceUpdate),
           'forceUpdate function is not wrapped after'
         );
       });
 
       it('should unwrap functions', () => {
-        assert.ok(
+        ok(
           isWrapped(constructed.render),
           'render function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.componentDidMount),
           'componentDidMount function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.shouldComponentUpdate),
           'shouldComponentUpdate function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.getSnapshotBeforeUpdate),
           'getSnapshotBeforeUpdate function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.componentDidUpdate),
           'componentDidUpdate function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.setState),
           'setState function is not wrapped before'
         );
-        assert.ok(
+        ok(
           isWrapped(constructed.forceUpdate),
           'forceUpdate function is not wrapped before'
         );
 
         constructed.unpatch();
 
-        assert.ok(
+        ok(
           !isWrapped(constructed.render),
           'render function is not unwrapped after'
         );
-        assert.ok(
+        ok(
           !isWrapped(constructed.componentDidMount),
           'componentDidMount function is not unwrapped after'
         );
-        assert.ok(
+        ok(
           !isWrapped(constructed.shouldComponentUpdate),
           'shouldComponentUpdate function is not unwrapped after'
         );
-        assert.ok(
+        ok(
           !isWrapped(constructed.getSnapshotBeforeUpdate),
           'getSnapshotBeforeUpdate function is not unwrapped after'
         );
-        assert.ok(
+        ok(
           !isWrapped(constructed.componentDidUpdate),
           'componentDidUpdate function is not unwrapped after'
         );
-        assert.ok(
+        ok(
           !isWrapped(constructed.setState),
           'setState function is not unwrapped after'
         );
-        assert.ok(
+        ok(
           !isWrapped(constructed.forceUpdate),
           'forceUpdate function is not unwrapped after'
         );
@@ -296,23 +290,23 @@ describe('ReactLoad Instrumentation', () => {
           const componentDidMountSpan: ReadableSpan = exportSpy.args[1][0][0];
           const mountingSpan: ReadableSpan = exportSpy.args[2][0][0];
 
-          assert.equal(
+          equal(
             mountingSpan.parentSpanId,
             undefined,
             'mounting span is should not have a parent'
           );
-          assert.equal(
+          equal(
             renderSpan.parentSpanId,
             mountingSpan.spanContext().spanId,
             'render span is not a child of the mounting span'
           );
-          assert.equal(
+          equal(
             componentDidMountSpan.parentSpanId,
             mountingSpan.spanContext().spanId,
             'componentDidMount span is not a child of the mounting span'
           );
 
-          assert.strictEqual(
+          strictEqual(
             exportSpy.args.length,
             3,
             'total number of spans is wrong'
@@ -324,13 +318,13 @@ describe('ReactLoad Instrumentation', () => {
           const componentDidMountSpan: ReadableSpan = exportSpy.args[1][0][0];
           const mountingSpan: ReadableSpan = exportSpy.args[2][0][0];
 
-          assert.equal(
+          equal(
             mountingSpan.name,
             'reactLoad: mounting',
             'mounting span has wrong name'
           );
-          assert.equal(renderSpan.name, 'render', 'render span has wrong name');
-          assert.equal(
+          equal(renderSpan.name, 'render', 'render span has wrong name');
+          equal(
             componentDidMountSpan.name,
             'componentDidMount',
             'componentDidMount span has wrong name'
@@ -339,7 +333,7 @@ describe('ReactLoad Instrumentation', () => {
 
         it('spans should have correct attributes', () => {
           const spans: [] = exportSpy.args;
-          assert.strictEqual(spans.length, 3, 'number of spans is wrong');
+          strictEqual(spans.length, 3, 'number of spans is wrong');
           spans.forEach(element => {
             const span: ReadableSpan = element[0][0];
             ensureSpanAttributesAreCorrect(span);
@@ -373,38 +367,38 @@ describe('ReactLoad Instrumentation', () => {
           const componentDidUpdateSpan: ReadableSpan = exportSpy.args[7][0][0];
           const updatingSpan: ReadableSpan = exportSpy.args[8][0][0];
 
-          assert.equal(
+          equal(
             updatingSpan.parentSpanId,
             undefined,
             'updating span is should not have a parent'
           );
-          assert.equal(
+          equal(
             setStateSpan.parentSpanId,
             updatingSpan.spanContext().spanId,
             'setState span is not a child of the updating span'
           );
-          assert.equal(
+          equal(
             shouldComponentUpdateSpan.parentSpanId,
             updatingSpan.spanContext().spanId,
             'shouldComponentUpdate span is not a child of the updating span'
           );
-          assert.equal(
+          equal(
             renderSpan.parentSpanId,
             updatingSpan.spanContext().spanId,
             'render span is not a child of the updating span'
           );
-          assert.equal(
+          equal(
             getSnapshotBeforeUpdateSpan.parentSpanId,
             updatingSpan.spanContext().spanId,
             'getSnapshotBeforeUpdate span is not a child of the updating span'
           );
-          assert.equal(
+          equal(
             componentDidUpdateSpan.parentSpanId,
             updatingSpan.spanContext().spanId,
             'componentDidUpdate span is not a child of the updating span'
           );
 
-          assert.strictEqual(
+          strictEqual(
             exportSpy.args.length,
             9,
             'total number of spans is wrong'
@@ -421,28 +415,28 @@ describe('ReactLoad Instrumentation', () => {
           const componentDidUpdateSpan: ReadableSpan = exportSpy.args[7][0][0];
           const updatingSpan: ReadableSpan = exportSpy.args[8][0][0];
 
-          assert.equal(
+          equal(
             updatingSpan.name,
             'reactLoad: updating',
             'updating span has wrong name'
           );
-          assert.equal(
+          equal(
             setStateSpan.name,
             'setState()',
             'setState span has wrong name'
           );
-          assert.equal(
+          equal(
             shouldComponentUpdateSpan.name,
             'shouldComponentUpdate',
             'shouldComponentUpdate span has wrong name'
           );
-          assert.equal(renderSpan.name, 'render', 'render span has wrong name');
-          assert.equal(
+          equal(renderSpan.name, 'render', 'render span has wrong name');
+          equal(
             getSnapshotBeforeUpdateSpan.name,
             'getSnapshotBeforeUpdate',
             'getSnapshotBeforeUpdate span has wrong name'
           );
-          assert.equal(
+          equal(
             componentDidUpdateSpan.name,
             'componentDidUpdate',
             'componentDidUpdate span has wrong name'
@@ -451,7 +445,7 @@ describe('ReactLoad Instrumentation', () => {
 
         it('spans should have correct attributes', () => {
           const spans: [] = exportSpy.args;
-          assert.strictEqual(spans.length, 9, 'number of spans is wrong');
+          strictEqual(spans.length, 9, 'number of spans is wrong');
           spans.forEach(element => {
             const span: ReadableSpan = element[0][0];
             ensureSpanAttributesAreCorrect(span);
@@ -483,33 +477,33 @@ describe('ReactLoad Instrumentation', () => {
           const componentDidUpdateSpan: ReadableSpan = exportSpy.args[6][0][0];
           const updatingSpan: ReadableSpan = exportSpy.args[7][0][0];
 
-          assert.equal(
+          equal(
             updatingSpan.parentSpanId,
             undefined,
             'updating span is should not have a parent'
           );
-          assert.equal(
+          equal(
             forceUpdateSpan.parentSpanId,
             updatingSpan.spanContext().spanId,
             'forceUpdate span is not a child of the updating span'
           );
-          assert.equal(
+          equal(
             renderSpan.parentSpanId,
             updatingSpan.spanContext().spanId,
             'render span is not a child of the updating span'
           );
-          assert.equal(
+          equal(
             getSnapshotBeforeUpdateSpan.parentSpanId,
             updatingSpan.spanContext().spanId,
             'getSnapshotBeforeUpdate span is not a child of the updating span'
           );
-          assert.equal(
+          equal(
             componentDidUpdateSpan.parentSpanId,
             updatingSpan.spanContext().spanId,
             'componentDidUpdate span is not a child of the updating span'
           );
 
-          assert.strictEqual(
+          strictEqual(
             exportSpy.args.length,
             8,
             'total number of spans is wrong'
@@ -524,23 +518,23 @@ describe('ReactLoad Instrumentation', () => {
           const componentDidUpdateSpan: ReadableSpan = exportSpy.args[6][0][0];
           const updatingSpan: ReadableSpan = exportSpy.args[7][0][0];
 
-          assert.equal(
+          equal(
             updatingSpan.name,
             'reactLoad: updating',
             'updating span has wrong name'
           );
-          assert.equal(
+          equal(
             forceUpdateSpan.name,
             'forceUpdate()',
             'forceUpdate span has wrong name'
           );
-          assert.equal(renderSpan.name, 'render', 'render span has wrong name');
-          assert.equal(
+          equal(renderSpan.name, 'render', 'render span has wrong name');
+          equal(
             getSnapshotBeforeUpdateSpan.name,
             'getSnapshotBeforeUpdate',
             'getSnapshotBeforeUpdate span has wrong name'
           );
-          assert.equal(
+          equal(
             componentDidUpdateSpan.name,
             'componentDidUpdate',
             'componentDidUpdate span has wrong name'
@@ -549,7 +543,7 @@ describe('ReactLoad Instrumentation', () => {
 
         it('spans should have correct attributes', () => {
           const spans: [] = exportSpy.args;
-          assert.strictEqual(spans.length, 8, 'number of spans is wrong');
+          strictEqual(spans.length, 8, 'number of spans is wrong');
           spans.forEach(element => {
             const span: ReadableSpan = element[0][0];
             ensureSpanAttributesAreCorrect(span);
@@ -578,18 +572,18 @@ describe('ReactLoad Instrumentation', () => {
             exportSpy.args[3][0][0];
           const unmountingSpan: ReadableSpan = exportSpy.args[4][0][0];
 
-          assert.equal(
+          equal(
             unmountingSpan.parentSpanId,
             undefined,
             'unmounting span is should not have a parent'
           );
-          assert.equal(
+          equal(
             componentWillUnmountSpan.parentSpanId,
             unmountingSpan.spanContext().spanId,
             'componentWillUnmount span is not a child of the unmounting span'
           );
 
-          assert.strictEqual(
+          strictEqual(
             exportSpy.args.length,
             5,
             'total number of spans is wrong'
@@ -601,12 +595,12 @@ describe('ReactLoad Instrumentation', () => {
             exportSpy.args[3][0][0];
           const unmountingSpan: ReadableSpan = exportSpy.args[4][0][0];
 
-          assert.equal(
+          equal(
             unmountingSpan.name,
             'reactLoad: unmounting',
             'unmounting span has wrong name'
           );
-          assert.equal(
+          equal(
             componentWillUnmountSpan.name,
             'componentWillUnmount',
             'componentWillUnmount span has wrong name'
@@ -615,7 +609,7 @@ describe('ReactLoad Instrumentation', () => {
 
         it('spans should have correct attributes', () => {
           const spans: [] = exportSpy.args;
-          assert.strictEqual(spans.length, 5, 'number of spans is wrong');
+          strictEqual(spans.length, 5, 'number of spans is wrong');
           spans.forEach(element => {
             const span: ReadableSpan = element[0][0];
             ensureSpanAttributesAreCorrect(span);
@@ -650,27 +644,23 @@ describe('ReactLoad Instrumentation', () => {
       const shouldComponentUpdateSpan: ReadableSpan = exportSpy.args[4][0][0];
       const updatingSpan: ReadableSpan = exportSpy.args[5][0][0];
 
-      assert.equal(
+      equal(
         updatingSpan.parentSpanId,
         undefined,
         'updating span is should not have a parent'
       );
-      assert.equal(
+      equal(
         setStateSpan.parentSpanId,
         updatingSpan.spanContext().spanId,
         'setState span is not a child of the updating span'
       );
-      assert.equal(
+      equal(
         shouldComponentUpdateSpan.parentSpanId,
         updatingSpan.spanContext().spanId,
         'shouldComponentUpdate span is not a child of the updating span'
       );
 
-      assert.strictEqual(
-        exportSpy.args.length,
-        6,
-        'total number of spans is wrong'
-      );
+      strictEqual(exportSpy.args.length, 6, 'total number of spans is wrong');
     });
 
     it('spans should have correct name', () => {
@@ -678,17 +668,13 @@ describe('ReactLoad Instrumentation', () => {
       const shouldComponentUpdateSpan: ReadableSpan = exportSpy.args[4][0][0];
       const updatingSpan: ReadableSpan = exportSpy.args[5][0][0];
 
-      assert.equal(
+      equal(
         updatingSpan.name,
         'reactLoad: updating',
         'updating span has wrong name'
       );
-      assert.equal(
-        setStateSpan.name,
-        'setState()',
-        'setState span has wrong name'
-      );
-      assert.equal(
+      equal(setStateSpan.name, 'setState()', 'setState span has wrong name');
+      equal(
         shouldComponentUpdateSpan.name,
         'shouldComponentUpdate',
         'shouldComponentUpdate span has wrong name'
@@ -709,21 +695,21 @@ function ensureSpanAttributesAreCorrect(span: ReadableSpan) {
   const attributes = span.attributes;
   const keys = Object.keys(attributes);
 
-  assert.ok(
+  ok(
     attributes[keys[0]] !== '',
     `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
   );
 
-  assert.ok(
+  ok(
     attributes[keys[1]] !== '',
     `attributes ${AttributeNames.REACT_NAME} is not defined for span "${span.name}"`
   );
 
-  assert.ok(
+  ok(
     attributes[keys[2]] !== '',
     `attributes ${AttributeNames.REACT_STATE} is not defined for span "${span.name}"`
   );
-  assert.strictEqual(
+  strictEqual(
     keys.length,
     3,
     `number of attributes is wrong for span "${span.name}"`

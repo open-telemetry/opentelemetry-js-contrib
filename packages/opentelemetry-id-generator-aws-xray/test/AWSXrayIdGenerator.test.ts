@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as assert from 'assert';
-import * as sinon from 'sinon';
+import { ok, notStrictEqual } from 'assert';
+import { restore, stub } from 'sinon';
 
 import { INVALID_SPANID, INVALID_TRACEID } from '@opentelemetry/api';
 
@@ -35,28 +35,28 @@ describe('AwsXRayTraceId', () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    restore();
   });
 
   it('returns 32 character hex strings', () => {
-    assert.ok(traceId1.match(/[a-f0-9]{32}/));
-    assert.ok(!traceId1.match(/^0+$/));
+    ok(traceId1.match(/[a-f0-9]{32}/));
+    ok(!traceId1.match(/^0+$/));
   });
 
   it('returns different ids on each call', () => {
-    assert.notStrictEqual(traceId1, traceId2);
+    notStrictEqual(traceId1, traceId2);
   });
 
   it('using current time to encode trace id', () => {
-    assert.ok(currTime >= prevTime);
-    assert.ok(currTime <= nextTime);
+    ok(currTime >= prevTime);
+    ok(currTime <= nextTime);
   });
 
   it('should not be all zero', () => {
-    sinon.stub(Math, 'random').returns(0);
+    stub(Math, 'random').returns(0);
     const traceIdTemp = idGenerator.generateTraceId();
 
-    assert.notStrictEqual(traceIdTemp, INVALID_TRACEID);
+    notStrictEqual(traceIdTemp, INVALID_TRACEID);
   });
 });
 
@@ -69,22 +69,22 @@ describe('AwsXRaySpanId', () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    restore();
   });
 
   it('returns 16 character hex strings', () => {
-    assert.ok(spanId1.match(/[a-f0-9]{16}/));
-    assert.ok(!spanId1.match(/^0+$/));
+    ok(spanId1.match(/[a-f0-9]{16}/));
+    ok(!spanId1.match(/^0+$/));
   });
 
   it('returns different ids on each call', () => {
-    assert.notStrictEqual(spanId1, spanId2);
+    notStrictEqual(spanId1, spanId2);
   });
 
   it('should not be all zero', () => {
-    sinon.stub(Math, 'random').returns(0);
+    stub(Math, 'random').returns(0);
     const spanIdTemp = idGenerator.generateSpanId();
 
-    assert.notStrictEqual(spanIdTemp, INVALID_SPANID);
+    notStrictEqual(spanIdTemp, INVALID_SPANID);
   });
 });

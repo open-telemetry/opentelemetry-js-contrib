@@ -21,15 +21,14 @@ import {
 const instrumentation = registerInstrumentationTesting(
   new AwsInstrumentation()
 );
-import * as AWSv2 from 'aws-sdk';
+import { config, SNS } from 'aws-sdk';
 import { SNS as SNSv3 } from '@aws-sdk/client-sns';
-import * as fs from 'fs';
-import * as nock from 'nock';
+import { readFileSync } from 'fs';
 
 import { mockV2AwsSend } from './testing-utils';
 import { expect } from 'expect';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
-import * as sinon from 'sinon';
+import { spy } from 'sinon';
 import {
   MESSAGINGDESTINATIONKINDVALUES_TOPIC,
   SEMATTRS_MESSAGING_DESTINATION,
@@ -38,6 +37,7 @@ import {
   SEMATTRS_RPC_METHOD,
 } from '@opentelemetry/semantic-conventions';
 import { SpanKind } from '@opentelemetry/api';
+import nock = require('nock');
 
 const responseMockSuccess = {
   requestId: '0000000000000',
@@ -49,7 +49,7 @@ const fakeARN = `arn:aws:sns:region:000000000:${topicName}`;
 
 describe('SNS - v2', () => {
   before(() => {
-    AWSv2.config.credentials = {
+    config.credentials = {
       accessKeyId: 'test key id',
       expired: false,
       expireTime: new Date(),
@@ -66,7 +66,7 @@ describe('SNS - v2', () => {
 
   describe('publish', () => {
     it('topic arn', async () => {
-      const sns = new AWSv2.SNS();
+      const sns = new SNS();
 
       await sns
         .publish({
@@ -96,7 +96,7 @@ describe('SNS - v2', () => {
     });
 
     it('phone number', async () => {
-      const sns = new AWSv2.SNS();
+      const sns = new SNS();
       const PhoneNumber = 'my phone number';
       await sns
         .publish({
@@ -119,8 +119,8 @@ describe('SNS - v2', () => {
     });
 
     it('inject context propagation', async () => {
-      const sns = new AWSv2.SNS();
-      const hookSpy = sinon.spy(
+      const sns = new SNS();
+      const hookSpy = spy(
         (instrumentation['servicesExtensions'] as any)['services'].get('SNS'),
         'requestPostSpanHook'
       );
@@ -144,7 +144,7 @@ describe('SNS - v2', () => {
 
   describe('createTopic', () => {
     it('basic createTopic creates a valid span', async () => {
-      const sns = new AWSv2.SNS();
+      const sns = new SNS();
 
       const Name = 'my new topic';
       await sns.createTopic({ Name }).promise();
@@ -185,7 +185,7 @@ describe('SNS - v3', () => {
       .post('/')
       .reply(
         200,
-        fs.readFileSync('./test/mock-responses/sns-publish.xml', 'utf8')
+        readFileSync('./test/mock-responses/sns-publish.xml', 'utf8')
       );
   });
 

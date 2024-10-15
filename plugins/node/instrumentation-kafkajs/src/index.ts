@@ -14,5 +14,11 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { KafkaJsInstrumentation } from './instrumentation';
+export {
+  KafkajsMessage,
+  MessageInfo,
+  KafkaProducerCustomAttributeFunction,
+  KafkaConsumerCustomAttributeFunction,
+  KafkaJsInstrumentationConfig,
+} from './types';

@@ -31,9 +31,10 @@ import {
 import { Resource } from '@opentelemetry/resources';
 
 import * as path from 'path';
-import * as assert from 'assert';
+import { equal, deepEqual } from 'assert';
 import * as fs from 'fs';
 import * as semver from 'semver';
+import assert = require('assert');
 
 import { CucumberInstrumentation, AttributeNames } from '../src';
 
@@ -140,7 +141,7 @@ describe('CucumberInstrumentation', () => {
         const parent = spans.find(span => span.name.startsWith('Feature'));
         assert(parent, 'Expected a parent span');
 
-        assert.deepEqual(
+        deepEqual(
           spans.map(span => span.name),
           [
             'Before',
@@ -169,7 +170,7 @@ describe('CucumberInstrumentation', () => {
         const parent = spans.find(span => span.name.startsWith('Feature'));
         assert(parent, 'Expected a parent span');
 
-        assert.deepEqual(parent.attributes, {
+        deepEqual(parent.attributes, {
           [SEMATTRS_CODE_FILEPATH]: 'test/current.feature',
           [SEMATTRS_CODE_LINENO]: 7,
           [SEMATTRS_CODE_FUNCTION]: 'Button pushing',
@@ -192,7 +193,7 @@ describe('CucumberInstrumentation', () => {
         );
         assert(parameterisedSpan);
 
-        assert.deepEqual(parameterisedSpan.attributes, {
+        deepEqual(parameterisedSpan.attributes, {
           [`${AttributeNames.STEP_ARGS}[0]`]: 'limit',
         });
       });
@@ -204,7 +205,7 @@ describe('CucumberInstrumentation', () => {
         );
         assert(tableSpan);
 
-        assert.deepEqual(tableSpan.attributes, {
+        deepEqual(tableSpan.attributes, {
           [`${AttributeNames.STEP_ARGS}[0]`]: JSON.stringify([
             ['Cucumber', 'Cucumis sativus'],
             ['Burr Gherkin', 'Cucumis anguria'],
@@ -236,9 +237,9 @@ describe('CucumberInstrumentation', () => {
       it('has a scenario for every example', () => {
         const spans = memoryExporter.getFinishedSpans();
         const scenarios = spans.filter(span => span.name.startsWith('Feature'));
-        assert.equal(scenarios.length, 2);
+        equal(scenarios.length, 2);
 
-        assert.deepEqual(
+        deepEqual(
           scenarios.map(span => span.name),
           [
             'Feature: Examples. Scenario: passing button pushing',
@@ -252,7 +253,7 @@ describe('CucumberInstrumentation', () => {
         const span = spans.find(span => span.name === 'Given(a failing step)');
         assert(span);
 
-        assert.equal(span.status.code, SpanStatusCode.ERROR);
+        equal(span.status.code, SpanStatusCode.ERROR);
       });
     });
 
@@ -279,9 +280,9 @@ describe('CucumberInstrumentation', () => {
           const attemptSpans = spans.filter(span =>
             span.name.startsWith('Attempt')
           );
-          assert.equal(attemptSpans.length, 3);
+          equal(attemptSpans.length, 3);
 
-          assert.deepEqual(
+          deepEqual(
             attemptSpans.map(span => span.parentSpanId),
             Array(3).fill(parent.spanContext().spanId)
           );
@@ -292,10 +293,10 @@ describe('CucumberInstrumentation', () => {
           const attemptSpans = spans.filter(span =>
             span.name.startsWith('Attempt')
           );
-          assert.equal(attemptSpans.length, 3);
+          equal(attemptSpans.length, 3);
 
           attemptSpans.forEach(attempt => {
-            assert.equal(
+            equal(
               spans.filter(
                 span => span.parentSpanId === attempt.spanContext().spanId
               ).length,
@@ -326,7 +327,7 @@ describe('CucumberInstrumentation', () => {
 
         const span = spans.find(span => span.name.startsWith('Given(a doc'));
         assert(span);
-        assert.deepEqual(span.attributes, {
+        deepEqual(span.attributes, {
           [`${AttributeNames.STEP_ARGS}[0]`]:
             'The cucumber (Cucumis sativus) is a widely cultivated plant in the gourd family Cucurbitaceae.',
         });
@@ -355,7 +356,7 @@ describe('CucumberInstrumentation', () => {
 
         const span = spans.find(span => span.name.startsWith('Given(a doc'));
         assert(span);
-        assert.deepEqual(span.attributes, {
+        deepEqual(span.attributes, {
           [`${AttributeNames.STEP_ARGS}[0]`]: 'This is a background',
         });
       });
@@ -375,9 +376,9 @@ describe('CucumberInstrumentation', () => {
             span.name.includes(`Fails ${hook}`)
           );
           assert(parent);
-          assert.equal(parent.status.code, SpanStatusCode.ERROR);
-          assert.equal(parent.status.message, 'FAILED');
-          assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'FAILED');
+          equal(parent.status.code, SpanStatusCode.ERROR);
+          equal(parent.status.message, 'FAILED');
+          equal(parent.attributes[AttributeNames.STEP_STATUS], 'FAILED');
 
           const span = spans.find(
             span =>
@@ -386,7 +387,7 @@ describe('CucumberInstrumentation', () => {
           );
           assert(span);
 
-          assert.equal(span.status.code, SpanStatusCode.ERROR);
+          equal(span.status.code, SpanStatusCode.ERROR);
         });
       });
     });
@@ -406,25 +407,19 @@ describe('CucumberInstrumentation', () => {
         const spans = memoryExporter.getFinishedSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
-        assert.equal(parent.status.code, SpanStatusCode.ERROR);
-        assert.equal(parent.status.message, 'UNDEFINED');
-        assert.equal(
-          parent.attributes[AttributeNames.STEP_STATUS],
-          'UNDEFINED'
-        );
+        equal(parent.status.code, SpanStatusCode.ERROR);
+        equal(parent.status.message, 'UNDEFINED');
+        equal(parent.attributes[AttributeNames.STEP_STATUS], 'UNDEFINED');
 
         const span = spans.find(span => span.name.startsWith('an undefined'));
         assert(span);
-        assert.equal(span.status.code, SpanStatusCode.ERROR);
-        assert.equal(span.status.message, 'UNDEFINED');
-        assert.equal(span.attributes[AttributeNames.STEP_STATUS], 'UNDEFINED');
+        equal(span.status.code, SpanStatusCode.ERROR);
+        equal(span.status.message, 'UNDEFINED');
+        equal(span.attributes[AttributeNames.STEP_STATUS], 'UNDEFINED');
 
         const skippedSpan = spans.find(span => span.name === 'does nothing');
         assert(skippedSpan);
-        assert.equal(
-          skippedSpan.attributes[AttributeNames.STEP_STATUS],
-          'SKIPPED'
-        );
+        equal(skippedSpan.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
       });
     });
 
@@ -442,18 +437,15 @@ describe('CucumberInstrumentation', () => {
         const spans = memoryExporter.getFinishedSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
-        assert.equal(parent.status.code, SpanStatusCode.ERROR);
-        assert.equal(parent.status.message, 'AMBIGUOUS');
-        assert.equal(
-          parent.attributes[AttributeNames.STEP_STATUS],
-          'AMBIGUOUS'
-        );
+        equal(parent.status.code, SpanStatusCode.ERROR);
+        equal(parent.status.message, 'AMBIGUOUS');
+        equal(parent.attributes[AttributeNames.STEP_STATUS], 'AMBIGUOUS');
 
         const span = spans.find(span => span.name.startsWith('an ambiguous'));
         assert(span);
 
-        assert.equal(span.status.code, SpanStatusCode.ERROR);
-        assert.equal(
+        equal(span.status.code, SpanStatusCode.ERROR);
+        equal(
           span.status.message?.split('\n')[0],
           'Multiple step definitions match:'
         );
@@ -472,11 +464,11 @@ describe('CucumberInstrumentation', () => {
         const spans = memoryExporter.getFinishedSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
-        assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
+        equal(parent.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
 
         const span = spans.find(span => span.name.startsWith('a skipped step'));
         assert(span);
-        assert.equal(span.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
+        equal(span.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
       });
 
       it('adds skipped event to skipped steps in before hook', async () => {
@@ -496,7 +488,7 @@ describe('CucumberInstrumentation', () => {
             )?.includes?.('@skip')
         );
         assert(parent);
-        assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
+        equal(parent.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
       });
     });
 
@@ -512,11 +504,11 @@ describe('CucumberInstrumentation', () => {
         const spans = memoryExporter.getFinishedSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
-        assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'PENDING');
+        equal(parent.attributes[AttributeNames.STEP_STATUS], 'PENDING');
 
         const span = spans.find(span => span.name.startsWith('a pending step'));
         assert(span);
-        assert.equal(span.attributes[AttributeNames.STEP_STATUS], 'PENDING');
+        equal(span.attributes[AttributeNames.STEP_STATUS], 'PENDING');
       });
 
       it('adds pending event to pending steps in before hook', async () => {
@@ -530,13 +522,13 @@ describe('CucumberInstrumentation', () => {
         const spans = memoryExporter.getFinishedSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
-        assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'PENDING');
+        equal(parent.attributes[AttributeNames.STEP_STATUS], 'PENDING');
 
         const span = spans.find(span =>
           span.name.startsWith('I push the button')
         );
         assert(span);
-        assert.equal(span.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
+        equal(span.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
       });
     });
   });
@@ -558,7 +550,7 @@ describe('CucumberInstrumentation', () => {
           Then no spans are recorded
       `);
       const spans = memoryExporter.getFinishedSpans();
-      assert.equal(spans.length, 0);
+      equal(spans.length, 0);
     });
   });
 });

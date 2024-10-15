@@ -1,11 +1,11 @@
 'use strict';
 
-import * as api from '@opentelemetry/api';
+import {trace, context,ROOT_CONTEXT,SpanKind,SpanStatusCode,Tracer} from '@opentelemetry/api';
 
-export function getMiddlewareTracer(tracer: api.Tracer) {
+export function getMiddlewareTracer(tracer: Tracer) {
   return (req: any, res: any, next: any) => {
     const span = tracer.startSpan(`express.middleware.tracer(${req.method} ${req.path})`, {
-      kind: api.SpanKind.SERVER,
+      kind: SpanKind.SERVER,
     });
 
     // End this span before sending out the response
@@ -15,17 +15,17 @@ export function getMiddlewareTracer(tracer: api.Tracer) {
       originalSend.apply(res, args);
     };
 
-    api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), next);
+    context.with(trace.setSpan(ROOT_CONTEXT, span), next);
   };
 }
 
-export function getErrorTracer(tracer: api.Tracer) {
+export function getErrorTracer(tracer: Tracer) {
   return (err: any, _req: any, res: any, _next: any) => {
     console.error('Caught error', err.message);
-    const span = api.trace.getSpan(api.context.active())
+    const span = trace.getSpan(context.active())
 
     if (span) {
-      span.setStatus({ code: api.SpanStatusCode.ERROR, message: err.message });
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
     }
     res.status(500).send(err.message);
   };

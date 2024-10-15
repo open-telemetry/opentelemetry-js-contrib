@@ -14,5 +14,12 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { MongoDBInstrumentation } from './instrumentation';
+export {
+  MongoDBInstrumentationExecutionResponseHook,
+  DbStatementSerializer,
+  MongoDBInstrumentationConfig,
+  MongoResponseHookInformation,
+  CommandResult,
+  MongodbCommandType,
+} from './types';

@@ -14,5 +14,9 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { RedisInstrumentation } from './instrumentation';
+export {
+  DbStatementSerializer,
+  RedisResponseCustomAttributeFunction,
+  RedisInstrumentationConfig,
+} from './types';

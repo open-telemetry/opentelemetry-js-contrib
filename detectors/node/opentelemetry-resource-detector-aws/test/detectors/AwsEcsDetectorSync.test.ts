@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
-import * as nock from 'nock';
-import * as sinon from 'sinon';
+import { Scope } from 'nock';
+import { ok, strictEqual, deepEqual, deepStrictEqual } from 'assert';
+import { restore, assert, stub } from 'sinon';
 import { awsEcsDetectorSync, AwsEcsDetectorSync } from '../../src';
 import {
   assertEmptyResource,
@@ -44,6 +44,7 @@ import { SemanticResourceAttributes as AdditionalSemanticResourceAttributes } fr
 import { readFileSync } from 'fs';
 import * as os from 'os';
 import { join } from 'path';
+import nock = require('nock');
 
 interface EcsResourceAttributes {
   readonly accountId?: string;
@@ -71,61 +72,61 @@ const assertEcsResource = (
     region: validations.region,
     zone: validations.zone,
   });
-  assert.strictEqual(
+  strictEqual(
     resource.attributes[SEMRESATTRS_CLOUD_PLATFORM],
     CLOUDPLATFORMVALUES_AWS_ECS
   );
   if (validations.containerArn)
-    assert.strictEqual(
+    strictEqual(
       resource.attributes[SEMRESATTRS_AWS_ECS_CONTAINER_ARN],
       validations.containerArn
     );
-  assert.strictEqual(
+  strictEqual(
     resource.attributes[AdditionalSemanticResourceAttributes.CLOUD_RESOURCE_ID],
     validations.containerArn
   );
   if (validations.clusterArn)
-    assert.strictEqual(
+    strictEqual(
       resource.attributes[SEMRESATTRS_AWS_ECS_CLUSTER_ARN],
       validations.clusterArn
     );
   if (validations.launchType)
-    assert.strictEqual(
+    strictEqual(
       resource.attributes[SEMRESATTRS_AWS_ECS_LAUNCHTYPE],
       validations.launchType
     );
   if (validations.taskArn)
-    assert.strictEqual(
+    strictEqual(
       resource.attributes[SEMRESATTRS_AWS_ECS_TASK_ARN],
       validations.taskArn
     );
   if (validations.taskFamily)
-    assert.strictEqual(
+    strictEqual(
       resource.attributes[SEMRESATTRS_AWS_ECS_TASK_FAMILY],
       validations.taskFamily
     );
   if (validations.taskRevision)
-    assert.strictEqual(
+    strictEqual(
       resource.attributes[SEMRESATTRS_AWS_ECS_TASK_REVISION],
       validations.taskRevision
     );
   if (validations.logGroupNames)
-    assert.deepEqual(
+    deepEqual(
       resource.attributes[SEMRESATTRS_AWS_LOG_GROUP_NAMES],
       validations.logGroupNames
     );
   if (validations.logGroupArns)
-    assert.deepEqual(
+    deepEqual(
       resource.attributes[SEMRESATTRS_AWS_LOG_GROUP_ARNS],
       validations.logGroupArns
     );
   if (validations.logStreamNames)
-    assert.deepEqual(
+    deepEqual(
       resource.attributes[SEMRESATTRS_AWS_LOG_STREAM_NAMES],
       validations.logStreamNames
     );
   if (validations.logStreamArns)
-    assert.deepEqual(
+    deepEqual(
       resource.attributes[SEMRESATTRS_AWS_LOG_STREAM_ARNS],
       validations.logStreamArns
     );
@@ -152,21 +153,21 @@ describe('AwsEcsResourceDetectorSync', () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    restore();
   });
 
   it('should successfully return resource data with noisy cgroup file', async () => {
     process.env.ECS_CONTAINER_METADATA_URI = 'ecs_metadata_v3_uri';
-    sinon.stub(os, 'hostname').returns(hostNameData);
-    readStub = sinon
-      .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
-      .resolves(noisyCgroupData);
+    stub(os, 'hostname').returns(hostNameData);
+    readStub = stub(AwsEcsDetectorSync, 'readFileAsync' as any).resolves(
+      noisyCgroupData
+    );
 
     const resource = awsEcsDetectorSync.detect();
     await resource.waitForAsyncAttributes?.();
 
-    sinon.assert.calledOnce(readStub);
-    assert.ok(resource);
+    assert.calledOnce(readStub);
+    ok(resource);
     assertEcsResource(resource, {});
     assertContainerResource(resource, {
       name: 'abcd.test.testing.com',
@@ -176,16 +177,16 @@ describe('AwsEcsResourceDetectorSync', () => {
 
   it('should always return first valid line of data', async () => {
     process.env.ECS_CONTAINER_METADATA_URI = 'ecs_metadata_v3_uri';
-    sinon.stub(os, 'hostname').returns(hostNameData);
-    readStub = sinon
-      .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
-      .resolves(multiValidCgroupData);
+    stub(os, 'hostname').returns(hostNameData);
+    readStub = stub(AwsEcsDetectorSync, 'readFileAsync' as any).resolves(
+      multiValidCgroupData
+    );
 
     const resource = awsEcsDetectorSync.detect();
     await resource.waitForAsyncAttributes?.();
 
-    sinon.assert.calledOnce(readStub);
-    assert.ok(resource);
+    assert.calledOnce(readStub);
+    ok(resource);
     assertEcsResource(resource, {});
     assertContainerResource(resource, {
       name: 'abcd.test.testing.com',
@@ -194,16 +195,16 @@ describe('AwsEcsResourceDetectorSync', () => {
   });
 
   it('should empty resource without accessing files', async () => {
-    sinon.stub(os, 'hostname').returns(hostNameData);
-    readStub = sinon
-      .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
-      .resolves(correctCgroupData);
+    stub(os, 'hostname').returns(hostNameData);
+    readStub = stub(AwsEcsDetectorSync, 'readFileAsync' as any).resolves(
+      correctCgroupData
+    );
 
     const resource = awsEcsDetectorSync.detect();
     await resource.waitForAsyncAttributes?.();
 
-    sinon.assert.notCalled(readStub);
-    assert.ok(resource);
+    assert.notCalled(readStub);
+    ok(resource);
     assertEmptyResource(resource);
   });
 
@@ -220,7 +221,7 @@ describe('AwsEcsResourceDetectorSync', () => {
         resourceAttributes: EcsResourceAttributes,
         suffix = ''
       ) {
-        let nockScope: nock.Scope;
+        let nockScope: Scope;
 
         beforeEach(() => {
           function readTestFileName(testFileName: string) {
@@ -254,16 +255,16 @@ describe('AwsEcsResourceDetectorSync', () => {
         });
 
         it('should successfully return resource data', async () => {
-          sinon.stub(os, 'hostname').returns(hostNameData);
-          readStub = sinon
-            .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
-            .resolves(correctCgroupData);
+          stub(os, 'hostname').returns(hostNameData);
+          readStub = stub(AwsEcsDetectorSync, 'readFileAsync' as any).resolves(
+            correctCgroupData
+          );
 
           const resource = awsEcsDetectorSync.detect();
           await resource.waitForAsyncAttributes?.();
 
-          sinon.assert.calledOnce(readStub);
-          assert.ok(resource);
+          assert.calledOnce(readStub);
+          ok(resource);
           assertEcsResource(resource, resourceAttributes);
           assertContainerResource(resource, {
             name: 'abcd.test.testing.com',
@@ -272,16 +273,16 @@ describe('AwsEcsResourceDetectorSync', () => {
         });
 
         it('should return resource only with hostname attribute without cgroup file', async () => {
-          sinon.stub(os, 'hostname').returns(hostNameData);
-          readStub = sinon
-            .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
-            .rejects(errorMsg.fileNotFoundError);
+          stub(os, 'hostname').returns(hostNameData);
+          readStub = stub(AwsEcsDetectorSync, 'readFileAsync' as any).rejects(
+            errorMsg.fileNotFoundError
+          );
 
           const resource = awsEcsDetectorSync.detect();
           await resource.waitForAsyncAttributes?.();
 
-          sinon.assert.calledOnce(readStub);
-          assert.ok(resource);
+          assert.calledOnce(readStub);
+          ok(resource);
           assertEcsResource(resource, resourceAttributes);
           assertContainerResource(resource, {
             name: 'abcd.test.testing.com',
@@ -289,16 +290,16 @@ describe('AwsEcsResourceDetectorSync', () => {
         });
 
         it('should return resource only with hostname attribute when cgroup file does not contain valid container ID', async () => {
-          sinon.stub(os, 'hostname').returns(hostNameData);
-          readStub = sinon
-            .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
-            .resolves('');
+          stub(os, 'hostname').returns(hostNameData);
+          readStub = stub(AwsEcsDetectorSync, 'readFileAsync' as any).resolves(
+            ''
+          );
 
           const resource = awsEcsDetectorSync.detect();
           await resource.waitForAsyncAttributes?.();
 
-          sinon.assert.calledOnce(readStub);
-          assert.ok(resource);
+          assert.calledOnce(readStub);
+          ok(resource);
           assertEcsResource(resource, resourceAttributes);
           assertContainerResource(resource, {
             name: 'abcd.test.testing.com',
@@ -306,16 +307,16 @@ describe('AwsEcsResourceDetectorSync', () => {
         });
 
         it('should return resource only with container ID attribute without hostname', async () => {
-          sinon.stub(os, 'hostname').returns('');
-          readStub = sinon
-            .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
-            .resolves(correctCgroupData);
+          stub(os, 'hostname').returns('');
+          readStub = stub(AwsEcsDetectorSync, 'readFileAsync' as any).resolves(
+            correctCgroupData
+          );
 
           const resource = awsEcsDetectorSync.detect();
           await resource.waitForAsyncAttributes?.();
 
-          sinon.assert.calledOnce(readStub);
-          assert.ok(resource);
+          assert.calledOnce(readStub);
+          ok(resource);
           assertEcsResource(resource, resourceAttributes);
           assertContainerResource(resource, {
             id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
@@ -323,16 +324,16 @@ describe('AwsEcsResourceDetectorSync', () => {
         });
 
         it('should return metadata v4 resource attributes when both hostname and container ID are invalid', async () => {
-          sinon.stub(os, 'hostname').returns('');
-          readStub = sinon
-            .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
-            .rejects(errorMsg.fileNotFoundError);
+          stub(os, 'hostname').returns('');
+          readStub = stub(AwsEcsDetectorSync, 'readFileAsync' as any).rejects(
+            errorMsg.fileNotFoundError
+          );
 
           const resource = awsEcsDetectorSync.detect();
           await resource.waitForAsyncAttributes?.();
 
-          sinon.assert.calledOnce(readStub);
-          assert.ok(resource);
+          assert.calledOnce(readStub);
+          ok(resource);
           assertEcsResource(resource, resourceAttributes);
         });
       }
@@ -411,14 +412,14 @@ describe('AwsEcsResourceDetectorSync', () => {
       const error = new Error('ERROR');
 
       beforeEach(() => {
-        sinon.stub(AwsEcsDetectorSync, '_getUrlAsJson' as any).rejects(error);
+        stub(AwsEcsDetectorSync, '_getUrlAsJson' as any).rejects(error);
       });
 
       it('should return empty resource if when there is an error', async () => {
         const resource = awsEcsDetectorSync.detect();
         await resource.waitForAsyncAttributes?.();
 
-        assert.deepStrictEqual(resource.attributes, {});
+        deepStrictEqual(resource.attributes, {});
       });
     });
   });

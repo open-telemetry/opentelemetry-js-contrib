@@ -19,7 +19,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { isWrapped } from '@opentelemetry/instrumentation';
-import * as assert from 'assert';
+import { strictEqual } from 'assert';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { NetInstrumentation } from '../src';
 import * as Sinon from 'sinon';
@@ -40,7 +40,7 @@ describe('NetInstrumentation', () => {
     instrumentation = new NetInstrumentation();
     instrumentation.setTracerProvider(provider);
     require('net');
-    assert.strictEqual(isWrapped(net.Socket.prototype.connect), true);
+    strictEqual(isWrapped(net.Socket.prototype.connect), true);
   });
 
   before(done => {
@@ -66,9 +66,9 @@ describe('NetInstrumentation', () => {
       instrumentation.disable();
       socket = net.connect(PORT, HOST, () => {
         const spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans.length, 0);
-        assert.strictEqual(isWrapped(net.Socket.prototype.connect), false);
-        assert.strictEqual((tracer.startSpan as sinon.SinonSpy).called, false);
+        strictEqual(spans.length, 0);
+        strictEqual(isWrapped(net.Socket.prototype.connect), false);
+        strictEqual((tracer.startSpan as sinon.SinonSpy).called, false);
         done();
       });
     });

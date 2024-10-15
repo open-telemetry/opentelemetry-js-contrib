@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
-export * from './enums/AttributeNames';
+export { PgInstrumentation } from './instrumentation';
+export {
+  PgResponseHookInformation,
+  PgInstrumentationExecutionResponseHook,
+  PgRequestHookInformation,
+  PgInstrumentationExecutionRequestHook,
+  PgInstrumentationConfig,
+} from './types';
+export { AttributeNames } from './enums/AttributeNames';

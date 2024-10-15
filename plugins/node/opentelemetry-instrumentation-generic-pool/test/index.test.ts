@@ -27,7 +27,7 @@ const plugin = new GenericPoolInstrumentation();
 
 import * as util from 'util';
 import * as genericPool from 'generic-pool';
-import * as assert from 'assert';
+import { strictEqual } from 'assert';
 import * as semver from 'semver';
 
 const CLIENT = '_client_';
@@ -81,7 +81,7 @@ describe('GenericPool instrumentation', () => {
     acquire = createPool();
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 
   afterEach(() => {
@@ -91,30 +91,30 @@ describe('GenericPool instrumentation', () => {
   });
 
   it('should create a span for acquire', async () => {
-    assert.strictEqual(await acquire(), CLIENT);
+    strictEqual(await acquire(), CLIENT);
     const [span] = memoryExporter.getFinishedSpans();
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-    assert.strictEqual(span.name, 'generic-pool.acquire');
+    strictEqual(memoryExporter.getFinishedSpans().length, 1);
+    strictEqual(span.name, 'generic-pool.acquire');
   });
 
   it('should attach it to the parent span', async () => {
     const rootSpan: any = tracer.startSpan('clientSpan');
 
     await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-      assert.strictEqual(await acquire(), CLIENT);
+      strictEqual(await acquire(), CLIENT);
       rootSpan.end();
 
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+      strictEqual(memoryExporter.getFinishedSpans().length, 2);
 
       const [span] = memoryExporter.getFinishedSpans();
-      assert.strictEqual(span.name, 'generic-pool.acquire');
-      assert.strictEqual(span.parentSpanId, rootSpan.spanContext().spanId);
+      strictEqual(span.name, 'generic-pool.acquire');
+      strictEqual(span.parentSpanId, rootSpan.spanContext().spanId);
     });
   });
 
   it('should not create anything if disabled', async () => {
     plugin.disable();
-    assert.strictEqual(await acquire(), CLIENT);
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    strictEqual(await acquire(), CLIENT);
+    strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 });

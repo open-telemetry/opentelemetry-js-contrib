@@ -21,7 +21,7 @@ import {
 } from '@opentelemetry/contrib-test-utils';
 import { RedisInstrumentation } from '../src';
 import type { MultiErrorReply } from '../src/internal-types';
-import * as assert from 'assert';
+import { strictEqual, ok, rejects, deepStrictEqual, fail } from 'assert';
 
 import {
   redisTestConfig,
@@ -94,48 +94,48 @@ describe('redis@^4.0.0', () => {
     it('simple set and get', async () => {
       await client.set('key', 'value');
       const value = await client.get('key');
-      assert.strictEqual(value, 'value'); // verify we did not screw up the normal functionality
+      strictEqual(value, 'value'); // verify we did not screw up the normal functionality
 
       const spans = getTestSpans();
-      assert.strictEqual(spans.length, 2);
+      strictEqual(spans.length, 2);
 
       const setSpan = spans.find(s => s.name.includes('SET'));
-      assert.ok(setSpan);
-      assert.strictEqual(setSpan?.kind, SpanKind.CLIENT);
-      assert.strictEqual(setSpan?.name, 'redis-SET');
-      assert.strictEqual(setSpan?.attributes[SEMATTRS_DB_SYSTEM], 'redis');
-      assert.strictEqual(
+      ok(setSpan);
+      strictEqual(setSpan?.kind, SpanKind.CLIENT);
+      strictEqual(setSpan?.name, 'redis-SET');
+      strictEqual(setSpan?.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+      strictEqual(
         setSpan?.attributes[SEMATTRS_DB_STATEMENT],
         'SET key [1 other arguments]'
       );
-      assert.strictEqual(
+      strictEqual(
         setSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
-      assert.strictEqual(
+      strictEqual(
         setSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
-      assert.strictEqual(
+      strictEqual(
         setSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
       );
 
       const getSpan = spans.find(s => s.name.includes('GET'));
-      assert.ok(getSpan);
-      assert.strictEqual(getSpan?.kind, SpanKind.CLIENT);
-      assert.strictEqual(getSpan?.name, 'redis-GET');
-      assert.strictEqual(getSpan?.attributes[SEMATTRS_DB_SYSTEM], 'redis');
-      assert.strictEqual(getSpan?.attributes[SEMATTRS_DB_STATEMENT], 'GET key');
-      assert.strictEqual(
+      ok(getSpan);
+      strictEqual(getSpan?.kind, SpanKind.CLIENT);
+      strictEqual(getSpan?.name, 'redis-GET');
+      strictEqual(getSpan?.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+      strictEqual(getSpan?.attributes[SEMATTRS_DB_STATEMENT], 'GET key');
+      strictEqual(
         getSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
-      assert.strictEqual(
+      strictEqual(
         getSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
-      assert.strictEqual(
+      strictEqual(
         getSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
       );
@@ -143,20 +143,20 @@ describe('redis@^4.0.0', () => {
 
     it('send general command', async () => {
       const res = await client.sendCommand(['SET', 'key', 'value']);
-      assert.strictEqual(res, 'OK'); // verify we did not screw up the normal functionality
+      strictEqual(res, 'OK'); // verify we did not screw up the normal functionality
 
       const [setSpan] = getTestSpans();
 
-      assert.ok(setSpan);
-      assert.strictEqual(
+      ok(setSpan);
+      strictEqual(
         setSpan?.attributes[SEMATTRS_DB_STATEMENT],
         'SET key [1 other arguments]'
       );
-      assert.strictEqual(
+      strictEqual(
         setSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
-      assert.strictEqual(
+      strictEqual(
         setSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
@@ -164,13 +164,13 @@ describe('redis@^4.0.0', () => {
 
     it('command with error', async () => {
       await client.set('string-key', 'string-value');
-      await assert.rejects(async () => await client.incr('string-key'));
+      await rejects(async () => await client.incr('string-key'));
 
       const [_setSpan, incrSpan] = getTestSpans();
 
-      assert.ok(incrSpan);
-      assert.strictEqual(incrSpan?.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(
+      ok(incrSpan);
+      strictEqual(incrSpan?.status.code, SpanStatusCode.ERROR);
+      strictEqual(
         incrSpan?.status.message,
         'ERR value is not an integer or out of range'
       );
@@ -178,8 +178,8 @@ describe('redis@^4.0.0', () => {
       const exceptions = incrSpan.events.filter(
         event => event.name === 'exception'
       );
-      assert.strictEqual(exceptions.length, 1);
-      assert.strictEqual(
+      strictEqual(exceptions.length, 1);
+      strictEqual(
         exceptions?.[0].attributes?.[SEMATTRS_EXCEPTION_MESSAGE],
         'ERR value is not an integer or out of range'
       );
@@ -200,21 +200,18 @@ describe('redis@^4.0.0', () => {
 
       const [span] = getTestSpans();
 
-      assert.strictEqual(span.name, 'redis-connect');
+      strictEqual(span.name, 'redis-connect');
 
-      assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
-      assert.strictEqual(
+      strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+      strictEqual(
         span.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
-      assert.strictEqual(
-        span.attributes[SEMATTRS_DB_CONNECTION_STRING],
-        redisTestUrl
-      );
+      strictEqual(span.attributes[SEMATTRS_DB_CONNECTION_STRING], redisTestUrl);
     });
 
     it('sets error status on connection failure', async () => {
@@ -225,16 +222,13 @@ describe('redis@^4.0.0', () => {
         url: redisURL,
       });
 
-      await assert.rejects(newClient.connect());
+      await rejects(newClient.connect());
 
       const [span] = getTestSpans();
 
-      assert.strictEqual(span.name, 'redis-connect');
-      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(
-        span.attributes[SEMATTRS_DB_CONNECTION_STRING],
-        redisURL
-      );
+      strictEqual(span.name, 'redis-connect');
+      strictEqual(span.status.code, SpanStatusCode.ERROR);
+      strictEqual(span.attributes[SEMATTRS_DB_CONNECTION_STRING], redisURL);
     });
 
     it('omits basic auth from DB_CONNECTION_STRING span attribute', async () => {
@@ -248,17 +242,17 @@ describe('redis@^4.0.0', () => {
         url: redisURL,
       });
 
-      await assert.rejects(newClient.connect());
+      await rejects(newClient.connect());
 
       const [span] = getTestSpans();
 
-      assert.strictEqual(span.name, 'redis-connect');
-      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(
+      strictEqual(span.name, 'redis-connect');
+      strictEqual(span.status.code, SpanStatusCode.ERROR);
+      strictEqual(
         span.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes[SEMATTRS_DB_CONNECTION_STRING],
         expectAttributeConnString
       );
@@ -275,17 +269,17 @@ describe('redis@^4.0.0', () => {
         url: redisURL,
       });
 
-      await assert.rejects(newClient.connect());
+      await rejects(newClient.connect());
 
       const [span] = getTestSpans();
 
-      assert.strictEqual(span.name, 'redis-connect');
-      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(
+      strictEqual(span.name, 'redis-connect');
+      strictEqual(span.status.code, SpanStatusCode.ERROR);
+      strictEqual(
         span.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes[SEMATTRS_DB_CONNECTION_STRING],
         expectAttributeConnString
       );
@@ -317,8 +311,8 @@ describe('redis@^4.0.0', () => {
       await newClient.disconnect();
 
       const [span] = getTestSpans();
-      assert.strictEqual(span.name, 'redis-connect');
-      assert.strictEqual(diagErrors.length, 0, "no diag.error's");
+      strictEqual(span.name, 'redis-connect');
+      strictEqual(diagErrors.length, 0, "no diag.error's");
     });
   });
 
@@ -331,47 +325,47 @@ describe('redis@^4.0.0', () => {
         .get('another-key')
         .exec(); // ['OK', 'another-value']
 
-      assert.strictEqual(setKeyReply, 'OK'); // verify we did not screw up the normal functionality
-      assert.strictEqual(otherKeyValue, 'another-value'); // verify we did not screw up the normal functionality
+      strictEqual(setKeyReply, 'OK'); // verify we did not screw up the normal functionality
+      strictEqual(otherKeyValue, 'another-value'); // verify we did not screw up the normal functionality
 
       const [setSpan, multiSetSpan, multiGetSpan] = getTestSpans();
 
-      assert.ok(setSpan);
+      ok(setSpan);
 
-      assert.ok(multiSetSpan);
-      assert.strictEqual(multiSetSpan.name, 'redis-SET');
-      assert.strictEqual(
+      ok(multiSetSpan);
+      strictEqual(multiSetSpan.name, 'redis-SET');
+      strictEqual(
         multiSetSpan.attributes[SEMATTRS_DB_STATEMENT],
         'SET key [1 other arguments]'
       );
-      assert.strictEqual(
+      strictEqual(
         multiSetSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
-      assert.strictEqual(
+      strictEqual(
         multiSetSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
-      assert.strictEqual(
+      strictEqual(
         multiSetSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
       );
 
-      assert.ok(multiGetSpan);
-      assert.strictEqual(multiGetSpan.name, 'redis-GET');
-      assert.strictEqual(
+      ok(multiGetSpan);
+      strictEqual(multiGetSpan.name, 'redis-GET');
+      strictEqual(
         multiGetSpan.attributes[SEMATTRS_DB_STATEMENT],
         'GET another-key'
       );
-      assert.strictEqual(
+      strictEqual(
         multiGetSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
-      assert.strictEqual(
+      strictEqual(
         multiGetSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
-      assert.strictEqual(
+      strictEqual(
         multiGetSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
       );
@@ -382,23 +376,23 @@ describe('redis@^4.0.0', () => {
         .multi()
         .addCommand(['SET', 'key', 'value'])
         .exec();
-      assert.strictEqual(setReply, 'OK'); // verify we did not screw up the normal functionality
+      strictEqual(setReply, 'OK'); // verify we did not screw up the normal functionality
 
       const [multiSetSpan] = getTestSpans();
-      assert.ok(multiSetSpan);
-      assert.strictEqual(
+      ok(multiSetSpan);
+      strictEqual(
         multiSetSpan.attributes[SEMATTRS_DB_STATEMENT],
         'SET key [1 other arguments]'
       );
-      assert.strictEqual(
+      strictEqual(
         multiSetSpan?.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
-      assert.strictEqual(
+      strictEqual(
         multiSetSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
-      assert.strictEqual(
+      strictEqual(
         multiSetSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
       );
@@ -415,17 +409,17 @@ describe('redis@^4.0.0', () => {
       }
       const [setReply, incrReply] = replies;
 
-      assert.strictEqual(setReply, 'OK'); // verify we did not screw up the normal functionality
-      assert.ok(incrReply instanceof Error); // verify we did not screw up the normal functionality
+      strictEqual(setReply, 'OK'); // verify we did not screw up the normal functionality
+      ok(incrReply instanceof Error); // verify we did not screw up the normal functionality
 
       const [multiSetSpan, multiIncrSpan] = getTestSpans();
 
-      assert.ok(multiSetSpan);
-      assert.strictEqual(multiSetSpan.status.code, SpanStatusCode.UNSET);
+      ok(multiSetSpan);
+      strictEqual(multiSetSpan.status.code, SpanStatusCode.UNSET);
 
-      assert.ok(multiIncrSpan);
-      assert.strictEqual(multiIncrSpan.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(
+      ok(multiIncrSpan);
+      strictEqual(multiIncrSpan.status.code, SpanStatusCode.ERROR);
+      strictEqual(
         multiIncrSpan.status.message,
         'ERR value is not an integer or out of range'
       );
@@ -437,15 +431,15 @@ describe('redis@^4.0.0', () => {
       await client.set(watchedKey, 'a different value');
       try {
         await client.multi().get(watchedKey).exec();
-        assert.fail('expected WatchError to be thrown and caught in try/catch');
+        fail('expected WatchError to be thrown and caught in try/catch');
       } catch (error) {
-        assert.ok(error instanceof WatchError);
+        ok(error instanceof WatchError);
       }
 
       // All the multi spans' status are set to ERROR.
       const [_watchSpan, _setSpan, multiGetSpan] = getTestSpans();
-      assert.strictEqual(multiGetSpan?.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(
+      strictEqual(multiGetSpan?.status.code, SpanStatusCode.ERROR);
+      strictEqual(
         multiGetSpan?.status.message,
         'One (or more) of the watched keys has been changed'
       );
@@ -461,8 +455,8 @@ describe('redis@^4.0.0', () => {
       commands = commands.get('another-key');
       const [setKeyReply, otherKeyValue] = await commands.exec(); // ['OK', 'another-value']
 
-      assert.strictEqual(setKeyReply, 'OK'); // verify we did not screw up the normal functionality
-      assert.strictEqual(otherKeyValue, 'another-value'); // verify we did not screw up the normal functionality
+      strictEqual(setKeyReply, 'OK'); // verify we did not screw up the normal functionality
+      strictEqual(otherKeyValue, 'another-value'); // verify we did not screw up the normal functionality
 
       const [_setSpan, multiSetSpan, multiGetSpan] = getTestSpans();
       // verify that commands span started when it was added to multi and not when "sent".
@@ -471,7 +465,7 @@ describe('redis@^4.0.0', () => {
       const startTimeDiff =
         hrTimeToMilliseconds(multiGetSpan.startTime) -
         hrTimeToMilliseconds(multiSetSpan.startTime);
-      assert.ok(
+      ok(
         startTimeDiff >= 9,
         `diff of start time should be >= 10 and it's ${startTimeDiff}`
       );
@@ -479,7 +473,7 @@ describe('redis@^4.0.0', () => {
       const endTimeDiff =
         hrTimeToMilliseconds(multiGetSpan.endTime) -
         hrTimeToMilliseconds(multiSetSpan.endTime);
-      assert.ok(endTimeDiff < 10); // spans should all end together when multi response arrives from redis server
+      ok(endTimeDiff < 10); // spans should all end together when multi response arrives from redis server
     });
 
     it('response hook for multi commands', async () => {
@@ -501,28 +495,25 @@ describe('redis@^4.0.0', () => {
         .set('key', 'value')
         .get('another-key')
         .exec(); // ['OK', 'another-value']
-      assert.strictEqual(setKeyReply, 'OK'); // verify we did not screw up the normal functionality
-      assert.strictEqual(otherKeyValue, 'another-value'); // verify we did not screw up the normal functionality
+      strictEqual(setKeyReply, 'OK'); // verify we did not screw up the normal functionality
+      strictEqual(otherKeyValue, 'another-value'); // verify we did not screw up the normal functionality
 
       const [_setSpan, multiSetSpan, multiGetSpan] = getTestSpans();
 
-      assert.ok(multiSetSpan);
-      assert.strictEqual(multiSetSpan.attributes['test.cmd.name'], 'SET');
-      assert.deepStrictEqual(multiSetSpan.attributes['test.cmd.args'], [
+      ok(multiSetSpan);
+      strictEqual(multiSetSpan.attributes['test.cmd.name'], 'SET');
+      deepStrictEqual(multiSetSpan.attributes['test.cmd.args'], [
         'key',
         'value',
       ]);
-      assert.strictEqual(multiSetSpan.attributes['test.db.response'], 'OK');
+      strictEqual(multiSetSpan.attributes['test.db.response'], 'OK');
 
-      assert.ok(multiGetSpan);
-      assert.strictEqual(multiGetSpan.attributes['test.cmd.name'], 'GET');
-      assert.deepStrictEqual(multiGetSpan.attributes['test.cmd.args'], [
+      ok(multiGetSpan);
+      strictEqual(multiGetSpan.attributes['test.cmd.name'], 'GET');
+      deepStrictEqual(multiGetSpan.attributes['test.cmd.args'], [
         'another-key',
       ]);
-      assert.strictEqual(
-        multiGetSpan.attributes['test.db.response'],
-        'another-value'
-      );
+      strictEqual(multiGetSpan.attributes['test.db.response'], 'another-value');
     });
   });
 
@@ -539,10 +530,7 @@ describe('redis@^4.0.0', () => {
         instrumentation.setConfig({ dbStatementSerializer });
         await client.set('key', 'value');
         const [span] = getTestSpans();
-        assert.strictEqual(
-          span.attributes[SEMATTRS_DB_STATEMENT],
-          'SET key value'
-        );
+        strictEqual(span.attributes[SEMATTRS_DB_STATEMENT], 'SET key value');
       });
 
       it('dbStatementSerializer throws', async () => {
@@ -553,8 +541,8 @@ describe('redis@^4.0.0', () => {
         instrumentation.setConfig({ dbStatementSerializer });
         await client.set('key', 'value');
         const [span] = getTestSpans();
-        assert.ok(span);
-        assert.ok(!(SEMATTRS_DB_STATEMENT in span.attributes));
+        ok(span);
+        ok(!(SEMATTRS_DB_STATEMENT in span.attributes));
       });
     });
 
@@ -573,13 +561,10 @@ describe('redis@^4.0.0', () => {
         instrumentation.setConfig({ responseHook });
         await client.set('key', 'value');
         const [span] = getTestSpans();
-        assert.ok(span);
-        assert.strictEqual(span.attributes['test.cmd.name'], 'SET');
-        assert.deepStrictEqual(span.attributes['test.cmd.args'], [
-          'key',
-          'value',
-        ]);
-        assert.strictEqual(span.attributes['test.db.response'], 'OK');
+        ok(span);
+        strictEqual(span.attributes['test.cmd.name'], 'SET');
+        deepStrictEqual(span.attributes['test.cmd.args'], ['key', 'value']);
+        strictEqual(span.attributes['test.db.response'], 'OK');
       });
 
       it('responseHook throws', async () => {
@@ -588,9 +573,9 @@ describe('redis@^4.0.0', () => {
         };
         instrumentation.setConfig({ responseHook });
         const res = await client.set('key', 'value');
-        assert.strictEqual(res, 'OK'); // package is still functional
+        strictEqual(res, 'OK'); // package is still functional
         const [span] = getTestSpans();
-        assert.ok(span);
+        ok(span);
       });
     });
 
@@ -600,15 +585,15 @@ describe('redis@^4.0.0', () => {
 
         // no parent span => no redis span
         const res = await client.set('key', 'value');
-        assert.strictEqual(res, 'OK'); // verify we did not screw up the normal functionality
-        assert.ok(getTestSpans().length === 0);
+        strictEqual(res, 'OK'); // verify we did not screw up the normal functionality
+        ok(getTestSpans().length === 0);
 
         // has ambient span => redis span
         const span = trace.getTracer('test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
           const res = await client.set('key', 'value');
-          assert.strictEqual(res, 'OK'); // verify we did not screw up the normal functionality
-          assert.ok(getTestSpans().length === 1);
+          strictEqual(res, 'OK'); // verify we did not screw up the normal functionality
+          ok(getTestSpans().length === 1);
         });
         span.end();
       });

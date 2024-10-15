@@ -35,7 +35,7 @@ import {
   CLOUDPROVIDERVALUES_AWS,
   CLOUDPLATFORMVALUES_AWS_EC2,
 } from '@opentelemetry/semantic-conventions';
-import * as http from 'http';
+import { request, RequestOptions } from 'http';
 
 /**
  * The AwsEc2DetectorSync can be used to detect if a process is running in AWS EC2
@@ -139,14 +139,14 @@ class AwsEc2DetectorSync implements DetectorSync {
    * to get back a valid JSON document. Parses that document and stores
    * the identity properties in a local map.
    */
-  private async _fetchString(options: http.RequestOptions): Promise<string> {
+  private async _fetchString(options: RequestOptions): Promise<string> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         req.abort();
         reject(new Error('EC2 metadata api request timed out.'));
       }, this.MILLISECOND_TIME_OUT);
 
-      const req = http.request(options, res => {
+      const req = request(options, res => {
         clearTimeout(timeoutId);
         const { statusCode } = res;
         res.setEncoding('utf8');

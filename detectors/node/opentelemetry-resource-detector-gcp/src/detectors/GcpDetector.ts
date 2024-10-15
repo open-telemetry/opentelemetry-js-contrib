@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as gcpMetadata from 'gcp-metadata';
+import { isAvailable, project, instance } from 'gcp-metadata';
 import { context, diag } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import {
@@ -58,7 +58,7 @@ class GcpDetector implements DetectorSync {
    * empty {@link ResourceAttributes} if the connection or parsing of the metadata fails.
    */
   private async _getAttributes(): Promise<ResourceAttributes> {
-    if (!(await gcpMetadata.isAvailable())) {
+    if (!(await isAvailable())) {
       diag.debug('GcpDetector failed: GCP Metadata unavailable.');
       return {};
     }
@@ -101,7 +101,7 @@ class GcpDetector implements DetectorSync {
   /** Gets project id from GCP project metadata. */
   private async _getProjectId(): Promise<string> {
     try {
-      return await gcpMetadata.project('project-id');
+      return await project('project-id');
     } catch {
       return '';
     }
@@ -110,7 +110,7 @@ class GcpDetector implements DetectorSync {
   /** Gets instance id from GCP instance metadata. */
   private async _getInstanceId(): Promise<string> {
     try {
-      const id = await gcpMetadata.instance('id');
+      const id = await instance('id');
       return id.toString();
     } catch {
       return '';
@@ -120,7 +120,7 @@ class GcpDetector implements DetectorSync {
   /** Gets zone from GCP instance metadata. */
   private async _getZone(): Promise<string> {
     try {
-      const zoneId = await gcpMetadata.instance('zone');
+      const zoneId = await instance('zone');
       if (zoneId) {
         return zoneId.split('/').pop();
       }
@@ -133,7 +133,7 @@ class GcpDetector implements DetectorSync {
   /** Gets cluster name from GCP instance metadata. */
   private async _getClusterName(): Promise<string> {
     try {
-      return await gcpMetadata.instance('attributes/cluster-name');
+      return await instance('attributes/cluster-name');
     } catch {
       return '';
     }
@@ -142,7 +142,7 @@ class GcpDetector implements DetectorSync {
   /** Gets hostname from GCP instance metadata. */
   private async _getHostname(): Promise<string> {
     try {
-      return await gcpMetadata.instance('hostname');
+      return await instance('hostname');
     } catch {
       return '';
     }

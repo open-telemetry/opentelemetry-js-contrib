@@ -15,7 +15,7 @@
  */
 
 import { diag, Span, SpanStatusCode } from '@opentelemetry/api';
-import * as assert from 'assert';
+import { strictEqual, fail, doesNotThrow } from 'assert';
 import * as sinon from 'sinon';
 import { AttributeNames } from '../../src/enums/AttributeNames';
 import { IgnoreMatcher } from '../../src/types';
@@ -25,24 +25,24 @@ describe('Utility', () => {
   describe('satisfiesPattern()', () => {
     it('string pattern', () => {
       const answer1 = utils.satisfiesPattern('localhost', 'localhost');
-      assert.strictEqual(answer1, true);
+      strictEqual(answer1, true);
       const answer2 = utils.satisfiesPattern('hostname', 'localhost');
-      assert.strictEqual(answer2, false);
+      strictEqual(answer2, false);
     });
 
     it('regex pattern', () => {
       const answer1 = utils.satisfiesPattern('LocalHost', /localhost/i);
-      assert.strictEqual(answer1, true);
+      strictEqual(answer1, true);
       const answer2 = utils.satisfiesPattern('Montreal.ca', /montreal.ca/);
-      assert.strictEqual(answer2, false);
+      strictEqual(answer2, false);
     });
 
     it('should throw if type is unknown', () => {
       try {
         utils.satisfiesPattern('google.com', true as unknown as IgnoreMatcher);
-        assert.fail();
+        fail();
       } catch (error) {
-        assert.strictEqual(error instanceof TypeError, true);
+        strictEqual(error instanceof TypeError, true);
       }
     });
 
@@ -51,12 +51,12 @@ describe('Utility', () => {
         'montreal.ca',
         (url: string) => url === 'montreal.ca'
       );
-      assert.strictEqual(answer1, true);
+      strictEqual(answer1, true);
       const answer2 = utils.satisfiesPattern(
         'montreal.ca',
         (url: string) => url !== 'montreal.ca'
       );
-      assert.strictEqual(answer2, false);
+      strictEqual(answer2, false);
     });
   });
 
@@ -72,11 +72,8 @@ describe('Utility', () => {
 
     it('should call isSatisfyPattern, n match', () => {
       const answer1 = utils.isIgnored('localhost', ['test']);
-      assert.strictEqual(answer1, false);
-      assert.strictEqual(
-        (utils.satisfiesPattern as sinon.SinonSpy).callCount,
-        1
-      );
+      strictEqual(answer1, false);
+      strictEqual((utils.satisfiesPattern as sinon.SinonSpy).callCount, 1);
     });
 
     it('should call isSatisfyPattern, match for function', () => {
@@ -84,14 +81,14 @@ describe('Utility', () => {
       const answer1 = utils.isIgnored('api.montreal.ca', [
         url => url.endsWith('montreal.ca'),
       ]);
-      assert.strictEqual(answer1, true);
+      strictEqual(answer1, true);
     });
 
     it('should call isSatisfyPattern, match for a single matcher', () => {
       const answer1 = utils.isIgnored('api.montreal.ca', url =>
         url.endsWith('montreal.ca')
       );
-      assert.strictEqual(answer1, true);
+      strictEqual(answer1, true);
     });
 
     it('should not re-throw when function throws an exception', () => {
@@ -100,7 +97,7 @@ describe('Utility', () => {
         diag.error('error', e);
       };
       for (const callback of [undefined, onException]) {
-        assert.doesNotThrow(() =>
+        doesNotThrow(() =>
           utils.isIgnored(
             'test',
             [
@@ -117,7 +114,7 @@ describe('Utility', () => {
     it('should call onException when function throws an exception', () => {
       satisfiesPatternStub.restore();
       const onException = sinon.spy();
-      assert.doesNotThrow(() =>
+      doesNotThrow(() =>
         utils.isIgnored(
           'test',
           [
@@ -128,25 +125,22 @@ describe('Utility', () => {
           onException
         )
       );
-      assert.strictEqual((onException as sinon.SinonSpy).callCount, 1);
+      strictEqual((onException as sinon.SinonSpy).callCount, 1);
     });
 
     it('should not call isSatisfyPattern', () => {
       utils.isIgnored('test', []);
-      assert.strictEqual(
-        (utils.satisfiesPattern as sinon.SinonSpy).callCount,
-        0
-      );
+      strictEqual((utils.satisfiesPattern as sinon.SinonSpy).callCount, 0);
     });
 
     it('should return false on empty list', () => {
       const answer1 = utils.isIgnored('test', []);
-      assert.strictEqual(answer1, false);
+      strictEqual(answer1, false);
     });
 
     it('should not throw and return false when list is undefined', () => {
       const answer2 = utils.isIgnored('test', undefined);
-      assert.strictEqual(answer2, false);
+      strictEqual(answer2, false);
     });
   });
 

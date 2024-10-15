@@ -21,9 +21,9 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
+import { strictEqual, notStrictEqual } from 'assert';
 import type * as http from 'http';
-import * as sinon from 'sinon';
+import { spy, assert } from 'sinon';
 import { ExpressInstrumentation } from '../src';
 import { ExpressRequestInfo, SpanNameHook } from '../src/types';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
@@ -93,9 +93,9 @@ describe('ExpressInstrumentation hooks', () => {
           rootSpan.end();
 
           const spans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(spans.length, 2);
+          strictEqual(spans.length, 2);
 
-          assert.notStrictEqual(
+          notStrictEqual(
             spans.find(span => span.name === 'custom: request_handler - *'),
             undefined
           );
@@ -117,10 +117,10 @@ describe('ExpressInstrumentation hooks', () => {
           rootSpan.end();
 
           const spans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(spans.length, 2);
+          strictEqual(spans.length, 2);
 
-          assert.strictEqual(rpcMetadata?.route, '*');
-          assert.notStrictEqual(
+          strictEqual(rpcMetadata?.route, '*');
+          notStrictEqual(
             spans.find(span => span.name === 'request handler - *'),
             undefined
           );
@@ -143,10 +143,10 @@ describe('ExpressInstrumentation hooks', () => {
           rootSpan.end();
 
           const spans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(spans.length, 2);
+          strictEqual(spans.length, 2);
 
-          assert.strictEqual(rpcMetadata?.route, '*');
-          assert.notStrictEqual(
+          strictEqual(rpcMetadata?.route, '*');
+          notStrictEqual(
             spans.find(span => span.name === 'request handler - *'),
             undefined
           );
@@ -177,7 +177,7 @@ describe('ExpressInstrumentation hooks', () => {
     });
 
     it('should call requestHook when set in config', async () => {
-      const requestHook = sinon.spy((span: Span, info: ExpressRequestInfo) => {
+      const requestHook = spy((span: Span, info: ExpressRequestInfo) => {
         span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
 
         if (info.layerType) {
@@ -200,13 +200,10 @@ describe('ExpressInstrumentation hooks', () => {
             span => span.name === 'request handler - *'
           );
 
-          assert.strictEqual(spans.length, 2);
-          sinon.assert.calledOnce(requestHook);
-          assert.strictEqual(
-            requestHandlerSpan?.attributes['http.method'],
-            'GET'
-          );
-          assert.strictEqual(
+          strictEqual(spans.length, 2);
+          assert.calledOnce(requestHook);
+          strictEqual(requestHandlerSpan?.attributes['http.method'], 'GET');
+          strictEqual(
             requestHandlerSpan?.attributes['express.layer_type'],
             ExpressLayerType.REQUEST_HANDLER
           );
@@ -215,7 +212,7 @@ describe('ExpressInstrumentation hooks', () => {
     });
 
     it('should ignore requestHook which throws exception', async () => {
-      const requestHook = sinon.spy((span: Span, info: ExpressRequestInfo) => {
+      const requestHook = spy((span: Span, info: ExpressRequestInfo) => {
         // This is added before the exception is thrown thus we can expect it
         span.setAttribute('http.method', info.request.method);
         throw Error('error thrown in requestHook');
@@ -236,13 +233,10 @@ describe('ExpressInstrumentation hooks', () => {
             span => span.name === 'request handler - *'
           );
 
-          assert.strictEqual(spans.length, 2);
-          assert.strictEqual(
-            requestHandlerSpan?.attributes['http.method'],
-            'GET'
-          );
+          strictEqual(spans.length, 2);
+          strictEqual(requestHandlerSpan?.attributes['http.method'], 'GET');
 
-          sinon.assert.threw(requestHook);
+          assert.threw(requestHook);
         }
       );
     });

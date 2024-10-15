@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as childProcess from 'child_process';
+import { spawnSync } from 'child_process';
 import {
   HrTime,
   Span,
@@ -22,15 +22,15 @@ import {
   SpanKind,
   SpanStatus,
 } from '@opentelemetry/api';
-import * as assert from 'assert';
+import { strictEqual, ok, deepStrictEqual, notStrictEqual } from 'assert';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { MetricReader, MeterProvider } from '@opentelemetry/sdk-metrics';
 import {
   hrTimeToMilliseconds,
   hrTimeToMicroseconds,
 } from '@opentelemetry/core';
-import * as path from 'path';
-import * as fs from 'fs';
+import { join } from 'path';
+import { readFileSync } from 'fs';
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
 const dockerRunCmds = {
@@ -67,7 +67,7 @@ export function cleanUpDocker(db: keyof typeof dockerRunCmds) {
 
 function run(cmd: string) {
   try {
-    const proc = childProcess.spawnSync(cmd, {
+    const proc = spawnSync(cmd, {
       shell: true,
     });
     const output = Buffer.concat(
@@ -94,27 +94,25 @@ export const assertSpan = (
   events: TimedEvent[],
   status: SpanStatus
 ) => {
-  assert.strictEqual(span.spanContext().traceId.length, 32);
-  assert.strictEqual(span.spanContext().spanId.length, 16);
-  assert.strictEqual(span.kind, kind);
+  strictEqual(span.spanContext().traceId.length, 32);
+  strictEqual(span.spanContext().spanId.length, 16);
+  strictEqual(span.kind, kind);
 
-  assert.ok(span.endTime);
-  assert.strictEqual(span.links.length, 0);
+  ok(span.endTime);
+  strictEqual(span.links.length, 0);
 
-  assert.ok(
-    hrTimeToMicroseconds(span.startTime) < hrTimeToMicroseconds(span.endTime)
-  );
-  assert.ok(hrTimeToMilliseconds(span.endTime) > 0);
+  ok(hrTimeToMicroseconds(span.startTime) < hrTimeToMicroseconds(span.endTime));
+  ok(hrTimeToMilliseconds(span.endTime) > 0);
 
   // attributes
-  assert.deepStrictEqual(span.attributes, attributes);
+  deepStrictEqual(span.attributes, attributes);
 
   // events
-  assert.deepStrictEqual(span.events, events);
+  deepStrictEqual(span.events, events);
 
-  assert.strictEqual(span.status.code, status.code);
+  strictEqual(span.status.code, status.code);
   if (status.message) {
-    assert.strictEqual(span.status.message, status.message);
+    strictEqual(span.status.message, status.message);
   }
 };
 
@@ -125,13 +123,10 @@ export const assertPropagation = (
 ) => {
   const targetSpanContext = childSpan.spanContext();
   const sourceSpanContext = parentSpan.spanContext();
-  assert.strictEqual(targetSpanContext.traceId, sourceSpanContext.traceId);
-  assert.strictEqual(childSpan.parentSpanId, sourceSpanContext.spanId);
-  assert.strictEqual(
-    targetSpanContext.traceFlags,
-    sourceSpanContext.traceFlags
-  );
-  assert.notStrictEqual(targetSpanContext.spanId, sourceSpanContext.spanId);
+  strictEqual(targetSpanContext.traceId, sourceSpanContext.traceId);
+  strictEqual(childSpan.parentSpanId, sourceSpanContext.spanId);
+  strictEqual(targetSpanContext.traceFlags, sourceSpanContext.traceFlags);
+  notStrictEqual(targetSpanContext.spanId, sourceSpanContext.spanId);
 };
 
 /**
@@ -157,7 +152,7 @@ export const getPackageVersion = (packageName: string) => {
   // versions. Prefix the search paths with the cwd to include the workspace
   // dir.
   const mainPath = require?.resolve(packageName, {
-    paths: [path.join(process.cwd(), 'node_modules')].concat(
+    paths: [join(process.cwd(), 'node_modules')].concat(
       require?.main?.paths || []
     ),
   });
@@ -173,13 +168,13 @@ export const getPackageVersion = (packageName: string) => {
   // }
   // resolving `packagePath` to `/path/to/opentelemetry-js-contrib/node_modules/tedious/lib/tedious.js`
   const idx = mainPath.lastIndexOf('node_modules');
-  const pjPath = path.join(
+  const pjPath = join(
     mainPath.slice(0, idx),
     'node_modules',
     packageName,
     'package.json'
   );
-  return JSON.parse(fs.readFileSync(pjPath, 'utf8')).version;
+  return JSON.parse(readFileSync(pjPath, 'utf8')).version;
 };
 
 export class TestMetricReader extends MetricReader {

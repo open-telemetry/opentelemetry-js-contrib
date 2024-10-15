@@ -29,8 +29,8 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
 import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
-import * as assert from 'assert';
-import * as sinon from 'sinon';
+import { deepEqual, strictEqual, deepStrictEqual, ok } from 'assert';
+import { assert, SinonSpy, spy } from 'sinon';
 import { Writable } from 'stream';
 import { BunyanInstrumentation, OpenTelemetryBunyanStream } from '../src';
 import { PACKAGE_VERSION } from '../src/version';
@@ -61,10 +61,10 @@ const Logger = require('bunyan');
 describe('BunyanInstrumentation', () => {
   let log: BunyanLogger;
   let stream: Writable;
-  let writeSpy: sinon.SinonSpy;
+  let writeSpy: SinonSpy;
 
   it('is instrumented', () => {
-    assert.ok(isWrapped((Logger.prototype as any)['_emit']));
+    ok(isWrapped((Logger.prototype as any)['_emit']));
   });
 
   describe('enabled instrumentation', () => {
@@ -73,7 +73,7 @@ describe('BunyanInstrumentation', () => {
       memExporter.getFinishedLogRecords().length = 0; // clear
       stream = new Writable();
       stream._write = () => {};
-      writeSpy = sinon.spy(stream, 'write');
+      writeSpy = spy(stream, 'write');
       log = Logger.createLogger({
         name: 'test-logger-name',
         level: 'debug',
@@ -86,16 +86,13 @@ describe('BunyanInstrumentation', () => {
       context.with(trace.setSpan(context.active(), span), () => {
         const { traceId, spanId, traceFlags } = span.spanContext();
         log.info('foo');
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['trace_id'], traceId);
-        assert.strictEqual(record['span_id'], spanId);
-        assert.strictEqual(
-          record['trace_flags'],
-          `0${traceFlags.toString(16)}`
-        );
+        strictEqual(record['trace_id'], traceId);
+        strictEqual(record['span_id'], spanId);
+        strictEqual(record['trace_flags'], `0${traceFlags.toString(16)}`);
         // Sanity check the message is unchanged
-        assert.strictEqual('foo', record['msg']);
+        strictEqual('foo', record['msg']);
       });
     });
 
@@ -108,33 +105,33 @@ describe('BunyanInstrumentation', () => {
       });
       context.with(trace.setSpan(context.active(), span), () => {
         log.info('foo');
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['resource.service.name'], 'test-service');
+        strictEqual(record['resource.service.name'], 'test-service');
       });
     });
 
     it('does not inject span context if no span is active', () => {
       log.info('foo');
-      assert.strictEqual(trace.getSpan(context.active()), undefined);
-      sinon.assert.calledOnce(writeSpy);
+      strictEqual(trace.getSpan(context.active()), undefined);
+      assert.calledOnce(writeSpy);
       const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-      assert.strictEqual(record['trace_id'], undefined);
-      assert.strictEqual(record['span_id'], undefined);
-      assert.strictEqual(record['trace_flags'], undefined);
-      assert.strictEqual('foo', record['msg']);
+      strictEqual(record['trace_id'], undefined);
+      strictEqual(record['span_id'], undefined);
+      strictEqual(record['trace_flags'], undefined);
+      strictEqual('foo', record['msg']);
     });
 
     it('does not inject span context if span context is invalid', () => {
       const span = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
       context.with(trace.setSpan(context.active(), span), () => {
         log.info('foo');
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['trace_id'], undefined);
-        assert.strictEqual(record['span_id'], undefined);
-        assert.strictEqual(record['trace_flags'], undefined);
-        assert.strictEqual('foo', record['msg']);
+        strictEqual(record['trace_id'], undefined);
+        strictEqual(record['span_id'], undefined);
+        strictEqual(record['trace_flags'], undefined);
+        strictEqual('foo', record['msg']);
       });
     });
 
@@ -148,11 +145,11 @@ describe('BunyanInstrumentation', () => {
       context.with(trace.setSpan(context.active(), span), () => {
         const { traceId, spanId } = span.spanContext();
         log.info('foo');
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['trace_id'], traceId);
-        assert.strictEqual(record['span_id'], spanId);
-        assert.strictEqual('foo', record['msg']);
+        strictEqual(record['trace_id'], traceId);
+        strictEqual(record['span_id'], spanId);
+        strictEqual('foo', record['msg']);
       });
     });
 
@@ -165,14 +162,14 @@ describe('BunyanInstrumentation', () => {
       });
       tracer.startActiveSpan('abc', span => {
         log.info('foo');
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual('foo', record['msg']);
-        assert.strictEqual(record['trace_id'], undefined);
-        assert.strictEqual(record['span_id'], undefined);
-        assert.strictEqual(record['trace_flags'], undefined);
-        assert.strictEqual(record['resource.service.name'], undefined);
-        assert.strictEqual(
+        strictEqual('foo', record['msg']);
+        strictEqual(record['trace_id'], undefined);
+        strictEqual(record['span_id'], undefined);
+        strictEqual(record['trace_flags'], undefined);
+        strictEqual(record['resource.service.name'], undefined);
+        strictEqual(
           memExporter.getFinishedLogRecords().length,
           1,
           'Log sending still works'
@@ -191,50 +188,50 @@ describe('BunyanInstrumentation', () => {
       log.warn('at warn level');
       log.error('at error level');
       log.fatal('at fatal level');
-      assert.strictEqual(logRecords.length, 5);
-      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
-      assert.strictEqual(logRecords[0].severityText, 'debug');
-      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.INFO);
-      assert.strictEqual(logRecords[1].severityText, 'info');
-      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.WARN);
-      assert.strictEqual(logRecords[2].severityText, 'warn');
-      assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.ERROR);
-      assert.strictEqual(logRecords[3].severityText, 'error');
-      assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.FATAL);
-      assert.strictEqual(logRecords[4].severityText, 'fatal');
+      strictEqual(logRecords.length, 5);
+      strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
+      strictEqual(logRecords[0].severityText, 'debug');
+      strictEqual(logRecords[1].severityNumber, SeverityNumber.INFO);
+      strictEqual(logRecords[1].severityText, 'info');
+      strictEqual(logRecords[2].severityNumber, SeverityNumber.WARN);
+      strictEqual(logRecords[2].severityText, 'warn');
+      strictEqual(logRecords[3].severityNumber, SeverityNumber.ERROR);
+      strictEqual(logRecords[3].severityText, 'error');
+      strictEqual(logRecords[4].severityNumber, SeverityNumber.FATAL);
+      strictEqual(logRecords[4].severityText, 'fatal');
 
       // attributes, resource, instrumentationScope, etc.
       log.info({ foo: 'bar' }, 'a message');
       const rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.body, 'a message');
-      assert.deepStrictEqual(rec.attributes, {
+      strictEqual(rec.body, 'a message');
+      deepStrictEqual(rec.attributes, {
         name: 'test-logger-name',
         foo: 'bar',
       });
-      assert.strictEqual(
+      strictEqual(
         rec.resource.attributes['service.name'],
         'test-instrumentation-bunyan'
       );
-      assert.strictEqual(
+      strictEqual(
         rec.instrumentationScope.name,
         '@opentelemetry/instrumentation-bunyan'
       );
-      assert.strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
-      assert.strictEqual(rec.spanContext, undefined);
+      strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
+      strictEqual(rec.spanContext, undefined);
 
       // spanContext
       tracer.startActiveSpan('abc', span => {
         const { traceId, spanId, traceFlags } = span.spanContext();
         log.info('in active span');
         const rec = logRecords[logRecords.length - 1];
-        assert.strictEqual(rec.spanContext?.traceId, traceId);
-        assert.strictEqual(rec.spanContext?.spanId, spanId);
-        assert.strictEqual(rec.spanContext?.traceFlags, traceFlags);
+        strictEqual(rec.spanContext?.traceId, traceId);
+        strictEqual(rec.spanContext?.spanId, spanId);
+        strictEqual(rec.spanContext?.traceFlags, traceFlags);
 
         // This rec should *NOT* have the `trace_id` et al attributes.
-        assert.strictEqual(rec.attributes.trace_id, undefined);
-        assert.strictEqual(rec.attributes.span_id, undefined);
-        assert.strictEqual(rec.attributes.trace_flags, undefined);
+        strictEqual(rec.attributes.trace_id, undefined);
+        strictEqual(rec.attributes.span_id, undefined);
+        strictEqual(rec.attributes.trace_flags, undefined);
 
         span.end();
       });
@@ -247,22 +244,22 @@ describe('BunyanInstrumentation', () => {
       // A non-Date "time" Bunyan field.
       log.info({ time: 'miller' }, 'hi');
       rec = logRecords[logRecords.length - 1];
-      assert.deepEqual(
+      deepEqual(
         rec.hrTime.map(n => typeof n),
         ['number', 'number']
       );
-      assert.strictEqual(rec.attributes.time, 'miller');
+      strictEqual(rec.attributes.time, 'miller');
 
       // An atypical Bunyan level number.
       log.info({ level: 42 }, 'just above Bunyan WARN==40');
       rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.severityNumber, SeverityNumber.WARN2);
-      assert.strictEqual(rec.severityText, undefined);
+      strictEqual(rec.severityNumber, SeverityNumber.WARN2);
+      strictEqual(rec.severityText, undefined);
 
       log.info({ level: 200 }, 'far above Bunyan FATAL==60');
       rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.severityNumber, SeverityNumber.FATAL4);
-      assert.strictEqual(rec.severityText, undefined);
+      strictEqual(rec.severityNumber, SeverityNumber.FATAL4);
+      strictEqual(rec.severityText, undefined);
     });
 
     it('does not emit to the Logs SDK if disableLogSending=true', () => {
@@ -276,14 +273,14 @@ describe('BunyanInstrumentation', () => {
       tracer.startActiveSpan('abc', span => {
         const { traceId, spanId } = span.spanContext();
         log.info('foo');
-        assert.strictEqual(memExporter.getFinishedLogRecords().length, 0);
+        strictEqual(memExporter.getFinishedLogRecords().length, 0);
 
         // Test log correlation still works.
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual('foo', record['msg']);
-        assert.strictEqual(record['trace_id'], traceId);
-        assert.strictEqual(record['span_id'], spanId);
+        strictEqual('foo', record['msg']);
+        strictEqual(record['trace_id'], traceId);
+        strictEqual(record['span_id'], spanId);
         span.end();
       });
     });
@@ -293,15 +290,15 @@ describe('BunyanInstrumentation', () => {
       log.info('foo');
 
       const logRecords = memExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
+      strictEqual(logRecords.length, 1);
       let rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.body, 'foo');
+      strictEqual(rec.body, 'foo');
 
       const child = log.child({ aProperty: 'bar' });
       child.info('hi');
       rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.body, 'hi');
-      assert.strictEqual(rec.attributes.aProperty, 'bar');
+      strictEqual(rec.body, 'hi');
+      strictEqual(rec.attributes.aProperty, 'bar');
     });
 
     it('emits to the Logs SDK with `Logger(...)`', () => {
@@ -309,15 +306,15 @@ describe('BunyanInstrumentation', () => {
       log.info('foo');
 
       const logRecords = memExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
+      strictEqual(logRecords.length, 1);
       let rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.body, 'foo');
+      strictEqual(rec.body, 'foo');
 
       const child = log.child({ aProperty: 'bar' });
       child.info('hi');
       rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.body, 'hi');
-      assert.strictEqual(rec.attributes.aProperty, 'bar');
+      strictEqual(rec.body, 'hi');
+      strictEqual(rec.attributes.aProperty, 'bar');
     });
 
     it('log record error level', () => {
@@ -330,8 +327,8 @@ describe('BunyanInstrumentation', () => {
       log.fatal('fatal log');
       const logRecords = memExporter.getFinishedLogRecords();
       // Only one log record match configured severity
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].body, 'fatal log');
+      strictEqual(logRecords.length, 1);
+      strictEqual(logRecords[0].body, 'fatal log');
     });
 
     it('log record error level', () => {
@@ -344,8 +341,8 @@ describe('BunyanInstrumentation', () => {
       log.error('error log');
       const logRecords = memExporter.getFinishedLogRecords();
       // Only one log record match configured severity
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].body, 'error log');
+      strictEqual(logRecords.length, 1);
+      strictEqual(logRecords[0].body, 'error log');
     });
 
     it('log record warn level', () => {
@@ -358,8 +355,8 @@ describe('BunyanInstrumentation', () => {
       log.warn('warn log');
       const logRecords = memExporter.getFinishedLogRecords();
       // Only one log record match configured severity
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].body, 'warn log');
+      strictEqual(logRecords.length, 1);
+      strictEqual(logRecords[0].body, 'warn log');
     });
 
     it('log record info level', () => {
@@ -372,8 +369,8 @@ describe('BunyanInstrumentation', () => {
       log.info('info log');
       const logRecords = memExporter.getFinishedLogRecords();
       // Only one log record match configured severity
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].body, 'info log');
+      strictEqual(logRecords.length, 1);
+      strictEqual(logRecords[0].body, 'info log');
     });
 
     it('log record debug level', () => {
@@ -382,12 +379,12 @@ describe('BunyanInstrumentation', () => {
       log.info('info log');
       log.debug('debug log');
       // Just the log.info() writes to `stream`.
-      sinon.assert.calledOnce(writeSpy);
+      assert.calledOnce(writeSpy);
       // Both log.info() and log.debug() should be written to the OTel Logs SDK.
       const logRecords = memExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 2);
-      assert.strictEqual(logRecords[0].body, 'info log');
-      assert.strictEqual(logRecords[1].body, 'debug log');
+      strictEqual(logRecords.length, 2);
+      strictEqual(logRecords[0].body, 'info log');
+      strictEqual(logRecords[1].body, 'debug log');
     });
 
     it('log record trace level', () => {
@@ -397,13 +394,13 @@ describe('BunyanInstrumentation', () => {
       log.debug('debug log');
       log.debug('trace log');
       // Just the log.info() writes to `stream`.
-      sinon.assert.calledOnce(writeSpy);
+      assert.calledOnce(writeSpy);
       // Both log.info() and log.debug() should be written to the OTel Logs SDK.
       const logRecords = memExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 3);
-      assert.strictEqual(logRecords[0].body, 'info log');
-      assert.strictEqual(logRecords[1].body, 'debug log');
-      assert.strictEqual(logRecords[2].body, 'trace log');
+      strictEqual(logRecords.length, 3);
+      strictEqual(logRecords[0].body, 'info log');
+      strictEqual(logRecords[1].body, 'debug log');
+      strictEqual(logRecords[2].body, 'trace log');
     });
   });
 
@@ -419,7 +416,7 @@ describe('BunyanInstrumentation', () => {
     beforeEach(() => {
       stream = new Writable();
       stream._write = () => {};
-      writeSpy = sinon.spy(stream, 'write');
+      writeSpy = spy(stream, 'write');
       log = Logger.createLogger({ name: 'test', stream });
       memExporter.getFinishedLogRecords().length = 0; // clear
     });
@@ -428,13 +425,13 @@ describe('BunyanInstrumentation', () => {
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
         log.info('foo');
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['trace_id'], undefined);
-        assert.strictEqual(record['span_id'], undefined);
-        assert.strictEqual(record['trace_flags'], undefined);
+        strictEqual(record['trace_id'], undefined);
+        strictEqual(record['span_id'], undefined);
+        strictEqual(record['trace_flags'], undefined);
         // Sanity check the message is unchanged
-        assert.strictEqual('foo', record['msg']);
+        strictEqual('foo', record['msg']);
       });
     });
 
@@ -447,16 +444,16 @@ describe('BunyanInstrumentation', () => {
       });
       context.with(trace.setSpan(context.active(), span), () => {
         log.info('foo');
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['resource.service.name'], undefined);
+        strictEqual(record['resource.service.name'], undefined);
       });
     });
 
     it('does not emit to the Logs SDK', () => {
       tracer.startActiveSpan('abc', span => {
         log.info('foo');
-        assert.strictEqual(memExporter.getFinishedLogRecords().length, 0);
+        strictEqual(memExporter.getFinishedLogRecords().length, 0);
       });
     });
   });
@@ -491,50 +488,50 @@ describe('OpenTelemetryBunyanStream', () => {
     log.error('at error level');
     log.fatal('at fatal level');
     const logRecords = memExporter.getFinishedLogRecords();
-    assert.strictEqual(logRecords.length, 5);
-    assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
-    assert.strictEqual(logRecords[0].severityText, 'debug');
-    assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.INFO);
-    assert.strictEqual(logRecords[1].severityText, 'info');
-    assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.WARN);
-    assert.strictEqual(logRecords[2].severityText, 'warn');
-    assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.ERROR);
-    assert.strictEqual(logRecords[3].severityText, 'error');
-    assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.FATAL);
-    assert.strictEqual(logRecords[4].severityText, 'fatal');
+    strictEqual(logRecords.length, 5);
+    strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
+    strictEqual(logRecords[0].severityText, 'debug');
+    strictEqual(logRecords[1].severityNumber, SeverityNumber.INFO);
+    strictEqual(logRecords[1].severityText, 'info');
+    strictEqual(logRecords[2].severityNumber, SeverityNumber.WARN);
+    strictEqual(logRecords[2].severityText, 'warn');
+    strictEqual(logRecords[3].severityNumber, SeverityNumber.ERROR);
+    strictEqual(logRecords[3].severityText, 'error');
+    strictEqual(logRecords[4].severityNumber, SeverityNumber.FATAL);
+    strictEqual(logRecords[4].severityText, 'fatal');
 
     // attributes, resource, instrumentationScope, etc.
     log.info({ foo: 'bar' }, 'a message');
     const rec = logRecords[logRecords.length - 1];
-    assert.strictEqual(rec.body, 'a message');
-    assert.deepStrictEqual(rec.attributes, {
+    strictEqual(rec.body, 'a message');
+    deepStrictEqual(rec.attributes, {
       name: 'test-logger-name',
       foo: 'bar',
     });
-    assert.strictEqual(
+    strictEqual(
       rec.resource.attributes['service.name'],
       'test-instrumentation-bunyan'
     );
-    assert.strictEqual(
+    strictEqual(
       rec.instrumentationScope.name,
       '@opentelemetry/instrumentation-bunyan'
     );
-    assert.strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
-    assert.strictEqual(rec.spanContext, undefined);
+    strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
+    strictEqual(rec.spanContext, undefined);
 
     // spanContext
     tracer.startActiveSpan('abc', span => {
       const { traceId, spanId, traceFlags } = span.spanContext();
       log.info('in active span');
       const rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.spanContext?.traceId, traceId);
-      assert.strictEqual(rec.spanContext?.spanId, spanId);
-      assert.strictEqual(rec.spanContext?.traceFlags, traceFlags);
+      strictEqual(rec.spanContext?.traceId, traceId);
+      strictEqual(rec.spanContext?.spanId, spanId);
+      strictEqual(rec.spanContext?.traceFlags, traceFlags);
 
       // This rec should *NOT* have the `trace_id` et al attributes.
-      assert.strictEqual(rec.attributes.trace_id, undefined);
-      assert.strictEqual(rec.attributes.span_id, undefined);
-      assert.strictEqual(rec.attributes.trace_flags, undefined);
+      strictEqual(rec.attributes.trace_id, undefined);
+      strictEqual(rec.attributes.span_id, undefined);
+      strictEqual(rec.attributes.trace_flags, undefined);
 
       span.end();
     });

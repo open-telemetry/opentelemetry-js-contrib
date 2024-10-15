@@ -15,7 +15,7 @@
  */
 
 import { execFile, PromiseWithChild } from 'child_process';
-import * as assert from 'assert';
+import { equal, ok } from 'assert';
 import { promisify } from 'util';
 import { Readable } from 'stream';
 
@@ -65,26 +65,22 @@ describe('Register', function () {
     const runPromise = runWithRegister('./test-app/app.js');
     const { child } = runPromise;
     const { stdout } = await runPromise;
-    assert.equal(child.exitCode, 0, `child.exitCode (${child.exitCode})`);
-    assert.equal(
-      child.signalCode,
-      null,
-      `child.signalCode (${child.signalCode})`
-    );
+    equal(child.exitCode, 0, `child.exitCode (${child.exitCode})`);
+    equal(child.signalCode, null, `child.signalCode (${child.signalCode})`);
 
-    assert.ok(
+    ok(
       stdout.includes(
         'OpenTelemetry automatic instrumentation started successfully'
       )
     );
 
-    assert.ok(
+    ok(
       stdout.includes('OpenTelemetry SDK terminated'),
       `Process output was missing message indicating successful shutdown, got stdout:\n${stdout}`
     );
 
     // Check a span has been generated for the GET request done in app.js
-    assert.ok(stdout.includes("name: 'GET'"), 'console span output in stdout');
+    ok(stdout.includes("name: 'GET'"), 'console span output in stdout');
   });
 
   it('shuts down the NodeSDK when SIGTERM is received', async () => {
@@ -94,12 +90,12 @@ describe('Register', function () {
     child.kill('SIGTERM');
     const { stdout } = await runPromise;
 
-    assert.ok(
+    ok(
       stdout.includes('OpenTelemetry SDK terminated'),
       `Process output was missing message indicating successful shutdown, got stdout:\n${stdout}`
     );
 
     // Check a span has been generated for the GET request done in app.js
-    assert.ok(stdout.includes("name: 'GET'"), 'console span output in stdout');
+    ok(stdout.includes("name: 'GET'"), 'console span output in stdout');
   });
 });

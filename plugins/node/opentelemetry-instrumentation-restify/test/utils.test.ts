@@ -14,47 +14,47 @@
  * limitations under the License.
  */
 import { isAsyncFunction, isPromise } from '../src/utils';
-import * as assert from 'assert';
+import { strictEqual } from 'assert';
 
 describe('utils', () => {
   describe('isPromise', () => {
     it('should be able to validate a promise to be true', () => {
-      assert.strictEqual(isPromise(Promise.resolve()), true);
+      strictEqual(isPromise(Promise.resolve()), true);
     });
 
     it('should be able to validate non-promise to be false', () => {
-      assert.strictEqual(isPromise(), false);
-      assert.strictEqual(isPromise(null), false);
-      assert.strictEqual(isPromise({}), false);
-      assert.strictEqual(isPromise('string'), false);
-      assert.strictEqual(isPromise(123), false);
-      assert.strictEqual(
+      strictEqual(isPromise(), false);
+      strictEqual(isPromise(null), false);
+      strictEqual(isPromise({}), false);
+      strictEqual(isPromise('string'), false);
+      strictEqual(isPromise(123), false);
+      strictEqual(
         isPromise(() => {}),
         false
       );
-      assert.strictEqual(isPromise((async () => {}) as any), false);
+      strictEqual(isPromise((async () => {}) as any), false);
     });
   });
 
   describe('isAsyncFunction', () => {
     it('should be able to validate an async function to be true', () => {
-      assert.strictEqual(
+      strictEqual(
         isAsyncFunction(async () => {}),
         true
       );
     });
 
     it('should be able to validate non async function to be false', () => {
-      assert.strictEqual(isAsyncFunction(), false);
-      assert.strictEqual(isAsyncFunction(null), false);
-      assert.strictEqual(isAsyncFunction({}), false);
-      assert.strictEqual(isAsyncFunction('string'), false);
-      assert.strictEqual(isAsyncFunction(123), false);
-      assert.strictEqual(
+      strictEqual(isAsyncFunction(), false);
+      strictEqual(isAsyncFunction(null), false);
+      strictEqual(isAsyncFunction({}), false);
+      strictEqual(isAsyncFunction('string'), false);
+      strictEqual(isAsyncFunction(123), false);
+      strictEqual(
         isAsyncFunction(() => {}),
         false
       );
-      assert.strictEqual(isAsyncFunction(Promise.resolve()), false);
+      strictEqual(isAsyncFunction(Promise.resolve()), false);
     });
   });
 });

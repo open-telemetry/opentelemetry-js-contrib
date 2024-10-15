@@ -17,13 +17,13 @@ import { context } from '@opentelemetry/api';
 import { isTracingSuppressed } from '@opentelemetry/core';
 import { getInstrumentation } from '@opentelemetry/contrib-test-utils';
 import { expect } from 'expect';
-import * as AWS from 'aws-sdk';
+import { Response, Request } from 'aws-sdk';
 
 // we want to mock the request object and trigger events on it's events emitter.
 // the event emitter is not part of the public interface, so we create a type
 // for the mock to use it.
-type CompleteEventHandler = (response: AWS.Response<any, any>) => void;
-type RequestWithEvents = AWS.Request<any, any> & {
+type CompleteEventHandler = (response: Response<any, any>) => void;
+type RequestWithEvents = Request<any, any> & {
   _events: { complete: CompleteEventHandler[] };
 };
 
@@ -37,7 +37,7 @@ export const mockV2AwsSend = (
   // I would like to see another pattern for this in the future, for example - patching only
   // once and just setting the result and data, or patching the http layer instead with nock package.
   getInstrumentation()?.disable();
-  AWS.Request.prototype.send = function (
+  Request.prototype.send = function (
     this: RequestWithEvents,
     cb?: (error: any, response: any) => void
   ) {
@@ -45,7 +45,7 @@ export const mockV2AwsSend = (
       expectedInstrumentationSuppressed
     );
     if (cb) {
-      (this as AWS.Request<any, any>).on('complete', response => {
+      (this as Request<any, any>).on('complete', response => {
         cb(response.error, response);
       });
     }
@@ -56,14 +56,13 @@ export const mockV2AwsSend = (
     };
     setImmediate(() => {
       this._events.complete.forEach(
-        (handler: (response: AWS.Response<any, any>) => void) =>
-          handler(response)
+        (handler: (response: Response<any, any>) => void) => handler(response)
       );
     });
     return response;
   };
 
-  AWS.Request.prototype.promise = function (this: RequestWithEvents) {
+  Request.prototype.promise = function (this: RequestWithEvents) {
     expect(isTracingSuppressed(context.active())).toStrictEqual(
       expectedInstrumentationSuppressed
     );
@@ -74,8 +73,7 @@ export const mockV2AwsSend = (
     };
     setImmediate(() => {
       this._events.complete.forEach(
-        (handler: (response: AWS.Response<any, any>) => void) =>
-          handler(response)
+        (handler: (response: Response<any, any>) => void) => handler(response)
       );
     });
     return new Promise(resolve =>

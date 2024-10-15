@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import { strictEqual, ok } from 'assert';
 import { azureAppServiceDetector } from '../../src/detectors/AzureAppServiceDetector';
 import {
   SEMRESATTRS_CLOUD_PLATFORM,
@@ -51,32 +51,23 @@ describe('AzureAppServiceDetector', () => {
     const resource = detectResourcesSync({
       detectors: [azureFunctionsDetector, azureAppServiceDetector],
     });
-    assert.ok(resource);
+    ok(resource);
     const attributes = resource.attributes;
-    assert.strictEqual(attributes[SEMRESATTRS_SERVICE_NAME], 'test-site');
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_PROVIDER], 'azure');
-    assert.strictEqual(
-      attributes[SEMRESATTRS_CLOUD_PLATFORM],
-      'azure_app_service'
-    );
-    assert.strictEqual(
+    strictEqual(attributes[SEMRESATTRS_SERVICE_NAME], 'test-site');
+    strictEqual(attributes[SEMRESATTRS_CLOUD_PROVIDER], 'azure');
+    strictEqual(attributes[SEMRESATTRS_CLOUD_PLATFORM], 'azure_app_service');
+    strictEqual(
       attributes['cloud.resource_id'],
       `/subscriptions/${process.env.WEBSITE_OWNER_NAME}/resourceGroups/${process.env.WEBSITE_RESOURCE_GROUP}/providers/Microsoft.Web/sites/${process.env.WEBSITE_SITE_NAME}`
     );
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
-    assert.strictEqual(
-      attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT],
-      'test-slot'
-    );
-    assert.strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
-    assert.strictEqual(
+    strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
+    strictEqual(attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT], 'test-slot');
+    strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
+    strictEqual(
       attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
       'test-instance-id'
     );
-    assert.strictEqual(
-      attributes['azure.app.service.stamp'],
-      'test-home-stamp'
-    );
+    strictEqual(attributes['azure.app.service.stamp'], 'test-home-stamp');
   });
 
   it('should test with no resource group', () => {
@@ -91,22 +82,16 @@ describe('AzureAppServiceDetector', () => {
     const resource = detectResourcesSync({
       detectors: [azureFunctionsDetector, azureAppServiceDetector],
     });
-    assert.ok(resource);
+    ok(resource);
     const attributes = resource.attributes;
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
-    assert.strictEqual(
-      attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT],
-      'test-slot'
-    );
-    assert.strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
-    assert.strictEqual(
+    strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
+    strictEqual(attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT], 'test-slot');
+    strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
+    strictEqual(
       attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
       'test-instance-id'
     );
-    assert.strictEqual(
-      attributes['azure.app.service.stamp'],
-      'test-home-stamp'
-    );
+    strictEqual(attributes['azure.app.service.stamp'], 'test-home-stamp');
   });
 
   it('should test with no owner name', () => {
@@ -122,22 +107,16 @@ describe('AzureAppServiceDetector', () => {
     const resource = detectResourcesSync({
       detectors: [azureFunctionsDetector, azureAppServiceDetector],
     });
-    assert.ok(resource);
+    ok(resource);
     const attributes = resource.attributes;
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
-    assert.strictEqual(
-      attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT],
-      'test-slot'
-    );
-    assert.strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
-    assert.strictEqual(
+    strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
+    strictEqual(attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT], 'test-slot');
+    strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
+    strictEqual(
       attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
       'test-instance-id'
     );
-    assert.strictEqual(
-      attributes['azure.app.service.stamp'],
-      'test-home-stamp'
-    );
-    assert.strictEqual(attributes['cloud.resource_id'], undefined);
+    strictEqual(attributes['azure.app.service.stamp'], 'test-home-stamp');
+    strictEqual(attributes['cloud.resource_id'], undefined);
   });
 });

@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import * as api from '@opentelemetry/api';
+import {
+  context,
+  trace,
+  Span,
+  SpanStatusCode,
+  Context,
+} from '@opentelemetry/api';
 import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core';
 import {
   InstrumentationBase,
@@ -165,7 +171,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
   ): T {
     const instrumentation = this;
     const patchedFunction = <any>function (this: any, ...args: any[]) {
-      const activeContext = api.context.active();
+      const activeContext = context.active();
 
       if (!instrumentation._shouldTrace(activeContext)) {
         return original.apply(this, args);
@@ -175,7 +181,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
           args: args,
         }) === false
       ) {
-        return api.context.with(
+        return context.with(
           suppressTracing(activeContext),
           original,
           this,
@@ -185,12 +191,12 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
 
       const span = instrumentation.tracer.startSpan(
         `fs ${functionName}`
-      ) as api.Span;
+      ) as Span;
 
       try {
         // Suppress tracing for internal fs calls
-        const res = api.context.with(
-          suppressTracing(api.trace.setSpan(activeContext, span)),
+        const res = context.with(
+          suppressTracing(trace.setSpan(activeContext, span)),
           original,
           this,
           ...args
@@ -201,7 +207,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
         span.recordException(error);
         span.setStatus({
           message: error.message,
-          code: api.SpanStatusCode.ERROR,
+          code: SpanStatusCode.ERROR,
         });
         instrumentation._runEndHook(functionName, { args: args, span, error });
         throw error;
@@ -218,7 +224,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
   ): T {
     const instrumentation = this;
     const patchedFunction = <any>function (this: any, ...args: any[]) {
-      const activeContext = api.context.active();
+      const activeContext = context.active();
 
       if (!instrumentation._shouldTrace(activeContext)) {
         return original.apply(this, args);
@@ -228,7 +234,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
           args: args,
         }) === false
       ) {
-        return api.context.with(
+        return context.with(
           suppressTracing(activeContext),
           original,
           this,
@@ -241,17 +247,17 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
       if (typeof cb === 'function') {
         const span = instrumentation.tracer.startSpan(
           `fs ${functionName}`
-        ) as api.Span;
+        ) as Span;
 
         // Return to the context active during the call in the callback
-        args[lastIdx] = api.context.bind(
+        args[lastIdx] = context.bind(
           activeContext,
           function (this: unknown, error?: Error) {
             if (error) {
               span.recordException(error);
               span.setStatus({
                 message: error.message,
-                code: api.SpanStatusCode.ERROR,
+                code: SpanStatusCode.ERROR,
               });
             }
             instrumentation._runEndHook(functionName, {
@@ -266,8 +272,8 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
 
         try {
           // Suppress tracing for internal fs calls
-          return api.context.with(
-            suppressTracing(api.trace.setSpan(activeContext, span)),
+          return context.with(
+            suppressTracing(trace.setSpan(activeContext, span)),
             original,
             this,
             ...args
@@ -276,7 +282,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
           span.recordException(error);
           span.setStatus({
             message: error.message,
-            code: api.SpanStatusCode.ERROR,
+            code: SpanStatusCode.ERROR,
           });
           instrumentation._runEndHook(functionName, {
             args: args,
@@ -299,7 +305,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
   >(functionName: 'exists', original: T): T {
     const instrumentation = this;
     const patchedFunction = <any>function (this: any, ...args: any[]) {
-      const activeContext = api.context.active();
+      const activeContext = context.active();
 
       if (!instrumentation._shouldTrace(activeContext)) {
         return original.apply(this, args);
@@ -309,7 +315,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
           args: args,
         }) === false
       ) {
-        return api.context.with(
+        return context.with(
           suppressTracing(activeContext),
           original,
           this,
@@ -322,26 +328,23 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
       if (typeof cb === 'function') {
         const span = instrumentation.tracer.startSpan(
           `fs ${functionName}`
-        ) as api.Span;
+        ) as Span;
 
         // Return to the context active during the call in the callback
-        args[lastIdx] = api.context.bind(
-          activeContext,
-          function (this: unknown) {
-            // `exists` never calls the callback with an error
-            instrumentation._runEndHook(functionName, {
-              args: args,
-              span,
-            });
-            span.end();
-            return cb.apply(this, arguments);
-          }
-        );
+        args[lastIdx] = context.bind(activeContext, function (this: unknown) {
+          // `exists` never calls the callback with an error
+          instrumentation._runEndHook(functionName, {
+            args: args,
+            span,
+          });
+          span.end();
+          return cb.apply(this, arguments);
+        });
 
         try {
           // Suppress tracing for internal fs calls
-          return api.context.with(
-            suppressTracing(api.trace.setSpan(activeContext, span)),
+          return context.with(
+            suppressTracing(trace.setSpan(activeContext, span)),
             original,
             this,
             ...args
@@ -350,7 +353,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
           span.recordException(error);
           span.setStatus({
             message: error.message,
-            code: api.SpanStatusCode.ERROR,
+            code: SpanStatusCode.ERROR,
           });
           instrumentation._runEndHook(functionName, {
             args: args,
@@ -388,7 +391,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
   ): T {
     const instrumentation = this;
     const patchedFunction = <any>async function (this: any, ...args: any[]) {
-      const activeContext = api.context.active();
+      const activeContext = context.active();
 
       if (!instrumentation._shouldTrace(activeContext)) {
         return original.apply(this, args);
@@ -398,7 +401,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
           args: args,
         }) === false
       ) {
-        return api.context.with(
+        return context.with(
           suppressTracing(activeContext),
           original,
           this,
@@ -408,12 +411,12 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
 
       const span = instrumentation.tracer.startSpan(
         `fs ${functionName}`
-      ) as api.Span;
+      ) as Span;
 
       try {
         // Suppress tracing for internal fs calls
-        const res = await api.context.with(
-          suppressTracing(api.trace.setSpan(activeContext, span)),
+        const res = await context.with(
+          suppressTracing(trace.setSpan(activeContext, span)),
           original,
           this,
           ...args
@@ -424,7 +427,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
         span.recordException(error);
         span.setStatus({
           message: error.message,
-          code: api.SpanStatusCode.ERROR,
+          code: SpanStatusCode.ERROR,
         });
         instrumentation._runEndHook(functionName, { args: args, span, error });
         throw error;
@@ -460,7 +463,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
     }
   }
 
-  protected _shouldTrace(context: api.Context): boolean {
+  protected _shouldTrace(context: Context): boolean {
     if (isTracingSuppressed(context)) {
       // Performance optimization. Avoid creating additional contexts and spans
       // if we already know that the tracing is being suppressed.
@@ -469,7 +472,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
 
     const { requireParentSpan } = this.getConfig();
     if (requireParentSpan) {
-      const parentSpan = api.trace.getSpan(context);
+      const parentSpan = trace.getSpan(context);
       if (parentSpan == null) {
         return false;
       }

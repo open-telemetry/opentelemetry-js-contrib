@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as assert from 'assert';
+import { strictEqual, ok } from 'assert';
 
 import { context, propagation } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -102,38 +102,32 @@ describe('UndiciInstrumentation metrics tests', function () {
       const scopeMetrics = resourceMetrics[0].scopeMetrics;
       const metrics = scopeMetrics[0].metrics;
 
-      assert.strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
-      assert.strictEqual(metrics.length, 1, 'metrics count');
-      assert.strictEqual(
-        metrics[0].descriptor.name,
-        'http.client.request.duration'
-      );
-      assert.strictEqual(
+      strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
+      strictEqual(metrics.length, 1, 'metrics count');
+      strictEqual(metrics[0].descriptor.name, 'http.client.request.duration');
+      strictEqual(
         metrics[0].descriptor.description,
         'Measures the duration of outbound HTTP requests.'
       );
-      assert.strictEqual(metrics[0].descriptor.unit, 's');
-      assert.strictEqual(metrics[0].dataPointType, DataPointType.HISTOGRAM);
-      assert.strictEqual(metrics[0].dataPoints.length, 1);
+      strictEqual(metrics[0].descriptor.unit, 's');
+      strictEqual(metrics[0].dataPointType, DataPointType.HISTOGRAM);
+      strictEqual(metrics[0].dataPoints.length, 1);
 
       const metricAttributes = metrics[0].dataPoints[0].attributes;
-      assert.strictEqual(
-        metricAttributes[SemanticAttributes.URL_SCHEME],
-        'http'
-      );
-      assert.strictEqual(
+      strictEqual(metricAttributes[SemanticAttributes.URL_SCHEME], 'http');
+      strictEqual(
         metricAttributes[SemanticAttributes.HTTP_REQUEST_METHOD],
         'GET'
       );
-      assert.strictEqual(
+      strictEqual(
         metricAttributes[SemanticAttributes.SERVER_ADDRESS],
         'localhost'
       );
-      assert.strictEqual(
+      strictEqual(
         metricAttributes[SemanticAttributes.SERVER_PORT],
         mockServer.port
       );
-      assert.strictEqual(
+      strictEqual(
         metricAttributes[SemanticAttributes.HTTP_RESPONSE_STATUS_CODE],
         200
       );
@@ -153,35 +147,29 @@ describe('UndiciInstrumentation metrics tests', function () {
       const scopeMetrics = resourceMetrics[0].scopeMetrics;
       const metrics = scopeMetrics[0].metrics;
 
-      assert.strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
-      assert.strictEqual(metrics.length, 1, 'metrics count');
-      assert.strictEqual(
-        metrics[0].descriptor.name,
-        'http.client.request.duration'
-      );
-      assert.strictEqual(
+      strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
+      strictEqual(metrics.length, 1, 'metrics count');
+      strictEqual(metrics[0].descriptor.name, 'http.client.request.duration');
+      strictEqual(
         metrics[0].descriptor.description,
         'Measures the duration of outbound HTTP requests.'
       );
-      assert.strictEqual(metrics[0].descriptor.unit, 's');
-      assert.strictEqual(metrics[0].dataPointType, DataPointType.HISTOGRAM);
-      assert.strictEqual(metrics[0].dataPoints.length, 1);
+      strictEqual(metrics[0].descriptor.unit, 's');
+      strictEqual(metrics[0].dataPointType, DataPointType.HISTOGRAM);
+      strictEqual(metrics[0].dataPoints.length, 1);
 
       const metricAttributes = metrics[0].dataPoints[0].attributes;
-      assert.strictEqual(
-        metricAttributes[SemanticAttributes.URL_SCHEME],
-        'http'
-      );
-      assert.strictEqual(
+      strictEqual(metricAttributes[SemanticAttributes.URL_SCHEME], 'http');
+      strictEqual(
         metricAttributes[SemanticAttributes.HTTP_REQUEST_METHOD],
         'GET'
       );
-      assert.strictEqual(
+      strictEqual(
         metricAttributes[SemanticAttributes.SERVER_ADDRESS],
         'unknownhost'
       );
-      assert.strictEqual(metricAttributes[SemanticAttributes.SERVER_PORT], 80);
-      assert.ok(
+      strictEqual(metricAttributes[SemanticAttributes.SERVER_PORT], 80);
+      ok(
         metricAttributes[SemanticAttributes.ERROR_TYPE],
         `the metric contains "${SemanticAttributes.ERROR_TYPE}" attribute if request failed`
       );

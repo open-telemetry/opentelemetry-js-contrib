@@ -24,8 +24,8 @@ import {
   SEMATTRS_NET_PEER_PORT,
   SEMATTRS_NET_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
-import * as assert from 'assert';
-import * as path from 'path';
+import { strictEqual } from 'assert';
+import { resolve, join } from 'path';
 import * as os from 'os';
 import { Socket } from 'net';
 import { IPC_TRANSPORT } from '../src/utils';
@@ -36,7 +36,7 @@ export const PORT = 42123;
 export const HOST = 'localhost';
 export const IPC_PATH =
   os.platform() !== 'win32'
-    ? path.join(os.tmpdir(), 'otel-js-net-test-ipc')
+    ? join(os.tmpdir(), 'otel-js-net-test-ipc')
     : '\\\\.\\pipe\\otel-js-net-test-ipc';
 
 export function assertTcpSpan(span: ReadableSpan, socket: Socket) {
@@ -98,28 +98,28 @@ export function assertTLSSpan(
 }
 
 export function assertSpanKind(span: ReadableSpan) {
-  assert.strictEqual(span.kind, SpanKind.INTERNAL);
+  strictEqual(span.kind, SpanKind.INTERNAL);
 }
 
 export function assertAttrib(span: ReadableSpan, attrib: string, value: any) {
-  assert.strictEqual(span.attributes[attrib], value);
+  strictEqual(span.attributes[attrib], value);
 }
 
 export function assertParentChild(
   parentSpan: ReadableSpan,
   childSpan: ReadableSpan
 ) {
-  assert.strictEqual(
+  strictEqual(
     childSpan.spanContext().traceId,
     parentSpan.spanContext().traceId
   );
-  assert.strictEqual(childSpan.parentSpanId, parentSpan.spanContext().spanId);
+  strictEqual(childSpan.parentSpanId, parentSpan.spanContext().spanId);
 }
 
 export const TLS_SERVER_CERT = fs
-  .readFileSync(path.resolve(__dirname, './fixtures/tls.crt'))
+  .readFileSync(resolve(__dirname, './fixtures/tls.crt'))
   .toString();
 
 export const TLS_SERVER_KEY = fs
-  .readFileSync(path.resolve(__dirname, './fixtures/tls.key'))
+  .readFileSync(resolve(__dirname, './fixtures/tls.key'))
   .toString();

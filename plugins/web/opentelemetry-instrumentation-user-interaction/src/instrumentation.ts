@@ -18,7 +18,7 @@
 
 import { isWrapped, InstrumentationBase } from '@opentelemetry/instrumentation';
 
-import * as api from '@opentelemetry/api';
+import { trace, context, Span, HrTime, Context } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 import { getElementXPath } from '@opentelemetry/sdk-trace-web';
 import { AttributeNames } from './enums/AttributeNames';
@@ -52,7 +52,7 @@ function defaultShouldPreventSpanCreation() {
 export class UserInteractionInstrumentation extends InstrumentationBase<UserInteractionInstrumentationConfig> {
   readonly version = PACKAGE_VERSION;
   readonly moduleName: string = 'user-interaction';
-  private _spansData = new WeakMap<api.Span, SpanData>();
+  private _spansData = new WeakMap<Span, SpanData>();
   private _zonePatched?: boolean;
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
@@ -60,10 +60,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     Map<string, Map<HTMLElement, Function>>
   >();
   // for event bubbling
-  private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<
-    Event,
-    api.Span
-  >();
+  private _eventsSpanMap: WeakMap<Event, Span> = new WeakMap<Event, Span>();
   private _eventNames: Set<EventName>;
   private _shouldPreventSpanCreation: ShouldPreventSpanCreation;
 
@@ -86,7 +83,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * @param task
    * @param span
    */
-  private _checkForTimeout(task: AsyncTask, span: api.Span) {
+  private _checkForTimeout(task: AsyncTask, span: Span) {
     const spanData = this._spansData.get(span);
     if (spanData) {
       if (task.source === 'setTimeout') {
@@ -116,8 +113,8 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
   private _createSpan(
     element: EventTarget | null | undefined,
     eventName: EventName,
-    parentSpan?: api.Span
-  ): api.Span | undefined {
+    parentSpan?: Span
+  ): Span | undefined {
     if (!(element instanceof HTMLElement)) {
       return undefined;
     }
@@ -142,9 +139,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
             [AttributeNames.HTTP_URL]: window.location.href,
           },
         },
-        parentSpan
-          ? api.trace.setSpan(api.context.active(), parentSpan)
-          : undefined
+        parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined
       );
 
       if (this._shouldPreventSpanCreation(eventName, element, span) === true) {
@@ -167,7 +162,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * This is needed to be able to end span when no more tasks left
    * @param span
    */
-  private _decrementTask(span: api.Span) {
+  private _decrementTask(span: Span) {
     const spanData = this._spansData.get(span);
     if (spanData) {
       spanData.taskCount--;
@@ -182,10 +177,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * @param zone
    * @private
    */
-  private _getCurrentSpan(zone: Zone): api.Span | undefined {
-    const context: api.Context | undefined = zone.get(ZONE_CONTEXT_KEY);
+  private _getCurrentSpan(zone: Zone): Span | undefined {
+    const context: Context | undefined = zone.get(ZONE_CONTEXT_KEY);
     if (context) {
-      return api.trace.getSpan(context);
+      return trace.getSpan(context);
     }
     return context;
   }
@@ -195,7 +190,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    *     This is needed to be able to end span when no more tasks left
    * @param span
    */
-  private _incrementTask(span: api.Span) {
+  private _incrementTask(span: Span) {
     const spanData = this._spansData.get(span);
     if (spanData) {
       spanData.taskCount++;
@@ -293,7 +288,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
         const once =
           useCapture && typeof useCapture === 'object' && useCapture.once;
         const patchedListener = function (this: HTMLElement, ...args: any[]) {
-          let parentSpan: api.Span | undefined;
+          let parentSpan: Span | undefined;
           const event: Event | undefined = args[0];
           const target = event?.target;
           if (event) {
@@ -307,15 +302,12 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
             if (event) {
               plugin._eventsSpanMap.set(event, span);
             }
-            return api.context.with(
-              api.trace.setSpan(api.context.active(), span),
-              () => {
-                const result = plugin._invokeListener(listener, this, args);
-                // no zone so end span immediately
-                span.end();
-                return result;
-              }
-            );
+            return context.with(trace.setSpan(context.active(), span), () => {
+              const result = plugin._invokeListener(listener, this, args);
+              // no zone so end span immediately
+              span.end();
+              return result;
+            });
           } else {
             return plugin._invokeListener(listener, this, args);
           }
@@ -420,7 +412,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * @param url
    */
   _updateInteractionName(url: string) {
-    const span: api.Span | undefined = api.trace.getSpan(api.context.active());
+    const span: Span | undefined = trace.getSpan(context.active());
     if (span && typeof span.updateName === 'function') {
       span.updateName(`${EVENT_NAVIGATION_NAME} ${url}`);
     }
@@ -490,7 +482,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
             ? applyArgs[0]
             : undefined;
         const target = event?.target;
-        let span: api.Span | undefined;
+        let span: Span | undefined;
         const activeZone = this;
         if (target) {
           span = plugin._createSpan(target, task.eventName);
@@ -498,8 +490,8 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
             plugin._incrementTask(span);
             return activeZone.run(() => {
               try {
-                return api.context.with(
-                  api.trace.setSpan(api.context.active(), span!),
+                return context.with(
+                  trace.setSpan(context.active(), span!),
                   () => {
                     const currentZone = Zone.current;
                     task._zone = currentZone;
@@ -512,7 +504,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
                   }
                 );
               } finally {
-                plugin._decrementTask(span as api.Span);
+                plugin._decrementTask(span as Span);
               }
             });
           }
@@ -560,7 +552,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * @param endTime
    * @private
    */
-  private _tryToEndSpan(span: api.Span, endTime?: api.HrTime) {
+  private _tryToEndSpan(span: Span, endTime?: HrTime) {
     if (span) {
       const spanData = this._spansData.get(span);
       if (spanData) {

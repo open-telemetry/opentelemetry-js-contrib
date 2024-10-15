@@ -14,5 +14,15 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { FsInstrumentation } from './instrumentation';
+export {
+  FunctionPropertyNames,
+  FunctionProperties,
+  FunctionPropertyNamesTwoLevels,
+  Member,
+  FMember,
+  FPMember,
+  CreateHook,
+  EndHook,
+  FsInstrumentationConfig,
+} from './types';

@@ -14,4 +14,16 @@
  * limitations under the License.
  */
 
-export * from './detectors';
+export { AwsBeanstalkDetector, awsBeanstalkDetector } from './detectors';
+export {
+  AwsBeanstalkDetectorSync,
+  awsBeanstalkDetectorSync,
+} from './detectors';
+export { awsEc2Detector } from './detectors';
+export { awsEc2DetectorSync } from './detectors';
+export { AwsEcsDetector, awsEcsDetector } from './detectors';
+export { AwsEcsDetectorSync, awsEcsDetectorSync } from './detectors';
+export { AwsEksDetector, awsEksDetector } from './detectors';
+export { AwsEksDetectorSync, awsEksDetectorSync } from './detectors';
+export { AwsLambdaDetector, awsLambdaDetector } from './detectors';
+export { AwsLambdaDetectorSync, awsLambdaDetectorSync } from './detectors';

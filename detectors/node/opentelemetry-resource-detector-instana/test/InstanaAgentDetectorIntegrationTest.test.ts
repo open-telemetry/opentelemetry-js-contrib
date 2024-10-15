@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as nock from 'nock';
-import * as assert from 'assert';
+import { disableNetConnect, enableNetConnect, cleanAll } from 'nock';
+import { equal } from 'assert';
 import {
   Resource,
   processDetector,
@@ -24,6 +24,7 @@ import {
 import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { instanaAgentDetector } from '../src';
+import nock = require('nock');
 
 const delay = (ms: number) =>
   new Promise<void>(resolve => {
@@ -32,13 +33,13 @@ const delay = (ms: number) =>
 
 describe('[Integration] instanaAgentDetector', () => {
   beforeEach(() => {
-    nock.disableNetConnect();
-    nock.cleanAll();
+    disableNetConnect();
+    cleanAll();
   });
 
   afterEach(() => {
-    nock.enableNetConnect();
-    nock.cleanAll();
+    enableNetConnect();
+    cleanAll();
   });
 
   it('#1 should return merged resource', async () => {
@@ -69,10 +70,10 @@ describe('[Integration] instanaAgentDetector', () => {
     // await resource.waitForAsyncAttributes?.(); [>= @opentelemetry/sdk-node@0.37.0]
     await resource.waitForAsyncAttributes?.();
 
-    assert.equal(resource.attributes['process.pid'], 123);
-    assert.equal(resource.attributes['process.runtime.name'], 'nodejs');
-    assert.equal(resource.attributes['service.name'], 'TestService');
-    assert.equal(
+    equal(resource.attributes['process.pid'], 123);
+    equal(resource.attributes['process.runtime.name'], 'nodejs');
+    equal(resource.attributes['service.name'], 'TestService');
+    equal(
       resource.attributes['service.instance.id'],
       '14:7d:da:ff:fe:e4:08:d5'
     );
@@ -106,10 +107,10 @@ describe('[Integration] instanaAgentDetector', () => {
 
     await delay(500);
 
-    assert.equal(resource.attributes['process.pid'], 123);
-    assert.equal(resource.attributes['process.runtime.name'], 'nodejs');
-    assert.equal(resource.attributes['service.name'], 'TestService');
-    assert.equal(
+    equal(resource.attributes['process.pid'], 123);
+    equal(resource.attributes['process.runtime.name'], 'nodejs');
+    equal(resource.attributes['service.name'], 'TestService');
+    equal(
       resource.attributes['service.instance.id'],
       '14:7d:da:ff:fe:e4:08:d5'
     );

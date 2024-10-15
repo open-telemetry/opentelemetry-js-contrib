@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import { equal } from 'assert';
 
 import { FsInstrumentation } from '@opentelemetry/instrumentation-fs';
 import {
@@ -60,7 +60,7 @@ describe('[Integration] ContainerDetector', () => {
     await new Promise(r => setTimeout(r, 0));
     const spans = memoryExporter.getFinishedSpans();
 
-    assert.equal(
+    equal(
       spans.length,
       numSpansAfterRequire,
       'no spans exported for ContainerDetector'

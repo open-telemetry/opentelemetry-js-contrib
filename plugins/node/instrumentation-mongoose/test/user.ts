@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { Schema, Document } from 'mongoose';
-import * as mongoose from 'mongoose';
+import { model } from 'mongoose';
 
 export interface IUser extends Document {
   email: string;
@@ -31,7 +31,7 @@ const UserSchema: Schema = new Schema({
 });
 
 // Export the model and return your IUser interface
-const User = mongoose.model<IUser>('User', UserSchema);
+const User = model<IUser>('User', UserSchema);
 export default User;
 
 export const loadUsers = async () => {

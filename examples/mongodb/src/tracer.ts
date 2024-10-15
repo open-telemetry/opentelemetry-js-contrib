@@ -1,4 +1,4 @@
-import * as api from "@opentelemetry/api";
+import {trace, Tracer} from '@opentelemetry/api';
 
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Resource } from '@opentelemetry/resources';
@@ -11,7 +11,7 @@ import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
 import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
 
-export const setupTracing = (serviceName: string): api.Tracer => {
+export const setupTracing = (serviceName: string): Tracer => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
       [SEMRESATTRS_SERVICE_NAME]: serviceName
@@ -34,5 +34,5 @@ export const setupTracing = (serviceName: string): api.Tracer => {
   provider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter()));
   provider.addSpanProcessor(new SimpleSpanProcessor(new JaegerExporter()));
 
-  return api.trace.getTracer('mongodb-example');
+  return trace.getTracer('mongodb-example');
 };

@@ -13,5 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from './aws-sdk';
-export * from './types';
+export { AwsInstrumentation } from './aws-sdk';
+export {
+  CommandInput,
+  NormalizedRequest,
+  NormalizedResponse,
+  AwsSdkRequestHookInformation,
+  AwsSdkRequestCustomAttributeFunction,
+  AwsSdkResponseHookInformation,
+  AwsSdkResponseCustomAttributeFunction,
+  AwsSdkSqsProcessHookInformation,
+  AwsSdkSqsProcessCustomAttributeFunction,
+  AwsSdkDynamoDBStatementSerializer,
+  AwsSdkInstrumentationConfig,
+} from './types';

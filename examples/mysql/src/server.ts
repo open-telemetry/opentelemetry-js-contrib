@@ -3,32 +3,32 @@
 // eslint-disable-next-line import/order
 import { setupTracing } from "./tracer";
 setupTracing('example-mysql-server');
-import * as api from '@opentelemetry/api';
-import * as mysql from 'mysql'
-import * as http from 'http';
+import {trace, context} from '@opentelemetry/api';
+import {createPool, createPoolCluster,createConnection} from 'mysql'
+import {createServer} from 'http';
 import { MysqlError } from "mysql";
 import { PoolConnection } from "mysql";
 
-const pool = mysql.createPool({
+const pool = createPool({
   host: 'localhost',
   user: 'root',
   password: 'secret',
 });
 
-const pool2 = mysql.createPool({
+const pool2 = createPool({
   host: 'localhost',
   user: 'root',
   password: 'secret',
   database: 'db_test' //this db is created by init.sql
 });
 
-const connection = mysql.createConnection({
+const connection = createConnection({
   host: 'localhost',
   user: 'root',
   password: 'secret',
 });
 
-const cluster = mysql.createPoolCluster();
+const cluster = createPoolCluster();
 
 cluster.add({
   host: 'localhost',
@@ -39,7 +39,7 @@ cluster.add({
 /** Starts a HTTP server that receives requests on sample server port. */
 function startServer(port: number | undefined) {
   // Creates a server
-  const server = http.createServer(handleRequest);
+  const server = createServer(handleRequest);
   // Starts the server
   server.listen(port, () => {
     console.log(`Node HTTP listening on ${port}`);
@@ -48,7 +48,7 @@ function startServer(port: number | undefined) {
 
 /** A function which handles requests and send response. */
 function handleRequest(request: any, response: any) {
-  const currentSpan = api.trace.getSpan(api.context.active())
+  const currentSpan = trace.getSpan(context.active())
   // display traceid in the terminal
   const traceId = currentSpan?.spanContext().traceId;
   console.log(`traceid: ${traceId}`);
@@ -92,7 +92,7 @@ function handlePoolQuery(response: any) {
     } else {
       conn.query(query, (err, results) => {
         conn.release();
-        api.trace.getSpan(api.context.active())?.addEvent('results');
+        trace.getSpan(context.active())?.addEvent('results');
         if (err) {
           console.log('Error code:', err.code);
           response.end(err.message);
@@ -114,7 +114,7 @@ function handle2PoolsQuery(response: any) {
     } else {
       conn.query(query1, (err, results) => {
         conn.release();
-        api.trace.getSpan(api.context.active())?.addEvent('results');
+        trace.getSpan(context.active())?.addEvent('results');
         if (err) {
           console.log('Error code:', err.code);
           response.end(err.message);
@@ -131,7 +131,7 @@ function handle2PoolsQuery(response: any) {
     } else {
       conn.query(query2, (err, results) => {
         conn.release();
-        api.trace.getSpan(api.context.active())?.addEvent('results');
+        trace.getSpan(context.active())?.addEvent('results');
         if (err) {
           console.log('Error code:', err.code);
           response.end(err.message);
@@ -204,7 +204,7 @@ function handleClusterQuery(response: any) {
       response.end(connErr.message);
     } else {
       conn.query(query, (err, results, _fields) => {
-        api.trace.getSpan(api.context.active())?.addEvent('results');
+        trace.getSpan(context.active())?.addEvent('results');
         if (err) {
           console.log('Error code:', err.code);
           response.end(err.message);

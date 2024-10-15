@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import * as dns from 'dns';
+import { lookup } from 'dns';
 
 export const checkInternet = (cb: (isConnected: boolean) => void) => {
-  dns.lookup('google.com', err => {
+  lookup('google.com', err => {
     if (err && err.code === 'ENOTFOUND') {
       cb(false);
     } else {

@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { CucumberInstrumentation } from './instrumentation';
+export { AttributeNames, CucumberInstrumentationConfig } from './types';

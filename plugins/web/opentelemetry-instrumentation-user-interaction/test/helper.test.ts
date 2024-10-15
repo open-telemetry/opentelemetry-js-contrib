@@ -15,7 +15,7 @@
  */
 
 import * as tracing from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
+import { strictEqual, ok } from 'assert';
 
 export class DummySpanExporter implements tracing.SpanExporter {
   export(spans: tracing.ReadableSpan[]) {}
@@ -73,14 +73,14 @@ export function assertInteractionSpan(
     elementId = 'testBtn',
   }: { name: string; eventType?: string; elementId?: string }
 ) {
-  assert.strictEqual(span.name, name);
+  strictEqual(span.name, name);
 
   const attributes = span.attributes;
-  assert.strictEqual(attributes.event_type, eventType);
-  assert.strictEqual(attributes.target_element, 'BUTTON');
-  assert.strictEqual(attributes.target_xpath, `//*[@id="${elementId}"]`);
-  assert.ok(attributes['http.url'] !== '');
-  assert.ok(attributes['user_agent'] !== '');
+  strictEqual(attributes.event_type, eventType);
+  strictEqual(attributes.target_element, 'BUTTON');
+  strictEqual(attributes.target_xpath, `//*[@id="${elementId}"]`);
+  ok(attributes['http.url'] !== '');
+  ok(attributes['user_agent'] !== '');
 }
 
 export function getData(url: string, callbackAfterSend: Function) {

@@ -29,7 +29,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import type * as Memcached from 'memcached';
-import * as assert from 'assert';
+import { deepEqual, strictEqual, ok, fail, notStrictEqual } from 'assert';
 import { MemcachedInstrumentation } from '../src';
 import {
   DBSYSTEMVALUES_MEMCACHED,
@@ -39,6 +39,7 @@ import {
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import * as util from 'util';
+import assert = require('assert');
 
 const instrumentation = new MemcachedInstrumentation();
 const memoryExporter = new InMemorySpanExporter();
@@ -133,7 +134,7 @@ describe('memcached@2.x', () => {
           await client.setPromise(KEY, VALUE, 10);
           const value = await client.getPromise(KEY);
 
-          assert.strictEqual(value, VALUE);
+          strictEqual(value, VALUE);
           const instrumentationSpans = memoryExporter.getFinishedSpans();
           assertSpans(instrumentationSpans, [
             {
@@ -161,9 +162,9 @@ describe('memcached@2.x', () => {
         async () => {
           try {
             await client.appendPromise(KEY, VALUE);
-            assert.fail(neverError);
+            fail(neverError);
           } catch (e) {
-            assert.notStrictEqual(e, neverError);
+            notStrictEqual(e, neverError);
           }
 
           const instrumentationSpans = memoryExporter.getFinishedSpans();
@@ -217,7 +218,7 @@ describe('memcached@2.x', () => {
         client.get(KEY, () => {
           try {
             const cbContext = context.active();
-            assert.strictEqual(cbContext, parentContext);
+            strictEqual(cbContext, parentContext);
             done();
           } catch (e) {
             done(e);
@@ -232,7 +233,7 @@ describe('memcached@2.x', () => {
       });
       const value = await client.getPromise(KEY);
 
-      assert.strictEqual(value, VALUE);
+      strictEqual(value, VALUE);
       const instrumentationSpans = memoryExporter.getFinishedSpans();
       assertSpans(instrumentationSpans, [
         {
@@ -246,7 +247,7 @@ describe('memcached@2.x', () => {
     it('should not create new spans when disabled', async () => {
       instrumentation.disable();
       await client.getPromise(KEY);
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      strictEqual(memoryExporter.getFinishedSpans().length, 0);
     });
   });
 
@@ -279,7 +280,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
     Array.isArray(expectedSpans),
     'Expected `expectedSpans` to be an array'
   );
-  assert.strictEqual(
+  strictEqual(
     actualSpans.length,
     expectedSpans.length,
     'Expected span count different from actual'
@@ -288,30 +289,24 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
     const expected = expectedSpans[idx];
     if (expected === null) return;
     try {
-      assert.notStrictEqual(span, undefined);
-      assert.notStrictEqual(expected, undefined);
+      notStrictEqual(span, undefined);
+      notStrictEqual(expected, undefined);
       assertMatch(span.name, new RegExp(expected.op));
       assertMatch(span.name, new RegExp('memcached'));
-      assert.strictEqual(span.kind, SpanKind.CLIENT);
-      assert.strictEqual(span.attributes['db.statement'], expected.statement);
+      strictEqual(span.kind, SpanKind.CLIENT);
+      strictEqual(span.attributes['db.statement'], expected.statement);
       for (const attr in DEFAULT_ATTRIBUTES) {
-        assert.strictEqual(span.attributes[attr], DEFAULT_ATTRIBUTES[attr]);
+        strictEqual(span.attributes[attr], DEFAULT_ATTRIBUTES[attr]);
       }
-      assert.strictEqual(span.attributes['db.memcached.key'], expected.key);
-      assert.strictEqual(
+      strictEqual(span.attributes['db.memcached.key'], expected.key);
+      strictEqual(
         typeof span.attributes['memcached.version'],
         'string',
         'memcached.version not specified'
       );
-      assert.deepEqual(
-        span.status,
-        expected.status || { code: SpanStatusCode.UNSET }
-      );
-      assert.strictEqual(span.attributes['db.operation'], expected.op);
-      assert.strictEqual(
-        span.parentSpanId,
-        expected.parentSpan?.spanContext().spanId
-      );
+      deepEqual(span.status, expected.status || { code: SpanStatusCode.UNSET });
+      strictEqual(span.attributes['db.operation'], expected.op);
+      strictEqual(span.parentSpanId, expected.parentSpan?.spanContext().spanId);
     } catch (e: any) {
       e.message = `At span[${idx}]: ${e.message}`;
       throw e;
@@ -320,5 +315,5 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
 };
 
 const assertMatch = (str: string, regexp: RegExp, err?: any) => {
-  assert.ok(regexp.test(str), err ?? `Expected '${str} to match ${regexp}`);
+  ok(regexp.test(str), err ?? `Expected '${str} to match ${regexp}`);
 };

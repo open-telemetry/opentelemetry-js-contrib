@@ -18,18 +18,19 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
+import { strictEqual, ok } from 'assert';
 import { FsInstrumentation } from '../src';
-import * as sinon from 'sinon';
+import { assert, spy } from 'sinon';
 import type * as FSPromisesType from 'fs/promises';
 import type { FsInstrumentationConfig } from '../src/types';
+import Assert = require('assert');
 
 const createHookError = new Error('createHook failed');
-const createHook = sinon.spy((_functionName: string) => {
+const createHook = spy((_functionName: string) => {
   throw createHookError;
 });
 const endHookError = new Error('endHook failed');
-const endHook = sinon.spy((_functionName: string) => {
+const endHook = spy((_functionName: string) => {
   throw endHookError;
 });
 const pluginConfig = {
@@ -42,7 +43,7 @@ const memoryExporter = new InMemorySpanExporter();
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
 const assertNotHookError = (err?: Error | null) => {
-  assert.ok(
+  ok(
     err &&
       err.message !== createHookError.message &&
       err.message !== endHookError.message,
@@ -52,13 +53,13 @@ const assertNotHookError = (err?: Error | null) => {
 
 const assertSuccessfulCallHooks = (expectedFunctionName: string) => {
   const createHookCall = createHook.withArgs(expectedFunctionName);
-  sinon.assert.called(createHookCall);
-  sinon.assert.threw(createHookCall, createHookError);
+  assert.called(createHookCall);
+  assert.threw(createHookCall, createHookError);
 
   const endHookCall = endHook.withArgs(expectedFunctionName);
-  sinon.assert.called(endHookCall);
-  sinon.assert.threw(endHookCall, endHookError);
-  assert(
+  assert.called(endHookCall);
+  assert.threw(endHookCall, endHookError);
+  Assert(
     !(endHookCall.getCall(0).args as any)[1].error,
     'Did not expect an error'
   );
@@ -66,13 +67,13 @@ const assertSuccessfulCallHooks = (expectedFunctionName: string) => {
 
 const assertFailingCallHooks = (expectedFunctionName: string) => {
   const createHookCall = createHook.withArgs(expectedFunctionName);
-  sinon.assert.called(createHookCall);
-  sinon.assert.threw(createHookCall, createHookError);
+  assert.called(createHookCall);
+  assert.threw(createHookCall, createHookError);
 
   const endHookCall = endHook.withArgs(expectedFunctionName);
-  sinon.assert.called(endHookCall);
-  sinon.assert.threw(endHookCall, endHookError);
-  assert((endHookCall.getCall(0).args as any)[1].error, 'Expected an error');
+  assert.called(endHookCall);
+  assert.threw(endHookCall, endHookError);
+  Assert((endHookCall.getCall(0).args as any)[1].error, 'Expected an error');
 };
 
 // This should equal `fs.constants.R_OK`.
@@ -91,7 +92,7 @@ describe('fs/promises instrumentation: hooks', () => {
     fsPromises = require('fs/promises');
     createHook.resetHistory();
     endHook.resetHistory();
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 
   afterEach(() => {

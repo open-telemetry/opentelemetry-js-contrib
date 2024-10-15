@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import * as nock from 'nock';
-import * as assert from 'assert';
+import { disableNetConnect, enableNetConnect, cleanAll } from 'nock';
+import { deepEqual, deepStrictEqual } from 'assert';
 import { instanaAgentDetector } from '../src';
+import nock = require('nock');
 
 describe('[UNIT] instanaAgentDetector', () => {
   describe('when agent is running', () => {
@@ -29,8 +30,8 @@ describe('[UNIT] instanaAgentDetector', () => {
     });
 
     beforeEach(() => {
-      nock.disableNetConnect();
-      nock.cleanAll();
+      disableNetConnect();
+      cleanAll();
     });
 
     afterEach(() => {
@@ -38,8 +39,8 @@ describe('[UNIT] instanaAgentDetector', () => {
       delete process.env.INSTANA_AGENT_HOST;
       delete process.env.INSTANA_AGENT_PORT;
 
-      nock.enableNetConnect();
-      nock.cleanAll();
+      enableNetConnect();
+      cleanAll();
     });
 
     it('should return agent resource with default host/port', async () => {
@@ -58,7 +59,7 @@ describe('[UNIT] instanaAgentDetector', () => {
 
       scope.done();
 
-      assert.deepEqual(resource.attributes, {
+      deepEqual(resource.attributes, {
         'process.pid': 123,
         'service.instance.id': '14:7d:da:ff:fe:e4:08:d5',
       });
@@ -85,7 +86,7 @@ describe('[UNIT] instanaAgentDetector', () => {
 
       scope.done();
 
-      assert.deepEqual(resource.attributes, {
+      deepEqual(resource.attributes, {
         'process.pid': 222,
         'service.instance.id': '14:7d:da:ff:fe:e4:08:d5',
       });
@@ -100,7 +101,7 @@ describe('[UNIT] instanaAgentDetector', () => {
       const resource = instanaAgentDetector.detect();
       await resource.waitForAsyncAttributes?.();
 
-      assert.deepStrictEqual(resource.attributes, {});
+      deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });
@@ -121,7 +122,7 @@ describe('[UNIT] instanaAgentDetector', () => {
       const resource = instanaAgentDetector.detect();
       await resource.waitForAsyncAttributes?.();
 
-      assert.deepStrictEqual(resource.attributes, {});
+      deepStrictEqual(resource.attributes, {});
     });
   });
 
@@ -134,7 +135,7 @@ describe('[UNIT] instanaAgentDetector', () => {
       const resource = instanaAgentDetector.detect();
       await resource.waitForAsyncAttributes?.();
 
-      assert.deepStrictEqual(resource.attributes, {});
+      deepStrictEqual(resource.attributes, {});
     });
   });
 });

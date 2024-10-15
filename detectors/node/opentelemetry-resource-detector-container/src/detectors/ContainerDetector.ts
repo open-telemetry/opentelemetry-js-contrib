@@ -23,8 +23,8 @@ import {
 
 import { SEMRESATTRS_CONTAINER_ID } from '@opentelemetry/semantic-conventions';
 
-import * as fs from 'fs';
-import * as util from 'util';
+import { readFile } from 'fs';
+import { promisify } from 'util';
 import { context, diag } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import { extractContainerIdFromLine } from './utils';
@@ -41,7 +41,7 @@ export class ContainerDetector implements DetectorSync {
   readonly DOCKER = 'docker-';
   readonly HEX_STRING_REGEX: RegExp = /^[a-f0-9]+$/i;
 
-  private static readFileAsync = util.promisify(fs.readFile);
+  private static readFileAsync = promisify(readFile);
 
   detect(_config?: ResourceDetectionConfig): IResource {
     const attributes = context.with(suppressTracing(context.active()), () =>

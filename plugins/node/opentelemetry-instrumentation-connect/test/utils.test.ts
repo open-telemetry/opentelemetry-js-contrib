@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as assert from 'assert';
+import { equal, strictEqual, notStrictEqual } from 'assert';
 
 import { PatchedRequest, _LAYERS_STORE_PROPERTY } from '../src/internal-types';
 import {
@@ -29,7 +29,7 @@ describe('utils', () => {
 
       addNewStackLayer(fakeRequest);
 
-      assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 1);
+      strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 1);
     });
 
     it('should append new stack item if private symbol already exists', () => {
@@ -40,8 +40,8 @@ describe('utils', () => {
 
       addNewStackLayer(fakeRequest);
 
-      assert.equal(fakeRequest[_LAYERS_STORE_PROPERTY], stack);
-      assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 2);
+      equal(fakeRequest[_LAYERS_STORE_PROPERTY], stack);
+      strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 2);
     });
 
     it('should return pop method to remove newly add stack', () => {
@@ -49,11 +49,11 @@ describe('utils', () => {
 
       const pop = addNewStackLayer(fakeRequest);
 
-      assert.notStrictEqual(pop, undefined);
+      notStrictEqual(pop, undefined);
 
       pop();
 
-      assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 0);
+      strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 0);
     });
 
     it('should prevent pop the same stack item multiple time', () => {
@@ -65,7 +65,7 @@ describe('utils', () => {
       pop();
       pop();
 
-      assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 1);
+      strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 1);
     });
   });
 
@@ -77,8 +77,8 @@ describe('utils', () => {
 
       replaceCurrentStackRoute(fakeRequest, '/new_route');
 
-      assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 2);
-      assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY][1], '/new_route');
+      strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 2);
+      strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY][1], '/new_route');
     });
   });
 
@@ -90,7 +90,7 @@ describe('utils', () => {
 
       const route = generateRoute(fakeRequest);
 
-      assert.strictEqual(route, '/first/second/third/');
+      strictEqual(route, '/first/second/third/');
     });
   });
 });

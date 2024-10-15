@@ -36,7 +36,7 @@ import {
   SEMRESATTRS_HOST_TYPE,
 } from '@opentelemetry/semantic-conventions';
 
-import * as http from 'http';
+import { RequestOptions, request } from 'http';
 
 /**
  * The AlibabaCloudEcsDetector can be used to detect if a process is running in
@@ -121,13 +121,13 @@ class AlibabaCloudEcsDetector implements DetectorSync {
     return await this._fetchString(options);
   }
 
-  private async _fetchString(options: http.RequestOptions): Promise<string> {
+  private async _fetchString(options: RequestOptions): Promise<string> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         req.destroy(new Error('ECS metadata api request timed out.'));
       }, this.MILLISECONDS_TIME_OUT);
 
-      const req = http.request(options, res => {
+      const req = request(options, res => {
         clearTimeout(timeoutId);
         const { statusCode } = res;
         if (

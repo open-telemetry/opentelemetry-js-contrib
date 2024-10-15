@@ -20,7 +20,7 @@ import {
 } from '@opentelemetry/sdk-metrics';
 
 import { RuntimeNodeInstrumentation } from '../src';
-import * as assert from 'assert';
+import { deepEqual, strictEqual } from 'assert';
 
 const MEASUREMENT_INTERVAL = 10;
 
@@ -57,9 +57,9 @@ describe('nodejs.event_loop.utilization', function () {
     const { resourceMetrics, errors } = await metricReader.collect();
 
     // assert
-    assert.deepEqual(errors, []);
+    deepEqual(errors, []);
     const scopeMetrics = resourceMetrics.scopeMetrics;
-    assert.strictEqual(scopeMetrics.length, 0);
+    strictEqual(scopeMetrics.length, 0);
   });
 
   it('should not record result when collecting immediately with custom config', async function () {
@@ -68,20 +68,14 @@ describe('nodejs.event_loop.utilization', function () {
     });
     instrumentation.setMeterProvider(meterProvider);
 
-    assert.deepEqual(
-      (await metricReader.collect()).resourceMetrics.scopeMetrics,
-      []
-    );
+    deepEqual((await metricReader.collect()).resourceMetrics.scopeMetrics, []);
   });
 
   it('should not record result when collecting immediately with default config', async function () {
     const instrumentation = new RuntimeNodeInstrumentation();
     instrumentation.setMeterProvider(meterProvider);
 
-    assert.deepEqual(
-      (await metricReader.collect()).resourceMetrics.scopeMetrics,
-      []
-    );
+    deepEqual((await metricReader.collect()).resourceMetrics.scopeMetrics, []);
   });
 
   it('should write event loop utilization metrics after eventLoopUtilizationMeasurementInterval', async function () {
@@ -96,49 +90,38 @@ describe('nodejs.event_loop.utilization', function () {
     const { resourceMetrics, errors } = await metricReader.collect();
 
     // assert
-    assert.deepEqual(
+    deepEqual(
       errors,
       [],
       'expected no errors from the callback during collection'
     );
     const scopeMetrics = resourceMetrics.scopeMetrics;
-    assert.strictEqual(
+    strictEqual(
       scopeMetrics.length,
       1,
       'expected one scope (one meter created by instrumentation)'
     );
     const metrics = scopeMetrics[0].metrics;
-    assert.strictEqual(
+    strictEqual(
       metrics.length,
       1,
       'expected one metric (one metric created by instrumentation)'
     );
-    assert.strictEqual(
+    strictEqual(
       metrics[0].dataPointType,
       DataPointType.GAUGE,
       'expected gauge'
     );
-    assert.strictEqual(
+    strictEqual(
       metrics[0].descriptor.name,
       'nodejs.event_loop.utilization',
       'descriptor.name'
     );
-    assert.strictEqual(
-      metrics[0].descriptor.description,
-      'Event loop utilization'
-    );
-    assert.strictEqual(
-      metrics[0].descriptor.unit,
-      '1',
-      'expected default unit'
-    );
-    assert.strictEqual(
-      metrics[0].dataPoints.length,
-      1,
-      'expected one data point'
-    );
+    strictEqual(metrics[0].descriptor.description, 'Event loop utilization');
+    strictEqual(metrics[0].descriptor.unit, '1', 'expected default unit');
+    strictEqual(metrics[0].dataPoints.length, 1, 'expected one data point');
     const val = metrics[0].dataPoints[0].value;
-    assert.strictEqual(val > 0, true, `val (${val}) > 0`);
-    assert.strictEqual(val <= 1, true, `val (${val}) <= 1`);
+    strictEqual(val > 0, true, `val (${val}) > 0`);
+    strictEqual(val <= 1, true, `val (${val}) <= 1`);
   });
 });

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as http from 'http';
+import { request } from 'http';
 
 import { context } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
@@ -72,7 +72,7 @@ class AzureVmResourceDetector implements DetectorSync {
         reject(new Error('Azure metadata service request timed out.'));
       }, 1000);
 
-      const req = http.request(options, res => {
+      const req = request(options, res => {
         clearTimeout(timeoutId);
         const { statusCode } = res;
         res.setEncoding('utf8');

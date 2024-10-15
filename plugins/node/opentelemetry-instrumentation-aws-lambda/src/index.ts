@@ -14,5 +14,14 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export {
+  AwsLambdaInstrumentation,
+  lambdaMaxInitInMilliseconds,
+  traceContextEnvironmentKey,
+} from './instrumentation';
+export {
+  RequestHook,
+  ResponseHook,
+  EventContextExtractor,
+  AwsLambdaInstrumentationConfig,
+} from './types';

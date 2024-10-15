@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { WinstonInstrumentation } from './instrumentation';
+export { LogHookFunction, WinstonInstrumentationConfig } from './types';

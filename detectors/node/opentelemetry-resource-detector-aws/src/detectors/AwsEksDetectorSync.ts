@@ -31,9 +31,9 @@ import {
   CLOUDPROVIDERVALUES_AWS,
   CLOUDPLATFORMVALUES_AWS_EKS,
 } from '@opentelemetry/semantic-conventions';
-import * as https from 'https';
-import * as fs from 'fs';
-import * as util from 'util';
+import { RequestOptions, request } from 'https';
+import { readFile, access } from 'fs';
+import { promisify } from 'util';
 import { diag } from '@opentelemetry/api';
 
 /**
@@ -60,8 +60,8 @@ export class AwsEksDetectorSync implements DetectorSync {
   readonly TIMEOUT_MS = 2000;
   readonly UTF8_UNICODE = 'utf8';
 
-  private static readFileAsync = util.promisify(fs.readFile);
-  private static fileAccessAsync = util.promisify(fs.access);
+  private static readFileAsync = promisify(readFile);
+  private static fileAccessAsync = promisify(access);
 
   detect(_config?: ResourceDetectionConfig): IResource {
     const attributes = context.with(suppressTracing(context.active()), () =>
@@ -205,14 +205,14 @@ export class AwsEksDetectorSync implements DetectorSync {
    * to get back a valid JSON document. Parses that document and stores
    * the identity properties in a local map.
    */
-  private async _fetchString(options: https.RequestOptions): Promise<string> {
+  private async _fetchString(options: RequestOptions): Promise<string> {
     return await new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         req.abort();
         reject(new Error('EKS metadata api request timed out.'));
       }, 2000);
 
-      const req = https.request(options, res => {
+      const req = request(options, res => {
         clearTimeout(timeoutId);
         const { statusCode } = res;
         res.setEncoding(this.UTF8_UNICODE);

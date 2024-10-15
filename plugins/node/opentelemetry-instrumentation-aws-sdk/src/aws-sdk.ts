@@ -23,7 +23,7 @@ import {
   SpanStatusCode,
 } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
-import type * as AWS from 'aws-sdk';
+import { Request } from 'aws-sdk';
 import { AttributeNames } from './enums';
 import { ServicesExtensions } from './services';
 import {
@@ -68,7 +68,7 @@ type V3PluginCommand = AwsV3Command<any, any, any, any, any> & {
 };
 
 const REQUEST_SPAN_KEY = Symbol('opentelemetry.instrumentation.aws-sdk.span');
-type V2PluginRequest = AWS.Request<any, any> & {
+type V2PluginRequest = Request<any, any> & {
   [REQUEST_SPAN_KEY]?: Span;
 };
 
@@ -236,7 +236,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
   }
 
   private _startAwsV2Span(
-    request: AWS.Request<any, any>,
+    request: Request<any, any>,
     metadata: RequestMetadata,
     normalizedRequest: NormalizedRequest
   ): Span {

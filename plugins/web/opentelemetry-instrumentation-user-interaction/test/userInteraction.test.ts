@@ -23,7 +23,7 @@ import {
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/sdk-trace-base';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
-import * as assert from 'assert';
+import { strictEqual, ok, equal, deepStrictEqual } from 'assert';
 import * as sinon from 'sinon';
 import 'zone.js';
 import { UserInteractionInstrumentation } from '../src';
@@ -124,7 +124,7 @@ describe('UserInteractionInstrumentation', () => {
 
     it('should handle task without async operation', () => {
       fakeClickInteraction();
-      assert.equal(exportSpy.args.length, 1, 'should export one span');
+      equal(exportSpy.args.length, 1, 'should export one span');
       const spanClick = exportSpy.args[0][0][0];
       assertClickSpan(spanClick);
     });
@@ -134,7 +134,7 @@ describe('UserInteractionInstrumentation', () => {
         originalSetTimeout(() => {
           const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
 
-          assert.equal(exportSpy.args.length, 1, 'should export one span');
+          equal(exportSpy.args.length, 1, 'should export one span');
           assertClickSpan(spanClick);
           done();
         });
@@ -146,7 +146,7 @@ describe('UserInteractionInstrumentation', () => {
       fakeClickInteraction(() => {
         const interval = setInterval(() => {}, 1);
         originalSetTimeout(() => {
-          assert.equal(
+          equal(
             exportSpy.args.length,
             1,
             'should not export more then one span'
@@ -173,24 +173,21 @@ describe('UserInteractionInstrumentation', () => {
           sandbox.clock.tick(1000);
         }).then(() => {
           originalSetTimeout(() => {
-            assert.equal(exportSpy.args.length, 2, 'should export 2 spans');
+            equal(exportSpy.args.length, 2, 'should export 2 spans');
 
             const spanXhr: tracing.ReadableSpan = exportSpy.args[0][0][0];
             const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
-            assert.equal(
+            equal(
               spanXhr.parentSpanId,
               spanClick.spanContext().spanId,
               'xhr span has wrong parent'
             );
-            assert.equal(
-              spanClick.name,
-              `Navigation: ${location.pathname}#foo=bar1`
-            );
+            equal(spanClick.name, `Navigation: ${location.pathname}#foo=bar1`);
 
             const attributes = spanClick.attributes;
-            assert.equal(attributes.event_type, 'click');
-            assert.equal(attributes.target_element, 'BUTTON');
-            assert.equal(attributes.target_xpath, '//*[@id="testBtn"]');
+            equal(attributes.event_type, 'click');
+            equal(attributes.target_element, 'BUTTON');
+            equal(attributes.target_xpath, '//*[@id="testBtn"]');
 
             done();
           });
@@ -204,11 +201,11 @@ describe('UserInteractionInstrumentation', () => {
           sandbox.clock.tick(1000);
         }).then(() => {
           originalSetTimeout(() => {
-            assert.equal(exportSpy.args.length, 2, 'should export 2 spans');
+            equal(exportSpy.args.length, 2, 'should export 2 spans');
 
             const spanXhr: tracing.ReadableSpan = exportSpy.args[0][0][0];
             const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
-            assert.equal(
+            equal(
               spanXhr.parentSpanId,
               spanClick.spanContext().spanId,
               'xhr span has wrong parent'
@@ -216,7 +213,7 @@ describe('UserInteractionInstrumentation', () => {
             assertClickSpan(spanClick);
 
             const attributes = spanXhr.attributes;
-            assert.equal(
+            equal(
               attributes['http.url'],
               'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
             );
@@ -230,11 +227,7 @@ describe('UserInteractionInstrumentation', () => {
 
     it('should not create spans from unknown events', () => {
       fakeEventInteraction('play');
-      assert.strictEqual(
-        exportSpy.args.length,
-        0,
-        'should not export any spans'
-      );
+      strictEqual(exportSpy.args.length, 0, 'should not export any spans');
     });
 
     it('should export spans for configured event types', () => {
@@ -243,7 +236,7 @@ describe('UserInteractionInstrumentation', () => {
       });
 
       fakeEventInteraction('play');
-      assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+      strictEqual(exportSpy.args.length, 1, 'should export one span');
       const span = exportSpy.args[0][0][0];
       assertInteractionSpan(span, { name: 'play' });
     });
@@ -254,11 +247,7 @@ describe('UserInteractionInstrumentation', () => {
       });
 
       fakeClickInteraction();
-      assert.strictEqual(
-        exportSpy.args.length,
-        0,
-        'should not export any spans'
-      );
+      strictEqual(exportSpy.args.length, 0, 'should not export any spans');
     });
 
     it('should call shouldPreventSpanCreation with proper arguments', () => {
@@ -272,7 +261,7 @@ describe('UserInteractionInstrumentation', () => {
       element.click();
 
       const span = exportSpy.args[0][0][0];
-      assert.deepStrictEqual(shouldPreventSpanCreation.args, [
+      deepStrictEqual(shouldPreventSpanCreation.args, [
         ['click', element, span],
       ]);
     });
@@ -288,11 +277,7 @@ describe('UserInteractionInstrumentation', () => {
         element.addEventListener('click', () => {});
         element.click();
 
-        assert.strictEqual(
-          exportSpy.args.length,
-          0,
-          'should not export any spans'
-        );
+        strictEqual(exportSpy.args.length, 0, 'should not export any spans');
       });
     });
 
@@ -307,7 +292,7 @@ describe('UserInteractionInstrumentation', () => {
         element.addEventListener('click', () => {});
         element.click();
 
-        assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+        strictEqual(exportSpy.args.length, 1, 'should export one span');
       });
     });
 
@@ -324,23 +309,20 @@ describe('UserInteractionInstrumentation', () => {
 
       const element = createButton();
       element.addEventListener('click', () => {
-        assert.ok(
+        ok(
           Zone.current !== newZone,
           'Current zone for 2nd listener click is wrong'
         );
-        assert.ok(
+        ok(
           Zone.current.parent === rootZone,
           'Parent Zone for 2nd listener click is wrong'
         );
       });
 
       newZone.run(() => {
-        assert.ok(Zone.current === newZone, 'New zone is wrong');
+        ok(Zone.current === newZone, 'New zone is wrong');
         fakeClickInteraction(() => {
-          assert.ok(
-            Zone.current.parent === newZone,
-            'Parent zone for click is wrong'
-          );
+          ok(Zone.current.parent === newZone, 'Parent zone for click is wrong');
           const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
           assertClickSpan(spanClick);
 
@@ -358,7 +340,7 @@ describe('UserInteractionInstrumentation', () => {
       fakeClickInteraction(callback, btn);
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
-        assert.equal(called, false, 'callback should not be called');
+        equal(called, false, 'callback should not be called');
         done();
       });
     });
@@ -387,7 +369,7 @@ describe('UserInteractionInstrumentation', () => {
       }, btn3);
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
-        assert.equal(exportSpy.args.length, 6, 'should export 6 spans');
+        equal(exportSpy.args.length, 6, 'should export 6 spans');
 
         const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
         const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
@@ -400,17 +382,17 @@ describe('UserInteractionInstrumentation', () => {
         assertClickSpan(span2, 'btn2');
         assertClickSpan(span3, 'btn3');
 
-        assert.strictEqual(
+        strictEqual(
           span1.spanContext().spanId,
           span4.parentSpanId,
           'span4 has wrong parent'
         );
-        assert.strictEqual(
+        strictEqual(
           span2.spanContext().spanId,
           span5.parentSpanId,
           'span5 has wrong parent'
         );
-        assert.strictEqual(
+        strictEqual(
           span3.spanContext().spanId,
           span6.parentSpanId,
           'span6 has wrong parent'
@@ -455,7 +437,7 @@ describe('UserInteractionInstrumentation', () => {
 
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
-        assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
+        equal(exportSpy.args.length, 4, 'should export 4 spans');
 
         const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
         const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
@@ -465,12 +447,12 @@ describe('UserInteractionInstrumentation', () => {
         assertClickSpan(span1, 'btn1');
         assertClickSpan(span2, 'btn2');
 
-        assert.strictEqual(
+        strictEqual(
           span1.spanContext().spanId,
           span3.parentSpanId,
           'span3 has wrong parent'
         );
-        assert.strictEqual(
+        strictEqual(
           span2.spanContext().spanId,
           span4.parentSpanId,
           'span4 has wrong parent'
@@ -511,7 +493,7 @@ describe('UserInteractionInstrumentation', () => {
 
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
-        assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
+        equal(exportSpy.args.length, 4, 'should export 4 spans');
 
         const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
         const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
@@ -521,12 +503,12 @@ describe('UserInteractionInstrumentation', () => {
         assertClickSpan(span1, 'btn1');
         assertClickSpan(span2, 'btn2');
 
-        assert.strictEqual(
+        strictEqual(
           span1.spanContext().spanId,
           span3.parentSpanId,
           'span3 has wrong parent'
         );
-        assert.strictEqual(
+        strictEqual(
           span2.spanContext().spanId,
           span4.parentSpanId,
           'span4 has wrong parent'
@@ -539,87 +521,75 @@ describe('UserInteractionInstrumentation', () => {
     it('should handle unpatch', () => {
       const _window: WindowWithZone = window as unknown as WindowWithZone;
       const ZoneWithPrototype = _window.Zone;
-      assert.strictEqual(
+      strictEqual(
         isWrapped(ZoneWithPrototype.prototype.runTask),
         true,
         'runTask should be wrapped'
       );
-      assert.strictEqual(
+      strictEqual(
         isWrapped(ZoneWithPrototype.prototype.scheduleTask),
         true,
         'scheduleTask should be wrapped'
       );
-      assert.strictEqual(
+      strictEqual(
         isWrapped(ZoneWithPrototype.prototype.cancelTask),
         true,
         'cancelTask should be wrapped'
       );
 
-      assert.strictEqual(
+      strictEqual(
         isWrapped(history.replaceState),
         true,
         'replaceState should be wrapped'
       );
-      assert.strictEqual(
+      strictEqual(
         isWrapped(history.pushState),
         true,
         'pushState should be wrapped'
       );
-      assert.strictEqual(
-        isWrapped(history.back),
-        true,
-        'back should be wrapped'
-      );
-      assert.strictEqual(
+      strictEqual(isWrapped(history.back), true, 'back should be wrapped');
+      strictEqual(
         isWrapped(history.forward),
         true,
         'forward should be wrapped'
       );
-      assert.strictEqual(isWrapped(history.go), true, 'go should be wrapped');
+      strictEqual(isWrapped(history.go), true, 'go should be wrapped');
 
       userInteractionInstrumentation.disable();
 
-      assert.strictEqual(
+      strictEqual(
         isWrapped(ZoneWithPrototype.prototype.runTask),
         false,
         'runTask should be unwrapped'
       );
-      assert.strictEqual(
+      strictEqual(
         isWrapped(ZoneWithPrototype.prototype.scheduleTask),
         false,
         'scheduleTask should be unwrapped'
       );
-      assert.strictEqual(
+      strictEqual(
         isWrapped(ZoneWithPrototype.prototype.cancelTask),
         false,
         'cancelTask should be unwrapped'
       );
 
-      assert.strictEqual(
+      strictEqual(
         isWrapped(history.replaceState),
         false,
         'replaceState should be unwrapped'
       );
-      assert.strictEqual(
+      strictEqual(
         isWrapped(history.pushState),
         false,
         'pushState should be unwrapped'
       );
-      assert.strictEqual(
-        isWrapped(history.back),
-        false,
-        'back should be unwrapped'
-      );
-      assert.strictEqual(
+      strictEqual(isWrapped(history.back), false, 'back should be unwrapped');
+      strictEqual(
         isWrapped(history.forward),
         false,
         'forward should be unwrapped'
       );
-      assert.strictEqual(
-        isWrapped(history.go),
-        false,
-        'go should be unwrapped'
-      );
+      strictEqual(isWrapped(history.go), false, 'go should be unwrapped');
     });
   });
 });

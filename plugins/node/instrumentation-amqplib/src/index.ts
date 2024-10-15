@@ -13,5 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from './amqplib';
-export * from './types';
+export { AmqplibInstrumentation } from './amqplib';
+export {
+  PublishInfo,
+  PublishConfirmedInfo,
+  ConsumeInfo,
+  ConsumeEndInfo,
+  AmqplibPublishCustomAttributeFunction,
+  AmqplibPublishConfirmCustomAttributeFunction,
+  AmqplibConsumeCustomAttributeFunction,
+  AmqplibConsumeEndCustomAttributeFunction,
+  EndOperation,
+  AmqplibInstrumentationConfig,
+  DEFAULT_CONFIG,
+  AmqplibPublishOptions,
+  Message,
+  ConsumeMessage,
+  CommonMessageFields,
+  MessageFields,
+  ConsumeMessageFields,
+  MessageProperties,
+} from './types';

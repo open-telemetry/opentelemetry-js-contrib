@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import { render } from 'react-dom';
 import { AppType } from '../types';
 import { styles } from './styles';
 import { withStyles } from '@material-ui/core';
@@ -52,7 +52,7 @@ loadFromStorage()
 
     const StyledApp = withStyles(styles)(App);
 
-    ReactDOM.render(
+    render(
       <StyledApp
         settings={storage.settings}
         isPermissionAlertDismissed={storage.isPermissionAlertDismissed}

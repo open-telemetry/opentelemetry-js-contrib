@@ -14,5 +14,9 @@
  * limitations under the License.
  */
 
-export * from './enums/AttributeNames';
-export * from './instrumentation';
+export {
+  AttributeNames,
+  ConnectTypes,
+  ConnectNames,
+} from './enums/AttributeNames';
+export { ANONYMOUS_NAME, ConnectInstrumentation } from './instrumentation';

@@ -15,27 +15,27 @@
  */
 
 import * as utils from '../src/utils';
-import * as assert from 'assert';
+import { strictEqual } from 'assert';
 import { KoaInstrumentationConfig, KoaLayerType } from '../src/types';
 
 describe('Utils', () => {
   describe('isLayerIgnored()', () => {
     it('should not fail with invalid config', () => {
-      assert.strictEqual(utils.isLayerIgnored(KoaLayerType.MIDDLEWARE), false);
-      assert.strictEqual(
+      strictEqual(utils.isLayerIgnored(KoaLayerType.MIDDLEWARE), false);
+      strictEqual(
         utils.isLayerIgnored(
           KoaLayerType.MIDDLEWARE,
           {} as KoaInstrumentationConfig
         ),
         false
       );
-      assert.strictEqual(
+      strictEqual(
         utils.isLayerIgnored(KoaLayerType.MIDDLEWARE, {
           ignoreLayersType: {},
         } as KoaInstrumentationConfig),
         false
       );
-      assert.strictEqual(
+      strictEqual(
         utils.isLayerIgnored(KoaLayerType.ROUTER, {
           ignoreLayersType: {},
         } as KoaInstrumentationConfig),
@@ -44,13 +44,13 @@ describe('Utils', () => {
     });
 
     it('should ignore based on type', () => {
-      assert.strictEqual(
+      strictEqual(
         utils.isLayerIgnored(KoaLayerType.MIDDLEWARE, {
           ignoreLayersType: [KoaLayerType.MIDDLEWARE],
         }),
         true
       );
-      assert.strictEqual(
+      strictEqual(
         utils.isLayerIgnored(KoaLayerType.ROUTER, {
           ignoreLayersType: [KoaLayerType.MIDDLEWARE],
         }),

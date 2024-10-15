@@ -14,7 +14,41 @@
  * limitations under the License.
  */
 
-export * from './resource-assertions';
-export * from './test-fixtures';
-export * from './test-utils';
-export * from './instrumentations';
+export {
+  assertCloudResource,
+  assertContainerResource,
+  assertHostResource,
+  assertK8sResource,
+  assertTelemetrySDKResource,
+  assertServiceResource,
+  assertProcessResource,
+  assertEmptyResource,
+} from './resource-assertions';
+export {
+  createTestNodeSdk,
+  OtlpSpanKind,
+  TestSpan,
+  TestCollector,
+  RunTestFixtureOptions,
+  runTestFixture,
+} from './test-fixtures';
+export {
+  startDocker,
+  cleanUpDocker,
+  assertSpan,
+  assertPropagation,
+  TimedEvent,
+  getPackageVersion,
+  TestMetricReader,
+  initMeterProvider,
+} from './test-utils';
+export {
+  mochaHooks,
+  getInstrumentation,
+  registerInstrumentationTesting,
+  getTestMemoryExporter,
+  setTestMemoryExporter,
+  getTestSpans,
+  resetMemoryExporter,
+  registerInstrumentationTestingProvider,
+} from './instrumentations';

@@ -22,7 +22,7 @@ import {
 import { SEMATTRS_NET_TRANSPORT } from '@opentelemetry/semantic-conventions';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import * as net from 'net';
-import * as assert from 'assert';
+import { throws, equal, strictEqual } from 'assert';
 import { NetInstrumentation } from '../src';
 import { SocketEvent } from '../src/internal-types';
 import { assertIpcSpan, assertTcpSpan, IPC_PATH, HOST, PORT } from './utils';
@@ -33,7 +33,7 @@ provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
 function getSpan() {
   const spans = memoryExporter.getFinishedSpans();
-  assert.strictEqual(spans.length, 1);
+  strictEqual(spans.length, 1);
   const [span] = spans;
   return span;
 }
@@ -171,12 +171,12 @@ describe('NetInstrumentation', () => {
 
   describe('invalid input', () => {
     it('should produce an error span when connect throws', done => {
-      assert.throws(() => {
+      throws(() => {
         // Invalid cast on purpose to avoid compiler errors.
         socket.connect({ port: {} } as { port: number });
       });
 
-      assert.strictEqual(getSpan().status.code, SpanStatusCode.ERROR);
+      strictEqual(getSpan().status.code, SpanStatusCode.ERROR);
 
       done();
     });
@@ -185,11 +185,8 @@ describe('NetInstrumentation', () => {
       const assertSpan = () => {
         try {
           const span = getSpan();
-          assert.strictEqual(
-            span.attributes[SEMATTRS_NET_TRANSPORT],
-            undefined
-          );
-          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+          strictEqual(span.attributes[SEMATTRS_NET_TRANSPORT], undefined);
+          strictEqual(span.status.code, SpanStatusCode.ERROR);
           done();
         } catch (e) {
           done(e);
@@ -202,7 +199,7 @@ describe('NetInstrumentation', () => {
       } catch (e: any) {
         // socket.connect() will throw in node@16
         socket.removeListener(SocketEvent.CLOSE, assertSpan);
-        assert.strictEqual(
+        strictEqual(
           e.message,
           'The "options" or "port" or "path" argument must be specified'
         );
@@ -219,7 +216,7 @@ describe('NetInstrumentation', () => {
         SocketEvent.CONNECT,
         SocketEvent.ERROR,
       ]) {
-        assert.equal(events.has(event), false);
+        equal(events.has(event), false);
       }
     }
 
@@ -244,7 +241,7 @@ describe('NetInstrumentation', () => {
         socket.destroy();
         socket.connect(PORT, () => {
           const spans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(spans.length, 2);
+          strictEqual(spans.length, 2);
           done();
         });
       });

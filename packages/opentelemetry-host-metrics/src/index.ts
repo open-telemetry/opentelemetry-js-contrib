@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-export * from './BaseMetrics';
-export * from './metric';
-export * from './types';
+export { MetricsCollectorConfig, BaseMetrics } from './BaseMetrics';
+export { HostMetrics } from './metric';
+export { CpuUsageData, ProcessCpuUsageData, MemoryData } from './types';

@@ -25,7 +25,7 @@ import {
 const instrumentation = registerInstrumentationTesting(
   new AwsInstrumentation()
 );
-import * as AWS from 'aws-sdk';
+import { Response, config, S3 } from 'aws-sdk';
 
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { SpanStatusCode, Span, SpanKind } from '@opentelemetry/api';
@@ -54,7 +54,7 @@ describe('instrumentation-aws-sdk-v2', () => {
   };
 
   const responseMockWithError: Pick<
-    AWS.Response<any, AWSError>,
+    Response<any, AWSError>,
     'requestId' | 'error'
   > & { httpResponse: Partial<HttpResponse> } = {
     requestId: '0000000000000',
@@ -71,7 +71,7 @@ describe('instrumentation-aws-sdk-v2', () => {
   };
 
   before(() => {
-    AWS.config.credentials = {
+    config.credentials = {
       accessKeyId: 'test key id',
       expired: false,
       expireTime: new Date(),
@@ -87,7 +87,7 @@ describe('instrumentation-aws-sdk-v2', () => {
       });
 
       it('adds proper number of spans with correct attributes', async () => {
-        const s3 = new AWS.S3();
+        const s3 = new S3();
         const bucketName = 'aws-test-bucket';
         const keyName = 'aws-test-object.txt';
         await new Promise(resolve => {
@@ -163,7 +163,7 @@ describe('instrumentation-aws-sdk-v2', () => {
       });
 
       it('adds proper number of spans with correct attributes if both, promise and callback were used', async () => {
-        const s3 = new AWS.S3();
+        const s3 = new S3();
         const bucketName = 'aws-test-bucket';
         const keyName = 'aws-test-object.txt';
         await new Promise(resolve => {
@@ -212,7 +212,7 @@ describe('instrumentation-aws-sdk-v2', () => {
       });
 
       it('adds proper number of spans with correct attributes if only promise was used', async () => {
-        const s3 = new AWS.S3();
+        const s3 = new S3();
         const bucketName = 'aws-test-bucket';
         const keyName = 'aws-test-object.txt';
         await new Promise(resolve => {
@@ -248,7 +248,7 @@ describe('instrumentation-aws-sdk-v2', () => {
       });
 
       it('should create span if no callback is supplied', done => {
-        const s3 = new AWS.S3();
+        const s3 = new S3();
         const bucketName = 'aws-test-bucket';
 
         s3.putObject({
@@ -271,7 +271,7 @@ describe('instrumentation-aws-sdk-v2', () => {
       });
 
       it('adds error attribute properly', async () => {
-        const s3 = new AWS.S3();
+        const s3 = new S3();
         const bucketName = 'aws-test-bucket';
         await new Promise(resolve => {
           s3.createBucket({ Bucket: bucketName }, async () => {
@@ -324,7 +324,7 @@ describe('instrumentation-aws-sdk-v2', () => {
       instrumentation.setConfig(config);
       instrumentation.enable();
 
-      const s3 = new AWS.S3();
+      const s3 = new S3();
       const bucketName = 'aws-test-bucket';
 
       s3.createBucket({ Bucket: bucketName }, async (err, data) => {
@@ -349,7 +349,7 @@ describe('instrumentation-aws-sdk-v2', () => {
       instrumentation.setConfig(config);
       instrumentation.enable();
 
-      const s3 = new AWS.S3();
+      const s3 = new S3();
       const bucketName = 'aws-test-bucket';
 
       s3.createBucket({ Bucket: bucketName }, async (err, data) => {
@@ -378,7 +378,7 @@ describe('instrumentation-aws-sdk-v2', () => {
       instrumentation.setConfig(config);
       instrumentation.enable();
 
-      const s3 = new AWS.S3();
+      const s3 = new S3();
       const bucketName = 'aws-test-bucket';
 
       s3.createBucket({ Bucket: bucketName }, async (err, data) => {
@@ -401,7 +401,7 @@ describe('instrumentation-aws-sdk-v2', () => {
       instrumentation.setConfig(config);
       instrumentation.enable();
 
-      const s3 = new AWS.S3();
+      const s3 = new S3();
 
       s3.createBucket({ Bucket: 'aws-test-bucket' }, (err, data) => {
         const awsSpans = getAwsSpans();
@@ -420,7 +420,7 @@ describe('instrumentation-aws-sdk-v2', () => {
       instrumentation.setConfig(config);
       instrumentation.enable();
 
-      const s3 = new AWS.S3();
+      const s3 = new S3();
 
       await s3.createBucket({ Bucket: 'aws-test-bucket' }).promise();
       const awsSpans = getAwsSpans();

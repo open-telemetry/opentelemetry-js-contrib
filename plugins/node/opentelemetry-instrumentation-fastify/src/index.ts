@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
-export * from './enums/AttributeNames';
-export * from './types';
-export * from './instrumentation';
+export {
+  AttributeNames,
+  FastifyTypes,
+  FastifyNames,
+} from './enums/AttributeNames';
+export {
+  FastifyRequestInfo,
+  FastifyCustomAttributeFunction,
+  FastifyInstrumentationConfig,
+} from './types';
+export { ANONYMOUS_NAME, FastifyInstrumentation } from './instrumentation';

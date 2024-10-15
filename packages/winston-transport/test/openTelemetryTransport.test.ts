@@ -20,8 +20,8 @@ import {
   SimpleLogRecordProcessor,
   InMemoryLogRecordExporter,
 } from '@opentelemetry/sdk-logs';
-import * as assert from 'assert';
-import * as sinon from 'sinon';
+import { strictEqual } from 'assert';
+import { spy, assert } from 'sinon';
 import { OpenTelemetryTransportV3 } from '../src';
 
 const loggerProvider = new LoggerProvider();
@@ -40,14 +40,14 @@ describe('OpenTelemetryTransportV3', () => {
 
   it('emit LogRecord', () => {
     const transport = new OpenTelemetryTransportV3();
-    const writeSpy = sinon.spy(transport, 'emit');
+    const writeSpy = spy(transport, 'emit');
     transport.log({ message: kMessage }, () => {});
     setImmediate(() => {
-      sinon.assert.calledOnce(writeSpy);
+      assert.calledOnce(writeSpy);
     });
     const logRecords = memoryLogExporter.getFinishedLogRecords();
-    assert.strictEqual(logRecords.length, 1);
-    assert.strictEqual(kMessage, logRecords[0].body, kMessage);
+    strictEqual(logRecords.length, 1);
+    strictEqual(kMessage, logRecords[0].body, kMessage);
   });
 
   it('emit LogRecord with extra attibutes', () => {
@@ -59,16 +59,10 @@ describe('OpenTelemetryTransportV3', () => {
     const parameters = Object.assign({ message: kMessage }, extraAttributes);
     transport.log(parameters, () => {});
     const logRecords = memoryLogExporter.getFinishedLogRecords();
-    assert.strictEqual(logRecords.length, 1);
-    assert.strictEqual(logRecords[0].body, kMessage);
-    assert.strictEqual(
-      logRecords[0].attributes['extraAttribute1'],
-      'attributeValue1'
-    );
-    assert.strictEqual(
-      logRecords[0].attributes['extraAttribute2'],
-      'attributeValue2'
-    );
+    strictEqual(logRecords.length, 1);
+    strictEqual(logRecords[0].body, kMessage);
+    strictEqual(logRecords[0].attributes['extraAttribute1'], 'attributeValue1');
+    strictEqual(logRecords[0].attributes['extraAttribute2'], 'attributeValue2');
   });
 
   describe('emit logRecord severity', () => {
@@ -83,14 +77,14 @@ describe('OpenTelemetryTransportV3', () => {
       transport.log({ message: kMessage, level: 'debug' }, callback);
       transport.log({ message: kMessage, level: 'silly' }, callback);
       const logRecords = memoryLogExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 7);
-      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.ERROR);
-      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.WARN);
-      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.INFO);
-      assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.DEBUG3);
-      assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.DEBUG2);
-      assert.strictEqual(logRecords[5].severityNumber, SeverityNumber.DEBUG);
-      assert.strictEqual(logRecords[6].severityNumber, SeverityNumber.TRACE);
+      strictEqual(logRecords.length, 7);
+      strictEqual(logRecords[0].severityNumber, SeverityNumber.ERROR);
+      strictEqual(logRecords[1].severityNumber, SeverityNumber.WARN);
+      strictEqual(logRecords[2].severityNumber, SeverityNumber.INFO);
+      strictEqual(logRecords[3].severityNumber, SeverityNumber.DEBUG3);
+      strictEqual(logRecords[4].severityNumber, SeverityNumber.DEBUG2);
+      strictEqual(logRecords[5].severityNumber, SeverityNumber.DEBUG);
+      strictEqual(logRecords[6].severityNumber, SeverityNumber.TRACE);
     });
 
     it('cli levels', () => {
@@ -107,17 +101,17 @@ describe('OpenTelemetryTransportV3', () => {
       transport.log({ message: kMessage, level: 'input' }, callback);
       transport.log({ message: kMessage, level: 'silly' }, callback);
       const logRecords = memoryLogExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 10);
-      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.ERROR);
-      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.WARN);
-      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.INFO3);
-      assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.INFO2);
-      assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.INFO);
-      assert.strictEqual(logRecords[5].severityNumber, SeverityNumber.DEBUG);
-      assert.strictEqual(logRecords[6].severityNumber, SeverityNumber.DEBUG2);
-      assert.strictEqual(logRecords[7].severityNumber, SeverityNumber.TRACE4);
-      assert.strictEqual(logRecords[8].severityNumber, SeverityNumber.TRACE2);
-      assert.strictEqual(logRecords[9].severityNumber, SeverityNumber.TRACE);
+      strictEqual(logRecords.length, 10);
+      strictEqual(logRecords[0].severityNumber, SeverityNumber.ERROR);
+      strictEqual(logRecords[1].severityNumber, SeverityNumber.WARN);
+      strictEqual(logRecords[2].severityNumber, SeverityNumber.INFO3);
+      strictEqual(logRecords[3].severityNumber, SeverityNumber.INFO2);
+      strictEqual(logRecords[4].severityNumber, SeverityNumber.INFO);
+      strictEqual(logRecords[5].severityNumber, SeverityNumber.DEBUG);
+      strictEqual(logRecords[6].severityNumber, SeverityNumber.DEBUG2);
+      strictEqual(logRecords[7].severityNumber, SeverityNumber.TRACE4);
+      strictEqual(logRecords[8].severityNumber, SeverityNumber.TRACE2);
+      strictEqual(logRecords[9].severityNumber, SeverityNumber.TRACE);
     });
 
     it('syslog levels', () => {
@@ -132,15 +126,15 @@ describe('OpenTelemetryTransportV3', () => {
       transport.log({ message: kMessage, level: 'info' }, callback);
       transport.log({ message: kMessage, level: 'debug' }, callback);
       const logRecords = memoryLogExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 8);
-      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL3);
-      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.FATAL2);
-      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.FATAL);
-      assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.ERROR);
-      assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.WARN);
-      assert.strictEqual(logRecords[5].severityNumber, SeverityNumber.INFO2);
-      assert.strictEqual(logRecords[6].severityNumber, SeverityNumber.INFO);
-      assert.strictEqual(logRecords[7].severityNumber, SeverityNumber.DEBUG);
+      strictEqual(logRecords.length, 8);
+      strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL3);
+      strictEqual(logRecords[1].severityNumber, SeverityNumber.FATAL2);
+      strictEqual(logRecords[2].severityNumber, SeverityNumber.FATAL);
+      strictEqual(logRecords[3].severityNumber, SeverityNumber.ERROR);
+      strictEqual(logRecords[4].severityNumber, SeverityNumber.WARN);
+      strictEqual(logRecords[5].severityNumber, SeverityNumber.INFO2);
+      strictEqual(logRecords[6].severityNumber, SeverityNumber.INFO);
+      strictEqual(logRecords[7].severityNumber, SeverityNumber.DEBUG);
     });
   });
 });

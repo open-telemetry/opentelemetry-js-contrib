@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { defaultDbStatementSerializer } from '../src/index';
-import * as assert from 'assert';
+import { strictEqual } from 'assert';
 
 describe('#defaultDbStatementSerializer()', () => {
   [
@@ -45,10 +45,7 @@ describe('#defaultDbStatementSerializer()', () => {
     },
   ].forEach(({ cmdName, cmdArgs, expected }) => {
     it(`should serialize the correct number of arguments for ${cmdName}`, () => {
-      assert.strictEqual(
-        defaultDbStatementSerializer(cmdName, cmdArgs),
-        expected
-      );
+      strictEqual(defaultDbStatementSerializer(cmdName, cmdArgs), expected);
     });
   });
 });

@@ -1,6 +1,6 @@
 'use strict';
 
-import * as api  from '@opentelemetry/api';
+import {trace, context,ROOT_CONTEXT} from '@opentelemetry/api';
 import { setupTracing } from './tracer';
 
 const tracer = setupTracing('example-mongodb-http-client')
@@ -17,7 +17,7 @@ function makeRequest() {
   let queries = 0;
   let responses = 0;
 
-  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
+  context.with(trace.setSpan(ROOT_CONTEXT, span), () => {
     queries += 1;
     http.get({
       host: 'localhost',
@@ -33,7 +33,7 @@ function makeRequest() {
       });
     });
   });
-  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
+  context.with(trace.setSpan(ROOT_CONTEXT, span), () => {
     queries += 1;
     http.get({
       host: 'localhost',
@@ -49,7 +49,7 @@ function makeRequest() {
       });
     });
   });
-  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
+  context.with(trace.setSpan(ROOT_CONTEXT, span), () => {
     queries += 1;
     http.get({
       host: 'localhost',

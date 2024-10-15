@@ -16,8 +16,8 @@
 
 import { diag } from '@opentelemetry/api';
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
-import * as assert from 'assert';
-import * as sinon from 'sinon';
+import { strictEqual } from 'assert';
+import { stub } from 'sinon';
 import { getWebAutoInstrumentations } from '../src';
 
 describe('utils', () => {
@@ -30,9 +30,9 @@ describe('utils', () => {
         '@opentelemetry/instrumentation-user-interaction',
         '@opentelemetry/instrumentation-xml-http-request',
       ];
-      assert.strictEqual(instrumentations.length, 4);
+      strictEqual(instrumentations.length, 4);
       for (let i = 0, j = instrumentations.length; i < j; i++) {
-        assert.strictEqual(
+        strictEqual(
           instrumentations[i].instrumentationName,
           expectedInstrumentations[i],
           `Instrumentation ${expectedInstrumentations[i]}, not loaded`
@@ -56,7 +56,7 @@ describe('utils', () => {
       const config =
         instrumentation._config as XMLHttpRequestInstrumentationConfig;
 
-      assert.strictEqual(config.clearTimingResources, clearTimingResources);
+      strictEqual(config.clearTimingResources, clearTimingResources);
     });
 
     it('should not return disabled instrumentation', () => {
@@ -70,11 +70,11 @@ describe('utils', () => {
           instr.instrumentationName ===
           '@opentelemetry/instrumentation-xml-http-request'
       );
-      assert.strictEqual(instrumentation, undefined);
+      strictEqual(instrumentation, undefined);
     });
 
     it('should show error for none existing instrumentation', () => {
-      const spy = sinon.stub(diag, 'error');
+      const spy = stub(diag, 'error');
       const name = '@opentelemetry/instrumentation-http2';
       const instrumentations = getWebAutoInstrumentations({
         // @ts-expect-error verify that wrong name works
@@ -85,9 +85,9 @@ describe('utils', () => {
       const instrumentation = instrumentations.find(
         instr => instr.instrumentationName === name
       );
-      assert.strictEqual(instrumentation, undefined);
+      strictEqual(instrumentation, undefined);
 
-      assert.strictEqual(
+      strictEqual(
         spy.args[0][0],
         `Provided instrumentation name "${name}" not found`
       );

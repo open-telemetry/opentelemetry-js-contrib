@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as assert from 'assert';
+import { strictEqual, ok } from 'assert';
 
 import {
   SpanKind,
@@ -66,11 +66,11 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       // const resp = await fetch('http://host:port')
       // so we need to do the assertion here
       try {
-        assert.ok(
+        ok(
           req.headers[MockPropagation.TRACE_CONTEXT_KEY],
           `trace propagation for ${MockPropagation.TRACE_CONTEXT_KEY} works`
         );
-        assert.ok(
+        ok(
           req.headers[MockPropagation.SPAN_CONTEXT_KEY],
           `trace propagation for ${MockPropagation.SPAN_CONTEXT_KEY} works`
         );
@@ -103,20 +103,20 @@ describe('UndiciInstrumentation `fetch` tests', function () {
   describe('disable()', function () {
     it('should not create spans when disabled', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Disable
       instrumentation.disable();
 
       const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
       const response = await fetch(fetchUrl);
-      assert.ok(
+      ok(
         response.headers.get('propagation-error') != null,
         'propagation is not set if instrumentation disabled'
       );
 
       spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0, 'no spans are created');
+      strictEqual(spans.length, 0, 'no spans are created');
     });
   });
 
@@ -132,7 +132,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
     it('should create valid spans even if the configuration hooks fail', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Set the bad configuration
       instrumentation.setConfig({
@@ -152,7 +152,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
       const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
       const response = await fetch(fetchUrl);
-      assert.ok(
+      ok(
         response.headers.get('propagation-error') == null,
         'propagation is set for instrumented requests'
       );
@@ -160,8 +160,8 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
 
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'localhost',
         httpStatusCode: response.status,
@@ -174,11 +174,11 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
     it('should create valid spans with empty configuration', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
       const response = await fetch(fetchUrl);
-      assert.ok(
+      ok(
         response.headers.get('propagation-error') == null,
         'propagation is set for instrumented requests'
       );
@@ -186,8 +186,8 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
 
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'localhost',
         httpStatusCode: response.status,
@@ -200,7 +200,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
     it('should create valid spans with the given configuration', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Set configuration
       instrumentation.setConfig({
@@ -242,7 +242,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
           'foo-client': 'bar',
         }),
       };
-      assert.ok(
+      ok(
         ignoreResponse.headers.get('propagation-error'),
         'propagation is not set for ignored requests'
       );
@@ -251,15 +251,15 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         `${protocol}://${hostname}:${mockServer.port}/?query=test`,
         reqInit
       );
-      assert.ok(
+      ok(
         queryResponse.headers.get('propagation-error') == null,
         'propagation is set for instrumented requests'
       );
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'localhost',
         httpStatusCode: queryResponse.status,
@@ -269,27 +269,27 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         reqHeaders: reqInit.headers,
         resHeaders: queryResponse.headers,
       });
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.request.header.foo-client'],
         'bar',
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.request.header.x-requested-with'],
         'undici',
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.response.header.foo-server'],
         'bar',
         'response headers from the server are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['test.response-hook.attribute'],
         'OK',
         'responseHook is called'
@@ -298,7 +298,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
     it('should not create spans without parent if required in configuration', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
         requireParentforSpans: true,
@@ -306,18 +306,18 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
       const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
       const response = await fetch(fetchUrl);
-      assert.ok(
+      ok(
         response.headers.get('propagation-error') == null,
         'propagation is set for instrumented requests'
       );
 
       spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0, 'no spans are created');
+      strictEqual(spans.length, 0, 'no spans are created');
     });
 
     it('should not create spans with parent if required in configuration', function (done) {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
         requireParentforSpans: true,
@@ -333,19 +333,19 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         const response = await fetch(fetchUrl);
 
         span.end();
-        assert.ok(
+        ok(
           response.headers.get('propagation-error') == null,
           'propagation is set for instrumented requests'
         );
 
         spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans.length, 2, 'child span is created');
-        assert.strictEqual(
+        strictEqual(spans.length, 2, 'child span is created');
+        strictEqual(
           spans.filter(span => span.kind === SpanKind.CLIENT).length,
           1,
           'child span is created'
         );
-        assert.strictEqual(
+        strictEqual(
           spans.filter(span => span.kind === SpanKind.INTERNAL).length,
           1,
           'parent span is present'
@@ -357,7 +357,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
     it('should capture errors using fetch API', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       let fetchError;
       try {
@@ -370,8 +370,8 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'unexistent-host-name',
         httpMethod: 'GET',
@@ -387,7 +387,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
     it('should capture error if fetch request is aborted', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       let fetchError;
       const controller = new AbortController();
@@ -406,8 +406,8 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'localhost',
         httpMethod: 'GET',

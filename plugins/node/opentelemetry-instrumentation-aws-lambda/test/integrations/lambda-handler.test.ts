@@ -32,7 +32,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
-import * as assert from 'assert';
+import { strictEqual, notDeepStrictEqual } from 'assert';
 import {
   SEMATTRS_EXCEPTION_MESSAGE,
   SEMATTRS_FAAS_COLDSTART,
@@ -56,29 +56,23 @@ import { W3CTraceContextPropagator } from '@opentelemetry/core';
 const memoryExporter = new InMemorySpanExporter();
 
 const assertSpanSuccess = (span: ReadableSpan) => {
-  assert.strictEqual(span.kind, SpanKind.SERVER);
-  assert.strictEqual(span.name, 'my_function');
-  assert.strictEqual(
-    span.attributes[SEMATTRS_FAAS_EXECUTION],
-    'aws_request_id'
-  );
-  assert.strictEqual(span.attributes['faas.id'], 'my_arn');
-  assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
-  assert.strictEqual(span.status.message, undefined);
+  strictEqual(span.kind, SpanKind.SERVER);
+  strictEqual(span.name, 'my_function');
+  strictEqual(span.attributes[SEMATTRS_FAAS_EXECUTION], 'aws_request_id');
+  strictEqual(span.attributes['faas.id'], 'my_arn');
+  strictEqual(span.status.code, SpanStatusCode.UNSET);
+  strictEqual(span.status.message, undefined);
 };
 
 const assertSpanFailure = (span: ReadableSpan) => {
-  assert.strictEqual(span.kind, SpanKind.SERVER);
-  assert.strictEqual(span.name, 'my_function');
-  assert.strictEqual(
-    span.attributes[SEMATTRS_FAAS_EXECUTION],
-    'aws_request_id'
-  );
-  assert.strictEqual(span.attributes['faas.id'], 'my_arn');
-  assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-  assert.strictEqual(span.status.message, 'handler error');
-  assert.strictEqual(span.events.length, 1);
-  assert.strictEqual(
+  strictEqual(span.kind, SpanKind.SERVER);
+  strictEqual(span.name, 'my_function');
+  strictEqual(span.attributes[SEMATTRS_FAAS_EXECUTION], 'aws_request_id');
+  strictEqual(span.attributes['faas.id'], 'my_arn');
+  strictEqual(span.status.code, SpanStatusCode.ERROR);
+  strictEqual(span.status.message, 'handler error');
+  strictEqual(span.events.length, 1);
+  strictEqual(
     span.events[0].attributes![SEMATTRS_EXCEPTION_MESSAGE],
     'handler error'
   );
@@ -206,12 +200,12 @@ describe('lambda handler', () => {
         'arg',
         ctx
       );
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('should record error', async () => {
@@ -223,12 +217,12 @@ describe('lambda handler', () => {
       } catch (e: any) {
         err = e;
       }
-      assert.strictEqual(err!.message, 'handler error');
+      strictEqual(err!.message, 'handler error');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanFailure(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('should record string error', async () => {
@@ -240,11 +234,11 @@ describe('lambda handler', () => {
       } catch (e: any) {
         err = e;
       }
-      assert.strictEqual(err!, 'handler error');
+      strictEqual(err!, 'handler error');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
       assertSpanFailure(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('context should have parent trace', async () => {
@@ -256,7 +250,7 @@ describe('lambda handler', () => {
       );
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(span.spanContext().traceId, result);
+      strictEqual(span.spanContext().traceId, result);
     });
 
     it('context should have parent trace', async () => {
@@ -268,7 +262,7 @@ describe('lambda handler', () => {
       );
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(span.spanContext().traceId, result);
+      strictEqual(span.spanContext().traceId, result);
     });
   });
 
@@ -289,12 +283,12 @@ describe('lambda handler', () => {
           }
         );
       });
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('should record coldstart', async () => {
@@ -323,18 +317,18 @@ describe('lambda handler', () => {
       });
 
       const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 2);
+      strictEqual(spans.length, 2);
       const [span1, span2] = spans;
 
-      assert.strictEqual(result1, 'ok');
+      strictEqual(result1, 'ok');
       assertSpanSuccess(span1);
-      assert.strictEqual(span1.parentSpanId, undefined);
-      assert.strictEqual(span1.attributes[SEMATTRS_FAAS_COLDSTART], true);
+      strictEqual(span1.parentSpanId, undefined);
+      strictEqual(span1.attributes[SEMATTRS_FAAS_COLDSTART], true);
 
-      assert.strictEqual(result2, 'ok');
+      strictEqual(result2, 'ok');
       assertSpanSuccess(span2);
-      assert.strictEqual(span2.parentSpanId, undefined);
-      assert.strictEqual(span2.attributes[SEMATTRS_FAAS_COLDSTART], false);
+      strictEqual(span2.parentSpanId, undefined);
+      strictEqual(span2.attributes[SEMATTRS_FAAS_COLDSTART], false);
     });
 
     it('should record coldstart with provisioned concurrency', async () => {
@@ -355,13 +349,13 @@ describe('lambda handler', () => {
           }
         );
       });
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(span.parentSpanId, undefined);
-      assert.strictEqual(span.attributes[SEMATTRS_FAAS_COLDSTART], false);
+      strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.attributes[SEMATTRS_FAAS_COLDSTART], false);
     });
 
     it('should record coldstart with proactive initialization', async () => {
@@ -382,13 +376,13 @@ describe('lambda handler', () => {
           }
         );
       });
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(span.parentSpanId, undefined);
-      assert.strictEqual(span.attributes[SEMATTRS_FAAS_COLDSTART], false);
+      strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.attributes[SEMATTRS_FAAS_COLDSTART], false);
     });
 
     it('should record error', async () => {
@@ -404,12 +398,12 @@ describe('lambda handler', () => {
       } catch (e: any) {
         err = e;
       }
-      assert.strictEqual(err!.message, 'handler error');
+      strictEqual(err!.message, 'handler error');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanFailure(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('should record error in callback', async () => {
@@ -433,12 +427,12 @@ describe('lambda handler', () => {
       } catch (e: any) {
         err = e;
       }
-      assert.strictEqual(err!.message, 'handler error');
+      strictEqual(err!.message, 'handler error');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanFailure(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('should record string error', async () => {
@@ -454,12 +448,12 @@ describe('lambda handler', () => {
       } catch (e: any) {
         err = e;
       }
-      assert.strictEqual(err!, 'handler error');
+      strictEqual(err!, 'handler error');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanFailure(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('context should have parent trace', async () => {
@@ -480,7 +474,7 @@ describe('lambda handler', () => {
       });
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(span.spanContext().traceId, result);
+      strictEqual(span.spanContext().traceId, result);
     });
 
     it('context should have parent trace', async () => {
@@ -501,7 +495,7 @@ describe('lambda handler', () => {
       });
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(span.spanContext().traceId, result);
+      strictEqual(span.spanContext().traceId, result);
     });
   });
 
@@ -526,12 +520,12 @@ describe('lambda handler', () => {
     } catch (e: any) {
       err = e;
     }
-    assert.strictEqual(err!, 'handler error');
+    strictEqual(err!, 'handler error');
     const spans = memoryExporter.getFinishedSpans();
     const [span] = spans;
-    assert.strictEqual(spans.length, 1);
+    strictEqual(spans.length, 1);
     assertSpanFailure(span);
-    assert.strictEqual(span.parentSpanId, undefined);
+    strictEqual(span.parentSpanId, undefined);
   });
 
   describe('with remote parent', () => {
@@ -543,16 +537,13 @@ describe('lambda handler', () => {
         'arg',
         ctx
       );
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext().traceId,
-        sampledAwsSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
+      strictEqual(span.spanContext().traceId, sampledAwsSpanContext.traceId);
+      strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
     });
 
     it('uses lambda context if unsampled and no http context', async () => {
@@ -563,10 +554,10 @@ describe('lambda handler', () => {
         'arg',
         ctx
       );
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       // Parent unsampled so no exported spans.
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
     });
 
     it('uses lambda context if sampled and http context present', async () => {
@@ -583,16 +574,13 @@ describe('lambda handler', () => {
         proxyEvent,
         ctx
       );
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext().traceId,
-        sampledAwsSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
+      strictEqual(span.spanContext().traceId, sampledAwsSpanContext.traceId);
+      strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
     });
 
     it('uses http context if sampled and lambda context unsampled', async () => {
@@ -609,16 +597,13 @@ describe('lambda handler', () => {
         proxyEvent,
         ctx
       );
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext().traceId,
-        sampledHttpSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, sampledHttpSpanContext.spanId);
+      strictEqual(span.spanContext().traceId, sampledHttpSpanContext.traceId);
+      strictEqual(span.parentSpanId, sampledHttpSpanContext.spanId);
     });
 
     it('uses http context if unsampled and lambda context unsampled', async () => {
@@ -635,10 +620,10 @@ describe('lambda handler', () => {
         proxyEvent,
         ctx
       );
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       // Parent unsampled so no spans exported.
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
     });
 
     it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "true"', async () => {
@@ -650,16 +635,16 @@ describe('lambda handler', () => {
         'arg',
         ctx
       );
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.notDeepStrictEqual(
+      notDeepStrictEqual(
         span.spanContext().traceId,
         sampledAwsSpanContext.traceId
       );
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "TRUE"', async () => {
@@ -671,16 +656,16 @@ describe('lambda handler', () => {
         'arg',
         ctx
       );
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.notDeepStrictEqual(
+      notDeepStrictEqual(
         span.spanContext().traceId,
         sampledAwsSpanContext.traceId
       );
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "True"', async () => {
@@ -692,16 +677,16 @@ describe('lambda handler', () => {
         'arg',
         ctx
       );
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.notDeepStrictEqual(
+      notDeepStrictEqual(
         span.spanContext().traceId,
         sampledAwsSpanContext.traceId
       );
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('ignores OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION if `config.disableAwsContextPropagation` is set', async () => {
@@ -715,16 +700,13 @@ describe('lambda handler', () => {
         'arg',
         ctx
       );
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext().traceId,
-        sampledAwsSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
+      strictEqual(span.spanContext().traceId, sampledAwsSpanContext.traceId);
+      strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
     });
 
     it('ignores sampled lambda context if "disableAwsContextPropagation" config option is true', async () => {
@@ -737,16 +719,16 @@ describe('lambda handler', () => {
         'arg',
         ctx
       );
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.notDeepStrictEqual(
+      notDeepStrictEqual(
         span.spanContext().traceId,
         sampledAwsSpanContext.traceId
       );
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('takes sampled http context over sampled lambda context if "disableAwsContextPropagation" config option is true', async () => {
@@ -766,16 +748,13 @@ describe('lambda handler', () => {
         ctx
       );
 
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext().traceId,
-        sampledHttpSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, sampledHttpSpanContext.spanId);
+      strictEqual(span.spanContext().traceId, sampledHttpSpanContext.traceId);
+      strictEqual(span.parentSpanId, sampledHttpSpanContext.spanId);
     });
 
     it('takes sampled custom context over sampled lambda context if "eventContextExtractor" is defined', async () => {
@@ -800,16 +779,16 @@ describe('lambda handler', () => {
         ctx
       );
 
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(
+      strictEqual(
         span.spanContext().traceId,
         sampledGenericSpanContext.traceId
       );
-      assert.strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
+      strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
     });
 
     it('prefers to extract baggage over sampled lambda context if "eventContextExtractor" is defined', async () => {
@@ -840,7 +819,7 @@ describe('lambda handler', () => {
         ctx
       );
 
-      assert.strictEqual(actual, baggage);
+      strictEqual(actual, baggage);
     });
 
     it('creates trace from ROOT_CONTEXT when "disableAwsContextPropagation" is true, eventContextExtractor is provided, and no custom context is found', async () => {
@@ -871,7 +850,7 @@ describe('lambda handler', () => {
 
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
 
     it('passes the lambda context object into the eventContextExtractor for scenarios where it is the otel context carrier', async () => {
@@ -920,16 +899,16 @@ describe('lambda handler', () => {
         ctxWithCustomData
       );
 
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(
+      strictEqual(
         span.spanContext().traceId,
         sampledGenericSpanContext.traceId
       );
-      assert.strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
+      strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
     });
   });
 
@@ -945,11 +924,8 @@ describe('lambda handler', () => {
         await lambdaRequire('lambda-test/async').handler('arg', ctx);
         const spans = memoryExporter.getFinishedSpans();
         const [span] = spans;
-        assert.strictEqual(spans.length, 1);
-        assert.strictEqual(
-          span.attributes[SEMRESATTRS_FAAS_NAME],
-          ctx.functionName
-        );
+        strictEqual(spans.length, 1);
+        strictEqual(span.attributes[SEMRESATTRS_FAAS_NAME], ctx.functionName);
         assertSpanSuccess(span);
       });
     });
@@ -980,7 +956,7 @@ describe('lambda handler', () => {
           ctx
         );
         const [span] = memoryExporter.getFinishedSpans();
-        assert.strictEqual(span.attributes[RES_ATTR], res);
+        strictEqual(span.attributes[RES_ATTR], res);
       });
 
       it('async - error', async () => {
@@ -993,7 +969,7 @@ describe('lambda handler', () => {
           err = e;
         }
         const [span] = memoryExporter.getFinishedSpans();
-        assert.strictEqual(span.attributes[ERR_ATTR], err!.message);
+        strictEqual(span.attributes[ERR_ATTR], err!.message);
       });
 
       it('sync - success', async () => {
@@ -1007,7 +983,7 @@ describe('lambda handler', () => {
           );
         });
         const [span] = memoryExporter.getFinishedSpans();
-        assert.strictEqual(span.attributes[RES_ATTR], result);
+        strictEqual(span.attributes[RES_ATTR], result);
       });
 
       it('sync - error', async () => {
@@ -1020,7 +996,7 @@ describe('lambda handler', () => {
           err = e;
         }
         const [span] = memoryExporter.getFinishedSpans();
-        assert.strictEqual(span.attributes[ERR_ATTR], err!.message);
+        strictEqual(span.attributes[ERR_ATTR], err!.message);
       });
 
       it('sync - error with callback', async () => {
@@ -1038,7 +1014,7 @@ describe('lambda handler', () => {
           );
         });
         const [span] = memoryExporter.getFinishedSpans();
-        assert.strictEqual(span.attributes[ERR_ATTR], error!.message);
+        strictEqual(span.attributes[ERR_ATTR], error!.message);
       });
     });
 
@@ -1049,12 +1025,12 @@ describe('lambda handler', () => {
           'arg',
           ctx
         );
-        assert.strictEqual(result, 'ok');
+        strictEqual(result, 'ok');
         const spans = memoryExporter.getFinishedSpans();
         const [span] = spans;
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
         assertSpanSuccess(span);
-        assert.strictEqual(span.parentSpanId, undefined);
+        strictEqual(span.parentSpanId, undefined);
       });
     });
   });
@@ -1071,12 +1047,12 @@ describe('lambda handler', () => {
         ctx
       );
 
-      assert.strictEqual(result, 'ok');
+      strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      strictEqual(span.parentSpanId, undefined);
     });
   });
 });

@@ -1,6 +1,6 @@
 'use strict';
 
-import * as api from '@opentelemetry/api';
+import {trace, context} from '@opentelemetry/api';
 import { setupTracing } from './tracer'
 setupTracing('example-koa-server');
 
@@ -32,7 +32,7 @@ const posts = ['post 0', 'post 1', 'post 2'];
 function addPost(ctx: Koa.Context) {
   const newPostId = posts.length;
   posts.push(`post ${newPostId}`);
-  const currentSpan = api.trace.getSpan(api.context.active());
+  const currentSpan = trace.getSpan(context.active());
   currentSpan?.addEvent('Added post');
   currentSpan?.setAttribute('post.id', newPostId)
   ctx.body = `Added post: ${posts[posts.length - 1]}`;
@@ -51,7 +51,7 @@ async function showNewPost(ctx: Koa.Context) {
 
 function runTest(ctx: Koa.Context) {
   console.log('runTest');
-  const currentSpan = api.trace.getSpan(api.context.active());
+  const currentSpan = trace.getSpan(context.active());
   if (currentSpan){
     const { traceId } = currentSpan.spanContext();
     console.log(`traceid: ${traceId}`);

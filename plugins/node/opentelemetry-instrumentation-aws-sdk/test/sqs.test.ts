@@ -21,9 +21,8 @@ import {
 const instrumentation = registerInstrumentationTesting(
   new AwsInstrumentation()
 );
-import * as AWS from 'aws-sdk';
+import { Response, config, SQS } from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
-import type { SQS } from 'aws-sdk';
 
 import {
   MESSAGINGDESTINATIONKINDVALUES_QUEUE,
@@ -59,7 +58,7 @@ const responseMockSuccess = {
   requestId: '0000000000000',
   error: null,
   httpResponse: { statusCode: 200 },
-} as AWS.Response<any, any>;
+} as Response<any, any>;
 
 const extractContextSpy = sinon.spy(
   messageAttributes,
@@ -68,7 +67,7 @@ const extractContextSpy = sinon.spy(
 
 describe('SQS', () => {
   before(() => {
-    AWS.config.credentials = {
+    config.credentials = {
       accessKeyId: 'test key id',
       expired: false,
       expireTime: new Date(),
@@ -80,7 +79,7 @@ describe('SQS', () => {
   beforeEach(() => {
     mockV2AwsSend(responseMockSuccess, {
       Messages: [{ Body: 'msg 1 payload' }, { Body: 'msg 2 payload' }],
-    } as AWS.SQS.Types.ReceiveMessageResult);
+    } as SQS.Types.ReceiveMessageResult);
   });
 
   describe('receive context', () => {
@@ -103,12 +102,12 @@ describe('SQS', () => {
     };
 
     it('should set parent context in sqs receive callback', done => {
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       sqs.receiveMessage(
         {
           QueueUrl: 'queue/url/for/unittests',
         },
-        (err: AWSError, data: AWS.SQS.Types.ReceiveMessageResult) => {
+        (err: AWSError, data: SQS.Types.ReceiveMessageResult) => {
           expect(err).toBeFalsy();
           createReceiveChildSpan();
           expectReceiverWithChildSpan(getTestSpans());
@@ -118,12 +117,12 @@ describe('SQS', () => {
     });
 
     it("should set parent context in sqs receive 'send' callback", done => {
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       sqs
         .receiveMessage({
           QueueUrl: 'queue/url/for/unittests',
         })
-        .send((err: AWSError, data: AWS.SQS.Types.ReceiveMessageResult) => {
+        .send((err: AWSError, data: SQS.Types.ReceiveMessageResult) => {
           expect(err).toBeFalsy();
           createReceiveChildSpan();
           expectReceiverWithChildSpan(getTestSpans());
@@ -132,7 +131,7 @@ describe('SQS', () => {
     });
 
     it('should set parent context in sqs receive promise then', async () => {
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       await sqs
         .receiveMessage({
           QueueUrl: 'queue/url/for/unittests',
@@ -145,7 +144,7 @@ describe('SQS', () => {
     });
 
     it.skip('should set parent context in sqs receive after await', async () => {
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       await sqs
         .receiveMessage({
           QueueUrl: 'queue/url/for/unittests',
@@ -158,7 +157,7 @@ describe('SQS', () => {
 
     it.skip('should set parent context in sqs receive from async function', async () => {
       const asycnReceive = async () => {
-        const sqs = new AWS.SQS();
+        const sqs = new SQS();
         return await sqs
           .receiveMessage({
             QueueUrl: 'queue/url/for/unittests',
@@ -231,7 +230,7 @@ describe('SQS', () => {
     const contextValueFromTest = 'context value from test';
 
     beforeEach(async () => {
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       await context.with(
         context.active().setValue(contextKeyFromTest, contextValueFromTest),
         async () => {
@@ -377,7 +376,7 @@ describe('SQS', () => {
   describe('hooks', () => {
     it('sqsResponseHook for sendMessage should add messaging attributes', async () => {
       const region = 'us-east-1';
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       sqs.config.update({ region });
 
       const QueueName = 'unittest';
@@ -427,7 +426,7 @@ describe('SQS', () => {
 
       instrumentation.setConfig(config);
 
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       const res = await sqs
         .receiveMessage({
           QueueUrl: 'queue/url/for/unittests',
@@ -452,7 +451,7 @@ describe('SQS', () => {
     });
 
     it('sqsProcessHook not set in config', async () => {
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       const res = await sqs
         .receiveMessage({
           QueueUrl: 'queue/url/for/unittests',
@@ -480,7 +479,7 @@ describe('SQS', () => {
       };
       instrumentation.setConfig(config);
 
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       const res = await sqs
         .receiveMessage({
           QueueUrl: 'queue/url/for/unittests',
@@ -502,7 +501,7 @@ describe('SQS', () => {
 
     it('bogus sendMessageBatch input should not crash', async () => {
       const region = 'us-east-1';
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       sqs.config.update({ region });
 
       const QueueName = 'unittest';
@@ -531,9 +530,9 @@ describe('SQS', () => {
     it('should not extract from payload even if set', async () => {
       mockV2AwsSend(responseMockSuccess, {
         Messages: [{ Body: JSON.stringify({ traceparent: 1 }) }],
-      } as AWS.SQS.Types.ReceiveMessageResult);
+      } as SQS.Types.ReceiveMessageResult);
 
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       await sqs
         .receiveMessage({
           QueueUrl: 'queue/url/for/unittests1',
@@ -556,9 +555,9 @@ describe('SQS', () => {
         Messages: [
           { Body: JSON.stringify({ MessageAttributes: { traceparent } }) },
         ],
-      } as AWS.SQS.Types.ReceiveMessageResult);
+      } as SQS.Types.ReceiveMessageResult);
 
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       await sqs
         .receiveMessage({
           QueueUrl: 'queue/url/for/unittests',
@@ -590,9 +589,9 @@ describe('SQS', () => {
             }),
           },
         ],
-      } as AWS.SQS.Types.ReceiveMessageResult);
+      } as SQS.Types.ReceiveMessageResult);
 
-      const sqs = new AWS.SQS();
+      const sqs = new SQS();
       await sqs
         .receiveMessage({
           QueueUrl: 'queue/url/for/unittests',
