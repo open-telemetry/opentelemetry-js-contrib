@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.39.0...instrumentation-fastify-v0.40.0) (2024-10-08)
+
+
+### Features
+
+* **instrumentation-fastify:** Enable Fastify v5 ([#2460](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2460)) ([02a9fdb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/02a9fdb60ce9cb05f77bb431811cd40b348c45f1))
+
 ## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.38.0...instrumentation-fastify-v0.39.0) (2024-09-02)
 
 
