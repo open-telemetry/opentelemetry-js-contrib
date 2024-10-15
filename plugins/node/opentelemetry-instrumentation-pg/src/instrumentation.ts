@@ -66,7 +66,6 @@ import {
 } from '@opentelemetry/semantic-conventions/incubating';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
-  private _pgPoolListenersSet: boolean = false;
   private _operationDuration!: Histogram;
   private _connectionsCount!: UpDownCounter;
   private _connectionPendingRequests!: UpDownCounter;
@@ -86,7 +85,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   override _updateMetricInstruments() {
-    this._pgPoolListenersSet = false;
     this._operationDuration = this.meter.createHistogram(
       METRIC_DB_CLIENT_OPERATION_DURATION,
       {
@@ -437,8 +435,8 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     };
   }
 
-  private setPoolConnectEventListeners(pgPool: PgPoolExtended) {
-    if (this._pgPoolListenersSet) return;
+  private _setPoolConnectEventListeners(pgPool: PgPoolExtended) {
+    if (pgPool.eventListenersSet) return;
     const poolName = utils.getPoolName(pgPool.options);
 
     pgPool.on('connect', () => {
@@ -480,7 +478,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         this._connectionsCounter
       );
     });
-    this._pgPoolListenersSet = true;
+    pgPool.eventListenersSet = true;
   }
 
   private _getPoolConnectPatch() {
@@ -497,7 +495,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           attributes: utils.getSemanticAttributesFromPool(this.options),
         });
 
-        plugin.setPoolConnectEventListeners(this);
+        plugin._setPoolConnectEventListeners(this);
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());

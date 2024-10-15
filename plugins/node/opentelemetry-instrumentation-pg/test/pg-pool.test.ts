@@ -592,22 +592,22 @@ describe('pg-pool', () => {
         assert.equal(
           poolAux.listenerCount('connect'),
           1,
-          "More than one event listener for 'connect'"
+          `${poolAux.listenerCount('connect')} event listener(s) for 'connect'`
         );
         assert.equal(
           poolAux.listenerCount('acquire'),
           1,
-          "More than one event listener for 'acquire'"
+          `${poolAux.listenerCount('acquire')} event listener(s) for 'acquire'`
         );
         assert.equal(
           poolAux.listenerCount('remove'),
           1,
-          "More than one event listener for 'remove'"
+          `${poolAux.listenerCount('remove')} event listener(s) for 'remove'`
         );
         assert.equal(
           poolAux.listenerCount('release'),
           1,
-          "More than one event listener for 'release'"
+          `${poolAux.listenerCount('release')} event listener(s) for 'release'`
         );
 
         completed++;
@@ -632,22 +632,22 @@ describe('pg-pool', () => {
         assert.equal(
           poolAux.listenerCount('connect'),
           1,
-          "More than one event listener for 'connect'"
+          `${poolAux.listenerCount('connect')} event listener(s) for 'connect'`
         );
         assert.equal(
           poolAux.listenerCount('acquire'),
           1,
-          "More than one event listener for 'acquire'"
+          `${poolAux.listenerCount('acquire')} event listener(s) for 'acquire'`
         );
         assert.equal(
           poolAux.listenerCount('remove'),
           1,
-          "More than one event listener for 'remove'"
+          `${poolAux.listenerCount('remove')} event listener(s) for 'remove'`
         );
         assert.equal(
           poolAux.listenerCount('release'),
           1,
-          "More than one event listener for 'release'"
+          `${poolAux.listenerCount('release')} event listener(s) for 'release'`
         );
 
         completed++;
@@ -685,22 +685,28 @@ describe('pg-pool', () => {
           assert.equal(
             poolAux.listenerCount('connect'),
             2,
-            "More than one event listener for 'connect'"
+            `${poolAux.listenerCount(
+              'connect'
+            )} event listener(s) for 'connect'`
           );
           assert.equal(
             poolAux.listenerCount('acquire'),
             1,
-            "More than one event listener for 'acquire'"
+            `${poolAux.listenerCount(
+              'acquire'
+            )} event listener(s) for 'acquire'`
           );
           assert.equal(
             poolAux.listenerCount('remove'),
             1,
-            "More than one event listener for 'remove'"
+            `${poolAux.listenerCount('remove')} event listener(s) for 'remove'`
           );
           assert.equal(
             poolAux.listenerCount('release'),
             1,
-            "More than one event listener for 'release'"
+            `${poolAux.listenerCount(
+              'release'
+            )} event listener(s) for 'release'`
           );
           assert.equal(testValue, 1);
 
@@ -729,6 +735,108 @@ describe('pg-pool', () => {
           );
           done();
         });
+      });
+    });
+
+    it('when creating multiple pools, all of them should be instrumented', done => {
+      const pool1: pgPool<pg.Client> = new pgPool(CONFIG);
+      const pool2: pgPool<pg.Client> = new pgPool(CONFIG);
+
+      let completed = 0;
+      pool1.connect((err, client, release) => {
+        if (err) {
+          throw new Error(err.message);
+        }
+        if (!release) {
+          throw new Error('Did not receive release function');
+        }
+        if (!client) {
+          throw new Error('No client received');
+        }
+        assert.ok(client);
+        release();
+
+        assert.equal(
+          pool1.listenerCount('connect'),
+          1,
+          `${pool1.listenerCount(
+            'connect'
+          )} event listener(s) for 'connect' on pool1`
+        );
+        assert.equal(
+          pool1.listenerCount('acquire'),
+          1,
+          `${pool1.listenerCount(
+            'acquire'
+          )} event listener(s) for 'acquire' on pool1`
+        );
+        assert.equal(
+          pool1.listenerCount('remove'),
+          1,
+          `${pool1.listenerCount(
+            'remove'
+          )} event listener(s) for 'remove' on pool1`
+        );
+        assert.equal(
+          pool1.listenerCount('release'),
+          1,
+          `${pool1.listenerCount(
+            'release'
+          )} event listener(s) for 'release' on pool1`
+        );
+
+        completed++;
+        if (completed >= 2) {
+          done();
+        }
+      });
+
+      pool2.connect((err, client, release) => {
+        if (err) {
+          throw new Error(err.message);
+        }
+        if (!release) {
+          throw new Error('Did not receive release function');
+        }
+        if (!client) {
+          throw new Error('No client received');
+        }
+        assert.ok(client);
+        release();
+
+        assert.equal(
+          pool2.listenerCount('connect'),
+          1,
+          `${pool2.listenerCount(
+            'connect'
+          )} event listener(s) for 'connect' on pool2`
+        );
+        assert.equal(
+          pool2.listenerCount('acquire'),
+          1,
+          `${pool2.listenerCount(
+            'acquire'
+          )} event listener(s) for 'acquire' on pool2`
+        );
+        assert.equal(
+          pool2.listenerCount('remove'),
+          1,
+          `${pool2.listenerCount(
+            'remove'
+          )} event listener(s) for 'remove' on pool2`
+        );
+        assert.equal(
+          pool2.listenerCount('release'),
+          1,
+          `${pool2.listenerCount(
+            'release'
+          )} event listener(s) for 'release' on pool2`
+        );
+
+        completed++;
+        if (completed >= 2) {
+          done();
+        }
       });
     });
   });

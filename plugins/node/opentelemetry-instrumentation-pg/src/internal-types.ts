@@ -57,6 +57,7 @@ export interface PgPoolOptionsParams {
 
 export interface PgPoolExtended extends pgPoolTypes<pgTypes.Client> {
   options: PgPoolOptionsParams;
+  eventListenersSet: boolean; // flag to identify if the event listeners for instrumentation have been set
 }
 
 export type PgClientConnect = (callback?: Function) => Promise<void> | void;
