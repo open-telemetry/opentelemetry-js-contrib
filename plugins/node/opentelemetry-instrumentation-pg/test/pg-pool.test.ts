@@ -601,15 +601,15 @@ describe('pg-pool', () => {
       const metrics = resourceMetrics.scopeMetrics[0].metrics;
       assert.strictEqual(
         metrics[0].descriptor.name,
-        METRIC_DB_CLIENT_OPERATION_DURATION,
+        METRIC_DB_CLIENT_OPERATION_DURATION
       );
       assert.strictEqual(
         metrics[1].descriptor.name,
-        METRIC_DB_CLIENT_CONNECTION_COUNT,
+        METRIC_DB_CLIENT_CONNECTION_COUNT
       );
       assert.strictEqual(
         metrics[2].descriptor.name,
-        METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
+        METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS
       );
     });
   });
