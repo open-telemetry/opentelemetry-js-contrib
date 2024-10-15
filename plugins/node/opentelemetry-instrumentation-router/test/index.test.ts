@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/// <reference path="../src/router.d.ts" />
+
 import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
