@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.42.0...instrumentation-express-v0.43.0) (2024-10-08)
+
+
+### Features
+
+* **instrumentation-express:** Use router path in router span names ([#2319](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2319)) ([ee5c584](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ee5c584c943eb8a3de0566843a42784f16c0f31f))
+
 ## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.41.1...instrumentation-express-v0.42.0) (2024-09-02)
 
 
