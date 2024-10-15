@@ -527,7 +527,7 @@ describe('pg-pool', () => {
           const metrics = resourceMetrics.scopeMetrics[0].metrics;
           assert.strictEqual(
             metrics[0].descriptor.name,
-            'db.client.operation.duration'
+            METRIC_DB_CLIENT_OPERATION_DURATION
           );
 
           assert.strictEqual(
