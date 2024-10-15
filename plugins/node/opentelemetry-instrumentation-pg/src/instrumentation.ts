@@ -66,6 +66,7 @@ import {
 } from '@opentelemetry/semantic-conventions/incubating';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
+  private _pgPoolListenersSet: boolean = false;
   private _operationDuration!: Histogram;
   private _connectionsCount!: UpDownCounter;
   private _connectionPendingRequests!: UpDownCounter;
@@ -85,6 +86,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   override _updateMetricInstruments() {
+    this._pgPoolListenersSet = false;
     this._operationDuration = this.meter.createHistogram(
       METRIC_DB_CLIENT_OPERATION_DURATION,
       {
@@ -435,6 +437,47 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     };
   }
 
+  private setPoolConnectEventListeners(pgPool: PgPoolExtended) {
+    if (this._pgPoolListenersSet) return;
+
+    pgPool.on('connect', () => {
+      this._connectionsCounter = utils.updateCounter(
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+
+    pgPool.on('acquire', () => {
+      this._connectionsCounter = utils.updateCounter(
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+
+    pgPool.on('remove', () => {
+      this._connectionsCounter = utils.updateCounter(
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+
+    pgPool.on('release' as any, () => {
+      this._connectionsCounter = utils.updateCounter(
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+    this._pgPoolListenersSet = true;
+  }
+
   private _getPoolConnectPatch() {
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
@@ -449,41 +492,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           attributes: utils.getSemanticAttributesFromPool(this.options),
         });
 
-        this.on('connect', () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
-
-        this.on('acquire', () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
-
-        this.on('remove', () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
-
-        this.on('release' as any, () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
+        plugin.setPoolConnectEventListeners(this)
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());

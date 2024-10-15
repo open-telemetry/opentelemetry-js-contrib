@@ -572,5 +572,119 @@ describe('pg-pool', () => {
         });
       });
     });
+
+    it('should not add duplicate event listeners to PgPool events', done => {
+      let poolAux: pgPool<pg.Client>;
+      poolAux = new pgPool(CONFIG);
+      let completed = 0;
+      poolAux.connect((err, client, release) => {
+        if (err) {
+          throw new Error(err.message);
+        }
+        if (!release) {
+          throw new Error('Did not receive release function');
+        }
+        if (!client) {
+          throw new Error('No client received');
+        }
+        assert.ok(client);
+        release();
+
+        assert.equal(poolAux.listenerCount('connect'), 1, "More than one event listener for 'connect'");
+        assert.equal(poolAux.listenerCount('acquire'), 1, "More than one event listener for 'acquire'");
+        assert.equal(poolAux.listenerCount('remove'), 1, "More than one event listener for 'remove'");
+        assert.equal(poolAux.listenerCount('release'), 1, "More than one event listener for 'release'");
+
+        completed++;
+        if (completed >= 2) {
+          done();
+        }
+      });
+
+      poolAux.connect((err, client, release) => {
+        if (err) {
+          throw new Error(err.message);
+        }
+        if (!release) {
+          throw new Error('Did not receive release function');
+        }
+        if (!client) {
+          throw new Error('No client received');
+        }
+        assert.ok(client);
+        release();
+
+        assert.equal(poolAux.listenerCount('connect'), 1, "More than one event listener for 'connect'");
+        assert.equal(poolAux.listenerCount('acquire'), 1, "More than one event listener for 'acquire'");
+        assert.equal(poolAux.listenerCount('remove'), 1, "More than one event listener for 'remove'");
+        assert.equal(poolAux.listenerCount('release'), 1, "More than one event listener for 'release'");
+
+        completed++;
+        if (completed >= 2) {
+          done();
+        }
+      });
+    });
+
+    it('adding a custom event listener should still work with the default event listeners to PgPool events', done => {
+      let poolAux: pgPool<pg.Client>;
+      poolAux = new pgPool(CONFIG);
+      let testValue = 0;
+      poolAux.on('connect', () => {
+        testValue = 1;
+      })
+
+      poolAux.connect((err, client, release) => {
+        if (err) {
+          throw new Error(err.message);
+        }
+        if (!release) {
+          throw new Error('Did not receive release function');
+        }
+        if (!client) {
+          throw new Error('No client received');
+        }
+        assert.ok(client);
+
+        client.query('SELECT NOW()', async (err, ret) => {
+          release();
+          if (err) {
+            throw new Error(err.message);
+          }
+          assert.ok(ret);
+          assert.equal(poolAux.listenerCount('connect'), 2, "More than one event listener for 'connect'");
+          assert.equal(poolAux.listenerCount('acquire'), 1, "More than one event listener for 'acquire'");
+          assert.equal(poolAux.listenerCount('remove'), 1, "More than one event listener for 'remove'");
+          assert.equal(poolAux.listenerCount('release'), 1, "More than one event listener for 'release'");
+          assert.equal(testValue, 1);
+
+
+          const { resourceMetrics, errors } = await metricReader.collect();
+          assert.deepEqual(
+            errors,
+            [],
+            'expected no errors from the callback during metric collection'
+          );
+
+          const metrics = resourceMetrics.scopeMetrics[0].metrics;
+          assert.strictEqual(
+            metrics[1].descriptor.name,
+            METRIC_DB_CLIENT_CONNECTION_COUNT
+          );
+          assert.strictEqual(
+            metrics[1].dataPoints[0].attributes[
+              ATTR_DB_CLIENT_CONNECTION_STATE
+            ],
+            'used'
+          );
+          assert.strictEqual(
+            metrics[1].dataPoints[0].value,
+            1,
+            'expected to have 1 used connection'
+          );
+          done();
+        });
+      });
+    });
   });
 });
