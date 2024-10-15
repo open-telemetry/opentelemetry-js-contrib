@@ -492,7 +492,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           attributes: utils.getSemanticAttributesFromPool(this.options),
         });
 
-        plugin.setPoolConnectEventListeners(this)
+        plugin.setPoolConnectEventListeners(this);
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());

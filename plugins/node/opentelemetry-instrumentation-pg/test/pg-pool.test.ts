@@ -574,8 +574,7 @@ describe('pg-pool', () => {
     });
 
     it('should not add duplicate event listeners to PgPool events', done => {
-      let poolAux: pgPool<pg.Client>;
-      poolAux = new pgPool(CONFIG);
+      const poolAux: pgPool<pg.Client> = new pgPool(CONFIG);
       let completed = 0;
       poolAux.connect((err, client, release) => {
         if (err) {
@@ -590,10 +589,26 @@ describe('pg-pool', () => {
         assert.ok(client);
         release();
 
-        assert.equal(poolAux.listenerCount('connect'), 1, "More than one event listener for 'connect'");
-        assert.equal(poolAux.listenerCount('acquire'), 1, "More than one event listener for 'acquire'");
-        assert.equal(poolAux.listenerCount('remove'), 1, "More than one event listener for 'remove'");
-        assert.equal(poolAux.listenerCount('release'), 1, "More than one event listener for 'release'");
+        assert.equal(
+          poolAux.listenerCount('connect'),
+          1,
+          "More than one event listener for 'connect'"
+        );
+        assert.equal(
+          poolAux.listenerCount('acquire'),
+          1,
+          "More than one event listener for 'acquire'"
+        );
+        assert.equal(
+          poolAux.listenerCount('remove'),
+          1,
+          "More than one event listener for 'remove'"
+        );
+        assert.equal(
+          poolAux.listenerCount('release'),
+          1,
+          "More than one event listener for 'release'"
+        );
 
         completed++;
         if (completed >= 2) {
@@ -614,10 +629,26 @@ describe('pg-pool', () => {
         assert.ok(client);
         release();
 
-        assert.equal(poolAux.listenerCount('connect'), 1, "More than one event listener for 'connect'");
-        assert.equal(poolAux.listenerCount('acquire'), 1, "More than one event listener for 'acquire'");
-        assert.equal(poolAux.listenerCount('remove'), 1, "More than one event listener for 'remove'");
-        assert.equal(poolAux.listenerCount('release'), 1, "More than one event listener for 'release'");
+        assert.equal(
+          poolAux.listenerCount('connect'),
+          1,
+          "More than one event listener for 'connect'"
+        );
+        assert.equal(
+          poolAux.listenerCount('acquire'),
+          1,
+          "More than one event listener for 'acquire'"
+        );
+        assert.equal(
+          poolAux.listenerCount('remove'),
+          1,
+          "More than one event listener for 'remove'"
+        );
+        assert.equal(
+          poolAux.listenerCount('release'),
+          1,
+          "More than one event listener for 'release'"
+        );
 
         completed++;
         if (completed >= 2) {
@@ -627,12 +658,11 @@ describe('pg-pool', () => {
     });
 
     it('adding a custom event listener should still work with the default event listeners to PgPool events', done => {
-      let poolAux: pgPool<pg.Client>;
-      poolAux = new pgPool(CONFIG);
+      const poolAux: pgPool<pg.Client> = new pgPool(CONFIG);
       let testValue = 0;
       poolAux.on('connect', () => {
         testValue = 1;
-      })
+      });
 
       poolAux.connect((err, client, release) => {
         if (err) {
@@ -652,12 +682,27 @@ describe('pg-pool', () => {
             throw new Error(err.message);
           }
           assert.ok(ret);
-          assert.equal(poolAux.listenerCount('connect'), 2, "More than one event listener for 'connect'");
-          assert.equal(poolAux.listenerCount('acquire'), 1, "More than one event listener for 'acquire'");
-          assert.equal(poolAux.listenerCount('remove'), 1, "More than one event listener for 'remove'");
-          assert.equal(poolAux.listenerCount('release'), 1, "More than one event listener for 'release'");
+          assert.equal(
+            poolAux.listenerCount('connect'),
+            2,
+            "More than one event listener for 'connect'"
+          );
+          assert.equal(
+            poolAux.listenerCount('acquire'),
+            1,
+            "More than one event listener for 'acquire'"
+          );
+          assert.equal(
+            poolAux.listenerCount('remove'),
+            1,
+            "More than one event listener for 'remove'"
+          );
+          assert.equal(
+            poolAux.listenerCount('release'),
+            1,
+            "More than one event listener for 'release'"
+          );
           assert.equal(testValue, 1);
-
 
           const { resourceMetrics, errors } = await metricReader.collect();
           assert.deepEqual(
