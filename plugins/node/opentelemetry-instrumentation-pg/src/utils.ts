@@ -92,7 +92,7 @@ export function getQuerySpanName(
   return `${SpanNames.QUERY_PREFIX}:${command}${dbName ? ` ${dbName}` : ''}`;
 }
 
-function parseNormalizedOperationName(queryText: string) {
+export function parseNormalizedOperationName(queryText: string) {
   const indexOfFirstSpace = queryText.indexOf(' ');
   let sqlCommand =
     indexOfFirstSpace === -1
