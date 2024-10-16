@@ -51,6 +51,22 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 | `requireParentSpan` | `boolean` | If true, requires a parent span to create new spans (default false) |
 | `addSqlCommenterCommentToQueries` | `boolean` | If true, adds [sqlcommenter](https://github.com/open-telemetry/opentelemetry-sqlcommenter) specification compliant comment to queries with tracing context (default false). _NOTE: A comment will not be added to queries that already contain `--` or `/* ... */` in them, even if these are not actually part of comments_ |
 
+### Metrics
+
+The value of the environment variable `OTEL_SEMCONV_STABILITY_OPT_IN` (a comma-separated list of values) will define which metrics are being collected.
+Possible values:
+- `database` - emit the new database conventions and stop emitting old database conventions.
+- `database/dup` - emit both the old and the stable database conventions, allowing for a seamless transition.
+- The default behavior (in the absence of one of these values) is to continue emitting only the old database conventions.
+
+List of Metrics affected by this environment variable (if the metric is not listed here, it will always be emitted):
+
+| Metric                                  | Emitted with value of `OTEL_SEMCONV_STABILITY_OPT_IN` |
+| --------------------------------------- | ---------------------------- |
+| `db.client.operation.duration`          | `database` or `database/dup` |
+| `db.client.connection.count`            | `database` or `database/dup` |
+| `db.client.connection.pending_requests` | `database` or `database/dup` |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

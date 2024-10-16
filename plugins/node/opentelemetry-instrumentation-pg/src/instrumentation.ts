@@ -39,6 +39,7 @@ import {
   PostgresCallback,
   PgPoolExtended,
   PgPoolCallback,
+  EVENT_LISTENERS_SET,
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
@@ -442,7 +443,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   private _setPoolConnectEventListeners(pgPool: PgPoolExtended) {
     const emit = utils.getEmitType();
     if (emit === utils.emitType.OLD_SEM_CONV) return;
-    if (pgPool.eventListenersSet) return;
+    if (pgPool[EVENT_LISTENERS_SET]) return;
     const poolName = utils.getPoolName(pgPool.options);
 
     pgPool.on('connect', () => {
@@ -484,7 +485,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         this._connectionsCounter
       );
     });
-    pgPool.eventListenersSet = true;
+    pgPool[EVENT_LISTENERS_SET] = true;
   }
 
   private _getPoolConnectPatch() {
