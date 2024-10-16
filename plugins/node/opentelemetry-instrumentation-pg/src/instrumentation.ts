@@ -86,8 +86,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   override _updateMetricInstruments() {
-    const emit = utils.getEmitType();
-    if (emit === utils.emitType.OLD_SEM_CONV) return;
     this._operationDuration = this.meter.createHistogram(
       METRIC_DB_CLIENT_OPERATION_DURATION,
       {
@@ -225,8 +223,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   private recordOperationDuration(attributes: Attributes, startTime: HrTime) {
-    const emit = utils.getEmitType();
-    if (emit === utils.emitType.OLD_SEM_CONV) return;
     const metricsAttributes: Attributes = {};
     const keysToCopy = [
       SEMATTRS_DB_SYSTEM,
@@ -441,8 +437,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   private _setPoolConnectEventListeners(pgPool: PgPoolExtended) {
-    const emit = utils.getEmitType();
-    if (emit === utils.emitType.OLD_SEM_CONV) return;
     if (pgPool[EVENT_LISTENERS_SET]) return;
     const poolName = utils.getPoolName(pgPool.options);
 
