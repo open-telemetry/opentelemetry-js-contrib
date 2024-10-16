@@ -34,6 +34,7 @@ import {
 import type * as tedious from 'tedious';
 import { TediousInstrumentationConfig } from './types';
 import { getSpanName, once } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const CURRENT_DATABASE = Symbol(

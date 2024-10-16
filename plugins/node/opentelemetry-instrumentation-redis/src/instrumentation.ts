@@ -25,6 +25,7 @@ import {
   getTracedInternalSendCommand,
 } from './utils';
 import { RedisInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const DEFAULT_CONFIG: RedisInstrumentationConfig = {

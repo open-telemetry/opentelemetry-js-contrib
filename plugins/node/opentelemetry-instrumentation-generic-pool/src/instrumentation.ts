@@ -24,6 +24,7 @@ import {
 
 import type * as genericPool from 'generic-pool';
 
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const MODULE_NAME = 'generic-pool';

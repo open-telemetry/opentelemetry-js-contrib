@@ -29,6 +29,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
 import { InstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export class MemcachedInstrumentation extends InstrumentationBase<InstrumentationConfig> {

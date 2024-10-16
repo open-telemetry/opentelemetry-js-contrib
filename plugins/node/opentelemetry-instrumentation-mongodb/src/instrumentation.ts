@@ -51,6 +51,7 @@ import {
   V4ConnectionPool,
 } from './internal-types';
 import { V4Connect, V4Session } from './internal-types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api';
 

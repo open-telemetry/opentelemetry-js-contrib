@@ -44,6 +44,7 @@ import type {
   Consumer,
 } from 'kafkajs';
 import { KafkaJsInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { bufferTextMapGetter } from './propagator';
 import {

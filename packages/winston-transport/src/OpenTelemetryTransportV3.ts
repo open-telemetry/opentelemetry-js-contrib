@@ -16,6 +16,7 @@
 
 import { Logger, logs } from '@opentelemetry/api-logs';
 import TransportStream = require('winston-transport');
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { emitLogRecord } from './utils';
 

@@ -27,6 +27,7 @@ import {
   InstrumentationModuleDefinition,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   SEMATTRS_DB_OPERATION,

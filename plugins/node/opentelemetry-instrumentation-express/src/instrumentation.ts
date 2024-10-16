@@ -33,6 +33,7 @@ import {
   isLayerIgnored,
   storeLayerPath,
 } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   InstrumentationBase,

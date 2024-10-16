@@ -27,6 +27,7 @@ import {
   SpanKind,
 } from '@opentelemetry/api';
 import { DataloaderInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import type * as Dataloader from 'dataloader';
 
