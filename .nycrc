@@ -5,7 +5,10 @@
   "include": [
     "src/**"
   ],
-  "reporter": ["text", "json"],
+  "reporter": [
+    "text",
+    "json"
+  ],
   "exclude": [
     "**/*.d.ts",
     "build/**/**/*.js",
@@ -15,7 +18,7 @@
     "src/platform/browser/*.ts",
     "test/*.ts",
     "webpack/*.js",
-    ".eslintrc.js"
+    ".eslintrc.config.mjs"
   ],
   "all": true
 }

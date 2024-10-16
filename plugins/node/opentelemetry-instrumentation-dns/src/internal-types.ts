@@ -1,11 +1,11 @@
-/*
- * Copyright The OpenTelemetry Authors
- *
+/**
+ * @copyright The OpenTelemetry Authors
+ * @license Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ * https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -49,7 +49,7 @@ export type LookupSimpleArgs = [number, LookupSimpleCallback];
 export type LookupOneArgs = [dns.LookupOneOptions, LookupSimpleCallback];
 export type LookupAllArgs = [
   dns.LookupAllOptions,
-  (err: NodeJS.ErrnoException | null, addresses: dns.LookupAddress[]) => void
+  (err: NodeJS.ErrnoException | null, addresses: dns.LookupAddress[]) => void,
 ];
 export type LookupArgs = [
   dns.LookupOptions,
@@ -57,7 +57,7 @@ export type LookupArgs = [
     err: NodeJS.ErrnoException | null,
     address: string | dns.LookupAddress[],
     family: number
-  ) => void
+  ) => void,
 ];
 export type LookupArgSignature = LookupSimpleArgs &
   LookupSimpleCallback &
