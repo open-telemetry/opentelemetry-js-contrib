@@ -55,6 +55,7 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 
 The value of the environment variable `OTEL_SEMCONV_STABILITY_OPT_IN` (a comma-separated list of values) will define which metrics are being collected.
 Possible values:
+
 - `database` - emit the new database conventions and stop emitting old database conventions.
 - `database/dup` - emit both the old and the stable database conventions, allowing for a seamless transition.
 - The default behavior (in the absence of one of these values) is to continue emitting only the old database conventions.
