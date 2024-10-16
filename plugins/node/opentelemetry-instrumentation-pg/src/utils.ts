@@ -54,6 +54,22 @@ import type * as pgTypes from 'pg';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { SpanNames } from './enums/SpanNames';
 
+export enum emitType {
+  NEW_SEM_CONV,
+  OLD_SEM_CONV,
+  BOTH_SEM_CONV,
+}
+
+export function getEmitType(): emitType {
+  if (process.env.OTEL_SEMCONV_STABILITY_OPT_IN?.includes('database/dup')) {
+    return emitType.BOTH_SEM_CONV;
+  }
+  if (process.env.OTEL_SEMCONV_STABILITY_OPT_IN?.includes('database')) {
+    return emitType.NEW_SEM_CONV;
+  }
+  return emitType.OLD_SEM_CONV;
+}
+
 /**
  * Helper function to get a low cardinality span name from whatever info we have
  * about the query.

@@ -968,10 +968,20 @@ describe('pg', () => {
   });
 
   describe('pg metrics', () => {
+    let envOptIn: string | undefined;
     let metricReader: testUtils.TestMetricReader;
 
     beforeEach(() => {
       metricReader = testUtils.initMeterProvider(instrumentation);
+    });
+
+    before(() => {
+      envOptIn = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database';
+    });
+
+    after(function () {
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = envOptIn;
     });
 
     it('should generate db.client.operation.duration metric', done => {
