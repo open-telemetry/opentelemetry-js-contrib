@@ -120,7 +120,5 @@ jobs:
         run: npm install -g npm@9 # npm@9 supports node >=14.17.0
       - name: Install
         run: npm ci
-      - name: Build
-        run: npm run compile
       - name: Run test-all-versions
         run: npm run --if-present --workspaces test-all-versions ${{ inputs.npm-workspace-args }}
