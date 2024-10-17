@@ -145,6 +145,9 @@ components:
     - kirrg001
   propagators/opentelemetry-propagator-ot-trace: []
     # Unmaintained
+  plugins/web/opentelemetry-instrumentation-page-view:
+    - Abinet18
+    - martinkuba
 
 ignored-authors:
   - renovate-bot

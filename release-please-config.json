@@ -67,6 +67,7 @@
     "plugins/web/opentelemetry-instrumentation-user-interaction": {},
     "plugins/web/opentelemetry-plugin-react-load": {},
     "propagators/opentelemetry-propagator-instana": {},
-    "propagators/opentelemetry-propagator-ot-trace": {}
+    "propagators/opentelemetry-propagator-ot-trace": {},
+    "plugins/web/opentelemetry-instrumentation-page-view": {}
+    }
   }
-}
