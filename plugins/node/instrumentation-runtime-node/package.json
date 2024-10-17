@@ -14,7 +14,7 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-runtime-node --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc mocha 'test/**/*.test.ts'",
     "version:update": "node ../../../scripts/version-update.js"
   },
   "author": "OpenTelemetry Authors",
@@ -46,10 +46,9 @@
     "@opentelemetry/sdk-metrics": "^1.20.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.2",
-    "mocha": "7.2.0",
+    "mocha": "10.7.3",
     "nyc": "^15.1.0",
     "rimraf": "5.0.10",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "peerDependencies": {
