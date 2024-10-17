@@ -20,6 +20,17 @@
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "GraphQLInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "graphql",
     "metrics",
