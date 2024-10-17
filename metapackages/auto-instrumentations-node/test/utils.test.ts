@@ -23,12 +23,15 @@ import { getResourceDetectorsFromEnv } from '../src/utils';
 
 describe('utils', () => {
   describe('getNodeAutoInstrumentations', () => {
-    it('should include all installed instrumentations', () => {
+    it('should include all default instrumentations', () => {
       const instrumentations = getNodeAutoInstrumentations();
       const installedInstrumentations = Object.keys(
         require('../package.json').dependencies
       ).filter(depName => {
-        return depName.startsWith('@opentelemetry/instrumentation-');
+        return (
+          depName.startsWith('@opentelemetry/instrumentation-') &&
+          depName !== '@opentelemetry/instrumentation-fs'
+        );
       });
 
       assert.deepStrictEqual(
@@ -83,6 +86,20 @@ describe('utils', () => {
             '@opentelemetry/instrumentation-aws-sdk',
             '@opentelemetry/instrumentation-nestjs-core',
           ])
+        );
+      } finally {
+        delete process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
+      }
+    });
+
+    it('should allow enabling non-default instrumentations via OTEL_NODE_ENABLED_INSTRUMENTATIONS environment variable', () => {
+      process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS = 'fs'; // separator with and without whitespaces should be allowed
+      try {
+        const instrumentations = getNodeAutoInstrumentations();
+
+        assert.deepStrictEqual(
+          new Set(instrumentations.map(i => i.instrumentationName)),
+          new Set(['@opentelemetry/instrumentation-fs'])
         );
       } finally {
         delete process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.4.3...resource-detector-container-v0.4.4) (2024-10-16)
+
+
+### Bug Fixes
+
+* **detector-container:** properly detect container ID when using Podman ([#2448](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2448)) ([ad560df](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ad560dfc5f662d418a74b0b197b3f48e4ae002d0))
+
 ## [0.4.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.4.2...resource-detector-container-v0.4.3) (2024-10-10)
 
 

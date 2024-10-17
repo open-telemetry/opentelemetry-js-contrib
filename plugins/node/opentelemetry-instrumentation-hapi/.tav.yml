@@ -1,11 +1,17 @@
 "@hapi/hapi":
-  - versions: "^19.2.0 || ^18.4.1 || ^17.9.0"
+  - versions:
+      include: "^19.2.0 || ^18.4.1 || ^17.9.0"
+      mode: latest-minors
     node: ">=14 <16"
     commands: npm test
-  - versions: "^20.3.0"
+  - versions:
+      include: "^20.3.0"
+      mode: latest-minors
     node: ">=14"
     commands: npm test
-  - versions: "^21.3.3"
+  - versions:
+      include: "^21.3.3"
+      mode: latest-minors
     node: ">=14.15.0"
     commands: npm test
 

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pg",
-  "version": "0.45.1",
+  "version": "0.46.0",
   "description": "OpenTelemetry instrumentation for `pg` and `pg-pool` database client for PostgreSQL",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -16,8 +16,8 @@
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
-    "test-all-versions": "cross-env IN_TAV=true tav",
-    "test-all-versions:local": "cross-env IN_TAV=true RUN_POSTGRES_TESTS_LOCAL=true npm run test-all-versions",
+    "test-all-versions": "tav",
+    "test-all-versions:local": "cross-env RUN_POSTGRES_TESTS_LOCAL=true npm run test-all-versions",
     "test:debug": "ts-mocha --inspect-brk --no-timeouts -p tsconfig.json 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_POSTGRES_TESTS_LOCAL=true npm run test",
     "version:update": "node ../../../scripts/version-update.js",
