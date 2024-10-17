@@ -69,6 +69,8 @@ components:
     - mottibec
   plugins/node/instrumentation-tedious: []
     # Unmaintained
+  plugins/node/instrumentation-typeorm:
+    - seemk
   plugins/node/opentelemetry-instrumentation-aws-lambda: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-aws-sdk:
