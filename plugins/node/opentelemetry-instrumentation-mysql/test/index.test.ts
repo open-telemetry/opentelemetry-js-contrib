@@ -153,7 +153,7 @@ describe('mysql@2.x-Tracing', () => {
 
         query.on('end', () => {
           const spans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(spans[0].name, sql);
+          assert.strictEqual(spans[0].name, 'SELECT');
           done();
         });
       });
