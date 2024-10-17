@@ -21,8 +21,8 @@
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "test": "nyc ts-mocha -p tsconfig.json test/**/*.test.ts",
     "test:browser": "nyc karma start --single-run",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json",
     "prepublishOnly": "npm run compile"
   },

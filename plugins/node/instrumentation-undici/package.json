@@ -12,8 +12,8 @@
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "watch": "tsc -w",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-undici --include-dependencies",
     "prewatch": "npm run precompile",
@@ -30,7 +30,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=14"
+    "node": ">=14 >=21"
   },
   "files": [
     "build/src/**/*.js",

@@ -7,6 +7,7 @@
     "forceConsistentCasingInFileNames": true,
     "inlineSources": true,
     "module": "commonjs",
+    "moduleResolution": "NodeNext",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,

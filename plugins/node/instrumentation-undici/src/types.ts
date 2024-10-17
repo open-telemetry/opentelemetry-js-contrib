@@ -1,11 +1,11 @@
-/*
- * Copyright The OpenTelemetry Authors
- *
+/**
+ * @copyright The OpenTelemetry Authors
+ * @license Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ * https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -54,7 +54,7 @@ export interface RequestHookFunction<T = UndiciRequest> {
 
 export interface ResponseHookFunction<
   RequestType = UndiciResponse,
-  ResponseType = UndiciResponse
+  ResponseType = UndiciResponse,
 > {
   (span: Span, info: { request: RequestType; response: ResponseType }): void;
 }
@@ -67,7 +67,7 @@ export interface StartSpanHookFunction<T = UndiciRequest> {
 // so it seems logical to have similar options than the HTTP instrumentation
 export interface UndiciInstrumentationConfig<
   RequestType = UndiciRequest,
-  ResponseType = UndiciResponse
+  ResponseType = UndiciResponse,
 > extends InstrumentationConfig {
   /** Not trace all outgoing requests that matched with custom function */
   ignoreRequestHook?: IgnoreRequestFunction<RequestType>;

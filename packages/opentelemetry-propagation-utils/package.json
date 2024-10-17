@@ -10,8 +10,8 @@
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/propagation-utils --include-dependencies",
     "prepublishOnly": "npm run compile",
     "prewatch": "npm run precompile",
