@@ -15,7 +15,6 @@
     "clean": "lerna run clean",
     "precompile": "tsc --version && npm run version:update",
     "version:update": "lerna run version:update",
-    "lint:readme": "lerna run lint:readme",
     "compile": "lerna run compile",
     "prewatch": "npm run precompile",
     "test": "lerna run test",
@@ -24,12 +23,13 @@
     "test-all-versions": "npm run --if-present --workspaces test-all-versions",
     "bump": "lerna publish",
     "changelog": "lerna-changelog",
-    "lint": "lerna run lint",
-    "lint:fix": "lerna run lint:fix",
+    "lint": "lerna run lint && npm run lint:readme && npm run lint:markdown",
+    "lint:fix": "lerna run lint:fix && npm run lint:markdown:fix",
     "lint:examples": "eslint ./examples/**/*.js",
     "lint:examples:fix": "eslint ./examples/**/*.js --fix",
     "lint:markdown": "markdownlint-cli2 $(git ls-files '*.md')",
-    "lint:markdown:fix": "markdownlint-cli2 --fix $(git ls-files '*.md')"
+    "lint:markdown:fix": "markdownlint-cli2 --fix $(git ls-files '*.md')",
+    "lint:readme": "lerna run lint:readme"
   },
   "keywords": [
     "opentelemetry",
