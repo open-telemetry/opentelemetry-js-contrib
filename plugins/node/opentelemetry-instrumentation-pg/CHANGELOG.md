@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.45.1...instrumentation-pg-v0.46.0) (2024-10-16)
+
+
+### Features
+
+* **instrumentation-pg:** add operation name attribute to db duration metric ([#2475](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2475)) ([b043ffb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b043ffbe17947409c0ae9ea6fabe6ab1ec5b4cc9))
+
+
+### Bug Fixes
+
+* **instrumentation-pg:** not add duplicate listeners to pg pool ([#2484](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2484)) ([33c093d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/33c093daf77153ea3d0ab8d7925772efd37bdebe))
+
+## [0.45.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.45.0...instrumentation-pg-v0.45.1) (2024-10-10)
+
+
+### Bug Fixes
+
+* add missing @opentelemetry/core dependency ([#2473](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2473)) ([4d66431](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4d66431a2ad480720bf6c33663a419ec1404cd33))
+
 ## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.44.0...instrumentation-pg-v0.45.0) (2024-10-08)
 
 
