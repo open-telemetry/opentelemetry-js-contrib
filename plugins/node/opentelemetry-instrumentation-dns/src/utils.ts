@@ -17,7 +17,7 @@
 import { Span, SpanStatusCode, Attributes } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import { AddressFamily } from './enums/AddressFamily';
-import * as dns from 'dns';
+import { LookupAddress } from 'dns';
 import { IgnoreMatcher } from './types';
 
 /**
@@ -62,12 +62,12 @@ export const getOperationName = (
   funcName: string,
   service?: string
 ): string => {
-  return service ? `dns.${service}/${funcName}` : `dns.${funcName}`;
+  return service ? `${service}/${funcName}` : `${funcName}`;
 };
 
 export const setLookupAttributes = (
   span: Span,
-  address: string | dns.LookupAddress[] | dns.LookupAddress,
+  address: string | LookupAddress[] | LookupAddress,
   family?: number
 ) => {
   const attributes = {} as Attributes;
@@ -75,13 +75,13 @@ export const setLookupAttributes = (
   let addresses = address;
 
   if (!isObject) {
-    addresses = [{ address, family } as dns.LookupAddress];
+    addresses = [{ address, family } as LookupAddress];
   } else if (!(addresses instanceof Array)) {
     addresses = [
       {
-        address: (address as dns.LookupAddress).address,
-        family: (address as dns.LookupAddress).family,
-      } as dns.LookupAddress,
+        address: (address as LookupAddress).address,
+        family: (address as LookupAddress).family,
+      } as LookupAddress,
     ];
   }
 

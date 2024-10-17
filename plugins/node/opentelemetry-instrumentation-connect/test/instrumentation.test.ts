@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as assert from 'assert';
+import { strictEqual, deepStrictEqual } from 'assert';
 
 import { context, trace } from '@opentelemetry/api';
 import { RPCType, setRPCMetadata, RPCMetadata } from '@opentelemetry/core';
@@ -27,6 +27,7 @@ import {
 import * as http from 'http';
 import type { AddressInfo } from 'net';
 import { ANONYMOUS_NAME, ConnectInstrumentation } from '../src';
+import assert = require('assert');
 
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {
@@ -97,7 +98,7 @@ describe('connect', () => {
       await httpRequest.get(`http://localhost:${PORT}/`);
 
       const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
     });
   });
   describe('when connect is enabled', () => {
@@ -139,14 +140,14 @@ describe('connect', () => {
       await httpRequest.get(`http://localhost:${PORT}/`);
 
       const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       const span = spans[0];
-      assert.deepStrictEqual(span.attributes, {
+      deepStrictEqual(span.attributes, {
         'connect.type': 'middleware',
         'connect.name': ANONYMOUS_NAME,
         [SEMATTRS_HTTP_ROUTE]: '/',
       });
-      assert.strictEqual(span.name, 'middleware - anonymous');
+      strictEqual(span.name, 'middleware - anonymous');
     });
 
     it('should generate span for named middleware', async () => {
@@ -158,14 +159,14 @@ describe('connect', () => {
       await httpRequest.get(`http://localhost:${PORT}/`);
 
       const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       const span = spans[0];
-      assert.deepStrictEqual(span.attributes, {
+      deepStrictEqual(span.attributes, {
         'connect.type': 'middleware',
         'connect.name': 'middleware1',
         [SEMATTRS_HTTP_ROUTE]: '/',
       });
-      assert.strictEqual(span.name, 'middleware - middleware1');
+      strictEqual(span.name, 'middleware - middleware1');
     });
 
     it('should generate span for route', async () => {
@@ -176,14 +177,14 @@ describe('connect', () => {
       await httpRequest.get(`http://localhost:${PORT}/foo`);
 
       const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 1);
+      strictEqual(spans.length, 1);
       const span = spans[0];
-      assert.deepStrictEqual(span.attributes, {
+      deepStrictEqual(span.attributes, {
         'connect.type': 'request_handler',
         'connect.name': '/foo',
         [SEMATTRS_HTTP_ROUTE]: '/foo',
       });
-      assert.strictEqual(span.name, 'request handler - /foo');
+      strictEqual(span.name, 'request handler - /foo');
     });
 
     it('should not change name for parent http route ', async () => {
@@ -207,9 +208,9 @@ describe('connect', () => {
       rootSpan.end();
 
       const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 3);
+      strictEqual(spans.length, 3);
       const changedRootSpan = spans[2];
-      assert.strictEqual(changedRootSpan.name, 'root span');
+      strictEqual(changedRootSpan.name, 'root span');
     });
 
     it('should mutate route value of RpcMetadata', async () => {
@@ -233,15 +234,12 @@ describe('connect', () => {
       rootSpan.end();
 
       const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 3);
+      strictEqual(spans.length, 3);
       const changedRootSpan = spans[2];
       const span = spans[0];
-      assert.strictEqual(rpcMetadata.route, '/foo');
-      assert.strictEqual(span.name, 'request handler - /foo');
-      assert.strictEqual(
-        span.parentSpanId,
-        changedRootSpan.spanContext().spanId
-      );
+      strictEqual(rpcMetadata.route, '/foo');
+      strictEqual(span.name, 'request handler - /foo');
+      strictEqual(span.parentSpanId, changedRootSpan.spanContext().spanId);
     });
 
     it('should append nested route in RpcMetadata', async () => {
@@ -267,7 +265,7 @@ describe('connect', () => {
       await httpRequest.get(`http://localhost:${PORT}/foo/bar`);
       rootSpan.end();
 
-      assert.strictEqual(rpcMetadata.route, '/foo/bar/');
+      strictEqual(rpcMetadata.route, '/foo/bar/');
     });
 
     it('should use latest match route when multiple route is match', async () => {
@@ -294,7 +292,7 @@ describe('connect', () => {
       await httpRequest.get(`http://localhost:${PORT}/foo/bar`);
       rootSpan.end();
 
-      assert.strictEqual(rpcMetadata.route, '/foo/bar');
+      strictEqual(rpcMetadata.route, '/foo/bar');
     });
 
     it('should use latest match route when multiple route is match (with nested app)', async () => {
@@ -324,7 +322,7 @@ describe('connect', () => {
       await httpRequest.get(`http://localhost:${PORT}/foo/bar/test`);
       rootSpan.end();
 
-      assert.strictEqual(rpcMetadata.route, '/foo/bar/test');
+      strictEqual(rpcMetadata.route, '/foo/bar/test');
     });
   });
 });

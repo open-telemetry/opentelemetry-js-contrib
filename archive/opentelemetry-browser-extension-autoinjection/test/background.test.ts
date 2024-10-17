@@ -18,7 +18,7 @@
 
 import { ProgrammaticContentScriptInjector } from '../src/background/ProgrammaticContentScriptInjector';
 import * as chromeMock from 'sinon-chrome';
-import * as assert from 'assert';
+import {ok,deepStrictEqual} from 'assert';
 import sinon = require('sinon');
 
 import { TAB_ID } from './utils';
@@ -41,7 +41,7 @@ describe('ProgrammaticContentScriptInjector', () => {
   });
 
   it('should subscribe on chrome.tabs.onUpdated', () => {
-    assert.ok(chromeMock.tabs.onUpdated.addListener.calledOnce);
+    ok(chromeMock.tabs.onUpdated.addListener.calledOnce);
   });
 
   it('should only be triggered on tab status "loading"', () => {
@@ -52,14 +52,14 @@ describe('ProgrammaticContentScriptInjector', () => {
     chromeMock.tabs.onUpdated.dispatch(TAB_ID, {
       status: TabStatus.UNLOADED,
     });
-    assert.ok(spy.notCalled);
-    assert.ok(chromeMock.tabs.get.notCalled);
+    ok(spy.notCalled);
+    ok(chromeMock.tabs.get.notCalled);
 
     chromeMock.tabs.onUpdated.dispatch(TAB_ID, {
       status: TabStatus.LOADING,
     });
-    assert.ok(spy.calledOnce, 'injectContentScript not triggered on "loading"');
-    assert.ok(chromeMock.tabs.get.calledOnce);
+    ok(spy.calledOnce, 'injectContentScript not triggered on "loading"');
+    ok(chromeMock.tabs.get.calledOnce);
   });
 
   it('should inject the content script if the url property of a tab is accessible', () => {
@@ -78,13 +78,13 @@ describe('ProgrammaticContentScriptInjector', () => {
       status: TabStatus.LOADING,
     });
 
-    assert.ok(chromeMock.tabs.executeScript.notCalled);
+    ok(chromeMock.tabs.executeScript.notCalled);
 
     chromeMock.tabs.onUpdated.dispatch(TAB_ID, {
       status: TabStatus.LOADING,
     });
 
-    assert.ok(
+    ok(
       chromeMock.tabs.executeScript.calledOnceWith(TAB_ID, {
         file: CONTENT_SCRIPT_NAME,
         allFrames: true,
@@ -99,7 +99,7 @@ describe('ProgrammaticContentScriptInjector', () => {
 
     chromeMockV3.scripting = {
       executeScript: args => {
-        assert.deepStrictEqual(args, {
+        deepStrictEqual(args, {
           target: {
             allFrames: true,
             tabId: TAB_ID,

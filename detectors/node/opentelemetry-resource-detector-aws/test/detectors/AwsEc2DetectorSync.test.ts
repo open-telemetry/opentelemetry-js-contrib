@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as nock from 'nock';
-import * as assert from 'assert';
+import { disableNetConnect, cleanAll, enableNetConnect } from 'nock';
+import { deepStrictEqual, ok } from 'assert';
 
 import {
   assertCloudResource,
@@ -23,6 +23,7 @@ import {
 } from '@opentelemetry/contrib-test-utils';
 
 import { awsEc2DetectorSync } from '../../src';
+import nock = require('nock');
 
 const AWS_HOST = 'http://' + awsEc2DetectorSync.AWS_IDMS_ENDPOINT;
 const AWS_TOKEN_PATH = awsEc2DetectorSync.AWS_INSTANCE_TOKEN_DOCUMENT_PATH;
@@ -44,12 +45,12 @@ const mockedHostResponse = 'my-hostname';
 
 describe('awsEc2DetectorSync', () => {
   beforeEach(() => {
-    nock.disableNetConnect();
-    nock.cleanAll();
+    disableNetConnect();
+    cleanAll();
   });
 
   afterEach(() => {
-    nock.enableNetConnect();
+    enableNetConnect();
   });
 
   describe('with successful request', () => {
@@ -71,7 +72,7 @@ describe('awsEc2DetectorSync', () => {
 
       scope.done();
 
-      assert.ok(resource);
+      ok(resource);
 
       assertCloudResource(resource, {
         provider: 'aws',
@@ -104,7 +105,7 @@ describe('awsEc2DetectorSync', () => {
       const resource = awsEc2DetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
-      assert.deepStrictEqual(resource.attributes, {});
+      deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });
@@ -126,7 +127,7 @@ describe('awsEc2DetectorSync', () => {
       const resource = awsEc2DetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
-      assert.deepStrictEqual(resource.attributes, {});
+      deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });
@@ -144,7 +145,7 @@ describe('awsEc2DetectorSync', () => {
       const resource = awsEc2DetectorSync.detect();
       await resource.waitForAsyncAttributes?.();
 
-      assert.deepStrictEqual(resource.attributes, {});
+      deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });

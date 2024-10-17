@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
-import * as sinon from 'sinon';
+import { deepStrictEqual, ok } from 'assert';
+import { createSandbox, SinonSandbox } from 'sinon';
 
 import { gitHubDetector } from '../../src/detectors';
 
 describe('GitHubResourceDetector', () => {
-  let sandbox: sinon.SinonSandbox;
+  let sandbox: SinonSandbox;
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = createSandbox();
 
     process.env.GITHUB_WORKFLOW = '';
     process.env.GITHUB_RUN_ID = '';
@@ -51,8 +51,8 @@ describe('GitHubResourceDetector', () => {
 
     const resource = await gitHubDetector.detect();
 
-    assert.ok(resource);
-    assert.deepStrictEqual(resource.attributes, {
+    ok(resource);
+    deepStrictEqual(resource.attributes, {
       'github.workflow': 'workflow-foo',
       'github.run_id': 'run-id-foo',
       'github.run_number': '42',
@@ -67,7 +67,7 @@ describe('GitHubResourceDetector', () => {
   it('should return empty resource when no GitHub env vars exists', async () => {
     const resource = await gitHubDetector.detect();
 
-    assert.ok(resource);
-    assert.deepStrictEqual(resource.attributes, {});
+    ok(resource);
+    deepStrictEqual(resource.attributes, {});
   });
 });

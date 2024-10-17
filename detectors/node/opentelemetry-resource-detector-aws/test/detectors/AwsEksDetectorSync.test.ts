@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import * as nock from 'nock';
-import * as sinon from 'sinon';
-import * as assert from 'assert';
+import { enableNetConnect, cleanAll, disableNetConnect } from 'nock';
+import { ok } from 'assert';
+import { restore, assert, stub } from 'sinon';
 import { Resource } from '@opentelemetry/resources';
 import { awsEksDetectorSync, AwsEksDetectorSync } from '../../src';
 import {
@@ -24,6 +24,7 @@ import {
   assertContainerResource,
   assertEmptyResource,
 } from '@opentelemetry/contrib-test-utils';
+import nock = require('nock');
 
 const K8S_SVC_URL = awsEksDetectorSync.K8S_SVC_URL;
 const AUTH_CONFIGMAP_PATH = awsEksDetectorSync.AUTH_CONFIGMAP_PATH;
@@ -42,26 +43,25 @@ describe('awsEksDetectorSync', () => {
   let readStub, fileStub, getCredStub;
 
   beforeEach(() => {
-    nock.disableNetConnect();
-    nock.cleanAll();
+    disableNetConnect();
+    cleanAll();
   });
 
   afterEach(() => {
-    sinon.restore();
-    nock.enableNetConnect();
+    restore();
+    enableNetConnect();
   });
 
   describe('on successful request', () => {
     it('should return an aws_eks_instance_resource', async () => {
-      fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
-        .resolves();
-      readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
-        .resolves(correctCgroupData);
-      getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
-        .resolves(k8s_token);
+      fileStub = stub(AwsEksDetectorSync, 'fileAccessAsync' as any).resolves();
+      readStub = stub(AwsEksDetectorSync, 'readFileAsync' as any).resolves(
+        correctCgroupData
+      );
+      getCredStub = stub(
+        awsEksDetectorSync,
+        '_getK8sCredHeader' as any
+      ).resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
         .get(AUTH_CONFIGMAP_PATH)
@@ -76,11 +76,11 @@ describe('awsEksDetectorSync', () => {
 
       scope.done();
 
-      sinon.assert.calledOnce(fileStub);
-      sinon.assert.calledTwice(readStub);
-      sinon.assert.calledTwice(getCredStub);
+      assert.calledOnce(fileStub);
+      assert.calledTwice(readStub);
+      assert.calledTwice(getCredStub);
 
-      assert.ok(resource);
+      ok(resource);
       assertK8sResource(resource, {
         clusterName: 'my-cluster',
       });
@@ -90,16 +90,14 @@ describe('awsEksDetectorSync', () => {
     });
 
     it('should return a resource with clusterName attribute without cgroup file', async () => {
-      fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
-        .resolves();
-      readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
+      fileStub = stub(AwsEksDetectorSync, 'fileAccessAsync' as any).resolves();
+      readStub = stub(AwsEksDetectorSync, 'readFileAsync' as any)
         .onSecondCall()
         .rejects(errorMsg.fileNotFoundError);
-      getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
-        .resolves(k8s_token);
+      getCredStub = stub(
+        awsEksDetectorSync,
+        '_getK8sCredHeader' as any
+      ).resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
         .get(AUTH_CONFIGMAP_PATH)
@@ -114,22 +112,21 @@ describe('awsEksDetectorSync', () => {
 
       scope.done();
 
-      assert.ok(resource);
+      ok(resource);
       assertK8sResource(resource, {
         clusterName: 'my-cluster',
       });
     });
 
     it('should return a resource with container ID attribute without a clusterName', async () => {
-      fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
-        .resolves();
-      readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
-        .resolves(correctCgroupData);
-      getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
-        .resolves(k8s_token);
+      fileStub = stub(AwsEksDetectorSync, 'fileAccessAsync' as any).resolves();
+      readStub = stub(AwsEksDetectorSync, 'readFileAsync' as any).resolves(
+        correctCgroupData
+      );
+      getCredStub = stub(
+        awsEksDetectorSync,
+        '_getK8sCredHeader' as any
+      ).resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
         .get(AUTH_CONFIGMAP_PATH)
@@ -144,23 +141,21 @@ describe('awsEksDetectorSync', () => {
 
       scope.done();
 
-      assert.ok(resource);
+      ok(resource);
       assertContainerResource(resource, {
         id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
       });
     });
 
     it('should return a resource with clusterName attribute when cgroup file does not contain valid Container ID', async () => {
-      fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
-        .resolves();
-      readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
+      fileStub = stub(AwsEksDetectorSync, 'fileAccessAsync' as any).resolves();
+      readStub = stub(AwsEksDetectorSync, 'readFileAsync' as any)
         .onSecondCall()
         .resolves('');
-      getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
-        .resolves(k8s_token);
+      getCredStub = stub(
+        awsEksDetectorSync,
+        '_getK8sCredHeader' as any
+      ).resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
         .get(AUTH_CONFIGMAP_PATH)
@@ -175,23 +170,24 @@ describe('awsEksDetectorSync', () => {
 
       scope.done();
 
-      assert.ok(resource);
-      assert.ok(resource);
+      ok(resource);
+      ok(resource);
       assertK8sResource(resource, {
         clusterName: 'my-cluster',
       });
     });
 
     it('should return an empty resource when not running on Eks', async () => {
-      fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
-        .resolves('');
-      readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
-        .resolves(correctCgroupData);
-      getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
-        .resolves(k8s_token);
+      fileStub = stub(AwsEksDetectorSync, 'fileAccessAsync' as any).resolves(
+        ''
+      );
+      readStub = stub(AwsEksDetectorSync, 'readFileAsync' as any).resolves(
+        correctCgroupData
+      );
+      getCredStub = stub(
+        awsEksDetectorSync,
+        '_getK8sCredHeader' as any
+      ).resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
         .get(AUTH_CONFIGMAP_PATH)
@@ -203,7 +199,7 @@ describe('awsEksDetectorSync', () => {
 
       scope.done();
 
-      assert.ok(resource);
+      ok(resource);
       assertEmptyResource(resource);
     });
 
@@ -211,28 +207,28 @@ describe('awsEksDetectorSync', () => {
       const errorMsg = {
         fileNotFoundError: new Error('cannot file k8s token file'),
       };
-      fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
-        .rejects(errorMsg.fileNotFoundError);
+      fileStub = stub(AwsEksDetectorSync, 'fileAccessAsync' as any).rejects(
+        errorMsg.fileNotFoundError
+      );
 
       const resource: Resource = await awsEksDetectorSync.detect();
 
-      assert.ok(resource);
+      ok(resource);
       assertEmptyResource(resource);
     });
 
     it('should return an empty resource when containerId and clusterName are invalid', async () => {
-      fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
-        .resolves('');
-      readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
+      fileStub = stub(AwsEksDetectorSync, 'fileAccessAsync' as any).resolves(
+        ''
+      );
+      readStub = stub(AwsEksDetectorSync, 'readFileAsync' as any)
         .onSecondCall()
         .rejects(errorMsg.fileNotFoundError);
 
-      getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
-        .resolves(k8s_token);
+      getCredStub = stub(
+        awsEksDetectorSync,
+        '_getK8sCredHeader' as any
+      ).resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
         .get(AUTH_CONFIGMAP_PATH)
@@ -247,22 +243,21 @@ describe('awsEksDetectorSync', () => {
 
       scope.isDone();
 
-      assert.ok(resource);
+      ok(resource);
       assertEmptyResource(resource);
     });
   });
 
   describe('on unsuccessful request', () => {
     it('should return an empty resource when timed out', async () => {
-      fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
-        .resolves();
-      readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
-        .resolves(correctCgroupData);
-      getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
-        .resolves(k8s_token);
+      fileStub = stub(AwsEksDetectorSync, 'fileAccessAsync' as any).resolves();
+      readStub = stub(AwsEksDetectorSync, 'readFileAsync' as any).resolves(
+        correctCgroupData
+      );
+      getCredStub = stub(
+        awsEksDetectorSync,
+        '_getK8sCredHeader' as any
+      ).resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
         .get(AUTH_CONFIGMAP_PATH)
@@ -275,20 +270,19 @@ describe('awsEksDetectorSync', () => {
 
       scope.done();
 
-      assert.ok(resource);
+      ok(resource);
       assertEmptyResource(resource);
     }).timeout(awsEksDetectorSync.TIMEOUT_MS + 100);
 
     it('should return an empty resource when receiving error response code', async () => {
-      fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
-        .resolves();
-      readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
-        .resolves(correctCgroupData);
-      getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
-        .resolves(k8s_token);
+      fileStub = stub(AwsEksDetectorSync, 'fileAccessAsync' as any).resolves();
+      readStub = stub(AwsEksDetectorSync, 'readFileAsync' as any).resolves(
+        correctCgroupData
+      );
+      getCredStub = stub(
+        awsEksDetectorSync,
+        '_getK8sCredHeader' as any
+      ).resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
         .get(AUTH_CONFIGMAP_PATH)
@@ -300,7 +294,7 @@ describe('awsEksDetectorSync', () => {
 
       scope.done();
 
-      assert.ok(resource);
+      ok(resource);
       assertEmptyResource(resource);
     });
   });

@@ -23,8 +23,9 @@ import {
   SEMATTRS_NET_PEER_NAME,
 } from '@opentelemetry/semantic-conventions';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
+import { strictEqual, notStrictEqual } from 'assert';
 import type { MongoClient, MongoClientOptions, Collection } from 'mongodb';
+import assert = require('assert');
 
 export const DEFAULT_MONGO_HOST = '127.0.0.1';
 
@@ -72,7 +73,7 @@ export function accessCollection(
 
 /**
  * Asserts root spans attributes.
- * @param spans Readable spans that we need to assert.
+ * @param spans Readable spans that we need to
  * @param expectedName The expected name of the first root span.
  * @param expectedKind The expected kind of the first root span.
  * @param log Whether should debug print the expected spans.
@@ -90,26 +91,23 @@ export function assertSpans(
   if (log) {
     console.log(spans);
   }
-  assert.strictEqual(spans.length, 2);
+  strictEqual(spans.length, 2);
   spans.forEach(span => {
     assert(span.endTime instanceof Array);
     assert(span.endTime.length === 2);
   });
   const [mongoSpan] = spans;
-  assert.strictEqual(mongoSpan.name, expectedName);
-  assert.strictEqual(mongoSpan.kind, expectedKind);
-  assert.strictEqual(
-    mongoSpan.attributes[SEMATTRS_DB_OPERATION],
-    expectedOperation
-  );
-  assert.strictEqual(mongoSpan.attributes[SEMATTRS_DB_SYSTEM], 'mongodb');
-  assert.strictEqual(
+  strictEqual(mongoSpan.name, expectedName);
+  strictEqual(mongoSpan.kind, expectedKind);
+  strictEqual(mongoSpan.attributes[SEMATTRS_DB_OPERATION], expectedOperation);
+  strictEqual(mongoSpan.attributes[SEMATTRS_DB_SYSTEM], 'mongodb');
+  strictEqual(
     mongoSpan.attributes[SEMATTRS_NET_PEER_NAME],
     process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
   );
-  assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
+  strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
   if (expectedConnString) {
-    assert.strictEqual(
+    strictEqual(
       mongoSpan.attributes[SEMATTRS_DB_CONNECTION_STRING],
       expectedConnString
     );
@@ -120,7 +118,7 @@ export function assertSpans(
       mongoSpan.attributes[SEMATTRS_DB_STATEMENT] as string
     );
     for (const key in dbStatement) {
-      assert.notStrictEqual(dbStatement[key], '?');
+      notStrictEqual(dbStatement[key], '?');
     }
   }
 }

@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './BaseOpenTelemetryComponent';
-export * from './enums/AttributeNames';
+export { BaseOpenTelemetryComponent } from './BaseOpenTelemetryComponent';
+export { AttributeNames } from './enums/AttributeNames';

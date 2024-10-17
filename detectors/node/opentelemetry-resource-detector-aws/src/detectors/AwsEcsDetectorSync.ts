@@ -45,10 +45,10 @@ import {
 } from '@opentelemetry/semantic-conventions';
 // Patch until the OpenTelemetry SDK is updated to ship this attribute
 import { SemanticResourceAttributes as AdditionalSemanticResourceAttributes } from './SemanticResourceAttributes';
-import * as http from 'http';
-import * as util from 'util';
-import * as fs from 'fs';
-import * as os from 'os';
+import { get, IncomingMessage } from 'http';
+import { promisify } from 'util';
+import { readFile } from 'fs';
+import { hostname } from 'os';
 import { getEnv } from '@opentelemetry/core';
 
 const HTTP_TIMEOUT_IN_MS = 1000;
@@ -68,7 +68,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
   static readonly CONTAINER_ID_LENGTH = 64;
   static readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
 
-  private static readFileAsync = util.promisify(fs.readFile);
+  private static readFileAsync = promisify(readFile);
 
   detect(): IResource {
     const attributes = context.with(suppressTracing(context.active()), () =>
@@ -123,7 +123,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
    * and then return null string
    */
   private static async _getContainerIdAndHostnameResource(): Promise<Resource> {
-    const hostName = os.hostname();
+    const hostName = hostname();
 
     let containerId = '';
     try {
@@ -241,7 +241,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
 
   private static _getUrlAsJson(url: string): Promise<any> {
     return new Promise<string>((resolve, reject) => {
-      const request = http.get(url, (response: http.IncomingMessage) => {
+      const request = get(url, (response: IncomingMessage) => {
         if (response.statusCode && response.statusCode >= 400) {
           reject(
             new Error(

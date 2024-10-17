@@ -17,7 +17,13 @@
 // for testing locally "npm run docker:start"
 
 import { context, trace, SpanKind, Span } from '@opentelemetry/api';
-import * as assert from 'assert';
+import {
+  deepEqual,
+  strictEqual,
+  deepStrictEqual,
+  doesNotThrow,
+  ifError,
+} from 'assert';
 import {
   MongoDBInstrumentation,
   MongoDBInstrumentationConfig,
@@ -29,6 +35,7 @@ import {
   getTestSpans,
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
+import assert = require('assert');
 
 // Get instrumentation (singleton)
 let instrumentation: MongoDBInstrumentation;
@@ -271,7 +278,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
           roots.forEach(root => {
             const rootId = root.spanContext().spanId;
             const children = spans.filter(s => s.parentSpanId === rootId);
-            assert.strictEqual(children.length, 1);
+            strictEqual(children.length, 1);
           });
           done();
         })
@@ -365,7 +372,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
             const dbStatement = JSON.parse(
               mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
             );
-            assert.strictEqual(dbStatement[key], '?');
+            strictEqual(dbStatement[key], '?');
             done();
           })
           .catch(err => {
@@ -400,7 +407,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
             const dbStatement = JSON.parse(
               mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
             );
-            assert.deepEqual(dbStatement, {
+            deepEqual(dbStatement, {
               aggregate: '?',
               pipeline: [
                 { $match: { key: '?' } },
@@ -453,7 +460,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               const dbStatement = JSON.parse(
                 mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
               );
-              assert.strictEqual(dbStatement[key], value);
+              strictEqual(dbStatement[key], value);
               done();
             })
             .catch(err => {
@@ -530,7 +537,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               span.end();
               const spans = getTestSpans();
               const insertSpan = spans[0];
-              assert.deepStrictEqual(
+              deepStrictEqual(
                 insertSpan.attributes['mongodb_insert_count'],
                 results?.insertedCount
               );
@@ -558,10 +565,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               );
 
               if (results) {
-                assert.strictEqual(
-                  hookAttributeValue?._id,
-                  results[0]._id.toString()
-                );
+                strictEqual(hookAttributeValue?._id, results[0]._id.toString());
               } else {
                 throw new Error('Got an unexpected Results: ' + results);
               }
@@ -635,7 +639,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
                   'find',
                   URL
                 );
-                assert.strictEqual(
+                strictEqual(
                   mainSpan.spanContext().spanId,
                   spans2[0].parentSpanId
                 );
@@ -655,7 +659,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
   /** Should intercept command */
   describe('Removing Instrumentation', () => {
     it('should unpatch plugin', () => {
-      assert.doesNotThrow(() => {
+      doesNotThrow(() => {
         instrumentation.disable();
       });
     });
@@ -667,7 +671,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         .insertMany(insertData)
         .then(() => {
           span.end();
-          assert.strictEqual(getTestSpans().length, 1);
+          strictEqual(getTestSpans().length, 1);
           done();
         })
         .catch(err => {
@@ -682,11 +686,11 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         .toArray()
         .then(() => {
           span.end();
-          assert.strictEqual(getTestSpans().length, 1);
+          strictEqual(getTestSpans().length, 1);
           done();
         })
         .catch(err => {
-          assert.ifError(err);
+          ifError(err);
           done(err);
         });
     });
@@ -697,7 +701,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         .createIndex({ a: 1 })
         .then(() => {
           span.end();
-          assert.strictEqual(getTestSpans().length, 1);
+          strictEqual(getTestSpans().length, 1);
           done();
         })
         .catch(err => {

@@ -19,11 +19,11 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
+import { strictEqual, ok } from 'assert';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { DnsInstrumentation } from '../../src';
-import * as Sinon from 'sinon';
-import * as dns from 'dns';
+import { spy, restore, SinonSpy } from 'sinon';
+import { lookup } from 'dns';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -37,16 +37,16 @@ describe('DnsInstrumentation', () => {
     instrumentation = new DnsInstrumentation();
     instrumentation.setTracerProvider(provider);
     require('dns');
-    assert.strictEqual(dns.lookup.__wrapped, true);
+    strictEqual(lookup.__wrapped, true);
   });
 
   beforeEach(() => {
-    Sinon.spy(tracer, 'startSpan');
-    Sinon.spy(context, 'with');
+    spy(tracer, 'startSpan');
+    spy(context, 'with');
   });
 
   afterEach(() => {
-    Sinon.restore();
+    restore();
   });
 
   describe('unpatch()', () => {
@@ -54,15 +54,15 @@ describe('DnsInstrumentation', () => {
       instrumentation.disable();
       const hostname = 'localhost';
 
-      dns.lookup(hostname, (err, address, family) => {
-        assert.ok(address);
-        assert.ok(family);
+      lookup(hostname, (err, address, family) => {
+        ok(address);
+        ok(family);
 
         const spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans.length, 0);
+        strictEqual(spans.length, 0);
 
-        assert.strictEqual(dns.lookup.__wrapped, undefined);
-        assert.strictEqual((context.with as sinon.SinonSpy).called, false);
+        strictEqual(lookup.__wrapped, undefined);
+        strictEqual((context.with as SinonSpy).called, false);
         done();
       });
     });

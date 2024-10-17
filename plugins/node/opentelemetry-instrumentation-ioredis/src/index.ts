@@ -14,5 +14,11 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { IORedisInstrumentation } from './instrumentation';
+export {
+  CommandArgs,
+  DbStatementSerializer,
+  IORedisRequestHookInformation,
+  RedisRequestCustomAttributeFunction,
+  IORedisInstrumentationConfig,
+} from './types';

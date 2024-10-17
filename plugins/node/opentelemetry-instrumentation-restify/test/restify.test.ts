@@ -30,15 +30,16 @@ import { RestifyRequestInfo } from '../src/types';
 const plugin = new RestifyInstrumentation();
 
 import * as semver from 'semver';
-import * as assert from 'assert';
+import { deepEqual, strictEqual, notStrictEqual } from 'assert';
 import * as http from 'http';
 import { AddressInfo } from 'net';
+import assert = require('assert');
 
 import * as restify from 'restify';
 const LIB_VERSION = require('restify/package.json').version;
 
 const assertIsVersion = (str: any) => {
-  assert.strictEqual(typeof str, 'string');
+  strictEqual(typeof str, 'string');
   assert(/^[0-9]+\.[0-9]+\.[0-9]+$/.test(str));
 };
 
@@ -142,7 +143,7 @@ describe('Restify Instrumentation', () => {
 
     server = await createServer();
     port = (server.address() as AddressInfo).port;
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 
   afterEach(() => {
@@ -160,39 +161,36 @@ describe('Restify Instrumentation', () => {
         async () => {
           await httpRequest.get(`http://localhost:${port}/route/foo`);
           rootSpan.end();
-          assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
+          strictEqual(memoryExporter.getFinishedSpans().length, 4);
 
           {
             // span from pre
             const span = memoryExporter.getFinishedSpans()[0];
-            assert.notStrictEqual(span, undefined);
-            assert.strictEqual(span.attributes['http.route'], undefined);
-            assert.strictEqual(span.attributes['restify.method'], 'pre');
-            assert.strictEqual(span.attributes['restify.type'], 'middleware');
-            assert.strictEqual(span.attributes['restify.name'], undefined);
+            notStrictEqual(span, undefined);
+            strictEqual(span.attributes['http.route'], undefined);
+            strictEqual(span.attributes['restify.method'], 'pre');
+            strictEqual(span.attributes['restify.type'], 'middleware');
+            strictEqual(span.attributes['restify.name'], undefined);
             assertIsVersion(span.attributes['restify.version']);
           }
           {
             // span from use
             const span = memoryExporter.getFinishedSpans()[1];
-            assert.notStrictEqual(span, undefined);
-            assert.strictEqual(span.attributes['http.route'], '/route/:param');
-            assert.strictEqual(span.attributes['restify.method'], 'use');
-            assert.strictEqual(span.attributes['restify.type'], 'middleware');
-            assert.strictEqual(span.attributes['restify.name'], 'useHandler');
+            notStrictEqual(span, undefined);
+            strictEqual(span.attributes['http.route'], '/route/:param');
+            strictEqual(span.attributes['restify.method'], 'use');
+            strictEqual(span.attributes['restify.type'], 'middleware');
+            strictEqual(span.attributes['restify.name'], 'useHandler');
             assertIsVersion(span.attributes['restify.version']);
           }
           {
             // span from get
             const span = memoryExporter.getFinishedSpans()[2];
-            assert.notStrictEqual(span, undefined);
-            assert.strictEqual(span.attributes['http.route'], '/route/:param');
-            assert.strictEqual(span.attributes['restify.method'], 'get');
-            assert.strictEqual(
-              span.attributes['restify.type'],
-              'request_handler'
-            );
-            assert.strictEqual(span.attributes['restify.name'], 'getHandler');
+            notStrictEqual(span, undefined);
+            strictEqual(span.attributes['http.route'], '/route/:param');
+            strictEqual(span.attributes['restify.method'], 'get');
+            strictEqual(span.attributes['restify.type'], 'request_handler');
+            strictEqual(span.attributes['restify.name'], 'getHandler');
             assertIsVersion(span.attributes['restify.version']);
           }
         }
@@ -209,19 +207,19 @@ describe('Restify Instrumentation', () => {
             `http://localhost:${port}/not-found`
           );
           rootSpan.end();
-          assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+          strictEqual(memoryExporter.getFinishedSpans().length, 2);
 
           {
             // span from pre
             const span = memoryExporter.getFinishedSpans()[0];
-            assert.notStrictEqual(span, undefined);
-            assert.strictEqual(span.attributes['http.route'], undefined);
-            assert.strictEqual(span.attributes['restify.method'], 'pre');
-            assert.strictEqual(span.attributes['restify.type'], 'middleware');
-            assert.strictEqual(span.attributes['restify.name'], undefined);
+            notStrictEqual(span, undefined);
+            strictEqual(span.attributes['http.route'], undefined);
+            strictEqual(span.attributes['restify.method'], 'pre');
+            strictEqual(span.attributes['restify.type'], 'middleware');
+            strictEqual(span.attributes['restify.name'], undefined);
             assertIsVersion(span.attributes['restify.version']);
           }
-          assert.strictEqual(
+          strictEqual(
             res,
             '{"code":"ResourceNotFound","message":"/not-found does not exist"}'
           );
@@ -239,54 +237,47 @@ describe('Restify Instrumentation', () => {
             `http://localhost:${port}/erroring`
           );
           rootSpan.end();
-          assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
+          strictEqual(memoryExporter.getFinishedSpans().length, 4);
 
-          if (semver.satisfies(LIB_VERSION, '>=8.2.0')) {
-            // Error handling changed slightly in v8.2.0 (https://github.com/restify/node-restify/pull/1757).
-            assert.deepEqual(
-              result,
-              '{"code":"Internal","message":"Error: NOK"}'
-            );
-          } else if (semver.satisfies(LIB_VERSION, '>=7 <8.2.0')) {
-            assert.deepEqual(
+          if (semver.satisfies(LIB_VERSION, '>=8')) {
+            deepEqual(result, '{"code":"Internal","message":"Error: NOK"}');
+          } else if (semver.satisfies(LIB_VERSION, '>=7 <8')) {
+            deepEqual(
               result,
               '{"code":"Internal","message":"caused by Error: NOK"}'
             );
           } else {
-            assert.deepEqual(result, '{"message":"NOK"}');
+            deepEqual(result, '{"message":"NOK"}');
           }
 
           {
             // span from pre
             const span = memoryExporter.getFinishedSpans()[0];
-            assert.notStrictEqual(span, undefined);
-            assert.strictEqual(span.attributes['http.route'], undefined);
-            assert.strictEqual(span.attributes['restify.method'], 'pre');
-            assert.strictEqual(span.attributes['restify.type'], 'middleware');
-            assert.strictEqual(span.attributes['restify.name'], undefined);
+            notStrictEqual(span, undefined);
+            strictEqual(span.attributes['http.route'], undefined);
+            strictEqual(span.attributes['restify.method'], 'pre');
+            strictEqual(span.attributes['restify.type'], 'middleware');
+            strictEqual(span.attributes['restify.name'], undefined);
             assertIsVersion(span.attributes['restify.version']);
           }
           {
             // span from use
             const span = memoryExporter.getFinishedSpans()[1];
-            assert.notStrictEqual(span, undefined);
-            assert.strictEqual(span.attributes['http.route'], '/erroring');
-            assert.strictEqual(span.attributes['restify.method'], 'use');
-            assert.strictEqual(span.attributes['restify.type'], 'middleware');
-            assert.strictEqual(span.attributes['restify.name'], 'useHandler');
+            notStrictEqual(span, undefined);
+            strictEqual(span.attributes['http.route'], '/erroring');
+            strictEqual(span.attributes['restify.method'], 'use');
+            strictEqual(span.attributes['restify.type'], 'middleware');
+            strictEqual(span.attributes['restify.name'], 'useHandler');
             assertIsVersion(span.attributes['restify.version']);
           }
           {
             // span from get
             const span = memoryExporter.getFinishedSpans()[2];
-            assert.notStrictEqual(span, undefined);
-            assert.strictEqual(span.attributes['http.route'], '/erroring');
-            assert.strictEqual(span.attributes['restify.method'], 'get');
-            assert.strictEqual(
-              span.attributes['restify.type'],
-              'request_handler'
-            );
-            assert.strictEqual(span.attributes['restify.name'], 'returnError');
+            notStrictEqual(span, undefined);
+            strictEqual(span.attributes['http.route'], '/erroring');
+            strictEqual(span.attributes['restify.method'], 'get');
+            strictEqual(span.attributes['restify.type'], 'request_handler');
+            strictEqual(span.attributes['restify.name'], 'returnError');
             assertIsVersion(span.attributes['restify.version']);
           }
         }
@@ -320,9 +311,9 @@ describe('Restify Instrumentation', () => {
           `http://localhost:${testLocalPort}/route/hello`
         );
         httpSpan.end();
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
-        assert.strictEqual(rpcMetadata.route, '/route/:param');
-        assert.strictEqual(res, '{"route":"hello"}');
+        strictEqual(memoryExporter.getFinishedSpans().length, 3);
+        strictEqual(rpcMetadata.route, '/route/:param');
+        strictEqual(res, '{"route":"hello"}');
       } finally {
         testLocalServer.close();
       }
@@ -343,21 +334,18 @@ describe('Restify Instrumentation', () => {
         const res = await httpRequest.get(
           `http://localhost:${testLocalPort}/route/hello`
         );
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+        strictEqual(memoryExporter.getFinishedSpans().length, 1);
         {
           // span from get
           const span = memoryExporter.getFinishedSpans()[0];
-          assert.notStrictEqual(span, undefined);
-          assert.strictEqual(span.attributes['http.route'], '/route/:param');
-          assert.strictEqual(span.attributes['restify.method'], 'get');
-          assert.strictEqual(
-            span.attributes['restify.type'],
-            'request_handler'
-          );
-          assert.strictEqual(span.attributes['restify.name'], 'getHandler');
+          notStrictEqual(span, undefined);
+          strictEqual(span.attributes['http.route'], '/route/:param');
+          strictEqual(span.attributes['restify.method'], 'get');
+          strictEqual(span.attributes['restify.type'], 'request_handler');
+          strictEqual(span.attributes['restify.name'], 'getHandler');
           assertIsVersion(span.attributes['restify.version']);
         }
-        assert.strictEqual(res, '{"route":"hello"}');
+        strictEqual(res, '{"route":"hello"}');
       } finally {
         testLocalServer.close();
       }
@@ -385,34 +373,31 @@ describe('Restify Instrumentation', () => {
           .get(`http://localhost:${testLocalPort}/route/hello`)
           .then(res => {
             // assert request results
-            assert.strictEqual(res, '{"route":"hello"}');
+            strictEqual(res, '{"route":"hello"}');
           });
 
         // assert pre request state
-        assert.strictEqual(status, 'uninit');
+        strictEqual(status, 'uninit');
         await started;
 
         // assert started state
-        assert.strictEqual(status, 'started');
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+        strictEqual(status, 'started');
+        strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
         resolveWork();
         await requestPromise;
 
         // assert done state
-        assert.strictEqual(status, 'done');
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+        strictEqual(status, 'done');
+        strictEqual(memoryExporter.getFinishedSpans().length, 1);
         {
           // span from get
           const span = memoryExporter.getFinishedSpans()[0];
-          assert.notStrictEqual(span, undefined);
-          assert.strictEqual(span.attributes['http.route'], '/route/:param');
-          assert.strictEqual(span.attributes['restify.method'], 'get');
-          assert.strictEqual(
-            span.attributes['restify.type'],
-            'request_handler'
-          );
-          assert.strictEqual(span.attributes['restify.name'], 'asyncHandler');
+          notStrictEqual(span, undefined);
+          strictEqual(span.attributes['http.route'], '/route/:param');
+          strictEqual(span.attributes['restify.method'], 'get');
+          strictEqual(span.attributes['restify.type'], 'request_handler');
+          strictEqual(span.attributes['restify.name'], 'asyncHandler');
           assertIsVersion(span.attributes['restify.version']);
         }
       } finally {
@@ -447,34 +432,31 @@ describe('Restify Instrumentation', () => {
           .get(`http://localhost:${testLocalPort}/route/hello`)
           .then(res => {
             // assert request results
-            assert.strictEqual(res, '{"route":"hello"}');
+            strictEqual(res, '{"route":"hello"}');
           });
 
         // assert pre request state
-        assert.strictEqual(status, 'uninit');
+        strictEqual(status, 'uninit');
         await started;
 
         // assert started state
-        assert.strictEqual(status, 'started');
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+        strictEqual(status, 'started');
+        strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
         resolveWork();
         await requestPromise;
 
         // assert done state
-        assert.strictEqual(status, 'done');
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+        strictEqual(status, 'done');
+        strictEqual(memoryExporter.getFinishedSpans().length, 1);
         {
           // span from get
           const span = memoryExporter.getFinishedSpans()[0];
-          assert.notStrictEqual(span, undefined);
-          assert.strictEqual(span.attributes['http.route'], '/route/:param');
-          assert.strictEqual(span.attributes['restify.method'], 'get');
-          assert.strictEqual(
-            span.attributes['restify.type'],
-            'request_handler'
-          );
-          assert.strictEqual(
+          notStrictEqual(span, undefined);
+          strictEqual(span.attributes['http.route'], '/route/:param');
+          strictEqual(span.attributes['restify.method'], 'get');
+          strictEqual(span.attributes['restify.type'], 'request_handler');
+          strictEqual(
             span.attributes['restify.name'],
             'promiseReturningHandler'
           );
@@ -487,8 +469,8 @@ describe('Restify Instrumentation', () => {
 
     it('should create spans even if there is no parent', async () => {
       const res = await httpRequest.get(`http://localhost:${port}/route/bar`);
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
-      assert.strictEqual(res, '{"route":"bar"}');
+      strictEqual(memoryExporter.getFinishedSpans().length, 3);
+      strictEqual(res, '{"route":"bar"}');
     });
 
     describe('using requestHook in config', () => {
@@ -510,17 +492,14 @@ describe('Restify Instrumentation', () => {
           async () => {
             await httpRequest.get(`http://localhost:${port}/route/foo`);
             rootSpan.end();
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
+            strictEqual(memoryExporter.getFinishedSpans().length, 4);
 
             {
               // span from get
               const span = memoryExporter.getFinishedSpans()[2];
-              assert.notStrictEqual(span, undefined);
-              assert.strictEqual(span.attributes[SEMATTRS_HTTP_METHOD], 'GET');
-              assert.strictEqual(
-                span.attributes['restify.layer'],
-                'request_handler'
-              );
+              notStrictEqual(span, undefined);
+              strictEqual(span.attributes[SEMATTRS_HTTP_METHOD], 'GET');
+              strictEqual(span.attributes['restify.layer'], 'request_handler');
             }
           }
         );
@@ -545,13 +524,13 @@ describe('Restify Instrumentation', () => {
           async () => {
             await httpRequest.get(`http://localhost:${port}/route/foo`);
             rootSpan.end();
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
+            strictEqual(memoryExporter.getFinishedSpans().length, 4);
 
             {
               // span from get
               const span = memoryExporter.getFinishedSpans()[2];
-              assert.notStrictEqual(span, undefined);
-              assert.strictEqual(span.attributes[SEMATTRS_HTTP_METHOD], 'GET');
+              notStrictEqual(span, undefined);
+              strictEqual(span.attributes[SEMATTRS_HTTP_METHOD], 'GET');
             }
           }
         );
@@ -567,16 +546,13 @@ describe('Restify Instrumentation', () => {
       await context.with(
         trace.setSpan(context.active(), rootSpan),
         async () => {
-          assert.strictEqual(
+          strictEqual(
             await httpRequest.get(`http://localhost:${port}/route/foo`),
             '{"route":"foo"}'
           );
           rootSpan.end();
-          assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-          assert.notStrictEqual(
-            memoryExporter.getFinishedSpans()[0],
-            undefined
-          );
+          strictEqual(memoryExporter.getFinishedSpans().length, 1);
+          notStrictEqual(memoryExporter.getFinishedSpans()[0], undefined);
         }
       );
     });

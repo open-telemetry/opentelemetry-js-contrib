@@ -30,8 +30,8 @@ import {
   ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
-import * as sinon from 'sinon';
+import { strictEqual, ok, deepStrictEqual, ifError } from 'assert';
+import { spy, assert } from 'sinon';
 import * as ioredisTypes from 'ioredis';
 import { IORedisInstrumentation } from '../src';
 import {
@@ -128,7 +128,7 @@ describe('ioredis', () => {
   });
 
   it('should have correct module name', () => {
-    assert.strictEqual(
+    strictEqual(
       instrumentation.instrumentationName,
       '@opentelemetry/instrumentation-ioredis'
     );
@@ -145,10 +145,10 @@ describe('ioredis', () => {
       const readyHandler = () => {
         const endedSpans = memoryExporter.getFinishedSpans();
 
-        assert.strictEqual(trace.getSpan(context.active()), span);
-        assert.strictEqual(endedSpans.length, 2);
-        assert.strictEqual(endedSpans[0].name, 'connect');
-        assert.strictEqual(endedSpans[1].name, 'info');
+        strictEqual(trace.getSpan(context.active()), span);
+        strictEqual(endedSpans.length, 2);
+        strictEqual(endedSpans[0].name, 'connect');
+        strictEqual(endedSpans[1].name, 'info');
         testUtils.assertPropagation(endedSpans[0], span);
 
         testUtils.assertSpan(
@@ -159,17 +159,17 @@ describe('ioredis', () => {
           unsetStatus
         );
         span.end();
-        assert.strictEqual(endedSpans.length, 3);
-        assert.strictEqual(endedSpans[2].name, 'test span');
+        strictEqual(endedSpans.length, 3);
+        strictEqual(endedSpans[2].name, 'test span');
 
         client.quit(() => {
-          assert.strictEqual(endedSpans.length, 4);
-          assert.strictEqual(endedSpans[3].name, 'quit');
+          strictEqual(endedSpans.length, 4);
+          strictEqual(endedSpans[3].name, 'quit');
           done();
         });
       };
       const errorHandler = (err: Error) => {
-        assert.ifError(err);
+        ifError(err);
         client.quit(done);
       };
 
@@ -257,12 +257,12 @@ describe('ioredis', () => {
             .startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
             command.method((err, _result) => {
-              assert.ifError(err);
-              assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              ifError(err);
+              strictEqual(memoryExporter.getFinishedSpans().length, 1);
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(endedSpans.length, 2);
-              assert.strictEqual(endedSpans[0].name, command.name);
+              strictEqual(endedSpans.length, 2);
+              strictEqual(endedSpans[0].name, command.name);
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -286,11 +286,11 @@ describe('ioredis', () => {
         await context.with(trace.setSpan(context.active(), span), async () => {
           try {
             await client.hset(hashKeyName, 'random', 'random');
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+            strictEqual(memoryExporter.getFinishedSpans().length, 1);
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, 'hset');
+            strictEqual(endedSpans.length, 2);
+            strictEqual(endedSpans[0].name, 'hset');
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -300,7 +300,7 @@ describe('ioredis', () => {
             );
             testUtils.assertPropagation(endedSpans[0], span);
           } catch (error) {
-            assert.ifError(error);
+            ifError(error);
           }
         });
       });
@@ -315,21 +315,21 @@ describe('ioredis', () => {
             await client.incr('non-int-key');
           } catch (ex: any) {
             const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 2);
+            strictEqual(endedSpans.length, 2);
             const ioredisSpan = endedSpans[1];
             // redis 'incr' operation failed with exception, so span should indicate it
-            assert.strictEqual(ioredisSpan.status.code, SpanStatusCode.ERROR);
+            strictEqual(ioredisSpan.status.code, SpanStatusCode.ERROR);
             const exceptionEvent = ioredisSpan.events[0];
-            assert.strictEqual(exceptionEvent.name, 'exception');
-            assert.strictEqual(
+            strictEqual(exceptionEvent.name, 'exception');
+            strictEqual(
               exceptionEvent.attributes?.[SEMATTRS_EXCEPTION_MESSAGE],
               ex.message
             );
-            assert.strictEqual(
+            strictEqual(
               exceptionEvent.attributes?.[SEMATTRS_EXCEPTION_STACKTRACE],
               ex.stack
             );
-            assert.strictEqual(
+            strictEqual(
               exceptionEvent.attributes?.[SEMATTRS_EXCEPTION_TYPE],
               ex.name
             );
@@ -350,11 +350,11 @@ describe('ioredis', () => {
           });
           stream
             .on('end', () => {
-              assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              strictEqual(memoryExporter.getFinishedSpans().length, 1);
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(endedSpans.length, 2);
-              assert.strictEqual(endedSpans[0].name, 'scan');
+              strictEqual(endedSpans.length, 2);
+              strictEqual(endedSpans[0].name, 'scan');
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -391,9 +391,9 @@ describe('ioredis', () => {
             await sub.quit();
             await pub.quit();
             const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 10);
+            strictEqual(endedSpans.length, 10);
             span.end();
-            assert.strictEqual(endedSpans.length, 11);
+            strictEqual(endedSpans.length, 11);
             const expectedSpanNames = [
               'connect',
               'info',
@@ -409,10 +409,7 @@ describe('ioredis', () => {
             ];
 
             const actualSpanNames = endedSpans.map(s => s.name);
-            assert.deepStrictEqual(
-              actualSpanNames.sort(),
-              expectedSpanNames.sort()
-            );
+            deepStrictEqual(actualSpanNames.sort(), expectedSpanNames.sort());
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
@@ -427,7 +424,7 @@ describe('ioredis', () => {
             );
             testUtils.assertPropagation(endedSpans[0], span);
           } catch (error) {
-            assert.ifError(error);
+            ifError(error);
           }
         });
       });
@@ -445,16 +442,16 @@ describe('ioredis', () => {
             .set('foo', 'bar')
             .get('foo')
             .exec((err, _results) => {
-              assert.ifError(err);
+              ifError(err);
 
-              assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
+              strictEqual(memoryExporter.getFinishedSpans().length, 4);
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(endedSpans.length, 5);
-              assert.strictEqual(endedSpans[0].name, 'multi');
-              assert.strictEqual(endedSpans[1].name, 'set');
-              assert.strictEqual(endedSpans[2].name, 'get');
-              assert.strictEqual(endedSpans[3].name, 'exec');
+              strictEqual(endedSpans.length, 5);
+              strictEqual(endedSpans[0].name, 'multi');
+              strictEqual(endedSpans[1].name, 'set');
+              strictEqual(endedSpans[2].name, 'get');
+              strictEqual(endedSpans[3].name, 'exec');
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -480,15 +477,15 @@ describe('ioredis', () => {
           pipeline.set('foo', 'bar');
           pipeline.del('cc');
           pipeline.exec((err, results) => {
-            assert.ifError(err);
+            ifError(err);
 
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+            strictEqual(memoryExporter.getFinishedSpans().length, 2);
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 3);
-            assert.strictEqual(endedSpans[0].name, 'set');
-            assert.strictEqual(endedSpans[1].name, 'del');
-            assert.strictEqual(endedSpans[2].name, 'test span');
+            strictEqual(endedSpans.length, 3);
+            strictEqual(endedSpans[0].name, 'set');
+            strictEqual(endedSpans[1].name, 'del');
+            strictEqual(endedSpans[2].name, 'test span');
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -511,12 +508,12 @@ describe('ioredis', () => {
         await context.with(trace.setSpan(context.active(), span), async () => {
           try {
             const value = await client.get(testKeyName);
-            assert.strictEqual(value, 'data');
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+            strictEqual(value, 'data');
+            strictEqual(memoryExporter.getFinishedSpans().length, 1);
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, 'get');
+            strictEqual(endedSpans.length, 2);
+            strictEqual(endedSpans[0].name, 'get');
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -526,7 +523,7 @@ describe('ioredis', () => {
             );
             testUtils.assertPropagation(endedSpans[0], span);
           } catch (error) {
-            assert.ifError(error);
+            ifError(error);
           }
         });
       });
@@ -540,12 +537,12 @@ describe('ioredis', () => {
         await context.with(trace.setSpan(context.active(), span), async () => {
           try {
             const result = await client.del(testKeyName);
-            assert.strictEqual(result, 1);
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+            strictEqual(result, 1);
+            strictEqual(memoryExporter.getFinishedSpans().length, 1);
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, 'del');
+            strictEqual(endedSpans.length, 2);
+            strictEqual(endedSpans[0].name, 'del');
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -555,7 +552,7 @@ describe('ioredis', () => {
             );
             testUtils.assertPropagation(endedSpans[0], span);
           } catch (error) {
-            assert.ifError(error);
+            ifError(error);
           }
         });
       });
@@ -581,16 +578,16 @@ describe('ioredis', () => {
           // Now `echo` can be used just like any other ordinary command,
           // and ioredis will try to use `EVALSHA` internally when possible for better performance.
           client.echo(testKeyName, (err, result) => {
-            assert.ifError(err);
+            ifError(err);
 
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
             const evalshaSpan = endedSpans[0];
             // the script may be already cached on server therefore we get either 2 or 3 spans
             if (endedSpans.length === 3) {
-              assert.strictEqual(endedSpans[2].name, 'test span');
-              assert.strictEqual(endedSpans[1].name, 'eval');
-              assert.strictEqual(endedSpans[0].name, 'evalsha');
+              strictEqual(endedSpans[2].name, 'test span');
+              strictEqual(endedSpans[1].name, 'eval');
+              strictEqual(endedSpans[0].name, 'evalsha');
               // in this case, server returns NOSCRIPT error for evalsha,
               // telling the client to use EVAL instead
               sanitizeEventForAssertion(evalshaSpan);
@@ -616,9 +613,9 @@ describe('ioredis', () => {
                 }
               );
             } else {
-              assert.strictEqual(endedSpans.length, 2);
-              assert.strictEqual(endedSpans[1].name, 'test span');
-              assert.strictEqual(endedSpans[0].name, 'evalsha');
+              strictEqual(endedSpans.length, 2);
+              strictEqual(endedSpans[1].name, 'test span');
+              strictEqual(endedSpans[0].name, 'evalsha');
               testUtils.assertSpan(
                 evalshaSpan,
                 SpanKind.CLIENT,
@@ -644,8 +641,8 @@ describe('ioredis', () => {
       it('should not create child span for query', async () => {
         await client.set(testKeyName, 'data');
         const result = await client.del(testKeyName);
-        assert.strictEqual(result, 1);
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+        strictEqual(result, 1);
+        strictEqual(memoryExporter.getFinishedSpans().length, 0);
       });
 
       it('should not create child span for connect', async () => {
@@ -653,7 +650,7 @@ describe('ioredis', () => {
         await lazyClient.connect();
         const spans = memoryExporter.getFinishedSpans();
         await lazyClient.quit();
-        assert.strictEqual(spans.length, 0);
+        strictEqual(spans.length, 0);
       });
     });
 
@@ -666,10 +663,10 @@ describe('ioredis', () => {
 
         await client.set(testKeyName, 'data');
         const result = await client.del(testKeyName);
-        assert.strictEqual(result, 1);
+        strictEqual(result, 1);
         const endedSpans = memoryExporter.getFinishedSpans();
 
-        assert.strictEqual(endedSpans.length, 2);
+        strictEqual(endedSpans.length, 2);
         testUtils.assertSpan(
           endedSpans[0],
           SpanKind.CLIENT,
@@ -691,9 +688,9 @@ describe('ioredis', () => {
         const lazyClient = new ioredis(REDIS_URL, { lazyConnect: true });
         await lazyClient.connect();
         const endedSpans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(endedSpans.length, 2);
-        assert.strictEqual(endedSpans[0].name, 'connect');
-        assert.strictEqual(endedSpans[1].name, 'info');
+        strictEqual(endedSpans.length, 2);
+        strictEqual(endedSpans[0].name, 'connect');
+        strictEqual(endedSpans[1].name, 'info');
 
         await lazyClient.quit();
         testUtils.assertSpan(
@@ -716,9 +713,9 @@ describe('ioredis', () => {
 
         await client.set(testKeyName, 'data');
         const result = await client.del(testKeyName);
-        assert.strictEqual(result, 1);
+        strictEqual(result, 1);
 
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+        strictEqual(memoryExporter.getFinishedSpans().length, 0);
       });
 
       it('should not instrument connect with requireParentSpan equal true', async () => {
@@ -730,7 +727,7 @@ describe('ioredis', () => {
         const lazyClient = new ioredis(REDIS_URL, { lazyConnect: true });
         await lazyClient.connect();
         const endedSpans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(endedSpans.length, 0);
+        strictEqual(endedSpans.length, 0);
 
         await lazyClient.quit();
       });
@@ -760,12 +757,12 @@ describe('ioredis', () => {
             .startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
             command.method((err, _result) => {
-              assert.ifError(err);
-              assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              ifError(err);
+              strictEqual(memoryExporter.getFinishedSpans().length, 1);
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(endedSpans.length, 2);
-              assert.strictEqual(endedSpans[0].name, command.name);
+              strictEqual(endedSpans.length, 2);
+              strictEqual(endedSpans[0].name, command.name);
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -793,12 +790,12 @@ describe('ioredis', () => {
             .startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
             operation.method((err, _) => {
-              assert.ifError(err);
-              assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+              ifError(err);
+              strictEqual(memoryExporter.getFinishedSpans().length, 0);
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(endedSpans.length, 1);
-              assert.strictEqual(endedSpans[0], span);
+              strictEqual(endedSpans.length, 1);
+              strictEqual(endedSpans[0], span);
               done();
             });
           });
@@ -810,13 +807,13 @@ describe('ioredis', () => {
         await context.with(trace.setSpan(context.active(), span), async () => {
           try {
             await client.hset(hashKeyName, 'random', 'random');
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+            strictEqual(memoryExporter.getFinishedSpans().length, 0);
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 1);
-            assert.strictEqual(endedSpans[0].name, 'test span');
+            strictEqual(endedSpans.length, 1);
+            strictEqual(endedSpans[0].name, 'test span');
           } catch (error) {
-            assert.ifError(error);
+            ifError(error);
           }
         });
       });
@@ -831,7 +828,7 @@ describe('ioredis', () => {
       });
 
       it('should call requestHook when set in config', async () => {
-        const requestHook = sinon.spy(
+        const requestHook = spy(
           (span: Span, requestInfo: IORedisRequestHookInformation) => {
             span.setAttribute(
               'attribute key from request hook',
@@ -847,26 +844,26 @@ describe('ioredis', () => {
         await context.with(trace.setSpan(context.active(), span), async () => {
           await client.incr('request-hook-test');
           const endedSpans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(endedSpans.length, 1);
-          assert.strictEqual(
+          strictEqual(endedSpans.length, 1);
+          strictEqual(
             endedSpans[0].attributes['attribute key from request hook'],
             'custom value from request hook'
           );
         });
 
-        sinon.assert.calledOnce(requestHook);
+        assert.calledOnce(requestHook);
         const [, requestInfo] = requestHook.firstCall.args;
-        assert.ok(
+        ok(
           /\d{1,4}\.\d{1,4}\.\d{1,5}.*/.test(
             requestInfo.moduleVersion as string
           )
         );
-        assert.strictEqual(requestInfo.cmdName, 'incr');
-        assert.deepStrictEqual(requestInfo.cmdArgs, ['request-hook-test']);
+        strictEqual(requestInfo.cmdName, 'incr');
+        deepStrictEqual(requestInfo.cmdArgs, ['request-hook-test']);
       });
 
       it('should ignore requestHook which throws exception', async () => {
-        const requestHook = sinon.spy(
+        const requestHook = spy(
           (span: Span, _requestInfo: IORedisRequestHookInformation) => {
             span.setAttribute(
               'attribute key BEFORE exception',
@@ -883,18 +880,18 @@ describe('ioredis', () => {
         await context.with(trace.setSpan(context.active(), span), async () => {
           await client.incr('request-hook-throw-test');
           const endedSpans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(endedSpans.length, 1);
-          assert.strictEqual(
+          strictEqual(endedSpans.length, 1);
+          strictEqual(
             endedSpans[0].attributes['attribute key BEFORE exception'],
             'this attribute is added to span BEFORE exception is thrown thus we can expect it'
           );
         });
 
-        sinon.assert.threw(requestHook);
+        assert.threw(requestHook);
       });
 
       it('should call responseHook when set in config', async () => {
-        const responseHook = sinon.spy(
+        const responseHook = spy(
           (
             span: Span,
             cmdName: string,
@@ -915,26 +912,26 @@ describe('ioredis', () => {
         await context.with(trace.setSpan(context.active(), span), async () => {
           await client.set('response-hook-test', 'test-value');
           const endedSpans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(endedSpans.length, 1);
-          assert.strictEqual(
+          strictEqual(endedSpans.length, 1);
+          strictEqual(
             endedSpans[0].attributes['attribute key from hook'],
             'custom value from hook'
           );
         });
 
-        sinon.assert.calledOnce(responseHook);
+        assert.calledOnce(responseHook);
         const [, cmdName, , response] = responseHook.firstCall.args as [
           Span,
           string,
           unknown,
           Buffer
         ];
-        assert.strictEqual(cmdName, 'set');
-        assert.strictEqual(response.toString(), 'OK');
+        strictEqual(cmdName, 'set');
+        strictEqual(response.toString(), 'OK');
       });
 
       it('should ignore responseHook which throws exception', async () => {
-        const responseHook = sinon.spy(
+        const responseHook = spy(
           (
             _span: Span,
             _cmdName: string,
@@ -954,10 +951,10 @@ describe('ioredis', () => {
           const endedSpans = memoryExporter.getFinishedSpans();
 
           // hook throw exception, but span should not be affected
-          assert.strictEqual(endedSpans.length, 1);
+          strictEqual(endedSpans.length, 1);
         });
 
-        sinon.assert.threw(responseHook);
+        assert.threw(responseHook);
       });
     });
 
@@ -984,15 +981,15 @@ describe('ioredis', () => {
             .startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
             operation.method((err, _) => {
-              assert.ifError(err);
+              ifError(err);
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(endedSpans.length, 2);
+              strictEqual(endedSpans.length, 2);
               const expectedStatement = dbStatementSerializer(
                 operation.name,
                 operation.args
               );
-              assert.strictEqual(
+              strictEqual(
                 endedSpans[0].attributes[SEMATTRS_DB_STATEMENT],
                 expectedStatement
               );
@@ -1014,15 +1011,15 @@ describe('ioredis', () => {
         NODE_NO_WARNINGS: '1',
       },
       checkResult: (err, stdout, stderr) => {
-        assert.ifError(err);
+        ifError(err);
       },
       checkCollector: (collector: testUtils.TestCollector) => {
         const spans = collector.sortedSpans;
-        assert.strictEqual(spans[0].name, 'manual');
-        assert.strictEqual(spans[1].name, 'set');
-        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
-        assert.strictEqual(spans[2].name, 'get');
-        assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+        strictEqual(spans[0].name, 'manual');
+        strictEqual(spans[1].name, 'set');
+        strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        strictEqual(spans[2].name, 'get');
+        strictEqual(spans[2].parentSpanId, spans[0].spanId);
       },
     });
   });

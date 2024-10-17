@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import * as api from '@opentelemetry/api';
+import {
+  trace,
+  context,
+  Tracer,
+  Span,
+  DiagLogger,
+  diag,
+} from '@opentelemetry/api';
 import { isWrapped } from '@opentelemetry/core';
 import * as shimmer from 'shimmer';
 import { AttributeNames } from './enums/AttributeNames';
@@ -37,16 +44,16 @@ import {
 export class BaseOpenTelemetryComponent extends React.Component {
   readonly component: string = 'react-load';
   moduleName = this.component;
-  private _parentSpanMap: WeakMap<React.Component, api.Span>;
-  private static _tracer: api.Tracer;
-  private static _logger: api.DiagLogger = api.diag;
+  private _parentSpanMap: WeakMap<React.Component, Span>;
+  private static _tracer: Tracer;
+  private static _logger: DiagLogger = diag;
 
   /**
    * @param props Props of the React component
    */
   constructor(props: Readonly<any>) {
     super(props);
-    this._parentSpanMap = new WeakMap<React.Component, api.Span>();
+    this._parentSpanMap = new WeakMap<React.Component, Span>();
     this.patch();
   }
 
@@ -56,7 +63,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * @param version Version of tracer, this is optional. When not provided it will use the latest.
    */
   static setTracer(name: string, version?: string): void {
-    BaseOpenTelemetryComponent._tracer = api.trace.getTracer(
+    BaseOpenTelemetryComponent._tracer = trace.getTracer(
       name,
       version ? version : PACKAGE_VERSION
     );
@@ -66,8 +73,8 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * Sets the logger for all components being instrumented
    * @param logger
    */
-  static setLogger(logger: api.DiagLogger): void {
-    api.diag.setLogger(logger);
+  static setLogger(logger: DiagLogger): void {
+    diag.setLogger(logger);
     BaseOpenTelemetryComponent._logger = logger;
   }
 
@@ -81,16 +88,14 @@ export class BaseOpenTelemetryComponent extends React.Component {
   private _createSpanWithParent(
     react: React.Component,
     name: string,
-    parentSpan: api.Span
-  ): api.Span {
+    parentSpan: Span
+  ): Span {
     return BaseOpenTelemetryComponent._tracer.startSpan(
       name,
       {
         attributes: this._getAttributes(react),
       },
-      parentSpan
-        ? api.trace.setSpan(api.context.active(), parentSpan)
-        : undefined
+      parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined
     );
   }
 
@@ -99,7 +104,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * @param react React component currently being instrumented
    * @param name Name of span
    */
-  private _createSpan(react: React.Component, name: string): api.Span {
+  private _createSpan(react: React.Component, name: string): Span {
     return BaseOpenTelemetryComponent._tracer.startSpan(name, {
       attributes: this._getAttributes(react),
     });
@@ -115,18 +120,15 @@ export class BaseOpenTelemetryComponent extends React.Component {
   private _instrumentFunction(
     react: React.Component,
     spanName: string,
-    parent: api.Span,
+    parent: Span,
     original: any
   ) {
     const span = this._createSpanWithParent(react, spanName, parent);
     let wasError = false;
     try {
-      return api.context.with(
-        api.trace.setSpan(api.context.active(), span),
-        () => {
-          return original();
-        }
-      );
+      return context.with(trace.setSpan(context.active(), span), () => {
+        return original();
+      });
     } catch (err: any) {
       span.setAttribute(AttributeNames.REACT_ERROR, err.stack);
       wasError = true;
@@ -174,8 +176,8 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * exist, the function creates one
    * @param react React component parent span belongs to.
    */
-  private _getParentSpan(react: React.Component, parentName: string): api.Span {
-    const parentSpan: api.Span | undefined = this._parentSpanMap.get(react);
+  private _getParentSpan(react: React.Component, parentName: string): Span {
+    const parentSpan: Span | undefined = this._parentSpanMap.get(react);
     if (!parentSpan) {
       const span = this._createSpan(react, parentName);
       this._parentSpanMap.set(react, span);
@@ -194,7 +196,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
         ...args
       ): React.ReactNode {
         // Render is the first method in the mounting flow, if a parent span wasn't created already then we're in the mounting flow
-        let parentSpan: api.Span;
+        let parentSpan: Span;
         if (!plugin._parentSpanMap.get(this)) {
           parentSpan = plugin._getParentSpan(
             this,
@@ -551,6 +553,6 @@ export class BaseOpenTelemetryComponent extends React.Component {
 
     shimmer.unwrap(this, 'componentWillUnmount');
 
-    this._parentSpanMap = new WeakMap<React.Component, api.Span>();
+    this._parentSpanMap = new WeakMap<React.Component, Span>();
   }
 }

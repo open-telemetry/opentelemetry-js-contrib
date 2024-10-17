@@ -20,10 +20,10 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
+import { deepEqual, strictEqual, fail, throws } from 'assert';
 import { promisify } from 'util';
 import { FsInstrumentation } from '../src';
-import * as sinon from 'sinon';
+import { spy } from 'sinon';
 import type * as FSType from 'fs';
 import tests, { TestCase, TestCreator } from './definitions';
 import type { FMember, FPMember, CreateHook, EndHook } from '../src/types';
@@ -34,12 +34,13 @@ import {
 } from '../src/constants';
 import { indexFs, splitTwoLevels } from '../src/utils';
 import { assertSpans, makeRootSpanName } from './utils';
+import assert = require('assert');
 
 const TEST_ATTRIBUTE = 'test.attr';
 const TEST_VALUE = 'test.attr.value';
 
-const createHook = <CreateHook>sinon.spy(
-  (fnName: FMember | FPMember, { args, span }) => {
+const createHook = <CreateHook>(
+  spy((fnName: FMember | FPMember, { args, span }) => {
     // `ts-node`, which we use via `ts-mocha` also patches module loading and creates
     // a lot of unrelated spans. Filter those out.
     if (['readFileSync', 'existsSync'].includes(fnName as string)) {
@@ -49,9 +50,9 @@ const createHook = <CreateHook>sinon.spy(
       }
     }
     return true;
-  }
+  })
 );
-const endHook = <EndHook>sinon.spy((fnName, { args, span }) => {
+const endHook = <EndHook>spy((fnName, { args, span }) => {
   span.setAttribute(TEST_ATTRIBUTE, TEST_VALUE);
 });
 const pluginConfig = {
@@ -81,7 +82,7 @@ describe('fs instrumentation', () => {
       },
       configurable: true,
     });
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 
   afterEach(() => {
@@ -107,10 +108,10 @@ describe('fs instrumentation', () => {
       const { objectToPatch, functionNameToPatch } = indexFs(fs, syncName);
       const rootSpan = tracer.startSpan(rootSpanName);
 
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      strictEqual(memoryExporter.getFinishedSpans().length, 0);
       context.with(trace.setSpan(context.active(), rootSpan), () => {
         if (error) {
-          assert.throws(
+          throws(
             () =>
               Reflect.apply(
                 objectToPatch[functionNameToPatch],
@@ -120,7 +121,7 @@ describe('fs instrumentation', () => {
             error
           );
         } else {
-          assert.deepEqual(
+          deepEqual(
             Reflect.apply(
               objectToPatch[functionNameToPatch],
               objectToPatch,
@@ -161,13 +162,13 @@ describe('fs instrumentation', () => {
       const { objectToPatch, functionNameToPatch } = indexFs(fs, name);
       const rootSpan = tracer.startSpan(rootSpanName);
 
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       context.with(trace.setSpan(context.active(), rootSpan), () => {
         (objectToPatch[functionNameToPatch] as Function)(
           ...args,
           (actualError: any | undefined, actualResult: any) => {
-            assert.strictEqual(trace.getSpan(context.active()), rootSpan);
+            strictEqual(trace.getSpan(context.active()), rootSpan);
 
             try {
               rootSpan.end();
@@ -193,8 +194,8 @@ describe('fs instrumentation', () => {
                     }
                   }
                 }
-                assert.deepEqual(actualError, resultAsError);
-                assert.deepEqual(actualResult, result);
+                deepEqual(actualError, resultAsError);
+                deepEqual(actualResult, result);
               }
               assertSpans(memoryExporter.getFinishedSpans(), [
                 ...spans.map((s: any) => {
@@ -232,7 +233,7 @@ describe('fs instrumentation', () => {
     it(`promises.${name} ${error ? 'error' : 'success'}`, async () => {
       const rootSpan = tracer.startSpan(rootSpanName);
 
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context
         .with(trace.setSpan(context.active(), rootSpan), () => {
           // eslint-disable-next-line node/no-unsupported-features/node-builtins
@@ -244,9 +245,9 @@ describe('fs instrumentation', () => {
         })
         .then((actualResult: any) => {
           if (error) {
-            assert.fail(`promises.${name} did not reject`);
+            fail(`promises.${name} did not reject`);
           } else {
-            assert.deepEqual(actualResult, result ?? resultAsError);
+            deepEqual(actualResult, result ?? resultAsError);
           }
         })
         .catch((actualError: any) => {
@@ -261,7 +262,7 @@ describe('fs instrumentation', () => {
             );
           } else {
             actualError.message = `Did not expect promises.${name} to reject: ${actualError.message}`;
-            assert.fail(actualError);
+            fail(actualError);
           }
         });
       rootSpan.end();
@@ -299,7 +300,7 @@ describe('fs instrumentation', () => {
         if (node14MissingFunctionNames.has(fname) && isNode14) continue;
 
         const { objectToPatch, functionNameToPatch } = indexFs(fs, fname);
-        assert.strictEqual(
+        strictEqual(
           typeof objectToPatch[functionNameToPatch],
           'function',
           `fs.${fname} is not a function`
@@ -311,7 +312,7 @@ describe('fs instrumentation', () => {
           fs.promises,
           fname
         );
-        assert.strictEqual(
+        strictEqual(
           typeof objectToPatch[functionNameToPatch],
           'function',
           `fs.promises.${fname} is not a function`

@@ -16,9 +16,9 @@
 
 /* eslint-disable node/no-unpublished-import */
 
-import * as chromeMock from 'sinon-chrome';
-import * as assert from 'assert';
-import * as sinon from 'sinon';
+import {reset} from 'sinon-chrome';
+import {ok} from 'assert';
+import {SinonSandbox,createSandbox,spy} from 'sinon';
 import { WebInstrumentation } from '../src/instrumentation/WebInstrumentation';
 import {
   ExporterType,
@@ -30,11 +30,11 @@ import { JSDOM } from 'jsdom';
 import { TEST_URL } from './utils';
 
 describe('WebInstrumentation', () => {
-  let sandbox: sinon.SinonSandbox;
+  let sandbox: SinonSandbox;
   let provider: WebTracerProvider;
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = createSandbox();
     provider = new WebTracerProvider();
     const { window } = new JSDOM('<!doctype html><html><body></body></html>', {
       url: TEST_URL,
@@ -51,7 +51,7 @@ describe('WebInstrumentation', () => {
   });
 
   it('adds exporters to the trace provider', () => {
-    const addSpanProcessorSpy = sinon.spy(provider, 'addSpanProcessor');
+    const addSpanProcessorSpy = spy(provider, 'addSpanProcessor');
     const instrumentation = new WebInstrumentation(
       {
         exporters: {
@@ -83,6 +83,6 @@ describe('WebInstrumentation', () => {
       provider
     );
     instrumentation.register();
-    assert.ok(addSpanProcessorSpy.callCount === 3);
+    ok(addSpanProcessorSpy.callCount === 3);
   });
 });

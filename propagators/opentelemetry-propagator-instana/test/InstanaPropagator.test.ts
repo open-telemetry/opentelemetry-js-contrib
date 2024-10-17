@@ -24,7 +24,7 @@ import {
   TraceFlags,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
-import * as assert from 'assert';
+import { strictEqual, deepStrictEqual } from 'assert';
 import {
   InstanaPropagator,
   INSTANA_TRACE_ID_HEADER,
@@ -54,12 +54,12 @@ describe('InstanaPropagator', () => {
         defaultTextMapSetter
       );
 
-      assert.strictEqual(
+      strictEqual(
         carrier[INSTANA_TRACE_ID_HEADER],
         '80f198ee56343ba864fe8b2a57d3eff7'
       );
-      assert.strictEqual(carrier[INSTANA_SPAN_ID_HEADER], 'e457b5a2e4d86bd1');
-      assert.strictEqual(carrier[INSTANA_LEVEL_HEADER], '1');
+      strictEqual(carrier[INSTANA_SPAN_ID_HEADER], 'e457b5a2e4d86bd1');
+      strictEqual(carrier[INSTANA_LEVEL_HEADER], '1');
     });
 
     it('translates sampled flag into level header', () => {
@@ -75,12 +75,12 @@ describe('InstanaPropagator', () => {
         defaultTextMapSetter
       );
 
-      assert.strictEqual(
+      strictEqual(
         carrier[INSTANA_TRACE_ID_HEADER],
         '80f198ee56343ba864fe8b2a57d3eff7'
       );
-      assert.strictEqual(carrier[INSTANA_SPAN_ID_HEADER], 'e457b5a2e4d86bd1');
-      assert.strictEqual(carrier[INSTANA_LEVEL_HEADER], '0');
+      strictEqual(carrier[INSTANA_SPAN_ID_HEADER], 'e457b5a2e4d86bd1');
+      strictEqual(carrier[INSTANA_LEVEL_HEADER], '0');
     });
 
     it('correctly reads sampled flags, even if other flags are set', () => {
@@ -98,12 +98,12 @@ describe('InstanaPropagator', () => {
         defaultTextMapSetter
       );
 
-      assert.strictEqual(
+      strictEqual(
         carrier[INSTANA_TRACE_ID_HEADER],
         '80f198ee56343ba864fe8b2a57d3eff7'
       );
-      assert.strictEqual(carrier[INSTANA_SPAN_ID_HEADER], 'e457b5a2e4d86bd1');
-      assert.strictEqual(carrier[INSTANA_LEVEL_HEADER], '1');
+      strictEqual(carrier[INSTANA_SPAN_ID_HEADER], 'e457b5a2e4d86bd1');
+      strictEqual(carrier[INSTANA_LEVEL_HEADER], '1');
     });
 
     it('does nothing if the trace ID is invalid', () => {
@@ -119,9 +119,9 @@ describe('InstanaPropagator', () => {
         defaultTextMapSetter
       );
 
-      assert.strictEqual(carrier[INSTANA_TRACE_ID_HEADER], undefined);
-      assert.strictEqual(carrier[INSTANA_SPAN_ID_HEADER], undefined);
-      assert.strictEqual(carrier[INSTANA_LEVEL_HEADER], undefined);
+      strictEqual(carrier[INSTANA_TRACE_ID_HEADER], undefined);
+      strictEqual(carrier[INSTANA_SPAN_ID_HEADER], undefined);
+      strictEqual(carrier[INSTANA_LEVEL_HEADER], undefined);
     });
 
     it('does nothing if the span ID is invalid', () => {
@@ -137,9 +137,9 @@ describe('InstanaPropagator', () => {
         defaultTextMapSetter
       );
 
-      assert.strictEqual(carrier[INSTANA_TRACE_ID_HEADER], undefined);
-      assert.strictEqual(carrier[INSTANA_SPAN_ID_HEADER], undefined);
-      assert.strictEqual(carrier[INSTANA_LEVEL_HEADER], undefined);
+      strictEqual(carrier[INSTANA_TRACE_ID_HEADER], undefined);
+      strictEqual(carrier[INSTANA_SPAN_ID_HEADER], undefined);
+      strictEqual(carrier[INSTANA_LEVEL_HEADER], undefined);
     });
   });
 
@@ -162,7 +162,7 @@ describe('InstanaPropagator', () => {
 
       const extractedSpanContext = trace.getSpan(context)?.spanContext();
 
-      assert.deepStrictEqual(extractedSpanContext, {
+      deepStrictEqual(extractedSpanContext, {
         traceId: '80f198ee56343ba864fe8b2a57d3eff7',
         spanId: 'e457b5a2e4d86bd1',
         isRemote: true,
@@ -187,7 +187,7 @@ describe('InstanaPropagator', () => {
 
       const extractedSpanContext = trace.getSpan(context)?.spanContext();
 
-      assert.deepStrictEqual(extractedSpanContext, {
+      deepStrictEqual(extractedSpanContext, {
         traceId: '80f198ee56343ba864fe8b2a57d3eff7',
         spanId: 'e457b5a2e4d86bd1',
         isRemote: true,
@@ -210,7 +210,7 @@ describe('InstanaPropagator', () => {
 
       const extractedSpanContext = trace.getSpan(context)?.spanContext();
 
-      assert.deepStrictEqual(extractedSpanContext, {
+      deepStrictEqual(extractedSpanContext, {
         traceId: '80f198ee56343ba864fe8b2a57d3eff7',
         spanId: 'e457b5a2e4d86bd1',
         isRemote: true,
@@ -234,7 +234,7 @@ describe('InstanaPropagator', () => {
 
       const extractedSpanContext = trace.getSpan(context)?.spanContext();
 
-      assert.deepStrictEqual(extractedSpanContext, {
+      deepStrictEqual(extractedSpanContext, {
         traceId: '80f198ee56343ba864fe8b2a57d3eff7',
         spanId: 'e457b5a2e4d86bd1',
         isRemote: true,
@@ -255,7 +255,7 @@ describe('InstanaPropagator', () => {
 
       const extractedSpanContext = trace.getSpan(context)?.spanContext();
 
-      assert.deepStrictEqual(extractedSpanContext, {
+      deepStrictEqual(extractedSpanContext, {
         traceId: INVALID_TRACEID,
         spanId: INVALID_SPANID,
         isRemote: true,
@@ -277,7 +277,7 @@ describe('InstanaPropagator', () => {
       );
 
       const extractedSpanContext = trace.getSpan(context)?.spanContext();
-      assert.deepStrictEqual(extractedSpanContext, {
+      deepStrictEqual(extractedSpanContext, {
         traceId: '00000000000000004aaba1a52cf8ee09',
         spanId: 'e457b5a2e4d86bd1',
         isRemote: true,
@@ -300,7 +300,7 @@ describe('InstanaPropagator', () => {
       );
 
       const extractedSpanContext = trace.getSpan(context)?.spanContext();
-      assert.deepStrictEqual(extractedSpanContext, {
+      deepStrictEqual(extractedSpanContext, {
         traceId: '80f198ee56343ba864fe8b2a57d3eff7',
         spanId: '0007b5a2e4d86bd1',
         isRemote: true,
@@ -323,7 +323,7 @@ describe('InstanaPropagator', () => {
       );
 
       const extractedSpanContext = trace.getSpan(context)?.spanContext();
-      assert.deepStrictEqual(undefined, extractedSpanContext);
+      deepStrictEqual(undefined, extractedSpanContext);
     });
 
     it('handles malformed span ID', () => {
@@ -341,7 +341,7 @@ describe('InstanaPropagator', () => {
       );
 
       const extractedSpanContext = trace.getSpan(context)?.spanContext();
-      assert.deepStrictEqual(undefined, extractedSpanContext);
+      deepStrictEqual(undefined, extractedSpanContext);
     });
 
     it('handles invalid trace ID', () => {
@@ -358,7 +358,7 @@ describe('InstanaPropagator', () => {
       );
 
       const extractedSpanContext = trace.getSpan(context)?.spanContext();
-      assert.deepStrictEqual(undefined, extractedSpanContext);
+      deepStrictEqual(undefined, extractedSpanContext);
     });
 
     it('handles invalid span ID', () => {
@@ -376,13 +376,13 @@ describe('InstanaPropagator', () => {
       );
 
       const extractedSpanContext = trace.getSpan(context)?.spanContext();
-      assert.deepStrictEqual(undefined, extractedSpanContext);
+      deepStrictEqual(undefined, extractedSpanContext);
     });
   });
 
   describe('.fields', () => {
     it('provides all fields', () => {
-      assert.deepStrictEqual(
+      deepStrictEqual(
         [INSTANA_TRACE_ID_HEADER, INSTANA_SPAN_ID_HEADER, INSTANA_LEVEL_HEADER],
         propagator.fields()
       );

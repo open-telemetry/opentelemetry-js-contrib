@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import { strictEqual } from 'assert';
 import {
   trace,
   SpanContext,
@@ -33,7 +33,7 @@ describe('addSqlCommenterComment', () => {
     };
 
     const query = 'SELECT * from FOO;';
-    assert.strictEqual(
+    strictEqual(
       addSqlCommenterComment(trace.wrapSpanContext(spanContext), query),
       "SELECT * from FOO; /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01'*/"
     );
@@ -47,16 +47,10 @@ describe('addSqlCommenterComment', () => {
     });
 
     const blockComment = 'SELECT * from FOO; /* Test comment */';
-    assert.strictEqual(
-      addSqlCommenterComment(span, blockComment),
-      blockComment
-    );
+    strictEqual(addSqlCommenterComment(span, blockComment), blockComment);
 
     const dashedComment = 'SELECT * from FOO; -- Test comment';
-    assert.strictEqual(
-      addSqlCommenterComment(span, dashedComment),
-      dashedComment
-    );
+    strictEqual(addSqlCommenterComment(span, dashedComment), dashedComment);
   });
 
   it('does not add a comment to an empty query', () => {
@@ -66,7 +60,7 @@ describe('addSqlCommenterComment', () => {
       traceFlags: TraceFlags.SAMPLED,
     };
 
-    assert.strictEqual(
+    strictEqual(
       addSqlCommenterComment(trace.wrapSpanContext(spanContext), ''),
       ''
     );
@@ -74,7 +68,7 @@ describe('addSqlCommenterComment', () => {
 
   it('does not add a comment if span context is invalid', () => {
     const query = 'SELECT * from FOO;';
-    assert.strictEqual(
+    strictEqual(
       addSqlCommenterComment(
         trace.wrapSpanContext(INVALID_SPAN_CONTEXT),
         query
@@ -92,7 +86,7 @@ describe('addSqlCommenterComment', () => {
     };
 
     const query = 'SELECT * from FOO;';
-    assert.strictEqual(
+    strictEqual(
       addSqlCommenterComment(trace.wrapSpanContext(spanContext), query),
       "SELECT * from FOO; /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01',tracestate='foo%3Dbar%2Cbaz%3Dqux'*/"
     );
@@ -107,7 +101,7 @@ describe('addSqlCommenterComment', () => {
     };
 
     const query = 'SELECT * from FOO;';
-    assert.strictEqual(
+    strictEqual(
       addSqlCommenterComment(trace.wrapSpanContext(spanContext), query),
       "SELECT * from FOO; /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01',tracestate='foo%3D%27bar%2Cbaz%3D%27qux%21%28%29%2A%27%2Chack%3D%27DROP%20TABLE'*/"
     );

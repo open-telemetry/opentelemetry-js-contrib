@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { MemcachedInstrumentation } from './instrumentation';
+export { InstrumentationConfig } from './types';

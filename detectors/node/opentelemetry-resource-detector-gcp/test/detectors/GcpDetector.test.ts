@@ -22,7 +22,7 @@ import {
   SECONDARY_HOST_ADDRESS,
   resetIsAvailableCache,
 } from 'gcp-metadata';
-import * as nock from 'nock';
+import { disableNetConnect, enableNetConnect, cleanAll } from 'nock';
 import { gcpDetector } from '../../src';
 import {
   assertCloudResource,
@@ -31,6 +31,7 @@ import {
   assertContainerResource,
   assertEmptyResource,
 } from '@opentelemetry/contrib-test-utils';
+import nock = require('nock');
 
 const HEADERS = {
   [HEADER_NAME.toLowerCase()]: HEADER_VALUE,
@@ -45,11 +46,11 @@ const HOSTNAME_PATH = BASE_PATH + '/instance/hostname';
 describe('gcpDetector', () => {
   describe('.detect', () => {
     before(() => {
-      nock.disableNetConnect();
+      disableNetConnect();
     });
 
     after(() => {
-      nock.enableNetConnect();
+      enableNetConnect();
       delete process.env.KUBERNETES_SERVICE_HOST;
       delete process.env.NAMESPACE;
       delete process.env.CONTAINER_NAME;
@@ -58,7 +59,7 @@ describe('gcpDetector', () => {
 
     beforeEach(() => {
       resetIsAvailableCache();
-      nock.cleanAll();
+      cleanAll();
       delete process.env.KUBERNETES_SERVICE_HOST;
       delete process.env.NAMESPACE;
       delete process.env.CONTAINER_NAME;

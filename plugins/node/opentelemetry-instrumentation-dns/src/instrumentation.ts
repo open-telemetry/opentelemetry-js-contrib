@@ -26,7 +26,12 @@ import {
 } from '@opentelemetry/instrumentation';
 import { AddressFamily } from './enums/AddressFamily';
 import { DnsInstrumentationConfig } from './types';
-import * as utils from './utils';
+import {
+  isIgnored,
+  getOperationName,
+  setError,
+  setLookupAttributes,
+} from './utils';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   LookupCallbackSignature,
@@ -110,10 +115,8 @@ export class DnsInstrumentation extends InstrumentationBase<DnsInstrumentationCo
       ...args: unknown[]
     ) {
       if (
-        utils.isIgnored(
-          hostname,
-          plugin.getConfig().ignoreHostnames,
-          (e: Error) => diag.error('caught ignoreHostname error: ', e)
+        isIgnored(hostname, plugin.getConfig().ignoreHostnames, (e: Error) =>
+          diag.error('caught ignoreHostname error: ', e)
         )
       ) {
         return original.apply(this, [hostname, ...args]);
@@ -121,7 +124,7 @@ export class DnsInstrumentation extends InstrumentationBase<DnsInstrumentationCo
 
       const argsCount = args.length;
       diag.debug('wrap lookup callback function and starts span');
-      const name = utils.getOperationName('lookup');
+      const name = getOperationName('lookup');
       const span = plugin.tracer.startSpan(name, {
         kind: SpanKind.CLIENT,
       });
@@ -136,7 +139,7 @@ export class DnsInstrumentation extends InstrumentationBase<DnsInstrumentationCo
           () => original.apply(this, [hostname, ...args]),
           error => {
             if (error != null) {
-              utils.setError(error, span);
+              setError(error, span);
               span.end();
             }
           }
@@ -150,18 +153,18 @@ export class DnsInstrumentation extends InstrumentationBase<DnsInstrumentationCo
             ]),
           error => {
             if (error != null) {
-              utils.setError(error, span);
+              setError(error, span);
               span.end();
             }
           }
         );
         promise.then(
           result => {
-            utils.setLookupAttributes(span, result as LookupAddress);
+            setLookupAttributes(span, result as LookupAddress);
             span.end();
           },
           (e: NodeJS.ErrnoException) => {
-            utils.setError(e, span);
+            setError(e, span);
             span.end();
           }
         );
@@ -187,9 +190,9 @@ export class DnsInstrumentation extends InstrumentationBase<DnsInstrumentationCo
       diag.debug('executing wrapped lookup callback function');
 
       if (err !== null) {
-        utils.setError(err, span);
+        setError(err, span);
       } else {
-        utils.setLookupAttributes(span, address, family);
+        setLookupAttributes(span, address, family);
       }
 
       span.end();

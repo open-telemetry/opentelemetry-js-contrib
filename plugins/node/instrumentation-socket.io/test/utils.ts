@@ -25,12 +25,12 @@ import * as expect from 'expect';
 import { Server } from 'socket.io';
 import * as socketIo from 'socket.io';
 import * as ioClient from 'socket.io-client';
-import * as path from 'path';
+import { join, dirname } from 'path';
 
 export const io = ioClient.io || ioClient;
 
 const packageJsonPath = (packageName: string) =>
-  path.join(path.dirname(require.resolve(packageName)), '..', 'package.json');
+  join(dirname(require.resolve(packageName)), '..', 'package.json');
 const version = require(packageJsonPath('socket.io')).version;
 
 assert.equal(typeof version, 'string');

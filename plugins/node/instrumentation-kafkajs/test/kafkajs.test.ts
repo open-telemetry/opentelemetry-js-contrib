@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import { strictEqual, deepStrictEqual, notStrictEqual } from 'assert';
 import { KafkaJsInstrumentation, KafkaJsInstrumentationConfig } from '../src';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
@@ -116,11 +116,11 @@ describe('instrumentation-kafkajs', () => {
       kafkaMessage: Message,
       span: ReadableSpan
     ) => {
-      assert.strictEqual(
+      strictEqual(
         kafkaMessage.headers?.[DummyPropagation.TRACE_CONTEXT_KEY],
         span.spanContext().traceId
       );
-      assert.strictEqual(
+      strictEqual(
         kafkaMessage.headers?.[DummyPropagation.SPAN_CONTEXT_KEY],
         span.spanContext().spanId
       );
@@ -154,22 +154,22 @@ describe('instrumentation-kafkajs', () => {
           ],
         });
 
-        assert.strictEqual(res.length, 1);
-        assert.strictEqual(res[0].topicName, 'topic-name-1');
+        strictEqual(res.length, 1);
+        strictEqual(res[0].topicName, 'topic-name-1');
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(span.kind, SpanKind.PRODUCER);
-        assert.strictEqual(span.name, 'topic-name-1');
-        assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
-        assert.strictEqual(span.attributes[SEMATTRS_MESSAGING_SYSTEM], 'kafka');
-        assert.strictEqual(
+        strictEqual(span.kind, SpanKind.PRODUCER);
+        strictEqual(span.name, 'topic-name-1');
+        strictEqual(span.status.code, SpanStatusCode.UNSET);
+        strictEqual(span.attributes[SEMATTRS_MESSAGING_SYSTEM], 'kafka');
+        strictEqual(
           span.attributes[SEMATTRS_MESSAGING_DESTINATION],
           'topic-name-1'
         );
 
-        assert.strictEqual(messagesSent.length, 1);
+        strictEqual(messagesSent.length, 1);
         expectKafkaHeadersToMatchSpanContext(
           messagesSent[0],
           span as ReadableSpan
@@ -190,11 +190,11 @@ describe('instrumentation-kafkajs', () => {
         });
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 2);
-        assert.strictEqual(spans[0].name, 'topic-name-1');
-        assert.strictEqual(spans[1].name, 'topic-name-1');
+        strictEqual(spans.length, 2);
+        strictEqual(spans[0].name, 'topic-name-1');
+        strictEqual(spans[1].name, 'topic-name-1');
 
-        assert.strictEqual(messagesSent.length, 2);
+        strictEqual(messagesSent.length, 2);
         expectKafkaHeadersToMatchSpanContext(
           messagesSent[0],
           spans[0] as ReadableSpan
@@ -231,12 +231,12 @@ describe('instrumentation-kafkajs', () => {
         });
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 3);
-        assert.strictEqual(spans[0].name, 'topic-name-1');
-        assert.strictEqual(spans[1].name, 'topic-name-1');
-        assert.strictEqual(spans[2].name, 'topic-name-2');
+        strictEqual(spans.length, 3);
+        strictEqual(spans[0].name, 'topic-name-1');
+        strictEqual(spans[1].name, 'topic-name-1');
+        strictEqual(spans[2].name, 'topic-name-2');
 
-        assert.strictEqual(messagesSent.length, 3);
+        strictEqual(messagesSent.length, 3);
         for (let i = 0; i < 3; i++) {
           expectKafkaHeadersToMatchSpanContext(
             messagesSent[i],
@@ -271,13 +271,10 @@ describe('instrumentation-kafkajs', () => {
         } catch (err) {}
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-        assert.strictEqual(
-          span.status.message,
-          'error thrown from kafka client send'
-        );
+        strictEqual(span.status.code, SpanStatusCode.ERROR);
+        strictEqual(span.status.message, 'error thrown from kafka client send');
       });
 
       it('error in send with multiple messages create failed spans', async () => {
@@ -296,10 +293,10 @@ describe('instrumentation-kafkajs', () => {
         } catch (err) {}
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 2);
+        strictEqual(spans.length, 2);
         spans.forEach(span => {
-          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-          assert.strictEqual(
+          strictEqual(span.status.code, SpanStatusCode.ERROR);
+          strictEqual(
             span.status.message,
             'error thrown from kafka client send'
           );
@@ -334,10 +331,10 @@ describe('instrumentation-kafkajs', () => {
         } catch (err) {}
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 3);
+        strictEqual(spans.length, 3);
         spans.forEach(span => {
-          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-          assert.strictEqual(
+          strictEqual(span.status.code, SpanStatusCode.ERROR);
+          strictEqual(
             span.status.message,
             'error thrown from kafka client send'
           );
@@ -374,9 +371,9 @@ describe('instrumentation-kafkajs', () => {
         });
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(
+        strictEqual(
           span.attributes['attribute-from-hook'],
           'testing message content'
         );
@@ -409,9 +406,9 @@ describe('instrumentation-kafkajs', () => {
         });
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
+        strictEqual(span.status.code, SpanStatusCode.UNSET);
       });
     });
   });
@@ -472,21 +469,18 @@ describe('instrumentation-kafkajs', () => {
         await runConfig?.eachMessage!(payload);
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(span.name, 'topic-name-1');
-        assert.strictEqual(span.parentSpanId, undefined);
-        assert.strictEqual(span.kind, SpanKind.CONSUMER);
-        assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
-        assert.strictEqual(span.attributes[SEMATTRS_MESSAGING_SYSTEM], 'kafka');
-        assert.strictEqual(
+        strictEqual(span.name, 'topic-name-1');
+        strictEqual(span.parentSpanId, undefined);
+        strictEqual(span.kind, SpanKind.CONSUMER);
+        strictEqual(span.status.code, SpanStatusCode.UNSET);
+        strictEqual(span.attributes[SEMATTRS_MESSAGING_SYSTEM], 'kafka');
+        strictEqual(
           span.attributes[SEMATTRS_MESSAGING_DESTINATION],
           'topic-name-1'
         );
-        assert.strictEqual(
-          span.attributes[SEMATTRS_MESSAGING_OPERATION],
-          'process'
-        );
+        strictEqual(span.attributes[SEMATTRS_MESSAGING_OPERATION], 'process');
       });
 
       it('consumer eachMessage with non promise return value', async () => {
@@ -500,7 +494,7 @@ describe('instrumentation-kafkajs', () => {
         await runConfig?.eachMessage!(payload);
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
       });
     });
 
@@ -532,9 +526,9 @@ describe('instrumentation-kafkajs', () => {
         await runConfig?.eachMessage!(payload);
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(
+        strictEqual(
           span.attributes['attribute key from hook'],
           payload.message.value?.toString()
         );
@@ -567,7 +561,7 @@ describe('instrumentation-kafkajs', () => {
 
         const spans = getTestSpans();
         // span should still be created
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
       });
     });
 
@@ -597,13 +591,13 @@ describe('instrumentation-kafkajs', () => {
         } catch (e) {
           exception = e;
         }
-        assert.deepStrictEqual(exception, errorToThrow);
+        deepStrictEqual(exception, errorToThrow);
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-        assert.strictEqual(
+        strictEqual(span.status.code, SpanStatusCode.ERROR);
+        strictEqual(
           span.status.message,
           'error thrown from eachMessage callback'
         );
@@ -626,13 +620,13 @@ describe('instrumentation-kafkajs', () => {
         } catch (e) {
           exception = e;
         }
-        assert.deepStrictEqual(exception, objectToThrow);
+        deepStrictEqual(exception, objectToThrow);
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-        assert.strictEqual(span.status.message, undefined);
+        strictEqual(span.status.code, SpanStatusCode.ERROR);
+        strictEqual(span.status.message, undefined);
       });
 
       it('throwing non object', async () => {
@@ -649,13 +643,13 @@ describe('instrumentation-kafkajs', () => {
         } catch (e) {
           exception = e;
         }
-        assert.strictEqual(exception, undefined);
+        strictEqual(exception, undefined);
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
+        strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-        assert.strictEqual(span.status.message, undefined);
+        strictEqual(span.status.code, SpanStatusCode.ERROR);
+        strictEqual(span.status.message, undefined);
       });
     });
 
@@ -676,15 +670,12 @@ describe('instrumentation-kafkajs', () => {
         await runConfig?.eachBatch!(payload);
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 3);
+        strictEqual(spans.length, 3);
         spans.forEach(span => {
-          assert.strictEqual(span.name, 'topic-name-1');
-          assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
-          assert.strictEqual(
-            span.attributes[SEMATTRS_MESSAGING_SYSTEM],
-            'kafka'
-          );
-          assert.strictEqual(
+          strictEqual(span.name, 'topic-name-1');
+          strictEqual(span.status.code, SpanStatusCode.UNSET);
+          strictEqual(span.attributes[SEMATTRS_MESSAGING_SYSTEM], 'kafka');
+          strictEqual(
             span.attributes[SEMATTRS_MESSAGING_DESTINATION],
             'topic-name-1'
           );
@@ -692,26 +683,20 @@ describe('instrumentation-kafkajs', () => {
 
         const [recvSpan, msg1Span, msg2Span] = spans;
 
-        assert.strictEqual(recvSpan.parentSpanId, undefined);
-        assert.strictEqual(
+        strictEqual(recvSpan.parentSpanId, undefined);
+        strictEqual(
           recvSpan.attributes[SEMATTRS_MESSAGING_OPERATION],
           'receive'
         );
 
-        assert.strictEqual(
-          msg1Span.parentSpanId,
-          recvSpan.spanContext().spanId
-        );
-        assert.strictEqual(
+        strictEqual(msg1Span.parentSpanId, recvSpan.spanContext().spanId);
+        strictEqual(
           msg1Span.attributes[SEMATTRS_MESSAGING_OPERATION],
           'process'
         );
 
-        assert.strictEqual(
-          msg2Span.parentSpanId,
-          recvSpan.spanContext().spanId
-        );
-        assert.strictEqual(
+        strictEqual(msg2Span.parentSpanId, recvSpan.spanContext().spanId);
+        strictEqual(
           msg2Span.attributes[SEMATTRS_MESSAGING_OPERATION],
           'process'
         );
@@ -730,7 +715,7 @@ describe('instrumentation-kafkajs', () => {
         await runConfig?.eachBatch!(payload);
 
         const spans = getTestSpans();
-        assert.strictEqual(spans.length, 3);
+        strictEqual(spans.length, 3);
       });
     });
   });
@@ -770,7 +755,7 @@ describe('instrumentation-kafkajs', () => {
         }
       );
 
-      assert.strictEqual(messagesSent.length, 1);
+      strictEqual(messagesSent.length, 1);
       const consumerPayload: EachMessagePayload = {
         topic: 'topic-name-1',
         partition: 0,
@@ -788,18 +773,15 @@ describe('instrumentation-kafkajs', () => {
       await runConfig?.eachMessage!(consumerPayload);
 
       const spans = getTestSpans();
-      assert.strictEqual(spans.length, 2);
+      strictEqual(spans.length, 2);
       const [producerSpan, consumerSpan] = spans;
-      assert.strictEqual(
+      strictEqual(
         consumerSpan.spanContext().traceId,
         producerSpan.spanContext().traceId
       );
-      assert.strictEqual(
-        consumerSpan.parentSpanId,
-        producerSpan.spanContext().spanId
-      );
-      assert.strictEqual(callbackBaggage!.getAllEntries().length, 1);
-      assert.strictEqual(callbackBaggage!.getEntry('foo')?.value, 'bar');
+      strictEqual(consumerSpan.parentSpanId, producerSpan.spanContext().spanId);
+      strictEqual(callbackBaggage!.getAllEntries().length, 1);
+      strictEqual(callbackBaggage!.getEntry('foo')?.value, 'bar');
     });
 
     it('context injected in producer is extracted as links in batch consumer', async () => {
@@ -816,7 +798,7 @@ describe('instrumentation-kafkajs', () => {
         ],
       });
 
-      assert.strictEqual(messagesSent.length, 1);
+      strictEqual(messagesSent.length, 1);
       const consumerPayload: EachBatchPayload = {
         batch: {
           topic: 'topic-name-1',
@@ -838,31 +820,31 @@ describe('instrumentation-kafkajs', () => {
       await runConfig?.eachBatch!(consumerPayload);
 
       const spans = getTestSpans();
-      assert.strictEqual(spans.length, 3);
+      strictEqual(spans.length, 3);
       const [producerSpan, receivingSpan, processingSpan] = spans;
 
       // processing span should be the child of receiving span and link to relevant producer
-      assert.strictEqual(
+      strictEqual(
         processingSpan.spanContext().traceId,
         receivingSpan.spanContext().traceId
       );
-      assert.strictEqual(
+      strictEqual(
         processingSpan.parentSpanId,
         receivingSpan.spanContext().spanId
       );
-      assert.strictEqual(processingSpan.links.length, 1);
-      assert.strictEqual(
+      strictEqual(processingSpan.links.length, 1);
+      strictEqual(
         processingSpan.links[0].context.traceId,
         producerSpan.spanContext().traceId
       );
-      assert.strictEqual(
+      strictEqual(
         processingSpan.links[0].context.spanId,
         producerSpan.spanContext().spanId
       );
 
       // receiving span should start a new trace
-      assert.strictEqual(receivingSpan.parentSpanId, undefined);
-      assert.notStrictEqual(
+      strictEqual(receivingSpan.parentSpanId, undefined);
+      notStrictEqual(
         receivingSpan.spanContext().traceId,
         producerSpan.spanContext().traceId
       );
@@ -871,7 +853,7 @@ describe('instrumentation-kafkajs', () => {
 
   describe('bufferTextMapGetter', () => {
     it('is possible to retrieve keys case insensitively', () => {
-      assert.strictEqual(
+      strictEqual(
         bufferTextMapGetter.get(
           {
             'X-B3-Trace-Id': '123',

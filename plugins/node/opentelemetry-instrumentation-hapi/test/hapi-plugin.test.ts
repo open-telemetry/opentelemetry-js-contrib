@@ -21,7 +21,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
+import { strictEqual, deepStrictEqual, notStrictEqual } from 'assert';
 import { getPlugin } from './plugin';
 const plugin = getPlugin();
 import * as hapi from '@hapi/hapi';
@@ -121,7 +121,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
         },
       });
       await server.start();
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -130,20 +130,20 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
             method: 'GET',
             url: '/test',
           });
-          assert.strictEqual(res.statusCode, 200);
+          strictEqual(res.statusCode, 200);
 
           rootSpan.end();
-          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+          deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
           const requestHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'multipleVersionPlugin: route - /test');
-          assert.notStrictEqual(requestHandlerSpan, undefined);
-          assert.strictEqual(
+          notStrictEqual(requestHandlerSpan, undefined);
+          strictEqual(
             requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
             HapiLayerType.PLUGIN
           );
-          assert.strictEqual(
+          strictEqual(
             requestHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
             'multipleVersionPlugin'
           );
@@ -151,7 +151,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
           const exportedRootSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'rootSpan');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          notStrictEqual(exportedRootSpan, undefined);
         }
       );
     });
@@ -175,7 +175,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
         },
       ]);
       await server.start();
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -184,38 +184,38 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
             method: 'GET',
             url: '/test',
           });
-          assert.strictEqual(res1.statusCode, 200);
+          strictEqual(res1.statusCode, 200);
           const res2 = await server.inject({
             method: 'GET',
             url: '/hello',
           });
-          assert.strictEqual(res2.statusCode, 200);
+          strictEqual(res2.statusCode, 200);
 
           rootSpan.end();
 
-          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+          deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
 
           const firstHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'multipleVersionPlugin: route - /test');
-          assert.notStrictEqual(firstHandlerSpan, undefined);
-          assert.strictEqual(
+          notStrictEqual(firstHandlerSpan, undefined);
+          strictEqual(
             firstHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
             HapiLayerType.PLUGIN
           );
-          assert.strictEqual(
+          strictEqual(
             firstHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
             'multipleVersionPlugin'
           );
           const secondHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'simplePlugin: route - /hello');
-          assert.notStrictEqual(secondHandlerSpan, undefined);
-          assert.strictEqual(
+          notStrictEqual(secondHandlerSpan, undefined);
+          strictEqual(
             secondHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
             HapiLayerType.PLUGIN
           );
-          assert.strictEqual(
+          strictEqual(
             secondHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
             'simplePlugin'
           );
@@ -223,7 +223,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
           const exportedRootSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'rootSpan');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          notStrictEqual(exportedRootSpan, undefined);
         }
       );
     });
@@ -233,7 +233,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
 
       await server.register([packagePlugin, simplePlugin]);
       await server.start();
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -242,38 +242,38 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
             method: 'GET',
             url: '/package',
           });
-          assert.strictEqual(res1.statusCode, 200);
+          strictEqual(res1.statusCode, 200);
           const res2 = await server.inject({
             method: 'GET',
             url: '/hello',
           });
-          assert.strictEqual(res2.statusCode, 200);
+          strictEqual(res2.statusCode, 200);
 
           rootSpan.end();
 
-          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+          deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
 
           const firstHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'plugin-by-package: route - /package');
-          assert.notStrictEqual(firstHandlerSpan, undefined);
-          assert.strictEqual(
+          notStrictEqual(firstHandlerSpan, undefined);
+          strictEqual(
             firstHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
             HapiLayerType.PLUGIN
           );
-          assert.strictEqual(
+          strictEqual(
             firstHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
             'plugin-by-package'
           );
           const secondHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'simplePlugin: route - /hello');
-          assert.notStrictEqual(secondHandlerSpan, undefined);
-          assert.strictEqual(
+          notStrictEqual(secondHandlerSpan, undefined);
+          strictEqual(
             secondHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
             HapiLayerType.PLUGIN
           );
-          assert.strictEqual(
+          strictEqual(
             secondHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
             'simplePlugin'
           );
@@ -281,7 +281,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
           const exportedRootSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'rootSpan');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          notStrictEqual(exportedRootSpan, undefined);
         }
       );
     });
@@ -306,7 +306,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
         },
       ]);
       await server.start();
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -315,26 +315,26 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
             method: 'GET',
             url: '/test',
           });
-          assert.strictEqual(res1.statusCode, 200);
+          strictEqual(res1.statusCode, 200);
           const res2 = await server.inject({
             method: 'GET',
             url: '/test2',
           });
-          assert.strictEqual(res2.statusCode, 200);
+          strictEqual(res2.statusCode, 200);
 
           rootSpan.end();
 
-          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+          deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
 
           const firstHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'multipleVersionPlugin: route - /test');
-          assert.notStrictEqual(firstHandlerSpan, undefined);
-          assert.strictEqual(
+          notStrictEqual(firstHandlerSpan, undefined);
+          strictEqual(
             firstHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
             HapiLayerType.PLUGIN
           );
-          assert.strictEqual(
+          strictEqual(
             firstHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
             'multipleVersionPlugin'
           );
@@ -343,12 +343,12 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
             .find(
               span => span.name === 'multipleVersionPlugin: route - /test2'
             );
-          assert.notStrictEqual(secondHandlerSpan, undefined);
-          assert.strictEqual(
+          notStrictEqual(secondHandlerSpan, undefined);
+          strictEqual(
             secondHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
             HapiLayerType.PLUGIN
           );
-          assert.strictEqual(
+          strictEqual(
             secondHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
             'multipleVersionPlugin'
           );
@@ -356,7 +356,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
           const exportedRootSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'rootSpan');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          notStrictEqual(exportedRootSpan, undefined);
         }
       );
     });
@@ -369,7 +369,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
           plugin: packagePlugin,
         });
         await server.start();
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+        strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
         await context.with(
           trace.setSpan(context.active(), rootSpan),
@@ -378,22 +378,22 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
               method: 'GET',
               url: '/package',
             });
-            assert.strictEqual(res.statusCode, 200);
+            strictEqual(res.statusCode, 200);
 
             rootSpan.end();
-            assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+            deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
             const requestHandlerSpan = memoryExporter
               .getFinishedSpans()
               .find(
                 span => span.name === 'plugin-by-package: route - /package'
               );
-            assert.notStrictEqual(requestHandlerSpan, undefined);
-            assert.strictEqual(
+            notStrictEqual(requestHandlerSpan, undefined);
+            strictEqual(
               requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
               HapiLayerType.PLUGIN
             );
-            assert.strictEqual(
+            strictEqual(
               requestHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
               'plugin-by-package'
             );
@@ -401,7 +401,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
             const exportedRootSpan = memoryExporter
               .getFinishedSpans()
               .find(span => span.name === 'rootSpan');
-            assert.notStrictEqual(exportedRootSpan, undefined);
+            notStrictEqual(exportedRootSpan, undefined);
           }
         );
       });
@@ -414,7 +414,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
           plugin: nestedPackagePlugin as any,
         });
         await server.start();
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+        strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
         await context.with(
           trace.setSpan(context.active(), rootSpan),
@@ -423,22 +423,22 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
               method: 'GET',
               url: '/package',
             });
-            assert.strictEqual(res.statusCode, 200);
+            strictEqual(res.statusCode, 200);
 
             rootSpan.end();
-            assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+            deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
             const requestHandlerSpan = memoryExporter
               .getFinishedSpans()
               .find(
                 span => span.name === 'plugin-by-package: route - /package'
               );
-            assert.notStrictEqual(requestHandlerSpan, undefined);
-            assert.strictEqual(
+            notStrictEqual(requestHandlerSpan, undefined);
+            strictEqual(
               requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
               HapiLayerType.PLUGIN
             );
-            assert.strictEqual(
+            strictEqual(
               requestHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
               'plugin-by-package'
             );
@@ -446,7 +446,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
             const exportedRootSpan = memoryExporter
               .getFinishedSpans()
               .find(span => span.name === 'rootSpan');
-            assert.notStrictEqual(exportedRootSpan, undefined);
+            notStrictEqual(exportedRootSpan, undefined);
           }
         );
       });
@@ -458,7 +458,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
         // Suppress this ts error due the Hapi plugin type definition is incomplete. server.register can accept nested plugin. See reference https://hapi.dev/api/?v=20.0.0#-routeoptionshandler
         await server.register(packagePlugin);
         await server.start();
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+        strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
         await context.with(
           trace.setSpan(context.active(), rootSpan),
@@ -467,22 +467,22 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
               method: 'GET',
               url: '/package',
             });
-            assert.strictEqual(res.statusCode, 200);
+            strictEqual(res.statusCode, 200);
 
             rootSpan.end();
-            assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+            deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
             const requestHandlerSpan = memoryExporter
               .getFinishedSpans()
               .find(
                 span => span.name === 'plugin-by-package: route - /package'
               );
-            assert.notStrictEqual(requestHandlerSpan, undefined);
-            assert.strictEqual(
+            notStrictEqual(requestHandlerSpan, undefined);
+            strictEqual(
               requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
               HapiLayerType.PLUGIN
             );
-            assert.strictEqual(
+            strictEqual(
               requestHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
               'plugin-by-package'
             );
@@ -490,7 +490,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
             const exportedRootSpan = memoryExporter
               .getFinishedSpans()
               .find(span => span.name === 'rootSpan');
-            assert.notStrictEqual(exportedRootSpan, undefined);
+            notStrictEqual(exportedRootSpan, undefined);
           }
         );
       });

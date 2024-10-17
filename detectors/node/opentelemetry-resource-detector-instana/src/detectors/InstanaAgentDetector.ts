@@ -24,7 +24,7 @@ import {
   SEMRESATTRS_PROCESS_PID,
   SEMRESATTRS_SERVICE_INSTANCE_ID,
 } from '@opentelemetry/semantic-conventions';
-import * as http from 'http';
+import { request } from 'http';
 
 class InstanaAgentDetector implements DetectorSync {
   readonly INSTANA_AGENT_DEFAULT_HOST = 'localhost';
@@ -114,7 +114,7 @@ class InstanaAgentDetector implements DetectorSync {
         timeout: agentTimeoutMs,
       };
 
-      const req = http.request(opts, res => {
+      const req = request(opts, res => {
         res.setEncoding('utf8');
         let rawData = '';
 

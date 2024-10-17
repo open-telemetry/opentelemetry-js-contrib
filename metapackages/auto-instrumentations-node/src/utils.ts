@@ -65,7 +65,7 @@ import {
   awsEksDetector,
   awsLambdaDetector,
 } from '@opentelemetry/resource-detector-aws';
-import { containerDetector } from '@opentelemetry/resource-detector-container';
+import { ContainerDetector } from '@opentelemetry/resource-detector-container';
 import { gcpDetector } from '@opentelemetry/resource-detector-gcp';
 import {
   Detector,
@@ -92,6 +92,7 @@ const RESOURCE_DETECTOR_ALIBABA = 'alibaba';
 const RESOURCE_DETECTOR_AWS = 'aws';
 const RESOURCE_DETECTOR_AZURE = 'azure';
 const RESOURCE_DETECTOR_GCP = 'gcp';
+const containerDetector = new ContainerDetector();
 
 const InstrumentationMap = {
   '@opentelemetry/instrumentation-amqplib': AmqplibInstrumentation,

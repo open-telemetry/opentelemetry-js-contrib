@@ -17,13 +17,13 @@
 import * as sinon from 'sinon';
 import * as assert from 'assert';
 
-import { containerDetector } from '../src';
+import {  ContainerDetector } from '../src';
 import {
   assertContainerResource,
   assertEmptyResource,
 } from '@opentelemetry/contrib-test-utils';
 
-import { ContainerDetector } from '../src';
+const containerDetector = new ContainerDetector;
 
 describe('ContainerDetector', () => {
   let readStub: sinon.SinonStub;

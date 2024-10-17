@@ -21,7 +21,7 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/sdk-trace-base';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
-import * as assert from 'assert';
+import { strictEqual, equal, deepStrictEqual } from 'assert';
 import * as sinon from 'sinon';
 import { UserInteractionInstrumentation } from '../src';
 import { UserInteractionInstrumentationConfig } from '../src/types';
@@ -122,28 +122,28 @@ describe('UserInteractionInstrumentation', () => {
       document.body.addEventListener('bodyEvent2', listener);
       document.addEventListener('docEvent', listener);
       document.body.dispatchEvent(new Event('bodyEvent'));
-      assert.strictEqual(called, true);
+      strictEqual(called, true);
       called = false;
       // Remove first callback, second type should still fire
       document.body.removeEventListener('bodyEvent', listener);
       document.body.dispatchEvent(new Event('bodyEvent'));
-      assert.strictEqual(called, false);
+      strictEqual(called, false);
       document.body.dispatchEvent(new Event('bodyEvent2'));
-      assert.strictEqual(called, true);
+      strictEqual(called, true);
       called = false;
       // Remove doc callback, body 2 should still fire
       document.removeEventListener('docEvent', listener);
       document.dispatchEvent(new Event('docEvent'));
-      assert.strictEqual(called, false);
+      strictEqual(called, false);
       document.body.dispatchEvent(new Event('bodyEvent2'));
-      assert.strictEqual(called, true);
+      strictEqual(called, true);
       called = false;
       // Finally, remove the last one and nothing should fire
       document.body.removeEventListener('bodyEvent2', listener);
       document.body.dispatchEvent(new Event('bodyEvent'));
       document.body.dispatchEvent(new Event('bodyEvent2'));
       document.dispatchEvent(new Event('docEvent'));
-      assert.strictEqual(called, false);
+      strictEqual(called, false);
     });
 
     it('should not double-register a listener', () => {
@@ -155,12 +155,12 @@ describe('UserInteractionInstrumentation', () => {
       document.body.addEventListener('bodyEvent', listener);
       document.body.addEventListener('bodyEvent', listener);
       document.body.dispatchEvent(new Event('bodyEvent'));
-      assert.strictEqual(callCount, 1);
+      strictEqual(callCount, 1);
       // now ensure remove still works
       callCount = 0;
       document.body.removeEventListener('bodyEvent', listener);
       document.body.dispatchEvent(new Event('bodyEvent'));
-      assert.strictEqual(callCount, 0);
+      strictEqual(callCount, 0);
     });
 
     it('should handle once-only callbacks', () => {
@@ -172,16 +172,16 @@ describe('UserInteractionInstrumentation', () => {
       document.body.addEventListener('bodyEvent', listener, { once: true });
       document.body.addEventListener('bodyEvent', listener); // considered a double-register
       document.body.dispatchEvent(new Event('bodyEvent'));
-      assert.strictEqual(callCount, 1);
+      strictEqual(callCount, 1);
       // now that it's been dispatched once, it's been removed
       document.body.dispatchEvent(new Event('bodyEvent'));
-      assert.strictEqual(callCount, 1);
+      strictEqual(callCount, 1);
       // should be able to re-add
       document.body.addEventListener('bodyEvent', listener);
       document.body.dispatchEvent(new Event('bodyEvent'));
-      assert.strictEqual(callCount, 2);
+      strictEqual(callCount, 2);
       document.body.dispatchEvent(new Event('bodyEvent'));
-      assert.strictEqual(callCount, 3);
+      strictEqual(callCount, 3);
     });
 
     it('should handle EventListener callbacks', () => {
@@ -195,16 +195,16 @@ describe('UserInteractionInstrumentation', () => {
       };
       document.body.addEventListener('EventListenerEvent', listener);
       document.body.dispatchEvent(new Event('EventListenerEvent'));
-      assert.strictEqual(callCount, 1);
+      strictEqual(callCount, 1);
       callCount = 0;
       document.body.removeEventListener('EventListenerEvent', listener);
       document.body.dispatchEvent(new Event('EventListenerEvent'));
-      assert.strictEqual(callCount, 0);
+      strictEqual(callCount, 0);
     });
 
     it('should handle task without async operation', () => {
       fakeClickInteraction();
-      assert.equal(exportSpy.args.length, 1, 'should export one span');
+      equal(exportSpy.args.length, 1, 'should export one span');
       const spanClick = exportSpy.args[0][0][0];
       assertClickSpan(spanClick);
     });
@@ -214,7 +214,7 @@ describe('UserInteractionInstrumentation', () => {
         originalSetTimeout(() => {
           const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
 
-          assert.equal(exportSpy.args.length, 1, 'should export one span');
+          equal(exportSpy.args.length, 1, 'should export one span');
           assertClickSpan(spanClick);
           done();
         });
@@ -234,7 +234,7 @@ describe('UserInteractionInstrumentation', () => {
       };
       fakeClickInteraction(() => {
         originalSetTimeout(() => {
-          assert.equal(exportSpy.args.length, 0, 'should NOT export any span');
+          equal(exportSpy.args.length, 0, 'should NOT export any span');
           done();
         });
       }, btn);
@@ -257,7 +257,7 @@ describe('UserInteractionInstrumentation', () => {
       };
       fakeClickInteraction(() => {
         originalSetTimeout(() => {
-          assert.equal(exportSpy.args.length, 0, 'should NOT export any span');
+          equal(exportSpy.args.length, 0, 'should NOT export any span');
           done();
         });
       }, btn);
@@ -271,7 +271,7 @@ describe('UserInteractionInstrumentation', () => {
 
       fakeClickInteraction(() => {
         originalSetTimeout(() => {
-          assert.equal(exportSpy.args.length, 0, 'should NOT export any span');
+          equal(exportSpy.args.length, 0, 'should NOT export any span');
           done();
         });
       });
@@ -289,24 +289,21 @@ describe('UserInteractionInstrumentation', () => {
           sandbox.clock.tick(1000);
         }).then(() => {
           originalSetTimeout(() => {
-            assert.equal(exportSpy.args.length, 2, 'should export 2 spans');
+            equal(exportSpy.args.length, 2, 'should export 2 spans');
 
             const spanXhr: tracing.ReadableSpan = exportSpy.args[0][0][0];
             const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
-            assert.equal(
+            equal(
               spanXhr.parentSpanId,
               spanClick.spanContext().spanId,
               'xhr span has wrong parent'
             );
-            assert.equal(
-              spanClick.name,
-              `Navigation: ${location.pathname}#foo=bar1`
-            );
+            equal(spanClick.name, `Navigation: ${location.pathname}#foo=bar1`);
 
             const attributes = spanClick.attributes;
-            assert.equal(attributes.event_type, 'click');
-            assert.equal(attributes.target_element, 'BUTTON');
-            assert.equal(attributes.target_xpath, '//*[@id="testBtn"]');
+            equal(attributes.event_type, 'click');
+            equal(attributes.target_element, 'BUTTON');
+            equal(attributes.target_xpath, '//*[@id="testBtn"]');
 
             done();
           });
@@ -320,11 +317,11 @@ describe('UserInteractionInstrumentation', () => {
           sandbox.clock.tick(1000);
         }).then(() => {
           originalSetTimeout(() => {
-            assert.equal(exportSpy.args.length, 2, 'should export 2 spans');
+            equal(exportSpy.args.length, 2, 'should export 2 spans');
 
             const spanXhr: tracing.ReadableSpan = exportSpy.args[0][0][0];
             const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
-            assert.equal(
+            equal(
               spanXhr.parentSpanId,
               spanClick.spanContext().spanId,
               'xhr span has wrong parent'
@@ -332,7 +329,7 @@ describe('UserInteractionInstrumentation', () => {
             assertClickSpan(spanClick);
 
             const attributes = spanXhr.attributes;
-            assert.equal(
+            equal(
               attributes['http.url'],
               'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
             );
@@ -362,13 +359,13 @@ describe('UserInteractionInstrumentation', () => {
         // remove added listener so we don't pollute other tests
         document.body.removeEventListener('click', listener1);
       }
-      assert.strictEqual(callCount, 2);
-      assert.strictEqual(exportSpy.args.length, 2);
-      assert.strictEqual(
+      strictEqual(callCount, 2);
+      strictEqual(exportSpy.args.length, 2);
+      strictEqual(
         exportSpy.args[0][0][0].traceId,
         exportSpy.args[1][0][0].traceId
       );
-      assert.strictEqual(
+      strictEqual(
         exportSpy.args[0][0][0].spanId,
         exportSpy.args[1][0][0].spanContext().parentSpanId
       );
@@ -398,7 +395,7 @@ describe('UserInteractionInstrumentation', () => {
       }, btn3);
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
-        assert.equal(exportSpy.args.length, 6, 'should export 6 spans');
+        equal(exportSpy.args.length, 6, 'should export 6 spans');
 
         const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
         const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
@@ -411,17 +408,17 @@ describe('UserInteractionInstrumentation', () => {
         assertClickSpan(span2, 'btn2');
         assertClickSpan(span3, 'btn3');
 
-        assert.strictEqual(
+        strictEqual(
           span1.spanContext().spanId,
           span4.parentSpanId,
           'span4 has wrong parent'
         );
-        assert.strictEqual(
+        strictEqual(
           span2.spanContext().spanId,
           span5.parentSpanId,
           'span5 has wrong parent'
         );
-        assert.strictEqual(
+        strictEqual(
           span3.spanContext().spanId,
           span6.parentSpanId,
           'span6 has wrong parent'
@@ -466,7 +463,7 @@ describe('UserInteractionInstrumentation', () => {
 
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
-        assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
+        equal(exportSpy.args.length, 4, 'should export 4 spans');
 
         const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
         const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
@@ -476,12 +473,12 @@ describe('UserInteractionInstrumentation', () => {
         assertClickSpan(span1, 'btn1');
         assertClickSpan(span2, 'btn2');
 
-        assert.strictEqual(
+        strictEqual(
           span1.spanContext().spanId,
           span3.parentSpanId,
           'span3 has wrong parent'
         );
-        assert.strictEqual(
+        strictEqual(
           span2.spanContext().spanId,
           span4.parentSpanId,
           'span4 has wrong parent'
@@ -526,18 +523,18 @@ describe('UserInteractionInstrumentation', () => {
 
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
-        assert.strictEqual(
+        strictEqual(
           listenerThis[0],
           root,
           'this inside event listener matches listened target (0)'
         );
-        assert.strictEqual(
+        strictEqual(
           listenerThis[1],
           root,
           'this inside event listener matches listened target (1)'
         );
 
-        assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
+        equal(exportSpy.args.length, 4, 'should export 4 spans');
 
         const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
         const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
@@ -547,12 +544,12 @@ describe('UserInteractionInstrumentation', () => {
         assertClickSpan(span1, 'btn1');
         assertClickSpan(span2, 'btn2');
 
-        assert.strictEqual(
+        strictEqual(
           span1.spanContext().spanId,
           span3.parentSpanId,
           'span3 has wrong parent'
         );
-        assert.strictEqual(
+        strictEqual(
           span2.spanContext().spanId,
           span4.parentSpanId,
           'span4 has wrong parent'
@@ -564,11 +561,7 @@ describe('UserInteractionInstrumentation', () => {
 
     it('should not create spans from unknown events', () => {
       fakeEventInteraction('play');
-      assert.strictEqual(
-        exportSpy.args.length,
-        0,
-        'should not export any spans'
-      );
+      strictEqual(exportSpy.args.length, 0, 'should not export any spans');
     });
 
     it('should export spans for configured event types', () => {
@@ -577,7 +570,7 @@ describe('UserInteractionInstrumentation', () => {
       });
 
       fakeEventInteraction('play');
-      assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+      strictEqual(exportSpy.args.length, 1, 'should export one span');
       const span = exportSpy.args[0][0][0];
       assertInteractionSpan(span, { name: 'play' });
     });
@@ -588,11 +581,7 @@ describe('UserInteractionInstrumentation', () => {
       });
 
       fakeClickInteraction();
-      assert.strictEqual(
-        exportSpy.args.length,
-        0,
-        'should not export any spans'
-      );
+      strictEqual(exportSpy.args.length, 0, 'should not export any spans');
     });
 
     it('should call shouldPreventSpanCreation with proper arguments', () => {
@@ -606,7 +595,7 @@ describe('UserInteractionInstrumentation', () => {
       element.click();
 
       const span = exportSpy.args[0][0][0];
-      assert.deepStrictEqual(shouldPreventSpanCreation.args, [
+      deepStrictEqual(shouldPreventSpanCreation.args, [
         ['click', element, span],
       ]);
     });
@@ -622,11 +611,7 @@ describe('UserInteractionInstrumentation', () => {
         element.addEventListener('click', () => {});
         element.click();
 
-        assert.strictEqual(
-          exportSpy.args.length,
-          0,
-          'should not export any spans'
-        );
+        strictEqual(exportSpy.args.length, 0, 'should not export any spans');
       });
     });
 
@@ -641,7 +626,7 @@ describe('UserInteractionInstrumentation', () => {
         element.addEventListener('click', () => {});
         element.click();
 
-        assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+        strictEqual(exportSpy.args.length, 1, 'should export one span');
       });
     });
 
@@ -663,77 +648,65 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should handle disable', () => {
-      assert.strictEqual(
+      strictEqual(
         isWrapped(HTMLElement.prototype.addEventListener),
         true,
         'addEventListener should be wrapped'
       );
-      assert.strictEqual(
+      strictEqual(
         isWrapped(HTMLElement.prototype.removeEventListener),
         true,
         'removeEventListener should be wrapped'
       );
 
-      assert.strictEqual(
+      strictEqual(
         isWrapped(history.replaceState),
         true,
         'replaceState should be wrapped'
       );
-      assert.strictEqual(
+      strictEqual(
         isWrapped(history.pushState),
         true,
         'pushState should be wrapped'
       );
-      assert.strictEqual(
-        isWrapped(history.back),
-        true,
-        'back should be wrapped'
-      );
-      assert.strictEqual(
+      strictEqual(isWrapped(history.back), true, 'back should be wrapped');
+      strictEqual(
         isWrapped(history.forward),
         true,
         'forward should be wrapped'
       );
-      assert.strictEqual(isWrapped(history.go), true, 'go should be wrapped');
+      strictEqual(isWrapped(history.go), true, 'go should be wrapped');
 
       userInteractionInstrumentation.disable();
 
-      assert.strictEqual(
+      strictEqual(
         isWrapped(HTMLElement.prototype.addEventListener),
         false,
         'addEventListener should be unwrapped'
       );
-      assert.strictEqual(
+      strictEqual(
         isWrapped(HTMLElement.prototype.removeEventListener),
         false,
         'removeEventListener should be unwrapped'
       );
 
-      assert.strictEqual(
+      strictEqual(
         isWrapped(history.replaceState),
         false,
         'replaceState should be unwrapped'
       );
-      assert.strictEqual(
+      strictEqual(
         isWrapped(history.pushState),
         false,
         'pushState should be unwrapped'
       );
-      assert.strictEqual(
-        isWrapped(history.back),
-        false,
-        'back should be unwrapped'
-      );
-      assert.strictEqual(
+      strictEqual(isWrapped(history.back), false, 'back should be unwrapped');
+      strictEqual(
         isWrapped(history.forward),
         false,
         'forward should be unwrapped'
       );
-      assert.strictEqual(
-        isWrapped(history.go),
-        false,
-        'go should be unwrapped'
-      );
+      strictEqual(isWrapped(history.go), false, 'go should be unwrapped');
     });
 
     describe('simulate IE', () => {
@@ -767,7 +740,7 @@ describe('UserInteractionInstrumentation', () => {
          */
 
         fakeClickInteraction();
-        assert.equal(exportSpy.args.length, 1, 'should export one span');
+        equal(exportSpy.args.length, 1, 'should export one span');
         const spanClick = exportSpy.args[0][0][0];
         assertClickSpan(spanClick);
       });
