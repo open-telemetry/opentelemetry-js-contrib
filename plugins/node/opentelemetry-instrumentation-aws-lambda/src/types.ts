@@ -41,4 +41,5 @@ export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
   disableAwsContextPropagation?: boolean;
   eventContextExtractor?: EventContextExtractor;
   lambdaHandler?: string;
+  lambdaStartTime?: number;
 }

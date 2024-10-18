@@ -42,5 +42,5 @@ jobs:
           close-pr-message: 'This issue was closed because no owner or sponsor has been found after 14 days'
           stale-pr-label: pkg-status:unmaintained:autoclose-scheduled
           only-labels: pkg-status:unmaintained
-          exempt-pr-labels: bug,has:sponsor,type:semconv-update,dependencies,autorelease:pending
+          exempt-pr-labels: 'bug,has:sponsor,type:semconv-update,dependencies,autorelease: pending'
           remove-stale-when-updated: false

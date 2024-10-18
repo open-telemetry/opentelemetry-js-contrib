@@ -30,6 +30,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
+import { DataPoint, Histogram } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import type * as pg from 'pg';
 import * as sinon from 'sinon';
@@ -50,7 +51,12 @@ import {
   SEMATTRS_NET_PEER_PORT,
   SEMATTRS_DB_USER,
   DBSYSTEMVALUES_POSTGRESQL,
+  ATTR_ERROR_TYPE,
 } from '@opentelemetry/semantic-conventions';
+import {
+  METRIC_DB_CLIENT_OPERATION_DURATION,
+  ATTR_DB_OPERATION_NAME,
+} from '@opentelemetry/semantic-conventions/incubating';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -956,6 +962,62 @@ describe('pg', () => {
         assert.ok(res);
         const spans = memoryExporter.getFinishedSpans();
         assert.strictEqual(spans.length, 0);
+        done();
+      });
+    });
+  });
+
+  describe('pg metrics', () => {
+    let metricReader: testUtils.TestMetricReader;
+
+    beforeEach(() => {
+      metricReader = testUtils.initMeterProvider(instrumentation);
+    });
+
+    it('should generate db.client.operation.duration metric', done => {
+      client.query('SELECT NOW()', async (_, ret) => {
+        assert.ok(ret, 'query should be executed');
+
+        const { resourceMetrics, errors } = await metricReader.collect();
+        assert.deepEqual(
+          errors,
+          [],
+          'expected no errors from the callback during metric collection'
+        );
+
+        const metrics = resourceMetrics.scopeMetrics[0].metrics;
+        assert.strictEqual(
+          metrics[0].descriptor.name,
+          METRIC_DB_CLIENT_OPERATION_DURATION
+        );
+        assert.strictEqual(
+          metrics[0].descriptor.description,
+          'Duration of database client operations.'
+        );
+        const dataPoint = metrics[0].dataPoints[0];
+        assert.strictEqual(
+          dataPoint.attributes[SEMATTRS_DB_SYSTEM],
+          DBSYSTEMVALUES_POSTGRESQL
+        );
+        assert.strictEqual(
+          dataPoint.attributes[ATTR_DB_OPERATION_NAME],
+          'SELECT'
+        );
+        assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], undefined);
+
+        const v = (dataPoint as DataPoint<Histogram>).value;
+        v.min = v.min ? v.min : 0;
+        v.max = v.max ? v.max : 0;
+        assert.equal(
+          v.min > 0,
+          true,
+          'expect min value for Histogram to be greater than 0'
+        );
+        assert.equal(
+          v.max > 0,
+          true,
+          'expect max value for Histogram to be greater than 0'
+        );
         done();
       });
     });
