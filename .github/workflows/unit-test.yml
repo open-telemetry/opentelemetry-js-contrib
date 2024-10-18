@@ -129,7 +129,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build
-        run: npm run compile
+        run: npm run version:update
       - name: Unit tests (Full)
         if: matrix.code-coverage
         run: npm run test
@@ -167,7 +167,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build
-        run: npm run compile
+        run: npm run version:update
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
