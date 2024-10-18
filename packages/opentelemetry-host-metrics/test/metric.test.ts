@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/* eslint-disable-next-line @typescript-eslint/triple-slash-reference */
+/// <reference path="../global.d.ts" />
+
 import * as Network from 'systeminformation/lib/network';
 import type { Systeminformation } from 'systeminformation';
 import { Attributes } from '@opentelemetry/api';
