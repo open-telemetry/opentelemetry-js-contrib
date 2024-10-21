@@ -55,8 +55,13 @@ export interface PgPoolOptionsParams {
   maxClient: number; // maximum size of the pool
 }
 
+export const EVENT_LISTENERS_SET = Symbol(
+  'opentelemetry.instrumentation.pg.eventListenersSet'
+);
+
 export interface PgPoolExtended extends pgPoolTypes<pgTypes.Client> {
   options: PgPoolOptionsParams;
+  [EVENT_LISTENERS_SET]?: boolean; // flag to identify if the event listeners for instrumentation have been set
 }
 
 export type PgClientConnect = (callback?: Function) => Promise<void> | void;
