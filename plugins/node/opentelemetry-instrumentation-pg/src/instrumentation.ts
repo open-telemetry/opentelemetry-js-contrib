@@ -39,6 +39,7 @@ import {
   PostgresCallback,
   PgPoolExtended,
   PgPoolCallback,
+  EVENT_LISTENERS_SET,
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
@@ -437,6 +438,52 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     };
   }
 
+  private _setPoolConnectEventListeners(pgPool: PgPoolExtended) {
+    if (pgPool[EVENT_LISTENERS_SET]) return;
+    const poolName = utils.getPoolName(pgPool.options);
+
+    pgPool.on('connect', () => {
+      this._connectionsCounter = utils.updateCounter(
+        poolName,
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+
+    pgPool.on('acquire', () => {
+      this._connectionsCounter = utils.updateCounter(
+        poolName,
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+
+    pgPool.on('remove', () => {
+      this._connectionsCounter = utils.updateCounter(
+        poolName,
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+
+    pgPool.on('release' as any, () => {
+      this._connectionsCounter = utils.updateCounter(
+        poolName,
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+    pgPool[EVENT_LISTENERS_SET] = true;
+  }
+
   private _getPoolConnectPatch() {
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
@@ -451,41 +498,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           attributes: utils.getSemanticAttributesFromPool(this.options),
         });
 
-        this.on('connect', () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
-
-        this.on('acquire', () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
-
-        this.on('remove', () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
-
-        this.on('release' as any, () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
+        plugin._setPoolConnectEventListeners(this);
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
