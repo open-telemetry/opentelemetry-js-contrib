@@ -148,7 +148,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build
-        run: npm run compile
+        run: NX_CACHE_DIRECTORY=$(npm get cache)/$GITHUB_REF_NAME npm run compile
       - name: Unit tests (Full)
         if: matrix.code-coverage
         run: npm run test
@@ -187,7 +187,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build
-        run: npm run compile
+        run: NX_CACHE_DIRECTORY=$(npm get cache)/$GITHUB_REF_NAME npm run compile
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
