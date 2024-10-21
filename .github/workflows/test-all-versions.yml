@@ -13,6 +13,32 @@ on:
         type: string
 
 jobs:
+  build:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    env:
+      NPM_CONFIG_UNSAFE_PERM: true
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run compile
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-cache-${{ github.run_number }}
+          path: node_modules/.cache/nx
+          retention-days: 1
+
   tav:
     name: Run test-all-versions
     strategy:
@@ -120,6 +146,11 @@ jobs:
         run: npm install -g npm@9 # npm@9 supports node >=14.17.0
       - name: Install
         run: npm ci
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-cache-${{ github.run_number }}
+          path: node_modules/.cache/nx
       - name: Build
         run: npm run compile
       - name: Run test-all-versions

@@ -155,7 +155,7 @@ jobs:
         run: npm install -g npm@9 # npm@9 supports node >=14.17.0
       - name: Install
         run: npm ci
-      - name: Dowload Artifacts
+      - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-cache-${{ github.run_number }}
