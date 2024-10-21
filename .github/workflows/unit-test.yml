@@ -5,26 +5,7 @@ on:
   pull_request:
 
 jobs:
-  build-with-cache:
-    strategy:
-      fail-fast: false
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 16
-      - name: Install
-        run: npm ci
-      - name: Build with Cache
-        run: |
-          echo "setting cache dir to $(npm get cache)/$GITHUB_REF_NAME"
-          NX_CACHE_DIRECTORY=$(npm get cache)/$GITHUB_REF_NAME npm run compile
   unit-test:
-    needs: build-with-cache
     strategy:
       fail-fast: false
       matrix:
@@ -148,7 +129,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build
-        run: NX_CACHE_DIRECTORY=$(npm get cache)/$GITHUB_REF_NAME npm run compile
+        run: npm run compile
       - name: Unit tests (Full)
         if: matrix.code-coverage
         run: npm run test
@@ -164,7 +145,6 @@ jobs:
           verbose: true
 
   browser-test:
-    needs: build-with-cache
     strategy:
       fail-fast: false
       matrix:
@@ -187,7 +167,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build
-        run: NX_CACHE_DIRECTORY=$(npm get cache)/$GITHUB_REF_NAME npm run compile
+        run: npm run compile
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
@@ -196,13 +176,3 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           verbose: true
-  empty-cache:
-    needs: [unit-test, browser-test]
-    strategy:
-      fail-fast: false
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clear Build Cache
-        run: |
-          echo "deleting cache dir $(npm get cache)/$GITHUB_REF_NAME"
-          rm -rf $(npm get cache)/$GITHUB_REF_NAME
