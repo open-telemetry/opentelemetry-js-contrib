@@ -5,7 +5,34 @@ on:
   pull_request:
 
 jobs:
+  build:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    env:
+      NPM_CONFIG_UNSAFE_PERM: true
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run compile
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-cache-${{ github.ref_name }}
+          path: node_modules/.cache/nx
+          retention-days: 1
+
   unit-test:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -128,6 +155,11 @@ jobs:
         run: npm install -g npm@9 # npm@9 supports node >=14.17.0
       - name: Install
         run: npm ci
+      - name: Dowload Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: $build-cache-${{ github.ref_name }}
+          path: node_modules/.cache/nx
       - name: Build
         run: npm run compile
       - name: Unit tests (Full)
@@ -145,6 +177,7 @@ jobs:
           verbose: true
 
   browser-test:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -166,6 +199,11 @@ jobs:
         run: npm install -g npm@9 # npm@9 supports node >=14.17.0
       - name: Install
         run: npm ci
+      - name: Dowload Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: $build-cache-${{ github.ref_name }}
+          path: node_modules/.cache/nx
       - name: Build
         run: npm run compile
       - name: Unit tests
