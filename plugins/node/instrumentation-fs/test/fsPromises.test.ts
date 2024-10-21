@@ -20,18 +20,19 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
+import { fail, strictEqual, deepEqual } from 'assert';
 import { FsInstrumentation } from '../src';
-import * as sinon from 'sinon';
+import { spy } from 'sinon';
 import type * as FSPromisesType from 'fs/promises';
 import tests, { FsFunction, TestCase, TestCreator } from './definitions';
 import type { FPMember, EndHook } from '../src/types';
 import { assertSpans, makeRootSpanName } from './utils';
+import assert = require('assert');
 
 const TEST_ATTRIBUTE = 'test.attr';
 const TEST_VALUE = 'test.attr.value';
 
-const endHook = <EndHook>sinon.spy((fnName, { args, span }) => {
+const endHook = <EndHook>spy((fnName, { args, span }) => {
   span.setAttribute(TEST_ATTRIBUTE, TEST_VALUE);
 });
 const pluginConfig = {
@@ -54,7 +55,7 @@ describe('fs/promises instrumentation', () => {
     plugin.setTracerProvider(provider);
     plugin.enable();
     fsPromises = require('fs/promises');
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 
   afterEach(() => {
@@ -74,7 +75,7 @@ describe('fs/promises instrumentation', () => {
     it(`promises.${name} ${error ? 'error' : 'success'}`, async () => {
       const rootSpan = tracer.startSpan(rootSpanName);
 
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context
         .with(trace.setSpan(context.active(), rootSpan), () => {
           // eslint-disable-next-line node/no-unsupported-features/node-builtins
@@ -86,9 +87,9 @@ describe('fs/promises instrumentation', () => {
         })
         .then((actualResult: any) => {
           if (error) {
-            assert.fail(`promises.${name} did not reject`);
+            fail(`promises.${name} did not reject`);
           } else {
-            assert.deepEqual(actualResult, result ?? resultAsError);
+            deepEqual(actualResult, result ?? resultAsError);
           }
         })
         .catch((actualError: any) => {
@@ -103,7 +104,7 @@ describe('fs/promises instrumentation', () => {
             );
           } else {
             actualError.message = `Did not expect promises.${name} to reject: ${actualError.message}`;
-            assert.fail(actualError);
+            fail(actualError);
           }
         });
       rootSpan.end();

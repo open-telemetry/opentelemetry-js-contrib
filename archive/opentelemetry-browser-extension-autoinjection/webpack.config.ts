@@ -16,9 +16,9 @@
 
 /* eslint-disable node/no-unpublished-import */
 
-import * as path from 'path';
+import {resolve} from 'path';
 import { mergeWithRules } from 'webpack-merge';
-import * as HtmlWebpackPlugin from 'html-webpack-plugin';
+import {HtmlWebpackPlugin as HtmlWebpackPlugin} from 'html-webpack-plugin';
 
 // Read the environment variables, and check for the existence of the "MV" variable
 // This can be used to only build the one or the other target.
@@ -34,7 +34,7 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
     module: {
       rules: [
         {
-          include: [path.resolve(__dirname, 'src/manifest.json5')],
+          include: [resolve(__dirname, 'src/manifest.json5')],
           test: /manifest.json5$/,
           use: [
             {
@@ -42,7 +42,7 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
               options: {},
             },
             {
-              loader: path.resolve('src/utils/manifest-loader.ts'),
+              loader: resolve('src/utils/manifest-loader.ts'),
               options: {
                 manifestVersion: 2,
               },
@@ -50,7 +50,7 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
           ],
         },
         {
-          include: [path.resolve(__dirname, 'src')],
+          include: [resolve(__dirname, 'src')],
           test: /\.tsx?$/,
           use: [
             {
@@ -63,7 +63,7 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
           ],
         },
         {
-          include: [path.resolve(__dirname, 'src/icons')],
+          include: [resolve(__dirname, 'src/icons')],
           test: /\.(jpe?g|png|webp)$/i,
           use: [
             // We are not going to use any of the images for real, throw away all output
@@ -118,18 +118,18 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
   const targetMV2 = merge(baseConfig, {
     output: {
       filename: '[name].js',
-      path: path.resolve(__dirname, 'build/mv2'),
+      path: resolve(__dirname, 'build/mv2'),
     },
   });
   const targetMV3 = merge(baseConfig, {
     module: {
       rules: [
         {
-          include: [path.resolve(__dirname, 'src/manifest.json5')],
+          include: [resolve(__dirname, 'src/manifest.json5')],
           test: /manifest.json5$/,
           use: [
             {
-              loader: path.resolve('src/utils/manifest-loader.ts'),
+              loader: resolve('src/utils/manifest-loader.ts'),
               options: {
                 manifestVersion: 3,
               },
@@ -140,7 +140,7 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
     },
     output: {
       filename: '[name].js',
-      path: path.resolve(__dirname, 'build/mv3'),
+      path: resolve(__dirname, 'build/mv3'),
     },
   });
 

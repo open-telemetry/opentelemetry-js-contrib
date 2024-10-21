@@ -17,7 +17,7 @@
 /* eslint-disable node/no-extraneous-import */
 
 import { capitalCase } from 'change-case';
-import * as json5 from 'json5';
+import {parse} from 'json5';
 
 // From https://github.com/TypeStrong/ts-loader/blob/main/src/interfaces.ts
 interface WebpackLoaderContext {
@@ -35,7 +35,7 @@ export default function (this: WebpackLoaderContext, source: string): string {
   const p = require('../../package.json');
   const options = this.getOptions();
 
-  const manifest5 = json5.parse(source);
+  const manifest5 = parse(source);
 
   const sizes = ['16', '32', '48', '128'];
   manifest5.icons = sizes.reduce((result: IconSet, size: string) => {

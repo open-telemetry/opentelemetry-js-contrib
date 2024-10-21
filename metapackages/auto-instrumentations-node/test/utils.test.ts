@@ -16,8 +16,8 @@
 
 import { diag } from '@opentelemetry/api';
 import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
-import * as assert from 'assert';
-import * as sinon from 'sinon';
+import { deepStrictEqual, strictEqual, equal } from 'assert';
+import { stub } from 'sinon';
 import { getNodeAutoInstrumentations } from '../src';
 import { getResourceDetectorsFromEnv } from '../src/utils';
 
@@ -34,7 +34,7 @@ describe('utils', () => {
         );
       });
 
-      assert.deepStrictEqual(
+      deepStrictEqual(
         new Set(instrumentations.map(i => i.instrumentationName)),
         new Set(installedInstrumentations)
       );
@@ -54,7 +54,7 @@ describe('utils', () => {
       ) as any;
       const configHttp = instrumentation._config as HttpInstrumentationConfig;
 
-      assert.strictEqual(
+      strictEqual(
         configHttp.applyCustomAttributesOnSpan,
         applyCustomAttributesOnSpan
       );
@@ -70,7 +70,7 @@ describe('utils', () => {
         instr =>
           instr.instrumentationName === '@opentelemetry/instrumentation-grpc'
       );
-      assert.strictEqual(instrumentation, undefined);
+      strictEqual(instrumentation, undefined);
     });
 
     it('should return only instrumentations enabled via OTEL_NODE_ENABLED_INSTRUMENTATIONS environment variable', () => {
@@ -79,7 +79,7 @@ describe('utils', () => {
       try {
         const instrumentations = getNodeAutoInstrumentations();
 
-        assert.deepStrictEqual(
+        deepStrictEqual(
           new Set(instrumentations.map(i => i.instrumentationName)),
           new Set([
             '@opentelemetry/instrumentation-http',
@@ -121,7 +121,7 @@ describe('utils', () => {
         );
 
         for (const disabledInstrumentation of disabledInstrumentations) {
-          assert.strictEqual(
+          strictEqual(
             enabledInstrumentationNames.has(disabledInstrumentation),
             false
           );
@@ -137,7 +137,7 @@ describe('utils', () => {
       try {
         const instrumentations = getNodeAutoInstrumentations();
 
-        assert.deepStrictEqual(
+        deepStrictEqual(
           new Set(instrumentations.map(i => i.instrumentationName)),
           new Set([
             '@opentelemetry/instrumentation-http',
@@ -151,7 +151,7 @@ describe('utils', () => {
     });
 
     it('should show error for none existing instrumentation', () => {
-      const spy = sinon.stub(diag, 'error');
+      const spy = stub(diag, 'error');
       const name = '@opentelemetry/instrumentation-http2';
       const instrumentations = getNodeAutoInstrumentations({
         // @ts-expect-error verify that wrong name works
@@ -162,9 +162,9 @@ describe('utils', () => {
       const instrumentation = instrumentations.find(
         instr => instr.instrumentationName === name
       );
-      assert.strictEqual(instrumentation, undefined);
+      strictEqual(instrumentation, undefined);
 
-      assert.strictEqual(
+      strictEqual(
         spy.args[0][0],
         `Provided instrumentation name "${name}" not found`
       );
@@ -175,12 +175,12 @@ describe('utils', () => {
 
   describe('getResourceDetectorsFromEnv', () => {
     it('should return all resource detectors by default', () => {
-      assert.equal(getResourceDetectorsFromEnv().length, 16);
+      equal(getResourceDetectorsFromEnv().length, 16);
     });
 
     it('should return all resource detectors when OTEL_NODE_RESOURCE_DETECTORS contains "all"', () => {
       process.env.OTEL_NODE_RESOURCE_DETECTORS = 'all';
-      assert.equal(getResourceDetectorsFromEnv().length, 16);
+      equal(getResourceDetectorsFromEnv().length, 16);
 
       delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });
@@ -190,10 +190,10 @@ describe('utils', () => {
 
       const resourceDetectors = getResourceDetectorsFromEnv();
 
-      assert.equal(resourceDetectors.length, 3);
-      assert.equal(resourceDetectors[0].constructor.name, 'EnvDetectorSync');
-      assert.equal(resourceDetectors[1].constructor.name, 'HostDetectorSync');
-      assert.equal(
+      equal(resourceDetectors.length, 3);
+      equal(resourceDetectors[0].constructor.name, 'EnvDetectorSync');
+      equal(resourceDetectors[1].constructor.name, 'HostDetectorSync');
+      equal(
         resourceDetectors[2].constructor.name,
         'ServiceInstanceIdDetectorSync'
       );
@@ -202,18 +202,18 @@ describe('utils', () => {
     });
 
     it('should return no resource detectors when OTEL_NODE_RESOURCE_DETECTORS contains "none" or a typo', () => {
-      const spy = sinon.stub(diag, 'error');
+      const spy = stub(diag, 'error');
       process.env.OTEL_NODE_RESOURCE_DETECTORS = 'none';
 
-      assert.equal(getResourceDetectorsFromEnv().length, 0);
+      equal(getResourceDetectorsFromEnv().length, 0);
 
-      assert.strictEqual(spy.callCount, 0);
+      strictEqual(spy.callCount, 0);
 
       process.env.OTEL_NODE_RESOURCE_DETECTORS = 'test';
 
-      assert.equal(getResourceDetectorsFromEnv().length, 0);
+      equal(getResourceDetectorsFromEnv().length, 0);
 
-      assert.strictEqual(
+      strictEqual(
         spy.args[0][0],
         'Invalid resource detector "test" specified in the environment variable OTEL_NODE_RESOURCE_DETECTORS'
       );

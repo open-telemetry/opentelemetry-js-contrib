@@ -34,8 +34,8 @@ import {
   CLOUDPROVIDERVALUES_AWS,
   CLOUDPLATFORMVALUES_AWS_ELASTIC_BEANSTALK,
 } from '@opentelemetry/semantic-conventions';
-import * as fs from 'fs';
-import * as util from 'util';
+import { readFile, access, constants } from 'fs';
+import { promisify } from 'util';
 
 /**
  * The AwsBeanstalkDetector can be used to detect if a process is running in AWS Elastic
@@ -53,8 +53,8 @@ const WIN_OS_BEANSTALK_CONF_PATH =
 
 export class AwsBeanstalkDetectorSync implements DetectorSync {
   BEANSTALK_CONF_PATH: string;
-  private static readFileAsync = util.promisify(fs.readFile);
-  private static fileAccessAsync = util.promisify(fs.access);
+  private static readFileAsync = promisify(readFile);
+  private static fileAccessAsync = promisify(access);
 
   constructor() {
     if (process.platform === 'win32') {
@@ -85,7 +85,7 @@ export class AwsBeanstalkDetectorSync implements DetectorSync {
     try {
       await AwsBeanstalkDetectorSync.fileAccessAsync(
         this.BEANSTALK_CONF_PATH,
-        fs.constants.R_OK
+        constants.R_OK
       );
 
       const rawData = await AwsBeanstalkDetectorSync.readFileAsync(

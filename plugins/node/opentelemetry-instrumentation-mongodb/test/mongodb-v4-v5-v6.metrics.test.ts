@@ -45,7 +45,8 @@ const instrumentation = registerInstrumentationTesting(
 
 import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import type { MongoClient, Collection } from 'mongodb';
-import * as assert from 'assert';
+import { strictEqual } from 'assert';
+import assert = require('assert');
 
 async function waitForNumberOfExports(
   exporter: InMemoryMetricExporter,
@@ -125,32 +126,29 @@ describe('MongoDBInstrumentation-Metrics', () => {
 
     assert.strictEqual(exportedMetrics.length, 1);
     const metrics = exportedMetrics[0].scopeMetrics[0].metrics;
-    assert.strictEqual(metrics.length, 1);
-    assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
+    strictEqual(metrics.length, 1);
+    strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
-    assert.strictEqual(
+    strictEqual(
       metrics[0].descriptor.description,
       'The number of connections that are currently in state described by the state attribute.'
     );
-    assert.strictEqual(metrics[0].descriptor.unit, '{connection}');
-    assert.strictEqual(
-      metrics[0].descriptor.name,
-      'db.client.connections.usage'
-    );
+    strictEqual(metrics[0].descriptor.unit, '{connection}');
+    strictEqual(metrics[0].descriptor.name, 'db.client.connections.usage');
 
     // Checking dataPoints
     const dataPoints = metrics[0].dataPoints;
-    assert.strictEqual(dataPoints.length, 2);
-    assert.strictEqual(dataPoints[0].value, 0);
-    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
-    assert.strictEqual(
+    strictEqual(dataPoints.length, 2);
+    strictEqual(dataPoints[0].value, 0);
+    strictEqual(dataPoints[0].attributes['state'], 'used');
+    strictEqual(
       dataPoints[0].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
 
-    assert.strictEqual(dataPoints[1].value, 1);
-    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
-    assert.strictEqual(
+    strictEqual(dataPoints[1].value, 1);
+    strictEqual(dataPoints[1].attributes['state'], 'idle');
+    strictEqual(
       dataPoints[1].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
@@ -163,28 +161,28 @@ describe('MongoDBInstrumentation-Metrics', () => {
       inMemoryMetricsExporter,
       2
     );
-    assert.strictEqual(exportedMetrics.length, 2);
+    strictEqual(exportedMetrics.length, 2);
     const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
-    assert.strictEqual(metrics.length, 1);
-    assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
+    strictEqual(metrics.length, 1);
+    strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
-    assert.strictEqual(
+    strictEqual(
       metrics[0].descriptor.description,
       'The number of connections that are currently in state described by the state attribute.'
     );
 
     // Checking dataPoints
     const dataPoints = metrics[0].dataPoints;
-    assert.strictEqual(dataPoints.length, 2);
-    assert.strictEqual(dataPoints[0].value, 0);
-    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
-    assert.strictEqual(
+    strictEqual(dataPoints.length, 2);
+    strictEqual(dataPoints[0].value, 0);
+    strictEqual(dataPoints[0].attributes['state'], 'used');
+    strictEqual(
       dataPoints[0].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
-    assert.strictEqual(dataPoints[1].value, 0);
-    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
-    assert.strictEqual(
+    strictEqual(dataPoints[1].value, 0);
+    strictEqual(dataPoints[1].attributes['state'], 'idle');
+    strictEqual(
       dataPoints[1].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );

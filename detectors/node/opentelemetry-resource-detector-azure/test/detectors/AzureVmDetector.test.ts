@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
-import * as nock from 'nock';
+import { strictEqual } from 'assert';
+import { disableNetConnect, cleanAll, enableNetConnect } from 'nock';
 import { azureVmDetector } from '../../src/detectors/AzureVmDetector';
 import { IResource } from '@opentelemetry/resources';
 import { AzureVmMetadata } from '../../src/types';
+import nock = require('nock');
 
 const linuxTestResponse: AzureVmMetadata = {
   additionalCapabilities: {
@@ -374,12 +375,12 @@ const AZURE_VM_METADATA_PATH =
 
 describe('AzureVmServiceDetector', () => {
   beforeEach(() => {
-    nock.disableNetConnect();
-    nock.cleanAll();
+    disableNetConnect();
+    cleanAll();
   });
 
   afterEach(() => {
-    nock.enableNetConnect();
+    enableNetConnect();
   });
 
   it('should get linux virtual machine attributes', async () => {
@@ -394,7 +395,7 @@ describe('AzureVmServiceDetector', () => {
     const attributes = resource.attributes;
     for (let i = 0; i < Object.keys(attributes).length; i++) {
       const key = Object.keys(attributes)[i];
-      assert.strictEqual(attributes[key], linuxAttributes[key]);
+      strictEqual(attributes[key], linuxAttributes[key]);
     }
     scope.done();
   });
@@ -411,7 +412,7 @@ describe('AzureVmServiceDetector', () => {
     const attributes = resource.attributes;
     for (let i = 0; i < Object.keys(attributes).length; i++) {
       const key = Object.keys(attributes)[i];
-      assert.strictEqual(attributes[key], windowsAttributes[key]);
+      strictEqual(attributes[key], windowsAttributes[key]);
     }
     scope.done();
   });

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as nock from 'nock';
-import * as assert from 'assert';
+import { disableNetConnect, cleanAll, enableNetConnect } from 'nock';
+import { ok, deepStrictEqual } from 'assert';
 import { Resource } from '@opentelemetry/resources';
 import { CLOUDPROVIDERVALUES_ALIBABA_CLOUD } from '@opentelemetry/semantic-conventions';
 import {
@@ -23,6 +23,7 @@ import {
   assertHostResource,
 } from '@opentelemetry/contrib-test-utils';
 import { alibabaCloudEcsDetector } from '../../src';
+import nock = require('nock');
 
 const ALIYUN_HOST =
   'http://' + alibabaCloudEcsDetector.ALIBABA_CLOUD_IDMS_ENDPOINT;
@@ -46,12 +47,12 @@ const mockedHostResponse = 'my-hostname';
 
 describe('alibabaCloudEcsDetector', () => {
   beforeEach(() => {
-    nock.disableNetConnect();
-    nock.cleanAll();
+    disableNetConnect();
+    cleanAll();
   });
 
   afterEach(() => {
-    nock.enableNetConnect();
+    enableNetConnect();
   });
 
   describe('with successful request', () => {
@@ -68,7 +69,7 @@ describe('alibabaCloudEcsDetector', () => {
 
       scope.done();
 
-      assert.ok(resource);
+      ok(resource);
 
       assertCloudResource(resource, {
         provider: CLOUDPROVIDERVALUES_ALIBABA_CLOUD,
@@ -96,7 +97,7 @@ describe('alibabaCloudEcsDetector', () => {
       const resource = await alibabaCloudEcsDetector.detect();
       await resource.waitForAsyncAttributes?.();
 
-      assert.deepStrictEqual(resource.attributes, {});
+      deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });
@@ -112,7 +113,7 @@ describe('alibabaCloudEcsDetector', () => {
       const resource = await alibabaCloudEcsDetector.detect();
       await resource.waitForAsyncAttributes?.();
 
-      assert.deepStrictEqual(resource.attributes, {});
+      deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });
@@ -125,7 +126,7 @@ describe('alibabaCloudEcsDetector', () => {
       const resource = await alibabaCloudEcsDetector.detect();
       await resource.waitForAsyncAttributes?.();
 
-      assert.deepStrictEqual(resource.attributes, {});
+      deepStrictEqual(resource.attributes, {});
 
       scope.done();
     });

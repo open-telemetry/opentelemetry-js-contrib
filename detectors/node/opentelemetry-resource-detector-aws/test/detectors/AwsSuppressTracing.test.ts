@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import { equal } from 'assert';
 
 import { FsInstrumentation } from '@opentelemetry/instrumentation-fs';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
@@ -78,11 +78,7 @@ describe('[Integration] Internal tracing', () => {
     await new Promise(r => setTimeout(r, 0));
     const spans = memoryExporter.getFinishedSpans();
 
-    assert.equal(
-      spans.length,
-      0,
-      'no spans exported from any AWS resource detector'
-    );
+    equal(spans.length, 0, 'no spans exported from any AWS resource detector');
 
     await sdk.shutdown();
     delete process.env.ECS_CONTAINER_METADATA_URI_V4;

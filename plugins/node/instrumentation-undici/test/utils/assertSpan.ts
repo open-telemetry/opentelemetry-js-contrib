@@ -21,7 +21,7 @@ import {
 } from '@opentelemetry/api';
 import { hrTimeToNanoseconds } from '@opentelemetry/core';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
+import { strictEqual, ok, deepStrictEqual, equal } from 'assert';
 import { SemanticAttributes } from '../../src/enums/SemanticAttributes';
 
 type IncomingHttpHeaders = Record<string, string | string[] | undefined>;
@@ -42,22 +42,22 @@ export const assertSpan = (
     error?: Exception;
   }
 ) => {
-  assert.strictEqual(span.spanContext().traceId.length, 32);
-  assert.strictEqual(span.spanContext().spanId.length, 16);
-  assert.strictEqual(span.kind, SpanKind.CLIENT, 'span.kind is correct');
-  assert.strictEqual(
+  strictEqual(span.spanContext().traceId.length, 32);
+  strictEqual(span.spanContext().spanId.length, 16);
+  strictEqual(span.kind, SpanKind.CLIENT, 'span.kind is correct');
+  strictEqual(
     span.name,
     validations.spanName || validations.httpMethod,
     'span.name is correct'
   );
-  assert.strictEqual(
+  strictEqual(
     span.attributes[SemanticAttributes.HTTP_REQUEST_METHOD],
     validations.httpMethod,
     `attributes['${SemanticAttributes.HTTP_REQUEST_METHOD}'] is correct`
   );
 
   if (validations.path) {
-    assert.strictEqual(
+    strictEqual(
       span.attributes[SemanticAttributes.URL_PATH],
       validations.path,
       `attributes['${SemanticAttributes.URL_PATH}'] is correct`
@@ -65,14 +65,14 @@ export const assertSpan = (
   }
 
   if (validations.query) {
-    assert.strictEqual(
+    strictEqual(
       span.attributes[SemanticAttributes.URL_QUERY],
       validations.query,
       `attributes['${SemanticAttributes.URL_QUERY}'] is correct`
     );
   }
 
-  assert.strictEqual(
+  strictEqual(
     span.attributes[SemanticAttributes.HTTP_RESPONSE_STATUS_CODE],
     validations.httpStatusCode,
     `attributes['${SemanticAttributes.HTTP_RESPONSE_STATUS_CODE}'] is correct ${
@@ -80,52 +80,49 @@ export const assertSpan = (
     }`
   );
 
-  assert.strictEqual(span.links.length, 0, 'there are no links');
+  strictEqual(span.links.length, 0, 'there are no links');
 
   if (validations.error) {
-    assert.strictEqual(span.events.length, 1, 'span contains one error event');
-    assert.strictEqual(
+    strictEqual(span.events.length, 1, 'span contains one error event');
+    strictEqual(
       span.events[0].name,
       'exception',
       'error event name is correct'
     );
 
     const eventAttributes = span.events[0].attributes;
-    assert.ok(eventAttributes != null, 'event has attributes');
-    assert.deepStrictEqual(
+    ok(eventAttributes != null, 'event has attributes');
+    deepStrictEqual(
       Object.keys(eventAttributes),
       ['exception.type', 'exception.message', 'exception.stacktrace'],
       'the event attribute names are correct'
     );
   } else {
-    assert.strictEqual(span.events.length, 0, 'span contains no events');
+    strictEqual(span.events.length, 0, 'span contains no events');
   }
 
   // Error message changes between version se we will
   // only assert its presence
   if (validations.forceStatus) {
-    assert.equal(
+    equal(
       span.status.code,
       validations.forceStatus.code,
       'span `status.code` is correct'
     );
-    assert.ok(span.status.message, 'span `status.message` is present');
+    ok(span.status.message, 'span `status.message` is present');
   } else {
     const { httpStatusCode } = validations;
     const isStatusUnset =
       httpStatusCode && httpStatusCode >= 100 && httpStatusCode < 400;
-    assert.equal(
+    equal(
       span.status.code,
       isStatusUnset ? SpanStatusCode.UNSET : SpanStatusCode.ERROR,
       'span `status.code` is correct'
     );
   }
 
-  assert.ok(span.endTime, 'must be finished');
-  assert.ok(
-    hrTimeToNanoseconds(span.duration) > 0,
-    'must have positive duration'
-  );
+  ok(span.endTime, 'must be finished');
+  ok(hrTimeToNanoseconds(span.duration) > 0, 'must have positive duration');
 
   if (validations.resHeaders) {
     // Headers were added in v17.5.0, v16.15.0
@@ -136,29 +133,29 @@ export const assertSpan = (
     if (contentLengthHeader) {
       const contentLength = Number(contentLengthHeader);
 
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.response.header.content-length'],
         contentLength
       );
     }
   }
 
-  assert.strictEqual(
+  strictEqual(
     span.attributes[SemanticAttributes.SERVER_ADDRESS],
     validations.hostname,
     'must be consistent (SERVER_ADDRESS and hostname)'
   );
   if (!validations.noNetPeer) {
-    assert.ok(
+    ok(
       span.attributes[SemanticAttributes.NETWORK_PEER_ADDRESS],
       `must have ${SemanticAttributes.NETWORK_PEER_ADDRESS}`
     );
-    assert.ok(
+    ok(
       span.attributes[SemanticAttributes.NETWORK_PEER_PORT],
       `must have ${SemanticAttributes.NETWORK_PEER_PORT}`
     );
   }
-  assert.ok(
+  ok(
     (span.attributes[SemanticAttributes.URL_FULL] as string).indexOf(
       span.attributes[SemanticAttributes.SERVER_ADDRESS] as string
     ) > -1,
@@ -169,7 +166,7 @@ export const assertSpan = (
     const userAgent = getHeader(validations.reqHeaders, 'user-agent');
 
     if (userAgent) {
-      assert.strictEqual(
+      strictEqual(
         span.attributes[SemanticAttributes.USER_AGENT_ORIGINAL],
         userAgent
       );

@@ -3,7 +3,7 @@
 import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 
-import * as api from '@opentelemetry/api';
+import {trace} from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
@@ -40,5 +40,5 @@ export const setupTracing = (serviceName: string) => {
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();
 
-  return api.trace.getTracer(serviceName);
+  return trace.getTracer(serviceName);
 };

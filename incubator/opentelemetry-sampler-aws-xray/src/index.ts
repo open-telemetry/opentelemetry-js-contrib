@@ -13,5 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from './remote-sampler';
+export {AWSXRayRemoteSampler} from './remote-sampler';
 export { AWSXRaySamplerConfig } from './types';

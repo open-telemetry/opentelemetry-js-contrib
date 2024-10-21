@@ -1,9 +1,9 @@
 'use strict';
 
-import * as api from '@opentelemetry/api';
+import {trace, context,ROOT_CONTEXT} from '@opentelemetry/api';
 import { setupTracing } from "./tracer";
 const tracer = setupTracing('example-mysql-client');
-import * as http from 'http';
+import {get} from 'http';
 
 /** A function which makes requests and handles response. */
 function makeRequest() {
@@ -15,9 +15,9 @@ function makeRequest() {
   let queries = 0;
   let responses = 0;
 
-  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
+  context.with(trace.setSpan(ROOT_CONTEXT, span), () => {
     queries += 1;
-    http.get({
+    get({
       host: 'localhost',
       port: 8080,
       path: '/connection/query',
@@ -31,9 +31,9 @@ function makeRequest() {
       });
     });
   });
-  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
+  context.with(trace.setSpan(ROOT_CONTEXT, span), () => {
     queries += 1;
-    http.get({
+    get({
       host: 'localhost',
       port: 8080,
       path: '/pool/query',
@@ -47,9 +47,9 @@ function makeRequest() {
       });
     });
   });
-  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
+  context.with(trace.setSpan(ROOT_CONTEXT, span), () => {
     queries += 1;
-    http.get({
+    get({
       host: 'localhost',
       port: 8080,
       path: '/pool/query-with-2-connections',
@@ -63,9 +63,9 @@ function makeRequest() {
       });
     });
   });
-  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
+  context.with(trace.setSpan(ROOT_CONTEXT, span), () => {
     queries += 1;
-    http.get({
+    get({
       host: 'localhost',
       port: 8080,
       path: '/pool/query-2-pools',
@@ -79,9 +79,9 @@ function makeRequest() {
       });
     });
   });
-  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
+  context.with(trace.setSpan(ROOT_CONTEXT, span), () => {
     queries += 1;
-    http.get({
+    get({
       host: 'localhost',
       port: 8080,
       path: '/cluster/query',

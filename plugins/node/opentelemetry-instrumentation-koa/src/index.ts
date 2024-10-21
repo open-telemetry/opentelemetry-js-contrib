@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
-export * from './enums/AttributeNames';
+export { KoaInstrumentation } from './instrumentation';
+export {
+  KoaLayerType,
+  KoaRequestInfo,
+  KoaRequestCustomAttributeFunction,
+  KoaInstrumentationConfig,
+} from './types';
+export { AttributeNames } from './enums/AttributeNames';

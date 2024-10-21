@@ -26,7 +26,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
-import * as assert from 'assert';
+import { strictEqual } from 'assert';
 import { ProxyTracerProvider, TracerProvider } from '@opentelemetry/api';
 import {
   AggregationTemporality,
@@ -114,7 +114,7 @@ describe('force flush', () => {
       );
     });
 
-    assert.strictEqual(forceFlushed, true);
+    strictEqual(forceFlushed, true);
   });
 
   it('should force flush ProxyTracerProvider with NodeTracerProvider', async () => {
@@ -148,7 +148,7 @@ describe('force flush', () => {
       );
     });
 
-    assert.strictEqual(forceFlushed, true);
+    strictEqual(forceFlushed, true);
   });
 
   it('should force flush MeterProvider', async () => {
@@ -179,7 +179,7 @@ describe('force flush', () => {
       );
     });
 
-    assert.strictEqual(forceFlushed, true);
+    strictEqual(forceFlushed, true);
   });
 
   it('should callback once after force flush providers', async () => {
@@ -232,8 +232,8 @@ describe('force flush', () => {
       );
     });
 
-    assert.strictEqual(tracerForceFlushed, true);
-    assert.strictEqual(meterForceFlushed, true);
-    assert.strictEqual(callbackCount, 1);
+    strictEqual(tracerForceFlushed, true);
+    strictEqual(meterForceFlushed, true);
+    strictEqual(callbackCount, 1);
   });
 });

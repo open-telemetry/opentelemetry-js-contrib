@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as assert from 'assert';
+import { strictEqual, ok } from 'assert';
 import { Writable } from 'stream';
 
 import {
@@ -92,11 +92,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
       // const resp = await fetch('http://host:port')
       // so we need to do the assertion here
       try {
-        assert.ok(
+        ok(
           req.headers[MockPropagation.TRACE_CONTEXT_KEY],
           `trace propagation for ${MockPropagation.TRACE_CONTEXT_KEY} works`
         );
-        assert.ok(
+        ok(
           req.headers[MockPropagation.SPAN_CONTEXT_KEY],
           `trace propagation for ${MockPropagation.SPAN_CONTEXT_KEY} works`
         );
@@ -133,7 +133,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
   describe('disable()', function () {
     it('should not create spans when disabled', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Disable via config
       instrumentation.disable();
@@ -142,13 +142,13 @@ describe('UndiciInstrumentation `undici` tests', function () {
       const { headers, body } = await undici.request(requestUrl);
       await consumeResponseBody(body);
 
-      assert.ok(
+      ok(
         headers['propagation-error'] != null,
         'propagation is not set if instrumentation disabled'
       );
 
       spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0, 'no spans are created');
+      strictEqual(spans.length, 0, 'no spans are created');
     });
   });
 
@@ -193,7 +193,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
     it('should ignore requests based on the result of ignoreRequestHook', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Do some requests
       const headers = {
@@ -207,18 +207,18 @@ describe('UndiciInstrumentation `undici` tests', function () {
       });
       await consumeResponseBody(ignoreResponse.body);
 
-      assert.ok(
+      ok(
         ignoreResponse.headers['propagation-error'],
         'propagation is not set for ignored requests'
       );
 
       spans = memoryExporter.getFinishedSpans();
-      assert.ok(spans.length === 0, 'ignoreRequestHook is filtering requests');
+      ok(spans.length === 0, 'ignoreRequestHook is filtering requests');
     });
 
     it('should create valid spans for different request methods', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Do some requests
       const headers = {
@@ -242,7 +242,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         // `SocketError: other side closed`.  Given this is only for old Node.js
         // versions and for this rare case of using a bogus HTTP method, we will
         // skip out of this test instead of attempting to fully understand it.
-        assert.strictEqual(err.message, 'other side closed');
+        strictEqual(err.message, 'other side closed');
         this.skip();
       }
       if (!firstQueryResponse) {
@@ -257,17 +257,17 @@ describe('UndiciInstrumentation `undici` tests', function () {
       });
       await consumeResponseBody(secondQueryResponse.body);
 
-      assert.ok(
+      ok(
         firstQueryResponse!.headers['propagation-error'] === undefined,
         'propagation is set for instrumented requests'
       );
-      assert.ok(
+      ok(
         secondQueryResponse!.headers['propagation-error'] === undefined,
         'propagation is set for instrumented requests'
       );
 
       spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 2);
+      strictEqual(spans.length, 2);
       assertSpan(spans[0], {
         hostname: 'localhost',
         httpStatusCode: firstQueryResponse!.statusCode,
@@ -277,7 +277,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         reqHeaders: headers,
         resHeaders: firstQueryResponse!.headers,
       });
-      assert.strictEqual(
+      strictEqual(
         spans[0].attributes['http.request.method_original'],
         'get',
         'request original method is captured'
@@ -293,7 +293,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         reqHeaders: headers,
         resHeaders: secondQueryResponse!.headers,
       });
-      assert.strictEqual(
+      strictEqual(
         spans[1].attributes['http.request.method_original'],
         'custom',
         'request original method is captured'
@@ -302,7 +302,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
     it('should create valid spans for "request" method', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Do some requests
       const headers = {
@@ -316,7 +316,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
       });
       await consumeResponseBody(ignoreResponse.body);
 
-      assert.ok(
+      ok(
         ignoreResponse.headers['propagation-error'],
         'propagation is not set for ignored requests'
       );
@@ -325,15 +325,15 @@ describe('UndiciInstrumentation `undici` tests', function () {
       const queryResponse = await undici.request(queryRequestUrl, { headers });
       await consumeResponseBody(queryResponse.body);
 
-      assert.ok(
+      ok(
         queryResponse.headers['propagation-error'] == null,
         'propagation is set for instrumented requests'
       );
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'localhost',
         httpStatusCode: queryResponse.statusCode,
@@ -343,27 +343,27 @@ describe('UndiciInstrumentation `undici` tests', function () {
         reqHeaders: headers,
         resHeaders: queryResponse.headers,
       });
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.request.header.foo-client'],
         'bar',
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.request.header.x-requested-with'],
         'undici',
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.response.header.foo-server'],
         'bar',
         'response headers from the server are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['test.response-hook.attribute'],
         'OK',
         'responseHook is called'
@@ -379,7 +379,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
       }
 
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Do some requests
       const headers = {
@@ -390,15 +390,15 @@ describe('UndiciInstrumentation `undici` tests', function () {
       const queryResponse = await undici.fetch(queryRequestUrl, { headers });
       await queryResponse.text();
 
-      assert.ok(
+      ok(
         queryResponse.headers.get('propagation-error') == null,
         'propagation is set for instrumented requests'
       );
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'localhost',
         httpStatusCode: queryResponse.status,
@@ -408,27 +408,27 @@ describe('UndiciInstrumentation `undici` tests', function () {
         reqHeaders: headers,
         resHeaders: queryResponse.headers as unknown as Headers,
       });
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.request.header.foo-client'],
         'bar',
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.request.header.x-requested-with'],
         'undici',
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.response.header.foo-server'],
         'bar',
         'response headers from the server are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['test.response-hook.attribute'],
         'OK',
         'responseHook is called'
@@ -437,7 +437,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
     it('should create valid spans for "stream" method', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Do some requests
       const headers = {
@@ -463,15 +463,15 @@ describe('UndiciInstrumentation `undici` tests', function () {
         }
       );
 
-      assert.ok(
+      ok(
         queryResponse.headers['propagation-error'] == null,
         'propagation is set for instrumented requests'
       );
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'localhost',
         httpStatusCode: queryResponse.statusCode,
@@ -481,27 +481,27 @@ describe('UndiciInstrumentation `undici` tests', function () {
         reqHeaders: headers,
         resHeaders: queryResponse.headers as unknown as Headers,
       });
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.request.header.foo-client'],
         'bar',
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.request.header.x-requested-with'],
         'undici',
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.response.header.foo-server'],
         'bar',
         'response headers from the server are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['test.response-hook.attribute'],
         'OK',
         'responseHook is called'
@@ -510,7 +510,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
     it('should create valid spans for "dispatch" method', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Do some requests
       const headers = {
@@ -544,15 +544,15 @@ describe('UndiciInstrumentation `undici` tests', function () {
         );
       });
 
-      assert.ok(
+      ok(
         queryResponse.headers['propagation-error'] == null,
         'propagation is set for instrumented requests'
       );
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'localhost',
         httpStatusCode: queryResponse.statusCode,
@@ -562,27 +562,27 @@ describe('UndiciInstrumentation `undici` tests', function () {
         reqHeaders: headers,
         resHeaders: queryResponse.headers as unknown as Headers,
       });
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.request.header.foo-client'],
         'bar',
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.request.header.x-requested-with'],
         'undici',
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['http.response.header.foo-server'],
         'bar',
         'response headers from the server are captured'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
       );
-      assert.strictEqual(
+      strictEqual(
         span.attributes['test.response-hook.attribute'],
         'OK',
         'responseHook is called'
@@ -591,7 +591,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
     it('should create valid spans even if the configuration hooks fail', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Set the bad configuration
       instrumentation.setConfig({
@@ -613,7 +613,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
       const { headers, statusCode, body } = await undici.request(requestUrl);
       await consumeResponseBody(body);
 
-      assert.ok(
+      ok(
         headers['propagation-error'] == null,
         'propagation is set for instrumented requests'
       );
@@ -621,8 +621,8 @@ describe('UndiciInstrumentation `undici` tests', function () {
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
 
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'localhost',
         httpStatusCode: statusCode,
@@ -635,7 +635,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
     it('should not create spans without parent if required in configuration', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
         requireParentforSpans: true,
@@ -645,18 +645,18 @@ describe('UndiciInstrumentation `undici` tests', function () {
       const response = await undici.request(requestUrl);
       await consumeResponseBody(response.body);
 
-      assert.ok(
+      ok(
         response.headers['propagation-error'] == null,
         'propagation is set for instrumented requests'
       );
 
       spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0, 'no spans are created');
+      strictEqual(spans.length, 0, 'no spans are created');
     });
 
     it('should not create spans with INVALID_SPAN_CONTEXT parent if required in configuration', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
         requireParentforSpans: true,
@@ -667,19 +667,19 @@ describe('UndiciInstrumentation `undici` tests', function () {
         const requestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
         const response = await undici.request(requestUrl);
         await consumeResponseBody(response.body);
-        assert.ok(
+        ok(
           response.headers['propagation-error'] == null,
           'propagation is set for instrumented requests'
         );
       });
 
       spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0, 'no spans are created');
+      strictEqual(spans.length, 0, 'no spans are created');
     });
 
     it('should create spans with parent if required in configuration', function (done) {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       instrumentation.setConfig({
         requireParentforSpans: true,
@@ -696,19 +696,19 @@ describe('UndiciInstrumentation `undici` tests', function () {
         await consumeResponseBody(response.body);
 
         span.end();
-        assert.ok(
+        ok(
           response.headers['propagation-error'] == null,
           'propagation is set for instrumented requests'
         );
 
         spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans.length, 2, 'child span is created');
-        assert.strictEqual(
+        strictEqual(spans.length, 2, 'child span is created');
+        strictEqual(
           spans.filter(span => span.kind === SpanKind.CLIENT).length,
           1,
           'child span is created'
         );
-        assert.strictEqual(
+        strictEqual(
           spans.filter(span => span.kind === SpanKind.INTERNAL).length,
           1,
           'parent span is present'
@@ -720,7 +720,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
     it('should capture errors while doing request', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       let fetchError;
       try {
@@ -733,8 +733,8 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'unexistent-host-name',
         httpMethod: 'GET',
@@ -757,7 +757,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
       }
 
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       let requestError;
       const controller = new AbortController();
@@ -778,8 +778,8 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'localhost',
         httpMethod: 'GET',
@@ -796,7 +796,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
     it('should not report an user-agent if it was not defined', async function () {
       let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+      strictEqual(spans.length, 0);
 
       // Do some requests
       const headers = {
@@ -807,15 +807,15 @@ describe('UndiciInstrumentation `undici` tests', function () {
       const queryResponse = await undici.request(queryRequestUrl, { headers });
       await consumeResponseBody(queryResponse.body);
 
-      assert.ok(
+      ok(
         queryResponse.headers['propagation-error'] == null,
         'propagation is set for instrumented requests'
       );
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
+      ok(span, 'a span is present');
+      strictEqual(spans.length, 1);
       assertSpan(span, {
         hostname: 'localhost',
         httpStatusCode: queryResponse.statusCode,
@@ -825,7 +825,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         reqHeaders: headers,
         resHeaders: queryResponse.headers,
       });
-      assert.strictEqual(
+      strictEqual(
         span.attributes['user_agent.original'],
         undefined,
         'user-agent is undefined'

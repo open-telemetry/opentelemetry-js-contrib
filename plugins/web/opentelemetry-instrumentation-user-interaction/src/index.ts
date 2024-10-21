@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
-export * from './enums/AttributeNames';
+export { UserInteractionInstrumentation } from './instrumentation';
+export {
+  EventName,
+  ShouldPreventSpanCreation,
+  UserInteractionInstrumentationConfig,
+} from './types';
+export { AttributeNames } from './enums/AttributeNames';

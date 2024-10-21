@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import { strictEqual } from 'assert';
 import {
   assertCloudResource,
   assertEmptyResource,
@@ -46,8 +46,8 @@ describe('awsLambdaDetector', () => {
         region: 'us-east-1',
       });
 
-      assert.strictEqual(resource.attributes['faas.name'], 'name');
-      assert.strictEqual(resource.attributes['faas.version'], 'v1');
+      strictEqual(resource.attributes['faas.name'], 'name');
+      strictEqual(resource.attributes['faas.version'], 'v1');
     });
   });
 

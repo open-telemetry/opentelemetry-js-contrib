@@ -19,7 +19,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { FsInstrumentation } from '../src';
-import * as assert from 'assert';
+import { deepEqual, strictEqual } from 'assert';
 import type * as FSType from 'fs';
 import type { FsInstrumentationConfig } from '../src/types';
 import * as api from '@opentelemetry/api';
@@ -44,7 +44,7 @@ describe('fs instrumentation: requireParentSpan', () => {
     plugin.setConfig(pluginConfig);
     plugin.enable();
     fs = require('fs');
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    strictEqual(memoryExporter.getFinishedSpans().length, 0);
   };
 
   beforeEach(() => {
@@ -75,10 +75,7 @@ describe('fs instrumentation: requireParentSpan', () => {
         });
       }).then(() => endRootSpan());
 
-      assert.deepEqual(
-        memoryExporter.getFinishedSpans().length,
-        expectedSpanCount()
-      );
+      deepEqual(memoryExporter.getFinishedSpans().length, expectedSpanCount());
     });
 
     it(`${prefix} a span with the synchronous API`, () => {
@@ -87,10 +84,7 @@ describe('fs instrumentation: requireParentSpan', () => {
         endRootSpan();
       });
 
-      assert.deepEqual(
-        memoryExporter.getFinishedSpans().length,
-        expectedSpanCount()
-      );
+      deepEqual(memoryExporter.getFinishedSpans().length, expectedSpanCount());
     });
 
     it(`${prefix} a span with the promises API`, async () => {
@@ -102,10 +96,7 @@ describe('fs instrumentation: requireParentSpan', () => {
         });
       });
 
-      assert.deepEqual(
-        memoryExporter.getFinishedSpans().length,
-        expectedSpanCount()
-      );
+      deepEqual(memoryExporter.getFinishedSpans().length, expectedSpanCount());
     });
   };
 

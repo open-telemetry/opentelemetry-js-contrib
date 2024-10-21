@@ -25,11 +25,12 @@ import {
   MetricData,
   MetricReader,
 } from '@opentelemetry/sdk-metrics';
-import * as assert from 'assert';
+import { strictEqual, ok } from 'assert';
 import * as os from 'os';
-import * as sinon from 'sinon';
+import { SinonSandbox, createSandbox } from 'sinon';
 import { ATTRIBUTE_NAMES } from '../src/enum';
 import { HostMetrics } from '../src';
+import assert = require('assert');
 
 const cpuJson = require('./mocks/cpu.json');
 const processJson = require('./mocks/process.json');
@@ -104,7 +105,7 @@ describe('Host Metrics', () => {
   describe('constructor', () => {
     it('should create a new instance', () => {
       const hostMetrics = new HostMetrics();
-      assert.ok(hostMetrics instanceof HostMetrics);
+      ok(hostMetrics instanceof HostMetrics);
     });
 
     it('should create a new instance with default meter provider', () => {
@@ -114,17 +115,17 @@ describe('Host Metrics', () => {
         meterProvider,
       });
       hostMetrics.start();
-      assert.ok(hostMetrics instanceof HostMetrics);
+      ok(hostMetrics instanceof HostMetrics);
     });
   });
 
   describe('metrics', () => {
-    let sandbox: sinon.SinonSandbox;
+    let sandbox: SinonSandbox;
     let hostMetrics: HostMetrics;
     let reader: TestMetricReader;
 
     beforeEach(async () => {
-      sandbox = sinon.createSandbox();
+      sandbox = createSandbox();
       sandbox.useFakeTimers();
 
       sandbox.stub(os, 'freemem').callsFake(mockedOS.freemem);
@@ -372,9 +373,9 @@ async function getRecords(
 ): Promise<MetricData> {
   const collectionResult = await metricReader.collect();
   assert(collectionResult != null);
-  assert.strictEqual(collectionResult.resourceMetrics.scopeMetrics.length, 1);
+  strictEqual(collectionResult.resourceMetrics.scopeMetrics.length, 1);
   const scopeMetrics = collectionResult.resourceMetrics.scopeMetrics[0];
-  assert.strictEqual(
+  strictEqual(
     scopeMetrics.scope.name,
     '@opentelemetry/host-metrics',
     'default instrumentation scope name is the package name'
@@ -382,7 +383,7 @@ async function getRecords(
   const metricDataList = scopeMetrics.metrics.filter(
     metric => metric.descriptor.name === name
   );
-  assert.strictEqual(metricDataList.length, 1);
+  strictEqual(metricDataList.length, 1);
   return metricDataList[0];
 }
 
@@ -395,13 +396,13 @@ function ensureValue(
   const matches = (metric.dataPoints as DataPoint<unknown>[]).filter(it => {
     return attrHash === hashAttributes(it.attributes);
   });
-  assert.strictEqual(matches.length, 1);
+  strictEqual(matches.length, 1);
   const point = matches[0];
   const aggValue =
     typeof point.value === 'number'
       ? point.value
       : (point.value as Histogram).sum;
-  assert.strictEqual(aggValue, value);
+  strictEqual(aggValue, value);
 }
 
 function hashAttributes(attributes: Attributes) {

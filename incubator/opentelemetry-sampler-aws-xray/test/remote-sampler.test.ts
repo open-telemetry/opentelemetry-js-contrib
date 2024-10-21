@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import * as sinon from 'sinon';
+import {SinonFakeTimers, SinonSpy, useFakeTimers, spy, assert} from 'sinon';
 import axios from 'axios';
-import * as nock from 'nock';
-import * as assert from 'assert';
+import {strictEqual,throws } from 'assert';
 
 import { AWSXRayRemoteSampler } from '../src';
+import nock = require('nock');
 
 describe('GetSamplingRules', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -89,9 +89,9 @@ describe('GetSamplingRules', () => {
     ],
   };
 
-  let clock: sinon.SinonFakeTimers;
+  let clock: SinonFakeTimers;
   let sampler: AWSXRayRemoteSampler;
-  let axiosPostSpy: sinon.SinonSpy;
+  let axiosPostSpy: SinonSpy;
 
   const defaultEndpoint = 'http://localhost:1234';
   const pollingInterval = 60 * 1000;
@@ -108,8 +108,8 @@ describe('GetSamplingRules', () => {
   });
 
   beforeEach(() => {
-    clock = sinon.useFakeTimers();
-    axiosPostSpy = sinon.spy(axios, 'post');
+    clock = useFakeTimers();
+    axiosPostSpy = spy(axios, 'post');
     sampler = new AWSXRayRemoteSampler(config);
   });
 
@@ -126,34 +126,34 @@ describe('GetSamplingRules', () => {
       pollingIntervalMs: -5,
     };
 
-    assert.throws(
+    throws(
       () => new AWSXRayRemoteSampler(configWithZeroPollingInterval),
       TypeError
     );
-    assert.throws(
+    throws(
       () => new AWSXRayRemoteSampler(configWithNegativeInterval),
       TypeError
     );
   });
 
   it('should make a POST request to the /GetSamplingRules endpoint upon initialization', async () => {
-    sinon.assert.calledOnce(axiosPostSpy);
+    assert.calledOnce(axiosPostSpy);
   });
 
   it('should make a POST request to the /GetSamplingRules endpoint', async () => {
     clock.tick(pollingInterval);
-    sinon.assert.calledTwice(axiosPostSpy);
+    assert.calledTwice(axiosPostSpy);
   });
 
   it('should make 3 POST requests to the /GetSamplingRules endpoint after 3 intervals have passed', async () => {
     clock.tick(pollingInterval);
     clock.tick(pollingInterval);
 
-    sinon.assert.calledThrice(axiosPostSpy);
+    assert.calledThrice(axiosPostSpy);
   });
 
   it('should initialize endpoint and polling interval from config correctly', async () => {
-    assert.strictEqual(
+    strictEqual(
       sampler.toString(),
       `AWSXRayRemoteSampler{endpoint=${defaultEndpoint}, pollingInterval=${pollingInterval}}`
     );
@@ -163,7 +163,7 @@ describe('GetSamplingRules', () => {
     const sampler = new AWSXRayRemoteSampler({});
 
     // default polling interval (5 minutes) = 5 * 60 * 1000
-    assert.strictEqual(
+    strictEqual(
       sampler.toString(),
       `AWSXRayRemoteSampler{endpoint=http://localhost:2000, pollingInterval=${
         5 * 60 * 1000

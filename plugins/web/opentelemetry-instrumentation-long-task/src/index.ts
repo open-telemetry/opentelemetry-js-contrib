@@ -14,5 +14,11 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { LongTaskInstrumentation } from './instrumentation';
+export {
+  PerformanceLongTaskTiming,
+  TaskAttributionTiming,
+  ObserverCallbackInformation,
+  ObserverCallback,
+  LongtaskInstrumentationConfig,
+} from './types';

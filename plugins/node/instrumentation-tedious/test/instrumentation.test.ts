@@ -34,11 +34,12 @@ import {
   ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
+import { strictEqual, deepStrictEqual } from 'assert';
 import { TediousInstrumentation } from '../src';
 import makeApi from './api';
 import type { Connection } from 'tedious';
 import * as semver from 'semver';
+import assert = require('assert');
 
 const port = Number(process.env.MSSQL_PORT) || 1433;
 const database = process.env.MSSQL_DATABASE || 'master';
@@ -149,7 +150,7 @@ describe('tedious', () => {
     const queryString = "SELECT 42, 'hello world'";
     const PARENT_NAME = 'parentSpan';
     const parentSpan = provider.getTracer('default').startSpan(PARENT_NAME);
-    assert.deepStrictEqual(
+    deepStrictEqual(
       await context.with(trace.setSpan(context.active(), parentSpan), () =>
         tedious.query(connection, queryString)
       ),
@@ -158,7 +159,7 @@ describe('tedious', () => {
     parentSpan.end();
 
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
+    strictEqual(spans.length, 2, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -166,7 +167,7 @@ describe('tedious', () => {
       parentSpan,
     });
 
-    assert.strictEqual(spans[1].name, PARENT_NAME);
+    strictEqual(spans[1].name, PARENT_NAME);
   });
 
   it('should catch errors', async () => {
@@ -177,7 +178,7 @@ describe('tedious', () => {
       /incorrect syntax/i
     );
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
+    strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -194,12 +195,9 @@ describe('tedious', () => {
       of one span.
     */
     const queryString = 'SELECT 42; SELECT 42; SELECT 42;';
-    assert.deepStrictEqual(
-      await tedious.query(connection, queryString),
-      [42, 42, 42]
-    );
+    deepStrictEqual(await tedious.query(connection, queryString), [42, 42, 42]);
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
+    strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -211,12 +209,12 @@ describe('tedious', () => {
 
   it('should instrument execSqlBatch calls containing multiple queries', async () => {
     const queryString = 'SELECT 42; SELECT 42; SELECT 42;';
-    assert.deepStrictEqual(
+    deepStrictEqual(
       await tedious.query(connection, queryString, 'execSqlBatch'),
       [42, 42, 42]
     );
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
+    strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSqlBatch master',
@@ -227,12 +225,12 @@ describe('tedious', () => {
   });
 
   it('should instrument stored procedure calls', async () => {
-    assert.strictEqual(await tedious.storedProcedure.create(connection), true);
-    assert.deepStrictEqual(await tedious.storedProcedure.call(connection), {
+    strictEqual(await tedious.storedProcedure.create(connection), true);
+    deepStrictEqual(await tedious.storedProcedure.call(connection), {
       outputCount: 11,
     });
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
+    strictEqual(spans.length, 2, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -245,14 +243,11 @@ describe('tedious', () => {
   });
 
   it('should instrument prepared statement calls', async () => {
-    assert.strictEqual(await tedious.preparedSQL.createTable(connection), true);
+    strictEqual(await tedious.preparedSQL.createTable(connection), true);
     const request = await tedious.preparedSQL.prepare(connection);
-    assert.strictEqual(
-      await tedious.preparedSQL.execute(connection, request),
-      true
-    );
+    strictEqual(await tedious.preparedSQL.execute(connection, request), true);
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
+    strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -277,13 +272,13 @@ describe('tedious', () => {
     };
     await tedious.query(connection, sql.create);
     await tedious.query(connection, sql.use);
-    assert.deepStrictEqual(await tedious.query(connection, sql.select), [
+    deepStrictEqual(await tedious.query(connection, sql.select), [
       42,
       'hello world',
     ]);
 
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
+    strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -301,10 +296,10 @@ describe('tedious', () => {
   });
 
   it('should instrument BulkLoads', async () => {
-    assert.strictEqual(await tedious.bulkLoad.createTable(connection), true);
-    assert.strictEqual(await tedious.bulkLoad.execute(connection), 2);
+    strictEqual(await tedious.bulkLoad.createTable(connection), true);
+    strictEqual(await tedious.bulkLoad.execute(connection), 2);
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
+    strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -353,33 +348,27 @@ const assertRejects = (
 
 function assertSpan(span: ReadableSpan, expected: any) {
   assert(span);
-  assert.strictEqual(span.name, expected.name);
-  assert.strictEqual(span.kind, SpanKind.CLIENT);
-  assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], DBSYSTEMVALUES_MSSQL);
-  assert.strictEqual(
-    span.attributes[SEMATTRS_DB_NAME],
-    expected.database ?? database
-  );
-  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_PORT], port);
-  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_NAME], host);
-  assert.strictEqual(span.attributes[SEMATTRS_DB_USER], user);
-  assert.strictEqual(
+  strictEqual(span.name, expected.name);
+  strictEqual(span.kind, SpanKind.CLIENT);
+  strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], DBSYSTEMVALUES_MSSQL);
+  strictEqual(span.attributes[SEMATTRS_DB_NAME], expected.database ?? database);
+  strictEqual(span.attributes[SEMATTRS_NET_PEER_PORT], port);
+  strictEqual(span.attributes[SEMATTRS_NET_PEER_NAME], host);
+  strictEqual(span.attributes[SEMATTRS_DB_USER], user);
+  strictEqual(
     span.attributes['tedious.procedure_count'],
     expected.procCount ?? 1,
     'Invalid procedure_count'
   );
-  assert.strictEqual(
+  strictEqual(
     span.attributes['tedious.statement_count'],
     expected.statementCount ?? 1,
     'Invalid statement_count'
   );
   if (expected.parentSpan) {
-    assert.strictEqual(
-      span.parentSpanId,
-      expected.parentSpan.spanContext().spanId
-    );
+    strictEqual(span.parentSpanId, expected.parentSpan.spanContext().spanId);
   }
-  assert.strictEqual(span.attributes[SEMATTRS_DB_SQL_TABLE], expected.table);
+  strictEqual(span.attributes[SEMATTRS_DB_SQL_TABLE], expected.table);
   if (expected.sql) {
     if (expected.sql instanceof RegExp) {
       assertMatch(
@@ -387,19 +376,19 @@ function assertSpan(span: ReadableSpan, expected: any) {
         expected.sql
       );
     } else {
-      assert.strictEqual(span.attributes[SEMATTRS_DB_STATEMENT], expected.sql);
+      strictEqual(span.attributes[SEMATTRS_DB_STATEMENT], expected.sql);
     }
   } else {
-    assert.strictEqual(span.attributes[SEMATTRS_DB_STATEMENT], undefined);
+    strictEqual(span.attributes[SEMATTRS_DB_STATEMENT], undefined);
   }
   if (expected.error) {
     assert(
       expected.error.test(span.status.message),
       `Expected "${span.status.message}" to match ${expected.error}`
     );
-    assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+    strictEqual(span.status.code, SpanStatusCode.ERROR);
   } else {
-    assert.strictEqual(span.status.message, undefined);
-    assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
+    strictEqual(span.status.message, undefined);
+    strictEqual(span.status.code, SpanStatusCode.UNSET);
   }
 }

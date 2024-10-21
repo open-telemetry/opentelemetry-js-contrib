@@ -26,7 +26,7 @@ import {
   Baggage,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
-import * as assert from 'assert';
+import assert = require('assert');
 import {
   OTTracePropagator,
   OT_TRACE_ID_HEADER,

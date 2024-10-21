@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import {
+  strictEqual,
+  deepStrictEqual,
+  ok,
+  equal,
+  deepEqual,
+  ifError,
+} from 'assert';
 import { Writable } from 'stream';
 
 import * as semver from 'semver';
-import * as sinon from 'sinon';
+import { spy, SinonSpy, assert } from 'sinon';
 import { INVALID_SPAN_CONTEXT, context, trace, Span } from '@opentelemetry/api';
 import { diag, DiagLogLevel } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
@@ -68,13 +75,13 @@ describe('PinoInstrumentation', () => {
   describe('disabled instrumentation', () => {
     let logger: Pino.Logger;
     let stream: Writable;
-    let writeSpy: sinon.SinonSpy;
+    let writeSpy: SinonSpy;
 
     beforeEach(() => {
       instrumentation.disable();
       stream = new Writable();
       stream._write = () => {};
-      writeSpy = sinon.spy(stream, 'write');
+      writeSpy = spy(stream, 'write');
       logger = pino(stream);
     });
 
@@ -87,12 +94,12 @@ describe('PinoInstrumentation', () => {
         logger.info('a message');
         span.end();
 
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['msg'], 'a message');
-        assert.strictEqual(record['trace_id'], undefined);
-        assert.strictEqual(record['span_id'], undefined);
-        assert.strictEqual(record['trace_flags'], undefined);
+        strictEqual(record['msg'], 'a message');
+        strictEqual(record['trace_id'], undefined);
+        strictEqual(record['span_id'], undefined);
+        strictEqual(record['trace_flags'], undefined);
       });
     });
 
@@ -107,9 +114,9 @@ describe('PinoInstrumentation', () => {
         logger.info('a message');
         span.end();
 
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['resource.service.name'], undefined);
+        strictEqual(record['resource.service.name'], undefined);
       });
     });
 
@@ -119,7 +126,7 @@ describe('PinoInstrumentation', () => {
         logger.info('a message');
         span.end();
 
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
         assertRecord(record, span);
       });
@@ -129,14 +136,14 @@ describe('PinoInstrumentation', () => {
   describe('log correlation', () => {
     let logger: Pino.Logger;
     let stream: Writable;
-    let writeSpy: sinon.SinonSpy;
+    let writeSpy: SinonSpy;
 
     beforeEach(() => {
       instrumentation.setConfig({}); // reset to defaults
       memExporter.getFinishedLogRecords().length = 0; // clear
       stream = new Writable();
       stream._write = () => {};
-      writeSpy = sinon.spy(stream, 'write');
+      writeSpy = spy(stream, 'write');
       logger = pino(stream);
     });
 
@@ -145,10 +152,10 @@ describe('PinoInstrumentation', () => {
         logger.info('a message');
         span.end();
 
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
         assertRecord(record, span);
-        assert.strictEqual(record['msg'], 'a message');
+        strictEqual(record['msg'], 'a message');
       });
     });
 
@@ -163,13 +170,13 @@ describe('PinoInstrumentation', () => {
         logger.info('a message');
         span.end();
 
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
         assertRecord(record, span, logKeys);
-        assert.strictEqual(record['trace_id'], undefined);
-        assert.strictEqual(record['span_id'], undefined);
-        assert.strictEqual(record['trace_flags'], undefined);
-        assert.strictEqual(record['msg'], 'a message');
+        strictEqual(record['trace_id'], undefined);
+        strictEqual(record['span_id'], undefined);
+        strictEqual(record['trace_flags'], undefined);
+        strictEqual(record['msg'], 'a message');
       });
     });
 
@@ -179,24 +186,24 @@ describe('PinoInstrumentation', () => {
         child.info('a message');
         span.end();
 
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
         assertRecord(record, span);
-        assert.strictEqual(record['msg'], 'a message');
-        assert.strictEqual(record['childField'], 42);
+        strictEqual(record['msg'], 'a message');
+        strictEqual(record['childField'], 42);
       });
     });
 
     it('does not inject span context if no span is active', () => {
-      assert.strictEqual(trace.getSpan(context.active()), undefined);
+      strictEqual(trace.getSpan(context.active()), undefined);
 
       logger.info('a message');
 
-      sinon.assert.calledOnce(writeSpy);
+      assert.calledOnce(writeSpy);
       const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-      assert.strictEqual(record['trace_id'], undefined);
-      assert.strictEqual(record['span_id'], undefined);
-      assert.strictEqual(record['trace_flags'], undefined);
+      strictEqual(record['trace_id'], undefined);
+      strictEqual(record['span_id'], undefined);
+      strictEqual(record['trace_flags'], undefined);
     });
 
     it('does not inject span context if span context is invalid', () => {
@@ -204,11 +211,11 @@ describe('PinoInstrumentation', () => {
       context.with(trace.setSpan(context.active(), span), () => {
         logger.info('a message');
 
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['trace_id'], undefined);
-        assert.strictEqual(record['span_id'], undefined);
-        assert.strictEqual(record['trace_flags'], undefined);
+        strictEqual(record['trace_id'], undefined);
+        strictEqual(record['span_id'], undefined);
+        strictEqual(record['trace_flags'], undefined);
       });
     });
 
@@ -217,7 +224,7 @@ describe('PinoInstrumentation', () => {
         logHook: (_span, record, level) => {
           record['resource.service.name'] = 'test-service';
           if (semver.satisfies(pino.version, '>=7.9.0')) {
-            assert.strictEqual(level, 30);
+            strictEqual(level, 30);
           }
         },
       });
@@ -226,10 +233,10 @@ describe('PinoInstrumentation', () => {
         logger.info('a message');
         span.end();
 
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
         assertRecord(record, span);
-        assert.strictEqual(record['resource.service.name'], 'test-service');
+        strictEqual(record['resource.service.name'], 'test-service');
       });
     });
 
@@ -243,7 +250,7 @@ describe('PinoInstrumentation', () => {
         logger.info('a message');
         span.end();
 
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
         assertRecord(record, span);
       });
@@ -260,13 +267,13 @@ describe('PinoInstrumentation', () => {
         logger.info('foo');
         span.end();
 
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual('foo', record['msg']);
-        assert.strictEqual(record['trace_id'], undefined);
-        assert.strictEqual(record['span_id'], undefined);
-        assert.strictEqual(record['trace_flags'], undefined);
-        assert.strictEqual(record['resource.service.name'], undefined);
+        strictEqual('foo', record['msg']);
+        strictEqual(record['trace_id'], undefined);
+        strictEqual(record['span_id'], undefined);
+        strictEqual(record['trace_flags'], undefined);
+        strictEqual(record['resource.service.name'], undefined);
       });
     });
 
@@ -281,10 +288,10 @@ describe('PinoInstrumentation', () => {
         span.end();
 
         const { traceId, spanId } = span.spanContext();
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['trace_id'], traceId);
-        assert.strictEqual(record['span_id'], spanId);
+        strictEqual(record['trace_id'], traceId);
+        strictEqual(record['span_id'], spanId);
       });
     });
 
@@ -299,20 +306,20 @@ describe('PinoInstrumentation', () => {
         span.end();
 
         const { traceId, spanId } = span.spanContext();
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['trace_id'], traceId);
-        assert.strictEqual(record['span_id'], spanId);
+        strictEqual(record['trace_id'], traceId);
+        strictEqual(record['span_id'], spanId);
       });
     });
   });
 
   describe('logger construction', () => {
-    let stdoutSpy: sinon.SinonSpy;
+    let stdoutSpy: SinonSpy;
 
     beforeEach(() => {
       instrumentation.setConfig({}); // reset to defaults
-      stdoutSpy = sinon.spy(process.stdout, 'write');
+      stdoutSpy = spy(process.stdout, 'write');
     });
 
     afterEach(() => {
@@ -338,7 +345,7 @@ describe('PinoInstrumentation', () => {
 
         const record = JSON.parse(stdoutSpy.firstCall.args[0].toString());
         assertRecord(record, span);
-        assert.strictEqual(record['name'], 'LogLog');
+        strictEqual(record['name'], 'LogLog');
       });
     });
 
@@ -364,9 +371,9 @@ describe('PinoInstrumentation', () => {
 
         const record = JSON.parse(stdoutSpy.firstCall.args[0].toString());
         assertRecord(record, span);
-        assert.strictEqual(record['a'], 2);
-        assert.strictEqual(record['b'], 'bar');
-        assert.strictEqual(record['name'], 'LogLog');
+        strictEqual(record['a'], 2);
+        strictEqual(record['b'], 'bar');
+        strictEqual(record['name'], 'LogLog');
       });
     });
 
@@ -385,8 +392,8 @@ describe('PinoInstrumentation', () => {
 
         const { spanId } = span.spanContext();
         const record = JSON.parse(stdoutSpy.firstCall.args[0].toString());
-        assert.strictEqual(record['trace_id'], '123');
-        assert.strictEqual(record['span_id'], spanId);
+        strictEqual(record['trace_id'], '123');
+        strictEqual(record['span_id'], spanId);
       });
     });
   });
@@ -394,7 +401,7 @@ describe('PinoInstrumentation', () => {
   describe('log sending', () => {
     let logger: Pino.Logger;
     let stream: Writable;
-    let writeSpy: sinon.SinonSpy;
+    let writeSpy: SinonSpy;
 
     before(function () {
       if (typeof pino.multistream !== 'function') {
@@ -407,7 +414,7 @@ describe('PinoInstrumentation', () => {
       memExporter.getFinishedLogRecords().length = 0; // clear
       stream = new Writable();
       stream._write = () => {};
-      writeSpy = sinon.spy(stream, 'write');
+      writeSpy = spy(stream, 'write');
       logger = pino(
         {
           name: 'test-logger-name',
@@ -428,33 +435,33 @@ describe('PinoInstrumentation', () => {
       logger.warn('at warn level');
       logger.error('at error level');
       logger.fatal('at fatal level');
-      assert.strictEqual(logRecords.length, 5);
-      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
-      assert.strictEqual(logRecords[0].severityText, 'debug');
-      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.INFO);
-      assert.strictEqual(logRecords[1].severityText, 'info');
-      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.WARN);
-      assert.strictEqual(logRecords[2].severityText, 'warn');
-      assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.ERROR);
-      assert.strictEqual(logRecords[3].severityText, 'error');
-      assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.FATAL);
-      assert.strictEqual(logRecords[4].severityText, 'fatal');
+      strictEqual(logRecords.length, 5);
+      strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
+      strictEqual(logRecords[0].severityText, 'debug');
+      strictEqual(logRecords[1].severityNumber, SeverityNumber.INFO);
+      strictEqual(logRecords[1].severityText, 'info');
+      strictEqual(logRecords[2].severityNumber, SeverityNumber.WARN);
+      strictEqual(logRecords[2].severityText, 'warn');
+      strictEqual(logRecords[3].severityNumber, SeverityNumber.ERROR);
+      strictEqual(logRecords[3].severityText, 'error');
+      strictEqual(logRecords[4].severityNumber, SeverityNumber.FATAL);
+      strictEqual(logRecords[4].severityText, 'fatal');
 
       // attributes, resource, instrumentationScope, etc.
       logger.info({ foo: 'bar' }, 'a message');
       const rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.body, 'a message');
-      assert.deepStrictEqual(rec.attributes, {
+      strictEqual(rec.body, 'a message');
+      deepStrictEqual(rec.attributes, {
         name: 'test-logger-name',
         foo: 'bar',
       });
-      assert.strictEqual(
+      strictEqual(
         rec.resource.attributes['service.name'],
         'test-instrumentation-pino'
       );
-      assert.strictEqual(rec.instrumentationScope.name, PACKAGE_NAME);
-      assert.strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
-      assert.strictEqual(rec.spanContext, undefined);
+      strictEqual(rec.instrumentationScope.name, PACKAGE_NAME);
+      strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
+      strictEqual(rec.spanContext, undefined);
 
       // spanContext
       tracer.startActiveSpan('abc', span => {
@@ -463,14 +470,14 @@ describe('PinoInstrumentation', () => {
 
         const { traceId, spanId, traceFlags } = span.spanContext();
         const rec = logRecords[logRecords.length - 1];
-        assert.strictEqual(rec.spanContext?.traceId, traceId);
-        assert.strictEqual(rec.spanContext?.spanId, spanId);
-        assert.strictEqual(rec.spanContext?.traceFlags, traceFlags);
+        strictEqual(rec.spanContext?.traceId, traceId);
+        strictEqual(rec.spanContext?.spanId, spanId);
+        strictEqual(rec.spanContext?.traceFlags, traceFlags);
 
         // This rec should *NOT* have the `trace_id` et al attributes.
-        assert.strictEqual(rec.attributes.trace_id, undefined);
-        assert.strictEqual(rec.attributes.span_id, undefined);
-        assert.strictEqual(rec.attributes.trace_flags, undefined);
+        strictEqual(rec.attributes.trace_id, undefined);
+        strictEqual(rec.attributes.span_id, undefined);
+        strictEqual(rec.attributes.trace_flags, undefined);
       });
     });
 
@@ -486,15 +493,15 @@ describe('PinoInstrumentation', () => {
         logger.info('foo');
         span.end();
 
-        assert.strictEqual(memExporter.getFinishedLogRecords().length, 0);
+        strictEqual(memExporter.getFinishedLogRecords().length, 0);
 
         // Test log correlation still works.
         const { traceId, spanId } = span.spanContext();
-        sinon.assert.calledOnce(writeSpy);
+        assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assert.strictEqual('foo', record['msg']);
-        assert.strictEqual(record['trace_id'], traceId);
-        assert.strictEqual(record['span_id'], spanId);
+        strictEqual('foo', record['msg']);
+        strictEqual(record['trace_id'], traceId);
+        strictEqual(record['span_id'], spanId);
       });
     });
 
@@ -507,11 +514,11 @@ describe('PinoInstrumentation', () => {
       // would be nice to maintain that "time" attribute if possible.
       logger.info({ time: 'miller' }, 'hi');
       const rec = logRecords[logRecords.length - 1];
-      assert.deepEqual(
+      deepEqual(
         rec.hrTime.map(n => typeof n),
         ['number', 'number']
       );
-      assert.strictEqual(rec.attributes.time, 'miller');
+      strictEqual(rec.attributes.time, 'miller');
     });
 
     it('edge case: custom "timestamp" option', () => {
@@ -522,32 +529,29 @@ describe('PinoInstrumentation', () => {
       logger.info('using false');
       otelRec = logRecords[logRecords.length - 1];
       pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
-      assert.deepEqual(
+      deepEqual(
         otelRec.hrTime.map(n => typeof n),
         ['number', 'number']
       );
-      assert.strictEqual(pinoRec.time, undefined);
+      strictEqual(pinoRec.time, undefined);
 
       logger = pino({ timestamp: pino.stdTimeFunctions.epochTime }, stream);
       logger.info('using epochTime');
       otelRec = logRecords[logRecords.length - 1];
       pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
-      assert.strictEqual(hrTimeToMilliseconds(otelRec.hrTime), pinoRec.time);
+      strictEqual(hrTimeToMilliseconds(otelRec.hrTime), pinoRec.time);
 
       logger = pino({ timestamp: pino.stdTimeFunctions.unixTime }, stream);
       logger.info('using unixTime');
       otelRec = logRecords[logRecords.length - 1];
       pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
-      assert.strictEqual(
-        hrTimeToMilliseconds(otelRec.hrTime),
-        pinoRec.time * 1e3
-      );
+      strictEqual(hrTimeToMilliseconds(otelRec.hrTime), pinoRec.time * 1e3);
 
       logger = pino({ timestamp: pino.stdTimeFunctions.isoTime }, stream);
       logger.info('using isoTime');
       otelRec = logRecords[logRecords.length - 1];
       pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
-      assert.strictEqual(
+      strictEqual(
         hrTimeToMilliseconds(otelRec.hrTime),
         new Date(pinoRec.time).getTime()
       );
@@ -556,12 +560,12 @@ describe('PinoInstrumentation', () => {
       logger.info('using custom timestamp fn');
       otelRec = logRecords[logRecords.length - 1];
       pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
-      assert.deepEqual(
+      deepEqual(
         otelRec.hrTime.map(n => typeof n),
         ['number', 'number']
       );
-      assert.strictEqual(pinoRec.time, 'quittin');
-      assert.strictEqual(otelRec.attributes.time, 'quittin');
+      strictEqual(pinoRec.time, 'quittin');
+      strictEqual(otelRec.attributes.time, 'quittin');
     });
 
     // A custom 'timestamp' fn that returns invalid data will result in a Pino
@@ -587,10 +591,10 @@ describe('PinoInstrumentation', () => {
 
       logger = pino({ timestamp: () => 'invalid JSON' }, stream);
       logger.info('using custom timestamp fn returning bogus result');
-      assert.strictEqual(logRecords.length, 0);
-      assert.ok(writeSpy.lastCall.args[0].toString().includes('invalid JSON'));
-      assert.equal(diagWarns.length, 1);
-      assert.ok(diagWarns[0][1].includes('could not send pino log line'));
+      strictEqual(logRecords.length, 0);
+      ok(writeSpy.lastCall.args[0].toString().includes('invalid JSON'));
+      equal(diagWarns.length, 1);
+      ok(diagWarns[0][1].includes('could not send pino log line'));
     });
 
     it('edge case: customLevels', () => {
@@ -610,18 +614,18 @@ describe('PinoInstrumentation', () => {
 
       (logger as any).foo('foomsg');
       rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.severityNumber, SeverityNumber.WARN);
-      assert.strictEqual(rec.severityText, 'foo');
+      strictEqual(rec.severityNumber, SeverityNumber.WARN);
+      strictEqual(rec.severityText, 'foo');
 
       (logger as any).bar('barmsg');
       rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.severityNumber, SeverityNumber.INFO4);
-      assert.strictEqual(rec.severityText, 'bar');
+      strictEqual(rec.severityNumber, SeverityNumber.INFO4);
+      strictEqual(rec.severityText, 'bar');
 
       (logger as any).baz('bazmsg');
       rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.severityNumber, SeverityNumber.WARN2);
-      assert.strictEqual(rec.severityText, 'baz');
+      strictEqual(rec.severityNumber, SeverityNumber.WARN2);
+      strictEqual(rec.severityText, 'baz');
     });
 
     it('edge case: customLevels and formatters.level', () => {
@@ -643,12 +647,12 @@ describe('PinoInstrumentation', () => {
       const logRecords = memExporter.getFinishedLogRecords();
       (logger as any).foo('foomsg');
       const otelRec = logRecords[logRecords.length - 1];
-      assert.strictEqual(otelRec.severityNumber, SeverityNumber.WARN);
-      assert.strictEqual(otelRec.severityText, 'foo');
+      strictEqual(otelRec.severityNumber, SeverityNumber.WARN);
+      strictEqual(otelRec.severityText, 'foo');
 
-      sinon.assert.calledOnce(writeSpy);
+      assert.calledOnce(writeSpy);
       const pinoRec = JSON.parse(writeSpy.firstCall.args[0].toString());
-      assert.equal((pinoRec as any).level, 'foo');
+      equal((pinoRec as any).level, 'foo');
     });
 
     it('edge case: customLevels and useOnlyCustomLevels', () => {
@@ -669,13 +673,13 @@ describe('PinoInstrumentation', () => {
 
       (logger as any).foo('foomsg');
       rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.severityNumber, SeverityNumber.WARN);
-      assert.strictEqual(rec.severityText, 'foo');
+      strictEqual(rec.severityNumber, SeverityNumber.WARN);
+      strictEqual(rec.severityText, 'foo');
 
       (logger as any).bar('barmsg');
       rec = logRecords[logRecords.length - 1];
-      assert.strictEqual(rec.severityNumber, SeverityNumber.INFO4);
-      assert.strictEqual(rec.severityText, 'bar');
+      strictEqual(rec.severityNumber, SeverityNumber.INFO4);
+      strictEqual(rec.severityText, 'bar');
     });
 
     // We use multistream internally to write to the OTel SDK. This test ensures
@@ -685,7 +689,7 @@ describe('PinoInstrumentation', () => {
 
       const stream2 = new Writable();
       stream2._write = () => {};
-      const writeSpy2 = sinon.spy(stream2, 'write');
+      const writeSpy2 = spy(stream2, 'write');
 
       logger = pino(
         {},
@@ -694,15 +698,15 @@ describe('PinoInstrumentation', () => {
       logger.info('using multistream');
 
       const otelRec = logRecords[logRecords.length - 1];
-      assert.equal(otelRec.body, 'using multistream');
+      equal(otelRec.body, 'using multistream');
 
-      sinon.assert.calledOnce(writeSpy);
+      assert.calledOnce(writeSpy);
       const pinoRec = JSON.parse(writeSpy.firstCall.args[0].toString());
-      assert.equal((pinoRec as any).msg, 'using multistream');
+      equal((pinoRec as any).msg, 'using multistream');
 
-      sinon.assert.calledOnce(writeSpy2);
+      assert.calledOnce(writeSpy2);
       const pinoRec2 = JSON.parse(writeSpy2.firstCall.args[0].toString());
-      assert.equal((pinoRec2 as any).msg, 'using multistream');
+      equal((pinoRec2 as any).msg, 'using multistream');
     });
 
     it('edge case: messageKey', () => {
@@ -711,11 +715,11 @@ describe('PinoInstrumentation', () => {
 
       const logRecords = memExporter.getFinishedLogRecords();
       const otelRec = logRecords[logRecords.length - 1];
-      assert.equal(otelRec.body, 'using messageKey');
+      equal(otelRec.body, 'using messageKey');
 
-      sinon.assert.calledOnce(writeSpy);
+      assert.calledOnce(writeSpy);
       const pinoRec = JSON.parse(writeSpy.firstCall.args[0].toString());
-      assert.equal((pinoRec as any).mymsg, 'using messageKey');
+      equal((pinoRec as any).mymsg, 'using messageKey');
     });
   });
 
@@ -731,20 +735,20 @@ describe('PinoInstrumentation', () => {
           NODE_NO_WARNINGS: '1',
         },
         checkResult: (err, stdout, _stderr) => {
-          assert.ifError(err);
+          ifError(err);
           logRecords = stdout
             .trim()
             .split('\n')
             .map(ln => JSON.parse(ln));
-          assert.strictEqual(logRecords.length, 1);
+          strictEqual(logRecords.length, 1);
         },
         checkCollector: (collector: TestCollector) => {
           // Check that both log records had the trace-context of the span injected.
           const spans = collector.sortedSpans;
-          assert.strictEqual(spans.length, 1);
+          strictEqual(spans.length, 1);
           logRecords.forEach(rec => {
-            assert.strictEqual(rec.trace_id, spans[0].traceId);
-            assert.strictEqual(rec.span_id, spans[0].spanId);
+            strictEqual(rec.trace_id, spans[0].traceId);
+            strictEqual(rec.span_id, spans[0].spanId);
           });
         },
       });
@@ -765,20 +769,20 @@ describe('PinoInstrumentation', () => {
             NODE_NO_WARNINGS: '1',
           },
           checkResult: (err, stdout, _stderr) => {
-            assert.ifError(err);
+            ifError(err);
             logRecords = stdout
               .trim()
               .split('\n')
               .map(ln => JSON.parse(ln));
-            assert.strictEqual(logRecords.length, 1);
+            strictEqual(logRecords.length, 1);
           },
           checkCollector: (collector: TestCollector) => {
             // Check that both log records had the trace-context of the span injected.
             const spans = collector.sortedSpans;
-            assert.strictEqual(spans.length, 1);
+            strictEqual(spans.length, 1);
             logRecords.forEach(rec => {
-              assert.strictEqual(rec.trace_id, spans[0].traceId);
-              assert.strictEqual(rec.span_id, spans[0].spanId);
+              strictEqual(rec.trace_id, spans[0].traceId);
+              strictEqual(rec.span_id, spans[0].spanId);
             });
           },
         });
@@ -793,9 +797,9 @@ function assertRecord(
   expectedKeys?: PinoInstrumentationConfig['logKeys']
 ) {
   const { traceId, spanId, traceFlags } = span.spanContext();
-  assert.strictEqual(record[expectedKeys?.traceId ?? 'trace_id'], traceId);
-  assert.strictEqual(record[expectedKeys?.spanId ?? 'span_id'], spanId);
-  assert.strictEqual(
+  strictEqual(record[expectedKeys?.traceId ?? 'trace_id'], traceId);
+  strictEqual(record[expectedKeys?.spanId ?? 'span_id'], spanId);
+  strictEqual(
     record[expectedKeys?.traceFlags ?? 'trace_flags'],
     `0${traceFlags.toString(16)}`
   );

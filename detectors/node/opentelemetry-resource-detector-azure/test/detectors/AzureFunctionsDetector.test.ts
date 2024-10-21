@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import { strictEqual, ok } from 'assert';
 import { azureFunctionsDetector } from '../../src/detectors/AzureFunctionsDetector';
 import { azureAppServiceDetector } from '../../src/detectors/AzureAppServiceDetector';
 import {
@@ -52,30 +52,24 @@ describe('AzureFunctionsDetector', () => {
     const resource = detectResourcesSync({
       detectors: [azureFunctionsDetector, azureAppServiceDetector],
     });
-    assert.ok(resource);
+    ok(resource);
     const attributes = resource.attributes;
-    assert.strictEqual(attributes[SEMRESATTRS_SERVICE_NAME], 'test-service');
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_PROVIDER], 'azure');
-    assert.strictEqual(
-      attributes[SEMRESATTRS_CLOUD_PLATFORM],
-      'azure_functions'
-    );
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
-    assert.strictEqual(
-      attributes[SEMRESATTRS_FAAS_INSTANCE],
-      'test-instance-id'
-    );
-    assert.strictEqual(attributes[SEMRESATTRS_FAAS_MAX_MEMORY], '1000');
+    strictEqual(attributes[SEMRESATTRS_SERVICE_NAME], 'test-service');
+    strictEqual(attributes[SEMRESATTRS_CLOUD_PROVIDER], 'azure');
+    strictEqual(attributes[SEMRESATTRS_CLOUD_PLATFORM], 'azure_functions');
+    strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
+    strictEqual(attributes[SEMRESATTRS_FAAS_INSTANCE], 'test-instance-id');
+    strictEqual(attributes[SEMRESATTRS_FAAS_MAX_MEMORY], '1000');
 
     // Should not detect app service values
-    assert.strictEqual(attributes[SEMRESATTRS_SERVICE_INSTANCE_ID], undefined);
-    assert.strictEqual(attributes[SEMRESATTRS_PROCESS_PID], process.pid);
+    strictEqual(attributes[SEMRESATTRS_SERVICE_INSTANCE_ID], undefined);
+    strictEqual(attributes[SEMRESATTRS_PROCESS_PID], process.pid);
 
-    assert.strictEqual(
+    strictEqual(
       attributes['cloud.resource_id'],
       `/subscriptions/${process.env.WEBSITE_OWNER_NAME}/resourceGroups/${process.env.WEBSITE_RESOURCE_GROUP}/providers/Microsoft.Web/sites/${process.env.WEBSITE_SITE_NAME}`
     );
-    assert.strictEqual(
+    strictEqual(
       attributes[AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE],
       undefined
     );
@@ -94,9 +88,9 @@ describe('AzureFunctionsDetector', () => {
     const resource = detectResourcesSync({
       detectors: [azureFunctionsDetector, azureAppServiceDetector],
     });
-    assert.ok(resource);
+    ok(resource);
     const attributes = resource.attributes;
-    assert.strictEqual(
+    strictEqual(
       attributes['cloud.resource_id'],
       `/subscriptions/${expectedWebsiteOwnerName}/resourceGroups/${process.env.WEBSITE_RESOURCE_GROUP}/providers/Microsoft.Web/sites/${process.env.WEBSITE_SITE_NAME}`
     );
@@ -104,7 +98,7 @@ describe('AzureFunctionsDetector', () => {
 });
 
 it('should detect azure functions if websiteSku is defined as FlexConsumption', () => {
-  assert.ok(!process.env.WEBSITE_SKU && !process.env.FUNCTIONS_VERSION);
+  ok(!process.env.WEBSITE_SKU && !process.env.FUNCTIONS_VERSION);
   process.env.WEBSITE_SITE_NAME = 'test-service';
   process.env.REGION_NAME = 'test-region';
   process.env.WEBSITE_INSTANCE_ID = 'test-instance-id';
@@ -116,13 +110,13 @@ it('should detect azure functions if websiteSku is defined as FlexConsumption', 
   const resource = detectResourcesSync({
     detectors: [azureFunctionsDetector, azureAppServiceDetector],
   });
-  assert.ok(resource);
+  ok(resource);
   const attributes = resource.attributes;
-  assert.strictEqual(attributes[SEMRESATTRS_SERVICE_NAME], 'test-service');
-  assert.strictEqual(attributes[SEMRESATTRS_CLOUD_PROVIDER], 'azure');
+  strictEqual(attributes[SEMRESATTRS_SERVICE_NAME], 'test-service');
+  strictEqual(attributes[SEMRESATTRS_CLOUD_PROVIDER], 'azure');
 
   // Should not detect app service values
-  assert.strictEqual(attributes[SEMRESATTRS_SERVICE_INSTANCE_ID], undefined);
-  assert.strictEqual(attributes[SEMRESATTRS_PROCESS_PID], process.pid);
+  strictEqual(attributes[SEMRESATTRS_SERVICE_INSTANCE_ID], undefined);
+  strictEqual(attributes[SEMRESATTRS_PROCESS_PID], process.pid);
   delete process.env.WEBSITE_SKU;
 });

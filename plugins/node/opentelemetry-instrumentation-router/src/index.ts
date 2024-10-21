@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './enums/AttributeNames';
+export { RouterInstrumentation } from './instrumentation';
+export { AttributeNames } from './enums/AttributeNames';

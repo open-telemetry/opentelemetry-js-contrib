@@ -21,7 +21,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import * as assert from 'assert';
+import { equal, strictEqual } from 'assert';
 import * as tls from 'tls';
 import { NetInstrumentation } from '../src';
 import { SocketEvent } from '../src/internal-types';
@@ -39,7 +39,7 @@ provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
 function getTLSSpans() {
   const spans = memoryExporter.getFinishedSpans();
-  assert.strictEqual(spans.length, 2);
+  strictEqual(spans.length, 2);
   const [netSpan, tlsSpan] = spans;
   return {
     netSpan,
@@ -133,8 +133,8 @@ describe('NetInstrumentation', () => {
       );
       tlsSocket.on('error', error => {
         const { tlsSpan } = getTLSSpans();
-        assert.strictEqual(tlsSpan.status.message, error.message);
-        assert.strictEqual(tlsSpan.status.code, SpanStatusCode.ERROR);
+        strictEqual(tlsSpan.status.message, error.message);
+        strictEqual(tlsSpan.status.code, SpanStatusCode.ERROR);
         done();
       });
     });
@@ -149,9 +149,9 @@ describe('NetInstrumentation', () => {
         SocketEvent.SECURE_CONNECT,
         SocketEvent.ERROR,
       ]) {
-        assert.equal(events.has(event), false);
+        equal(events.has(event), false);
       }
-      assert.strictEqual(tlsSocket.listenerCount(SocketEvent.CLOSE), 1);
+      strictEqual(tlsSocket.listenerCount(SocketEvent.CLOSE), 1);
     }
 
     it('should clean up listeners for tls.connect', done => {
