@@ -470,6 +470,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       SemanticAttributes.SERVER_PORT,
       SemanticAttributes.URL_SCHEME,
       SemanticAttributes.ERROR_TYPE,
+      SemanticAttributes.HTTP_ROUTE,
     ];
     keysToCopy.forEach(key => {
       if (key in attributes) {
