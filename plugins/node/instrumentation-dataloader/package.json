@@ -50,7 +50,6 @@
     "@types/mocha": "7.0.2",
     "@types/node": "18.18.14",
     "dataloader": "2.2.2",
-    "mocha": "10.7.3",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "test-all-versions": "6.1.0",

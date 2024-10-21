@@ -46,7 +46,6 @@
     "@types/mocha": "8.2.3",
     "@types/node": "18.18.14",
     "@types/sinon": "10.0.20",
-    "mocha": "10.7.3",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",

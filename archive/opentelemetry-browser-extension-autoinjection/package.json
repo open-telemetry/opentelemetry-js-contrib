@@ -47,7 +47,6 @@
     "html-webpack-plugin": "5.3.2",
     "jimp": "0.16.1",
     "jsdom": "15.2.1",
-    "mocha": "10.7.3",
     "null-loader": "4.0.1",
     "nyc": "15.1.0",
     "responsive-loader": "2.3.0",

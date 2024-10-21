@@ -54,7 +54,6 @@
     "@types/mocha": "8.2.3",
     "@types/node": "18.18.14",
     "expect": "29.2.0",
-    "mocha": "10.7.3",
     "mongoose": "6.13.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",

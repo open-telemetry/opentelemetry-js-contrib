@@ -59,7 +59,6 @@
     "@types/sinon": "10.0.20",
     "cross-env": "7.0.3",
     "ioredis": "5.2.2",
-    "mocha": "10.7.3",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",

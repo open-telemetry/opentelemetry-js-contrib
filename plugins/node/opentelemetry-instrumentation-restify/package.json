@@ -52,7 +52,6 @@
     "@types/node": "18.18.14",
     "@types/restify": "4.3.12",
     "@types/semver": "7.5.8",
-    "mocha": "10.7.3",
     "nyc": "15.1.0",
     "restify": "11.1.0",
     "rimraf": "5.0.10",

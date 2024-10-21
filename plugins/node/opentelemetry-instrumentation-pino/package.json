@@ -54,7 +54,6 @@
     "@types/node": "18.18.14",
     "@types/semver": "7.5.8",
     "@types/sinon": "10.0.20",
-    "mocha": "10.7.3",
     "nyc": "15.1.0",
     "pino": "8.3.1",
     "rimraf": "5.0.10",
