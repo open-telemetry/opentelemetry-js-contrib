@@ -331,32 +331,12 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
     );
 }
 
-function removePrecompile() {
-    const dirs = getAllWorkspaceDirs();
-
-    dirs.forEach(d => {
-        const pkgPath = path.join(d, 'package.json');
-        const pkgText = fs.readFileSync(pkgPath, 'utf-8');
-        const pkgLines = pkgText.split('\n');
-
-        const removeIndex = pkgLines.findIndex(l => l.indexOf('"precompile":') !== -1)
-        const shouldRemove = removeIndex !== -1;
-
-        console.log(d, removeIndex)
-        if (shouldRemove) {
-            pkgLines.splice(removeIndex, 1);
-            fs.writeFileSync(pkgPath, pkgLines.join('\n'), 'utf-8');
-        }
-    });
-}
-
 async function main() {
-    // updateNpmWorkspacesDeps({
-    //     patterns: ['@opentelemetry/*'],
-    //     allowRangeBumpFor0x: true,
-    //     dryRun: false,
-    // });
-    removePrecompile();
+    updateNpmWorkspacesDeps({
+        patterns: ['@opentelemetry/*'],
+        allowRangeBumpFor0x: true,
+        dryRun: false,
+    });
 }
 
 main();
