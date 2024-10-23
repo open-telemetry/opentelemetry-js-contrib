@@ -112,10 +112,13 @@ export function getDbValues(
  * @returns SQL statement without variable arguments or SQL verb
  */
 export function getSpanName(query: string | Query | QueryOptions): string {
-  if (typeof query === 'object') {
-    return query.sql;
+  const rawQuery = typeof query === 'object' ? query.sql : query;
+  // Extract the SQL verb
+  const firstSpace = rawQuery?.indexOf(' ');
+  if (typeof firstSpace === 'number' && firstSpace !== -1) {
+    return rawQuery?.substring(0, firstSpace);
   }
-  return query.split(' ')[0];
+  return rawQuery;
 }
 
 export function arrayStringifyHelper(arr: Array<unknown> | undefined): string {
