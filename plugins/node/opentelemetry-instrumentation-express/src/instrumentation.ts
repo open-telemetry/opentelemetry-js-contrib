@@ -59,47 +59,63 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
     return [
       new InstrumentationNodeModuleDefinition(
         'express',
-        ['>=4.0.0 <6'],
+        ['>=4.0.0 <5'],
         moduleExports => {
-          const isExpressV5 = 'Route' in moduleExports.Router;
-          const routerProto = isExpressV5
-            ? moduleExports.Router.prototype
-            : moduleExports.Router;
-          // patch express.Router.route
-          if (isWrapped(routerProto.route)) {
-            this._unwrap(routerProto, 'route');
-          }
-          this._wrap(routerProto, 'route', this._getRoutePatch());
-          // patch express.Router.use
-          if (isWrapped(routerProto.use)) {
-            this._unwrap(routerProto, 'use');
-          }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          this._wrap(routerProto, 'use', this._getRouterUsePatch() as any);
-          // patch express.Application.use
-          if (isWrapped(moduleExports.application.use)) {
-            this._unwrap(moduleExports.application, 'use');
-          }
-          this._wrap(
-            moduleExports.application,
-            'use',
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this._getAppUsePatch(isExpressV5) as any
-          );
-          return moduleExports;
+          this._setup(moduleExports, false);
         },
         moduleExports => {
-          if (moduleExports === undefined) return;
-          const isExpressV5 = 'Route' in moduleExports.Router;
-          const routerProto = isExpressV5
-            ? moduleExports.Router.prototype
-            : moduleExports.Router;
-          this._unwrap(routerProto, 'route');
-          this._unwrap(routerProto, 'use');
-          this._unwrap(moduleExports.application, 'use');
+          this._tearDown(moduleExports, false);
+        }
+      ),
+      new InstrumentationNodeModuleDefinition(
+        'express',
+        ['>=5 <6'],
+        moduleExports => {
+          this._setup(moduleExports, true);
+        },
+        moduleExports => {
+          this._tearDown(moduleExports, true);
         }
       ),
     ];
+  }
+
+  private _setup(moduleExports: any, isExpressV5: boolean) {
+    const routerProto = isExpressV5
+      ? moduleExports.Router.prototype
+      : moduleExports.Router;
+    // patch express.Router.route
+    if (isWrapped(routerProto.route)) {
+      this._unwrap(routerProto, 'route');
+    }
+    this._wrap(routerProto, 'route', this._getRoutePatch());
+    // patch express.Router.use
+    if (isWrapped(routerProto.use)) {
+      this._unwrap(routerProto, 'use');
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this._wrap(routerProto, 'use', this._getRouterUsePatch() as any);
+    // patch express.Application.use
+    if (isWrapped(moduleExports.application.use)) {
+      this._unwrap(moduleExports.application, 'use');
+    }
+    this._wrap(
+      moduleExports.application,
+      'use',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this._getAppUsePatch(isExpressV5) as any
+    );
+    return moduleExports;
+  }
+
+  private _tearDown(moduleExports: any, isExpressV5: boolean) {
+    if (moduleExports === undefined) return;
+    const routerProto = isExpressV5
+      ? moduleExports.Router.prototype
+      : moduleExports.Router;
+    this._unwrap(routerProto, 'route');
+    this._unwrap(routerProto, 'use');
+    this._unwrap(moduleExports.application, 'use');
   }
 
   /**
