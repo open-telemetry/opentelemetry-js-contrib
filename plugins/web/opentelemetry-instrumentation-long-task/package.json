@@ -12,7 +12,6 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../../scripts/lint-readme.js",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-user-interaction --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
