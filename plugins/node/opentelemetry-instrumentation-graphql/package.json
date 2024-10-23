@@ -14,7 +14,7 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-graphql --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "version:update": "node ../../../scripts/version-update.js",
@@ -51,11 +51,9 @@
     "@types/mocha": "8.2.3",
     "@types/node": "18.18.14",
     "graphql": "^16.5.0",
-    "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "test-all-versions": "6.1.0",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {

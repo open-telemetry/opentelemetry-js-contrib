@@ -50,7 +50,11 @@ import {
   SEMATTRS_DB_USER,
   SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_DB_CLIENT_CONNECTION_STATE } from '@opentelemetry/semantic-conventions/incubating';
+import {
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
+  METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
+  ATTR_DB_CLIENT_CONNECTION_STATE,
+} from '@opentelemetry/semantic-conventions/incubating';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -277,6 +281,7 @@ describe('pg-pool', () => {
         await client.query('SELECT NOW()');
       } finally {
         client.release();
+        await newPool.end();
       }
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
@@ -491,7 +496,7 @@ describe('pg-pool', () => {
       metricReader = testUtils.initMeterProvider(instrumentation);
     });
 
-    it('should generate `db.client.connection.count` and `db.client.connection.pending_requests` metrics', async () => {
+    it('should generate `db.client.connection.count` and `db.client.connection.pending_requests` metrics', done => {
       pool.connect((err, client, release) => {
         if (err) {
           throw new Error(err.message);
@@ -521,7 +526,7 @@ describe('pg-pool', () => {
           const metrics = resourceMetrics.scopeMetrics[0].metrics;
           assert.strictEqual(
             metrics[1].descriptor.name,
-            'db.client.connection.count'
+            METRIC_DB_CLIENT_CONNECTION_COUNT
           );
           assert.strictEqual(
             metrics[1].descriptor.description,
@@ -552,7 +557,7 @@ describe('pg-pool', () => {
 
           assert.strictEqual(
             metrics[2].descriptor.name,
-            'db.client.connection.pending_requests'
+            METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS
           );
           assert.strictEqual(
             metrics[2].descriptor.description,
@@ -563,7 +568,275 @@ describe('pg-pool', () => {
             0,
             'expected to have 0 pending requests'
           );
+          done();
         });
+      });
+    });
+
+    it('should not add duplicate event listeners to PgPool events', done => {
+      const poolAux: pgPool<pg.Client> = new pgPool(CONFIG);
+      let completed = 0;
+      poolAux.connect((err, client, release) => {
+        if (err) {
+          throw new Error(err.message);
+        }
+        if (!release) {
+          throw new Error('Did not receive release function');
+        }
+        if (!client) {
+          throw new Error('No client received');
+        }
+        assert.ok(client);
+        release();
+
+        assert.equal(
+          poolAux.listenerCount('connect'),
+          1,
+          `${poolAux.listenerCount('connect')} event listener(s) for 'connect'`
+        );
+        assert.equal(
+          poolAux.listenerCount('acquire'),
+          1,
+          `${poolAux.listenerCount('acquire')} event listener(s) for 'acquire'`
+        );
+        assert.equal(
+          poolAux.listenerCount('remove'),
+          1,
+          `${poolAux.listenerCount('remove')} event listener(s) for 'remove'`
+        );
+        assert.equal(
+          poolAux.listenerCount('release'),
+          1,
+          `${poolAux.listenerCount('release')} event listener(s) for 'release'`
+        );
+
+        completed++;
+        if (completed >= 2) {
+          done();
+        }
+      });
+
+      poolAux.connect((err, client, release) => {
+        if (err) {
+          throw new Error(err.message);
+        }
+        if (!release) {
+          throw new Error('Did not receive release function');
+        }
+        if (!client) {
+          throw new Error('No client received');
+        }
+        assert.ok(client);
+        release();
+
+        assert.equal(
+          poolAux.listenerCount('connect'),
+          1,
+          `${poolAux.listenerCount('connect')} event listener(s) for 'connect'`
+        );
+        assert.equal(
+          poolAux.listenerCount('acquire'),
+          1,
+          `${poolAux.listenerCount('acquire')} event listener(s) for 'acquire'`
+        );
+        assert.equal(
+          poolAux.listenerCount('remove'),
+          1,
+          `${poolAux.listenerCount('remove')} event listener(s) for 'remove'`
+        );
+        assert.equal(
+          poolAux.listenerCount('release'),
+          1,
+          `${poolAux.listenerCount('release')} event listener(s) for 'release'`
+        );
+
+        completed++;
+        if (completed >= 2) {
+          done();
+        }
+      });
+    });
+
+    it('adding a custom event listener should still work with the default event listeners to PgPool events', done => {
+      const poolAux: pgPool<pg.Client> = new pgPool(CONFIG);
+      let testValue = 0;
+      poolAux.on('connect', () => {
+        testValue = 1;
+      });
+
+      poolAux.connect((err, client, release) => {
+        if (err) {
+          throw new Error(err.message);
+        }
+        if (!release) {
+          throw new Error('Did not receive release function');
+        }
+        if (!client) {
+          throw new Error('No client received');
+        }
+        assert.ok(client);
+
+        client.query('SELECT NOW()', async (err, ret) => {
+          release();
+          if (err) {
+            throw new Error(err.message);
+          }
+          assert.ok(ret);
+          assert.equal(
+            poolAux.listenerCount('connect'),
+            2,
+            `${poolAux.listenerCount(
+              'connect'
+            )} event listener(s) for 'connect'`
+          );
+          assert.equal(
+            poolAux.listenerCount('acquire'),
+            1,
+            `${poolAux.listenerCount(
+              'acquire'
+            )} event listener(s) for 'acquire'`
+          );
+          assert.equal(
+            poolAux.listenerCount('remove'),
+            1,
+            `${poolAux.listenerCount('remove')} event listener(s) for 'remove'`
+          );
+          assert.equal(
+            poolAux.listenerCount('release'),
+            1,
+            `${poolAux.listenerCount(
+              'release'
+            )} event listener(s) for 'release'`
+          );
+          assert.equal(testValue, 1);
+
+          const { resourceMetrics, errors } = await metricReader.collect();
+          assert.deepEqual(
+            errors,
+            [],
+            'expected no errors from the callback during metric collection'
+          );
+
+          const metrics = resourceMetrics.scopeMetrics[0].metrics;
+          assert.strictEqual(
+            metrics[1].descriptor.name,
+            METRIC_DB_CLIENT_CONNECTION_COUNT
+          );
+          assert.strictEqual(
+            metrics[1].dataPoints[0].attributes[
+              ATTR_DB_CLIENT_CONNECTION_STATE
+            ],
+            'used'
+          );
+          assert.strictEqual(
+            metrics[1].dataPoints[0].value,
+            1,
+            'expected to have 1 used connection'
+          );
+          done();
+        });
+      });
+    });
+
+    it('when creating multiple pools, all of them should be instrumented', done => {
+      const pool1: pgPool<pg.Client> = new pgPool(CONFIG);
+      const pool2: pgPool<pg.Client> = new pgPool(CONFIG);
+
+      let completed = 0;
+      pool1.connect((err, client, release) => {
+        if (err) {
+          throw new Error(err.message);
+        }
+        if (!release) {
+          throw new Error('Did not receive release function');
+        }
+        if (!client) {
+          throw new Error('No client received');
+        }
+        assert.ok(client);
+        release();
+
+        assert.equal(
+          pool1.listenerCount('connect'),
+          1,
+          `${pool1.listenerCount(
+            'connect'
+          )} event listener(s) for 'connect' on pool1`
+        );
+        assert.equal(
+          pool1.listenerCount('acquire'),
+          1,
+          `${pool1.listenerCount(
+            'acquire'
+          )} event listener(s) for 'acquire' on pool1`
+        );
+        assert.equal(
+          pool1.listenerCount('remove'),
+          1,
+          `${pool1.listenerCount(
+            'remove'
+          )} event listener(s) for 'remove' on pool1`
+        );
+        assert.equal(
+          pool1.listenerCount('release'),
+          1,
+          `${pool1.listenerCount(
+            'release'
+          )} event listener(s) for 'release' on pool1`
+        );
+
+        completed++;
+        if (completed >= 2) {
+          done();
+        }
+      });
+
+      pool2.connect((err, client, release) => {
+        if (err) {
+          throw new Error(err.message);
+        }
+        if (!release) {
+          throw new Error('Did not receive release function');
+        }
+        if (!client) {
+          throw new Error('No client received');
+        }
+        assert.ok(client);
+        release();
+
+        assert.equal(
+          pool2.listenerCount('connect'),
+          1,
+          `${pool2.listenerCount(
+            'connect'
+          )} event listener(s) for 'connect' on pool2`
+        );
+        assert.equal(
+          pool2.listenerCount('acquire'),
+          1,
+          `${pool2.listenerCount(
+            'acquire'
+          )} event listener(s) for 'acquire' on pool2`
+        );
+        assert.equal(
+          pool2.listenerCount('remove'),
+          1,
+          `${pool2.listenerCount(
+            'remove'
+          )} event listener(s) for 'remove' on pool2`
+        );
+        assert.equal(
+          pool2.listenerCount('release'),
+          1,
+          `${pool2.listenerCount(
+            'release'
+          )} event listener(s) for 'release' on pool2`
+        );
+
+        completed++;
+        if (completed >= 2) {
+          done();
+        }
       });
     });
   });

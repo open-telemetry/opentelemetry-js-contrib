@@ -6,7 +6,7 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "ts-mocha --require @opentelemetry/contrib-test-utils -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "mocha --require @opentelemetry/contrib-test-utils 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
@@ -50,11 +50,9 @@
     "@types/node": "18.18.14",
     "@types/sinon": "^10.0.11",
     "kafkajs": "^2.2.4",
-    "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {

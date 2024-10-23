@@ -92,7 +92,7 @@ export function getQuerySpanName(
   return `${SpanNames.QUERY_PREFIX}:${command}${dbName ? ` ${dbName}` : ''}`;
 }
 
-function parseNormalizedOperationName(queryText: string) {
+export function parseNormalizedOperationName(queryText: string) {
   const indexOfFirstSpace = queryText.indexOf(' ');
   let sqlCommand =
     indexOfFirstSpace === -1
@@ -282,12 +282,12 @@ export interface poolConnectionsCounter {
 }
 
 export function updateCounter(
+  poolName: string,
   pool: PgPoolExtended,
   connectionCount: UpDownCounter,
   connectionPendingRequests: UpDownCounter,
   latestCounter: poolConnectionsCounter
 ): poolConnectionsCounter {
-  const poolName = getPoolName(pool.options);
   const all = pool.totalCount;
   const pending = pool.waitingCount;
   const idle = pool.idleCount;
