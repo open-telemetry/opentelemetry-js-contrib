@@ -51,9 +51,10 @@ import {
   SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_DB_CLIENT_CONNECTION_STATE,
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
-  ATTR_DB_CLIENT_CONNECTION_STATE,
+  METRIC_DB_CLIENT_OPERATION_DURATION,
 } from '@opentelemetry/semantic-conventions/incubating';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -525,6 +526,11 @@ describe('pg-pool', () => {
 
           const metrics = resourceMetrics.scopeMetrics[0].metrics;
           assert.strictEqual(
+            metrics[0].descriptor.name,
+            METRIC_DB_CLIENT_OPERATION_DURATION
+          );
+
+          assert.strictEqual(
             metrics[1].descriptor.name,
             METRIC_DB_CLIENT_CONNECTION_COUNT
           );
@@ -571,6 +577,40 @@ describe('pg-pool', () => {
           done();
         });
       });
+    });
+
+    it('should generate `db.client.*` metrics (Promises-style)', async (...args) => {
+      const client = await pool.connect();
+
+      try {
+        const ret = await client.query('SELECT NOW()');
+        assert.ok(ret);
+      } finally {
+        client.release();
+      }
+
+      const { resourceMetrics, errors } = await metricReader.collect();
+      assert.deepEqual(
+        errors,
+        [],
+        'expected no errors from the callback during metric collection'
+      );
+
+      // We just test the expected metric *names* here. The particulars of the
+      // metric values are already tested in other test cases.
+      const metrics = resourceMetrics.scopeMetrics[0].metrics;
+      assert.strictEqual(
+        metrics[0].descriptor.name,
+        METRIC_DB_CLIENT_OPERATION_DURATION
+      );
+      assert.strictEqual(
+        metrics[1].descriptor.name,
+        METRIC_DB_CLIENT_CONNECTION_COUNT
+      );
+      assert.strictEqual(
+        metrics[2].descriptor.name,
+        METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS
+      );
     });
 
     it('should not add duplicate event listeners to PgPool events', done => {
