@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.50.2...auto-instrumentations-node-v0.51.0) (2024-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auto-instrumentations-node:** disable @opentelemetry/instrumentation-fs by default ([#2467](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2467))
+
+### Features
+
+* **auto-instrumentations-node:** disable @opentelemetry/instrumentation-fs by default ([#2467](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2467)) ([a558044](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a55804415d39c751a3f5f58c00cf27747821302f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-pg bumped from ^0.45.1 to ^0.46.0
+    * @opentelemetry/resource-detector-container bumped from ^0.4.3 to ^0.4.4
+
+## [0.50.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.50.1...auto-instrumentations-node-v0.50.2) (2024-10-10)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-pg bumped from ^0.45.0 to ^0.45.1
+    * @opentelemetry/resource-detector-alibaba-cloud bumped from ^0.29.2 to ^0.29.3
+    * @opentelemetry/resource-detector-container bumped from ^0.4.2 to ^0.4.3
+
+## [0.50.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.50.0...auto-instrumentations-node-v0.50.1) (2024-10-08)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.44.0 to ^0.45.0
+    * @opentelemetry/instrumentation-express bumped from ^0.42.0 to ^0.43.0
+    * @opentelemetry/instrumentation-fastify bumped from ^0.39.0 to ^0.40.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.44.0 to ^0.45.0
+    * @opentelemetry/instrumentation-redis-4 bumped from ^0.42.0 to ^0.42.1
+    * @opentelemetry/resource-detector-alibaba-cloud bumped from ^0.29.1 to ^0.29.2
+    * @opentelemetry/resource-detector-aws bumped from ^1.6.1 to ^1.6.2
+    * @opentelemetry/resource-detector-container bumped from ^0.4.1 to ^0.4.2
+    * @opentelemetry/resource-detector-gcp bumped from ^0.29.11 to ^0.29.12
+
 ## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.49.2...auto-instrumentations-node-v0.50.0) (2024-09-02)
 
 

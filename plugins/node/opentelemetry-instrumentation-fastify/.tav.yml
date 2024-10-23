@@ -1,8 +1,14 @@
 "fastify":
-  # Sanity check the first 4.x release, instead of all releases, plus recent
-  # releases.
-  - versions: "4.0.0 || >=4.24.3 <5"
+  - versions:
+      include: "^4.0.0"
+      mode: max-7
     commands: npm run test
+  - versions:
+      include: ">=5 <6"
+      mode: max-7
+    commands: npm run test
+    peerDependencies: "@fastify/express@4.0.1"
+    node: '>=20'
 
 # Fastify versions after 4.18.0 require a typescript greater than 4.4.4.
 "typescript":
