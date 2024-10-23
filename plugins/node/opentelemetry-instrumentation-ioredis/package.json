@@ -6,8 +6,8 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
-    "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true ts-mocha --inspect-brk --no-timeouts -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",
     "test-all-versions": "tav",
     "test-all-versions:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test-all-versions",
@@ -59,12 +59,10 @@
     "@types/sinon": "10.0.20",
     "cross-env": "7.0.3",
     "ioredis": "5.2.2",
-    "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
     "test-all-versions": "6.1.0",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
