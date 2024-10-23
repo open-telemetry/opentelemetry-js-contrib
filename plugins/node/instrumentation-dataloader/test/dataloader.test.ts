@@ -31,10 +31,24 @@ extraInstrumentation.disable();
 
 import * as assert from 'assert';
 import * as Dataloader from 'dataloader';
+import * as crypto from 'crypto';
+
+const getMd5HashFromIdx = (idx: number) =>
+  crypto.createHash('md5').update(String(idx)).digest('hex');
 
 describe('DataloaderInstrumentation', () => {
   let dataloader: Dataloader<string, number>;
   let contextManager: AsyncHooksContextManager;
+
+  class CustomDataLoader extends Dataloader<string, string> {
+    constructor() {
+      super(async keys => keys.map((_, idx) => getMd5HashFromIdx(idx)));
+    }
+
+    public async customLoad() {
+      return this.load('test');
+    }
+  }
 
   const memoryExporter = new InMemorySpanExporter();
   const provider = new NodeTracerProvider();
@@ -333,5 +347,16 @@ describe('DataloaderInstrumentation', () => {
 
     assert.deepStrictEqual(await alternativeDataloader.loadMany(['test']), [1]);
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 5);
+  });
+
+  it('should not prune custom methods', async () => {
+    const customDataloader = new CustomDataLoader();
+    await customDataloader.customLoad();
+
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+    const [batchSpan, loadSpan] = memoryExporter.getFinishedSpans();
+
+    assert.strictEqual(loadSpan.name, 'dataloader.load');
+    assert.strictEqual(batchSpan.name, 'dataloader.batch');
   });
 });

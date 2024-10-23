@@ -91,64 +91,73 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
     return `${MODULE_NAME}.${operation} ${dataloaderName}`;
   }
 
+  private _wrapBatchLoadFn(
+    batchLoadFn: Dataloader.BatchLoadFn<unknown, unknown>
+  ): Dataloader.BatchLoadFn<unknown, unknown> {
+    const instrumentation = this;
+
+    return function patchedBatchLoadFn(
+      this: DataloaderInternal,
+      ...args: Parameters<Dataloader.BatchLoadFn<unknown, unknown>>
+    ) {
+      if (
+        !instrumentation.isEnabled() ||
+        !instrumentation.shouldCreateSpans()
+      ) {
+        return batchLoadFn.call(this, ...args);
+      }
+
+      const parent = context.active();
+      const span = instrumentation.tracer.startSpan(
+        instrumentation.getSpanName(this, 'batch'),
+        { links: this._batch?.spanLinks as Link[] | undefined },
+        parent
+      );
+
+      return context.with(trace.setSpan(parent, span), () => {
+        return (batchLoadFn.apply(this, args) as Promise<unknown[]>)
+          .then(value => {
+            span.end();
+            return value;
+          })
+          .catch(err => {
+            span.recordException(err);
+            span.setStatus({
+              code: SpanStatusCode.ERROR,
+              message: err.message,
+            });
+            span.end();
+            throw err;
+          });
+      });
+    };
+  }
+
   private _getPatchedConstructor(
     constructor: typeof Dataloader
   ): typeof Dataloader {
-    const prototype = constructor.prototype;
     const instrumentation = this;
+    const prototype = constructor.prototype;
+
+    if (!instrumentation.isEnabled() || !instrumentation.shouldCreateSpans()) {
+      return constructor;
+    }
 
     function PatchedDataloader(
+      this: DataloaderInternal,
       ...args: ConstructorParameters<typeof constructor>
     ) {
-      const inst = new constructor(...args) as DataloaderInternal;
-
-      if (!instrumentation.isEnabled()) {
-        return inst;
+      // BatchLoadFn is the first constructor argument
+      // https://github.com/graphql/dataloader/blob/77c2cd7ca97e8795242018ebc212ce2487e729d2/src/index.js#L47
+      if (isWrapped(args[0])) {
+        instrumentation._unwrap(args, 0);
       }
 
-      if (isWrapped(inst._batchLoadFn)) {
-        instrumentation._unwrap(inst, '_batchLoadFn');
-      }
+      args[0] = instrumentation._wrapBatchLoadFn(
+        args[0]
+      ) as Dataloader.BatchLoadFn<unknown, unknown>;
 
-      instrumentation._wrap(inst, '_batchLoadFn', original => {
-        return function patchedBatchLoadFn(
-          this: DataloaderInternal,
-          ...args: Parameters<Dataloader.BatchLoadFn<unknown, unknown>>
-        ) {
-          if (
-            !instrumentation.isEnabled() ||
-            !instrumentation.shouldCreateSpans()
-          ) {
-            return original.call(this, ...args);
-          }
-
-          const parent = context.active();
-          const span = instrumentation.tracer.startSpan(
-            instrumentation.getSpanName(inst, 'batch'),
-            { links: this._batch?.spanLinks as Link[] | undefined },
-            parent
-          );
-
-          return context.with(trace.setSpan(parent, span), () => {
-            return (original.apply(this, args) as Promise<unknown[]>)
-              .then(value => {
-                span.end();
-                return value;
-              })
-              .catch(err => {
-                span.recordException(err);
-                span.setStatus({
-                  code: SpanStatusCode.ERROR,
-                  message: err.message,
-                });
-                span.end();
-                throw err;
-              });
-          });
-        };
-      });
-
-      return inst;
+      return constructor.apply(this, args);
     }
 
     PatchedDataloader.prototype = prototype;
