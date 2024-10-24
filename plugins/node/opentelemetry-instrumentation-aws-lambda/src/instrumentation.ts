@@ -38,12 +38,14 @@ import {
   TraceFlags,
   TracerProvider,
   ROOT_CONTEXT,
+  Attributes,
 } from '@opentelemetry/api';
 import {
   AWSXRAY_TRACE_ID_HEADER,
   AWSXRayPropagator,
 } from '@opentelemetry/propagator-aws-xray';
 import {
+  ATTR_URL_FULL,
   SEMATTRS_FAAS_EXECUTION,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
   SEMRESATTRS_FAAS_ID,
@@ -247,6 +249,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
                 context.invokedFunctionArn
               ),
             [ATTR_FAAS_COLDSTART]: requestIsColdStart,
+            ...AwsLambdaInstrumentation._extractOtherEventFields(event),
           },
         },
         parent
@@ -427,6 +430,46 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     // The default extractor tries to get sampled trace header from HTTP headers.
     const httpHeaders = event.headers || {};
     return propagation.extract(otelContext.active(), httpHeaders, headerGetter);
+  }
+
+  private static _extractOtherEventFields(event: any): Attributes {
+    const answer: Attributes = {};
+    const fullUrl = this._extractFullUrl(event);
+    if (fullUrl) {
+      answer[ATTR_URL_FULL] = fullUrl;
+    }
+    return answer;
+  }
+
+  private static _extractFullUrl(event: any): string | undefined {
+    // API gateway encodes a lot of url information in various places to recompute this
+    if (
+      !(
+        event.headers &&
+        (event.path || event.rawPath) &&
+        event.headers['host'] &&
+        event.headers['x-forwarded-proto']
+      )
+    ) {
+      return undefined;
+    }
+    let answer = event.headers['x-forwarded-proto'] + '://';
+    answer += event.headers['host'];
+    if (event.headers['x-forwarded-port']) {
+      answer += ':' + event.headers['x-forwarded-port'];
+    }
+    answer += event.path ? event.path : event.rawPath;
+    if (event.queryStringParameters) {
+      let first = true;
+      for (const key in event.queryStringParameters) {
+        answer += first ? '?' : '&';
+        answer += encodeURIComponent(key);
+        answer += '=';
+        answer += encodeURIComponent(event.queryStringParameters[key]);
+        first = false;
+      }
+    }
+    return answer;
   }
 
   private static _determineParent(
