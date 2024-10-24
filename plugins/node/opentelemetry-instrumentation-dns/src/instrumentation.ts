@@ -27,6 +27,7 @@ import {
 import { AddressFamily } from './enums/AddressFamily';
 import { DnsInstrumentationConfig } from './types';
 import * as utils from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   LookupCallbackSignature,
