@@ -414,6 +414,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               // Return a pass-along promise which ends the span and then goes to user's orig resolvers
               return new Promise(resolve => {
                 utils.handleExecutionResult(plugin.getConfig(), span, result);
+                recordDuration();
                 span.end();
                 resolve(result);
               });
@@ -424,6 +425,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
                   code: SpanStatusCode.ERROR,
                   message: error.message,
                 });
+                recordDuration();
                 span.end();
                 reject(error);
               });
