@@ -51,7 +51,6 @@
     "@types/sinon": "10.0.20",
     "babel-loader": "8.3.0",
     "babel-plugin-istanbul": "7.0.0",
-    "cross-var": "1.1.0",
     "lerna": "6.6.2",
     "nyc": "15.1.0",
     "sinon": "15.1.2",
