@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.6.0...winston-transport-v0.7.0) (2024-10-25)
+
+
+### Features
+
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
 ## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.5.0...winston-transport-v0.6.0) (2024-09-02)
 
 
