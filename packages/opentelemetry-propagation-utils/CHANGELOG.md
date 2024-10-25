@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.30.12](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.11...propagation-utils-v0.30.12) (2024-10-25)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.41.0 to ^0.42.0
+
 ## [0.30.11](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.10...propagation-utils-v0.30.11) (2024-09-02)
 
 
