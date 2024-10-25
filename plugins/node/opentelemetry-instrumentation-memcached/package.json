@@ -14,8 +14,8 @@
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
-    "test:debug": "cross-env RUN_MEMCACHED_TESTS_LOCAL=true ts-mocha --inspect-brk --no-timeouts -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test:debug": "cross-env RUN_MEMCACHED_TESTS_LOCAL=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_MEMCACHED_TESTS_LOCAL=true npm run test",
     "version:update": "node ../../../scripts/version-update.js"
   },
@@ -53,14 +53,12 @@
     "@types/node": "18.18.14",
     "cross-env": "7.0.3",
     "memcached": "2.2.2",
-    "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.53.0",
+    "@opentelemetry/instrumentation": "^0.54.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/memcached": "^2.2.6"
   },

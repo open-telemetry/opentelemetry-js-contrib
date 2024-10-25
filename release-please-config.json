@@ -67,6 +67,8 @@
     "plugins/web/opentelemetry-instrumentation-user-interaction": {},
     "plugins/web/opentelemetry-plugin-react-load": {},
     "propagators/opentelemetry-propagator-instana": {},
-    "propagators/opentelemetry-propagator-ot-trace": {}
+    "propagators/opentelemetry-propagator-ot-trace": {},
+    "propagators/propagator-aws-xray": {},
+    "propagators/propagator-aws-xray-lambda": {}
   }
 }

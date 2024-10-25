@@ -7,7 +7,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "test-all-versions": "tav",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc mocha 'test/**/*.test.ts'",
     "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
@@ -55,17 +55,15 @@
     "@types/node": "18.18.14",
     "@types/sinon": "10.0.20",
     "express": "4.20.0",
-    "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
     "test-all-versions": "6.1.0",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.53.0",
+    "@opentelemetry/instrumentation": "^0.54.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express#readme"

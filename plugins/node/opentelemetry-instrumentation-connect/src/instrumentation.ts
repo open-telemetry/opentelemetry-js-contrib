@@ -24,6 +24,7 @@ import {
   ConnectTypes,
 } from './enums/AttributeNames';
 import { PatchedRequest, Use, UseArgs, UseArgs2 } from './internal-types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   InstrumentationBase,

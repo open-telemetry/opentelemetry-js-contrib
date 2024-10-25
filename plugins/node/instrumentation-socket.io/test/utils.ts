@@ -73,3 +73,15 @@ export const expectSpan = (
     callback(span);
   }
 };
+
+export const expectSpans = (
+  spanNames: string,
+  callback?: (spans: ReadableSpan[]) => void,
+  spanCount?: number
+) => {
+  const spans = getSocketIoSpans();
+  expect(spans.length).toEqual(spanCount || 1);
+  const foundSpans = spans.filter(span => spanNames.includes(span.name));
+  expect(foundSpans).toBeDefined();
+  callback?.(foundSpans);
+};

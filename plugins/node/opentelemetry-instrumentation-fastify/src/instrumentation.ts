@@ -41,6 +41,7 @@ import {
   safeExecuteInTheMiddleMaybePromise,
   startSpan,
 } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export const ANONYMOUS_NAME = 'anonymous';
