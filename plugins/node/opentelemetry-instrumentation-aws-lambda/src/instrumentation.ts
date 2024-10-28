@@ -97,14 +97,28 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     // Lambda loads user function using an absolute path.
     let filename = path.resolve(taskRoot, moduleRoot, module);
     if (!filename.endsWith('.js')) {
-      // its impossible to know in advance if the user has a cjs or js file.
-      // check that the .js file exists otherwise fallback to next known possibility
+      // Its impossible to know in advance if the user has a js, cjs or mjs file.
+      // Check that the .js file exists otherwise fallback to the next known possibilities (.cjs, .mjs).
       try {
         fs.statSync(`${filename}.js`);
         filename += '.js';
       } catch (e) {
-        // fallback to .cjs
-        filename += '.cjs';
+        try {
+          fs.statSync(`${filename}.cjs`);
+          // fallback to .cjs (CommonJS)
+          filename += '.cjs';
+        } catch (e2) {
+          try {
+            fs.statSync(`${filename}.mjs`);
+            // fallback to .mjs (ESM)
+            filename += '.mjs';
+          } catch (e3) {
+            diag.error(
+              'No handler file was able to resolved with one of the known extensions for the file',
+              filename
+            );
+          }
+        }
       }
     }
 
