@@ -45,7 +45,7 @@ const spanStart = (
   span.current.setAttributes({
     // it should create the first span knowing there is not a previous view
     [ATTRIBUTES.initialView]: !!isLaunch,
-    // it should set the view name in case it's useful have this as attr
+    // it should set the view name in case it's useful to have this as an attr
     [ATTRIBUTES.viewName]: currentRouteName,
   });
 

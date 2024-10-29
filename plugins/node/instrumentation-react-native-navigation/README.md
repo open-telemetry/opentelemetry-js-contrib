@@ -198,7 +198,7 @@ For instance, when the application starts and the user navigates to a new sectio
 }
 ```
 
-If you dig into the attributes, `view.launch` refers to the moment the app is launched. It will be `true` only the first time the app mounts. Changing the status between background/foreground won't modify this attribute. For this case the `view.state.end` is used, and it can contain two possible values: `active` and `background`.
+If you dig into the attributes, `view.launch` refers to the moment the app is launched. It will be `true` only the first time the app mounts. Changing the status between background/foreground won't modify this attribute. For this case the `view.state.end` is used, and it can contain two possible values for Android: `active` and `background`, and a third one can be found for iOS: `inactive` (for more information about this you can visit the official [React Native - App States](https://reactnative.dev/docs/appstate#app-states) documentation).
 
 Both components (<NavigationTracker /> and <NativeNavigationTracker />) are built on top of third-party libraries and function according to the respective APIs exposed by those libraries.
 
