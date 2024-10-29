@@ -15,6 +15,7 @@
  */
 import { MutableRefObject, useEffect, useRef } from 'react';
 import { trace, Tracer, TracerProvider } from '@opentelemetry/api';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from '../../version';
 import useConsole from './useConsole';
 import { NavigationTrackerConfig } from '../../types/navigation';
