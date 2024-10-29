@@ -274,20 +274,35 @@ pkg:sql-common:
   - changed-files:
       - any-glob-to-any-file:
           - packages/opentelemetry-sql-common/**
+pkg:propagator-aws-xray:
+  - changed-files:
+      - any-glob-to-any-file:
+          - propagators/propagator-aws-xray/**
+pkg:propagator-aws-xray-lambda:
+  - changed-files:
+      - any-glob-to-any-file:
+          - propagators/propagator-aws-xray-lambda/**
 pkg-status:unmaintained:
   - changed-files:
       - any-glob-to-any-file:
           - detectors/node/opentelemetry-resource-detector-github/**
+          - packages/opentelemetry-redis-common/**
           - plugins/node/instrumentation-fs/**
           - plugins/node/instrumentation-tedious/**
           - plugins/node/opentelemetry-instrumentation-connect/**
           - plugins/node/opentelemetry-instrumentation-dns/**
+          - plugins/node/opentelemetry-instrumentation-fastify/**
           - plugins/node/opentelemetry-instrumentation-generic-pool/**
           - plugins/node/opentelemetry-instrumentation-hapi/**
           - plugins/node/opentelemetry-instrumentation-knex/**
           - plugins/node/opentelemetry-instrumentation-koa/**
           - plugins/node/opentelemetry-instrumentation-memcached/**
+          - plugins/node/opentelemetry-instrumentation-mongodb/**
+          - plugins/node/opentelemetry-instrumentation-mysql/**
+          - plugins/node/opentelemetry-instrumentation-mysql2/**
           - plugins/node/opentelemetry-instrumentation-nestjs-core/**
           - plugins/node/opentelemetry-instrumentation-restify/**
           - plugins/node/opentelemetry-instrumentation-router/**
           - propagators/opentelemetry-propagator-ot-trace/**
+          - propagators/propagator-aws-xray/**
+          - propagators/propagator-aws-xray-lambda/**

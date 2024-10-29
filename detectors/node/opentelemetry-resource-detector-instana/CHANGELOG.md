@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.14.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.13.0...resource-detector-instana-v0.14.0) (2024-10-25)
+
+
+### Features
+
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.41.0 to ^0.42.0
+
+## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.12.0...resource-detector-instana-v0.13.0) (2024-10-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **detector-instana:** change implementation to DetectorSync interface ([#2337](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2337))
+
+### Features
+
+* **detector-instana:** change implementation to DetectorSync interface ([#2337](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2337)) ([ef5efcb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ef5efcb7c6bd432159627b5aa1833cc97dce98ca))
+
 ## [0.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.11.0...resource-detector-instana-v0.12.0) (2024-09-02)
 
 
