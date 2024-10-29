@@ -13,7 +13,7 @@
     "compile": "tsc --build tsconfig.json",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc mocha 'test/**/*.test.ts'",
     "watch": "tsc -w"
   },
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -46,9 +46,7 @@
     "@opentelemetry/api": "^1.1.0",
     "@types/mocha": "^7.0.2",
     "@types/node": "18.18.14",
-    "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   }
 }

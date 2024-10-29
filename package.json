@@ -22,6 +22,7 @@
     "changelog": "lerna-changelog",
     "lint": "nx run-many -t lint && npm run lint:readme && npm run lint:markdown",
     "lint:fix": "nx run-many -t lint:fix && npm run lint:markdown:fix",
+    "lint:deps": "npx --yes knip@5.33.3 --dependencies --production --tags=-knipignore",
     "lint:examples": "eslint ./examples/**/*.js",
     "lint:examples:fix": "eslint ./examples/**/*.js --fix",
     "lint:markdown": "markdownlint-cli2 $(git ls-files '*.md')",
@@ -54,9 +55,11 @@
     "markdownlint-cli2": "0.13.0",
     "minimatch": "^9.0.3",
     "nx": "15.9.7",
+    "mocha": "^10.7.3",
     "prettier": "2.8.8",
-    "semver": "^7.6.0",
     "process": "0.11.10",
+    "semver": "^7.6.0",
+    "ts-node": "10.9.2",
     "util": "0.12.5"
   },
   "changelog": {

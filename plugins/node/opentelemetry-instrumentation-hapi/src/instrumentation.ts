@@ -24,6 +24,7 @@ import {
 } from '@opentelemetry/instrumentation';
 
 import type * as Hapi from '@hapi/hapi';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   HapiComponentName,

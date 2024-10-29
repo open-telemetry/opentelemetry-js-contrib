@@ -39,6 +39,7 @@ import {
   ResourceFetchCustomAttributeFunction,
 } from './types';
 import { AttributeNames } from './enums/AttributeNames';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   SEMATTRS_HTTP_URL,

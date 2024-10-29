@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-alibaba-cloud",
-  "version": "0.29.3",
+  "version": "0.29.4",
   "description": "OpenTelemetry resource detector for Alibaba Cloud",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -12,7 +12,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc mocha 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "watch": "tsc -w"
   },
@@ -39,24 +39,22 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.41.0",
+    "@opentelemetry/contrib-test-utils": "^0.42.0",
     "@types/mocha": "8.2.3",
     "@types/node": "18.18.14",
     "@types/sinon": "10.0.20",
-    "mocha": "7.2.0",
     "nock": "13.3.3",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.0.0"
   },
   "dependencies": {
-    "@opentelemetry/resources": "^1.10.0",
     "@opentelemetry/core": "^1.26.0",
+    "@opentelemetry/resources": "^1.10.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-alibaba-cloud#readme"
