@@ -19,7 +19,9 @@ yarn add @opentelemetry/instrumentation-react-native-navigation @opentelemetry/a
 
 ## Usage
 
-This package is designed to streamline your workflow by requiring minimal setup. To use this package, you only need to pass a reference and a optionally provider (the global one will be used by default)
+This package is designed to streamline your workflow by requiring minimal setup. To use this package, you only need to pass a reference and a optionally provider (the global one will be used by default).
+
+### Expo Router / React Native Navigation
 
 If you are using `expo-router` or `react-native/navigation` you need to wrap your entire application with the `NavigationTracker` component.
 
@@ -30,7 +32,8 @@ import {NavigationTracker} from '@opentelemetry/instrumentation-react-native-nav
 import {useProvider} from "./test/hooks/useProvider";
 
 const App: FC = () => {
-  const navigationRef = useNavigationContainerRef(); // if you do not use `expo-router` the same hook is also available in `@react-navigation/native` since `expo-router` is built on top of it. Just make sure this ref is passed also to the navigation container at the root of your app (if not, the ref would be empty and you will get a console.warn message instead).
+  // if you do not use `expo-router` the same hook is also available in `@react-navigation/native` since `expo-router` is built on top of it. Just make sure this ref is passed also to the navigation container at the root of your app (if not, the ref would be empty and you will get a console.warn message instead).
+  const navigationRef = useNavigationContainerRef();
 
   const provider = useProvider(); // the provider is something you need to configure and pass down as prop into the `NavigationTracker` component (this hook is not part of the package, it is just used here as a reference)
   // If your choice is not to pass any custom tracer provider, the <NavigationTracker /> component will use the global one.
@@ -60,6 +63,49 @@ const App: FC = () => {
 
 export default App;
 ```
+
+If you are using the `useNavigationContainerRef()` from the `@react-navigation/native` package please make sure you wrap what it returns into the proper shape of a reference (i.e `{ current: { <useNavigationContainerRef value> } }`), otherwise it won't work as expected and you will see the mentioned console.warn message insted (in case `debug` mode is enabled).
+
+```javascript
+import {FC, useMemo} from 'react';
+import {Stack} from 'expo-router';
+import {useNavigationContainerRef} from '@react-navigation/native';
+import {NavigationTracker} from '@opentelemetry/instrumentation-react-native-navigation';
+import {useProvider} from "./test/hooks/useProvider";
+
+const App: FC = () => {
+  // Trick: if you inspect the source code of `useNavigationContainerRef` from `@react-navigation/native` you will see that it returns `navigation.current` instead of the entire shape of a reference.
+  const navigationRefVal = useNavigationContainerRef();
+  // We need here that entire shape, so we re-create it and pass it down into the `ref` prop for the `NavigationTracker` component.
+  const navigationRef = useRef(navigationRefVal);
+
+  const provider = useProvider();
+
+  const config = useMemo(() => ({
+    tracerOptions: {
+      schemaUrl: "",
+    },
+    attributes: {
+      "static.attribute.key": "static.attribute.value",
+      "custom.attribute.key": "custom.attribute.value",
+    },
+    debug: false,
+  }), []);
+
+  return (
+    <NavigationTracker ref={navigationRef} provider={provider}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{headerShown: false}} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </NavigationTracker>
+  );
+};
+
+export default App;
+```
+
+### Wix React Native Navigation
 
 If you are using `wix/react-native-navigation` you are also able to track navigation changes by importing and implement the `NativeNavigationTracker` component. The purpose in here is to wrap the entire application with the exposed component.
 
