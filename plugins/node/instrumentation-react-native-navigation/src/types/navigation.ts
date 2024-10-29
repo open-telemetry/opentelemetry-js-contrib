@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 import { Attributes, TracerOptions } from '@opentelemetry/api';
+import { useNavigationContainerRef as useReactNativeNavigationContainerRef } from '@react-navigation/native';
+import { useNavigationContainerRef as useReactNativeNavigationExpoContainerRef } from 'expo-router';
+import { Navigation } from 'react-native-navigation';
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -30,22 +33,12 @@ import { Attributes, TracerOptions } from '@opentelemetry/api';
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export interface INavigationContainer {
-  addListener: (
-    event: 'state',
-    callback: (args: { name: string }) => void
-  ) => void;
-  getCurrentRoute: () => { name: string };
-}
 
-export interface INativeNavigationContainer {
-  registerComponentDidAppearListener: (
-    cb: (args: { componentName: string }) => void
-  ) => void;
-  registerComponentDidDisappearListener: (
-    cb: (args: { componentName: string }) => void
-  ) => void;
-}
+export type INativeNavigationContainer = ReturnType<typeof Navigation.events>;
+
+export type INavigationContainer =
+  | ReturnType<typeof useReactNativeNavigationContainerRef>
+  | ReturnType<typeof useReactNativeNavigationExpoContainerRef>['current'];
 
 export interface NavigationTrackerConfig {
   attributes?: Attributes;

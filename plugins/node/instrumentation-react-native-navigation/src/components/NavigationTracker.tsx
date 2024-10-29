@@ -40,6 +40,7 @@ const NavigationTracker = forwardRef<
 
   return <>{children}</>;
 });
+
 NavigationTracker.displayName = 'NavigationTracker';
 
 export default NavigationTracker;

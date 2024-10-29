@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-// referencing to `wix/react-native-navigation` package
+import { Navigation as WixNavigation } from 'react-native-navigation';
+
+// referencing to `react-native-navigation` package.
+// hacky trick to mock implementation in order to be able to stub the methods in tests
 export const Navigation = {
-  events: () => ({
-    registerComponentDidAppearListener: () => {},
-    registerComponentDidDisappearListener: () => {},
-  }),
+  events: () =>
+    ({
+      registerComponentDidAppearListener: () => {},
+      registerComponentDidDisappearListener: () => {},
+    } as unknown as ReturnType<typeof WixNavigation.events>),
 };

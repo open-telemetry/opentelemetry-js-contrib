@@ -22,7 +22,10 @@ import { NativeNavigationTracker } from '../src';
 import useProvider from './helpers/hooks/useProvider';
 import api from '@opentelemetry/api';
 import * as rnn from './helpers/react-native-navigation';
-import { NavigationTrackerConfig } from '../src/types/navigation';
+import {
+  INativeNavigationContainer,
+  NavigationTrackerConfig,
+} from '../src/types/navigation';
 
 const AppWithProvider: FC<{
   shouldPassProvider: boolean;
@@ -60,7 +63,7 @@ describe('NativeNavigationTracker.tsx', function () {
     sandbox.stub(Navigation, 'events').returns({
       registerComponentDidAppearListener: mockDidAppearListener,
       registerComponentDidDisappearListener: mockDidDisappearListener,
-    });
+    } as unknown as INativeNavigationContainer);
 
     mockAddEventListener = sandbox.spy(AppState, 'addEventListener');
     mockConsoleDir = sandbox.spy(console, 'dir');
