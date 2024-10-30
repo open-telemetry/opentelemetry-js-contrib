@@ -38,6 +38,7 @@ import type {
 } from '@cucumber/cucumber/lib/support_code_library_builder/types';
 
 import { AttributeNames, CucumberInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const hooks = ['Before', 'BeforeStep', 'AfterStep', 'After'] as const;
