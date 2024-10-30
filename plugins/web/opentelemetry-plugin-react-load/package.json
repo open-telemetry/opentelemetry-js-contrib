@@ -22,7 +22,7 @@
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
   },
   "keywords": [
-    "opentelemetry ",
+    "opentelemetry",
     "react",
     "web",
     "tracing",
