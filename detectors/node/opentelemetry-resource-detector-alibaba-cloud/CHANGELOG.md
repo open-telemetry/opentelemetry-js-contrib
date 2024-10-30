@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.29.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.29.3...resource-detector-alibaba-cloud-v0.29.4) (2024-10-25)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.41.0 to ^0.42.0
+
+## [0.29.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.29.2...resource-detector-alibaba-cloud-v0.29.3) (2024-10-10)
+
+
+### Bug Fixes
+
+* add missing @opentelemetry/core dependency ([#2473](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2473)) ([4d66431](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4d66431a2ad480720bf6c33663a419ec1404cd33))
+
+## [0.29.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.29.1...resource-detector-alibaba-cloud-v0.29.2) (2024-10-08)
+
+
+### Bug Fixes
+
+* **detector-alibaba:** suppres internal tracing ([#2429](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2429)) ([9a7690e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9a7690e92e571fcbf541eb76b6a5c4fde546b6e6))
+
+## [0.29.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.29.0...resource-detector-alibaba-cloud-v0.29.1) (2024-09-02)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.40.0 to ^0.41.0
+
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.28.10...resource-detector-alibaba-cloud-v0.29.0) (2024-08-05)
 
 

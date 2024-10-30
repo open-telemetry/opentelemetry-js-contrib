@@ -30,6 +30,7 @@ import {
 import { getClientAttributes } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { RedisInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
 import type { MultiErrorReply } from './internal-types';
@@ -335,7 +336,7 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
       return function patchedConnect(this: any): Promise<void> {
         const options = this.options;
 
-        const attributes = getClientAttributes(this._diag, options);
+        const attributes = getClientAttributes(plugin._diag, options);
 
         const span = plugin.tracer.startSpan(
           `${RedisInstrumentation.COMPONENT}-connect`,

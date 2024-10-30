@@ -34,6 +34,7 @@ import {
   ValueType,
 } from '@opentelemetry/api';
 
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 import {
@@ -68,7 +69,6 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
   private _httpClientDurationHistogram!: Histogram;
   constructor(config: UndiciInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this.setConfig(config);
   }
 
   // No need to instrument files/modules
@@ -77,26 +77,32 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
   }
 
   override disable(): void {
-    if (!this.getConfig().enabled) {
-      return;
-    }
-
-    this._channelSubs.forEach(sub => sub.channel.unsubscribe(sub.onMessage));
-    this._channelSubs.length = 0;
     super.disable();
-    this.setConfig({ ...this.getConfig(), enabled: false });
+    this._channelSubs.forEach(sub => sub.unsubscribe());
+    this._channelSubs.length = 0;
   }
 
   override enable(): void {
-    if (this.getConfig().enabled) {
+    // "enabled" handling is currently a bit messy with InstrumentationBase.
+    // If constructed with `{enabled: false}`, this `.enable()` is still called,
+    // and `this.getConfig().enabled !== this.isEnabled()`, creating confusion.
+    //
+    // For now, this class will setup for instrumenting if `.enable()` is
+    // called, but use `this.getConfig().enabled` to determine if
+    // instrumentation should be generated. This covers the more likely common
+    // case of config being given a construction time, rather than later via
+    // `instance.enable()`, `.disable()`, or `.setConfig()` calls.
+    super.enable();
+
+    // This method is called by the super-class constructor before ours is
+    // called. So we need to ensure the property is initalized.
+    this._channelSubs = this._channelSubs || [];
+
+    // Avoid to duplicate subscriptions
+    if (this._channelSubs.length > 0) {
       return;
     }
-    super.enable();
-    this.setConfig({ ...this.getConfig(), enabled: true });
 
-    // This method is called by the `InstrumentationAbstract` constructor before
-    // ours is called. So we need to ensure the property is initalized
-    this._channelSubs = this._channelSubs || [];
     this.subscribeToChannel(
       'undici:request:create',
       this.onRequestCreated.bind(this)
@@ -111,16 +117,6 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     );
     this.subscribeToChannel('undici:request:trailers', this.onDone.bind(this));
     this.subscribeToChannel('undici:request:error', this.onError.bind(this));
-  }
-
-  override setConfig(config: UndiciInstrumentationConfig = {}): void {
-    super.setConfig(config);
-
-    if (config?.enabled) {
-      this.enable();
-    } else {
-      this.disable();
-    }
   }
 
   protected override _updateMetricInstruments() {
@@ -142,14 +138,29 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
   private subscribeToChannel(
     diagnosticChannel: string,
-    onMessage: ListenerRecord['onMessage']
+    onMessage: (message: any, name: string | symbol) => void
   ) {
-    const channel = diagch.channel(diagnosticChannel);
-    channel.subscribe(onMessage);
+    // `diagnostics_channel` had a ref counting bug until v18.19.0.
+    // https://github.com/nodejs/node/pull/47520
+    const [major, minor] = process.version
+      .replace('v', '')
+      .split('.')
+      .map(n => Number(n));
+    const useNewSubscribe = major > 18 || (major === 18 && minor >= 19);
+
+    let unsubscribe: () => void;
+    if (useNewSubscribe) {
+      diagch.subscribe?.(diagnosticChannel, onMessage);
+      unsubscribe = () => diagch.unsubscribe?.(diagnosticChannel, onMessage);
+    } else {
+      const channel = diagch.channel(diagnosticChannel);
+      channel.subscribe(onMessage);
+      unsubscribe = () => channel.unsubscribe(onMessage);
+    }
+
     this._channelSubs.push({
       name: diagnosticChannel,
-      channel,
-      onMessage,
+      unsubscribe,
     });
   }
 
@@ -162,9 +173,10 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     // - ignored by config
     // - method is 'CONNECT'
     const config = this.getConfig();
+    const enabled = config.enabled !== false;
     const shouldIgnoreReq = safeExecuteInTheMiddle(
       () =>
-        !config.enabled ||
+        !enabled ||
         request.method === 'CONNECT' ||
         config.ignoreRequestHook?.(request),
       e => e && this._diag.error('caught ignoreRequestHook error: ', e),
@@ -354,6 +366,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     };
 
     const config = this.getConfig();
+
+    // Execute the response hook if defined
+    safeExecuteInTheMiddle(
+      () => config.responseHook?.(span, { request, response }),
+      e => e && this._diag.error('caught responseHook error: ', e),
+      true
+    );
+
     const headersToAttribs = new Set();
 
     if (config.headersToSpanAttributes?.responseHeaders) {

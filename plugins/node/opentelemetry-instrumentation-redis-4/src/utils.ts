@@ -46,7 +46,7 @@ function removeCredentialsFromDBConnectionStringAttribute(
   diag: DiagLogger,
   url?: unknown
 ): string | undefined {
-  if (typeof url !== 'string') {
+  if (typeof url !== 'string' || !url) {
     return;
   }
 

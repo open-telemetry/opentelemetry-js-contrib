@@ -22,6 +22,7 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { BunyanInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { OpenTelemetryBunyanStream } from './OpenTelemetryBunyanStream';
 import type * as BunyanLogger from 'bunyan';
@@ -96,7 +97,7 @@ export class BunyanInstrumentation extends InstrumentationBase<BunyanInstrumenta
   }
 
   override setConfig(config: BunyanInstrumentationConfig = {}) {
-    this._config = { ...DEFAULT_CONFIG, ...config };
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   private _getPatchedEmit() {

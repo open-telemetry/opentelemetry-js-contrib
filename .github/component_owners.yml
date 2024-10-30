@@ -2,8 +2,8 @@
 components:
   detectors/node/opentelemetry-resource-detector-alibaba-cloud:
     - legendecas
-  detectors/node/opentelemetry-resource-detector-aws:
-    - carolabadeer
+  detectors/node/opentelemetry-resource-detector-aws: []
+    # Unmaintained
   detectors/node/opentelemetry-resource-detector-azure:
     - jacksonweber
     - hectorhdzg
@@ -15,10 +15,9 @@ components:
   detectors/node/opentelemetry-resource-detector-github: []
     # Unmaintained
   detectors/node/opentelemetry-resource-detector-instana:
-    - basti1302
     - kirrg001
-  incubator/opentelemetry-sampler-aws-xray:
-    - carolabadeer
+  incubator/opentelemetry-sampler-aws-xray: []
+    # Unmaintained
   metapackages/auto-configuration-propagators:
     - pichlermarc
   metapackages/auto-instrumentations-node:
@@ -36,15 +35,15 @@ components:
     - jamiedanielson
   packages/opentelemetry-host-metrics:
     - legendecas
-  packages/opentelemetry-id-generator-aws-xray:
-    - carolabadeer
+  packages/opentelemetry-id-generator-aws-xray: []
+    # Unmaintained
   packages/opentelemetry-propagation-utils:
     - dyladan
     - pichlermarc
     - legendecas
     - blumamir
-  packages/opentelemetry-redis-common:
-    - haddasbronfman
+  packages/opentelemetry-redis-common: []
+    # Unmaintained
   packages/opentelemetry-test-utils:
     - dyladan
     - pichlermarc
@@ -70,10 +69,9 @@ components:
     - mottibec
   plugins/node/instrumentation-tedious: []
     # Unmaintained
-  plugins/node/opentelemetry-instrumentation-aws-lambda:
-    - carolabadeer
+  plugins/node/opentelemetry-instrumentation-aws-lambda: []
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-aws-sdk:
-    - carolabadeer
     - blumamir
   plugins/node/opentelemetry-instrumentation-bunyan:
     - seemk
@@ -87,8 +85,8 @@ components:
   plugins/node/opentelemetry-instrumentation-express:
     - JamieDanielson
     - pkanal
-  plugins/node/opentelemetry-instrumentation-fastify:
-    - pichlermarc
+  plugins/node/opentelemetry-instrumentation-fastify: []
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-generic-pool: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-graphql:
@@ -104,12 +102,12 @@ components:
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-memcached: []
     # Unmaintained
-  plugins/node/opentelemetry-instrumentation-mongodb:
-    - osherv
-  plugins/node/opentelemetry-instrumentation-mysql:
-    - haddasbronfman
-  plugins/node/opentelemetry-instrumentation-mysql2:
-    - haddasbronfman
+  plugins/node/opentelemetry-instrumentation-mongodb: []
+    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-mysql: []
+    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-mysql2: []
+    # Unmaintained
   plugins/node/opentelemetry-instrumentation-nestjs-core: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-net:
@@ -144,10 +142,13 @@ components:
   plugins/web/opentelemetry-plugin-react-load:
     - martinkuba
   propagators/opentelemetry-propagator-instana:
-    - basti1302
     - kirrg001
   propagators/opentelemetry-propagator-ot-trace: []
     # Unmaintained
+  propagators/propagator-aws-xray: [ ]
+  # Unmaintained
+  propagators/propagator-aws-xray-lambda: [ ]
+  # Unmaintained
 
 ignored-authors:
   - renovate-bot

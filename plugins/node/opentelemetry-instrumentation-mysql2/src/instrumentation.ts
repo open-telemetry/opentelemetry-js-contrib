@@ -35,6 +35,7 @@ import {
   getSpanName,
   once,
 } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;

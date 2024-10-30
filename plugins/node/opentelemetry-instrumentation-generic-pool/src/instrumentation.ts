@@ -24,6 +24,7 @@ import {
 
 import type * as genericPool from 'generic-pool';
 
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const MODULE_NAME = 'generic-pool';
@@ -109,7 +110,7 @@ export class GenericPoolInstrumentation extends InstrumentationBase {
     ) {
       const parent = api.context.active();
       const span = instrumentation.tracer.startSpan(
-        'generic-pool.aquire',
+        'generic-pool.acquire',
         {},
         parent
       );
@@ -156,7 +157,7 @@ export class GenericPoolInstrumentation extends InstrumentationBase {
       }
       const parent = api.context.active();
       const span = instrumentation.tracer.startSpan(
-        'generic-pool.aquire',
+        'generic-pool.acquire',
         {},
         parent
       );

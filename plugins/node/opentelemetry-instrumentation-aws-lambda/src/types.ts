@@ -40,4 +40,5 @@ export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
   responseHook?: ResponseHook;
   eventContextExtractor?: EventContextExtractor;
   lambdaHandler?: string;
+  lambdaStartTime?: number;
 }

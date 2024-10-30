@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.29.13](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.12...resource-detector-gcp-v0.29.13) (2024-10-25)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.41.0 to ^0.42.0
+
+## [0.29.12](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.11...resource-detector-gcp-v0.29.12) (2024-10-08)
+
+
+### Bug Fixes
+
+* **detector-gcp:** suppress internal tracing ([#2424](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2424)) ([3ee6f09](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3ee6f09aa8fa026dbe137ab2fb33f204064b1018))
+
+## [0.29.11](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.10...resource-detector-gcp-v0.29.11) (2024-09-02)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.40.0 to ^0.41.0
+
 ## [0.29.10](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.9...resource-detector-gcp-v0.29.10) (2024-06-06)
 
 
