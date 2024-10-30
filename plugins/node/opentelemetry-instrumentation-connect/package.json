@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-connect",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "OpenTelemetry instrumentation for `connect` http middleware framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -14,7 +14,7 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-connect --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc mocha 'test/**/*.test.ts'",
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w"
   },
@@ -50,15 +50,13 @@
     "@types/mocha": "7.0.2",
     "@types/node": "18.18.14",
     "connect": "3.7.0",
-    "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.53.0",
+    "@opentelemetry/instrumentation": "^0.54.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/connect": "3.4.36"
   },

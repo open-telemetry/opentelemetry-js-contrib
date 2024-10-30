@@ -34,6 +34,7 @@ import {
   WindowWithZone,
   ZoneTypeWithPrototype,
 } from './internal-types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
