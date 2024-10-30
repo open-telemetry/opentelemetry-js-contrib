@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.46.0...instrumentation-pg-v0.47.0) (2024-10-25)
+
+
+### Features
+
+* **instrumentation-pg:** add error type to db duration metric ([#2476](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2476)) ([9564380](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9564380782164c8d8da6cac675d76d2fb4cdf20b))
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
+
+### Bug Fixes
+
+* **instrumentation-pg:** ensure db.client.operation.duration metric is recorded for Promises API usage of pg ([#2480](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2480)) ([97a2956](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/97a2956f2703ebe62c16863decada93fef4574ec)), closes [#2380](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2380)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.41.0 to ^0.42.0
+
 ## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.45.1...instrumentation-pg-v0.46.0) (2024-10-16)
 
 
