@@ -125,7 +125,7 @@ provider.register({
 });
 ```
 
-2. The OpenTelemetry SDK is configured to export traces to a backend other than AWX X-Ray, but the lambda function is invoked by other AWS services which send the context using the X-Ray HTTP headers. In this case, include the `AWSXRayPropagator`, which extracts context from the HTTP header but not the Lambda Active Tracing context.
+1. The OpenTelemetry SDK is configured to export traces to a backend other than AWX X-Ray, but the lambda function is invoked by other AWS services which send the context using the X-Ray HTTP headers. In this case, include the `AWSXRayPropagator`, which extracts context from the HTTP header but not the Lambda Active Tracing context.
 
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
