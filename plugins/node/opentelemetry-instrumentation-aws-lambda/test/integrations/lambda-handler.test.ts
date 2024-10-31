@@ -22,7 +22,6 @@ import * as path from 'path';
 import {
   AwsLambdaInstrumentation,
   AwsLambdaInstrumentationConfig,
-  traceContextEnvironmentKey,
   lambdaMaxInitInMilliseconds,
 } from '../../src';
 import {
@@ -534,7 +533,7 @@ describe('lambda handler', () => {
     });
 
     it('can extract context from lambda context env variable using a global propagator', async () => {
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      process.env['_X_AMZN_TRACE_ID'] = sampledAwsHeader;
       propagation.setGlobalPropagator(new AWSXRayLambdaPropagator());
       initializeHandler('lambda-test/async.handler');
 
