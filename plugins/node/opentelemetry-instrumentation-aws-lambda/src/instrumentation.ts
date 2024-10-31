@@ -66,7 +66,6 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   },
 };
 
-export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
 export const lambdaMaxInitInMilliseconds = 10_000;
 
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
