@@ -13,7 +13,7 @@ on:
         type: string
 
 jobs:
-  build:
+  build-and-cache:
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
@@ -41,7 +41,7 @@ jobs:
 
   tav:
     name: Run test-all-versions
-    needs: build
+    needs: build-and-cache
     strategy:
       fail-fast: false
       matrix:
