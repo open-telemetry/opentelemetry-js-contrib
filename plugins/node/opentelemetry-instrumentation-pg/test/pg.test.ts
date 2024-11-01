@@ -849,15 +849,9 @@ describe('pg', () => {
           const [span] = memoryExporter.getFinishedSpans();
           assert.ok(span);
 
-          const commentedQuery = addSqlCommenterComment(
-            trace.wrapSpanContext(span.spanContext()),
-            query
-          );
-
           const executedQueries = getExecutedQueries();
           assert.equal(executedQueries.length, 1);
           assert.equal(executedQueries[0].text, query);
-          assert.notEqual(query, commentedQuery);
         } catch (e: any) {
           assert.ok(false, e.message);
         }
@@ -875,15 +869,11 @@ describe('pg', () => {
             assert.ok(res);
 
             const [span] = memoryExporter.getFinishedSpans();
-            const commentedQuery = addSqlCommenterComment(
-              trace.wrapSpanContext(span.spanContext()),
-              query
-            );
+            assert.ok(span);
 
             const executedQueries = getExecutedQueries();
             assert.equal(executedQueries.length, 1);
             assert.equal(executedQueries[0].text, query);
-            assert.notEqual(query, commentedQuery);
             done();
           },
         } as pg.QueryConfig);
@@ -964,15 +954,11 @@ describe('pg', () => {
           assert.ok(resPromise);
 
           const [span] = memoryExporter.getFinishedSpans();
-          const commentedQuery = addSqlCommenterComment(
-            trace.wrapSpanContext(span.spanContext()),
-            query
-          );
+          assert.ok(span);
 
           const executedQueries = getExecutedQueries();
           assert.equal(executedQueries.length, 1);
           assert.equal(executedQueries[0].text, query);
-          assert.notEqual(query, commentedQuery);
         } catch (e: any) {
           assert.ok(false, e.message);
         }

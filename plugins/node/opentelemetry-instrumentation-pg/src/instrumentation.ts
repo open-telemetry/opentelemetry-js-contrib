@@ -297,16 +297,18 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
         // Modify query text w/ a tracing comment before invoking original for
         // tracing, but only if args[0] has one of our expected shapes.
-        // Also omit the tracing comment if args[0] is a prepared query object.
         if (instrumentationConfig.addSqlCommenterCommentToQueries) {
-          args[0] = firstArgIsString
-            ? addSqlCommenterComment(span, arg0)
-            : firstArgIsQueryObjectWithText && !('name' in arg0)
-            ? {
-                ...arg0,
-                text: addSqlCommenterComment(span, arg0.text),
-              }
-            : args[0];
+          if (firstArgIsString) {
+            args[0] = addSqlCommenterComment(span, arg0);
+          } else if (firstArgIsQueryObjectWithText && !('name' in arg0)) {
+            // In the case of a query object, we need to ensure there's no name field
+            // as this indicates a prepared query, where the comment would remain the same
+            // for every invocation and contain an outdated trace context.
+            args[0] = {
+              ...arg0,
+              text: addSqlCommenterComment(span, arg0.text),
+            };
+          }
         }
 
         // Bind callback (if any) to parent span (if any)
