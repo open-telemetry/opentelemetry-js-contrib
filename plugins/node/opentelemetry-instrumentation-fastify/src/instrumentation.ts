@@ -41,6 +41,7 @@ import {
   safeExecuteInTheMiddleMaybePromise,
   startSpan,
 } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export const ANONYMOUS_NAME = 'anonymous';
@@ -55,7 +56,7 @@ export class FastifyInstrumentation extends InstrumentationBase<FastifyInstrumen
     return [
       new InstrumentationNodeModuleDefinition(
         'fastify',
-        ['>=3.0.0 <5'],
+        ['>=3.0.0 <6'],
         moduleExports => {
           return this._patchConstructor(moduleExports);
         }

@@ -1,4 +1,6 @@
 'lru-memoizer':
-  versions: ">=1.3 <3"
+  versions:
+    include: ">=1.3 <3"
+    mode: latest-minors
   commands:
     - npm test

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.43.0...instrumentation-express-v0.44.0) (2024-10-25)
+
+
+### Features
+
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.41.0 to ^0.42.0
+
+## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.42.0...instrumentation-express-v0.43.0) (2024-10-08)
+
+
+### Features
+
+* **instrumentation-express:** Use router path in router span names ([#2319](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2319)) ([ee5c584](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ee5c584c943eb8a3de0566843a42784f16c0f31f))
+
 ## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.41.1...instrumentation-express-v0.42.0) (2024-09-02)
 
 

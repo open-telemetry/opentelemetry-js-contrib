@@ -241,12 +241,13 @@ describe('Restify Instrumentation', () => {
           rootSpan.end();
           assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
 
-          if (semver.satisfies(LIB_VERSION, '>=8')) {
+          if (semver.satisfies(LIB_VERSION, '>=8.2.0')) {
+            // Error handling changed slightly in v8.2.0 (https://github.com/restify/node-restify/pull/1757).
             assert.deepEqual(
               result,
               '{"code":"Internal","message":"Error: NOK"}'
             );
-          } else if (semver.satisfies(LIB_VERSION, '>=7 <8')) {
+          } else if (semver.satisfies(LIB_VERSION, '>=7 <8.2.0')) {
             assert.deepEqual(
               result,
               '{"code":"Internal","message":"caused by Error: NOK"}'

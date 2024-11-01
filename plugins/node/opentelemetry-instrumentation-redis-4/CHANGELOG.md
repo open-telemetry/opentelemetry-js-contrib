@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.42.1...instrumentation-redis-4-v0.43.0) (2024-10-25)
+
+
+### Features
+
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.41.0 to ^0.42.0
+
+## [0.42.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.42.0...instrumentation-redis-4-v0.42.1) (2024-10-08)
+
+
+### Bug Fixes
+
+* **instrumentation-redis-4:** avoid diag.error spam when configured client URL is the empty string ([#2399](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2399)) ([ec3b9c8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ec3b9c87aa2c79dc8cdcb4023df71dcafc6f08a4)), closes [#2389](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2389)
+
 ## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.41.1...instrumentation-redis-4-v0.42.0) (2024-09-02)
 
 
