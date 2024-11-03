@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-container",
-  "version": "0.4.2",
+  "version": "0.4.4",
   "description": "Opentelemetry resource detector to get container resource attributes",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@opentelemetry/resources": "^1.10.0",
+    "@opentelemetry/core": "^1.26.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-container#readme"

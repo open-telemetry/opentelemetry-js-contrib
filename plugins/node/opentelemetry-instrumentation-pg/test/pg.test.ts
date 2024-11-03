@@ -53,6 +53,10 @@ import {
   DBSYSTEMVALUES_POSTGRESQL,
   ATTR_ERROR_TYPE,
 } from '@opentelemetry/semantic-conventions';
+import {
+  METRIC_DB_CLIENT_OPERATION_DURATION,
+  ATTR_DB_OPERATION_NAME,
+} from '@opentelemetry/semantic-conventions/incubating';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -984,7 +988,7 @@ describe('pg', () => {
         const metrics = resourceMetrics.scopeMetrics[0].metrics;
         assert.strictEqual(
           metrics[0].descriptor.name,
-          'db.client.operation.duration'
+          METRIC_DB_CLIENT_OPERATION_DURATION
         );
         assert.strictEqual(
           metrics[0].descriptor.description,
@@ -994,6 +998,10 @@ describe('pg', () => {
         assert.strictEqual(
           dataPoint.attributes[SEMATTRS_DB_SYSTEM],
           DBSYSTEMVALUES_POSTGRESQL
+        );
+        assert.strictEqual(
+          dataPoint.attributes[ATTR_DB_OPERATION_NAME],
+          'SELECT'
         );
         assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], undefined);
 

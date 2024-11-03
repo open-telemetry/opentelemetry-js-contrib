@@ -136,6 +136,8 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
 };
 
+const defaultExcludedInstrumentations = ['@opentelemetry/instrumentation-fs'];
+
 // Config types inferred automatically from the first argument of the constructor
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;
 export type InstrumentationConfigMap = {
@@ -208,10 +210,14 @@ function getInstrumentationsFromEnv(envVar: string): string[] {
 
 /**
  * Returns the list of instrumentations that are enabled based on the environment variable.
+ * If the environment variable is unset, returns all instrumentation that are enabled by default.
  */
 function getEnabledInstrumentationsFromEnv() {
   if (!process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS) {
-    return Object.keys(InstrumentationMap);
+    // all keys in the InstrumentationMap except for everything that is not enabled by default.
+    return Object.keys(InstrumentationMap).filter(
+      key => !defaultExcludedInstrumentations.includes(key)
+    );
   }
 
   const instrumentationsFromEnv = getInstrumentationsFromEnv(
