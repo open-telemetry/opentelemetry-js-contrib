@@ -37,6 +37,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { SocketIoInstrumentationConfig } from './types';
 import { SocketIoInstrumentationAttributes } from './AttributeNames';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   extractRoomsAttributeValue,
@@ -292,14 +293,9 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
         }
         const wrappedListener = function (this: any, ...args: any[]) {
           const eventName = ev;
-          const defaultNamespace = '/';
           const namespace = this.name || this.adapter?.nsp?.name;
-          const destination =
-            namespace === defaultNamespace
-              ? eventName
-              : `${namespace} ${eventName}`;
           const span: Span = self.tracer.startSpan(
-            `${destination} ${MESSAGINGOPERATIONVALUES_RECEIVE}`,
+            `${MESSAGINGOPERATIONVALUES_RECEIVE} ${namespace}`,
             {
               kind: SpanKind.CONSUMER,
               attributes: {
@@ -393,8 +389,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
             namespace;
           attributes[SEMATTRS_MESSAGING_DESTINATION] = namespace;
         }
-        const spanRooms = rooms.length ? `[${rooms.join()}]` : '';
-        const span = self.tracer.startSpan(`${namespace}${spanRooms} send`, {
+        const span = self.tracer.startSpan(`send ${namespace}`, {
           kind: SpanKind.PRODUCER,
           attributes,
         });

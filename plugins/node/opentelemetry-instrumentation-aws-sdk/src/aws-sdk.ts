@@ -33,6 +33,7 @@ import {
   NormalizedRequest,
   NormalizedResponse,
 } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   InstrumentationBase,
