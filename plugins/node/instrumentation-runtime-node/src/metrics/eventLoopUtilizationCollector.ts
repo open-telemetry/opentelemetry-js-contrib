@@ -20,7 +20,7 @@ import { BaseCollector } from './baseCollector';
 
 const { eventLoopUtilization: eventLoopUtilizationCollector } = performance;
 
-export const NODEJS_EVENT_LOOP_UTILIZATION = 'eventloop.utilization';
+export const ATTR_NODEJS_EVENT_LOOP_UTILIZATION = 'eventloop.utilization';
 
 export class EventLoopUtilizationCollector extends BaseCollector {
   private _lastValue?: EventLoopUtilization;
@@ -35,7 +35,7 @@ export class EventLoopUtilizationCollector extends BaseCollector {
   public updateMetricInstruments(meter: Meter): void {
     meter
       .createObservableGauge(
-        `${this.namePrefix}.${NODEJS_EVENT_LOOP_UTILIZATION}`,
+        `${this.namePrefix}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`,
         {
           description: 'Event loop utilization',
           unit: 's',

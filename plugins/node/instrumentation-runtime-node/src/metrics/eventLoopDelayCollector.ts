@@ -19,7 +19,7 @@ import * as perf_hooks from 'node:perf_hooks';
 import { IntervalHistogram } from 'node:perf_hooks';
 import { BaseCollector } from './baseCollector';
 
-enum NodeJsEventLoopDelay {
+enum NodeJsEventLoopDelayAttributes {
   min = 'eventloop.delay.min',
   max = 'eventloop.delay.max',
   mean = 'eventloop.delay.mean',
@@ -30,28 +30,28 @@ enum NodeJsEventLoopDelay {
 }
 
 export const metricNames: Record<
-  NodeJsEventLoopDelay,
+  NodeJsEventLoopDelayAttributes,
   { description: string }
 > = {
-  [NodeJsEventLoopDelay.min]: {
+  [NodeJsEventLoopDelayAttributes.min]: {
     description: 'Event loop minimum delay.',
   },
-  [NodeJsEventLoopDelay.max]: {
+  [NodeJsEventLoopDelayAttributes.max]: {
     description: 'Event loop maximum delay.',
   },
-  [NodeJsEventLoopDelay.mean]: {
+  [NodeJsEventLoopDelayAttributes.mean]: {
     description: 'Event loop mean delay.',
   },
-  [NodeJsEventLoopDelay.stddev]: {
+  [NodeJsEventLoopDelayAttributes.stddev]: {
     description: 'Event loop standard deviation delay.',
   },
-  [NodeJsEventLoopDelay.p50]: {
+  [NodeJsEventLoopDelayAttributes.p50]: {
     description: 'Event loop 50 percentile delay.',
   },
-  [NodeJsEventLoopDelay.p90]: {
+  [NodeJsEventLoopDelayAttributes.p90]: {
     description: 'Event loop 90 percentile delay.',
   },
-  [NodeJsEventLoopDelay.p99]: {
+  [NodeJsEventLoopDelayAttributes.p99]: {
     description: 'Event loop 99 percentile delay.',
   },
 };
@@ -81,51 +81,51 @@ export class EventLoopDelayCollector extends BaseCollector {
 
   updateMetricInstruments(meter: Meter): void {
     const delayMin = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelay.min}`,
+      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.min}`,
       {
-        description: metricNames[NodeJsEventLoopDelay.min].description,
+        description: metricNames[NodeJsEventLoopDelayAttributes.min].description,
         unit: 's',
       }
     );
     const delayMax = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelay.max}`,
+      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.max}`,
       {
-        description: metricNames[NodeJsEventLoopDelay.max].description,
+        description: metricNames[NodeJsEventLoopDelayAttributes.max].description,
         unit: 's',
       }
     );
     const delayMean = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelay.mean}`,
+      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.mean}`,
       {
-        description: metricNames[NodeJsEventLoopDelay.mean].description,
+        description: metricNames[NodeJsEventLoopDelayAttributes.mean].description,
         unit: 's',
       }
     );
     const delayStddev = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelay.stddev}`,
+      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.stddev}`,
       {
-        description: metricNames[NodeJsEventLoopDelay.stddev].description,
+        description: metricNames[NodeJsEventLoopDelayAttributes.stddev].description,
         unit: 's',
       }
     );
     const delayp50 = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelay.p50}`,
+      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.p50}`,
       {
-        description: metricNames[NodeJsEventLoopDelay.p50].description,
+        description: metricNames[NodeJsEventLoopDelayAttributes.p50].description,
         unit: 's',
       }
     );
     const delayp90 = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelay.p90}`,
+      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.p90}`,
       {
-        description: metricNames[NodeJsEventLoopDelay.p90].description,
+        description: metricNames[NodeJsEventLoopDelayAttributes.p90].description,
         unit: 's',
       }
     );
     const delayp99 = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelay.p99}`,
+      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.p99}`,
       {
-        description: metricNames[NodeJsEventLoopDelay.p99].description,
+        description: metricNames[NodeJsEventLoopDelayAttributes.p99].description,
         unit: 's',
       }
     );

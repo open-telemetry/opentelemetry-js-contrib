@@ -18,7 +18,7 @@ import { Meter } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
 import * as v8 from 'node:v8';
 import { HeapSpaceInfo } from 'v8';
-import { V8_HEAP_SIZE_NAME_ATTRIBUTE } from '../consts/attributes';
+import { ATTR_V8JS_HEAP_SPACE_NAME } from '../consts/attributes';
 
 export enum V8HeapSpaceMetrics {
   heapLimit = 'memory.heap.limit',
@@ -80,7 +80,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
         unit: 'By',
       }
     );
-    const heapSpaceNameAttributeName = `${this.namePrefix}.${V8_HEAP_SIZE_NAME_ATTRIBUTE}`;
+    const heapSpaceNameAttributeName = `${this.namePrefix}.${ATTR_V8JS_HEAP_SPACE_NAME}`;
 
     meter.addBatchObservableCallback(
       observableResult => {

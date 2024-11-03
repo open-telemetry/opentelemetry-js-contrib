@@ -13,4 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export const V8_HEAP_SIZE_NAME_ATTRIBUTE = 'heap.space.name';
+export const ATTR_V8JS_HEAP_SPACE_NAME = 'heap.space.name';

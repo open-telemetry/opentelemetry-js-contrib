@@ -19,11 +19,11 @@ import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
 import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
-import { NODEJS_EVENT_LOOP_TIME } from '../src/metrics/eventLoopTimeCollector';
+import { ATTR_NODEJS_EVENT_LOOP_TIME } from '../src/metrics/eventLoopTimeCollector';
 
 const MEASUREMENT_INTERVAL = 10;
 
-describe(`${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_TIME}`, function () {
+describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_TIME}`, function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -51,7 +51,7 @@ describe(`${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_TIME}`, function 
     assert.strictEqual(scopeMetrics.length, 0);
   });
 
-  it(`should write ${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_TIME}`, async function () {
+  it(`should write ${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_TIME}`, async function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
@@ -72,14 +72,14 @@ describe(`${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_TIME}`, function 
     const timeMetric = scopeMetrics[0].metrics.find(
       x =>
         x.descriptor.name ===
-        `${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_TIME}`
+        `${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_TIME}`
     );
 
     assert.notEqual(timeMetric, undefined, 'metric not found');
 
     assert.strictEqual(
       timeMetric!.descriptor.name,
-      `${ConventionalNamePrefix.NodeJs}.${NODEJS_EVENT_LOOP_TIME}`,
+      `${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_TIME}`,
       'descriptor.name'
     );
 

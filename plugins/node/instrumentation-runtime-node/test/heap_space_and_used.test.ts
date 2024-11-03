@@ -20,7 +20,7 @@ import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
 import { metricNames } from '../src/metrics/heapSpacesSizeAndUsedCollector';
 import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
-import { V8_HEAP_SIZE_NAME_ATTRIBUTE } from '../src/consts/attributes';
+import { ATTR_V8JS_HEAP_SPACE_NAME } from '../src/consts/attributes';
 import { GaugeMetricData } from '@opentelemetry/sdk-metrics/build/src/export/MetricData';
 
 const MEASUREMENT_INTERVAL = 10;
@@ -118,7 +118,7 @@ describe('nodejs.heap_space', function () {
         const spaceAttribute = metric?.dataPoints.find(
           x =>
             x.attributes[
-              `${ConventionalNamePrefix.V8js}.${V8_HEAP_SIZE_NAME_ATTRIBUTE}`
+              `${ConventionalNamePrefix.V8js}.${ATTR_V8JS_HEAP_SPACE_NAME}`
             ] === space
         );
 

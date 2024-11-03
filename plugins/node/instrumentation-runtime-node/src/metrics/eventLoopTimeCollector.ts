@@ -20,7 +20,7 @@ import { BaseCollector } from './baseCollector';
 
 const { eventLoopUtilization: eventLoopUtilizationCollector } = performance;
 
-export const NODEJS_EVENT_LOOP_TIME = 'eventloop.time';
+export const ATTR_NODEJS_EVENT_LOOP_TIME = 'eventloop.time';
 
 export class EventLoopTimeCollector extends BaseCollector {
   constructor(
@@ -32,7 +32,7 @@ export class EventLoopTimeCollector extends BaseCollector {
 
   public updateMetricInstruments(meter: Meter): void {
     const timeCounter = meter.createObservableCounter(
-      `${this.namePrefix}.${NODEJS_EVENT_LOOP_TIME}`,
+      `${this.namePrefix}.${ATTR_NODEJS_EVENT_LOOP_TIME}`,
       {
         description:
           'Cumulative duration of time the event loop has been in each state.',
