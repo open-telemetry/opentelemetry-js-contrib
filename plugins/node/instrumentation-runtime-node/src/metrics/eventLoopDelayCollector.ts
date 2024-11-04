@@ -83,49 +83,56 @@ export class EventLoopDelayCollector extends BaseCollector {
     const delayMin = meter.createObservableGauge(
       `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.min}`,
       {
-        description: metricNames[NodeJsEventLoopDelayAttributes.min].description,
+        description:
+          metricNames[NodeJsEventLoopDelayAttributes.min].description,
         unit: 's',
       }
     );
     const delayMax = meter.createObservableGauge(
       `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.max}`,
       {
-        description: metricNames[NodeJsEventLoopDelayAttributes.max].description,
+        description:
+          metricNames[NodeJsEventLoopDelayAttributes.max].description,
         unit: 's',
       }
     );
     const delayMean = meter.createObservableGauge(
       `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.mean}`,
       {
-        description: metricNames[NodeJsEventLoopDelayAttributes.mean].description,
+        description:
+          metricNames[NodeJsEventLoopDelayAttributes.mean].description,
         unit: 's',
       }
     );
     const delayStddev = meter.createObservableGauge(
       `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.stddev}`,
       {
-        description: metricNames[NodeJsEventLoopDelayAttributes.stddev].description,
+        description:
+          metricNames[NodeJsEventLoopDelayAttributes.stddev].description,
         unit: 's',
       }
     );
     const delayp50 = meter.createObservableGauge(
       `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.p50}`,
       {
-        description: metricNames[NodeJsEventLoopDelayAttributes.p50].description,
+        description:
+          metricNames[NodeJsEventLoopDelayAttributes.p50].description,
         unit: 's',
       }
     );
     const delayp90 = meter.createObservableGauge(
       `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.p90}`,
       {
-        description: metricNames[NodeJsEventLoopDelayAttributes.p90].description,
+        description:
+          metricNames[NodeJsEventLoopDelayAttributes.p90].description,
         unit: 's',
       }
     );
     const delayp99 = meter.createObservableGauge(
       `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.p99}`,
       {
-        description: metricNames[NodeJsEventLoopDelayAttributes.p99].description,
+        description:
+          metricNames[NodeJsEventLoopDelayAttributes.p99].description,
         unit: 's',
       }
     );
