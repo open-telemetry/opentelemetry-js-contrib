@@ -27,9 +27,10 @@ import { IResource } from '@opentelemetry/resources';
 describe('[Integration] ContainerDetector', () => {
   it('should not start spans for detector reads to filesystem', async () => {
     const memoryExporter = new InMemorySpanExporter();
+    const spanProcessor = new SimpleSpanProcessor(memoryExporter);
     const sdk = new NodeSDK({
       instrumentations: [new FsInstrumentation()],
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+      spanProcessors: [spanProcessor],
     });
 
     sdk.start();
@@ -50,7 +51,7 @@ describe('[Integration] ContainerDetector', () => {
 
     // NOTE: the require process makes use of the fs API so spans are being exported.
     // We need to check no new spans are exported when `detect` is called.
-    await new Promise(r => setTimeout(r, 0));
+    await spanProcessor.forceFlush();
     const numSpansAfterRequire = memoryExporter.getFinishedSpans().length;
 
     const resource = containerDetector.detect() as IResource;

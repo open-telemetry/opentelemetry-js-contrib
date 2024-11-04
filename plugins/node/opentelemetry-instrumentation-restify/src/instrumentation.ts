@@ -21,6 +21,7 @@ import * as api from '@opentelemetry/api';
 import type { Server } from 'restify';
 import { LayerType } from './types';
 import { AttributeNames } from './enums/AttributeNames';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import {
@@ -35,7 +36,7 @@ import { isPromise, isAsyncFunction } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { RestifyInstrumentationConfig } from './types';
 
-const supportedVersions = ['>=4.0.0 <12'];
+const supportedVersions = ['>=4.1.0 <12'];
 
 export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumentationConfig> {
   constructor(config: RestifyInstrumentationConfig = {}) {
