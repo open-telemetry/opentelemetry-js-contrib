@@ -13,9 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
-
-export interface RuntimeNodeInstrumentationConfig
-  extends InstrumentationConfig {
-  monitoringPrecision?: number;
-}
+export const ATTR_V8JS_HEAP_SPACE_NAME = 'heap.space.name';

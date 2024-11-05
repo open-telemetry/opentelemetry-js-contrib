@@ -18,12 +18,10 @@ import { MeterProvider } from '@opentelemetry/sdk-metrics';
 import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
-import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
-import { ATTR_NODEJS_EVENT_LOOP_UTILIZATION } from '../src/metrics/eventLoopUtilizationCollector';
 
 const MEASUREMENT_INTERVAL = 10;
 
-describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`, function () {
+describe('instrumentation', function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -51,53 +49,37 @@ describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}
     assert.strictEqual(scopeMetrics.length, 0);
   });
 
-  it(`should write ${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`, async function () {
+  it('should export after being enabled', async function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
+      enabled: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
     // act
     await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
-    const { resourceMetrics, errors } = await metricReader.collect();
+    const firstCollections = await metricReader.collect();
 
     // assert
+    assert.deepEqual(firstCollections.errors, []);
+    const scopeMetrics = firstCollections.resourceMetrics.scopeMetrics;
+    assert.strictEqual(scopeMetrics.length, 0);
+
+    instrumentation.enable();
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
+
+    const secondCollection = await metricReader.collect();
     assert.deepEqual(
-      errors,
+      secondCollection.errors,
       [],
       'expected no errors from the callback during collection'
     );
-    const scopeMetrics = resourceMetrics.scopeMetrics;
-    const utilizationMetric = scopeMetrics[0].metrics.find(
-      x =>
-        x.descriptor.name ===
-        `${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`
-    );
-
-    assert.notEqual(utilizationMetric, undefined, 'metric not found');
-
+    const secondScopeMetrics = secondCollection.resourceMetrics.scopeMetrics;
     assert.strictEqual(
-      utilizationMetric!.descriptor.name,
-      `${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`,
-      'descriptor.name'
-    );
-
-    assert.strictEqual(
-      utilizationMetric!.descriptor.description,
-      'Event loop utilization'
-    );
-
-    assert.strictEqual(
-      utilizationMetric!.descriptor.unit,
-      's',
-      'expected default unit'
-    );
-
-    assert.strictEqual(
-      utilizationMetric!.dataPoints.length,
+      secondScopeMetrics.length,
       1,
-      'expected one data point'
+      'expected one scope (one meter created by instrumentation)'
     );
   });
 });
