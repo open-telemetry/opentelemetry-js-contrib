@@ -23,6 +23,7 @@ import { GCCollector } from './metrics/gcCollector';
 import { HeapSpacesSizeAndUsedCollector } from './metrics/heapSpacesSizeAndUsedCollector';
 import { ConventionalNamePrefix } from './types/ConventionalNamePrefix';
 import { EventLoopTimeCollector } from './metrics/eventLoopTimeCollector';
+/** @knipignore */
 import { PACKAGE_VERSION, PACKAGE_NAME } from './version';
 
 const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
