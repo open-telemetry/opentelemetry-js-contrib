@@ -10,7 +10,6 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/resource-detector-gcp --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
@@ -40,6 +39,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/contrib-test-utils": "^0.42.0",
+    "@opentelemetry/instrumentation-http": "^0.54.0",
     "@types/mocha": "8.2.3",
     "@types/node": "18.18.14",
     "@types/semver": "7.5.8",
