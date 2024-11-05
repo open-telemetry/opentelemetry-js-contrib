@@ -25,7 +25,7 @@ npm install --save @opentelemetry/instrumentation-router
 const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const RouterInstrumentation = require('@opentelemetry/instrumentation-router');
+const { RouterInstrumentation } = require('@opentelemetry/instrumentation-router');
 
 const provider = new NodeTracerProvider();
 
