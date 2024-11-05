@@ -25,6 +25,7 @@
   "plugins/node/instrumentation-lru-memoizer": "0.41.0",
   "plugins/node/instrumentation-mongoose": "0.43.0",
   "plugins/node/instrumentation-runtime-node": "0.8.0",
+  "plugins/node/instrumentation-sequelize": "0.1.0",
   "plugins/node/instrumentation-socket.io": "0.43.0",
   "plugins/node/instrumentation-tedious": "0.15.0",
   "plugins/node/instrumentation-undici": "0.7.0",
