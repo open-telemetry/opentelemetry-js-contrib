@@ -540,7 +540,7 @@ describe('lambda handler', () => {
       initializeHandler('lambda-test/async.handler');
 
       const handler = await lambdaLoadHandler();
-      const result = handler('arg', ctx);
+      const result = await handler('arg', ctx);
 
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
