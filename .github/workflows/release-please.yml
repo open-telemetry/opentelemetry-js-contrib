@@ -16,6 +16,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      # If you update this version make sure to keep in sync:
+      # - `build-and-cache` job of unit-test workflow
+      # - `build-and-cache` job of test-all-versions workflow
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
