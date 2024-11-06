@@ -35,6 +35,9 @@ const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const provider = new NodeTracerProvider();
 provider.register();
 
+// Note that this needs to appear after the tracer provider is registered,
+// otherwise the instrumentation will not properly flush data after each
+// lambda invocation.
 registerInstrumentations({
   instrumentations: [
     new AwsLambdaInstrumentation({
@@ -46,7 +49,7 @@ registerInstrumentations({
 
 In your Lambda function configuration, add or update the `NODE_OPTIONS` environment variable to require the wrapper, e.g.,
 
-`NODE_OPTIONS=--require lambda-wrapper`
+`NODE_OPTIONS=--require lambda-wrapper --experimental-loader @opentelemetry/instrumentation/hook.mjs`
 
 ## AWS Lambda Instrumentation Options
 
