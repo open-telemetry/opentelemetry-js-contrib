@@ -54,7 +54,7 @@ interface Result extends mysqlTypes.RowDataPacket {
   solution: number;
 }
 
-describe('mysql2@2.x', () => {
+describe('mysql2', () => {
   let contextManager: AsyncHooksContextManager;
   let connection: mysqlTypes.Connection;
   let rootConnection: mysqlTypes.Connection;
@@ -148,7 +148,7 @@ describe('mysql2@2.x', () => {
       host,
       password,
       database,
-    } as mysqlTypes.PoolClusterOptions);
+    });
   });
 
   afterEach(done => {
