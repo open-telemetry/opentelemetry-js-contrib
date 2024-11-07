@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.45.0...instrumentation-aws-sdk-v0.46.0) (2024-11-07)
+
+
+### Features
+
+* **aws-sdk:** add s3 and kinesis service extensions for aws-sdk instrumentation ([#2361](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2361)) ([a5b5614](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a5b5614b18d0b77ce5772df9f286492879323c88))
+
 ## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.44.0...instrumentation-aws-sdk-v0.45.0) (2024-10-25)
 
 
