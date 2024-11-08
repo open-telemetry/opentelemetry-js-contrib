@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.47.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.47.0...instrumentation-pg-v0.47.1) (2024-11-07)
+
+
+### Bug Fixes
+
+* **pg:** Do not add SQLCommenter comments to prepared statements ([#2456](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2456)) ([8070c7f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8070c7f9e50110046b72a658e7fbd8d2f06b73e9))
+
 ## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.46.0...instrumentation-pg-v0.47.0) (2024-10-25)
 
 
