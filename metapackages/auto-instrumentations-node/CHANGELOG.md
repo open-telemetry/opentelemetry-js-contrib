@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.52.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.52.0...auto-instrumentations-node-v0.52.1) (2024-11-07)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.46.0 to ^0.47.0
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.45.0 to ^0.46.0
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.42.0 to ^0.42.1
+    * @opentelemetry/instrumentation-pg bumped from ^0.47.0 to ^0.47.1
+    * @opentelemetry/instrumentation-undici bumped from ^0.7.0 to ^0.7.1
+
 ## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.51.0...auto-instrumentations-node-v0.52.0) (2024-10-25)
 
 

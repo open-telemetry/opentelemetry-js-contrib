@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.42.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.42.0...instrumentation-mysql2-v0.42.1) (2024-11-07)
+
+
+### Bug Fixes
+
+* **instrumentation-mysql:** fix test for mysql2 v3 ([#2168](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2168)) ([#2451](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2451)) ([ad8c581](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ad8c581c24f47e1ed413598b78f866977af56124))
+
 ## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.41.0...instrumentation-mysql2-v0.42.0) (2024-10-25)
 
 
