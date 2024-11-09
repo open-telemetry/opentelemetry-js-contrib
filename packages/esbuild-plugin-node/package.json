@@ -53,7 +53,7 @@
   "dependencies": {
     "@opentelemetry/auto-instrumentations-node": "0.52.1",
     "@opentelemetry/instrumentation": "^0.54.0",
-    "esbuild": "0.24.x"
+    "esbuild": "0.21.x"
   },
   "files": [
     "build/src/**/*.js",
