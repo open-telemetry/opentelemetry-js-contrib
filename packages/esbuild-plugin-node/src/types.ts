@@ -22,23 +22,24 @@ export interface ExtractedModule {
   path: string;
 }
 
+export type PluginData = {
+  extractedModule: ExtractedModule;
+  shouldPatchPackage: boolean;
+  moduleVersion: string;
+  instrumentationName: string;
+};
+
 export type OnLoadArgs = Omit<EsbuildOnLoadArgs, 'pluginData'> & {
-  pluginData?: {
-    shouldPatchPackage: boolean;
-    package: string;
-    instrumentation: {
-      name: string;
-    };
-    extractedModule: ExtractedModule;
-  };
+  pluginData?: PluginData;
 };
 
 export interface ModuleParams {
+  path?: string;
   oTelInstrumentationPackage: string;
   oTelInstrumentationClass: string;
   oTelInstrumentationConstructorArgs?: string;
-  instrumentedFileName: string;
   instrumentationName?: string;
+  moduleVersion: string;
 }
 
 type _RemoveFunctions<T> = {

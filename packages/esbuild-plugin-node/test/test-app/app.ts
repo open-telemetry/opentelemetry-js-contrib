@@ -15,6 +15,7 @@
  */
 
 import { buildTestSchema } from './graphql/schema';
+import { createClient } from 'redis';
 import fastify from 'fastify';
 import { graphql } from './graphql/adapter';
 import pino from 'pino';
@@ -23,11 +24,16 @@ export const server = fastify({
   logger: pino({}, pino.destination(1)),
   disableRequestLogging: true,
 });
+const redisClient = createClient({ url: process.env.REDIS_URL });
 
-server.get('/test', req => {
+server.get('/test', async req => {
   req.log.info({ hi: 'there' }, 'Log message from handler');
+
+  await redisClient.get('key').catch(() => void 0);
+
   return { hi: 'there' };
 });
+
 const schema = buildTestSchema();
 const sourceList = `
   query {

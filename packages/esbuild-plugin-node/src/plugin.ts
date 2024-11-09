@@ -18,15 +18,17 @@ import {
   ExtractedModule,
   OnLoadArgs,
   OpenTelemetryPluginParams,
+  PluginData,
 } from './types';
 import { Plugin, PluginBuild } from 'esbuild';
+import { dirname, join } from 'path';
 import {
   instrumentationModuleDefinitions,
   otelPackageToInstrumentationConfig,
 } from './config/main';
 
+import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import { builtinModules } from 'module';
-import { dirname } from 'path';
 import { readFile } from 'fs/promises';
 import { satisfies } from 'semver';
 import { wrapModule } from './common';
@@ -65,24 +67,29 @@ export function openTelemetryPlugin(
         // We'll rely on the OTel auto-instrumentation at runtime to patch builtin modules
         if (isBuiltIn(args.path, extractedModule)) return;
 
-        // See if we have an instrumentation registered for this package
-        const matchingInstrumentation = await getInstrumentation({
+        const moduleVersion = await getModuleVersion({
           extractedModule,
-          path: args.path,
           resolveDir: args.resolveDir,
           build,
         });
+        if (!moduleVersion) return;
 
+        // See if we have an instrumentation registered for this package
+        const matchingInstrumentation = await getInstrumentation({
+          extractedModule,
+          moduleVersion,
+          path: args.path,
+        });
         if (!matchingInstrumentation) return;
 
-        return {
-          path,
-          pluginData: {
-            extractedModule,
-            shouldPatchPackage: true,
-            instrumentation: { name: matchingInstrumentation.name },
-          },
+        const pluginData: PluginData = {
+          extractedModule,
+          moduleVersion,
+          shouldPatchPackage: true,
+          instrumentationName: matchingInstrumentation.name,
         };
+
+        return { path, pluginData };
       });
 
       build.onLoad(
@@ -94,19 +101,26 @@ export function openTelemetryPlugin(
           const contents = await readFile(path);
 
           const config =
-            otelPackageToInstrumentationConfig[pluginData.instrumentation.name];
+            otelPackageToInstrumentationConfig[pluginData.instrumentationName];
+          if (!config) return;
 
+          // console.log('config is', config);
           const packageConfig =
             pluginConfig?.instrumentationConfig?.[
               config.oTelInstrumentationPackage
             ];
+          const extractedModule = pluginData.extractedModule;
 
           return {
             contents: wrapModule(contents.toString(), {
-              instrumentationName: pluginData.instrumentation.name,
+              path: join(
+                extractedModule.package || '',
+                extractedModule.path || ''
+              ),
+              moduleVersion: pluginData.moduleVersion,
+              instrumentationName: pluginData.instrumentationName,
               oTelInstrumentationClass: config.oTelInstrumentationClass,
               oTelInstrumentationPackage: config.oTelInstrumentationPackage,
-              instrumentedFileName: `${pluginData.extractedModule.package}/${pluginData.extractedModule.path}`,
               oTelInstrumentationConstructorArgs:
                 config.configGenerator(packageConfig),
             }),
@@ -194,45 +208,65 @@ function isBuiltIn(path: string, extractedModule: ExtractedModule): boolean {
   );
 }
 
-async function getInstrumentation({
+async function getModuleVersion({
   extractedModule,
-  path,
   resolveDir,
   build,
 }: {
   extractedModule: ExtractedModule;
-  path: string;
   resolveDir: string;
   build: PluginBuild;
 }) {
+  const { path: packageJsonPath } = await build.resolve(
+    `${extractedModule.package}/package.json`,
+    {
+      resolveDir,
+      kind: 'require-resolve',
+    }
+  );
+  if (!packageJsonPath) return;
+
+  const packageJsonContents = await readFile(packageJsonPath);
+  return JSON.parse(packageJsonContents.toString()).version;
+}
+
+async function getInstrumentation({
+  extractedModule,
+  path,
+  moduleVersion,
+}: {
+  extractedModule: ExtractedModule;
+  path: string;
+  moduleVersion: string;
+}): Promise<InstrumentationModuleDefinition | null> {
   for (const instrumentationModuleDefinition of instrumentationModuleDefinitions) {
-    const moduleWithPackage = `${extractedModule.package}/${extractedModule.path}`;
+    const fullModulePath = `${extractedModule.package}/${extractedModule.path}`;
     const nameMatches =
       instrumentationModuleDefinition.name === path ||
-      instrumentationModuleDefinition.name === moduleWithPackage;
+      instrumentationModuleDefinition.name === fullModulePath;
 
     if (!nameMatches) {
-      const fileMatch = instrumentationModuleDefinition.files.find(
-        file => file.name === path || file.name === moduleWithPackage
-      );
+      const fileMatch = instrumentationModuleDefinition.files.find(file => {
+        return file.name === path || file.name === fullModulePath;
+      });
       if (!fileMatch) continue;
     }
 
-    const { path: packageJsonPath } = await build.resolve(
-      `${extractedModule.package}/package.json`,
-      {
-        resolveDir,
-        kind: 'require-resolve',
-      }
-    );
-
-    const packageJsonContents = await readFile(packageJsonPath);
-    const version = JSON.parse(packageJsonContents.toString()).version;
-
     if (
       instrumentationModuleDefinition.supportedVersions.some(supportedVersion =>
-        satisfies(version, supportedVersion)
+        satisfies(moduleVersion, supportedVersion)
       )
+    ) {
+      return instrumentationModuleDefinition;
+    }
+
+    if (
+      instrumentationModuleDefinition.files.some(file => {
+        if (file.name !== path && file.name !== fullModulePath) return false;
+        return file.supportedVersions.some(supportedVersion =>
+          satisfies(moduleVersion, supportedVersion)
+        );
+      })
     ) {
       return instrumentationModuleDefinition;
     }

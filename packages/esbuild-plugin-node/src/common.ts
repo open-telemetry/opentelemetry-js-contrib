@@ -19,10 +19,11 @@ import type { ModuleParams } from './types';
 export function wrapModule(
   originalSource: string,
   {
+    path,
+    moduleVersion,
     oTelInstrumentationPackage,
     oTelInstrumentationClass,
     instrumentationName,
-    instrumentedFileName,
     oTelInstrumentationConstructorArgs = '',
   }: ModuleParams
 ) {
@@ -33,6 +34,7 @@ export function wrapModule(
 {
   let mod = module.exports;
 
+  const { satisfies } = require('semver');
   const { ${oTelInstrumentationClass} } = require('${oTelInstrumentationPackage}');
   const { diag } = require('@opentelemetry/api');
   const instrumentations = new ${oTelInstrumentationClass}(${oTelInstrumentationConstructorArgs}).getModuleDefinitions();
@@ -47,28 +49,20 @@ export function wrapModule(
       : 'instrumentations[0]'
   };
 
-  if (instrumentation.patch && instrumentation.files?.length) {
-    diag.error('Not sure how to handle patch and files on instrumentation for ${oTelInstrumentationClass} ${instrumentationName}');
-    return;
-  }
-
   if (instrumentation.patch) {
     mod = instrumentation.patch(mod)
-  } else {
-    if (!instrumentation.files?.length) {
-      diag.error('No patch nor files exist on instrumentation for ${oTelInstrumentationClass} ${instrumentationName}');
-      return;
-    } else if (instrumentation.files.length === 1) {
-      mod = instrumentation.files[0].patch(mod);
-    } else {
-      const instrumentationFile = instrumentation.files.find(file => file.name === '${instrumentedFileName}');
-      if (!instrumentationFile) {
-        diag.error('Not sure how to handle multiple files for instrumentations for ${instrumentationName} when none is found with name ${instrumentedFileName}');
-        return;
+  }
+
+  if (instrumentation.files?.length) {
+    for (const file of instrumentation.files.filter(f => f.name === '${path}')) {
+      if (!file.supportedVersions.some(v => satisfies('${moduleVersion}', v))) {
+        diag.debug('Skipping instrumentation for ' + path + '@' + moduleVersion + ' because it does not match supported versions' + f.supportedVersions.join(','));
+        continue;
       }
-      mod = instrumentationFile.patch(mod);
+      mod = file.patch({ ...mod }, '${moduleVersion}');
     }
   }
+
 
   module.exports = mod;
 }

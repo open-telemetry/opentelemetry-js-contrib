@@ -16,7 +16,7 @@
 
 import * as assert from 'assert';
 
-import { exec as execCb, spawnSync } from 'child_process';
+import { SpawnSyncReturns, exec as execCb, spawnSync } from 'child_process';
 
 import { promisify } from 'util';
 
@@ -116,6 +116,12 @@ describe('Esbuild can instrument packages via a plugin', function () {
     assert.ok(requestHandlerLogMessage, 'Log message handler is triggered');
     const { trace_id } = JSON.parse(requestHandlerLogMessage);
     assert.equal(traceId, trace_id, 'Pino logs include trace ID');
+  });
+
+  it('redis', async () => {
+    const traceId = getTraceId(stdOutLines, 'redis-GET');
+
+    assert.ok(traceId, 'console span output in stdout contains a traceId');
   });
 
   describe('graphql', () => {
