@@ -21,6 +21,7 @@ import * as api from '@opentelemetry/api';
 import type { Server } from 'restify';
 import { LayerType } from './types';
 import { AttributeNames } from './enums/AttributeNames';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import {
@@ -35,7 +36,9 @@ import { isPromise, isAsyncFunction } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { RestifyInstrumentationConfig } from './types';
 
-export class RestifyInstrumentation extends InstrumentationBase {
+const supportedVersions = ['>=4.1.0 <12'];
+
+export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumentationConfig> {
   constructor(config: RestifyInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -43,18 +46,10 @@ export class RestifyInstrumentation extends InstrumentationBase {
   private _moduleVersion?: string;
   private _isDisabled = false;
 
-  override setConfig(config: RestifyInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
-  }
-
-  override getConfig(): RestifyInstrumentationConfig {
-    return this._config as RestifyInstrumentationConfig;
-  }
-
   init() {
     const module = new InstrumentationNodeModuleDefinition(
       constants.MODULE_NAME,
-      constants.SUPPORTED_VERSIONS,
+      supportedVersions,
       (moduleExports, moduleVersion) => {
         this._moduleVersion = moduleVersion;
         return moduleExports;
@@ -64,7 +59,7 @@ export class RestifyInstrumentation extends InstrumentationBase {
     module.files.push(
       new InstrumentationNodeModuleFile(
         'restify/lib/server.js',
-        constants.SUPPORTED_VERSIONS,
+        supportedVersions,
         moduleExports => {
           this._isDisabled = false;
           const Server: any = moduleExports;
@@ -188,11 +183,11 @@ export class RestifyInstrumentation extends InstrumentationBase {
         );
 
         const instrumentation = this;
-        const requestHook = instrumentation.getConfig().requestHook;
+        const { requestHook } = instrumentation.getConfig();
         if (requestHook) {
           safeExecuteInTheMiddle(
             () => {
-              return requestHook!(span, {
+              return requestHook(span, {
                 request: req,
                 layerType: metadata.type,
               });

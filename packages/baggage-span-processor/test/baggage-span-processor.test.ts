@@ -16,12 +16,7 @@
 
 import { BaggageSpanProcessor } from '../src/baggage-span-processor';
 import { ALLOW_ALL_BAGGAGE_KEYS } from '../src/types';
-import {
-  propagation,
-  ROOT_CONTEXT,
-  SpanKind,
-  TraceFlags,
-} from '@opentelemetry/api';
+import { propagation, ROOT_CONTEXT, SpanKind } from '@opentelemetry/api';
 import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'expect';
 
@@ -39,17 +34,14 @@ describe('BaggageSpanProcessor with all keys filter', () => {
   let span: Span;
 
   beforeEach(() => {
-    span = new Span(
-      new BasicTracerProvider().getTracer('baggage-testing'),
-      ROOT_CONTEXT,
+    const tracer = new BasicTracerProvider().getTracer('baggage-testing');
+    span = tracer.startSpan(
       'Edward W. Span',
       {
-        traceId: 'e4cda95b652f4a1592b449d5929fda1b',
-        spanId: '7e0c63257de34c92',
-        traceFlags: TraceFlags.SAMPLED,
+        kind: SpanKind.SERVER,
       },
-      SpanKind.SERVER
-    );
+      ROOT_CONTEXT
+    ) as Span;
   });
 
   it('onStart adds current Baggage entries to a span as attributes', () => {
@@ -91,17 +83,14 @@ describe('BaggageSpanProcessor with startWith key filter', () => {
   let span: Span;
 
   beforeEach(() => {
-    span = new Span(
-      new BasicTracerProvider().getTracer('baggage-testing'),
-      ROOT_CONTEXT,
+    const tracer = new BasicTracerProvider().getTracer('baggage-testing');
+    span = tracer.startSpan(
       'Edward W. Span',
       {
-        traceId: 'e4cda95b652f4a1592b449d5929fda1b',
-        spanId: '7e0c63257de34c92',
-        traceFlags: TraceFlags.SAMPLED,
+        kind: SpanKind.SERVER,
       },
-      SpanKind.SERVER
-    );
+      ROOT_CONTEXT
+    ) as Span;
   });
 
   it('should only add baggage entries that match filter', () => {
@@ -131,17 +120,14 @@ describe('BaggageSpanProcessor with regex key filter', () => {
   let span: Span;
 
   beforeEach(() => {
-    span = new Span(
-      new BasicTracerProvider().getTracer('baggage-testing'),
-      ROOT_CONTEXT,
+    const tracer = new BasicTracerProvider().getTracer('baggage-testing');
+    span = tracer.startSpan(
       'Edward W. Span',
       {
-        traceId: 'e4cda95b652f4a1592b449d5929fda1b',
-        spanId: '7e0c63257de34c92',
-        traceFlags: TraceFlags.SAMPLED,
+        kind: SpanKind.SERVER,
       },
-      SpanKind.SERVER
-    );
+      ROOT_CONTEXT
+    ) as Span;
   });
 
   it('should only add baggage entries that match filter', () => {

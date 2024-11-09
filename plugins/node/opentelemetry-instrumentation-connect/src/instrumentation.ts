@@ -24,6 +24,7 @@ import {
   ConnectTypes,
 } from './enums/AttributeNames';
 import { PatchedRequest, Use, UseArgs, UseArgs2 } from './internal-types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   InstrumentationBase,
@@ -50,7 +51,7 @@ export class ConnectInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'connect',
-        ['^3.0.0'],
+        ['>=3.0.0 <4'],
         moduleExports => {
           return this._patchConstructor(moduleExports);
         }

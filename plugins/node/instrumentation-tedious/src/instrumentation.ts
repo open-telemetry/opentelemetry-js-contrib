@@ -34,6 +34,7 @@ import {
 import type * as tedious from 'tedious';
 import { TediousInstrumentationConfig } from './types';
 import { getSpanName, once } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const CURRENT_DATABASE = Symbol(
@@ -67,7 +68,7 @@ function setDatabase(this: ApproxConnection, databaseName: string) {
   });
 }
 
-export class TediousInstrumentation extends InstrumentationBase {
+export class TediousInstrumentation extends InstrumentationBase<TediousInstrumentationConfig> {
   static readonly COMPONENT = 'tedious';
 
   constructor(config: TediousInstrumentationConfig = {}) {
@@ -78,7 +79,7 @@ export class TediousInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         TediousInstrumentation.COMPONENT,
-        ['>=1.11.0 <18'],
+        ['>=1.11.0 <20'],
         (moduleExports: typeof tedious) => {
           const ConnectionPrototype: any = moduleExports.Connection.prototype;
           for (const method of PATCHED_METHODS) {

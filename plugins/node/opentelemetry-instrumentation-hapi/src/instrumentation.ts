@@ -24,6 +24,7 @@ import {
 } from '@opentelemetry/instrumentation';
 
 import type * as Hapi from '@hapi/hapi';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   HapiComponentName,
@@ -56,7 +57,7 @@ export class HapiInstrumentation extends InstrumentationBase {
   protected init() {
     return new InstrumentationNodeModuleDefinition(
       HapiComponentName,
-      ['>=17 <22'],
+      ['>=17.0.0 <22'],
       (module: any) => {
         const moduleExports: typeof Hapi =
           module[Symbol.toStringTag] === 'Module' ? module.default : module;

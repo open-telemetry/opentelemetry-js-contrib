@@ -1,5 +1,58 @@
 # Changelog
 
+## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.43.0...instrumentation-express-v0.44.0) (2024-10-25)
+
+
+### Features
+
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.41.0 to ^0.42.0
+
+## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.42.0...instrumentation-express-v0.43.0) (2024-10-08)
+
+
+### Features
+
+* **instrumentation-express:** Use router path in router span names ([#2319](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2319)) ([ee5c584](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ee5c584c943eb8a3de0566843a42784f16c0f31f))
+
+## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.41.1...instrumentation-express-v0.42.0) (2024-09-02)
+
+
+### Features
+
+* update deps matching "@opentelemetry/" ([9fa058e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fa058ebb919de4e2a4e1af95b3c792c6ea962ac))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.40.0 to ^0.41.0
+
+## [0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.41.0...instrumentation-express-v0.41.1) (2024-07-23)
+
+
+### Bug Fixes
+
+* **instr-express:** fix handler patching for already patched router ([#2294](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2294)) ([2c32e58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2c32e5869ef9b6d582ba4da02623a030309bcaf3))
+
+## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.40.1...instrumentation-express-v0.41.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196))
+
+### Bug Fixes
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196)) ([01c28ae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/01c28ae016ed32f9968e52bc91e3e3700dcef82e))
+
 ## [0.40.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.40.0...instrumentation-express-v0.40.1) (2024-06-10)
 
 

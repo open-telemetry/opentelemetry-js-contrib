@@ -1,5 +1,62 @@
 # Changelog
 
+## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.42.0...instrumentation-amqplib-v0.43.0) (2024-10-25)
+
+
+### Features
+
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.41.0 to ^0.42.0
+
+## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.41.0...instrumentation-amqplib-v0.42.0) (2024-09-02)
+
+
+### Features
+
+* update deps matching "@opentelemetry/" ([9fa058e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fa058ebb919de4e2a4e1af95b3c792c6ea962ac))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.40.0 to ^0.41.0
+
+## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.40.0...instrumentation-amqplib-v0.41.0) (2024-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **amqplib:** instrumentation produced high cardinality span names ([#2366](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2366))
+
+### Bug Fixes
+
+* **amqplib:** instrumentation produced high cardinality span names ([#2366](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2366)) ([184b19f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/184b19f191635fa8d433eddcc6ed3f7d94a35d8a))
+
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.39.0...instrumentation-amqplib-v0.40.0) (2024-07-23)
+
+
+### Features
+
+* Add the ability to use span links when consuming a message amqp plugin ([#1972](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1972)) ([5f2c160](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5f2c160ac0fd4f6aa76c227537c34329c6c9dfb2))
+
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.38.0...instrumentation-amqplib-v0.39.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196))
+
+### Bug Fixes
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196)) ([01c28ae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/01c28ae016ed32f9968e52bc91e3e3700dcef82e))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.37.0...instrumentation-amqplib-v0.38.0) (2024-06-06)
 
 

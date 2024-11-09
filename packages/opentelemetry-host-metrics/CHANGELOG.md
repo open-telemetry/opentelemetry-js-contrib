@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.35.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.35.3...host-metrics-v0.35.4) (2024-10-08)
+
+
+### Bug Fixes
+
+* **host-metrics:** widen MeterProvider type restriction in BaseMetrics class ([#2428](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2428)) ([cb89486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cb89486f7ade51769acdc78f10d978e711b1ab3e))
+
+## [0.35.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.35.2...host-metrics-v0.35.3) (2024-07-03)
+
+
+### Bug Fixes
+
+* **host-metrics:** make host metrics constructor options optional ([#2300](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2300)) ([16bff40](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/16bff40d1bf5d3729db235c90f560b4e3387c13c))
+
 ## [0.35.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.35.1...host-metrics-v0.35.2) (2024-06-06)
 
 

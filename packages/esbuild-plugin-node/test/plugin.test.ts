@@ -16,7 +16,7 @@
 
 import * as assert from 'assert';
 
-import { SpawnSyncReturns, exec as execCb, spawnSync } from 'child_process';
+import { exec as execCb, spawnSync } from 'child_process';
 
 import { promisify } from 'util';
 

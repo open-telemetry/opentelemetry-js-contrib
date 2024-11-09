@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-router
 
 ### Supported Versions
 
-- `>=1.0.0`
+- [`router`](https://www.npmjs.com/package/router) versions `>=1.0.0 <2`
 
 ## Usage
 
@@ -25,7 +25,7 @@ npm install --save @opentelemetry/instrumentation-router
 const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const RouterInstrumentation = require('@opentelemetry/instrumentation-router');
+const { RouterInstrumentation } = require('@opentelemetry/instrumentation-router');
 
 const provider = new NodeTracerProvider();
 

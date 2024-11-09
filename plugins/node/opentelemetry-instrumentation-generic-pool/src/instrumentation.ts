@@ -24,11 +24,12 @@ import {
 
 import type * as genericPool from 'generic-pool';
 
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const MODULE_NAME = 'generic-pool';
 
-export default class Instrumentation extends InstrumentationBase {
+export class GenericPoolInstrumentation extends InstrumentationBase {
   // only used for v2 - v2.3)
   private _isDisabled = false;
 
@@ -40,7 +41,7 @@ export default class Instrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
-        ['>=3'],
+        ['>=3.0.0 <4'],
         moduleExports => {
           const Pool: any = moduleExports.Pool;
           if (isWrapped(Pool.prototype.acquire)) {
@@ -61,7 +62,7 @@ export default class Instrumentation extends InstrumentationBase {
       ),
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
-        ['^2.4'],
+        ['>=2.4.0 <3'],
         moduleExports => {
           const Pool: any = moduleExports.Pool;
           if (isWrapped(Pool.prototype.acquire)) {
@@ -82,7 +83,7 @@ export default class Instrumentation extends InstrumentationBase {
       ),
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
-        ['2 - 2.3'],
+        ['>=2.0.0 <2.4'],
         moduleExports => {
           this._isDisabled = false;
           if (isWrapped(moduleExports.Pool)) {
@@ -109,7 +110,7 @@ export default class Instrumentation extends InstrumentationBase {
     ) {
       const parent = api.context.active();
       const span = instrumentation.tracer.startSpan(
-        'generic-pool.aquire',
+        'generic-pool.acquire',
         {},
         parent
       );
@@ -156,7 +157,7 @@ export default class Instrumentation extends InstrumentationBase {
       }
       const parent = api.context.active();
       const span = instrumentation.tracer.startSpan(
-        'generic-pool.aquire',
+        'generic-pool.acquire',
         {},
         parent
       );

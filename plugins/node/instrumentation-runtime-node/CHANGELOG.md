@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.9.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.8.0...instrumentation-runtime-node-v0.9.0) (2024-11-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-runtime-node:** add prom-client-metrics ([#2136](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2136))
+
+### Features
+
+* **instrumentation-runtime-node:** add prom-client-metrics ([#2136](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2136)) ([80d0c74](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80d0c74f8cafdfce681ef39e6cea103dca4e4ccd))
+
+## [0.8.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.7.0...instrumentation-runtime-node-v0.8.0) (2024-10-25)
+
+
+### Features
+
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
+## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.6.0...instrumentation-runtime-node-v0.7.0) (2024-09-02)
+
+
+### Features
+
+* update deps matching "@opentelemetry/" ([9fa058e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fa058ebb919de4e2a4e1af95b3c792c6ea962ac))
+
+## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.5.0...instrumentation-runtime-node-v0.6.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* export instrumentations only as named export ([#2296](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2296))
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196))
+
+### Bug Fixes
+
+* export instrumentations only as named export ([#2296](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2296)) ([0ed4038](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0ed40384287a8d06549c2a9c98a26ea9b068c472))
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196)) ([01c28ae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/01c28ae016ed32f9968e52bc91e3e3700dcef82e))
+
 ## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.4.0...instrumentation-runtime-node-v0.5.0) (2024-06-06)
 
 

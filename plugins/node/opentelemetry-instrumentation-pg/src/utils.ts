@@ -22,9 +22,12 @@ import {
   Tracer,
   SpanKind,
   diag,
+  UpDownCounter,
+  Attributes,
 } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import {
+  ATTR_ERROR_TYPE,
   SEMATTRS_DB_SYSTEM,
   SEMATTRS_DB_NAME,
   SEMATTRS_DB_CONNECTION_STRING,
@@ -34,6 +37,12 @@ import {
   SEMATTRS_DB_STATEMENT,
   DBSYSTEMVALUES_POSTGRESQL,
 } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
+  ATTR_DB_CLIENT_CONNECTION_STATE,
+  DB_CLIENT_CONNECTION_STATE_VALUE_USED,
+  DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
+} from '@opentelemetry/semantic-conventions/incubating';
 import {
   PgClientExtended,
   PostgresCallback,
@@ -85,7 +94,7 @@ export function getQuerySpanName(
   return `${SpanNames.QUERY_PREFIX}:${command}${dbName ? ` ${dbName}` : ''}`;
 }
 
-function parseNormalizedOperationName(queryText: string) {
+export function parseNormalizedOperationName(queryText: string) {
   const indexOfFirstSpace = queryText.indexOf(' ');
   let sqlCommand =
     indexOfFirstSpace === -1
@@ -236,7 +245,9 @@ export function handleExecutionResult(
 export function patchCallback(
   instrumentationConfig: PgInstrumentationConfig,
   span: Span,
-  cb: PostgresCallback
+  cb: PostgresCallback,
+  attributes: Attributes,
+  recordDuration: { (): void }
 ): PostgresCallback {
   return function patchedCallback(
     this: PgClientExtended,
@@ -244,7 +255,10 @@ export function patchCallback(
     res: object
   ) {
     if (err) {
-      // span.recordException(err);
+      if (Object.prototype.hasOwnProperty.call(err, 'code')) {
+        attributes[ATTR_ERROR_TYPE] = (err as any)['code'];
+      }
+
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: err.message,
@@ -253,9 +267,54 @@ export function patchCallback(
       handleExecutionResult(instrumentationConfig, span, res);
     }
 
+    recordDuration();
     span.end();
     cb.call(this, err, res);
   };
+}
+
+export function getPoolName(pool: PgPoolOptionsParams): string {
+  let poolName = '';
+  poolName += (pool?.host ? `${pool.host}` : 'unknown_host') + ':';
+  poolName += (pool?.port ? `${pool.port}` : 'unknown_port') + '/';
+  poolName += pool?.database ? `${pool.database}` : 'unknown_database';
+
+  return poolName.trim();
+}
+
+export interface poolConnectionsCounter {
+  used: number;
+  idle: number;
+  pending: number;
+}
+
+export function updateCounter(
+  poolName: string,
+  pool: PgPoolExtended,
+  connectionCount: UpDownCounter,
+  connectionPendingRequests: UpDownCounter,
+  latestCounter: poolConnectionsCounter
+): poolConnectionsCounter {
+  const all = pool.totalCount;
+  const pending = pool.waitingCount;
+  const idle = pool.idleCount;
+  const used = all - idle;
+
+  connectionCount.add(used - latestCounter.used, {
+    [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_USED,
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
+  });
+
+  connectionCount.add(idle - latestCounter.idle, {
+    [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
+  });
+
+  connectionPendingRequests.add(pending - latestCounter.pending, {
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
+  });
+
+  return { used: used, idle: idle, pending: pending };
 }
 
 export function patchCallbackPGPool(

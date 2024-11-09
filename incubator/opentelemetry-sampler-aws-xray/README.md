@@ -2,7 +2,7 @@
 
 > This component is still in development and has not been released as an npm package.
 
-component owner: @carolabadeer
+[component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @jj22ee
 
 This module provides the remote/centralized sampler for AWS X-Ray.
 

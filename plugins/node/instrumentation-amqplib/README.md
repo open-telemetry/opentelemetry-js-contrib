@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-amqplib
 
 ## Supported Versions
 
-- `>=0.5.5`
+- [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <1`
 
 ## Usage
 
@@ -40,6 +40,7 @@ registerInstrumentations({
       // publishConfirmHook: (span: Span, publishConfirmedInto: PublishConfirmedInfo) => { },
       // consumeHook: (span: Span, consumeInfo: ConsumeInfo) => { },
       // consumeEndHook: (span: Span, consumeEndInfo: ConsumeEndInfo) => { },
+      // useLinksForConsume: boolean,
     }),
   ],
 })
@@ -49,13 +50,14 @@ registerInstrumentations({
 
 amqplib instrumentation has few options available to choose from. You can set the following:
 
-| Options                           | Type                                      | Description                                                                                                                |
-| --------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `publishHook`                  | `AmqplibPublishCustomAttributeFunction`    | hook for adding custom attributes before publish message is sent.                                             |
-| `publishConfirmHook`                  | `AmqplibPublishConfirmCustomAttributeFunction`    | hook for adding custom attributes after publish message is confirmed by the broker.                                             |
-| `consumeHook`                  | `AmqplibConsumeCustomAttributeFunction`    | hook for adding custom attributes before consumer message is processed.                                             |
-| `consumeEndHook`                  | `AmqplibConsumeEndCustomAttributeFunction`    | hook for adding custom attributes after consumer message is acked to server.                                             |
-| `consumeTimeoutMs`                  | `number`    | read [Consume Timeout](#consume-timeout) below                                             |
+| Options              | Type                                           | Description                                                                         |
+| -------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `publishHook`        | `AmqplibPublishCustomAttributeFunction`        | hook for adding custom attributes before publish message is sent.                   |
+| `publishConfirmHook` | `AmqplibPublishConfirmCustomAttributeFunction` | hook for adding custom attributes after publish message is confirmed by the broker. |
+| `consumeHook`        | `AmqplibConsumeCustomAttributeFunction`        | hook for adding custom attributes before consumer message is processed.             |
+| `consumeEndHook`     | `AmqplibConsumeEndCustomAttributeFunction`     | hook for adding custom attributes after consumer message is acked to server.        |
+| `consumeTimeoutMs`   | `number`                                       | read [Consume Timeout](#consume-timeout) below                                      |
+| `useLinksForConsume` | `boolean`                                      | read [Links for Consume](#links-for-consume) below                                  |
 
 ### Consume Timeout
 
@@ -69,17 +71,21 @@ If timeout is not big enough, span might be closed with 'InstrumentationTimeout'
 
 Default is 1 minute
 
-## Migration From opentelemetry-instrumentation-amqplib
+### Links for Consume
 
-This instrumentation was originally published under the name `"opentelemetry-instrumentation-amqplib"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js). Few breaking changes were made during porting to the contrib repo to align with conventions:
+By default, consume spans continue the trace where a message was produced. However, per the [spec](https://opentelemetry.io/docs/specs/semconv/messaging/messaging-spans/#consumer-spans), consume spans should be linked to the message's creation context. Setting to true, this will enable the behavior to follow the spec.
 
-### Hook Info
+Default is false
 
-The instrumentation's config `publishHook`, `publishConfirmHook`, `consumeHook` and `consumeEndHook` functions signature changed, so the second function parameter is info object, containing the relevant hook data.
+## Running Tests Locally
 
-### `moduleVersionAttributeName` config option
+To run the tests locally, you need to have a RabbitMQ server running.  You can use the following command to start a RabbitMQ server using Docker:
 
-The `moduleVersionAttributeName` config option is removed. To add the amqplib package version to spans, use the `moduleVersion` attribute in hook info for `publishHook` and `consumeHook` functions.
+```bash
+npm run test:docker:run
+```
+
+By default, the tests that connect to RabbitMQ are skipped. To make sure these tests are run, you can set the `RUN_RABBIT_TESTS` environment variable to `true`
 
 ## Semantic Conventions
 

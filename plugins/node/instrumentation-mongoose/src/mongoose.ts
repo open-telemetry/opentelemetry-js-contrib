@@ -27,6 +27,7 @@ import {
   InstrumentationModuleDefinition,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   SEMATTRS_DB_OPERATION,
@@ -34,44 +35,71 @@ import {
   SEMATTRS_DB_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 
-const contextCaptureFunctions = [
-  'remove',
+const contextCaptureFunctionsCommon = [
   'deleteOne',
   'deleteMany',
   'find',
   'findOne',
   'estimatedDocumentCount',
   'countDocuments',
-  'count',
   'distinct',
   'where',
   '$where',
   'findOneAndUpdate',
   'findOneAndDelete',
   'findOneAndReplace',
-  'findOneAndRemove',
 ];
+
+const contextCaptureFunctions6 = [
+  'remove',
+  'count',
+  'findOneAndRemove',
+  ...contextCaptureFunctionsCommon,
+];
+const contextCaptureFunctions7 = [
+  'count',
+  'findOneAndRemove',
+  ...contextCaptureFunctionsCommon,
+];
+const contextCaptureFunctions8 = [...contextCaptureFunctionsCommon];
+
+function getContextCaptureFunctions(
+  moduleVersion: string | undefined
+): string[] {
+  /* istanbul ignore next */
+  if (!moduleVersion) {
+    return contextCaptureFunctionsCommon;
+  } else if (moduleVersion.startsWith('6.') || moduleVersion.startsWith('5.')) {
+    return contextCaptureFunctions6;
+  } else if (moduleVersion.startsWith('7.')) {
+    return contextCaptureFunctions7;
+  } else {
+    return contextCaptureFunctions8;
+  }
+}
+
+function instrumentRemove(moduleVersion: string | undefined): boolean {
+  return (
+    (moduleVersion &&
+      (moduleVersion.startsWith('5.') || moduleVersion.startsWith('6.'))) ||
+    false
+  );
+}
 
 // when mongoose functions are called, we store the original call context
 // and then set it as the parent for the spans created by Query/Aggregate exec()
 // calls. this bypass the unlinked spans issue on thenables await operations.
 export const _STORED_PARENT_SPAN: unique symbol = Symbol('stored-parent-span');
 
-export class MongooseInstrumentation extends InstrumentationBase {
-  protected override _config!: MongooseInstrumentationConfig;
-
+export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrumentationConfig> {
   constructor(config: MongooseInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-  }
-
-  override setConfig(config: MongooseInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
   }
 
   protected init(): InstrumentationModuleDefinition {
     const module = new InstrumentationNodeModuleDefinition(
       'mongoose',
-      ['>=5.9.7 <7'],
+      ['>=5.9.7 <9'],
       this.patch.bind(this),
       this.unpatch.bind(this)
     );
@@ -93,11 +121,14 @@ export class MongooseInstrumentation extends InstrumentationBase {
     // so we need to apply the same logic after instrumenting the save function.
     moduleExports.Model.prototype.$save = moduleExports.Model.prototype.save;
 
-    this._wrap(
-      moduleExports.Model.prototype,
-      'remove',
-      this.patchOnModelMethods('remove', moduleVersion)
-    );
+    if (instrumentRemove(moduleVersion)) {
+      this._wrap(
+        moduleExports.Model.prototype,
+        'remove',
+        this.patchOnModelMethods('remove', moduleVersion)
+      );
+    }
+
     this._wrap(
       moduleExports.Query.prototype,
       'exec',
@@ -108,6 +139,8 @@ export class MongooseInstrumentation extends InstrumentationBase {
       'exec',
       this.patchAggregateExec(moduleVersion)
     );
+
+    const contextCaptureFunctions = getContextCaptureFunctions(moduleVersion);
 
     contextCaptureFunctions.forEach((funcName: string) => {
       this._wrap(
@@ -121,11 +154,20 @@ export class MongooseInstrumentation extends InstrumentationBase {
     return moduleExports;
   }
 
-  private unpatch(moduleExports: typeof mongoose): void {
+  private unpatch(
+    moduleExports: typeof mongoose,
+    moduleVersion: string | undefined
+  ): void {
+    const contextCaptureFunctions = getContextCaptureFunctions(moduleVersion);
+
     this._unwrap(moduleExports.Model.prototype, 'save');
     // revert the patch for $save which we applied by aliasing it to patched `save`
     moduleExports.Model.prototype.$save = moduleExports.Model.prototype.save;
-    this._unwrap(moduleExports.Model.prototype, 'remove');
+
+    if (instrumentRemove(moduleVersion)) {
+      this._unwrap(moduleExports.Model.prototype, 'remove');
+    }
+
     this._unwrap(moduleExports.Query.prototype, 'exec');
     this._unwrap(moduleExports.Aggregate.prototype, 'exec');
 
@@ -140,7 +182,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
     return (originalAggregate: Function) => {
       return function exec(this: any, callback?: Function) {
         if (
-          self._config.requireParentSpan &&
+          self.getConfig().requireParentSpan &&
           trace.getSpan(context.active()) === undefined
         ) {
           return originalAggregate.apply(this, arguments);
@@ -148,12 +190,15 @@ export class MongooseInstrumentation extends InstrumentationBase {
 
         const parentSpan = this[_STORED_PARENT_SPAN];
         const attributes: Attributes = {};
-        if (self._config.dbStatementSerializer) {
-          attributes[SEMATTRS_DB_STATEMENT] =
-            self._config.dbStatementSerializer('aggregate', {
+        const { dbStatementSerializer } = self.getConfig();
+        if (dbStatementSerializer) {
+          attributes[SEMATTRS_DB_STATEMENT] = dbStatementSerializer(
+            'aggregate',
+            {
               options: this.options,
               aggregatePipeline: this._pipeline,
-            });
+            }
+          );
         }
 
         const span = self._startSpan(
@@ -181,7 +226,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
     return (originalExec: Function) => {
       return function exec(this: any, callback?: Function) {
         if (
-          self._config.requireParentSpan &&
+          self.getConfig().requireParentSpan &&
           trace.getSpan(context.active()) === undefined
         ) {
           return originalExec.apply(this, arguments);
@@ -189,14 +234,14 @@ export class MongooseInstrumentation extends InstrumentationBase {
 
         const parentSpan = this[_STORED_PARENT_SPAN];
         const attributes: Attributes = {};
-        if (self._config.dbStatementSerializer) {
-          attributes[SEMATTRS_DB_STATEMENT] =
-            self._config.dbStatementSerializer(this.op, {
-              condition: this._conditions,
-              updates: this._update,
-              options: this.options,
-              fields: this._fields,
-            });
+        const { dbStatementSerializer } = self.getConfig();
+        if (dbStatementSerializer) {
+          attributes[SEMATTRS_DB_STATEMENT] = dbStatementSerializer(this.op, {
+            condition: this._conditions,
+            updates: this._update,
+            options: this.options,
+            fields: this._fields,
+          });
         }
         const span = self._startSpan(
           this.mongooseCollection,
@@ -223,7 +268,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
     return (originalOnModelFunction: Function) => {
       return function method(this: any, options?: any, callback?: Function) {
         if (
-          self._config.requireParentSpan &&
+          self.getConfig().requireParentSpan &&
           trace.getSpan(context.active()) === undefined
         ) {
           return originalOnModelFunction.apply(this, arguments);
@@ -234,9 +279,12 @@ export class MongooseInstrumentation extends InstrumentationBase {
           serializePayload.options = options;
         }
         const attributes: Attributes = {};
-        if (self._config.dbStatementSerializer) {
-          attributes[SEMATTRS_DB_STATEMENT] =
-            self._config.dbStatementSerializer(op, serializePayload);
+        const { dbStatementSerializer } = self.getConfig();
+        if (dbStatementSerializer) {
+          attributes[SEMATTRS_DB_STATEMENT] = dbStatementSerializer(
+            op,
+            serializePayload
+          );
         }
         const span = self._startSpan(
           this.constructor.collection,
@@ -331,7 +379,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
           originalThis,
           span,
           args,
-          self._config.responseHook,
+          self.getConfig().responseHook,
           moduleVersion
         )
       );
@@ -342,14 +390,14 @@ export class MongooseInstrumentation extends InstrumentationBase {
       return handlePromiseResponse(
         response,
         span,
-        self._config.responseHook,
+        self.getConfig().responseHook,
         moduleVersion
       );
     }
   }
 
   private _callOriginalFunction<T>(originalFunction: (...args: any[]) => T): T {
-    if (this._config?.suppressInternalInstrumentation) {
+    if (this.getConfig().suppressInternalInstrumentation) {
       return context.with(suppressTracing(context.active()), originalFunction);
     } else {
       return originalFunction();

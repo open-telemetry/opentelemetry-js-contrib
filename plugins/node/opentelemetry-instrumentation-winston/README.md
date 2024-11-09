@@ -15,6 +15,12 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-winston
 ```
 
+### Supported Versions
+
+- [`winston`](https://www.npmjs.com/package/winston) versions `>=1.0.0 <4`
+
+Log sending: [`winston`](https://www.npmjs.com/package/winston) versions `>=3.0.0 <4`
+
 ## Usage
 
 ```js
@@ -98,13 +104,42 @@ logHook: (span, record) => {
 
 Log injection can be disabled with the `disableLogCorrelation: true` option.
 
-### Supported versions
+### Using OpenTelemetryTransportV3 without instrumentation
 
-`1.x`, `2.x`, `3.x`
+[@opentelemetry/winston-transport](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/winston-transport) package exports the Winston transport class that is used to send records to the
+OpenTelemetry Logs SDK. It can be used directly when configuring a Winston logger.
+For example:
 
-Log sending
+```js
+const logsAPI = require('@opentelemetry/api-logs');
+const {
+    LoggerProvider,
+    SimpleLogRecordProcessor,
+    ConsoleLogRecordExporter,
+} = require('@opentelemetry/sdk-logs');
+const { OpenTelemetryTransportV3 } = require('@opentelemetry/winston-transport');
+const winston = require('winston');
 
-`3.x`
+
+// To start a logger, you first need to initialize the Logger provider.
+const loggerProvider = new LoggerProvider();
+// Add a processor to export log record
+loggerProvider.addLogRecordProcessor(
+    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())
+);
+logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
+
+const logger = winston.createLogger({
+  level: 'info',
+  transports: [
+    new winston.transports.Console(),
+    new OpenTelemetryTransportV3()
+  ]
+});
+```
+
+> [!IMPORTANT]
+> Logs will be duplicated if `@opentelemetry/winston-transport` is added as a transport in `winston` and `@opentelemetry/instrumentation-winston` is configured with `disableLogSending: false`.
 
 ## Semantic Conventions
 

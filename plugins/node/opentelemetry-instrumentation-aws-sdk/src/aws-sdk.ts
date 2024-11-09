@@ -33,6 +33,7 @@ import {
   NormalizedRequest,
   NormalizedResponse,
 } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   InstrumentationBase,
@@ -72,17 +73,12 @@ type V2PluginRequest = AWS.Request<any, any> & {
   [REQUEST_SPAN_KEY]?: Span;
 };
 
-export class AwsInstrumentation extends InstrumentationBase {
+export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentationConfig> {
   static readonly component = 'aws-sdk';
-  protected override _config!: AwsSdkInstrumentationConfig;
   private servicesExtensions: ServicesExtensions = new ServicesExtensions();
 
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-  }
-
-  override setConfig(config: AwsSdkInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
   }
 
   protected init(): InstrumentationModuleDefinition[] {
@@ -274,13 +270,14 @@ export class AwsInstrumentation extends InstrumentationBase {
     request: NormalizedRequest,
     moduleVersion: string | undefined
   ) {
-    if (this._config?.preRequestHook) {
+    const { preRequestHook } = this.getConfig();
+    if (preRequestHook) {
       const requestInfo: AwsSdkRequestHookInformation = {
         moduleVersion,
         request,
       };
       safeExecuteInTheMiddle(
-        () => this._config.preRequestHook!(span, requestInfo),
+        () => preRequestHook(span, requestInfo),
         (e: Error | undefined) => {
           if (e)
             diag.error(
@@ -294,7 +291,7 @@ export class AwsInstrumentation extends InstrumentationBase {
   }
 
   private _callUserResponseHook(span: Span, response: NormalizedResponse) {
-    const responseHook = this._config?.responseHook;
+    const { responseHook } = this.getConfig();
     if (!responseHook) return;
 
     const responseInfo: AwsSdkResponseHookInformation = {
@@ -343,7 +340,7 @@ export class AwsInstrumentation extends InstrumentationBase {
             normalizedResponse,
             span,
             self.tracer,
-            self._config
+            self.getConfig()
           );
         }
 
@@ -462,7 +459,7 @@ export class AwsInstrumentation extends InstrumentationBase {
         );
         const requestMetadata = self.servicesExtensions.requestPreSpanHook(
           normalizedRequest,
-          self._config,
+          self.getConfig(),
           self._diag
         );
         const span = self._startAwsV3Span(normalizedRequest, requestMetadata);
@@ -528,7 +525,7 @@ export class AwsInstrumentation extends InstrumentationBase {
                     normalizedResponse,
                     span,
                     self.tracer,
-                    self._config
+                    self.getConfig()
                   );
                   self._callUserResponseHook(span, normalizedResponse);
                   return response;
@@ -538,6 +535,15 @@ export class AwsInstrumentation extends InstrumentationBase {
                   if (requestId) {
                     span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
                   }
+
+                  const httpStatusCode = err?.$metadata?.httpStatusCode;
+                  if (httpStatusCode) {
+                    span.setAttribute(
+                      SEMATTRS_HTTP_STATUS_CODE,
+                      httpStatusCode
+                    );
+                  }
+
                   const extendedRequestId = err?.extendedRequestId;
                   if (extendedRequestId) {
                     span.setAttribute(
@@ -592,7 +598,7 @@ export class AwsInstrumentation extends InstrumentationBase {
       const normalizedRequest = normalizeV2Request(this);
       const requestMetadata = self.servicesExtensions.requestPreSpanHook(
         normalizedRequest,
-        self._config,
+        self.getConfig(),
         self._diag
       );
       const span = self._startAwsV2Span(
@@ -635,7 +641,7 @@ export class AwsInstrumentation extends InstrumentationBase {
       const normalizedRequest = normalizeV2Request(this);
       const requestMetadata = self.servicesExtensions.requestPreSpanHook(
         normalizedRequest,
-        self._config,
+        self.getConfig(),
         self._diag
       );
       const span = self._startAwsV2Span(
@@ -671,7 +677,7 @@ export class AwsInstrumentation extends InstrumentationBase {
   }
 
   private _callOriginalFunction<T>(originalFunction: (...args: any[]) => T): T {
-    if (this._config?.suppressInternalInstrumentation) {
+    if (this.getConfig().suppressInternalInstrumentation) {
       return context.with(suppressTracing(context.active()), originalFunction);
     } else {
       return originalFunction();

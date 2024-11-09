@@ -28,7 +28,7 @@ Since [root hook plugin](https://mochajs.org/#root-hook-plugins) are used, this 
 1. Add dev dependency on this package:
 
 ```sh
-npm install @opentelemetry/test-utils --save-dev
+npm install @opentelemetry/contrib-test-utils --save-dev
 ```
 
 1. [`require`](https://mochajs.org/#-require-module-r-module) this package in mocha invocation:
@@ -37,22 +37,22 @@ As command line argument option to mocha:
 
 ```js
     "scripts": {
-        "test": "mocha --require @opentelemetry/test-utils",
-        "test:jaeger": "OTEL_EXPORTER_JAEGER_AGENT_HOST=localhost mocha --require @opentelemetry/test-utils",
+        "test": "mocha --require @opentelemetry/contrib-test-utils",
+        "test:jaeger": "OTEL_EXPORTER_JAEGER_AGENT_HOST=localhost mocha --require @opentelemetry/contrib-test-utils",
     },
 ``
 
 Or by using config file / package.json config:
 ```js
     "mocha": {
-        "require": [ "@opentelemetry/test-utils" ]
+        "require": [ "@opentelemetry/contrib-test-utils" ]
     }
 ```
 
 1. In your `.spec` file, import `registerInstrumentationTesting` and `getTestSpans` functions and use them to create instrumentation class instance and make assertions in the test:
 
 ```js
-import { getTestSpans, registerInstrumentationTesting } from '@opentelemetry/test-utils';
+import { getTestSpans, registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = registerInstrumentationTesting(new MyAwesomeInstrumentation());
 

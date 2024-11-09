@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-[component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @carolabadeer
+[component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @jj22ee
 
 Resource detector for Amazon Web Services.
 
@@ -11,7 +11,7 @@ Resource detector for Amazon Web Services.
 
 | Maturity                                  | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
 | ----------------------------------------- | ----------------------------------------------------- | --------------------- |
-| [Stable](../../../CONTRIBUTING.md#stable) | @carolabadeer                                         | API 1.0+<br/>SDK 1.0+ |
+| [Stable](../../../CONTRIBUTING.md#stable) | @jj22ee                                               | API 1.0+<br/>SDK 1.0+ |
 
 ## Installation
 

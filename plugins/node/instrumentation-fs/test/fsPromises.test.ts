@@ -21,7 +21,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import Instrumentation from '../src';
+import { FsInstrumentation } from '../src';
 import * as sinon from 'sinon';
 import type * as FSPromisesType from 'fs/promises';
 import tests, { FsFunction, TestCase, TestCreator } from './definitions';
@@ -45,12 +45,12 @@ provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 describe('fs/promises instrumentation', () => {
   let contextManager: AsyncHooksContextManager;
   let fsPromises: typeof FSPromisesType;
-  let plugin: Instrumentation;
+  let plugin: FsInstrumentation;
 
   beforeEach(async () => {
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
-    plugin = new Instrumentation(pluginConfig);
+    plugin = new FsInstrumentation(pluginConfig);
     plugin.setTracerProvider(provider);
     plugin.enable();
     fsPromises = require('fs/promises');

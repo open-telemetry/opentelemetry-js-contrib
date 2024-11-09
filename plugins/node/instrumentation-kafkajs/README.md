@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-kafkajs
 
 ### Supported versions
 
-- `<3.0.0`
+- [`kafkajs`](https://www.npmjs.com/package/kafkajs) versions `>=0.1.0 <3`
 
 ## Usage
 

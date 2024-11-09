@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.46.0...instrumentation-aws-lambda-v0.47.0) (2024-11-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **aws-lambda:** Remove explicit x-ray context in favor of global propagator ([#2369](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2369))
+
+### Features
+
+* **aws-lambda:** Remove explicit x-ray context in favor of global propagator ([#2369](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2369)) ([a926f53](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a926f536733a2add23464bd26988cf253bdda305))
+* **instrumentation-aws-lambda:** take care of ESM based (`.mjs`) handlers ([#2508](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2508)) ([0309cae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0309caeafc44ac9cb13a3345b790b01b76d0497d))
+
+## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.45.0...instrumentation-aws-lambda-v0.46.0) (2024-10-25)
+
+
+### Features
+
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
+## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.44.0...instrumentation-aws-lambda-v0.45.0) (2024-10-08)
+
+
+### Features
+
+* Record AWS Lambda coldstarts ([#2403](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2403)) ([bc69fff](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bc69fffc106142ed4c8333d3f6122329f51e4039))
+
+## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.43.0...instrumentation-aws-lambda-v0.44.0) (2024-09-02)
+
+
+### Features
+
+* update deps matching "@opentelemetry/" ([9fa058e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fa058ebb919de4e2a4e1af95b3c792c6ea962ac))
+
+## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.42.0...instrumentation-aws-lambda-v0.43.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196))
+
+### Bug Fixes
+
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196)) ([01c28ae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/01c28ae016ed32f9968e52bc91e3e3700dcef82e))
+
 ## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.41.1...instrumentation-aws-lambda-v0.42.0) (2024-06-06)
 
 

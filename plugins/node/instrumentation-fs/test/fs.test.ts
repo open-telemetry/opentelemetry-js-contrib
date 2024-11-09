@@ -22,7 +22,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { promisify } from 'util';
-import Instrumentation from '../src';
+import { FsInstrumentation } from '../src';
 import * as sinon from 'sinon';
 import type * as FSType from 'fs';
 import tests, { TestCase, TestCreator } from './definitions';
@@ -40,8 +40,8 @@ const TEST_VALUE = 'test.attr.value';
 
 const createHook = <CreateHook>sinon.spy(
   (fnName: FMember | FPMember, { args, span }) => {
-    // `ts-node`, which we use via `ts-mocha` also patches module loading and creates
-    // a lot of unrelated spans. Filter those out.
+    // `ts-node`, which we use via `mocha` also patches module loading and
+    // creates a lot of unrelated spans. Filter those out.
     if (['readFileSync', 'existsSync'].includes(fnName as string)) {
       const filename = args[0];
       if (!/test\/fixtures/.test(filename)) {
@@ -66,12 +66,12 @@ provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 describe('fs instrumentation', () => {
   let contextManager: AsyncHooksContextManager;
   let fs: typeof FSType;
-  let plugin: Instrumentation;
+  let plugin: FsInstrumentation;
 
   beforeEach(async () => {
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
-    plugin = new Instrumentation(pluginConfig);
+    plugin = new FsInstrumentation(pluginConfig);
     plugin.setTracerProvider(provider);
     plugin.enable();
     fs = require('fs');

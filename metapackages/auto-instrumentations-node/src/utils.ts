@@ -35,6 +35,7 @@ import { GrpcInstrumentation } from '@opentelemetry/instrumentation-grpc';
 import { HapiInstrumentation } from '@opentelemetry/instrumentation-hapi';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
+import { KafkaJsInstrumentation } from '@opentelemetry/instrumentation-kafkajs';
 import { KnexInstrumentation } from '@opentelemetry/instrumentation-knex';
 import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
 import { LruMemoizerInstrumentation } from '@opentelemetry/instrumentation-lru-memoizer';
@@ -112,6 +113,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-hapi': HapiInstrumentation,
   '@opentelemetry/instrumentation-http': HttpInstrumentation,
   '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
+  '@opentelemetry/instrumentation-kafkajs': KafkaJsInstrumentation,
   '@opentelemetry/instrumentation-knex': KnexInstrumentation,
   '@opentelemetry/instrumentation-koa': KoaInstrumentation,
   '@opentelemetry/instrumentation-lru-memoizer': LruMemoizerInstrumentation,
@@ -134,6 +136,8 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
 };
 
+const defaultExcludedInstrumentations = ['@opentelemetry/instrumentation-fs'];
+
 // Config types inferred automatically from the first argument of the constructor
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;
 export type InstrumentationConfigMap = {
@@ -147,6 +151,7 @@ export function getNodeAutoInstrumentations(
 ): Instrumentation[] {
   checkManuallyProvidedInstrumentationNames(Object.keys(inputConfigs));
   const enabledInstrumentationsFromEnv = getEnabledInstrumentationsFromEnv();
+  const disabledInstrumentationsFromEnv = getDisabledInstrumentationsFromEnv();
 
   const instrumentations: Instrumentation[] = [];
 
@@ -159,7 +164,8 @@ export function getNodeAutoInstrumentations(
 
     if (
       userConfig.enabled === false ||
-      !enabledInstrumentationsFromEnv.includes(name)
+      !enabledInstrumentationsFromEnv.includes(name) ||
+      disabledInstrumentationsFromEnv.includes(name)
     ) {
       diag.debug(`Disabling instrumentation for ${name}`);
       continue;
@@ -186,20 +192,51 @@ function checkManuallyProvidedInstrumentationNames(
   }
 }
 
-/**
- * Returns the list of instrumentations that are enabled based on the environment variable.
- */
-function getEnabledInstrumentationsFromEnv() {
-  if (!process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS) {
-    return Object.keys(InstrumentationMap);
+function getInstrumentationsFromEnv(envVar: string): string[] {
+  const envVarValue = process.env[envVar];
+  if (envVarValue == null) {
+    return [];
   }
 
-  const instrumentationsFromEnv =
-    process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS.split(',').map(
+  const instrumentationsFromEnv = envVarValue
+    ?.split(',')
+    .map(
       instrumentationPkgSuffix =>
         `@opentelemetry/instrumentation-${instrumentationPkgSuffix.trim()}`
     );
   checkManuallyProvidedInstrumentationNames(instrumentationsFromEnv);
+  return instrumentationsFromEnv;
+}
+
+/**
+ * Returns the list of instrumentations that are enabled based on the environment variable.
+ * If the environment variable is unset, returns all instrumentation that are enabled by default.
+ */
+function getEnabledInstrumentationsFromEnv() {
+  if (!process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS) {
+    // all keys in the InstrumentationMap except for everything that is not enabled by default.
+    return Object.keys(InstrumentationMap).filter(
+      key => !defaultExcludedInstrumentations.includes(key)
+    );
+  }
+
+  const instrumentationsFromEnv = getInstrumentationsFromEnv(
+    'OTEL_NODE_ENABLED_INSTRUMENTATIONS'
+  );
+  return instrumentationsFromEnv;
+}
+
+/**
+ * Returns the list of instrumentations that are disabled based on the environment variable.
+ */
+function getDisabledInstrumentationsFromEnv() {
+  if (!process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS) {
+    return [];
+  }
+
+  const instrumentationsFromEnv = getInstrumentationsFromEnv(
+    'OTEL_NODE_DISABLED_INSTRUMENTATIONS'
+  );
   return instrumentationsFromEnv;
 }
 

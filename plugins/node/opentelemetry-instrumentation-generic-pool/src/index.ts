@@ -14,7 +14,4 @@
  * limitations under the License.
  */
 
-import GenericPoolInstrumentation from './instrumentation';
-
-export { GenericPoolInstrumentation };
-export default GenericPoolInstrumentation;
+export * from './instrumentation';

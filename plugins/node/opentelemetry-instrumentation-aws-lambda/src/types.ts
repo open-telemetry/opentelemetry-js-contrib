@@ -38,7 +38,7 @@ export type EventContextExtractor = (
 export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
   requestHook?: RequestHook;
   responseHook?: ResponseHook;
-  disableAwsContextPropagation?: boolean;
   eventContextExtractor?: EventContextExtractor;
   lambdaHandler?: string;
+  lambdaStartTime?: number;
 }

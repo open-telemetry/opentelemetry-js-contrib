@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.42.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.42.0...instrumentation-mysql2-v0.42.1) (2024-11-07)
+
+
+### Bug Fixes
+
+* **instrumentation-mysql:** fix test for mysql2 v3 ([#2168](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2168)) ([#2451](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2451)) ([ad8c581](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ad8c581c24f47e1ed413598b78f866977af56124))
+
+## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.41.0...instrumentation-mysql2-v0.42.0) (2024-10-25)
+
+
+### Features
+
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.41.0 to ^0.42.0
+
+## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.40.0...instrumentation-mysql2-v0.41.0) (2024-09-02)
+
+
+### Features
+
+* update deps matching "@opentelemetry/" ([9fa058e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fa058ebb919de4e2a4e1af95b3c792c6ea962ac))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.40.0 to ^0.41.0
+
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.39.0...instrumentation-mysql2-v0.40.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* export instrumentations only as named export ([#2296](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2296))
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196))
+
+### Bug Fixes
+
+* export instrumentations only as named export ([#2296](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2296)) ([0ed4038](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0ed40384287a8d06549c2a9c98a26ea9b068c472))
+* standardize supported versions and set upper bound limit ([#2196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2196)) ([01c28ae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/01c28ae016ed32f9968e52bc91e3e3700dcef82e))
+
 ## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.38.1...instrumentation-mysql2-v0.39.0) (2024-06-06)
 
 

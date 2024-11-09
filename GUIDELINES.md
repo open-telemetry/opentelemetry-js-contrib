@@ -198,6 +198,84 @@ Instrumentation may add additional patch/unpatch messages for specific functions
 
 The cases above are not covered by the base class and offer additional context to the user troubleshooting an issue with the instrumentation.
 
+## Supported Versions
+
+Supported versions can refer to 2 entities in the context of OpenTelemetry instrumentations:
+
+- `Instrumented Package` - This is the user-facing package/s that the end user has installed in his application and is familiar with.
+- `Patched Package` - These are the packages that are being patched in practice to achieve the instrumentation goals. It may be `Instrumented Package` itself or transitive internal dependencies of the `Instrumented Package`.
+
+### `Instrumented Package` Documentation
+
+Instrumentation should have a "## Supported Versions" section in the README file that lists the supported versions range of the instrumented package. This range should hide and consolidate any internal implementation details like the use of internal modules, different patch logic for different versions, etc. It should focus on the relevance to the human consumer.
+
+### `Patched Package`s Supported Versions
+
+The packages to patch are specified in the `InstrumentationNodeModuleDefinition` and `InstrumentationNodeModuleFile` classes. Instrumentation can specify arrays with different package names and version ranges to use to implement the instrumentation logic. example use:
+
+```js
+const supportedVersions = ['>=1.2.3 <3'];
+
+  protected init() {
+
+    const someModuleFile = new InstrumentationNodeModuleFile(
+      'foo/lib/some-file.js',
+      supportedVersions,
+      myFilePatch,
+      myFileUnpatch,
+    );
+
+    const module = new InstrumentationNodeModuleDefinition(
+      'foo',
+      supportedVersions,
+      myModulePatch,
+      myModuleUnpatch,
+      [someModuleFile]
+    );
+    return module
+  }
+```
+
+### Variations
+
+There can be few variations between the instrumented package and the patched package:
+
+- Single Module - instrumentation patches the same module that is instrumented.
+- Different Modules - instrumentation patches internal modules with different names and version ranges as of the instrumented package.
+- Node.js Core Modules - instrumentation patches a Node.js internal module.
+- Multiple Modules - instrumentation may instrument a set of (potentially large number of) user-facing instrumented packages.
+- Patch Logic - instrumentation may use the `moduleExports` to patch, or hooks up to other mechanisms for recording signals. examples are: Node.js diagnostics channel, patching globals (like `window` being patched in browser instrumentations, or patches arbitrary lambda function handlers, etc.
+
+### Range Specification
+
+For versions that are a closed range, instrumentations should prefer to specify the supported versions of the instrumented package as `>=x.y.z <w` to promote consistency and readability across the code-base.
+
+If an instrumentation supports just one major version of the instrumented package, it can specify the version range as `^x.y.z` or `^x`, which are equivalent but more readable.
+
+Instrumentation should use an upper and lower bounds for the version ranges it uses for patches. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior.
+
+New major versions should be reviewed and tested before being added to the supported versions list.
+
+Specific guidelines for different cases:
+
+- For `Different Modules`, instrumentations can use an upper limit on patched packages but it is unknown which future versions of the instrumented package will continue to use it. Thus it is ok to use an open upper limit, for example `>=1.2.3`, for the instrumented package.
+- For `Node.js Core Modules`, the supported versions range is set to `['*']` to advertise that the instrumentation is compatible with all versions of Node.js that OpenTelemetry supports.
+- For `Multiple Modules`, the supported versions range should be specified for each module in the README file with the supported versions.
+- For `Different Patch Logic`, the use of supported versions can sometimes be more flexible, and the README should specify useful versioning information.
+
+### Add New Supported Versions
+
+When a new major version of the instrumented package is released, renovate bot will open a PR in contrib which helps maintainers to become aware of it. The instrumentation maintainer should review the new version and check compatibility with existing code. It can then be added to the supported versions list to be released in the next version of the instrumentation.
+
+Checklist for adding a new version to the supported versions list:
+
+- [ ] Review which functions are patched by the instrumentation and if they were changed in the new version that need support in code.
+- [ ] Check for breaking changes in the new version that could affect the instrumentation.
+- [ ] Test the instrumentation with the new version to ensure it works as expected.
+- [ ] Update the supported versions list in the instrumentation code, perhaps with different patches and additional `InstrumentationNodeModuleDefinition`s that target the new version.
+- [ ] Update the README file to reflect the support for new versions.
+- [ ] For instrumentations that use test-all-versions `.tav.yml`, add the new version to the list of versions to test.
+
 ## package.json
 
 ### Description

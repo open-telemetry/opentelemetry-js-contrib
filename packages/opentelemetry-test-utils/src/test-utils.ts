@@ -24,12 +24,14 @@ import {
 } from '@opentelemetry/api';
 import * as assert from 'assert';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { MetricReader, MeterProvider } from '@opentelemetry/sdk-metrics';
 import {
   hrTimeToMilliseconds,
   hrTimeToMicroseconds,
 } from '@opentelemetry/core';
 import * as path from 'path';
 import * as fs from 'fs';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
 const dockerRunCmds = {
   cassandra:
@@ -37,7 +39,7 @@ const dockerRunCmds = {
   memcached:
     'docker run --rm -d --name otel-memcached -p 11211:11211 memcached:1.6.9-alpine',
   mssql:
-    'docker run --rm -d --name otel-mssql -p 1433:1433 -e SA_PASSWORD=mssql_passw0rd -e ACCEPT_EULA=Y mcr.microsoft.com/mssql/server:2017-latest',
+    'docker run --rm -d --name otel-mssql -p 1433:1433 -e MSSQL_SA_PASSWORD=mssql_passw0rd -e ACCEPT_EULA=Y mcr.microsoft.com/mssql/server:2022-latest',
   mysql:
     'docker run --rm -d --name otel-mysql -p 33306:3306 -e MYSQL_ROOT_PASSWORD=rootpw -e MYSQL_DATABASE=test_db -e MYSQL_USER=otel -e MYSQL_PASSWORD=secret mysql:5.7 --log_output=TABLE --general_log=ON',
   postgres:
@@ -178,4 +180,25 @@ export const getPackageVersion = (packageName: string) => {
     'package.json'
   );
   return JSON.parse(fs.readFileSync(pjPath, 'utf8')).version;
+};
+
+export class TestMetricReader extends MetricReader {
+  constructor() {
+    super();
+  }
+
+  protected async onForceFlush(): Promise<void> {}
+  protected async onShutdown(): Promise<void> {}
+}
+
+export const initMeterProvider = (
+  instrumentation: InstrumentationBase
+): TestMetricReader => {
+  const metricReader = new TestMetricReader();
+  const meterProvider = new MeterProvider({
+    readers: [metricReader],
+  });
+  instrumentation.setMeterProvider(meterProvider);
+
+  return metricReader;
 };

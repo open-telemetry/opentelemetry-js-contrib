@@ -33,6 +33,7 @@ import {
   isLayerIgnored,
   storeLayerPath,
 } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   InstrumentationBase,
@@ -50,24 +51,16 @@ import {
 } from './internal-types';
 
 /** Express instrumentation for OpenTelemetry */
-export class ExpressInstrumentation extends InstrumentationBase {
+export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumentationConfig> {
   constructor(config: ExpressInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-  }
-
-  override setConfig(config: ExpressInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
-  }
-
-  override getConfig(): ExpressInstrumentationConfig {
-    return this._config as ExpressInstrumentationConfig;
   }
 
   init() {
     return [
       new InstrumentationNodeModuleDefinition(
         'express',
-        ['^4.0.0'],
+        ['>=4.0.0 <5'],
         moduleExports => {
           const routerProto = moduleExports.Router as unknown as express.Router;
           // patch express.Router.route
@@ -188,7 +181,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
         const attributes: Attributes = {
           [SEMATTRS_HTTP_ROUTE]: route.length > 0 ? route : '/',
         };
-        const metadata = getLayerMetadata(layer, layerPath);
+        const metadata = getLayerMetadata(route, layer, layerPath);
         const type = metadata.attributes[
           AttributeNames.EXPRESS_TYPE
         ] as ExpressLayerType;
@@ -199,7 +192,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
         }
 
         // verify against the config if the layer should be ignored
-        if (isLayerIgnored(metadata.name, type, instrumentation._config)) {
+        if (isLayerIgnored(metadata.name, type, instrumentation.getConfig())) {
           if (type === ExpressLayerType.MIDDLEWARE) {
             (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
           }
@@ -222,10 +215,11 @@ export class ExpressInstrumentation extends InstrumentationBase {
           attributes: Object.assign(attributes, metadata.attributes),
         });
 
-        if (instrumentation.getConfig().requestHook) {
+        const { requestHook } = instrumentation.getConfig();
+        if (requestHook) {
           safeExecuteInTheMiddle(
             () =>
-              instrumentation.getConfig().requestHook!(span, {
+              requestHook(span, {
                 request: req,
                 layerType: type,
                 route,
@@ -315,7 +309,11 @@ export class ExpressInstrumentation extends InstrumentationBase {
       // some properties holding metadata and state so we need to proxy them
       // through through patched function
       // ref: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1950
-      Object.keys(original).forEach(key => {
+      // Also some apps/libs do their own patching before OTEL and have these properties
+      // in the proptotype. So we use a `for...in` loop to get own properties and also
+      // any enumerable prop in the prototype chain
+      // ref: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2271
+      for (const key in original) {
         Object.defineProperty(patched, key, {
           get() {
             return original[key];
@@ -324,21 +322,20 @@ export class ExpressInstrumentation extends InstrumentationBase {
             original[key] = value;
           },
         });
-      });
-
+      }
       return patched;
     });
   }
 
   _getSpanName(info: ExpressRequestInfo, defaultName: string) {
-    const hook = this.getConfig().spanNameHook;
+    const { spanNameHook } = this.getConfig();
 
-    if (!(hook instanceof Function)) {
+    if (!(spanNameHook instanceof Function)) {
       return defaultName;
     }
 
     try {
-      return hook(info, defaultName) ?? defaultName;
+      return spanNameHook(info, defaultName) ?? defaultName;
     } catch (err) {
       diag.error(
         'express instrumentation: error calling span name rewrite hook',

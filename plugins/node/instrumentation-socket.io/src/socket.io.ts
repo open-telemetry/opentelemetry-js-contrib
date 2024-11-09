@@ -37,6 +37,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { SocketIoInstrumentationConfig } from './types';
 import { SocketIoInstrumentationAttributes } from './AttributeNames';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   extractRoomsAttributeValue,
@@ -53,9 +54,7 @@ const reservedEvents = [
   'removeListener',
 ];
 
-export class SocketIoInstrumentation extends InstrumentationBase {
-  protected override _config!: SocketIoInstrumentationConfig;
-
+export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrumentationConfig> {
   constructor(config: SocketIoInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, normalizeConfig(config));
   }
@@ -286,22 +285,17 @@ export class SocketIoInstrumentation extends InstrumentationBase {
     const self = this;
     return (original: Function) => {
       return function (this: any, ev: any, originalListener: Function) {
-        if (!self._config.traceReserved && reservedEvents.includes(ev)) {
+        if (!self.getConfig().traceReserved && reservedEvents.includes(ev)) {
           return original.apply(this, arguments);
         }
-        if (self._config.onIgnoreEventList?.includes(ev)) {
+        if (self.getConfig().onIgnoreEventList?.includes(ev)) {
           return original.apply(this, arguments);
         }
         const wrappedListener = function (this: any, ...args: any[]) {
           const eventName = ev;
-          const defaultNamespace = '/';
           const namespace = this.name || this.adapter?.nsp?.name;
-          const destination =
-            namespace === defaultNamespace
-              ? eventName
-              : `${namespace} ${eventName}`;
           const span: Span = self.tracer.startSpan(
-            `${destination} ${MESSAGINGOPERATIONVALUES_RECEIVE}`,
+            `${MESSAGINGOPERATIONVALUES_RECEIVE} ${namespace}`,
             {
               kind: SpanKind.CONSUMER,
               attributes: {
@@ -315,10 +309,10 @@ export class SocketIoInstrumentation extends InstrumentationBase {
             }
           );
 
-          if (self._config.onHook) {
+          const { onHook } = self.getConfig();
+          if (onHook) {
             safeExecuteInTheMiddle(
-              () =>
-                self._config?.onHook?.(span, { moduleVersion, payload: args }),
+              () => onHook(span, { moduleVersion, payload: args }),
               e => {
                 if (e) self._diag.error('onHook error', e);
               },
@@ -369,10 +363,10 @@ export class SocketIoInstrumentation extends InstrumentationBase {
     const self = this;
     return (original: Function) => {
       return function (this: any, ev: any, ...args: any[]) {
-        if (!self._config.traceReserved && reservedEvents.includes(ev)) {
+        if (!self.getConfig().traceReserved && reservedEvents.includes(ev)) {
           return original.apply(this, arguments);
         }
-        if (self._config?.emitIgnoreEventList?.includes(ev)) {
+        if (self.getConfig().emitIgnoreEventList?.includes(ev)) {
           return original.apply(this, arguments);
         }
         const messagingSystem = 'socket.io';
@@ -395,16 +389,15 @@ export class SocketIoInstrumentation extends InstrumentationBase {
             namespace;
           attributes[SEMATTRS_MESSAGING_DESTINATION] = namespace;
         }
-        const spanRooms = rooms.length ? `[${rooms.join()}]` : '';
-        const span = self.tracer.startSpan(`${namespace}${spanRooms} send`, {
+        const span = self.tracer.startSpan(`send ${namespace}`, {
           kind: SpanKind.PRODUCER,
           attributes,
         });
 
-        if (self._config.emitHook) {
+        const { emitHook } = self.getConfig();
+        if (emitHook) {
           safeExecuteInTheMiddle(
-            () =>
-              self._config.emitHook?.(span, { moduleVersion, payload: args }),
+            () => emitHook(span, { moduleVersion, payload: args }),
             e => {
               if (e) self._diag.error('emitHook error', e);
             },

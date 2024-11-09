@@ -7,15 +7,19 @@ This module provides automatic instrumentation for the [`net`](http://nodejs.org
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
-Supports both TCP and IPC connections.
-
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
+Supports both TCP and IPC connections.
 
 ## Installation
 
 ```bash
 npm install --save @opentelemetry/instrumentation-net
 ```
+
+## Supported Versions
+
+- Node.js `>=14`
 
 ## Usage
 
