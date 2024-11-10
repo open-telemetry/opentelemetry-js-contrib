@@ -59,7 +59,7 @@ export function wrapModule(
         diag.debug('Skipping instrumentation for ' + path + '@' + moduleVersion + ' because it does not match supported versions' + f.supportedVersions.join(','));
         continue;
       }
-      mod = file.patch({ ...mod }, '${moduleVersion}');
+      mod = file.patch(mod, '${moduleVersion}');
     }
   }
 
