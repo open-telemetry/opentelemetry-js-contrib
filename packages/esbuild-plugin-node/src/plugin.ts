@@ -208,6 +208,8 @@ function isBuiltIn(path: string, extractedModule: ExtractedModule): boolean {
   );
 }
 
+const moduleVersionByPackageJsonPath = new Map<string, string>();
+
 async function getModuleVersion({
   extractedModule,
   resolveDir,
@@ -217,17 +219,20 @@ async function getModuleVersion({
   resolveDir: string;
   build: PluginBuild;
 }) {
-  const { path: packageJsonPath } = await build.resolve(
-    `${extractedModule.package}/package.json`,
-    {
-      resolveDir,
-      kind: 'require-resolve',
-    }
-  );
+  const path = `${extractedModule.package}/package.json`;
+  const contents = moduleVersionByPackageJsonPath.get(path);
+  if (contents) return contents;
+
+  const { path: packageJsonPath } = await build.resolve(path, {
+    resolveDir,
+    kind: 'require-resolve',
+  });
   if (!packageJsonPath) return;
 
   const packageJsonContents = await readFile(packageJsonPath);
-  return JSON.parse(packageJsonContents.toString()).version;
+  const moduleVersion = JSON.parse(packageJsonContents.toString()).version;
+  moduleVersionByPackageJsonPath.set(path, moduleVersion);
+  return moduleVersion;
 }
 
 function getInstrumentation({
