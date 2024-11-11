@@ -52,6 +52,7 @@ import { RedisInstrumentation as RedisInstrumentationV2 } from '@opentelemetry/i
 import { RedisInstrumentation as RedisInstrumentationV4 } from '@opentelemetry/instrumentation-redis-4';
 import { RestifyInstrumentation } from '@opentelemetry/instrumentation-restify';
 import { RouterInstrumentation } from '@opentelemetry/instrumentation-router';
+import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
 import { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.io';
 import { TediousInstrumentation } from '@opentelemetry/instrumentation-tedious';
 import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
@@ -130,6 +131,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-redis-4': RedisInstrumentationV4,
   '@opentelemetry/instrumentation-restify': RestifyInstrumentation,
   '@opentelemetry/instrumentation-router': RouterInstrumentation,
+  '@opentelemetry/instrumentation-runtime-node': RuntimeNodeInstrumentation,
   '@opentelemetry/instrumentation-socket.io': SocketIoInstrumentation,
   '@opentelemetry/instrumentation-tedious': TediousInstrumentation,
   '@opentelemetry/instrumentation-undici': UndiciInstrumentation,
