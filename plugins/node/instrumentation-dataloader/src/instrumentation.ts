@@ -139,7 +139,7 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
     const instrumentation = this;
     const prototype = constructor.prototype;
 
-    if (!instrumentation.isEnabled() || !instrumentation.shouldCreateSpans()) {
+    if (!instrumentation.isEnabled()) {
       return constructor;
     }
 
@@ -149,13 +149,15 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
     ) {
       // BatchLoadFn is the first constructor argument
       // https://github.com/graphql/dataloader/blob/77c2cd7ca97e8795242018ebc212ce2487e729d2/src/index.js#L47
-      if (isWrapped(args[0])) {
-        instrumentation._unwrap(args, 0);
-      }
+      if (typeof args[0] === 'function') {
+        if (isWrapped(args[0])) {
+          instrumentation._unwrap(args, 0);
+        }
 
-      args[0] = instrumentation._wrapBatchLoadFn(
-        args[0]
-      ) as Dataloader.BatchLoadFn<unknown, unknown>;
+        args[0] = instrumentation._wrapBatchLoadFn(
+          args[0]
+        ) as Dataloader.BatchLoadFn<unknown, unknown>;
+      }
 
       return constructor.apply(this, args);
     }
