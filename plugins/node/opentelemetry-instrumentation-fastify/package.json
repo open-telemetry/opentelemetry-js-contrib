@@ -15,7 +15,6 @@
     "test": "nyc mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js",
-    "prewatch": "npm run precompile",
     "watch": "tsc -w"
   },
   "keywords": [

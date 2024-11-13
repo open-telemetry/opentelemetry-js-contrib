@@ -13,7 +13,6 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "prepublishOnly": "npm run compile",
-    "prewatch": "npm run precompile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
