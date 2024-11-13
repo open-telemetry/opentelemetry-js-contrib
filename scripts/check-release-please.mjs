@@ -5,7 +5,7 @@ import { globSync } from 'glob';
 /*
 	Enumerates through
 
-	- lerna packages,
+	- workspace packages,
 	- release please's manifest, and
 	- release please's config, and
 
