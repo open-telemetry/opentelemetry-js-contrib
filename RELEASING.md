@@ -32,14 +32,13 @@ Create a new branch called `x.y.z-proposal` from the current commit.
 Decide on the next `major.minor.patch` release number based on [semver](http://semver.org/) guidelines.
 
 - Use `npm install` command to initialize all package directories
-- Use `lerna publish --skip-npm --no-git-tag-version --no-push` to bump the version in all `package.json`
-- Use `npm run bootstrap` to generate latest `version.ts` files
+- Use `node ./scripts/bump-pacakge-versions.mjs` to bump the version in all `package.json`
 
 ## Use the Changelog to create a GitHub Release
 
 ### Generate the changelog with lerna
 
-Since we use `lerna`, we can use [lerna-changelog](https://github.com/lerna/lerna-changelog#lerna-changelog)
+We use [lerna-changelog](https://github.com/lerna/lerna-changelog#lerna-changelog)
 
 #### How to use
 
