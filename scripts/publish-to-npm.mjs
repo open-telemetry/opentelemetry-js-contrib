@@ -23,7 +23,7 @@
  * - [X] checks package versions directly from the `pacakge.json` files (from-package)
  * - [X] filters out all private repos (--no-private)
  * - [X] does not create tags o push anything (--no-push & --no-git-tag-version)
- * - [X] does not any extra request to verify access tokens (--no-verify-access)
+ * - [X] does not do any extra request to verify access tokens (--no-verify-access)
  * - [X] does not ask for confirmation (--yes)
  */
 
