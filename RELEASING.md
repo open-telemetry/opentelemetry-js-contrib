@@ -90,19 +90,14 @@ Create a pull request titled `chore: x.y.z release proposal`. The commit body sh
 
 Merge the PR, and pull the changes locally (using the commands in the first step). Ensure that `chore: x.y.z release proposal` is the most recent commit.
 
+## Compile all packages
+
+Go into the root folder and run `npm ci && npm run compile` to build all packages with the latest version of the code.
+
 ## Publish all packages
 
-Go into each directory and use `npm publish` (requires permissions) to publish the package. You can use the following script to automate this.
-
-```bash
-#!/bin/bash
-
-for dir in $(ls packages); do
- pushd packages/$dir
- npm publish
- popd
-done
-```
+Use the dedicated script for publishing by running the command `node ./scripts/publish-to-npm.mjs` in the root folder. The script will
+walk over all non private packages and publish the ones that has not been published yet.
 
 Check your e-mail and make sure the number of “you’ve published this module” emails matches the number you expect.
 
