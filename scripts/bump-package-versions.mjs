@@ -62,25 +62,25 @@ repoTags.forEach((tag) => {
 // Assumption: current version is latest on npm (so no checking it)
 publicPkgList.forEach((pkgInfo) => {
   if (pkgInfo.tag) {
-    // need to calculate next version
     const commitList = execSync(`git log ${pkgInfo.tag}..HEAD --oneline`, { encoding: 'utf-8' }).split('\n');
     const pkgScope = pkgInfo.name.replace('@opentelemetry/', '');
-    const commitsForPackage = commitList.filter((c) => c.indexOf(`(${pkgScope})`) !== -1);
+    const commitsForPackage = commitList
+      // Get only the ones with the scope
+      .filter((c) => c.indexOf(`(${pkgScope})`) !== -1);
 
     if (commitsForPackage.length === 0) {
       return;
     }
     console.log(pkgInfo.tag)
     console.log(commitsForPackage)
-    const [major, minor, patch] = pkgInfo.version.split('.').map(n => parseInt(n, 10));
-    const isExperimental = major === 0;
+    const isExperimental = pkgInfo.version.startsWith('0.');
     const bumpMinor = commitsForPackage.some((cmt) => {
       const pattern = isExperimental ? `(${pkgScope})!:` : `feat(${pkgScope}):`
       return cmt.includes(pattern);
     });
     const bumpMajor = !isExperimental && commitsForPackage.some((cmt) => cmt.includes(`(${pkgScope})!:`));
 
-    let command
+    let command;
     if (bumpMajor) {
       command = 'npm version major';
     } else if (bumpMinor) {
