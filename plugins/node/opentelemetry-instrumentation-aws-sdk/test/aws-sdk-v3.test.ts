@@ -84,6 +84,9 @@ describe('instrumentation-aws-sdk-v3', () => {
       expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
       expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('PutObject');
       expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('S3');
+      expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
+        'ot-demo-test'
+      );
       expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
       expect(span.kind).toEqual(SpanKind.CLIENT);
@@ -108,6 +111,9 @@ describe('instrumentation-aws-sdk-v3', () => {
         expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
         expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('PutObject');
         expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('S3');
+        expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
+          'ot-demo-test'
+        );
         expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
         expect(span.name).toEqual('S3.PutObject');
         expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
@@ -134,6 +140,9 @@ describe('instrumentation-aws-sdk-v3', () => {
       expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
       expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('PutObject');
       expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('S3');
+      expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
+        'ot-demo-test'
+      );
       expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
       expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
@@ -167,6 +176,9 @@ describe('instrumentation-aws-sdk-v3', () => {
         expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
         expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('PutObject');
         expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('S3');
+        expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
+          'invalid-bucket-name'
+        );
         expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(403);
         expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
         expect(span.attributes[AttributeNames.AWS_REQUEST_ID]).toEqual(

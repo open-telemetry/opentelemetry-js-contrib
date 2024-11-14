@@ -35,7 +35,6 @@ import {
   SpanKind,
   SpanStatusCode,
   TextMapGetter,
-  TraceFlags,
   TracerProvider,
   ROOT_CONTEXT,
   Attributes,
@@ -60,11 +59,10 @@ import {
 } from 'aws-lambda';
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { env } from 'process';
 import { LambdaModule } from './internal-types';
 
-const awsPropagator = new AWSXRayPropagator();
 const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   keys(carrier): string[] {
     return Object.keys(carrier);
@@ -74,7 +72,6 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   },
 };
 
-export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
 export const lambdaMaxInitInMilliseconds = 10_000;
 
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
@@ -82,18 +79,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
   private _metricForceFlusher?: () => Promise<void>;
 
   constructor(config: AwsLambdaInstrumentationConfig = {}) {
-    if (config.disableAwsContextPropagation == null) {
-      if (
-        typeof env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] ===
-          'string' &&
-        env[
-          'OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'
-        ].toLocaleLowerCase() === 'true'
-      ) {
-        config = { ...config, disableAwsContextPropagation: true };
-      }
-    }
-
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
@@ -118,14 +103,28 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     // Lambda loads user function using an absolute path.
     let filename = path.resolve(taskRoot, moduleRoot, module);
     if (!filename.endsWith('.js')) {
-      // its impossible to know in advance if the user has a cjs or js file.
-      // check that the .js file exists otherwise fallback to next known possibility
+      // It's impossible to know in advance if the user has a js, mjs or cjs file.
+      // Check that the .js file exists otherwise fallback to the next known possibilities (.mjs, .cjs).
       try {
         fs.statSync(`${filename}.js`);
         filename += '.js';
       } catch (e) {
-        // fallback to .cjs
-        filename += '.cjs';
+        try {
+          fs.statSync(`${filename}.mjs`);
+          // fallback to .mjs (ESM)
+          filename += '.mjs';
+        } catch (e2) {
+          try {
+            fs.statSync(`${filename}.cjs`);
+            // fallback to .cjs (CommonJS)
+            filename += '.cjs';
+          } catch (e3) {
+            this._diag.warn(
+              'No handler file was able to resolved with one of the known extensions for the file',
+              filename
+            );
+          }
+        }
       }
     }
 
@@ -231,7 +230,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       const parent = AwsLambdaInstrumentation._determineParent(
         event,
         context,
-        config.disableAwsContextPropagation === true,
         config.eventContextExtractor ||
           AwsLambdaInstrumentation._defaultEventContextExtractor
       );
@@ -475,32 +473,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
   private static _determineParent(
     event: any,
     context: Context,
-    disableAwsContextPropagation: boolean,
     eventContextExtractor: EventContextExtractor
   ): OtelContext {
-    let parent: OtelContext | undefined = undefined;
-    if (!disableAwsContextPropagation) {
-      const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
-      if (lambdaTraceHeader) {
-        parent = awsPropagator.extract(
-          otelContext.active(),
-          { [AWSXRAY_TRACE_ID_HEADER]: lambdaTraceHeader },
-          headerGetter
-        );
-      }
-      if (parent) {
-        const spanContext = trace.getSpan(parent)?.spanContext();
-        if (
-          spanContext &&
-          (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED
-        ) {
-          // Trace header provided by Lambda only sampled if a sampled context was propagated from
-          // an upstream cloud service such as S3, or the user is using X-Ray. In these cases, we
-          // need to use it as the parent.
-          return parent;
-        }
-      }
-    }
     const extractedContext = safeExecuteInTheMiddle(
       () => eventContextExtractor(event, context),
       e => {
@@ -515,10 +489,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     if (trace.getSpan(extractedContext)?.spanContext()) {
       return extractedContext;
     }
-    if (!parent) {
-      // No context in Lambda environment or HTTP headers.
-      return ROOT_CONTEXT;
-    }
-    return parent;
+    return ROOT_CONTEXT;
   }
 }

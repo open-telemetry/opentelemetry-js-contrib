@@ -13,8 +13,36 @@ on:
         type: string
 
 jobs:
+  build-and-cache:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    env:
+      NPM_CONFIG_UNSAFE_PERM: true
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Use the same Node.js version used for `release-please` workflow.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run compile
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tav-build-cache-${{ github.run_number }}
+          path: node_modules/.cache/nx
+          retention-days: 1
+
   tav:
     name: Run test-all-versions
+    needs: build-and-cache
     strategy:
       fail-fast: false
       matrix:
@@ -26,14 +54,14 @@ jobs:
         ports:
         - 27017:27017
       mssql:
-        image: mcr.microsoft.com/mssql/server:2017-latest
+        image: mcr.microsoft.com/mssql/server:2022-latest
         env:
-          SA_PASSWORD: mssql_passw0rd
+          MSSQL_SA_PASSWORD: mssql_passw0rd
           ACCEPT_EULA: Y
         ports:
         - 1433:1433
         options: >-
-          --health-cmd "/opt/mssql-tools/bin/sqlcmd -U sa -P $SA_PASSWORD -Q 'select 1' -b -o /dev/null"
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $MSSQL_SA_PASSWORD -C -Q 'select 1' -b -o /dev/null"
           --health-interval 1s
           --health-timeout 30s
           --health-start-period 10s
@@ -120,6 +148,11 @@ jobs:
         run: npm install -g npm@9 # npm@9 supports node >=14.17.0
       - name: Install
         run: npm ci
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: tav-build-cache-${{ github.run_number }}
+          path: node_modules/.cache/nx
       - name: Build
         run: npm run compile
       - name: Run test-all-versions

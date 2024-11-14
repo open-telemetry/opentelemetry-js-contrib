@@ -34,6 +34,7 @@ import {
   ValueType,
 } from '@opentelemetry/api';
 
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 import {
@@ -77,7 +78,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
   override disable(): void {
     super.disable();
-    this._channelSubs.forEach(sub => sub.channel.unsubscribe(sub.onMessage));
+    this._channelSubs.forEach(sub => sub.unsubscribe());
     this._channelSubs.length = 0;
   }
 
@@ -137,14 +138,29 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
   private subscribeToChannel(
     diagnosticChannel: string,
-    onMessage: ListenerRecord['onMessage']
+    onMessage: (message: any, name: string | symbol) => void
   ) {
-    const channel = diagch.channel(diagnosticChannel);
-    channel.subscribe(onMessage);
+    // `diagnostics_channel` had a ref counting bug until v18.19.0.
+    // https://github.com/nodejs/node/pull/47520
+    const [major, minor] = process.version
+      .replace('v', '')
+      .split('.')
+      .map(n => Number(n));
+    const useNewSubscribe = major > 18 || (major === 18 && minor >= 19);
+
+    let unsubscribe: () => void;
+    if (useNewSubscribe) {
+      diagch.subscribe?.(diagnosticChannel, onMessage);
+      unsubscribe = () => diagch.unsubscribe?.(diagnosticChannel, onMessage);
+    } else {
+      const channel = diagch.channel(diagnosticChannel);
+      channel.subscribe(onMessage);
+      unsubscribe = () => channel.unsubscribe(onMessage);
+    }
+
     this._channelSubs.push({
       name: diagnosticChannel,
-      channel,
-      onMessage,
+      unsubscribe,
     });
   }
 
@@ -172,7 +188,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     const startTime = hrTime();
-    const requestUrl = new URL(request.origin + request.path);
+    let requestUrl;
+    try {
+      requestUrl = new URL(request.path, request.origin);
+    } catch (err) {
+      this._diag.warn('could not determine url.full:', err);
+      // Skip instrumenting this request.
+      return;
+    }
     const urlScheme = requestUrl.protocol.replace(':', '');
     const requestMethod = this.getRequestMethod(request.method);
     const attributes: Attributes = {

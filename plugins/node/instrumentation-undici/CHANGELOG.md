@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.7.0...instrumentation-undici-v0.7.1) (2024-11-07)
+
+
+### Bug Fixes
+
+* **instrumentation-undici:** fix a possible crash if the request path is a full URL ([#2518](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2518)) ([28e209a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/28e209a9da36bc4e1f8c2b0db7360170ed46cb80)), closes [#2471](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2471)
+* **instrumentation-undici:** Fix RequestType ([#2503](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2503)) ([9a20e15](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9a20e15547669450987b2bb7cab193f17e04ebb7))
+
+## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.6.0...instrumentation-undici-v0.7.0) (2024-10-25)
+
+
+### Features
+
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
 ## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.5.0...instrumentation-undici-v0.6.0) (2024-09-02)
 
 
