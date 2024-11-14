@@ -24,6 +24,7 @@ import path from 'path';
 import { readFileSync } from 'fs';
 import { globSync } from 'glob';
 
+// -- Utility functions --
 // TODO: move this into a common file
 const readJson = (filePath) => {
 	return JSON.parse(readFileSync(filePath));
@@ -41,6 +42,18 @@ const getPackages = () => {
 			return pkgInfo;
 		});
 }
+
+const getCommitsFrom = (commitOrTag) => {
+  return execSync(`git log ${commitOrTag}..HEAD --oneline`, { encoding: 'utf-8' }).split('\n');
+}
+
+const getScopedCommitsFrom = (scope, commitOrTag) => {
+  const commits = execSync(`git log ${commitOrTag}..HEAD --oneline`, { encoding: 'utf-8' }).split('\n');
+
+  return commits.filter((c) => c.indexOf(`(${scope})`) !== -1);
+}
+
+// -- Main line
 const publicPkgList = getPackages().filter(pkg => !pkg.private);
 const repoTags = execSync('git tag', { encoding: 'utf-8' }).split('\n');
 
@@ -61,38 +74,65 @@ repoTags.forEach((tag) => {
 // Check for commits on each package
 // Assumption: current version is latest on npm (so no checking it)
 publicPkgList.forEach((pkgInfo) => {
-  if (pkgInfo.tag) {
-    const commitList = execSync(`git log ${pkgInfo.tag}..HEAD --oneline`, { encoding: 'utf-8' }).split('\n');
-    const pkgScope = pkgInfo.name.replace('@opentelemetry/', '');
-    const commitsForPackage = commitList
-      // Get only the ones with the scope
-      .filter((c) => c.indexOf(`(${pkgScope})`) !== -1);
+  const pkgScope = pkgInfo.name.replace('@opentelemetry/', '');
 
-    if (commitsForPackage.length === 0) {
+  if (pkgInfo.tag) {
+    const scopedCommits = getScopedCommitsFrom(pkgScope, pkgInfo.tag);
+
+    if (scopedCommits.length === 0) {
       return;
     }
-    console.log(pkgInfo.tag)
-    console.log(commitsForPackage)
+
     const isExperimental = pkgInfo.version.startsWith('0.');
-    const bumpMinor = commitsForPackage.some((cmt) => {
+    const bumpMinor = scopedCommits.some((cmt) => {
       const pattern = isExperimental ? `(${pkgScope})!:` : `feat(${pkgScope}):`
       return cmt.includes(pattern);
     });
-    const bumpMajor = !isExperimental && commitsForPackage.some((cmt) => cmt.includes(`(${pkgScope})!:`));
+    const bumpMajor = !isExperimental && scopedCommits.some((cmt) => cmt.includes(`(${pkgScope})!:`));
+    const bumpType = bumpMajor ? 'major' : (bumpMinor ? 'minor' : 'patch');
 
-    let command;
-    if (bumpMajor) {
-      command = 'npm version major';
-    } else if (bumpMinor) {
-      command = 'npm version minor';
-    } else {
-      command = 'npm version patch';
-    }
-    console.log(`executing ${command}`)
-    execSync(`${command} --git-tag-version=false`, { cwd: pkgInfo.location });
+    console.log(`Bumping ${bumpType} version in ${pkgInfo.name}`);
+    execSync(`npm version ${bumpType} --git-tag-version=false`, { cwd: pkgInfo.location });
 
   } else {
-    // is the 1st time so no new version needed
-    console.log(pkgInfo.name, 'has no tag')
+    // NOTE: this could be one of two scenairios
+    // - new package
+    // - package being moved here like @opentelemetry/propagator-aws-xray-lambda
+    console.log(pkgInfo.name, 'has no tag');
+    let isNewPkg = false;
+    let versions;
+    try {
+      versions = JSON.parse(
+        execSync(`npm info ${pkgInfo.name} --json time`, { encoding: 'utf-8' })
+      );
+    } catch (err) {
+      console.log(`*********\n${err.message}\n********`)
+      isNewPkg = err.message.includes('npm ERR! 404 Not Found - GET');
+    }
+
+
+    if (isNewPkg) {
+      console.log(pkgInfo.name, 'is not in the registry. No bump needed');
+    } else {
+      // - assume version is the last in npm
+      // - find the commit where it was added
+      // - check for commits since then, and do the calculation
+      const addCommit = execSync(`git log --diff-filter=A -- ${pkgInfo.location}/package.json`, { encoding: 'utf-8' });
+      const commitSha = addCommit.substring(7, 14);
+      const scopedCommits = getScopedCommitsFrom(pkgScope, commitSha);
+      
+      console.log(`Package ${pkgInfo.name} was added in ${commitSha}`);
+  
+      const isExperimental = pkgInfo.version.startsWith('0.');
+      const bumpMinor = scopedCommits.some((cmt) => {
+        const pattern = isExperimental ? `(${pkgScope})!:` : `feat(${pkgScope}):`
+        return cmt.includes(pattern);
+      });
+      const bumpMajor = !isExperimental && scopedCommits.some((cmt) => cmt.includes(`(${pkgScope})!:`));
+      const bumpType = bumpMajor ? 'major' : (bumpMinor ? 'minor' : 'patch');
+  
+      console.log(`Bumping ${bumpType} version in ${pkgInfo.name}`);
+      execSync(`npm version ${bumpType} --git-tag-version=false`, { cwd: pkgInfo.location });
+    }
   }
 })
