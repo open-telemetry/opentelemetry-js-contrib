@@ -40,10 +40,6 @@ import {
   Attributes,
 } from '@opentelemetry/api';
 import {
-  AWSXRAY_TRACE_ID_HEADER,
-  AWSXRayPropagator,
-} from '@opentelemetry/propagator-aws-xray';
-import {
   ATTR_URL_FULL,
   SEMATTRS_FAAS_EXECUTION,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
