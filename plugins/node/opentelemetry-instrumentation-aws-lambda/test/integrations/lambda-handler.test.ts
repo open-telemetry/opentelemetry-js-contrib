@@ -781,15 +781,17 @@ describe('lambda handler', () => {
         },
         queryStringParameters: {
           key: 'value',
-          key2: 'value2'
+          key2: 'value2',
         },
       };
 
       await lambdaRequire('lambda-test/sync').handler(event, ctx, () => {});
       const [span] = memoryExporter.getFinishedSpans();
       assert.ok(
-        (span.attributes[ATTR_URL_FULL] === 'http://www.example.com/lambda/test/path?key=value&key2=value2') ||
-        (span.attributes[ATTR_URL_FULL] === 'http://www.example.com/lambda/test/path?key2=value2&key=value')
+        span.attributes[ATTR_URL_FULL] ===
+          'http://www.example.com/lambda/test/path?key=value&key2=value2' ||
+          span.attributes[ATTR_URL_FULL] ===
+            'http://www.example.com/lambda/test/path?key2=value2&key=value'
       );
     });
     it('pulls url from api gateway http events', async () => {
