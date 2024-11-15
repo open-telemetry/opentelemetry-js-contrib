@@ -437,22 +437,26 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
 
   private static _extractFullUrl(event: any): string | undefined {
     // API gateway encodes a lot of url information in various places to recompute this
-    if (
-      !(
-        event.headers &&
-        (event.path || event.rawPath) &&
-        event.headers['host'] &&
-        event.headers['x-forwarded-proto']
-      )
-    ) {
+
+    // Helper function to deal with case variations (instead of making a tolower() copy of the headers)
+    function findAny(
+      event: any,
+      key1: string,
+      key2: string
+    ): string | undefined {
+      return event.headers[key1] ?? event.headers[key2];
+    }
+    const host = findAny(event, 'host', 'Host');
+    const proto = findAny(event, 'x-forwarded-proto', 'X-Forwarded-Proto');
+    const port = findAny(event, 'x-forwarded-port', 'X-Forwarded-Port');
+    if (!(event.headers && (event.path || event.rawPath) && host && proto)) {
       return undefined;
     }
-    let answer = event.headers['x-forwarded-proto'] + '://';
-    answer += event.headers['host'];
-    if (event.headers['x-forwarded-port']) {
-      answer += ':' + event.headers['x-forwarded-port'];
+    let answer = proto + '://' + host;
+    if (port) {
+      answer += ':' + port;
     }
-    answer += event.path ? event.path : event.rawPath;
+    answer += event.path ?? event.rawPath;
     if (event.queryStringParameters) {
       let first = true;
       for (const key in event.queryStringParameters) {
