@@ -437,7 +437,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
 
   private static _extractFullUrl(event: any): string | undefined {
     // API gateway encodes a lot of url information in various places to recompute this
-
+    if (!event.headers) {
+      return undefined;
+    }
     // Helper function to deal with case variations (instead of making a tolower() copy of the headers)
     function findAny(
       event: any,
@@ -449,7 +451,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     const host = findAny(event, 'host', 'Host');
     const proto = findAny(event, 'x-forwarded-proto', 'X-Forwarded-Proto');
     const port = findAny(event, 'x-forwarded-port', 'X-Forwarded-Port');
-    if (!(event.headers && (event.path || event.rawPath) && host && proto)) {
+    if (!(proto && host && (event.path || event.rawPath))) {
       return undefined;
     }
     let answer = proto + '://' + host;
