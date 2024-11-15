@@ -776,8 +776,9 @@ describe('lambda handler', () => {
       const event = {
         path: '/lambda/test/path',
         headers: {
-          host: 'www.example.com',
-          'x-forwarded-proto': 'http',
+          Host: 'www.example.com',
+          'X-Forwarded-Proto': 'http',
+          'X-Forwarded-Port': 1234,
         },
         queryStringParameters: {
           key: 'value',
@@ -789,9 +790,9 @@ describe('lambda handler', () => {
       const [span] = memoryExporter.getFinishedSpans();
       assert.ok(
         span.attributes[ATTR_URL_FULL] ===
-          'http://www.example.com/lambda/test/path?key=value&key2=value2' ||
+          'http://www.example.com:1234/lambda/test/path?key=value&key2=value2' ||
           span.attributes[ATTR_URL_FULL] ===
-            'http://www.example.com/lambda/test/path?key2=value2&key=value'
+            'http://www.example.com:1234/lambda/test/path?key2=value2&key=value'
       );
     });
     it('pulls url from api gateway http events', async () => {
