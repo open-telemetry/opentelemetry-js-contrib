@@ -12,11 +12,10 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Sampler, AlwaysOnSampler, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
-import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { Resource } from '@opentelemetry/resources';
 import { SEMRESATTRS_SERVICE_NAME, SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 
-const Exporter = (process.env.EXPORTER || '').toLowerCase().startsWith('z') ? ZipkinExporter : OTLPTraceExporter;
+const Exporter = OTLPTraceExporter;
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 
@@ -36,9 +35,7 @@ export const setupTracing = (serviceName: string) => {
     ],
   });
 
-  const exporter = new Exporter({
-    serviceName,
-  });
+  const exporter = new Exporter({});
 
   provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
