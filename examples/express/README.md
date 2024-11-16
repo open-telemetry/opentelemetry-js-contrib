@@ -1,6 +1,6 @@
 # Overview
 
-OpenTelemetry Express Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we can use Zipkin or Jaeger for this example), to give observability to distributed systems.
+OpenTelemetry Express Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we can Jaeger for this example), to give observability to distributed systems.
 
 This is a simple example that demonstrates tracing calls made to Express API. The example
 shows key aspects of tracing such as
@@ -17,31 +17,9 @@ shows key aspects of tracing such as
 npm install
 ```
 
-Setup [Zipkin Tracing](https://zipkin.io/pages/quickstart.html)
-or
-Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/#all-in-one)
+Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/2.0/getting-started/#in-docker)
 
 ## Run the Application
-
-### Zipkin
-
-Run the server:
-
-```sh
-npm run zipkin:server
-```
-
-Then run the client in a separate terminal:
-
-```sh
-npm run zipkin:client
-```
-
-After a short time, the generated traces should be available in the Zipkin UI.
-Visit <http://localhost:9411/zipkin> and click the "RUN QUERY" button to view
-recent traces, then click "SHOW" on a given trace.
-
-<p align="center"><img alt="Zipkin UI with trace" src="./images/zipkin.jpg?raw=true"/></p>
 
 ### Jaeger
 
