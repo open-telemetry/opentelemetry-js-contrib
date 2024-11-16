@@ -232,6 +232,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       const span = plugin.tracer.startSpan(
         name,
         {
+          // For coldstarts,
+          // use Lambda start time as invocation span start time to take initialization time into account.
+          startTime: requestIsColdStart ? lambdaStartTime : Date.now(),
           kind: SpanKind.SERVER,
           attributes: {
             [SEMATTRS_FAAS_EXECUTION]: context.awsRequestId,

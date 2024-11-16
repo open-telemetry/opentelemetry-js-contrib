@@ -51,7 +51,10 @@ import {
   defaultTextMapGetter,
 } from '@opentelemetry/api';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
-import { W3CTraceContextPropagator } from '@opentelemetry/core';
+import {
+  hrTimeToMilliseconds,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
 import { AWSXRayLambdaPropagator } from '@opentelemetry/propagator-aws-xray-lambda';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -266,10 +269,15 @@ describe('lambda handler', () => {
     });
 
     it('should record coldstart', async () => {
-      initializeHandler('lambda-test/sync.handler');
+      const time0 = Date.now();
+      initializeHandler('lambda-test/sync.handler', { lambdaStartTime: time0 });
+
+      // Simulate initialization time
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       const handlerModule = lambdaRequire('lambda-test/sync');
 
+      const time1 = Date.now();
       const result1 = await new Promise((resolve, reject) => {
         handlerModule.handler('arg', ctx, (err: Error, res: any) => {
           if (err) {
@@ -280,6 +288,7 @@ describe('lambda handler', () => {
         });
       });
 
+      const time2 = Date.now();
       const result2 = await new Promise((resolve, reject) => {
         handlerModule.handler('arg', ctx, (err: Error, res: any) => {
           if (err) {
@@ -298,18 +307,28 @@ describe('lambda handler', () => {
       assertSpanSuccess(span1);
       assert.strictEqual(span1.parentSpanId, undefined);
       assert.strictEqual(span1.attributes[SEMATTRS_FAAS_COLDSTART], true);
+      // Since it is coldstart, invocation span start time should be equal to lambda start time
+      assert.strictEqual(hrTimeToMilliseconds(span1.startTime), time0);
+      // Since it is coldstart, invocation span start time should be before actual handler call time
+      assert.ok(hrTimeToMilliseconds(span1.startTime) < time1);
 
       assert.strictEqual(result2, 'ok');
       assertSpanSuccess(span2);
       assert.strictEqual(span2.parentSpanId, undefined);
       assert.strictEqual(span2.attributes[SEMATTRS_FAAS_COLDSTART], false);
+      // Since it is warm invocation, invocation span start time should be after than lambda start time
+      assert.ok(hrTimeToMilliseconds(span2.startTime) > time0);
+      // Since it is warm invocation, invocation span start time should be equal or after than handler call time
+      assert.ok(hrTimeToMilliseconds(span2.startTime) >= time2);
     });
 
     it('should record coldstart with provisioned concurrency', async () => {
       process.env.AWS_LAMBDA_INITIALIZATION_TYPE = 'provisioned-concurrency';
 
-      initializeHandler('lambda-test/sync.handler');
+      const time0 = Date.now() - 1;
+      initializeHandler('lambda-test/sync.handler', { lambdaStartTime: time0 });
 
+      const time1 = Date.now();
       const result = await new Promise((resolve, reject) => {
         lambdaRequire('lambda-test/sync').handler(
           'arg',
@@ -323,20 +342,26 @@ describe('lambda handler', () => {
           }
         );
       });
+
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
+
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
       assert.strictEqual(span.parentSpanId, undefined);
       assert.strictEqual(span.attributes[SEMATTRS_FAAS_COLDSTART], false);
+      // Since it is warm invocation, invocation span start time should be after than lambda start time
+      assert.ok(hrTimeToMilliseconds(span.startTime) > time0);
+      // Since it is warm invocation, invocation span start time should be equal or after than handler call time
+      assert.ok(hrTimeToMilliseconds(span.startTime) >= time1);
     });
 
     it('should record coldstart with proactive initialization', async () => {
-      initializeHandler('lambda-test/sync.handler', {
-        lambdaStartTime: Date.now() - 2 * lambdaMaxInitInMilliseconds,
-      });
+      const time0 = Date.now() - 2 * lambdaMaxInitInMilliseconds;
+      initializeHandler('lambda-test/sync.handler', { lambdaStartTime: time0 });
 
+      const time1 = Date.now();
       const result = await new Promise((resolve, reject) => {
         lambdaRequire('lambda-test/sync').handler(
           'arg',
@@ -350,13 +375,19 @@ describe('lambda handler', () => {
           }
         );
       });
+
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
+
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
       assert.strictEqual(span.parentSpanId, undefined);
       assert.strictEqual(span.attributes[SEMATTRS_FAAS_COLDSTART], false);
+      // Since it is warm invocation, invocation span start time should be after than lambda start time
+      assert.ok(hrTimeToMilliseconds(span.startTime) > time0);
+      // Since it is warm invocation, invocation span start time should be equal or after than handler call time
+      assert.ok(hrTimeToMilliseconds(span.startTime) >= time1);
     });
 
     it('should record error', async () => {
