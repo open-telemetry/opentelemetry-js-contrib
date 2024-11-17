@@ -39,8 +39,6 @@ import {
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
-type formatType = typeof mysqlTypes.format;
-
 export class MySQL2Instrumentation extends InstrumentationBase<MySQL2InstrumentationConfig> {
   static readonly COMMON_ATTRIBUTES = {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MYSQL,
@@ -64,7 +62,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
           this._wrap(
             ConnectionPrototype,
             'query',
-            this._patchQuery(moduleExports.format, false) as any
+            this._patchQuery(false) as any
           );
 
           if (isWrapped(ConnectionPrototype.execute)) {
@@ -73,7 +71,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
           this._wrap(
             ConnectionPrototype,
             'execute',
-            this._patchQuery(moduleExports.format, true) as any
+            this._patchQuery(true) as any
           );
 
           return moduleExports;
@@ -82,14 +80,18 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
           if (moduleExports === undefined) return;
           const ConnectionPrototype: mysqlTypes.Connection =
             moduleExports.Connection.prototype;
-          this._unwrap(ConnectionPrototype, 'query');
-          this._unwrap(ConnectionPrototype, 'execute');
+          if (isWrapped(ConnectionPrototype.query)) {
+            this._unwrap(ConnectionPrototype, 'query');
+          }
+          if (isWrapped(ConnectionPrototype.execute)) {
+            this._unwrap(ConnectionPrototype, 'execute');
+          }
         }
       ),
     ];
   }
 
-  private _patchQuery(format: formatType, isPrepared: boolean) {
+  private _patchQuery(isPrepared: boolean) {
     return (originalQuery: Function): Function => {
       const thisPlugin = this;
       return function query(
@@ -110,7 +112,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
           attributes: {
             ...MySQL2Instrumentation.COMMON_ATTRIBUTES,
             ...getConnectionAttributes(this.config),
-            [SEMATTRS_DB_STATEMENT]: getDbStatement(query, format, values),
+            [SEMATTRS_DB_STATEMENT]: getDbStatement(query, values),
           },
         });
 
@@ -150,11 +152,10 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
               );
             }
           }
-
           span.end();
         });
 
-        if (arguments.length === 1) {
+        if (typeof arguments[arguments.length - 1] !== 'function') {
           if (typeof (query as any).onResult === 'function') {
             thisPlugin._wrap(
               query as any,
@@ -178,22 +179,13 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
             });
 
           return streamableQuery;
-        }
-
-        if (typeof arguments[1] === 'function') {
+        } else {
           thisPlugin._wrap(
             arguments,
-            1,
-            thisPlugin._patchCallbackQuery(endSpan)
-          );
-        } else if (typeof arguments[2] === 'function') {
-          thisPlugin._wrap(
-            arguments,
-            2,
+            arguments.length - 1,
             thisPlugin._patchCallbackQuery(endSpan)
           );
         }
-
         return originalQuery.apply(this, arguments);
       };
     };
