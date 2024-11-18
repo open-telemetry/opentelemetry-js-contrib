@@ -152,6 +152,10 @@ registerInstrumentations({
 ![Screenshot of the running example](images/main-sync.jpg)
 ![Screenshot of the running example](images/click-sync.jpg)
 
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
