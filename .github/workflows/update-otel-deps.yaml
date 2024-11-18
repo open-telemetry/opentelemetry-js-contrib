@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  create-or-update-release-pr:
+  create-or-update-deps-pr:
     runs-on: ubuntu-latest
     steps:
       - name: Fork
