@@ -53,6 +53,10 @@ Each call to `.load` or `.loadMany` will create a child span for the current act
 
 The batch load function of the dataloader also creates a span, which links to spans created as part of `.load` and `.loadMany`, it is a child span of whatever the active span is during which the dataloader is created.
 
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
