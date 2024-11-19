@@ -56,7 +56,7 @@ Reporting bugs is an important contribution. Please make sure to include:
 ### Before you start
 
 Please read project contribution
-[guide](https://github.com/open-telemetry/community/blob/main/CONTRIBUTING.md)
+[guide](https://github.com/open-telemetry/community/blob/main/guides/contributor/processes.md)
 for general practices for OpenTelemetry project.
 
 #### Conventional commit
