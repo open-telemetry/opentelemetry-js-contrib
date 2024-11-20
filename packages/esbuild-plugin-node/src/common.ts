@@ -23,7 +23,6 @@ export function wrapModule(
     moduleVersion,
     oTelInstrumentationPackage,
     oTelInstrumentationClass,
-    instrumentationName,
     oTelInstrumentationConstructorArgs = '',
   }: ModuleParams
 ) {
@@ -39,30 +38,28 @@ export function wrapModule(
   const { diag } = require('@opentelemetry/api');
   const instrumentations = new ${oTelInstrumentationClass}(${oTelInstrumentationConstructorArgs}).getModuleDefinitions();
 
-  if (instrumentations.length > 1 && !'${instrumentationName}') {
-    diag.error('instrumentationName must be specified because ${oTelInstrumentationClass} has multiple instrumentations');
-    return;
-  }
-  const instrumentation = ${
-    instrumentationName
-      ? `instrumentations.find(i => i.name === '${instrumentationName}')`
-      : 'instrumentations[0]'
-  };
+  for (const instrumentation of instrumentations) {
+    if (!instrumentation.supportedVersions.some(v => satisfies('${moduleVersion}', v))) {
+      diag.debug('Skipping instrumentation ${oTelInstrumentationClass}, because module version ${moduleVersion} does not match supported versions ' + instrumentation.supportedVersions.join(','));
+      continue;
+    }
 
-  if (instrumentation.patch) {
-    mod = instrumentation.patch(mod)
-  }
+    if (instrumentation.patch) {
+      diag.debug('Applying instrumentation patch ' + instrumentation.name + ' via esbuild-plugin-node');
+      mod = instrumentation.patch(mod)
+    }
 
-  if (instrumentation.files?.length) {
-    for (const file of instrumentation.files.filter(f => f.name === '${path}')) {
-      if (!file.supportedVersions.some(v => satisfies('${moduleVersion}', v))) {
-        diag.debug('Skipping instrumentation for ${path}@${moduleVersion} because it does not match supported versions ' + file.supportedVersions.join(','));
-        continue;
+    if (instrumentation.files?.length) {
+      for (const file of instrumentation.files.filter(f => f.name === '${path}')) {
+        if (!file.supportedVersions.some(v => satisfies('${moduleVersion}', v))) {
+          diag.debug('Skipping instrumentation for ${path}@${moduleVersion} because it does not match supported versions ' + file.supportedVersions.join(','));
+          continue;
+        }
+        diag.debug('Applying instrumentation patch to ${path}@${moduleVersion} via esbuild-plugin-node');
+        mod = file.patch(mod, '${moduleVersion}');
       }
-      mod = file.patch(mod, '${moduleVersion}');
     }
   }
-
 
   module.exports = mod;
 }
