@@ -56,8 +56,8 @@ export function openTelemetryPlugin(
           return;
         }
 
-        var path;
-        var extractedModule;
+        let path;
+        let extractedModule;
 
         try {
           const result = extractPackageAndModulePath(
