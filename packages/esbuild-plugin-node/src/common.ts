@@ -56,7 +56,7 @@ export function wrapModule(
   if (instrumentation.files?.length) {
     for (const file of instrumentation.files.filter(f => f.name === '${path}')) {
       if (!file.supportedVersions.some(v => satisfies('${moduleVersion}', v))) {
-        diag.debug('Skipping instrumentation for ' + path + '@' + moduleVersion + ' because it does not match supported versions' + f.supportedVersions.join(','));
+        diag.debug('Skipping instrumentation for ${path}@${moduleVersion} because it does not match supported versions ' + file.supportedVersions.join(','));
         continue;
       }
       mod = file.patch(mod, '${moduleVersion}');
