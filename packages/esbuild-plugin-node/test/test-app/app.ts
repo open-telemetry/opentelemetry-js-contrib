@@ -19,6 +19,7 @@ import { createClient } from 'redis';
 import fastify from 'fastify';
 import { graphql } from './graphql/adapter';
 import pino from 'pino';
+import { MongoClient } from 'mongodb';
 
 export const server = fastify({
   logger: pino({}, pino.destination(1)),
@@ -30,6 +31,11 @@ server.get('/test', async req => {
   req.log.info({ hi: 'there' }, 'Log message from handler');
 
   await redisClient.get('key').catch(() => void 0);
+
+  const mongoClient = await MongoClient.connect(`${process.env.MONGO_URL}`);
+  const db = mongoClient.db('sample-database')
+  const col = db.collection('sample-collection')
+  await col.insertOne({'hello': "test"})
 
   return { hi: 'there' };
 });
