@@ -32,10 +32,14 @@ server.get('/test', async req => {
 
   await redisClient.get('key').catch(() => void 0);
 
-  const mongoClient = await MongoClient.connect(`${process.env.MONGO_URL}`);
-  const db = mongoClient.db('sample-database')
-  const col = db.collection('sample-collection')
-  await col.insertOne({'hello': "test"})
+  try{
+    const mongoClient = await MongoClient.connect(`${process.env.MONGO_URL}`);
+    const db = mongoClient.db('sample-database')
+    const col = db.collection('sample-collection')
+    await col.insertOne({'hello': "test"})
+  } catch (e) {
+    req.log.info('Error connecting to MongoDB');
+  }
 
   return { hi: 'there' };
 });
