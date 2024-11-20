@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.47.1...instrumentation-pg-v0.48.0) (2024-11-18)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2535](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2535)) ([5223a6c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5223a6ca10c5930cf2753271e1e670ae682d6d9c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.42.0 to ^0.43.0
+
+## [0.47.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.47.0...instrumentation-pg-v0.47.1) (2024-11-07)
+
+
+### Bug Fixes
+
+* **pg:** Do not add SQLCommenter comments to prepared statements ([#2456](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2456)) ([8070c7f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8070c7f9e50110046b72a658e7fbd8d2f06b73e9))
+
 ## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.46.0...instrumentation-pg-v0.47.0) (2024-10-25)
 
 

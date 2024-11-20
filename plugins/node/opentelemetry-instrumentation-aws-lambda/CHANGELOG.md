@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.47.0...instrumentation-aws-lambda-v0.48.0) (2024-11-18)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2535](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2535)) ([5223a6c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5223a6ca10c5930cf2753271e1e670ae682d6d9c))
+
+## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.46.0...instrumentation-aws-lambda-v0.47.0) (2024-11-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **aws-lambda:** Remove explicit x-ray context in favor of global propagator ([#2369](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2369))
+
+### Features
+
+* **aws-lambda:** Remove explicit x-ray context in favor of global propagator ([#2369](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2369)) ([a926f53](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a926f536733a2add23464bd26988cf253bdda305))
+* **instrumentation-aws-lambda:** take care of ESM based (`.mjs`) handlers ([#2508](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2508)) ([0309cae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0309caeafc44ac9cb13a3345b790b01b76d0497d))
+
 ## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.45.0...instrumentation-aws-lambda-v0.46.0) (2024-10-25)
 
 

@@ -143,9 +143,12 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
             return;
         }
         // We use 'npm outdated -j ...' as a quick way to get the current
-        // installed version and latest published version of deps. The '-j'
-        // output shows a limited/random subset of data such that its `wanted`
-        // value cannot be used (see "npm outdated" perils above).
+        // installed version and latest published version of deps.
+        // Note: The '-j' output with npm@9 shows a limited/random subset of
+        // data such that its `wanted` value cannot be used (see "npm outdated"
+        // perils above). This has changed with npm@10 such that we might be
+        // able to use the `wanted` values now.
+        debug(`   $ cd ${wsDir} && npm outdated --json ${depNames.join(' ')}`);
         const p = spawnSync('npm', ['outdated', '--json'].concat(depNames), {
             cwd: wsDir,
             encoding: 'utf8',
@@ -156,13 +159,17 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
         }
 
         const npmInstallArgs = [];
+        let npmInstallingALocalDep = false;
         for (let depName of depNames) {
             if (!(depName in outdated)) {
                 continue;
             }
+            const anOutdatedEntry = Array.isArray(outdated[depName])
+              ? outdated[depName][0]
+              : outdated[depName];
             const summaryNote = localPkgNames.has(depName) ? ' (local)' : '';
-            const currVer = outdated[depName].current;
-            const latestVer = outdated[depName].latest;
+            const currVer = anOutdatedEntry.current;
+            const latestVer = anOutdatedEntry.latest;
             if (semver.satisfies(latestVer, info.deps[depName])) {
                 // `npm update` should suffice.
                 npmUpdatePkgNames.add(depName);
@@ -172,6 +179,9 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
             } else if (semver.lt(currVer, '1.0.0')) {
                 if (allowRangeBumpFor0x) {
                     npmInstallArgs.push(`${depName}@${latestVer}`);
+                    if (localPkgNames.has(depName)) {
+                      npmInstallingALocalDep = true;
+                    }
                     summaryStrs.add(
                         `${currVer} -> ${latestVer} ${depName} (range-bump)${summaryNote}`
                     );
@@ -192,6 +202,18 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
                 cwd: wsDir,
                 argv: ['npm', 'install'].concat(npmInstallArgs),
             });
+            if (npmInstallingALocalDep) {
+              // A surprise I've found with 'npm install ...': When the dep
+              // being updated (e.g. '@otel/foo@0.1.0' to '@otel/foo@0.2.0')
+              // is a *local* dep (i.e. it is another workspace in the same
+              // repo) then updating successfully sometimes requires running the
+              // 'npm install ...' **twice**.
+              npmInstallTasks.push({
+                  cwd: wsDir,
+                  argv: ['npm', 'install'].concat(npmInstallArgs),
+                  comment: 'second time because "npm install"ing a *local* dep can take two tries'
+              });
+            }
         }
     });
 
@@ -203,7 +225,7 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
     debug('npmInstallTasks: ', npmInstallTasks);
     debug('npmUpdatePkgNames: ', npmUpdatePkgNames);
     for (let task of npmInstallTasks) {
-        console.log(` $ cd ${task.cwd} && ${task.argv.join(' ')}`);
+        console.log(` $ cd ${task.cwd} && ${task.argv.join(' ')} ${task.comment ? `# ${task.comment}` : ''}`);
         if (!dryRun) {
             const p = spawnSync(task.argv[0], task.argv.slice(1), {
                 cwd: task.cwd,
