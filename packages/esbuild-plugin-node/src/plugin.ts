@@ -118,6 +118,7 @@ export function openTelemetryPlugin(
                 extractedModule.path || ''
               ),
               moduleVersion: pluginData.moduleVersion,
+              instrumentationName: pluginData.instrumentationName,
               oTelInstrumentationClass: config.oTelInstrumentationClass,
               oTelInstrumentationPackage: config.oTelInstrumentationPackage,
               oTelInstrumentationConstructorArgs:
