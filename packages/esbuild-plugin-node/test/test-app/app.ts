@@ -21,11 +21,17 @@ import { graphql } from './graphql/adapter';
 import pino from 'pino';
 import { MongoClient } from 'mongodb';
 
+const redisClient = createClient({ url: process.env.REDIS_URL });
+
 export const server = fastify({
   logger: pino({}, pino.destination(1)),
   disableRequestLogging: true,
+}).register(require('@fastify/rate-limit'), {
+  // Use @fastify/rate-limit to avoid CodeQL "Missing rate limiting" error in CI
+  global: true,
+  max: 100,
+  timeWindow: '1 minute',
 });
-const redisClient = createClient({ url: process.env.REDIS_URL });
 
 server.get('/test', async req => {
   req.log.info({ hi: 'there' }, 'Log message from handler');
