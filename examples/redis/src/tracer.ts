@@ -16,8 +16,9 @@ const EXPORTER = process.env.EXPORTER || '';
 export const setupTracing = (serviceName: string) => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: serviceName,
-  }),});
+      [SEMRESATTRS_SERVICE_NAME]: serviceName,
+    }),
+  });
 
   let exporter;
   if (EXPORTER.toLowerCase().startsWith('z')) {
@@ -32,10 +33,7 @@ export const setupTracing = (serviceName: string) => {
   provider.register();
 
   registerInstrumentations({
-    instrumentations: [
-      new HttpInstrumentation(),
-      new RedisInstrumentation(),
-    ],
+    instrumentations: [new HttpInstrumentation(), new RedisInstrumentation()],
     tracerProvider: provider,
   });
 

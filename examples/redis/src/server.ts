@@ -1,6 +1,6 @@
 'use strict';
 
-import { setupTracing } from './tracer'
+import { setupTracing } from './tracer';
 const tracer = setupTracing('example-redis-server');
 
 // Require in rest of modules
@@ -20,12 +20,9 @@ async function setupRoutes() {
   const redis = await redisPromise;
 
   app.get('/run_test', async (req: express.Request, res: express.Response) => {
-    const uuid = Math.random()
-      .toString(36)
-      .substring(2, 15)
-      + Math.random()
-        .toString(36)
-        .substring(2, 15);
+    const uuid =
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
     await axios.get(`http://localhost:${PORT}/set?args=uuid,${uuid}`);
     const body = await axios.get(`http://localhost:${PORT}/get?args=uuid`);
 
@@ -36,7 +33,7 @@ async function setupRoutes() {
     }
   });
 
-  app.get('/:cmd', (req: any , res: any) => {
+  app.get('/:cmd', (req: any, res: any) => {
     if (!req.query.args) {
       res.status(400).send('No args provided');
       return;

@@ -10,15 +10,15 @@ import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { Resource } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
 const EXPORTER = process.env.EXPORTER || '';
 
 export const setupTracing = (serviceName: string) => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: serviceName
-    })
+      [SEMRESATTRS_SERVICE_NAME]: serviceName,
+    }),
   });
 
   let exporter;
@@ -30,10 +30,7 @@ export const setupTracing = (serviceName: string) => {
   provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
   registerInstrumentations({
-    instrumentations: [
-      new KoaInstrumentation(),
-      new HttpInstrumentation(),
-    ],
+    instrumentations: [new KoaInstrumentation(), new HttpInstrumentation()],
     tracerProvider: provider,
   });
 
