@@ -37,13 +37,13 @@ docker run --rm --name jaeger \
 Run the server:
 
 ```sh
-npm run jaeger:server
+npm run server
 ```
 
 Then run the client in a separate terminal:
 
 ```sh
-npm run jaeger:client
+npm run client
 ```
 
 Visit the Jaeger UI at <http://localhost:16686/search>, select a service (e.g. "example-express-client"), click "Find Traces", then click on a trace to view it.
