@@ -1,6 +1,6 @@
 # Overview
 
-OpenTelemetry Express Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we can Jaeger for this example), to give observability to distributed systems.
+OpenTelemetry Express Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we use Jaeger for this example), to give observability to distributed systems.
 
 This is a simple example that demonstrates tracing calls made to Express API. The example
 shows key aspects of tracing such as
