@@ -38,7 +38,6 @@
     "@opentelemetry/sdk-trace-node": "^1.27.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "axios": "^1.6.0",
-    "cross-env": "^7.0.3",
     "express": "^4.17.1"
   },
   "devDependencies": {
