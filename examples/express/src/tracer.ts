@@ -15,7 +15,6 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { Resource } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME, ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 
-const Exporter = OTLPTraceExporter;
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import {HttpInstrumentation} from '@opentelemetry/instrumentation-http';
 
@@ -35,7 +34,7 @@ export const setupTracing = (serviceName: string) => {
     ],
   });
 
-  const exporter = new Exporter({});
+  const exporter = new OTLPTraceExporter({});
 
   provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 

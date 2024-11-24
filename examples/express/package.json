@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "description": "Example of Express integration with OpenTelemetry",
   "scripts": {
-    "jaeger:server": "cross-env EXPORTER=jaeger ts-node src/server.ts",
-    "jaeger:client": "cross-env EXPORTER=jaeger ts-node src/client.ts",
+    "server": "ts-node src/server.ts",
+    "client": "ts-node src/client.ts",
     "compile": "tsc -p ."
   },
   "repository": {
