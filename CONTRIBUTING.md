@@ -140,6 +140,7 @@ When two or more approaches must be compared, please write a benchmark in the be
 This repository contains many components which are maintained by more than the typical set of JS maintainers and approvers.
 Each component in this repository SHOULD have a component owner who is responsible for maintaining it.
 The README.md for each component SHOULD contain its owner, but the source of truth for component ownership is in [.github/component_owners.yml](.github/component_owners.yml).
+Each component owner SHOULD be listed in CODEOWNERS with the path to the component.
 Component owners are generally given authority to make decisions relating to implementation and feature requests for their components,
 provided they follow the best practices set out by the maintainers and the [mission, vision and values](https://github.com/open-telemetry/community/blob/main/mission-vision-values.md)
 of the OpenTelemetry Project.
@@ -148,6 +149,9 @@ Component owners MUST do their best to maintain a high level of quality, securit
 Maintainers may override the decisions of component owners, but should only do so when they feel one or more of these traits is compromised.
 
 ### Becoming a Component Owner
+
+To become a component owner, contributors MUST be a member of the OpenTelemetry GitHub organization.
+To become a member, follow the steps in the [community guidelines for membership requirements](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#requirements).
 
 To become a component owner, contributors SHOULD demonstrate prior knowledge of the instrumented package or the concepts therein.
 
@@ -306,6 +310,7 @@ When instrumentation cannot be included in a target package and there is good re
 Note that new instrumentation needs at least two contributors assigned to it as code-owners.  It is the responsibility
 of the requesting party to reach out and find code-owners for the proposed instrumentation. The instrumentation request
 needs to be accepted before any pull requests for the instrumentation can be considered for merging.
+Review the guidelines for [Becoming a Component Owner](#becoming-a-component-owner).
 
 Regardless of where instrumentation is hosted, it needs to be discoverable.
 The [OpenTelemetry registry](https://opentelemetry.io/registry/) exists to ensure that instrumentation is discoverable.
