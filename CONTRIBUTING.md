@@ -181,6 +181,7 @@ If all these conditions are met, aspiring component owners are encouraged to sel
 information provided on the issue - either approve or deny the ownership request. If the ownership request has been
 approved, the new component owner opens a PR to add themselves to the list of owners ([.github/component_owners.yml](.github/component_owners.yml))
 for that package.
+@open-telemetry/javascript-maintainers will add the component owner to @open-telemetry/javascript-contrib-triagers and to the CODEOWNERS file.
 
 ## Component Lifecycle
 
