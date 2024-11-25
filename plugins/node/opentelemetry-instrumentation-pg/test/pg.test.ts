@@ -53,6 +53,10 @@ import {
   DBSYSTEMVALUES_POSTGRESQL,
   ATTR_ERROR_TYPE,
 } from '@opentelemetry/semantic-conventions';
+import {
+  METRIC_DB_CLIENT_OPERATION_DURATION,
+  ATTR_DB_OPERATION_NAME,
+} from '@opentelemetry/semantic-conventions/incubating';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -849,15 +853,9 @@ describe('pg', () => {
           const [span] = memoryExporter.getFinishedSpans();
           assert.ok(span);
 
-          const commentedQuery = addSqlCommenterComment(
-            trace.wrapSpanContext(span.spanContext()),
-            query
-          );
-
           const executedQueries = getExecutedQueries();
           assert.equal(executedQueries.length, 1);
           assert.equal(executedQueries[0].text, query);
-          assert.notEqual(query, commentedQuery);
         } catch (e: any) {
           assert.ok(false, e.message);
         }
@@ -875,15 +873,11 @@ describe('pg', () => {
             assert.ok(res);
 
             const [span] = memoryExporter.getFinishedSpans();
-            const commentedQuery = addSqlCommenterComment(
-              trace.wrapSpanContext(span.spanContext()),
-              query
-            );
+            assert.ok(span);
 
             const executedQueries = getExecutedQueries();
             assert.equal(executedQueries.length, 1);
             assert.equal(executedQueries[0].text, query);
-            assert.notEqual(query, commentedQuery);
             done();
           },
         } as pg.QueryConfig);
@@ -948,6 +942,33 @@ describe('pg', () => {
       });
     });
 
+    it('should not add sqlcommenter comment when addSqlCommenterCommentToQueries=true is specified with a prepared statement', async () => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        try {
+          const query = 'SELECT NOW()';
+          const resPromise = await client.query({
+            text: query,
+            name: 'prepared sqlcommenter',
+          });
+          assert.ok(resPromise);
+
+          const [span] = memoryExporter.getFinishedSpans();
+          assert.ok(span);
+
+          const executedQueries = getExecutedQueries();
+          assert.equal(executedQueries.length, 1);
+          assert.equal(executedQueries[0].text, query);
+        } catch (e: any) {
+          assert.ok(false, e.message);
+        }
+      });
+    });
+
     it('should not generate traces for client.query() when requireParentSpan=true is specified', done => {
       instrumentation.setConfig({
         requireParentSpan: true,
@@ -984,7 +1005,7 @@ describe('pg', () => {
         const metrics = resourceMetrics.scopeMetrics[0].metrics;
         assert.strictEqual(
           metrics[0].descriptor.name,
-          'db.client.operation.duration'
+          METRIC_DB_CLIENT_OPERATION_DURATION
         );
         assert.strictEqual(
           metrics[0].descriptor.description,
@@ -995,7 +1016,58 @@ describe('pg', () => {
           dataPoint.attributes[SEMATTRS_DB_SYSTEM],
           DBSYSTEMVALUES_POSTGRESQL
         );
+        assert.strictEqual(
+          dataPoint.attributes[ATTR_DB_OPERATION_NAME],
+          'SELECT'
+        );
         assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], undefined);
+
+        const v = (dataPoint as DataPoint<Histogram>).value;
+        v.min = v.min ? v.min : 0;
+        v.max = v.max ? v.max : 0;
+        assert.equal(
+          v.min > 0,
+          true,
+          'expect min value for Histogram to be greater than 0'
+        );
+        assert.equal(
+          v.max > 0,
+          true,
+          'expect max value for Histogram to be greater than 0'
+        );
+        done();
+      });
+    });
+
+    it('should generate db.client.operation.duration metric with error attribute', done => {
+      client.query('SELECT foo from bar', async (err, ret) => {
+        assert.notEqual(err, null);
+        const { resourceMetrics, errors } = await metricReader.collect();
+        assert.deepEqual(
+          errors,
+          [],
+          'expected no errors from the callback during metric collection'
+        );
+
+        const metrics = resourceMetrics.scopeMetrics[0].metrics;
+        assert.strictEqual(
+          metrics[0].descriptor.name,
+          METRIC_DB_CLIENT_OPERATION_DURATION
+        );
+        assert.strictEqual(
+          metrics[0].descriptor.description,
+          'Duration of database client operations.'
+        );
+        const dataPoint = metrics[0].dataPoints[0];
+        assert.strictEqual(
+          dataPoint.attributes[SEMATTRS_DB_SYSTEM],
+          DBSYSTEMVALUES_POSTGRESQL
+        );
+        assert.strictEqual(
+          dataPoint.attributes[ATTR_DB_OPERATION_NAME],
+          'SELECT'
+        );
+        assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], '42P01');
 
         const v = (dataPoint as DataPoint<Histogram>).value;
         v.min = v.min ? v.min : 0;

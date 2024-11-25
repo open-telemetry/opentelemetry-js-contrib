@@ -23,9 +23,11 @@ import {
   SpanKind,
   diag,
   UpDownCounter,
+  Attributes,
 } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import {
+  ATTR_ERROR_TYPE,
   SEMATTRS_DB_SYSTEM,
   SEMATTRS_DB_NAME,
   SEMATTRS_DB_CONNECTION_STRING,
@@ -92,7 +94,7 @@ export function getQuerySpanName(
   return `${SpanNames.QUERY_PREFIX}:${command}${dbName ? ` ${dbName}` : ''}`;
 }
 
-function parseNormalizedOperationName(queryText: string) {
+export function parseNormalizedOperationName(queryText: string) {
   const indexOfFirstSpace = queryText.indexOf(' ');
   let sqlCommand =
     indexOfFirstSpace === -1
@@ -244,6 +246,7 @@ export function patchCallback(
   instrumentationConfig: PgInstrumentationConfig,
   span: Span,
   cb: PostgresCallback,
+  attributes: Attributes,
   recordDuration: { (): void }
 ): PostgresCallback {
   return function patchedCallback(
@@ -252,6 +255,10 @@ export function patchCallback(
     res: object
   ) {
     if (err) {
+      if (Object.prototype.hasOwnProperty.call(err, 'code')) {
+        attributes[ATTR_ERROR_TYPE] = (err as any)['code'];
+      }
+
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: err.message,
@@ -282,12 +289,12 @@ export interface poolConnectionsCounter {
 }
 
 export function updateCounter(
+  poolName: string,
   pool: PgPoolExtended,
   connectionCount: UpDownCounter,
   connectionPendingRequests: UpDownCounter,
   latestCounter: poolConnectionsCounter
 ): poolConnectionsCounter {
-  const poolName = getPoolName(pool.options);
   const all = pool.totalCount;
   const pending = pool.waitingCount;
   const idle = pool.idleCount;

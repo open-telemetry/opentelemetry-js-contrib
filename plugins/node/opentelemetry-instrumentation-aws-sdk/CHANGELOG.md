@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.46.0...instrumentation-aws-sdk-v0.47.0) (2024-11-18)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2535](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2535)) ([5223a6c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5223a6ca10c5930cf2753271e1e670ae682d6d9c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.30.12 to ^0.30.13
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.42.0 to ^0.43.0
+
+## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.45.0...instrumentation-aws-sdk-v0.46.0) (2024-11-07)
+
+
+### Features
+
+* **aws-sdk:** add s3 and kinesis service extensions for aws-sdk instrumentation ([#2361](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2361)) ([a5b5614](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a5b5614b18d0b77ce5772df9f286492879323c88))
+
+## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.44.0...instrumentation-aws-sdk-v0.45.0) (2024-10-25)
+
+
+### Features
+
+* update "@opentelemetry/*" dependencies to 1.27.0/0.54.0 ([2822511](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2822511a8acffb875ebd67ff2cf95980a9ddc01e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.30.11 to ^0.30.12
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.41.0 to ^0.42.0
+
 ## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.43.1...instrumentation-aws-sdk-v0.44.0) (2024-09-02)
 
 

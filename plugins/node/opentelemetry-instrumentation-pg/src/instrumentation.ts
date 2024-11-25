@@ -39,10 +39,12 @@ import {
   PostgresCallback,
   PgPoolExtended,
   PgPoolCallback,
+  EVENT_LISTENERS_SET,
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
 import {
@@ -62,6 +64,7 @@ import {
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
   METRIC_DB_CLIENT_OPERATION_DURATION,
   ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
 } from '@opentelemetry/semantic-conventions/incubating';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
@@ -124,7 +127,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   protected init() {
     const modulePG = new InstrumentationNodeModuleDefinition(
       'pg',
-      ['>=8.0.0 <9'],
+      ['>=8.0.3 <9'],
       (module: any) => {
         const moduleExports: typeof pgTypes =
           module[Symbol.toStringTag] === 'Module'
@@ -228,6 +231,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       ATTR_ERROR_TYPE,
       ATTR_SERVER_PORT,
       ATTR_SERVER_ADDRESS,
+      ATTR_DB_OPERATION_NAME,
     ];
 
     keysToCopy.forEach(key => {
@@ -282,6 +286,11 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           [ATTR_SERVER_ADDRESS]: this.connectionParameters.host,
         };
 
+        if (queryConfig?.text) {
+          attributes[ATTR_DB_OPERATION_NAME] =
+            utils.parseNormalizedOperationName(queryConfig?.text);
+        }
+
         const recordDuration = () => {
           plugin.recordOperationDuration(attributes, startTime);
         };
@@ -298,14 +307,17 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         // Modify query text w/ a tracing comment before invoking original for
         // tracing, but only if args[0] has one of our expected shapes.
         if (instrumentationConfig.addSqlCommenterCommentToQueries) {
-          args[0] = firstArgIsString
-            ? addSqlCommenterComment(span, arg0)
-            : firstArgIsQueryObjectWithText
-            ? {
-                ...arg0,
-                text: addSqlCommenterComment(span, arg0.text),
-              }
-            : args[0];
+          if (firstArgIsString) {
+            args[0] = addSqlCommenterComment(span, arg0);
+          } else if (firstArgIsQueryObjectWithText && !('name' in arg0)) {
+            // In the case of a query object, we need to ensure there's no name field
+            // as this indicates a prepared query, where the comment would remain the same
+            // for every invocation and contain an outdated trace context.
+            args[0] = {
+              ...arg0,
+              text: addSqlCommenterComment(span, arg0.text),
+            };
+          }
         }
 
         // Bind callback (if any) to parent span (if any)
@@ -317,6 +329,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               instrumentationConfig,
               span,
               args[args.length - 1] as PostgresCallback, // nb: not type safe.
+              attributes,
               recordDuration
             );
 
@@ -333,6 +346,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               plugin.getConfig(),
               span,
               queryConfig.callback as PostgresCallback, // nb: not type safe.
+              attributes,
               recordDuration
             );
 
@@ -406,6 +420,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               // Return a pass-along promise which ends the span and then goes to user's orig resolvers
               return new Promise(resolve => {
                 utils.handleExecutionResult(plugin.getConfig(), span, result);
+                recordDuration();
                 span.end();
                 resolve(result);
               });
@@ -416,6 +431,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
                   code: SpanStatusCode.ERROR,
                   message: error.message,
                 });
+                recordDuration();
                 span.end();
                 reject(error);
               });
@@ -426,6 +442,52 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         return result; // void
       };
     };
+  }
+
+  private _setPoolConnectEventListeners(pgPool: PgPoolExtended) {
+    if (pgPool[EVENT_LISTENERS_SET]) return;
+    const poolName = utils.getPoolName(pgPool.options);
+
+    pgPool.on('connect', () => {
+      this._connectionsCounter = utils.updateCounter(
+        poolName,
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+
+    pgPool.on('acquire', () => {
+      this._connectionsCounter = utils.updateCounter(
+        poolName,
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+
+    pgPool.on('remove', () => {
+      this._connectionsCounter = utils.updateCounter(
+        poolName,
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+
+    pgPool.on('release' as any, () => {
+      this._connectionsCounter = utils.updateCounter(
+        poolName,
+        pgPool,
+        this._connectionsCount,
+        this._connectionPendingRequests,
+        this._connectionsCounter
+      );
+    });
+    pgPool[EVENT_LISTENERS_SET] = true;
   }
 
   private _getPoolConnectPatch() {
@@ -442,41 +504,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           attributes: utils.getSemanticAttributesFromPool(this.options),
         });
 
-        this.on('connect', () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
-
-        this.on('acquire', () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
-
-        this.on('remove', () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
-
-        this.on('release' as any, () => {
-          plugin._connectionsCounter = utils.updateCounter(
-            this,
-            plugin._connectionsCount,
-            plugin._connectionPendingRequests,
-            plugin._connectionsCounter
-          );
-        });
+        plugin._setPoolConnectEventListeners(this);
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());

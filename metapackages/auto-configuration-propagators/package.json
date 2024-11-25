@@ -19,11 +19,10 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/auto-configuration-propagators --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",
+    "test": "nyc mocha 'test/**/*.ts'",
     "watch": "tsc -w"
   },
   "bugs": {
@@ -37,11 +36,9 @@
     "@types/mocha": "7.0.2",
     "@types/node": "18.18.14",
     "@types/sinon": "10.0.20",
-    "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {

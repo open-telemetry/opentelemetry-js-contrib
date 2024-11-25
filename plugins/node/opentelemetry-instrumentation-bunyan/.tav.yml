@@ -1,4 +1,6 @@
 bunyan:
   # Testing ^1.8.12 covers at least 95% of the downloaded versions
-  versions: "^1.8.12"
+  versions:
+    include: "^1.8.12"
+    mode: latest-minors
   commands: npm run test

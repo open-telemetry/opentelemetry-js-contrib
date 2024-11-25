@@ -74,6 +74,7 @@ import {
   normalizeExchange,
   unmarkConfirmChannelTracing,
 } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const supportedVersions = ['>=0.5.5 <1'];

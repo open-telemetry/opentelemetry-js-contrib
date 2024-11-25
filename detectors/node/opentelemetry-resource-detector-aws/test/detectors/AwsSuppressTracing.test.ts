@@ -32,9 +32,10 @@ describe('[Integration] Internal tracing', () => {
       'http://169.254.169.254/metadata';
 
     const memoryExporter = new InMemorySpanExporter();
+    const spanProcessor = new SimpleSpanProcessor(memoryExporter);
     const sdk = new NodeSDK({
       instrumentations: [new FsInstrumentation(), new HttpInstrumentation()],
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+      spanProcessors: [spanProcessor],
     });
     sdk.start();
 
@@ -58,7 +59,7 @@ describe('[Integration] Internal tracing', () => {
 
     // NOTE: the require process makes use of the fs API so spans are being exported.
     // We reset the exporter to have a clean state for assertions
-    await new Promise(r => setTimeout(r, 0));
+    await spanProcessor.forceFlush();
     memoryExporter.reset();
 
     const detectors = [

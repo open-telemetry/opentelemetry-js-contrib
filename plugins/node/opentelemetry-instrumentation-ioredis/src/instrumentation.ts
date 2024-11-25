@@ -33,6 +33,7 @@ import {
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { endSpan } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {

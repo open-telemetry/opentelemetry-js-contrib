@@ -19,6 +19,7 @@ import { isWrapped } from '@opentelemetry/core';
 import * as shimmer from 'shimmer';
 import { AttributeNames } from './enums/AttributeNames';
 import * as React from 'react';
+/** @knipignore */
 import { PACKAGE_VERSION } from './version';
 import {
   RenderFunction,
