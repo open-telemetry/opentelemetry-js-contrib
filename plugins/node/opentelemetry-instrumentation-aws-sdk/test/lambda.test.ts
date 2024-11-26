@@ -22,10 +22,10 @@ import {
 registerInstrumentationTesting(new AwsInstrumentation());
 
 import {
-  SEMATTRS_FAAS_EXECUTION,
-  SEMATTRS_FAAS_INVOKED_NAME,
-  SEMATTRS_FAAS_INVOKED_PROVIDER,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_FAAS_INVOCATION_ID,
+  ATTR_FAAS_INVOKED_NAME,
+  ATTR_FAAS_INVOKED_PROVIDER,
+} from '@opentelemetry/semantic-conventions/incubating';
 import { SpanKind } from '@opentelemetry/api';
 
 import { Lambda, InvocationType } from '@aws-sdk/client-lambda';
@@ -94,7 +94,7 @@ describe('Lambda', () => {
         };
         const span = await getInvokedSpan(params);
 
-        expect(span.attributes[SEMATTRS_FAAS_INVOKED_PROVIDER]).toEqual('aws');
+        expect(span.attributes[ATTR_FAAS_INVOKED_PROVIDER]).toEqual('aws');
       });
 
       it('should add the function name as a semantic attribute', async () => {
@@ -109,7 +109,7 @@ describe('Lambda', () => {
         };
         const span = await getInvokedSpan(params);
 
-        expect(span.attributes[SEMATTRS_FAAS_INVOKED_NAME]).toEqual(
+        expect(span.attributes[ATTR_FAAS_INVOKED_NAME]).toEqual(
           'ot-test-function-name'
         );
       });
@@ -349,10 +349,10 @@ describe('Lambda', () => {
         const [span] = getTestSpans();
 
         expect(span.kind).toEqual(SpanKind.CLIENT);
-        expect(span.attributes[SEMATTRS_FAAS_INVOKED_NAME]).toEqual(
+        expect(span.attributes[ATTR_FAAS_INVOKED_NAME]).toEqual(
           'ot-test-function-name'
         );
-        expect(span.attributes[SEMATTRS_FAAS_INVOKED_PROVIDER]).toEqual('aws');
+        expect(span.attributes[ATTR_FAAS_INVOKED_PROVIDER]).toEqual('aws');
       });
     });
 
@@ -385,7 +385,7 @@ describe('Lambda', () => {
       expect(getTestSpans().length).toBe(1);
       const [span] = getTestSpans();
 
-      expect(span.attributes[SEMATTRS_FAAS_EXECUTION]).toEqual(
+      expect(span.attributes[ATTR_FAAS_INVOCATION_ID]).toEqual(
         '95882c2b-3fd2-485d-ada3-9fcb1ca65459'
       );
     });

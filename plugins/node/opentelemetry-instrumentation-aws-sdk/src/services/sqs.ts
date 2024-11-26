@@ -35,13 +35,15 @@ import {
   MESSAGINGDESTINATIONKINDVALUES_QUEUE,
   MESSAGINGOPERATIONVALUES_PROCESS,
   MESSAGINGOPERATIONVALUES_RECEIVE,
-  SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
-  SEMATTRS_MESSAGING_MESSAGE_ID,
-  SEMATTRS_MESSAGING_OPERATION,
-  SEMATTRS_MESSAGING_SYSTEM,
   SEMATTRS_MESSAGING_URL,
 } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION,
+  ATTR_MESSAGING_SYSTEM,
+} from '@opentelemetry/semantic-conventions/incubating';
 import {
   contextGetter,
   extractPropagationContext,
@@ -60,10 +62,10 @@ export class SqsServiceExtension implements ServiceExtension {
     let spanName: string | undefined;
 
     const spanAttributes: Attributes = {
-      [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sqs',
+      [ATTR_MESSAGING_SYSTEM]: 'aws.sqs',
       [SEMATTRS_MESSAGING_DESTINATION_KIND]:
         MESSAGINGDESTINATIONKINDVALUES_QUEUE,
-      [SEMATTRS_MESSAGING_DESTINATION]: queueName,
+      [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
       [SEMATTRS_MESSAGING_URL]: queueUrl,
     };
 
@@ -75,7 +77,7 @@ export class SqsServiceExtension implements ServiceExtension {
           isIncoming = true;
           spanKind = SpanKind.CONSUMER;
           spanName = `${queueName} receive`;
-          spanAttributes[SEMATTRS_MESSAGING_OPERATION] =
+          spanAttributes[ATTR_MESSAGING_OPERATION] =
             MESSAGINGOPERATIONVALUES_RECEIVE;
 
           request.commandInput.MessageAttributeNames =
@@ -139,10 +141,7 @@ export class SqsServiceExtension implements ServiceExtension {
   ) => {
     switch (response.request.commandName) {
       case 'SendMessage':
-        span.setAttribute(
-          SEMATTRS_MESSAGING_MESSAGE_ID,
-          response?.data?.MessageId
-        );
+        span.setAttribute(ATTR_MESSAGING_MESSAGE_ID, response?.data?.MessageId);
         break;
 
       case 'SendMessageBatch':
@@ -170,14 +169,13 @@ export class SqsServiceExtension implements ServiceExtension {
                 contextGetter
               ),
               attributes: {
-                [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sqs',
-                [SEMATTRS_MESSAGING_DESTINATION]: queueName,
+                [ATTR_MESSAGING_SYSTEM]: 'aws.sqs',
+                [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
                 [SEMATTRS_MESSAGING_DESTINATION_KIND]:
                   MESSAGINGDESTINATIONKINDVALUES_QUEUE,
-                [SEMATTRS_MESSAGING_MESSAGE_ID]: message.MessageId,
+                [ATTR_MESSAGING_MESSAGE_ID]: message.MessageId,
                 [SEMATTRS_MESSAGING_URL]: queueUrl,
-                [SEMATTRS_MESSAGING_OPERATION]:
-                  MESSAGINGOPERATIONVALUES_PROCESS,
+                [ATTR_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
               },
             }),
             processHook: (span: Span, message: SQS.Message) =>

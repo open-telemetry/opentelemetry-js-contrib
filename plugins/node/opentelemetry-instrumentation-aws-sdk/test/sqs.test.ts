@@ -29,17 +29,19 @@ import {
   MESSAGINGDESTINATIONKINDVALUES_QUEUE,
   MESSAGINGOPERATIONVALUES_PROCESS,
   MESSAGINGOPERATIONVALUES_RECEIVE,
-  SEMATTRS_HTTP_STATUS_CODE,
-  SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
-  SEMATTRS_MESSAGING_MESSAGE_ID,
-  SEMATTRS_MESSAGING_OPERATION,
-  SEMATTRS_MESSAGING_SYSTEM,
   SEMATTRS_MESSAGING_URL,
-  SEMATTRS_RPC_METHOD,
-  SEMATTRS_RPC_SERVICE,
-  SEMATTRS_RPC_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_HTTP_STATUS_CODE,
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION,
+  ATTR_MESSAGING_SYSTEM,
+  ATTR_RPC_METHOD,
+  ATTR_RPC_SERVICE,
+  ATTR_RPC_SYSTEM,
+} from '@opentelemetry/semantic-conventions/incubating';
 import {
   context,
   SpanKind,
@@ -189,14 +191,14 @@ describe('SQS', () => {
     ) => {
       const awsReceiveSpan = spans.filter(
         s =>
-          s.attributes[SEMATTRS_MESSAGING_OPERATION] ===
+          s.attributes[ATTR_MESSAGING_OPERATION] ===
           MESSAGINGOPERATIONVALUES_RECEIVE
       );
       expect(awsReceiveSpan.length).toBe(1);
 
       const processSpans = spans.filter(
         s =>
-          s.attributes[SEMATTRS_MESSAGING_OPERATION] ===
+          s.attributes[ATTR_MESSAGING_OPERATION] ===
           MESSAGINGOPERATIONVALUES_PROCESS
       );
       expect(processSpans.length).toBe(2);
@@ -392,24 +394,24 @@ describe('SQS', () => {
       const [span] = getTestSpans();
 
       // make sure we have the general aws attributes:
-      expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
-      expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('SendMessage');
-      expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('SQS');
+      expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+      expect(span.attributes[ATTR_RPC_METHOD]).toEqual('SendMessage');
+      expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('SQS');
       expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
 
       // custom messaging attributes
-      expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual('aws.sqs');
+      expect(span.attributes[ATTR_MESSAGING_SYSTEM]).toEqual('aws.sqs');
       expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]).toEqual(
         MESSAGINGDESTINATIONKINDVALUES_QUEUE
       );
-      expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
+      expect(span.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toEqual(
         QueueName
       );
       expect(span.attributes[SEMATTRS_MESSAGING_URL]).toEqual(params.QueueUrl);
-      expect(span.attributes[SEMATTRS_MESSAGING_MESSAGE_ID]).toEqual(
+      expect(span.attributes[ATTR_MESSAGING_MESSAGE_ID]).toEqual(
         response.MessageId
       );
-      expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
+      expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
     });
 
     it('sqsProcessHook called and add message attribute to span', async () => {
@@ -439,7 +441,7 @@ describe('SQS', () => {
 
       const processSpans = getTestSpans().filter(
         s =>
-          s.attributes[SEMATTRS_MESSAGING_OPERATION] ===
+          s.attributes[ATTR_MESSAGING_OPERATION] ===
           MESSAGINGOPERATIONVALUES_PROCESS
       );
       expect(processSpans.length).toBe(2);
@@ -463,7 +465,7 @@ describe('SQS', () => {
       );
       const processSpans = getTestSpans().filter(
         s =>
-          s.attributes[SEMATTRS_MESSAGING_OPERATION] ===
+          s.attributes[ATTR_MESSAGING_OPERATION] ===
           MESSAGINGOPERATIONVALUES_PROCESS
       );
       expect(processSpans.length).toBe(2);
@@ -492,7 +494,7 @@ describe('SQS', () => {
 
       const processSpans = getTestSpans().filter(
         s =>
-          s.attributes[SEMATTRS_MESSAGING_OPERATION] ===
+          s.attributes[ATTR_MESSAGING_OPERATION] ===
           MESSAGINGOPERATIONVALUES_PROCESS
       );
       expect(processSpans.length).toBe(2);
@@ -518,9 +520,7 @@ describe('SQS', () => {
       expect(spans.length).toBe(1);
 
       // Spot check a single attribute as a sanity check.
-      expect(spans[0].attributes[SEMATTRS_RPC_METHOD]).toEqual(
-        'SendMessageBatch'
-      );
+      expect(spans[0].attributes[ATTR_RPC_METHOD]).toEqual('SendMessageBatch');
     });
   });
 

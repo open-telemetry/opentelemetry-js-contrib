@@ -16,10 +16,12 @@
 import { Span, Tracer, SpanKind, Attributes } from '@opentelemetry/api';
 import {
   MESSAGINGDESTINATIONKINDVALUES_TOPIC,
-  SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
-  SEMATTRS_MESSAGING_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_SYSTEM,
+} from '@opentelemetry/semantic-conventions/incubating';
 import {
   NormalizedRequest,
   NormalizedResponse,
@@ -36,7 +38,7 @@ export class SnsServiceExtension implements ServiceExtension {
     let spanKind: SpanKind = SpanKind.CLIENT;
     let spanName = `SNS ${request.commandName}`;
     const spanAttributes: Attributes = {
-      [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sns',
+      [ATTR_MESSAGING_SYSTEM]: 'aws.sns',
     };
 
     if (request.commandName === 'Publish') {
@@ -45,16 +47,13 @@ export class SnsServiceExtension implements ServiceExtension {
       spanAttributes[SEMATTRS_MESSAGING_DESTINATION_KIND] =
         MESSAGINGDESTINATIONKINDVALUES_TOPIC;
       const { TopicArn, TargetArn, PhoneNumber } = request.commandInput;
-      spanAttributes[SEMATTRS_MESSAGING_DESTINATION] =
+      spanAttributes[ATTR_MESSAGING_DESTINATION_NAME] =
         this.extractDestinationName(TopicArn, TargetArn, PhoneNumber);
-      // ToDO: Use SEMATTRS_MESSAGING_DESTINATION_NAME when implemented
-      spanAttributes['messaging.destination.name'] =
-        TopicArn || TargetArn || PhoneNumber || 'unknown';
 
       spanName = `${
         PhoneNumber
           ? 'phone_number'
-          : spanAttributes[SEMATTRS_MESSAGING_DESTINATION]
+          : spanAttributes[ATTR_MESSAGING_DESTINATION_NAME]
       } send`;
     }
 
