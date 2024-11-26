@@ -16,6 +16,7 @@
 import { Span, Tracer, SpanKind, Attributes } from '@opentelemetry/api';
 import {
   MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+  SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
 } from '@opentelemetry/semantic-conventions';
 import {
@@ -47,13 +48,15 @@ export class SnsServiceExtension implements ServiceExtension {
       spanAttributes[SEMATTRS_MESSAGING_DESTINATION_KIND] =
         MESSAGINGDESTINATIONKINDVALUES_TOPIC;
       const { TopicArn, TargetArn, PhoneNumber } = request.commandInput;
-      spanAttributes[ATTR_MESSAGING_DESTINATION_NAME] =
+      spanAttributes[SEMATTRS_MESSAGING_DESTINATION] =
         this.extractDestinationName(TopicArn, TargetArn, PhoneNumber);
+      spanAttributes[ATTR_MESSAGING_DESTINATION_NAME] =
+        TopicArn || TargetArn || PhoneNumber || 'unknown';
 
       spanName = `${
         PhoneNumber
           ? 'phone_number'
-          : spanAttributes[ATTR_MESSAGING_DESTINATION_NAME]
+          : spanAttributes[SEMATTRS_MESSAGING_DESTINATION]
       } send`;
     }
 

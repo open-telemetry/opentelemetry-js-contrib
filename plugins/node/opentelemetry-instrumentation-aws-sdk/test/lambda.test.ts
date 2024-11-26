@@ -21,6 +21,7 @@ import {
 } from '@opentelemetry/contrib-test-utils';
 registerInstrumentationTesting(new AwsInstrumentation());
 
+import { SEMATTRS_FAAS_EXECUTION } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_FAAS_INVOCATION_ID,
   ATTR_FAAS_INVOKED_NAME,
@@ -385,6 +386,9 @@ describe('Lambda', () => {
       expect(getTestSpans().length).toBe(1);
       const [span] = getTestSpans();
 
+      expect(span.attributes[SEMATTRS_FAAS_EXECUTION]).toEqual(
+        '95882c2b-3fd2-485d-ada3-9fcb1ca65459'
+      );
       expect(span.attributes[ATTR_FAAS_INVOCATION_ID]).toEqual(
         '95882c2b-3fd2-485d-ada3-9fcb1ca65459'
       );

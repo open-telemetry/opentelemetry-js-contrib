@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import { Span, SpanKind, Tracer, diag, Attributes } from '@opentelemetry/api';
+import { SEMATTRS_FAAS_EXECUTION } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_FAAS_INVOCATION_ID,
   ATTR_FAAS_INVOKED_NAME,
@@ -85,6 +86,7 @@ export class LambdaServiceExtension implements ServiceExtension {
     switch (response.request.commandName) {
       case LambdaCommands.Invoke:
         {
+          span.setAttribute(SEMATTRS_FAAS_EXECUTION, response.requestId);
           span.setAttribute(ATTR_FAAS_INVOCATION_ID, response.requestId);
         }
         break;

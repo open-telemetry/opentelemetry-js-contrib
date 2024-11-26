@@ -35,6 +35,7 @@ import {
   MESSAGINGDESTINATIONKINDVALUES_QUEUE,
   MESSAGINGOPERATIONVALUES_PROCESS,
   MESSAGINGOPERATIONVALUES_RECEIVE,
+  SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
   SEMATTRS_MESSAGING_URL,
 } from '@opentelemetry/semantic-conventions';
@@ -65,6 +66,7 @@ export class SqsServiceExtension implements ServiceExtension {
       [ATTR_MESSAGING_SYSTEM]: 'aws.sqs',
       [SEMATTRS_MESSAGING_DESTINATION_KIND]:
         MESSAGINGDESTINATIONKINDVALUES_QUEUE,
+      [SEMATTRS_MESSAGING_DESTINATION]: queueName,
       [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
       [SEMATTRS_MESSAGING_URL]: queueUrl,
     };
@@ -170,6 +172,7 @@ export class SqsServiceExtension implements ServiceExtension {
               ),
               attributes: {
                 [ATTR_MESSAGING_SYSTEM]: 'aws.sqs',
+                [SEMATTRS_MESSAGING_DESTINATION]: queueName,
                 [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
                 [SEMATTRS_MESSAGING_DESTINATION_KIND]:
                   MESSAGINGDESTINATIONKINDVALUES_QUEUE,

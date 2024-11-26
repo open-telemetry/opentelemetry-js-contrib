@@ -29,6 +29,7 @@ import {
   MESSAGINGDESTINATIONKINDVALUES_QUEUE,
   MESSAGINGOPERATIONVALUES_PROCESS,
   MESSAGINGOPERATIONVALUES_RECEIVE,
+  SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
   SEMATTRS_MESSAGING_URL,
 } from '@opentelemetry/semantic-conventions';
@@ -403,6 +404,9 @@ describe('SQS', () => {
       expect(span.attributes[ATTR_MESSAGING_SYSTEM]).toEqual('aws.sqs');
       expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]).toEqual(
         MESSAGINGDESTINATIONKINDVALUES_QUEUE
+      );
+      expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
+        QueueName
       );
       expect(span.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toEqual(
         QueueName

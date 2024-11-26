@@ -32,6 +32,7 @@ import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as sinon from 'sinon';
 import {
   MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+  SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
 } from '@opentelemetry/semantic-conventions';
 import {
@@ -86,8 +87,11 @@ describe('SNS - v2', () => {
       expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]).toBe(
         MESSAGINGDESTINATIONKINDVALUES_TOPIC
       );
-      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+      expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toBe(
         topicName
+      );
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+        fakeARN
       );
       expect(publishSpan.attributes[ATTR_RPC_METHOD]).toBe('Publish');
       expect(publishSpan.attributes[ATTR_MESSAGING_SYSTEM]).toBe('aws.sns');
@@ -109,6 +113,9 @@ describe('SNS - v2', () => {
       );
       expect(publishSpans.length).toBe(1);
       const publishSpan = publishSpans[0];
+      expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toBe(
+        PhoneNumber
+      );
       expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
         PhoneNumber
       );
@@ -156,6 +163,9 @@ describe('SNS - v2', () => {
         createTopicSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
       ).toBeUndefined();
       expect(
+        createTopicSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]
+      ).toBeUndefined();
+      expect(
         createTopicSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]
       ).toBeUndefined();
       expect(createTopicSpan.kind).toBe(SpanKind.CLIENT);
@@ -201,8 +211,11 @@ describe('SNS - v3', () => {
       expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]).toBe(
         MESSAGINGDESTINATIONKINDVALUES_TOPIC
       );
-      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+      expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toBe(
         topicV3Name
+      );
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+        topicV3ARN
       );
       expect(publishSpan.attributes[ATTR_RPC_METHOD]).toBe('Publish');
       expect(publishSpan.attributes[ATTR_MESSAGING_SYSTEM]).toBe('aws.sns');
@@ -221,7 +234,7 @@ describe('SNS - v3', () => {
       );
       expect(publishSpans.length).toBe(1);
       const publishSpan = publishSpans[0];
-      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+      expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toBe(
         PhoneNumber
       );
     });
