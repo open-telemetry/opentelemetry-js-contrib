@@ -93,7 +93,7 @@ export class SnsServiceExtension implements ServiceExtension {
     if (topicArn || targetArn) {
       const arn = topicArn ?? targetArn;
       try {
-        return arn.substr(arn.lastIndexOf(':') + 1);
+        return arn.substring(arn.lastIndexOf(':') + 1);
       } catch (err) {
         return arn;
       }
