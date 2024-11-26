@@ -28,7 +28,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import type * as mysqlTypes from 'mysql2';
-import { MySQL2InstrumentationConfig } from './types';
+import { MySQL2InstrumentationConfig, MySQL2RequestInfo } from './types';
 import {
   getConnectionAttributes,
   getDbStatement,
@@ -104,7 +104,30 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
           values = [_valuesOrCallback];
         }
 
-        const span = thisPlugin.tracer.startSpan(getSpanName(query), {
+        const defaultSpanName = getSpanName(query);
+        const mysql2RequestInfo: MySQL2RequestInfo = {
+          query,
+          values,
+          database: this.config.database,
+          host: this.config.host,
+        };
+        const spanNameHook = thisPlugin.getConfig().spanNameHook;
+        let spanName = defaultSpanName;
+        if (spanNameHook) {
+          spanName =
+            safeExecuteInTheMiddle(
+              () => spanNameHook(mysql2RequestInfo, defaultSpanName),
+              (err, result) => {
+                if (err) {
+                  thisPlugin._diag.warn('Failed executing spanNameHook', err);
+                }
+                return result;
+              },
+              true
+            ) ?? defaultSpanName;
+        }
+
+        const span = thisPlugin.tracer.startSpan(spanName, {
           kind: api.SpanKind.CLIENT,
           attributes: {
             ...MySQL2Instrumentation.COMMON_ATTRIBUTES,

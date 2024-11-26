@@ -16,6 +16,7 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type { Span } from '@opentelemetry/api';
+import type { Query, QueryOptions } from 'mysql2';
 
 export interface MySQL2ResponseHookInformation {
   queryResults: any;
@@ -25,6 +26,22 @@ export interface MySQL2InstrumentationExecutionResponseHook {
   (span: Span, responseHookInfo: MySQL2ResponseHookInformation): void;
 }
 
+export interface MySQL2RequestInfo {
+  host?: string;
+  database?: string;
+  query: string | Query | QueryOptions;
+  values?: unknown[];
+}
+
+export type SpanNameHook = (
+  info: MySQL2RequestInfo,
+  /**
+   * If no decision is taken based on RequestInfo, the default name
+   * supplied by the instrumentation can be used instead.
+   */
+  defaultName: string
+) => string;
+
 export interface MySQL2InstrumentationConfig extends InstrumentationConfig {
   /**
    * Hook that allows adding custom span attributes based on the data
@@ -33,6 +50,11 @@ export interface MySQL2InstrumentationConfig extends InstrumentationConfig {
    * @default undefined
    */
   responseHook?: MySQL2InstrumentationExecutionResponseHook;
+
+  /**
+   * Hook to override the name for an SQL span
+   */
+  spanNameHook?: SpanNameHook;
 
   /**
    * If true, queries are modified to also include a comment with

@@ -1100,6 +1100,110 @@ describe('mysql2', () => {
     });
   });
 
+  describe('#spanNameHook', () => {
+    it('span hook gets request info as parameters', done => {
+      const config: MySQL2InstrumentationConfig = {
+        spanNameHook: (info, defaultName) => {
+          assert.strictEqual(defaultName, 'SELECT');
+          assert.deepStrictEqual(info, {
+            database: 'test_db',
+            host: '127.0.0.1',
+            query: 'SELECT ? as solution',
+            values: ['otel-user'],
+          });
+          return defaultName;
+        },
+      };
+      instrumentation.setConfig(config);
+
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT ? as solution';
+        const query = connection.query(sql, ['otel-user']);
+
+        query.on('end', () => {
+          done();
+        });
+      });
+    });
+
+    describe('valid span name hook', () => {
+      beforeEach(() => {
+        const config: MySQL2InstrumentationConfig = {
+          spanNameHook: (info, defaultName) => {
+            const query =
+              typeof info.query === 'string' ? info.query : info.query.sql;
+            const prioritizedSqlVerbs = [
+              'DROP',
+              'DELETE',
+              'INSERT',
+              'UPDATE',
+              'SELECT',
+            ];
+            for (const verb of prioritizedSqlVerbs) {
+              if (query.includes(verb)) {
+                return verb;
+              }
+            }
+            return 'UNKNOWN';
+          },
+        };
+        instrumentation.setConfig(config);
+      });
+
+      it('should set span name using spanNameHook', done => {
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          const sql =
+            'WITH number AS (SELECT 1+1 as solution) SELECT solution FROM number';
+          connection.query(
+            sql,
+            ['otel-user'],
+            (err, res: mysqlTypes.RowDataPacket[]) => {
+              assert.ifError(err);
+              assert.ok(res);
+              console.log(res[0]);
+              assert.strictEqual(res[0].solution, 2);
+              const spans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(spans.length, 1);
+              assertSpan(spans[0], sql);
+              assert.strictEqual(spans[0].name, 'SELECT');
+              done();
+            }
+          );
+        });
+      });
+    });
+
+    describe('invalid span name hook', () => {
+      beforeEach(() => {
+        const config: MySQL2InstrumentationConfig = {
+          spanNameHook: () => {
+            throw new Error('could not decide on a name');
+          },
+        };
+        instrumentation.setConfig(config);
+      });
+
+      it('should not affect the behavior of the query', done => {
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          const sql = 'SELECT 1+1 as solution';
+          connection.query(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql);
+            assert.strictEqual(spans[0].name, 'SELECT');
+            done();
+          });
+        });
+      });
+    });
+  });
+
   describe('#responseHook', () => {
     const queryResultAttribute = 'query_result';
 
