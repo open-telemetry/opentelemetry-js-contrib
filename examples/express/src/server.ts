@@ -1,11 +1,11 @@
-import { setupTracing } from './tracer'
+import { setupTracing } from './tracer';
 
 setupTracing('example-express-server');
 
 // Require in rest of modules
 import * as express from 'express';
 import { default as axios } from 'axios';
-import { RequestHandler } from "express";
+import { RequestHandler } from 'express';
 
 // Setup express
 const app = express();
@@ -32,19 +32,21 @@ const authMiddleware: RequestHandler = (req, res, next) => {
 };
 
 app.use(express.json());
-app.get('/health', (req, res) => res.status(200).send("HEALTHY")); // endpoint that is called by framework/cluster
+app.get('/health', (req, res) => res.status(200).send('HEALTHY')); // endpoint that is called by framework/cluster
 app.get('/run_test', async (req, res) => {
   // Calls another endpoint of the same API, somewhat mimicking an external API call
-  const createdCat = await axios.post(`http://localhost:${PORT}/cats`, {
-    name: 'Tom',
-    friends: [
-      'Jerry',
-    ],
-  }, {
-    headers: {
-      Authorization: 'secret_token',
+  const createdCat = await axios.post(
+    `http://localhost:${PORT}/cats`,
+    {
+      name: 'Tom',
+      friends: ['Jerry'],
     },
-  });
+    {
+      headers: {
+        Authorization: 'secret_token',
+      },
+    }
+  );
 
   return res.status(201).send(createdCat.data);
 });

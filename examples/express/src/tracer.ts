@@ -1,6 +1,6 @@
 'use strict';
 
-import { SpanKind, Attributes } from "@opentelemetry/api";
+import { SpanKind, Attributes } from '@opentelemetry/api';
 
 const opentelemetry = require('@opentelemetry/api');
 
@@ -10,13 +10,22 @@ diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { Sampler, AlwaysOnSampler, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import {
+  Sampler,
+  AlwaysOnSampler,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace-base';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { Resource } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME, SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
+import {
+  SEMRESATTRS_SERVICE_NAME,
+  SEMATTRS_HTTP_ROUTE,
+} from '@opentelemetry/semantic-conventions';
 
-const Exporter = (process.env.EXPORTER || '').toLowerCase().startsWith('z') ? ZipkinExporter : OTLPTraceExporter;
+const Exporter = (process.env.EXPORTER || '').toLowerCase().startsWith('z')
+  ? ZipkinExporter
+  : OTLPTraceExporter;
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 
@@ -48,7 +57,11 @@ export const setupTracing = (serviceName: string) => {
   return opentelemetry.trace.getTracer(serviceName);
 };
 
-type FilterFunction = (spanName: string, spanKind: SpanKind, attributes: Attributes) => boolean;
+type FilterFunction = (
+  spanName: string,
+  spanKind: SpanKind,
+  attributes: Attributes
+) => boolean;
 
 function filterSampler(filterFn: FilterFunction, parent: Sampler): Sampler {
   return {
@@ -60,10 +73,17 @@ function filterSampler(filterFn: FilterFunction, parent: Sampler): Sampler {
     },
     toString() {
       return `FilterSampler(${parent.toString()})`;
-    }
-  }
+    },
+  };
 }
 
-function ignoreHealthCheck(spanName: string, spanKind: SpanKind, attributes: Attributes) {
-  return spanKind !== opentelemetry.SpanKind.SERVER || attributes[SEMATTRS_HTTP_ROUTE] !== "/health";
+function ignoreHealthCheck(
+  spanName: string,
+  spanKind: SpanKind,
+  attributes: Attributes
+) {
+  return (
+    spanKind !== opentelemetry.SpanKind.SERVER ||
+    attributes[SEMATTRS_HTTP_ROUTE] !== '/health'
+  );
 }

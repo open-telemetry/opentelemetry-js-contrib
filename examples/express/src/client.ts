@@ -1,7 +1,7 @@
 'use strict';
 
 // eslint-disable-next-line import/order
-import { setupTracing } from "./tracer";
+import { setupTracing } from './tracer';
 const tracer = setupTracing('example-express-client');
 
 import * as api from '@opentelemetry/api';
@@ -24,8 +24,12 @@ function makeRequest() {
       }
     }
     span.end();
-    console.log('Sleeping 5 seconds before shutdown to ensure all records are flushed.');
-    setTimeout(() => { console.log('Completed.'); }, 5000);
+    console.log(
+      'Sleeping 5 seconds before shutdown to ensure all records are flushed.'
+    );
+    setTimeout(() => {
+      console.log('Completed.');
+    }, 5000);
   });
 }
 
