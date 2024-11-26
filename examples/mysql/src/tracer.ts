@@ -13,14 +13,15 @@ import {
   MeterProvider,
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
-const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-grpc');
+const {
+  OTLPMetricExporter,
+} = require('@opentelemetry/exporter-metrics-otlp-grpc');
 
 const EXPORTER = process.env.EXPORTER || '';
 
 export const setupTracing = (serviceName: string) => {
-
   //metrics:
-  const meterProvider = new MeterProvider()
+  const meterProvider = new MeterProvider();
   const metricExporter = new OTLPMetricExporter();
   const metricReader = new PeriodicExportingMetricReader({
     exporter: metricExporter,
@@ -32,21 +33,21 @@ export const setupTracing = (serviceName: string) => {
   //traces:
   const tracerProvider = new NodeTracerProvider({
     resource: new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: serviceName,
-  }),});
+      [SEMRESATTRS_SERVICE_NAME]: serviceName,
+    }),
+  });
 
   if (EXPORTER.toLowerCase().startsWith('z')) {
-    tracerProvider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter()));
+    tracerProvider.addSpanProcessor(
+      new SimpleSpanProcessor(new ZipkinExporter())
+    );
   }
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   tracerProvider.register();
 
   registerInstrumentations({
-    instrumentations: [
-      new HttpInstrumentation(),
-      new MySQLInstrumentation(),
-    ],
+    instrumentations: [new HttpInstrumentation(), new MySQLInstrumentation()],
     tracerProvider: tracerProvider,
     meterProvider: meterProvider,
   });

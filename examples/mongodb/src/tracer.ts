@@ -1,4 +1,4 @@
-import * as api from "@opentelemetry/api";
+import * as api from '@opentelemetry/api';
 
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Resource } from '@opentelemetry/resources';
@@ -10,12 +10,11 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
 import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
-
 export const setupTracing = (serviceName: string): api.Tracer => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: serviceName
-    })
+      [SEMRESATTRS_SERVICE_NAME]: serviceName,
+    }),
   });
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
