@@ -18,6 +18,7 @@ npm install
 ```
 
 Start Jaeger in Docker for receiving tracing data (see [the Jaeger docs](https://www.jaegertracing.io/docs/2.0/getting-started/#in-docker) for more details about running Jaeger):
+
 ```bash
 docker run --rm --name jaeger \
   -p 5778:5778 \
