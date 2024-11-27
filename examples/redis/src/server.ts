@@ -7,6 +7,7 @@ const tracer = setupTracing('example-redis-server');
 import * as express from 'express';
 import axios from 'axios';
 import * as tracerHandlers from './express-tracer-handlers';
+import { randomBytes } from 'crypto';
 const redisPromise = require('./setup-redis').redis;
 
 // Setup express
@@ -20,12 +21,7 @@ async function setupRoutes() {
   const redis = await redisPromise;
 
   app.get('/run_test', async (req: express.Request, res: express.Response) => {
-    const uuid = Math.random()
-      .toString(36)
-      .substring(2, 15)
-      + Math.random()
-        .toString(36)
-        .substring(2, 15);
+    const uuid = randomBytes(16).toString('hex');
     await axios.get(`http://localhost:${PORT}/set?args=uuid,${uuid}`);
     const body = await axios.get(`http://localhost:${PORT}/get?args=uuid`);
 
