@@ -392,5 +392,5 @@ function wrapPromise<T>(
 }
 
 function truncateQuery(query: unknown, maxQueryLength: number) {
-  return String(query).substr(0, maxQueryLength);
+  return String(query).substring(0, maxQueryLength);
 }
