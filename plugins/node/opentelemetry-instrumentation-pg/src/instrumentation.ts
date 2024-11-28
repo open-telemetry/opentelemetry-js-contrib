@@ -18,6 +18,7 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
+  InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
 import {
   context,
@@ -66,6 +67,12 @@ import {
   ATTR_DB_NAMESPACE,
   ATTR_DB_OPERATION_NAME,
 } from '@opentelemetry/semantic-conventions/incubating';
+
+function extractModuleExports(module: any) {
+  return module[Symbol.toStringTag] === 'Module'
+    ? module.default // ESM
+    : module; // CommonJS
+}
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   private _operationDuration!: Histogram;
@@ -125,45 +132,33 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   protected init() {
+    const SUPPORTED_PG_VERSIONS = ['>=8.0.3 <9'];
+
+    const modulePgNativeClient = new InstrumentationNodeModuleFile(
+      'pg/lib/native/client.js',
+      SUPPORTED_PG_VERSIONS,
+      this._patchPgClient.bind(this),
+      this._unpatchPgClient.bind(this)
+    );
+
+    const modulePgClient = new InstrumentationNodeModuleFile(
+      'pg/lib/client.js',
+      SUPPORTED_PG_VERSIONS,
+      this._patchPgClient.bind(this),
+      this._unpatchPgClient.bind(this)
+    );
+
     const modulePG = new InstrumentationNodeModuleDefinition(
       'pg',
-      ['>=8.0.3 <9'],
+      SUPPORTED_PG_VERSIONS,
       (module: any) => {
-        const moduleExports: typeof pgTypes =
-          module[Symbol.toStringTag] === 'Module'
-            ? module.default // ESM
-            : module; // CommonJS
-        if (isWrapped(moduleExports.Client.prototype.query)) {
-          this._unwrap(moduleExports.Client.prototype, 'query');
-        }
-
-        if (isWrapped(moduleExports.Client.prototype.connect)) {
-          this._unwrap(moduleExports.Client.prototype, 'connect');
-        }
-
-        this._wrap(
-          moduleExports.Client.prototype,
-          'query',
-          this._getClientQueryPatch() as any
-        );
-
-        this._wrap(
-          moduleExports.Client.prototype,
-          'connect',
-          this._getClientConnectPatch() as any
-        );
-
+        this._patchPgClient(module.Client);
         return module;
       },
       (module: any) => {
-        const moduleExports: typeof pgTypes =
-          module[Symbol.toStringTag] === 'Module'
-            ? module.default // ESM
-            : module; // CommonJS
-        if (isWrapped(moduleExports.Client.prototype.query)) {
-          this._unwrap(moduleExports.Client.prototype, 'query');
-        }
-      }
+        this._unpatchPgClient(module.Client);
+        return module;
+      }, [modulePgClient, modulePgNativeClient]
     );
 
     const modulePGPool = new InstrumentationNodeModuleDefinition(
@@ -189,6 +184,51 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
     return [modulePG, modulePGPool];
   }
+
+  private _patchPgClient(
+    module: any,
+  ) {
+    const moduleExports = extractModuleExports(module);
+
+    if (isWrapped(moduleExports.prototype.query)) {
+      this._unwrap(moduleExports.prototype, 'query');
+    }
+
+    if (isWrapped(moduleExports.prototype.connect)) {
+      this._unwrap(moduleExports.prototype, 'connect');
+    }
+
+    this._wrap(
+      moduleExports.prototype,
+      'query',
+      this._getClientQueryPatch() as any
+    );
+
+    this._wrap(
+      moduleExports.prototype,
+      'connect',
+      this._getClientConnectPatch() as any
+    );
+
+    return module;
+  }
+
+  private _unpatchPgClient(
+    module: any,
+  ) {
+    const moduleExports = extractModuleExports(module);
+
+    if (isWrapped(moduleExports.prototype.query)) {
+      this._unwrap(moduleExports.prototype, 'query');
+    }
+
+    if (isWrapped(moduleExports.prototype.connect)) {
+      this._unwrap(moduleExports.prototype, 'connect');
+    }
+
+    return module;
+  }
+
 
   private _getClientConnectPatch() {
     const plugin = this;
@@ -272,12 +312,12 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         // to properly narrow arg0, but TS 4.3.5 does not.
         const queryConfig = firstArgIsString
           ? {
-              text: arg0 as string,
-              values: Array.isArray(args[1]) ? args[1] : undefined,
-            }
+            text: arg0 as string,
+            values: Array.isArray(args[1]) ? args[1] : undefined,
+          }
           : firstArgIsQueryObjectWithText
-          ? (arg0 as utils.ObjectWithText)
-          : undefined;
+            ? (arg0 as utils.ObjectWithText)
+            : undefined;
 
         const attributes: Attributes = {
           [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
