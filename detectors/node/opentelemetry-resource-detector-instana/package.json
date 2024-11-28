@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "@opentelemetry/resources": "^1.10.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/semantic-conventions": "^1.28.0"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"
