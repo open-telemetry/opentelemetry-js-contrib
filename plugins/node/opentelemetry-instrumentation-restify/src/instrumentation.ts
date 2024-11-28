@@ -177,6 +177,7 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
         const span = this.tracer.startSpan(
           spanName,
           {
+            kind: api.SpanKind.SERVER,
             attributes,
           },
           api.context.active()

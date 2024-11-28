@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, trace, Span } from '@opentelemetry/api';
+import { context, trace, Span, SpanKind } from '@opentelemetry/api';
 import { SEMATTRS_HTTP_METHOD } from '@opentelemetry/semantic-conventions';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -60,7 +60,7 @@ const httpRequest = {
     });
   },
 };
-const noop = (value: unknown) => {};
+const noop = (value: unknown) => { };
 const defer = (): {
   promise: Promise<unknown>;
   resolve: Function;
@@ -171,6 +171,7 @@ describe('Restify Instrumentation', () => {
             assert.strictEqual(span.attributes['restify.type'], 'middleware');
             assert.strictEqual(span.attributes['restify.name'], undefined);
             assertIsVersion(span.attributes['restify.version']);
+            assert.strictEqual(span['kind'], SpanKind.SERVER);
           }
           {
             // span from use
@@ -181,6 +182,7 @@ describe('Restify Instrumentation', () => {
             assert.strictEqual(span.attributes['restify.type'], 'middleware');
             assert.strictEqual(span.attributes['restify.name'], 'useHandler');
             assertIsVersion(span.attributes['restify.version']);
+            assert.strictEqual(span['kind'], SpanKind.SERVER);
           }
           {
             // span from get
@@ -194,6 +196,7 @@ describe('Restify Instrumentation', () => {
             );
             assert.strictEqual(span.attributes['restify.name'], 'getHandler');
             assertIsVersion(span.attributes['restify.version']);
+            assert.strictEqual(span['kind'], SpanKind.SERVER);
           }
         }
       );

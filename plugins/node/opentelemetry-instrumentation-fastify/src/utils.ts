@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Attributes, Span, SpanStatusCode, Tracer } from '@opentelemetry/api';
+import { Attributes, Span, SpanKind, SpanStatusCode, Tracer } from '@opentelemetry/api';
 import { spanRequestSymbol } from './constants';
 
 import type { PluginFastifyReply } from './internal-types';
@@ -32,7 +32,7 @@ export function startSpan(
   spanName: string,
   spanAttributes: Attributes = {}
 ) {
-  const span = tracer.startSpan(spanName, { attributes: spanAttributes });
+  const span = tracer.startSpan(spanName, { kind: SpanKind.SERVER, attributes: spanAttributes });
 
   const spans: Span[] = reply[spanRequestSymbol] || [];
   spans.push(span);
