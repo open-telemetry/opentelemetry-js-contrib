@@ -158,7 +158,8 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       (module: any) => {
         this._unpatchPgClient(module.Client);
         return module;
-      }, [modulePgClient, modulePgNativeClient]
+      },
+      [modulePgClient, modulePgNativeClient]
     );
 
     const modulePGPool = new InstrumentationNodeModuleDefinition(
@@ -185,9 +186,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     return [modulePG, modulePGPool];
   }
 
-  private _patchPgClient(
-    module: any,
-  ) {
+  private _patchPgClient(module: any) {
     const moduleExports = extractModuleExports(module);
 
     if (isWrapped(moduleExports.prototype.query)) {
@@ -213,9 +212,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     return module;
   }
 
-  private _unpatchPgClient(
-    module: any,
-  ) {
+  private _unpatchPgClient(module: any) {
     const moduleExports = extractModuleExports(module);
 
     if (isWrapped(moduleExports.prototype.query)) {
@@ -228,7 +225,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
     return module;
   }
-
 
   private _getClientConnectPatch() {
     const plugin = this;
@@ -312,12 +308,12 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         // to properly narrow arg0, but TS 4.3.5 does not.
         const queryConfig = firstArgIsString
           ? {
-            text: arg0 as string,
-            values: Array.isArray(args[1]) ? args[1] : undefined,
-          }
+              text: arg0 as string,
+              values: Array.isArray(args[1]) ? args[1] : undefined,
+            }
           : firstArgIsQueryObjectWithText
-            ? (arg0 as utils.ObjectWithText)
-            : undefined;
+          ? (arg0 as utils.ObjectWithText)
+          : undefined;
 
         const attributes: Attributes = {
           [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
