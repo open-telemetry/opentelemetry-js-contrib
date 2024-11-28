@@ -251,7 +251,7 @@ export class FastifyInstrumentation extends InstrumentationBase<FastifyInstrumen
         anyRequest.routeOptions?.handler || anyRequest.context?.handler;
 
       const handlerName = handler?.name.startsWith('bound ')
-        ? handler.name.substr(6)
+        ? handler.name.substring(6)
         : handler?.name;
       const spanName = `${FastifyNames.REQUEST_HANDLER} - ${
         handlerName || this.pluginName || ANONYMOUS_NAME
