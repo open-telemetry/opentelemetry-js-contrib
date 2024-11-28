@@ -14,17 +14,25 @@
  * limitations under the License.
  */
 
+'use strict';
+
 // Setup telemetry for tracing and Bunyan logging.
 //
 // This writes OTel spans and log records to the console for simplicity. In a
 // real setup you would configure exporters to send to remote observability apps
 // for viewing and analysis.
 
-const { NodeSDK, tracing, logs, api } = require('@opentelemetry/sdk-node');
-const { envDetectorSync, hostDetectorSync, processDetectorSync } = require('@opentelemetry/resources');
+const { NodeSDK, tracing, logs } = require('@opentelemetry/sdk-node');
+const {
+  envDetectorSync,
+  hostDetectorSync,
+  processDetectorSync,
+} = require('@opentelemetry/resources');
 // api.diag.setLogger(new api.DiagConsoleLogger(), api.DiagLogLevel.DEBUG);
 
-const { BunyanInstrumentation } = require('@opentelemetry/instrumentation-bunyan');
+const {
+  BunyanInstrumentation,
+} = require('@opentelemetry/instrumentation-bunyan');
 
 const sdk = new NodeSDK({
   serviceName: 'bunyan-example',
@@ -36,20 +44,22 @@ const sdk = new NodeSDK({
     // The HostDetector adds `host.name` and `host.arch` fields. `host.name`
     // replaces the usual Bunyan `hostname` field. HostDetector is *not* a
     // default detector of the `NodeSDK`.
-    hostDetectorSync
+    hostDetectorSync,
   ],
-  spanProcessor: new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter()),
-  logRecordProcessor: new logs.SimpleLogRecordProcessor(new logs.ConsoleLogRecordExporter()),
-  instrumentations: [
-    new BunyanInstrumentation(),
-  ]
-})
-process.on("SIGTERM", () => {
+  spanProcessor: new tracing.SimpleSpanProcessor(
+    new tracing.ConsoleSpanExporter()
+  ),
+  logRecordProcessor: new logs.SimpleLogRecordProcessor(
+    new logs.ConsoleLogRecordExporter()
+  ),
+  instrumentations: [new BunyanInstrumentation()],
+});
+process.on('SIGTERM', () => {
   sdk
     .shutdown()
     .then(
       () => {},
-      (err) => console.log("warning: error shutting down OTel SDK", err)
+      err => console.log('warning: error shutting down OTel SDK', err)
     )
     .finally(() => process.exit(0));
 });
