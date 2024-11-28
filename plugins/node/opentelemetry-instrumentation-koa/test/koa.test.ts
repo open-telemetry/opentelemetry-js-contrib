@@ -41,6 +41,7 @@ import * as assert from 'assert';
 import * as koa from 'koa';
 import * as http from 'http';
 import * as sinon from 'sinon';
+import * as semver from 'semver';
 import { AddressInfo } from 'net';
 import { KoaLayerType, KoaRequestInfo } from '../src/types';
 import { AttributeNames } from '../src/enums/AttributeNames';
@@ -65,7 +66,11 @@ const httpRequest = {
   },
 };
 
-describe('Koa Instrumentation', () => {
+const LIB_VERSION = require('@koa/router/package.json').version;
+const NODE_VERSION = process.version;
+const routerCompat = semver.gte(LIB_VERSION, '13.0.0') && semver.gte(NODE_VERSION, '18.0.0')
+
+describe('Koa Instrumentation', function () {
   const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
@@ -77,7 +82,7 @@ describe('Koa Instrumentation', () => {
   let server: http.Server;
   let port: number;
 
-  before(() => {
+  before(function () {
     plugin.enable();
   });
 
@@ -141,7 +146,12 @@ describe('Koa Instrumentation', () => {
       yield next;
     };
 
-  describe('Instrumenting @koa/router calls', () => {
+  describe('Instrumenting @koa/router calls', function() {
+    before(function() {
+      if (!routerCompat) {
+        this.skip();
+      }
+    });
     it('should create a child span for middlewares (string route)', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
