@@ -35,6 +35,7 @@ import {
 import * as assert from 'assert';
 import { MySQL2Instrumentation, MySQL2InstrumentationConfig } from '../src';
 
+const LIB_VERSION = testUtils.getPackageVersion('mysql2');
 const port = Number(process.env.MYSQL_PORT) || 33306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
 const host = process.env.MYSQL_HOST || '127.0.0.1';
@@ -47,6 +48,7 @@ instrumentation.enable();
 instrumentation.disable();
 
 import * as mysqlTypes from 'mysql2/promise';
+import * as semver from 'semver';
 
 interface GeneralLogResult extends mysqlTypes.RowDataPacket {
   argument: string | Buffer;
@@ -134,16 +136,18 @@ describe('mysql2/promise', () => {
       password,
       database,
     });
-    poolCluster = mysqlTypes.createPoolCluster();
-    // the implementation actually accepts ConnectionConfig as well,
-    // but the types do not reflect that
-    poolCluster.add('name', {
-      port,
-      user,
-      host,
-      password,
-      database,
-    });
+    if (isPoolClusterSupportPromise()) {
+      poolCluster = mysqlTypes.createPoolCluster();
+      // the implementation actually accepts ConnectionConfig as well,
+      // but the types do not reflect that
+      poolCluster.add('name', {
+        port,
+        user,
+        host,
+        password,
+        database,
+      });
+    }
   });
 
   afterEach(async () => {
@@ -153,7 +157,9 @@ describe('mysql2/promise', () => {
     instrumentation.disable();
     await connection.end();
     await pool.end();
-    await poolCluster.end();
+    if (isPoolClusterSupportPromise()) {
+      await poolCluster.end();
+    }
   });
 
   describe('when the query is a string', () => {
@@ -726,6 +732,12 @@ describe('mysql2/promise', () => {
   });
 
   describe('#PoolCluster', () => {
+    before(function () {
+      if (!isPoolClusterSupportPromise()) {
+        this.skip();
+      }
+    });
+
     it('should intercept poolClusterConnection.query(text: string)', async () => {
       const poolClusterConnection = await poolCluster.getConnection();
       const span = provider.getTracer('default').startSpan('test span');
@@ -921,7 +933,11 @@ describe('mysql2/promise', () => {
         });
       });
 
-      it('should extract data from responseHook - poolCluster', async () => {
+      it('should extract data from responseHook - poolCluster', async function () {
+        if (!isPoolClusterSupportPromise()) {
+          this.skip();
+        }
+
         const poolClusterConnection = await poolCluster.getConnection();
         const span = provider.getTracer('default').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -962,4 +978,10 @@ function assertSpan(
     assert.strictEqual(span.status.message, errorMessage);
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
   }
+}
+
+function isPoolClusterSupportPromise() {
+  // Since v2.3.0, mysql2 supports promise for PoolCluster
+  // https://github.com/sidorares/node-mysql2/commit/2cfecd9a5d48987ba98ce7a8de26d26399cda7f6
+  return semver.gte(LIB_VERSION, '2.3.0');
 }
