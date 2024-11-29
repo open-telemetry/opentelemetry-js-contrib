@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import * as semver from 'semver';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -34,12 +33,8 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import {
-  MySQL2Instrumentation,
-  MySQL2InstrumentationConfig,
-} from '../src';
+import { MySQL2Instrumentation, MySQL2InstrumentationConfig } from '../src';
 
-const LIB_VERSION = testUtils.getPackageVersion('mysql2');
 const port = Number(process.env.MYSQL_PORT) || 33306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
 const host = process.env.MYSQL_HOST || '127.0.0.1';
@@ -158,11 +153,7 @@ describe('mysql2/promise', () => {
     instrumentation.disable();
     await connection.end();
     await pool.end();
-    if (isPoolClusterEndIgnoreCallback()) {
-      await poolCluster.end();
-    } else {
-      await poolCluster.end();
-    }
+    await poolCluster.end();
   });
 
   describe('when the query is a string', () => {
@@ -971,10 +962,4 @@ function assertSpan(
     assert.strictEqual(span.status.message, errorMessage);
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
   }
-}
-
-function isPoolClusterEndIgnoreCallback() {
-  // Since v2.2.0 `end` function respect callback
-  // https://github.com/sidorares/node-mysql2/commit/1481015626e506754adc4308e5508356a3a03aa0
-  return semver.lt(LIB_VERSION, '2.2.0');
 }
