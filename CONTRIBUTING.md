@@ -140,7 +140,6 @@ When two or more approaches must be compared, please write a benchmark in the be
 This repository contains many components which are maintained by more than the typical set of JS maintainers and approvers.
 Each component in this repository SHOULD have a component owner who is responsible for maintaining it.
 The README.md for each component SHOULD contain its owner, but the source of truth for component ownership is in [.github/component_owners.yml](.github/component_owners.yml).
-Each component owner SHOULD be listed in CODEOWNERS with the path to the component.
 Component owners are generally given authority to make decisions relating to implementation and feature requests for their components,
 provided they follow the best practices set out by the maintainers and the [mission, vision and values](https://github.com/open-telemetry/community/blob/main/mission-vision-values.md)
 of the OpenTelemetry Project.
@@ -181,7 +180,7 @@ If all these conditions are met, aspiring component owners are encouraged to sel
 information provided on the issue - either approve or deny the ownership request. If the ownership request has been
 approved, the new component owner opens a PR to add themselves to the list of owners ([.github/component_owners.yml](.github/component_owners.yml))
 for that package.
-@open-telemetry/javascript-maintainers will add the component owner to @open-telemetry/javascript-contrib-triagers and to the CODEOWNERS file.
+@open-telemetry/javascript-maintainers will add the component owner to @open-telemetry/javascript-contrib-triagers.
 
 ## Component Lifecycle
 
