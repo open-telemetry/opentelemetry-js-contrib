@@ -33,6 +33,7 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
+  ATTR_URL_FULL,
   SEMATTRS_EXCEPTION_MESSAGE,
   SEMATTRS_FAAS_COLDSTART,
   SEMATTRS_FAAS_EXECUTION,
@@ -766,6 +767,54 @@ describe('lambda handler', () => {
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
       assert.strictEqual(span.parentSpanId, undefined);
+    });
+  });
+
+  describe('url parsing', () => {
+    it('pulls url from api gateway rest events', async () => {
+      initializeHandler('lambda-test/sync.handler');
+      const event = {
+        path: '/lambda/test/path',
+        headers: {
+          Host: 'www.example.com',
+          'X-Forwarded-Proto': 'http',
+          'X-Forwarded-Port': 1234,
+        },
+        queryStringParameters: {
+          key: 'value',
+          key2: 'value2',
+        },
+      };
+
+      await lambdaRequire('lambda-test/sync').handler(event, ctx, () => {});
+      const [span] = memoryExporter.getFinishedSpans();
+      assert.ok(
+        span.attributes[ATTR_URL_FULL] ===
+          'http://www.example.com:1234/lambda/test/path?key=value&key2=value2' ||
+          span.attributes[ATTR_URL_FULL] ===
+            'http://www.example.com:1234/lambda/test/path?key2=value2&key=value'
+      );
+    });
+    it('pulls url from api gateway http events', async () => {
+      initializeHandler('lambda-test/sync.handler');
+      const event = {
+        rawPath: '/lambda/test/path',
+        headers: {
+          host: 'www.example.com',
+          'x-forwarded-proto': 'http',
+          'x-forwarded-port': 1234,
+        },
+        queryStringParameters: {
+          key: 'value',
+        },
+      };
+
+      await lambdaRequire('lambda-test/sync').handler(event, ctx, () => {});
+      const [span] = memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        span.attributes[ATTR_URL_FULL],
+        'http://www.example.com:1234/lambda/test/path?key=value'
+      );
     });
   });
 });
