@@ -127,6 +127,12 @@ describe('Esbuild can instrument packages via a plugin', function () {
     assert.ok(traceId, 'console span output in stdout contains a redis span');
   });
 
+  it('mongodb', async () => {
+    const traceId = getTraceId(stdOutLines, 'mongodb.find');
+
+    assert.ok(traceId, 'console span output in stdout contains a traceId');
+  });
+
   describe('graphql', () => {
     it('should instrument parse', () => {
       const parseSpan = getTrace(stdOutLines, 'graphql.parse');
@@ -143,6 +149,4 @@ describe('Esbuild can instrument packages via a plugin', function () {
       assert.ok(parseSpan, 'There is a span for query');
     });
   });
-
-  // TODO: Add tests for mongodb spans. This will require running a mongodb instance.
 });

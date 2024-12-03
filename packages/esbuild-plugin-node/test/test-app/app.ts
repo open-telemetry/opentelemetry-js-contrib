@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { MongoClient } from 'mongodb';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import { buildTestSchema } from './graphql/schema';
 import { createClient } from 'redis';
 import fastify from 'fastify';
@@ -39,12 +41,15 @@ server.get('/test', async req => {
   await redisClient.get('key').catch(() => void 0);
 
   try {
-    const mongoClient = await MongoClient.connect(`${process.env.MONGO_URL}`);
+    const mongoDbUri = (req.query as any)?.mongoDbUri;
+    if (!mongoDbUri) throw new Error('Missing mongoDbUri query param');
+    const mongoClient = new MongoClient(mongoDbUri);
     const db = mongoClient.db('sample-database');
     const col = db.collection('sample-collection');
-    await col.insertOne({ hello: 'test' });
+    await col.findOne({ hello: 'test' });
+    await mongoClient.close();
   } catch (e) {
-    req.log.info('Error connecting to MongoDB');
+    req.log.info(e, 'Error connecting to MongoDB');
   }
 
   return { hi: 'there' };
@@ -68,22 +73,27 @@ server.get('/graphql', async req => {
 server
   .listen({ port: 8080 })
   .then(async () => {
-    await Promise.all([
-      server
+    const mongod = await MongoMemoryServer.create();
+    const mongoDbUri = mongod.getUri();
+    try {
+      await server
         .inject()
         .get('/test')
+        .query({ mongoDbUri })
         .end()
         .catch(err => {
           throw err;
-        }),
-      server
+        });
+      await server
         .inject()
         .get('/graphql')
         .end()
         .catch(err => {
           throw err;
-        }),
-    ]).finally(() => server.close());
+        });
+    } finally {
+      await Promise.all([server.close(), mongod.stop()]).catch(() => void 0);
+    }
   })
   .catch(err => {
     throw err;

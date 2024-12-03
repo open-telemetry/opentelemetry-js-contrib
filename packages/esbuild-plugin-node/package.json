@@ -45,6 +45,7 @@
     "fastify": "4.15.0",
     "mocha": "7.2.0",
     "mongodb": "5.9.2",
+    "mongodb-memory-server": "^10.1.2",
     "nyc": "15.1.0",
     "pino": "^8.19.0",
     "redis": "^4.7.0",
