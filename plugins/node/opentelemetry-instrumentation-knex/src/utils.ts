@@ -79,7 +79,7 @@ export const limitLength = (str: string, maxLength: number) => {
     0 < maxLength &&
     maxLength < str.length
   ) {
-    return str.substr(0, maxLength) + '..';
+    return str.substring(0, maxLength) + '..';
   }
   return str;
 };

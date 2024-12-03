@@ -76,6 +76,7 @@ components:
   plugins/node/opentelemetry-instrumentation-aws-sdk:
     - blumamir
     - jj22ee
+    - trivikr
   plugins/node/opentelemetry-instrumentation-bunyan:
     - seemk
     - trentm
