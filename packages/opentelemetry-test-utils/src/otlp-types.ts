@@ -126,7 +126,7 @@ interface IStatus {
 const enum EStatusCode {
   /** The default status. */
   STATUS_CODE_UNSET = 0,
-  /** The Span has been evaluated by an Application developers or Operator to have completed successfully. */
+  /** The Span has been evaluated by an Application developer or Operator to have completed successfully. */
   STATUS_CODE_OK = 1,
   /** The Span contains an error. */
   STATUS_CODE_ERROR = 2,
