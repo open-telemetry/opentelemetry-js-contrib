@@ -19,17 +19,33 @@ import { createClient } from 'redis';
 import fastify from 'fastify';
 import { graphql } from './graphql/adapter';
 import pino from 'pino';
+import { MongoClient } from 'mongodb';
+
+const redisClient = createClient({ url: process.env.REDIS_URL });
 
 export const server = fastify({
   logger: pino({}, pino.destination(1)),
   disableRequestLogging: true,
+}).register(require('@fastify/rate-limit'), {
+  // Use @fastify/rate-limit to avoid CodeQL "Missing rate limiting" error in CI
+  global: true,
+  max: 100,
+  timeWindow: '1 minute',
 });
-const redisClient = createClient({ url: process.env.REDIS_URL });
 
 server.get('/test', async req => {
   req.log.info({ hi: 'there' }, 'Log message from handler');
 
   await redisClient.get('key').catch(() => void 0);
+
+  try {
+    const mongoClient = await MongoClient.connect(`${process.env.MONGO_URL}`);
+    const db = mongoClient.db('sample-database');
+    const col = db.collection('sample-collection');
+    await col.insertOne({ hello: 'test' });
+  } catch (e) {
+    req.log.info('Error connecting to MongoDB');
+  }
 
   return { hi: 'there' };
 });

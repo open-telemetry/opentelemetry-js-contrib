@@ -105,9 +105,12 @@ describe('Esbuild can instrument packages via a plugin', function () {
       )
     );
 
-    const traceId = getTraceId(stdOutLines, 'request handler - fastify');
+    const traceId = getTraceId(
+      stdOutLines,
+      'request handler - fastify -> @fastify/rate-limit'
+    );
 
-    assert.ok(traceId, 'console span output in stdout contains a traceId');
+    assert.ok(traceId, 'console span output in stdout contains a fastify span');
 
     const requestHandlerLogMessage = stdOutLines.find(line =>
       line.includes('Log message from handler')
@@ -121,7 +124,7 @@ describe('Esbuild can instrument packages via a plugin', function () {
   it('redis', async () => {
     const traceId = getTraceId(stdOutLines, 'redis-GET');
 
-    assert.ok(traceId, 'console span output in stdout contains a traceId');
+    assert.ok(traceId, 'console span output in stdout contains a redis span');
   });
 
   describe('graphql', () => {
@@ -140,4 +143,6 @@ describe('Esbuild can instrument packages via a plugin', function () {
       assert.ok(parseSpan, 'There is a span for query');
     });
   });
+
+  // TODO: Add tests for mongodb spans. This will require running a mongodb instance.
 });
