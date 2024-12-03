@@ -39,7 +39,6 @@
     "@opentelemetry/sdk-node": "^0.55.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.6.5",
-    "esbuild": "0.24.x",
     "fastify": "4.15.0",
     "mocha": "7.2.0",
     "mongodb": "6.8.0",
@@ -54,7 +53,7 @@
   "dependencies": {
     "@opentelemetry/auto-instrumentations-node": "0.53.0",
     "@opentelemetry/instrumentation": "^0.55.0",
-    "esbuild": "0.24.x"
+    "esbuild": "0.21.x"
   },
   "files": [
     "build/src/**/*.js",
