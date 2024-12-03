@@ -21,7 +21,6 @@ import { createClient } from 'redis';
 import fastify from 'fastify';
 import { graphql } from './graphql/adapter';
 import pino from 'pino';
-import { MongoClient } from 'mongodb';
 
 const redisClient = createClient({ url: process.env.REDIS_URL });
 
