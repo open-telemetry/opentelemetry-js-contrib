@@ -146,3 +146,17 @@ export const once = (fn: Function) => {
     return fn(...args);
   };
 };
+
+export function getConnectionPrototypeToInstrument(connection: any){
+  const connectionPrototype = connection.prototype;
+  const basePrototype = Object.getPrototypeOf(connectionPrototype);
+
+  // mysql2@3.11.5 included a refactoring, where most code was moved out of the `Connection` class and into a shared base
+  // so we need to instrument that instead, see https://github.com/sidorares/node-mysql2/pull/3081
+  if(basePrototype?.constructor?.name == 'BaseConnection'){
+    return basePrototype;
+  }
+
+  // otherwise instrument the connection directly.
+  return connectionPrototype;
+}

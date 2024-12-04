@@ -37,7 +37,7 @@ import * as assert from 'assert';
 import { MySQL2Instrumentation, MySQL2InstrumentationConfig } from '../src';
 
 const LIB_VERSION = testUtils.getPackageVersion('mysql2');
-const port = Number(process.env.MYSQL_PORT) || 33306;
+const port = Number(process.env.MYSQL_PORT) || 3306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
 const host = process.env.MYSQL_HOST || '127.0.0.1';
 const user = process.env.MYSQL_USER || 'otel';
@@ -223,10 +223,14 @@ describe('mysql2', () => {
         });
 
         query.on('end', () => {
-          assert.strictEqual(rows, 1);
-          const spans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], sql);
+          try {
+            assert.strictEqual(rows, 1);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql);
+          } catch (e) {
+            done(e);
+          }
           done();
         });
       });
@@ -340,8 +344,12 @@ describe('mysql2', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
           getLastQueries(1).then(([query]) => {
-            assert.doesNotMatch(query, /.*traceparent.*/);
-            done();
+            try {
+              assert.doesNotMatch(query, /.*traceparent.*/);
+              done();
+            } catch (e) {
+              done(e);
+            }
           });
         });
       });

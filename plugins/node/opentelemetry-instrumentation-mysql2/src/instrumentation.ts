@@ -30,7 +30,7 @@ import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationConfig } from './types';
 import {
-  getConnectionAttributes,
+  getConnectionAttributes, getConnectionPrototypeToInstrument,
   getDbStatement,
   getSpanName,
   once,
@@ -55,8 +55,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         'mysql2',
         ['>=1.4.2 <4'],
         (moduleExports: any) => {
-          const ConnectionPrototype: mysqlTypes.Connection =
-            moduleExports.Connection.prototype;
+          const ConnectionPrototype: mysqlTypes.Connection = getConnectionPrototypeToInstrument(moduleExports.Connection);
           if (isWrapped(ConnectionPrototype.query)) {
             this._unwrap(ConnectionPrototype, 'query');
           }
