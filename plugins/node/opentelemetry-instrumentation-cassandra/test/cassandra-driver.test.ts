@@ -244,7 +244,7 @@ describe('CassandraDriverInstrumentation', () => {
       it('truncates long queries', async () => {
         const query = 'select userid, count from ot.test';
         await client.execute(query);
-        assertSingleSpan('cassandra-driver.execute', query.substr(0, 25));
+        assertSingleSpan('cassandra-driver.execute', query.substring(0, 25));
       });
     });
 

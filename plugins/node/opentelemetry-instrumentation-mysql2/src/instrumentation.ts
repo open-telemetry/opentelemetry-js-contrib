@@ -31,6 +31,7 @@ import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationConfig } from './types';
 import {
   getConnectionAttributes,
+  getConnectionPrototypeToInstrument,
   getDbStatement,
   getSpanName,
   once,
@@ -56,7 +57,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         ['>=1.4.2 <4'],
         (moduleExports: any) => {
           const ConnectionPrototype: mysqlTypes.Connection =
-            moduleExports.Connection.prototype;
+            getConnectionPrototypeToInstrument(moduleExports.Connection);
           if (isWrapped(ConnectionPrototype.query)) {
             this._unwrap(ConnectionPrototype, 'query');
           }
