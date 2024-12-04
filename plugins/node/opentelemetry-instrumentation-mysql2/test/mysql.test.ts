@@ -223,10 +223,14 @@ describe('mysql2', () => {
         });
 
         query.on('end', () => {
-          assert.strictEqual(rows, 1);
-          const spans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], sql);
+          try {
+            assert.strictEqual(rows, 1);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql);
+          } catch (e) {
+            done(e);
+          }
           done();
         });
       });
@@ -340,8 +344,12 @@ describe('mysql2', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
           getLastQueries(1).then(([query]) => {
-            assert.doesNotMatch(query, /.*traceparent.*/);
-            done();
+            try {
+              assert.doesNotMatch(query, /.*traceparent.*/);
+              done();
+            } catch (e) {
+              done(e);
+            }
           });
         });
       });
