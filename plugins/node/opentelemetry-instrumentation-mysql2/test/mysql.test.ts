@@ -37,7 +37,7 @@ import * as assert from 'assert';
 import { MySQL2Instrumentation, MySQL2InstrumentationConfig } from '../src';
 
 const LIB_VERSION = testUtils.getPackageVersion('mysql2');
-const port = Number(process.env.MYSQL_PORT) || 3306;
+const port = Number(process.env.MYSQL_PORT) || 33306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
 const host = process.env.MYSQL_HOST || '127.0.0.1';
 const user = process.env.MYSQL_USER || 'otel';
