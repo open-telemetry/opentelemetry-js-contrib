@@ -49,7 +49,7 @@ const common = {
 module.exports = webpackMerge(common, {
   devtool: 'eval-source-map',
   devServer: {
-    contentBase: path.resolve(__dirname),
+    static: path.resolve(path.join(__dirname, "examples")),
   },
   plugins: [
     new webpack.DefinePlugin({
