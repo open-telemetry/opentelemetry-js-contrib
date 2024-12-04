@@ -79,8 +79,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         },
         (moduleExports: any) => {
           if (moduleExports === undefined) return;
-          const ConnectionPrototype: mysqlTypes.Connection =
-            moduleExports.Connection.prototype;
+          const ConnectionPrototype = this._getConnectionPrototype(moduleExports);
           this._unwrap(ConnectionPrototype, 'query');
           this._unwrap(ConnectionPrototype, 'execute');
         }
