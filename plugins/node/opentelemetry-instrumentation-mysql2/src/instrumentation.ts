@@ -55,8 +55,8 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         'mysql2',
         ['>=1.4.2 <4'],
         (moduleExports: any) => {
-          const ConnectionPrototype: mysqlTypes.Connection =
-            moduleExports.Connection.prototype;
+          const ConnectionPrototype = this._getConnectionPrototype(moduleExports);
+
           if (isWrapped(ConnectionPrototype.query)) {
             this._unwrap(ConnectionPrototype, 'query');
           }
@@ -209,5 +209,18 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         return originalCallback(...arguments);
       };
     };
+  }
+
+  private _getConnectionPrototype(moduleExports: any): mysqlTypes.Connection {
+    const baseClass = Object.getPrototypeOf(moduleExports.Connection);
+
+    // if `baseClass` has no prototype means connection is not extending
+    // another class so the functions we need to patch are already there
+    if (typeof baseClass.prototype === 'undefined') {
+      return moduleExports.Connection.prototype;
+    }
+
+    // return the BaseConnection prototype (mysql2@3.11.5+)
+    return baseClass.prototype;
   }
 }
