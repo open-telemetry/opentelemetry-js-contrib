@@ -153,7 +153,9 @@ export function getConnectionPrototypeToInstrument(connection: any) {
 
   // mysql2@3.11.5 included a refactoring, where most code was moved out of the `Connection` class and into a shared base
   // so we need to instrument that instead, see https://github.com/sidorares/node-mysql2/pull/3081
-  if (basePrototype?.constructor?.name === 'BaseConnection') {
+  // This checks if the functions we're instrumenting are there on the base - we cannot use the presence of a base
+  // prototype since EventEmitter is the base for mysql2@<=3.11.4
+  if (typeof basePrototype?.query === 'function' && typeof basePrototype?.execute === 'function') {
     return basePrototype;
   }
 
