@@ -30,6 +30,8 @@ components:
     - pichlermarc
     - legendecas
     - blumamir
+  packages/esbuild-plugin-node:
+    - drewcorlin1
   packages/baggage-span-processor:
     - mikegoldsmith
     - jamiedanielson
