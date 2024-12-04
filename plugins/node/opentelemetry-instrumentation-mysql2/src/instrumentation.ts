@@ -215,13 +215,12 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
   private _getConnectionPrototype(moduleExports: any): mysqlTypes.Connection {
     const baseClass = Object.getPrototypeOf(moduleExports.Connection);
 
-    // if `baseClass` has no prototype means connection is not extending
-    // another class so the functions we need to patch are already there
-    if (typeof baseClass.prototype === 'undefined') {
-      return moduleExports.Connection.prototype;
+    // return the base class prototype if it has the method
+    // we need to patch (mysql2@3.11.5+)
+    if (typeof baseClass.prototype?.query === 'function') {
+      return baseClass.prototype;
     }
 
-    // return the BaseConnection prototype (mysql2@3.11.5+)
-    return baseClass.prototype;
+    return moduleExports.Connection.prototype;
   }
 }
