@@ -55,7 +55,8 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         'mysql2',
         ['>=1.4.2 <4'],
         (moduleExports: any) => {
-          const ConnectionPrototype = this._getConnectionPrototype(moduleExports);
+          const ConnectionPrototype =
+            this._getConnectionPrototype(moduleExports);
 
           if (isWrapped(ConnectionPrototype.query)) {
             this._unwrap(ConnectionPrototype, 'query');
@@ -79,7 +80,8 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         },
         (moduleExports: any) => {
           if (moduleExports === undefined) return;
-          const ConnectionPrototype = this._getConnectionPrototype(moduleExports);
+          const ConnectionPrototype =
+            this._getConnectionPrototype(moduleExports);
           this._unwrap(ConnectionPrototype, 'query');
           this._unwrap(ConnectionPrototype, 'execute');
         }
