@@ -152,11 +152,15 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       'pg',
       SUPPORTED_PG_VERSIONS,
       (module: any) => {
-        this._patchPgClient(module.Client);
+        const moduleExports = extractModuleExports(module);
+
+        this._patchPgClient(moduleExports.Client);
         return module;
       },
       (module: any) => {
-        this._unpatchPgClient(module.Client);
+        const moduleExports = extractModuleExports(module);
+
+        this._unpatchPgClient(moduleExports.Client);
         return module;
       },
       [modulePgClient, modulePgNativeClient]
@@ -187,6 +191,10 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   private _patchPgClient(module: any) {
+    if (!module) {
+      return;
+    }
+
     const moduleExports = extractModuleExports(module);
 
     if (isWrapped(moduleExports.prototype.query)) {
