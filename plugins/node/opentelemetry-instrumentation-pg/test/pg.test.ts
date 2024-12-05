@@ -153,14 +153,10 @@ describe('pg', () => {
     postgres = require('pg');
     client = new postgres.Client(CONFIG);
 
-    await new Promise<void>(resolve => setTimeout(resolve, 3000));
-
     await client.connect();
   });
 
   after(async () => {
-    await new Promise<void>(resolve => setTimeout(resolve, 3000));
-
     if (testPostgresLocally) {
       testUtils.cleanUpDocker('postgres');
     }

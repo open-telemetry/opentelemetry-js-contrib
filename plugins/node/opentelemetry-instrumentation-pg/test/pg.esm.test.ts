@@ -21,7 +21,7 @@ describe('pg ESM usage', () => {
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
-  before(async function () {
+  before(function () {
     const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -38,7 +38,7 @@ describe('pg ESM usage', () => {
     }
   });
 
-  after(async () => {
+  after(() => {
     if (testPostgresLocally) {
       testUtils.cleanUpDocker('postgres');
     }
@@ -53,7 +53,7 @@ describe('pg ESM usage', () => {
           '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
         NODE_NO_WARNINGS: '1',
       },
-      checkResult: err => {
+      checkResult: (err, stdout, stderr) => {
         assert.ifError(err);
       },
       checkCollector: (collector: testUtils.TestCollector) => {

@@ -68,7 +68,7 @@ const CONFIG = {
     ? parseInt(process.env.POSTGRES_PORT, 10)
     : 54320,
   maxClient: 1,
-  idleTimeoutMillis: 30000,
+  idleTimeoutMillis: 10000,
 };
 
 const DEFAULT_PGPOOL_ATTRIBUTES = {
@@ -125,7 +125,7 @@ describe('pg-pool', () => {
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
-  before(function (done) {
+  before(function () {
     const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -150,7 +150,6 @@ describe('pg-pool', () => {
 
     const pgPool = require('pg-pool');
     pool = new pgPool(CONFIG);
-    setTimeout(done, 3000);
   });
 
   after(done => {

@@ -43,7 +43,6 @@ import pg from 'pg';
 
 const client = new pg.Client(CONFIG);
 
-await new Promise(resolve => setTimeout(resolve, 4000));
 await client.connect();
 
 const tracer = trace.getTracer();
