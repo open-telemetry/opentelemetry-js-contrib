@@ -69,7 +69,6 @@ const CONFIG = {
     : 54320,
   maxClient: 1,
   idleTimeoutMillis: 30000,
-
 };
 
 const DEFAULT_PGPOOL_ATTRIBUTES = {
