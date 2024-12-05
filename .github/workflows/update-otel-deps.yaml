@@ -42,7 +42,7 @@ jobs:
           git checkout -b feat/update-otel-deps
           node ./scripts/update-otel-deps.js
           git commit -am "feat(deps): update deps matching '@opentelemetry/*'"
-          git push origin feat/update-otel-deps --force
+          git push --set-upstream origin feat/update-otel-deps --force
           gh pr create --repo open-telemetry/opentelemetry-js-contrib --title 'chore: prepare next release' --body 'Updates all `@opentelemetry/*` dependencies to latest'
         env:
           GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
