@@ -261,7 +261,7 @@ export async function runTestFixture(
           if (opts.checkCollector) {
             await opts.checkCollector(collector);
           }
-        } catch(err) {
+        } catch (err) {
           reject(err);
         } finally {
           collector.close();
