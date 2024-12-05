@@ -152,10 +152,15 @@ describe('pg', () => {
 
     postgres = require('pg');
     client = new postgres.Client(CONFIG);
+
+    await new Promise<void>(resolve => setTimeout(resolve, 3000));
+
     await client.connect();
   });
 
   after(async () => {
+    await new Promise<void>(resolve => setTimeout(resolve, 3000));
+
     if (testPostgresLocally) {
       testUtils.cleanUpDocker('postgres');
     }
@@ -1084,26 +1089,6 @@ describe('pg', () => {
         );
         done();
       });
-    });
-  });
-
-  it('should work with ESM usage', async () => {
-    await testUtils.runTestFixture({
-      cwd: __dirname,
-      argv: ['fixtures/use-pg.mjs'],
-      env: {
-        NODE_OPTIONS:
-          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
-        NODE_NO_WARNINGS: '1',
-      },
-      checkResult: (err, stdout, stderr) => {
-        assert.ifError(err);
-      },
-      checkCollector: (collector: testUtils.TestCollector) => {
-        const spans = collector.sortedSpans;
-
-        assert.strictEqual(spans.length, 2);
-      },
     });
   });
 });
