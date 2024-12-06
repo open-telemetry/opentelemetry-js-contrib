@@ -108,6 +108,10 @@ describe('pg', () => {
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
     instrumentation.enable();
+
+    // Disable and enable the instrumentation to visit unwrap calls
+    instrumentation.disable();
+    instrumentation.enable();
   }
 
   let postgres: typeof pg;
