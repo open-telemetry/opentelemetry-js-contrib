@@ -160,6 +160,7 @@ describe('pg', () => {
     if (testPostgresLocally) {
       testUtils.cleanUpDocker('postgres');
     }
+
     await client.end();
   });
 
@@ -1087,7 +1088,9 @@ describe('pg', () => {
       });
     });
   });
+});
 
+describe('pg (ESM)', () => {
   it('should work with ESM usage', async () => {
     await testUtils.runTestFixture({
       cwd: __dirname,
@@ -1109,7 +1112,7 @@ describe('pg', () => {
         assert.strictEqual(spans[0].kind, 3);
         assert.strictEqual(spans[1].name, 'test-span');
         assert.strictEqual(spans[1].kind, 1);
-        assert.strictEqual(spans[2].name, 'pg.query:SELECT postgres');
+        assert.strictEqual(spans[2].name, 'pg.query:SELECT otel_pg_database');
         assert.strictEqual(spans[2].kind, 3);
       },
     });
