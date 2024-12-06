@@ -310,6 +310,30 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     );
   }
 
+  private _callUserExceptionResponseHook(
+    span: Span,
+    request: NormalizedRequest,
+    err: any
+  ) {
+    const { exceptionHook } = this.getConfig();
+    if (!exceptionHook) return;
+    const requestInfo: AwsSdkRequestHookInformation = {
+      request,
+    };
+
+    safeExecuteInTheMiddle(
+      () => exceptionHook(span, requestInfo, err),
+      (e: Error | undefined) => {
+        if (e)
+          diag.error(
+            `${AwsInstrumentation.component} instrumentation: exceptionHook error`,
+            e
+          );
+      },
+      true
+    );
+  }
+
   private _registerV2CompletedEvent(
     span: Span,
     v2Request: V2PluginRequest,
@@ -557,6 +581,11 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                     message: err.message,
                   });
                   span.recordException(err);
+                  self._callUserExceptionResponseHook(
+                    span,
+                    normalizedRequest,
+                    err
+                  );
                   throw err;
                 })
                 .finally(() => {
