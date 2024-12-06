@@ -40,7 +40,6 @@ const sdk = createTestNodeSdk({
 sdk.start();
 
 import pg from 'pg';
-
 const client = new pg.Client(CONFIG);
 
 await client.connect();
