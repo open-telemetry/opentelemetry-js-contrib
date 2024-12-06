@@ -46,12 +46,12 @@ await client.connect();
 
 const tracer = trace.getTracer();
 
-await tracer.startActiveSpan('test-span', async (span) => {
+await tracer.startActiveSpan('test-span', async span => {
   const res = await client.query('SELECT NOW()');
 
   assert.ok(res);
   span.end();
-});
 
-await client.end();
-await sdk.shutdown();
+  await client.end();
+  await sdk.shutdown();
+});
