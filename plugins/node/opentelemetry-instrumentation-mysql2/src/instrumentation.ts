@@ -154,8 +154,16 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
           }
           span.end();
         });
-
-        if (typeof arguments[arguments.length - 1] !== 'function') {
+        function findCallback(_arguments: IArguments) {
+          for (let i = 0; i < _arguments.length; i++) {
+            if (typeof _arguments[i] === 'function') {
+              return i;
+            }
+          }
+          return -1;
+        }
+        const cb = findCallback(arguments);
+        if (cb < 0) {
           if (typeof (query as any).onResult === 'function') {
             thisPlugin._wrap(
               query as any,
@@ -182,7 +190,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         } else {
           thisPlugin._wrap(
             arguments,
-            arguments.length - 1,
+            cb,
             thisPlugin._patchCallbackQuery(endSpan)
           );
         }

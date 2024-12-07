@@ -722,6 +722,27 @@ describe('mysql2', () => {
       });
     });
 
+    it('should intercept pool.query(text: options, callback, null)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+1 as solution';
+        // @ts-ignore
+        pool.query(
+          { sql },
+          (err, res: mysqlTypes.RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql);
+            done();
+          },
+          null
+        );
+      });
+    });
+
     it('should intercept pool.query(text: string, values: [], callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       context.with(trace.setSpan(context.active(), span), () => {
