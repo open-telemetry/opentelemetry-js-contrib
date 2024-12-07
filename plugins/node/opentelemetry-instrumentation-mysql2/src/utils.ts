@@ -36,10 +36,6 @@ interface QueryOptions {
   values?: any | any[] | { [param: string]: any };
 }
 
-interface Query {
-  sql: string;
-}
-
 interface Config {
   host?: string;
   port?: number;
@@ -47,6 +43,7 @@ interface Config {
   user?: string;
   connectionConfig?: Config;
 }
+
 /**
  * Get an Attributes map from a mysql connection config object
  *
@@ -97,29 +94,28 @@ function getJDBCString(
 }
 
 /**
- * Conjures up the value for the db.statement attribute by formatting a SQL query.
- *
- * @returns the database statement being executed.
+ * Returns a string representing the SQL query that is appropriate to return
+ * in telemetry. If there are no `values` then, to be cautious, it is assumed
+ * the query SQL may include sensitive data and `undefined` is returned, so
+ * that no DB statement is included in telemetry.
  */
 export function getDbStatement(
-  query: string | Query | QueryOptions,
-  format: (
-    sql: string,
-    values: any[],
-    stringifyObjects?: boolean,
-    timeZone?: string
-  ) => string,
+  query: string | QueryOptions,
   values?: any[]
-): string {
+): string | undefined {
+  let statement = '';
   if (typeof query === 'string') {
-    return values ? format(query, values) : query;
+    if (!values) {
+      return;
+    }
+    statement = query;
   } else {
-    // According to https://github.com/mysqljs/mysql#performing-queries
-    // The values argument will override the values in the option object.
-    return values || (query as QueryOptions).values
-      ? format(query.sql, values || (query as QueryOptions).values)
-      : query.sql;
+    if (!query.values && !values) {
+      return;
+    }
+    statement = query.sql;
   }
+  return statement;
 }
 
 /**
@@ -128,7 +124,7 @@ export function getDbStatement(
  *
  * @returns SQL statement without variable arguments or SQL verb
  */
-export function getSpanName(query: string | Query | QueryOptions): string {
+export function getSpanName(query: string | QueryOptions): string {
   const rawQuery = typeof query === 'object' ? query.sql : query;
   // Extract the SQL verb
   const firstSpace = rawQuery?.indexOf(' ');
