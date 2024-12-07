@@ -55,7 +55,7 @@
     "@opentelemetry/sdk-trace-web": "^1.8.0",
     "@types/mocha": "10.0.6",
     "@types/node": "18.18.14",
-    "@types/sinon": "10.0.20",
+    "@types/sinon": "17.0.3",
     "@types/webpack-env": "1.16.3",
     "assert": "2.0.0",
     "babel-loader": "8.3.0",

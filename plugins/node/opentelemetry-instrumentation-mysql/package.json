@@ -48,7 +48,7 @@
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.18.14",
-    "@types/sinon": "10.0.20",
+    "@types/sinon": "17.0.3",
     "mysql": "2.18.1",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",

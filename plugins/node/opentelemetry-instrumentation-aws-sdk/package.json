@@ -63,7 +63,7 @@
     "@smithy/node-http-handler": "2.4.0",
     "@types/mocha": "8.2.3",
     "@types/node": "18.18.14",
-    "@types/sinon": "10.0.20",
+    "@types/sinon": "17.0.3",
     "aws-sdk": "2.1008.0",
     "eslint": "8.7.0",
     "expect": "29.2.0",

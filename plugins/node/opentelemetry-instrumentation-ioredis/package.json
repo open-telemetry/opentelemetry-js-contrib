@@ -55,7 +55,7 @@
     "@types/ioredis4": "npm:@types/ioredis@4.28.10",
     "@types/mocha": "7.0.2",
     "@types/node": "18.18.14",
-    "@types/sinon": "10.0.20",
+    "@types/sinon": "17.0.3",
     "cross-env": "7.0.3",
     "ioredis": "5.2.2",
     "nyc": "15.1.0",
