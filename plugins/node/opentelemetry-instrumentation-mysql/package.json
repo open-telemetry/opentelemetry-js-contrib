@@ -16,6 +16,17 @@
     "test": "nyc mocha 'test/**/*.test.ts'",
     "version:update": "node ../../../scripts/version-update.js"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "MySQLInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "instrumentation",
     "mysql",

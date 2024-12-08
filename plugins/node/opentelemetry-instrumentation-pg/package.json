@@ -22,6 +22,17 @@
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "PgInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "instrumentation",
     "nodejs",

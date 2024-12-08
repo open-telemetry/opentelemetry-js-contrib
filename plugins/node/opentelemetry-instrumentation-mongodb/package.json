@@ -23,6 +23,17 @@
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "MongoDBInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "mongodb",
     "nodejs",
