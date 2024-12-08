@@ -62,39 +62,61 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         'express',
         ['>=4.0.0 <5'],
         moduleExports => {
-          const routerProto = moduleExports.Router as unknown as express.Router;
-          // patch express.Router.route
-          if (isWrapped(routerProto.route)) {
-            this._unwrap(routerProto, 'route');
-          }
-          this._wrap(routerProto, 'route', this._getRoutePatch());
-          // patch express.Router.use
-          if (isWrapped(routerProto.use)) {
-            this._unwrap(routerProto, 'use');
-          }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          this._wrap(routerProto, 'use', this._getRouterUsePatch() as any);
-          // patch express.Application.use
-          if (isWrapped(moduleExports.application.use)) {
-            this._unwrap(moduleExports.application, 'use');
-          }
-          this._wrap(
-            moduleExports.application,
-            'use',
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this._getAppUsePatch() as any
-          );
-          return moduleExports;
+          this._setup(moduleExports, false);
         },
         moduleExports => {
-          if (moduleExports === undefined) return;
-          const routerProto = moduleExports.Router as unknown as express.Router;
-          this._unwrap(routerProto, 'route');
-          this._unwrap(routerProto, 'use');
-          this._unwrap(moduleExports.application, 'use');
+          this._tearDown(moduleExports, false);
+        }
+      ),
+      new InstrumentationNodeModuleDefinition(
+        'express',
+        ['>=5 <6'],
+        moduleExports => {
+          this._setup(moduleExports, true);
+        },
+        moduleExports => {
+          this._tearDown(moduleExports, true);
         }
       ),
     ];
+  }
+
+  private _setup(moduleExports: any, isExpressV5: boolean) {
+    const routerProto = isExpressV5
+      ? moduleExports.Router.prototype
+      : moduleExports.Router;
+    // patch express.Router.route
+    if (isWrapped(routerProto.route)) {
+      this._unwrap(routerProto, 'route');
+    }
+    this._wrap(routerProto, 'route', this._getRoutePatch());
+    // patch express.Router.use
+    if (isWrapped(routerProto.use)) {
+      this._unwrap(routerProto, 'use');
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this._wrap(routerProto, 'use', this._getRouterUsePatch() as any);
+    // patch express.Application.use
+    if (isWrapped(moduleExports.application.use)) {
+      this._unwrap(moduleExports.application, 'use');
+    }
+    this._wrap(
+      moduleExports.application,
+      'use',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this._getAppUsePatch(isExpressV5) as any
+    );
+    return moduleExports;
+  }
+
+  private _tearDown(moduleExports: any, isExpressV5: boolean) {
+    if (moduleExports === undefined) return;
+    const routerProto = isExpressV5
+      ? moduleExports.Router.prototype
+      : moduleExports.Router;
+    this._unwrap(routerProto, 'route');
+    this._unwrap(routerProto, 'use');
+    this._unwrap(moduleExports.application, 'use');
   }
 
   /**
@@ -136,16 +158,22 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
   /**
    * Get the patch for Application.use function
    */
-  private _getAppUsePatch() {
+  private _getAppUsePatch(isExpressV5: boolean) {
     const instrumentation = this;
     return function (original: express.Application['use']) {
       return function use(
-        this: { _router: ExpressRouter },
+        // In express 5.x the router is stored in `router` whereas in 4.x it's stored in `_router`
+        this: { _router?: ExpressRouter; router?: ExpressRouter },
         ...args: Parameters<typeof original>
       ) {
+        // if we access app.router in express 4.x we trigger an assertion error
+        // This property existed in v3, was removed in v4 and then re-added in v5
+        const router = isExpressV5 ? this.router : this._router;
         const route = original.apply(this, args);
-        const layer = this._router.stack[this._router.stack.length - 1];
-        instrumentation._applyPatch(layer, getLayerPath(args));
+        if (router) {
+          const layer = router.stack[router.stack.length - 1];
+          instrumentation._applyPatch(layer, getLayerPath(args));
+        }
         return route;
       };
     };
