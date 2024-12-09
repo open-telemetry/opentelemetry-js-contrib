@@ -35,9 +35,12 @@ describe('awsLambdaDetectorSync', () => {
 
   describe('on lambda', () => {
     it('fills resource', async () => {
+      process.env.AWS_REGION = 'us-east-1';
       process.env.AWS_LAMBDA_FUNCTION_NAME = 'name';
       process.env.AWS_LAMBDA_FUNCTION_VERSION = 'v1';
-      process.env.AWS_REGION = 'us-east-1';
+      process.env.AWS_LAMBDA_LOG_GROUP_NAME = '/aws/lambda/name';
+      process.env.AWS_LAMBDA_LOG_STREAM_NAME = '2024/03/14/[$LATEST]123456';
+      process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE = '128';
 
       const resource = awsLambdaDetectorSync.detect();
 
@@ -48,6 +51,17 @@ describe('awsLambdaDetectorSync', () => {
 
       assert.strictEqual(resource.attributes['faas.name'], 'name');
       assert.strictEqual(resource.attributes['faas.version'], 'v1');
+      assert.strictEqual(
+        resource.attributes['faas.instance'],
+        '2024/03/14/[$LATEST]123456'
+      );
+      assert.strictEqual(
+        resource.attributes['faas.max_memory'],
+        128 * 1024 * 1024
+      );
+      assert.deepStrictEqual(resource.attributes['aws.log.group.names'], [
+        '/aws/lambda/name',
+      ]);
     });
   });
 
