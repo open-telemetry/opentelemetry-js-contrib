@@ -24,9 +24,12 @@ import {
 import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
-import { ExpressLayerType } from '../src/enums/ExpressLayerType';
-import { AttributeNames } from '../src/enums/AttributeNames';
-import { ExpressInstrumentation, ExpressInstrumentationConfig } from '../src';
+import { ExpressLayerType } from '../../src/enums/ExpressLayerType';
+import { AttributeNames } from '../../src/enums/AttributeNames';
+import {
+  ExpressInstrumentation,
+  ExpressInstrumentationConfig,
+} from '../../src';
 import { createServer, httpRequest } from './utils';
 
 const instrumentation = new ExpressInstrumentation({
