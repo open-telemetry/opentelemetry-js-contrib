@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/// <reference types="zone.js" />
 import { HrTime } from '@opentelemetry/api';
 import { EventName } from './types';
 

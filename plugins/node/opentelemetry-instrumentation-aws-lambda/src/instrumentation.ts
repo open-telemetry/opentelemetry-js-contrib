@@ -92,7 +92,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     }
 
     const handler = path.basename(handlerDef);
-    const moduleRoot = handlerDef.substr(0, handlerDef.length - handler.length);
+    const moduleRoot = handlerDef.substring(
+      0,
+      handlerDef.length - handler.length
+    );
 
     const [module, functionName] = handler.split('.', 2);
 

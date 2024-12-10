@@ -67,7 +67,7 @@ export class OTTracePropagator implements TextMapPropagator {
     const spanContext = trace.getSpan(context)?.spanContext();
     if (!spanContext || !isSpanContextValid(spanContext)) return;
 
-    setter.set(carrier, OT_TRACE_ID_HEADER, spanContext.traceId.substr(16));
+    setter.set(carrier, OT_TRACE_ID_HEADER, spanContext.traceId.substring(16));
     setter.set(carrier, OT_SPAN_ID_HEADER, spanContext.spanId);
     setter.set(
       carrier,
@@ -110,7 +110,7 @@ export class OTTracePropagator implements TextMapPropagator {
       getter.keys(carrier).forEach(k => {
         if (!k.startsWith(OT_BAGGAGE_PREFIX)) return;
         const value = readHeader(carrier, getter, k);
-        baggage = baggage.setEntry(k.substr(OT_BAGGAGE_PREFIX.length), {
+        baggage = baggage.setEntry(k.substring(OT_BAGGAGE_PREFIX.length), {
           value,
         });
       });
