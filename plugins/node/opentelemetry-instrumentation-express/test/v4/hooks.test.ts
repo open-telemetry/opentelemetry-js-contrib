@@ -24,9 +24,9 @@ import {
 import * as assert from 'assert';
 import type * as http from 'http';
 import * as sinon from 'sinon';
-import { ExpressInstrumentation } from '../src';
-import { ExpressRequestInfo, SpanNameHook } from '../src/types';
-import { ExpressLayerType } from '../src/enums/ExpressLayerType';
+import { ExpressInstrumentation } from '../../src';
+import { ExpressRequestInfo, SpanNameHook } from '../../src/types';
+import { ExpressLayerType } from '../../src/enums/ExpressLayerType';
 import { SEMATTRS_HTTP_METHOD } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new ExpressInstrumentation();
