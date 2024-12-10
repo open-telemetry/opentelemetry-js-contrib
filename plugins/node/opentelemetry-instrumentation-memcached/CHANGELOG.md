@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.42.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.42.0...instrumentation-memcached-v0.42.1) (2024-12-10)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.44.0 to ^0.45.0
+
 ## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.41.0...instrumentation-memcached-v0.42.0) (2024-12-04)
 
 

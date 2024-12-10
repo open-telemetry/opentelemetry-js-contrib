@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.17.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.17.0...instrumentation-tedious-v0.17.1) (2024-12-10)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.44.0 to ^0.45.0
+
 ## [0.17.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.16.0...instrumentation-tedious-v0.17.0) (2024-12-04)
 
 

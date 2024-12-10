@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.49.0...instrumentation-aws-lambda-v0.50.0) (2024-12-10)
+
+
+### Features
+
+* report url for lambda invoked via api gateway ([#2404](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2404)) ([91c9089](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/91c90892b8f9f4f37968e1f176c23696d7196da3))
+
 ## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.48.0...instrumentation-aws-lambda-v0.49.0) (2024-12-04)
 
 

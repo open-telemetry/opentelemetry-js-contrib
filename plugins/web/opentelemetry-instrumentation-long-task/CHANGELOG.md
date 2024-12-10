@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-long-task-v0.43.0...instrumentation-long-task-v0.44.0) (2024-12-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-user-interaction:** make getZoneWithPrototype() private to avoid leaking internal type `ZoneWithPrototype`
+
+### Features
+
+* widen peer dependency range to include zone.js v0.15.0 ([2e0cbdf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2e0cbdf28cbd406352ac3232f4dceda9e68e6e79))
+
+
+### Bug Fixes
+
+* **instrumentation-user-interaction:** make getZoneWithPrototype() private to avoid leaking internal type `ZoneWithPrototype` ([2e0cbdf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2e0cbdf28cbd406352ac3232f4dceda9e68e6e79))
+
 ## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-long-task-v0.42.0...instrumentation-long-task-v0.43.0) (2024-12-04)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.44.0...contrib-test-utils-v0.45.0) (2024-12-10)
+
+
+### Features
+
+* **contrib-test-utils:** copy soon-to-be-removed types from @opentelemetry/otlp-transformer ([#2573](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2573)) ([23a345d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/23a345dbfbf99569250a5194e403b98c9385fca9))
+
+
+### Bug Fixes
+
+* **test-utils:** Don't swallow assertion errors from `checkResult` and `checkCollector` ([#2588](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2588)) ([de679ad](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/de679ad46d16019abdea79c48c7fb1f9635a8ad5))
+
 ## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.43.0...contrib-test-utils-v0.44.0) (2024-12-04)
 
 

@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.44.0...auto-instrumentations-web-v0.45.0) (2024-12-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-user-interaction:** make getZoneWithPrototype() private to avoid leaking internal type `ZoneWithPrototype`
+
+### Features
+
+* widen peer dependency range to include zone.js v0.15.0 ([2e0cbdf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2e0cbdf28cbd406352ac3232f4dceda9e68e6e79))
+
+
+### Bug Fixes
+
+* **instrumentation-user-interaction:** make getZoneWithPrototype() private to avoid leaking internal type `ZoneWithPrototype` ([2e0cbdf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2e0cbdf28cbd406352ac3232f4dceda9e68e6e79))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.43.0 to ^0.44.0
+
 ## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.43.0...auto-instrumentations-web-v0.44.0) (2024-12-04)
 
 
