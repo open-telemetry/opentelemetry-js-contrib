@@ -63,6 +63,12 @@ export interface StartSpanHookFunction<T = UndiciRequest> {
   (request: T): Attributes;
 }
 
+export interface RequestMetricAttributesHookFunction<
+  RequestType = UndiciRequest
+> {
+  (request: RequestType): Attributes;
+}
+
 // This package will instrument HTTP requests made through `undici` or  `fetch` global API
 // so it seems logical to have similar options than the HTTP instrumentation
 export interface UndiciInstrumentationConfig<
@@ -84,4 +90,6 @@ export interface UndiciInstrumentationConfig<
     requestHeaders?: string[];
     responseHeaders?: string[];
   };
+  /** Function for adding custom attributes to metrics based on request */
+  requestMetricAttributesHook?: RequestMetricAttributesHookFunction<RequestType>;
 }

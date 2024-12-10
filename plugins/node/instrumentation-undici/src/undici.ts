@@ -430,7 +430,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     this._recordFromReq.delete(request);
 
     // Record metrics
-    this.recordRequestDuration(attributes, startTime);
+    this.recordRequestDuration(attributes, startTime, request);
   }
 
   // This is the event we get when something is wrong in the request like
@@ -464,10 +464,10 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     // Record metrics (with the error)
     attributes[SemanticAttributes.ERROR_TYPE] = error.message;
-    this.recordRequestDuration(attributes, startTime);
+    this.recordRequestDuration(attributes, startTime, request);
   }
 
-  private recordRequestDuration(attributes: Attributes, startTime: HrTime) {
+  private recordRequestDuration(attributes: Attributes, startTime: HrTime, request: UndiciRequest) {
     // Time to record metrics
     const metricsAttributes: Attributes = {};
     // Get the attribs already in span attributes
@@ -484,6 +484,19 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
         metricsAttributes[key] = attributes[key];
       }
     });
+
+    // Apply custom attributes from the requestMetricAttributesHook if defined
+    const config = this.getConfig();
+    const customAttributes = safeExecuteInTheMiddle(
+      () => config.requestMetricAttributesHook?.(request),
+      e => e && this._diag.error('caught requestMetricAttributesHook error: ', e),
+      true
+    );
+    if (customAttributes) {
+      Object.entries(customAttributes).forEach(([key, val]) => {
+        metricsAttributes[key] = val;
+      });
+    }
 
     // Take the duration and record it
     const durationSeconds =
