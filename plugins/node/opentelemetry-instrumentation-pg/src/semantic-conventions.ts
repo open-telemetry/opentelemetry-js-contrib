@@ -24,14 +24,44 @@
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export declare const METRIC_DB_CLIENT_CONNECTION_COUNT: 'db.client.connection.count';
+export const METRIC_DB_CLIENT_CONNECTION_COUNT = 'db.client.connection.count';
 
 /**
  * The number of pending requests for an open connection, cumulative for the entire pool
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export declare const METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS: 'db.client.connection.pending_requests';
+export const METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS =
+  'db.client.connection.pending_requests';
+
+/**
+ * The name of the connection pool; unique within the instrumented application. In case the connection pool implementation doesn't provide a name, instrumentation **SHOULD** use a combination of parameters that would make the name unique, for example, combining attributes `server.address`, `server.port`, and `db.namespace`, formatted as `server.address:server.port/db.namespace`. Instrumentations that generate connection pool name following different patterns **SHOULD** document it.
+ *
+ * @example myDataSource
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_DB_CLIENT_CONNECTION_POOL_NAME =
+  'db.client.connection.pool.name';
+
+/**
+ * The state of a connection in the pool
+ *
+ * @example idle
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_DB_CLIENT_CONNECTION_STATE = 'db.client.connection.state';
+
+/**
+ * Enum value "idle" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
+ */
+export const DB_CLIENT_CONNECTION_STATE_VALUE_IDLE = 'idle';
+
+/**
+ * Enum value "used" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
+ */
+export const DB_CLIENT_CONNECTION_STATE_VALUE_USED = 'used';
 
 /**
  * Duration of database client operations.
@@ -40,7 +70,8 @@ export declare const METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS: 'db.client.co
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export declare const METRIC_DB_CLIENT_OPERATION_DURATION: 'db.client.operation.duration';
+export const METRIC_DB_CLIENT_OPERATION_DURATION =
+  'db.client.operation.duration';
 
 /**
  * The name of the database, fully qualified within the server address and port.
@@ -55,7 +86,7 @@ export declare const METRIC_DB_CLIENT_OPERATION_DURATION: 'db.client.operation.d
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export declare const ATTR_DB_NAMESPACE: 'db.namespace';
+export const ATTR_DB_NAMESPACE = 'db.namespace';
 
 /**
  * The name of the operation or command being executed.
@@ -72,4 +103,4 @@ export declare const ATTR_DB_NAMESPACE: 'db.namespace';
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export declare const ATTR_DB_OPERATION_NAME: 'db.operation.name';
+export const ATTR_DB_OPERATION_NAME = 'db.operation.name';
