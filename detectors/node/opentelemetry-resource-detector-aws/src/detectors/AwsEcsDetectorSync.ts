@@ -46,8 +46,6 @@ import {
 // Patch until the OpenTelemetry SDK is updated to ship this attribute
 import { SemanticResourceAttributes as AdditionalSemanticResourceAttributes } from './SemanticResourceAttributes';
 import * as http from 'http';
-import * as util from 'util';
-import * as fs from 'fs';
 import * as os from 'os';
 import { getEnv } from '@opentelemetry/core';
 
@@ -65,11 +63,6 @@ interface AwsLogOptions {
  * plugins of AWS X-Ray. Returns an empty Resource if detection fails.
  */
 export class AwsEcsDetectorSync implements DetectorSync {
-  static readonly CONTAINER_ID_LENGTH = 64;
-  static readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
-
-  private static readFileAsync = util.promisify(fs.readFile);
-
   detect(): IResource {
     const attributes = context.with(suppressTracing(context.active()), () =>
       this._getAttributes()
@@ -88,7 +81,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
       let resource = new Resource({
         [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
         [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_ECS,
-      }).merge(await AwsEcsDetectorSync._getContainerIdAndHostnameResource());
+      }).merge(await AwsEcsDetectorSync._getHostnameResource());
 
       const metadataUrl = getEnv().ECS_CONTAINER_METADATA_URI_V4;
       if (metadataUrl) {
@@ -115,43 +108,16 @@ export class AwsEcsDetectorSync implements DetectorSync {
     }
   }
 
-  /**
-   * Read container ID from cgroup file
-   * In ECS, even if we fail to find target file
-   * or target file does not contain container ID
-   * we do not throw an error but throw warning message
-   * and then return null string
-   */
-  private static async _getContainerIdAndHostnameResource(): Promise<Resource> {
-    const hostName = os.hostname();
+  private static async _getHostnameResource(): Promise<Resource> {
+      const hostName = os.hostname();
 
-    let containerId = '';
-    try {
-      const rawData = await AwsEcsDetectorSync.readFileAsync(
-        AwsEcsDetectorSync.DEFAULT_CGROUP_PATH,
-        'utf8'
-      );
-      const splitData = rawData.trim().split('\n');
-      for (const str of splitData) {
-        if (str.length > AwsEcsDetectorSync.CONTAINER_ID_LENGTH) {
-          containerId = str.substring(
-            str.length - AwsEcsDetectorSync.CONTAINER_ID_LENGTH
-          );
-          break;
-        }
+      if (hostName) {
+        return new Resource({
+          [SEMRESATTRS_CONTAINER_NAME]: hostName || ''
+        });
       }
-    } catch (e) {
-      diag.debug('AwsEcsDetector failed to read container ID', e);
-    }
 
-    if (hostName || containerId) {
-      return new Resource({
-        [SEMRESATTRS_CONTAINER_NAME]: hostName || '',
-        [SEMRESATTRS_CONTAINER_ID]: containerId || '',
-      });
-    }
-
-    return Resource.empty();
+      return Resource.empty();
   }
 
   private static async _getMetadataV4Resource(
@@ -174,10 +140,12 @@ export class AwsEcsDetectorSync implements DetectorSync {
       : `${baseArn}:cluster/${cluster}`;
 
     const containerArn: string = containerMetadata['ContainerARN'];
+    const containerId: string = containerMetadata['DockerId'];
 
     // https://github.com/open-telemetry/semantic-conventions/blob/main/semantic_conventions/resource/cloud_provider/aws/ecs.yaml
     const attributes: ResourceAttributes = {
       [SEMRESATTRS_AWS_ECS_CONTAINER_ARN]: containerArn,
+      [SEMRESATTRS_CONTAINER_ID]: containerId,
       [SEMRESATTRS_AWS_ECS_CLUSTER_ARN]: clusterArn,
       [SEMRESATTRS_AWS_ECS_LAUNCHTYPE]: launchType?.toLowerCase(),
       [SEMRESATTRS_AWS_ECS_TASK_ARN]: taskArn,
