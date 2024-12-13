@@ -19,6 +19,7 @@ import {
   IResource,
   Resource,
   ResourceAttributes,
+  ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 
 /**
@@ -27,7 +28,7 @@ import {
  * Returns an empty Resource if detection fails.
  */
 export class AwsLambdaDetectorSync implements DetectorSync {
-  detect(): IResource {
+  detect(_config?: ResourceDetectionConfig): IResource {
     const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME;
     if (!functionName) {
       return Resource.empty();
