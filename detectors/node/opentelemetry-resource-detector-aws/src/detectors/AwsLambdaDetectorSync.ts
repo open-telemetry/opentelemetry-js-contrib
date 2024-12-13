@@ -28,8 +28,12 @@ import {
  */
 export class AwsLambdaDetectorSync implements DetectorSync {
   detect(): IResource {
-    const awsRegion = process.env.AWS_REGION;
     const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME;
+    if (!functionName) {
+      return Resource.empty();
+    }
+
+    const awsRegion = process.env.AWS_REGION;
     const functionVersion = process.env.AWS_LAMBDA_FUNCTION_VERSION;
     const logGroupName = process.env.AWS_LAMBDA_LOG_GROUP_NAME;
     const logStreamName = process.env.AWS_LAMBDA_LOG_STREAM_NAME;
