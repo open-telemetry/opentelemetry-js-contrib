@@ -17,6 +17,7 @@
     "metapackages/auto-instrumentations-node": {},
     "metapackages/auto-instrumentations-web": {},
     "packages/baggage-span-processor": {},
+    "packages/esbuild-plugin-node": {},
     "packages/opentelemetry-host-metrics": {},
     "packages/opentelemetry-id-generator-aws-xray": {},
     "packages/opentelemetry-propagation-utils": {},
