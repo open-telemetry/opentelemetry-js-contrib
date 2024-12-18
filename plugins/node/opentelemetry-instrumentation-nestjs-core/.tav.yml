@@ -7,6 +7,7 @@
     node: ">=16"
     peerDependencies:
         - "@nestjs/common@^10.0.0"
+        - "@nestjs/platform-express@^10.0.0"
         - "rxjs@^7.1.0"
     commands: npm run test
 
@@ -15,6 +16,7 @@
       mode: latest-minors
     peerDependencies:
         - "@nestjs/common@^9.0.0"
+        - "@nestjs/platform-express@^9.0.0"
         - "rxjs@^7.1.0"
     commands: npm run test
 
@@ -23,6 +25,7 @@
       mode: latest-minors
     peerDependencies:
         - "@nestjs/common@^8.0.0"
+        - "@nestjs/platform-express@^8.0.0"
         - "rxjs@^7.1.0"
     commands: npm run test
 
