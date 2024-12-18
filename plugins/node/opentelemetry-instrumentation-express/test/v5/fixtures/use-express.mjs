@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
+// Use express from an ES module:
+//    node --experimental-loader=@opentelemetry/instrumentation/hook.mjs use-express.mjs
+
 import { promisify } from 'util';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { ExpressInstrumentation } from '../../build/src/index.js';
+import { ExpressInstrumentation } from '../../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
-  serviceName: 'use-express-nested',
-  instrumentations: [
-    new HttpInstrumentation(),
-    new ExpressInstrumentation()
-  ]
-})
-
+  serviceName: 'use-express',
+  instrumentations: [new HttpInstrumentation(), new ExpressInstrumentation()],
+});
 sdk.start();
 
 import express from 'express';
@@ -44,37 +43,21 @@ app.use(async function simpleMiddleware(req, res, next) {
   next();
 });
 
-const userRouter = express.Router();
-const postsRouter = express.Router();
-
-postsRouter.get('/:postId', (req, res, next) => {
-  res.json({ hello: 'yes' });
-  res.end();
-  next();
+app.get('/post/:id', (req, res) => {
+  res.send(`Post id: ${req.params.id}`);
 });
-
-userRouter.get('/api/user/:id', (req, res, next) => {
-  res.json({ hello: 'yes' });
-  res.end();
-  next();
-});
-
-userRouter.use('/api/user/:id/posts', postsRouter);
-
-app.use(userRouter);
 
 const server = http.createServer(app);
 await new Promise(resolve => server.listen(0, resolve));
 const port = server.address().port;
 
-
 await new Promise(resolve => {
-  http.get(`http://localhost:${port}/api/user/123/posts/321`, (res) => {
+  http.get(`http://localhost:${port}/post/0`, res => {
     res.resume();
-    res.on('end', data => {
-      resolve(data);
+    res.on('end', () => {
+      resolve();
     });
-  })
+  });
 });
 
 await new Promise(resolve => server.close(resolve));
