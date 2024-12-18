@@ -23,6 +23,7 @@ import {
   SpanContext,
   TraceFlags,
   trace,
+  TextMapGetter,
 } from '@opentelemetry/api';
 import { TraceState } from '@opentelemetry/core';
 
@@ -307,6 +308,33 @@ describe('AWSXRayPropagator', () => {
         .getSpan(
           xrayPropagator.extract(ROOT_CONTEXT, carrier, defaultTextMapGetter)
         )
+        ?.spanContext();
+
+      assert.deepStrictEqual(extractedSpanContext, {
+        traceId: TRACE_ID,
+        spanId: SPAN_ID,
+        isRemote: true,
+        traceFlags: TraceFlags.SAMPLED,
+      });
+    });
+
+    it('should extract multi header using array getter', () => {
+      carrier[AWSXRAY_TRACE_ID_HEADER] =
+        'Root=1-8a3c60f7-d188f8fa79d48a391a778fa6;Parent=53995c3f42cd8ad8;Sampled=1';
+      const multiGetter: TextMapGetter = {
+        get(carrier, key) {
+          if (carrier == null || carrier[key] === undefined) {
+            return undefined;
+          }
+          return [carrier[key]];
+        },
+        keys: function (carrier: any): string[] {
+          return defaultTextMapGetter.keys(carrier);
+        },
+      };
+
+      const extractedSpanContext = trace
+        .getSpan(xrayPropagator.extract(ROOT_CONTEXT, carrier, multiGetter))
         ?.spanContext();
 
       assert.deepStrictEqual(extractedSpanContext, {
