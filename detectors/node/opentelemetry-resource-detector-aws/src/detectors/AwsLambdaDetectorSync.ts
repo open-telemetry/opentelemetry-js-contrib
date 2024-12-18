@@ -21,15 +21,6 @@ import {
   ResourceAttributes,
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
-import {
-  SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CLOUD_PLATFORM,
-  SEMRESATTRS_CLOUD_REGION,
-  SEMRESATTRS_FAAS_VERSION,
-  SEMRESATTRS_FAAS_NAME,
-  CLOUDPROVIDERVALUES_AWS,
-  CLOUDPLATFORMVALUES_AWS_LAMBDA,
-} from '@opentelemetry/semantic-conventions';
 
 /**
  * The AwsLambdaDetector can be used to detect if a process is running in AWS Lambda
@@ -43,23 +34,22 @@ export class AwsLambdaDetectorSync implements DetectorSync {
       return Resource.empty();
     }
 
+    const awsRegion = process.env.AWS_REGION;
     const functionVersion = process.env.AWS_LAMBDA_FUNCTION_VERSION;
-    const region = process.env.AWS_REGION;
+    const logGroupName = process.env.AWS_LAMBDA_LOG_GROUP_NAME;
+    const logStreamName = process.env.AWS_LAMBDA_LOG_STREAM_NAME;
+    const memorySize = process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE as string;
 
     const attributes: ResourceAttributes = {
-      [SEMRESATTRS_CLOUD_PROVIDER]: String(CLOUDPROVIDERVALUES_AWS),
-      [SEMRESATTRS_CLOUD_PLATFORM]: String(CLOUDPLATFORMVALUES_AWS_LAMBDA),
+      'aws.log.group.names': [logGroupName],
+      'cloud.provider': 'aws',
+      'cloud.platform': 'aws_lambda',
+      'cloud.region': awsRegion,
+      'faas.name': functionName,
+      'faas.version': functionVersion,
+      'faas.instance': logStreamName,
+      'faas.max_memory': parseInt(memorySize) * 1024 * 1024,
     };
-    if (region) {
-      attributes[SEMRESATTRS_CLOUD_REGION] = region;
-    }
-
-    if (functionName) {
-      attributes[SEMRESATTRS_FAAS_NAME] = functionName;
-    }
-    if (functionVersion) {
-      attributes[SEMRESATTRS_FAAS_VERSION] = functionVersion;
-    }
 
     return new Resource(attributes);
   }
