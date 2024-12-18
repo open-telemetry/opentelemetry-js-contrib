@@ -96,7 +96,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'tata');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 2);
+          assert.strictEqual(finishListenerCount, 4);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -201,7 +201,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'tata');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 2);
+          assert.strictEqual(finishListenerCount, 4);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -620,23 +620,51 @@ describe('ExpressInstrumentation', () => {
         //     `- span 'middleware - simpleMiddleware'
         //     `- span 'request handler - /post/:id'
         const spans = collector.sortedSpans;
+
         assert.strictEqual(spans[0].name, 'GET');
         assert.strictEqual(spans[0].kind, testUtils.OtlpSpanKind.CLIENT);
         assert.strictEqual(spans[1].name, 'GET /post/:id');
         assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
         assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
-        assert.strictEqual(spans[2].name, 'middleware - query');
-        assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[3].name, 'middleware - expressInit');
-        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[5].name, 'request handler - /post/:id');
-        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+
+        const querySpan = spans.find(
+          span => span.name === 'middleware - query'
+        );
+
+        assert.strictEqual(querySpan?.kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(querySpan?.parentSpanId, spans[1].spanId);
+
+        const expressInitSpan = spans.find(
+          span => span.name === 'middleware - expressInit'
+        );
+
+        assert.strictEqual(
+          expressInitSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(expressInitSpan?.parentSpanId, spans[1].spanId);
+
+        const simpleMiddlewareSpan = spans.find(
+          span => span.name === 'middleware - simpleMiddleware'
+        );
+
+        assert.strictEqual(
+          simpleMiddlewareSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(simpleMiddlewareSpan?.parentSpanId, spans[1].spanId);
+
+        const requestHandlerSpan = spans.find(
+          span => span.name === 'request handler - /post/:id'
+        );
+
+        assert.strictEqual(
+          requestHandlerSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(requestHandlerSpan?.parentSpanId, spans[1].spanId);
+
+        assert.strictEqual(spans.length, 6);
       },
     });
   });
@@ -661,18 +689,51 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[1].name, 'GET /api/user/:id');
         assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
         assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
-        assert.strictEqual(spans[2].name, 'middleware - query');
-        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[5].name, 'router - /api/user/:id');
-        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[6].name, 'request handler - /api/user/:id');
-        assert.strictEqual(spans[6].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[6].parentSpanId, spans[1].spanId);
+
+        const querySpan = spans.find(
+          span => span.name === 'middleware - query'
+        );
+
+        assert.strictEqual(querySpan?.kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(querySpan?.parentSpanId, spans[1].spanId);
+
+        const expressInitSpan = spans.find(
+          span => span.name === 'middleware - expressInit'
+        );
+
+        assert.strictEqual(
+          expressInitSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(expressInitSpan?.parentSpanId, spans[1].spanId);
+
+        const simpleMiddlewareSpan = spans.find(
+          span => span.name === 'middleware - simpleMiddleware'
+        );
+
+        assert.strictEqual(
+          simpleMiddlewareSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(simpleMiddlewareSpan?.parentSpanId, spans[1].spanId);
+
+        const routerSpan = spans.find(
+          span => span.name === 'router - /api/user/:id'
+        );
+
+        assert.strictEqual(routerSpan?.kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(routerSpan?.parentSpanId, spans[1].spanId);
+
+        const requestHandlerSpan = spans.find(
+          span => span.name === 'request handler - /api/user/:id'
+        );
+
+        assert.strictEqual(
+          requestHandlerSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(requestHandlerSpan?.parentSpanId, spans[1].spanId);
+        assert.strictEqual(spans.length, 7);
       },
     });
   });
@@ -696,27 +757,65 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[0].kind, testUtils.OtlpSpanKind.CLIENT);
         assert.strictEqual(spans[1].name, 'GET /api/user/:id/posts/:postId');
         assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
-        assert.strictEqual(spans[2].name, 'middleware - query');
-        assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[3].name, 'middleware - expressInit');
-        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[5].name, 'router - /api/user/:id');
-        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[6].name, 'router - /:postId');
-        assert.strictEqual(spans[6].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[6].parentSpanId, spans[1].spanId);
-        assert.strictEqual(
-          spans[7].name,
-          'request handler - /api/user/:id/posts/:postId'
+
+        const querySpan = spans.find(
+          span => span.name === 'middleware - query'
         );
-        assert.strictEqual(spans[7].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[7].parentSpanId, spans[1].spanId);
+
+        assert.strictEqual(querySpan?.kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(querySpan?.parentSpanId, spans[1].spanId);
+
+        const expressInitSpan = spans.find(
+          span => span.name === 'middleware - expressInit'
+        );
+
+        assert.strictEqual(
+          expressInitSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(expressInitSpan?.parentSpanId, spans[1].spanId);
+
+        const simpleMiddlewareSpan = spans.find(
+          span => span.name === 'middleware - simpleMiddleware'
+        );
+
+        assert.strictEqual(
+          simpleMiddlewareSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(simpleMiddlewareSpan?.parentSpanId, spans[1].spanId);
+
+        const routerSpanOuter = spans.find(
+          span => span.name === 'router - /api/user/:id'
+        );
+
+        assert.strictEqual(
+          routerSpanOuter?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(routerSpanOuter?.parentSpanId, spans[1].spanId);
+
+        const routerSpanInner = spans.find(
+          span => span.name === 'router - /:postId'
+        );
+
+        assert.strictEqual(
+          routerSpanInner?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(routerSpanInner?.parentSpanId, spans[1].spanId);
+
+        const requestHandlerSpan = spans.find(
+          span => span.name === 'request handler - /api/user/:id/posts/:postId'
+        );
+
+        assert.strictEqual(
+          requestHandlerSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(requestHandlerSpan?.parentSpanId, spans[1].spanId);
+
+        assert.strictEqual(spans.length, 8);
       },
     });
   });
@@ -742,21 +841,45 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[1].name, 'GET /\\/test\\/regex/');
         assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
         assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
-        assert.strictEqual(spans[2].name, 'middleware - query');
-        assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[3].name, 'middleware - expressInit');
-        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-        assert.strictEqual(
-          spans[5].name,
-          'request handler - /\\/test\\/regex/'
+
+        const querySpan = spans.find(
+          span => span.name === 'middleware - query'
         );
-        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+
+        assert.strictEqual(querySpan?.kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(querySpan?.parentSpanId, spans[1].spanId);
+
+        const expressInitSpan = spans.find(
+          span => span.name === 'middleware - expressInit'
+        );
+
+        assert.strictEqual(
+          expressInitSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(expressInitSpan?.parentSpanId, spans[1].spanId);
+
+        const simpleMiddlewareSpan = spans.find(
+          span => span.name === 'middleware - simpleMiddleware'
+        );
+
+        assert.strictEqual(
+          simpleMiddlewareSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(simpleMiddlewareSpan?.parentSpanId, spans[1].spanId);
+
+        const requestHandlerSpan = spans.find(
+          span => span.name === 'request handler - /\\/test\\/regex/'
+        );
+
+        assert.strictEqual(
+          requestHandlerSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(requestHandlerSpan?.parentSpanId, spans[1].spanId);
+
+        assert.strictEqual(spans.length, 6);
       },
     });
   });
@@ -781,18 +904,45 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[0].kind, testUtils.OtlpSpanKind.CLIENT);
         assert.strictEqual(spans[1].name, 'GET /test,6,/test/');
         assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
-        assert.strictEqual(spans[2].name, 'middleware - query');
-        assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[3].name, 'middleware - expressInit');
-        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[5].name, 'request handler - /test,6,/test/');
-        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+
+        const querySpan = spans.find(
+          span => span.name === 'middleware - query'
+        );
+
+        assert.strictEqual(querySpan?.kind, testUtils.OtlpSpanKind.INTERNAL);
+        assert.strictEqual(querySpan?.parentSpanId, spans[1].spanId);
+
+        const expressInitSpan = spans.find(
+          span => span.name === 'middleware - expressInit'
+        );
+
+        assert.strictEqual(
+          expressInitSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(expressInitSpan?.parentSpanId, spans[1].spanId);
+
+        const simpleMiddlewareSpan = spans.find(
+          span => span.name === 'middleware - simpleMiddleware'
+        );
+
+        assert.strictEqual(
+          simpleMiddlewareSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(simpleMiddlewareSpan?.parentSpanId, spans[1].spanId);
+
+        const requestHandlerSpan = spans.find(
+          span => span.name === 'request handler - /test,6,/test/'
+        );
+
+        assert.strictEqual(
+          requestHandlerSpan?.kind,
+          testUtils.OtlpSpanKind.INTERNAL
+        );
+        assert.strictEqual(requestHandlerSpan?.parentSpanId, spans[1].spanId);
+
+        assert.strictEqual(spans.length, 6);
       },
     });
   });
@@ -821,21 +971,50 @@ describe('ExpressInstrumentation', () => {
             'GET /test/array1,/\\/test\\/array[2-9]/'
           );
           assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
-          assert.strictEqual(spans[2].name, 'middleware - query');
-          assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-          assert.strictEqual(spans[3].name, 'middleware - expressInit');
-          assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-          assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-          assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-          assert.strictEqual(
-            spans[5].name,
-            'request handler - /test/array1,/\\/test\\/array[2-9]/'
+
+          const querySpan = spans.find(
+            span => span.name === 'middleware - query'
           );
-          assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+
+          assert.strictEqual(querySpan?.kind, testUtils.OtlpSpanKind.INTERNAL);
+          assert.strictEqual(querySpan?.parentSpanId, spans[1].spanId);
+
+          const expressInitSpan = spans.find(
+            span => span.name === 'middleware - expressInit'
+          );
+
+          assert.strictEqual(
+            expressInitSpan?.kind,
+            testUtils.OtlpSpanKind.INTERNAL
+          );
+          assert.strictEqual(expressInitSpan?.parentSpanId, spans[1].spanId);
+
+          const simpleMiddlewareSpan = spans.find(
+            span => span.name === 'middleware - simpleMiddleware'
+          );
+
+          assert.strictEqual(
+            simpleMiddlewareSpan?.kind,
+            testUtils.OtlpSpanKind.INTERNAL
+          );
+          assert.strictEqual(
+            simpleMiddlewareSpan?.parentSpanId,
+            spans[1].spanId
+          );
+
+          const requestHandlerSpan = spans.find(
+            span =>
+              span.name ===
+              'request handler - /test/array1,/\\/test\\/array[2-9]/'
+          );
+
+          assert.strictEqual(
+            requestHandlerSpan?.kind,
+            testUtils.OtlpSpanKind.INTERNAL
+          );
+          assert.strictEqual(requestHandlerSpan?.parentSpanId, spans[1].spanId);
+
+          assert.strictEqual(spans.length, 6);
         },
       });
     });
@@ -874,21 +1053,50 @@ describe('ExpressInstrumentation', () => {
             'GET /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/'
           );
           assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
-          assert.strictEqual(spans[2].name, 'middleware - query');
-          assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-          assert.strictEqual(spans[3].name, 'middleware - expressInit');
-          assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-          assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-          assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-          assert.strictEqual(
-            spans[5].name,
-            'request handler - /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/'
+
+          const querySpan = spans.find(
+            span => span.name === 'middleware - query'
           );
-          assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+
+          assert.strictEqual(querySpan?.kind, testUtils.OtlpSpanKind.INTERNAL);
+          assert.strictEqual(querySpan?.parentSpanId, spans[1].spanId);
+
+          const expressInitSpan = spans.find(
+            span => span.name === 'middleware - expressInit'
+          );
+
+          assert.strictEqual(
+            expressInitSpan?.kind,
+            testUtils.OtlpSpanKind.INTERNAL
+          );
+          assert.strictEqual(expressInitSpan?.parentSpanId, spans[1].spanId);
+
+          const simpleMiddlewareSpan = spans.find(
+            span => span.name === 'middleware - simpleMiddleware'
+          );
+
+          assert.strictEqual(
+            simpleMiddlewareSpan?.kind,
+            testUtils.OtlpSpanKind.INTERNAL
+          );
+          assert.strictEqual(
+            simpleMiddlewareSpan?.parentSpanId,
+            spans[1].spanId
+          );
+
+          const requestHandlerSpan = spans.find(
+            span =>
+              span.name ===
+              'request handler - /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/'
+          );
+
+          assert.strictEqual(
+            requestHandlerSpan?.kind,
+            testUtils.OtlpSpanKind.INTERNAL
+          );
+          assert.strictEqual(requestHandlerSpan?.parentSpanId, spans[1].spanId);
+
+          assert.strictEqual(spans.length, 6);
         },
       });
     });
