@@ -108,6 +108,10 @@ describe('pg', () => {
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
     instrumentation.enable();
+
+    // Disable and enable the instrumentation to visit unwrap calls
+    instrumentation.disable();
+    instrumentation.enable();
   }
 
   let postgres: typeof pg;
@@ -152,6 +156,7 @@ describe('pg', () => {
 
     postgres = require('pg');
     client = new postgres.Client(CONFIG);
+
     await client.connect();
   });
 
@@ -159,6 +164,7 @@ describe('pg', () => {
     if (testPostgresLocally) {
       testUtils.cleanUpDocker('postgres');
     }
+
     await client.end();
   });
 
@@ -1084,6 +1090,35 @@ describe('pg', () => {
         );
         done();
       });
+    });
+  });
+});
+
+describe('pg (ESM)', () => {
+  it('should work with ESM usage', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-pg.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        const spans = collector.sortedSpans;
+
+        assert.strictEqual(spans.length, 3);
+
+        assert.strictEqual(spans[0].name, 'pg.connect');
+        assert.strictEqual(spans[0].kind, 3);
+        assert.strictEqual(spans[1].name, 'test-span');
+        assert.strictEqual(spans[1].kind, 1);
+        assert.strictEqual(spans[2].name, 'pg.query:SELECT otel_pg_database');
+        assert.strictEqual(spans[2].kind, 3);
+      },
     });
   });
 });
