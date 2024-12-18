@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-azure",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "OpenTelemetry SDK resource detector for Azure",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.44.0",
+    "@opentelemetry/contrib-test-utils": "^0.45.0",
     "@opentelemetry/instrumentation-http": "^0.57.0",
     "@types/mocha": "8.2.3",
     "@types/node": "18.18.14",

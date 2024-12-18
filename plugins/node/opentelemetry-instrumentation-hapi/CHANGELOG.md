@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-hapi-v0.44.0...instrumentation-hapi-v0.45.0) (2024-12-18)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2608](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2608)) ([aa46705](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/aa46705d2fd1bd5ee6d763ac8cd73a7630889d34))
+
+
+### Bug Fixes
+
+* **test-utils:** Don't swallow assertion errors from `checkResult` and `checkCollector` ([#2588](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2588)) ([de679ad](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/de679ad46d16019abdea79c48c7fb1f9635a8ad5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.44.0 to ^0.45.0
+
 ## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-hapi-v0.43.0...instrumentation-hapi-v0.44.0) (2024-12-04)
 
 
