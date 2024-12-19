@@ -234,13 +234,6 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         }
 
         let spanHasEnded = false;
-        if (
-          metadata.attributes[AttributeNames.EXPRESS_TYPE] !==
-          ExpressLayerType.MIDDLEWARE
-        ) {
-          span.end();
-          spanHasEnded = true;
-        }
         // listener for response.on('finish')
         const onResponseFinish = () => {
           if (spanHasEnded === false) {
@@ -269,16 +262,28 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
               });
             }
 
-            if (spanHasEnded === false) {
-              spanHasEnded = true;
-              req.res?.removeListener('finish', onResponseFinish);
-              span.end();
-            }
             if (!(req.route && isError)) {
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
             const callback = args[callbackIdx] as Function;
-            return callback.apply(this, arguments);
+
+            try {
+              return callback.apply(this, arguments);
+            } catch (anyError) {
+              const [error, message] = asErrorAndMessage(anyError);
+              span.recordException(error);
+              span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message,
+              });
+              throw anyError;
+            } finally {
+              if (!spanHasEnded) {
+                spanHasEnded = true;
+                req.res?.removeListener('finish', onResponseFinish);
+                span.end();
+              }
+            }
           };
         }
 
