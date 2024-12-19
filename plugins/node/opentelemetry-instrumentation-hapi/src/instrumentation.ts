@@ -287,7 +287,7 @@ export class HapiInstrumentation extends InstrumentationBase {
           pluginName
         );
       });
-      return oldHandler(server, options);
+      return oldHandler.apply(this, [server, options]);
     };
     plugin.register = newRegisterHandler;
   }
