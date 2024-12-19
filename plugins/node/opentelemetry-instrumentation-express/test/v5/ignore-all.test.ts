@@ -23,9 +23,15 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
-import { AttributeNames } from '../src/enums/AttributeNames';
-import { ExpressInstrumentation, ExpressLayerType } from '../src';
+import { AttributeNames } from '../../src/enums/AttributeNames';
+import { ExpressInstrumentation, ExpressLayerType } from '../../src';
 import { createServer, httpRequest } from './utils';
+
+const nodeVersionNotSupported = process.version.startsWith('v14');
+if (nodeVersionNotSupported) {
+  console.log('Skipping express v5 tests for node version 14');
+  process.exit(0);
+}
 
 const instrumentation = new ExpressInstrumentation({
   ignoreLayersType: [
