@@ -99,7 +99,10 @@ export class AWSXRayPropagator implements TextMapPropagator {
     if (!relevantHeaderKey) {
       return INVALID_SPAN_CONTEXT;
     }
-    const traceHeader = getter.get(carrier, relevantHeaderKey);
+    const rawTraceHeader = getter.get(carrier, relevantHeaderKey);
+    const traceHeader = Array.isArray(rawTraceHeader)
+      ? rawTraceHeader[0]
+      : rawTraceHeader;
 
     if (!traceHeader || typeof traceHeader !== 'string') {
       return INVALID_SPAN_CONTEXT;
