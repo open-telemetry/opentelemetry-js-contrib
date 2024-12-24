@@ -25,6 +25,7 @@ import {
 } from '@opentelemetry/contrib-test-utils';
 import { Resource } from '@opentelemetry/resources';
 import {
+  SEMRESATTRS_CONTAINER_ID,
   SEMRESATTRS_CLOUD_PLATFORM,
   SEMRESATTRS_AWS_ECS_CONTAINER_ARN,
   SEMRESATTRS_AWS_ECS_CLUSTER_ARN,
@@ -51,6 +52,7 @@ interface EcsResourceAttributes {
   readonly zone?: string;
   readonly clusterArn?: string;
   readonly containerArn?: string;
+  readonly containerId?: string;
   readonly launchType?: 'ec2' | 'fargate';
   readonly taskArn?: string;
   readonly taskFamily?: string;
@@ -79,6 +81,11 @@ const assertEcsResource = (
     assert.strictEqual(
       resource.attributes[SEMRESATTRS_AWS_ECS_CONTAINER_ARN],
       validations.containerArn
+    );
+  if (validations.containerId)
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_CONTAINER_ID],
+      validations.containerId
     );
   assert.strictEqual(
     resource.attributes[AdditionalSemanticResourceAttributes.CLOUD_RESOURCE_ID],
@@ -343,6 +350,7 @@ describe('AwsEcsResourceDetector', () => {
             clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
             containerArn:
               'arn:aws:ecs:us-west-2:111122223333:container/0206b271-b33f-47ab-86c6-a0ba208a70a9',
+            containerId: 'ea32192c8553fbff06c9340478a2ff089b2bb5646fb718b4ee206641c9086d66',
             launchType: 'ec2',
             taskArn:
               'arn:aws:ecs:us-west-2:111122223333:task/default/158d1c8083dd49d6b527399fd6414f5c',
@@ -369,6 +377,7 @@ describe('AwsEcsResourceDetector', () => {
             clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
             containerArn:
               'arn:aws:ecs:us-west-2:111122223333:container/05966557-f16c-49cb-9352-24b3a0dcd0e1',
+            containerId: 'cd189a933e5849daa93386466019ab50-2495160603',
             launchType: 'fargate',
             taskArn:
               'arn:aws:ecs:us-west-2:111122223333:task/default/e9028f8d5d8e4f258373e7b93ce9a3c3',
@@ -391,6 +400,7 @@ describe('AwsEcsResourceDetector', () => {
               clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
               containerArn:
                 'arn:aws:ecs:us-west-2:111122223333:container/05966557-f16c-49cb-9352-24b3a0dcd0e1',
+              containerId: 'cd189a933e5849daa93386466019ab50-2495160603',
               launchType: 'fargate',
               taskArn:
                 'arn:aws:ecs:us-west-2:111122223333:task/default/e9028f8d5d8e4f258373e7b93ce9a3c3',
