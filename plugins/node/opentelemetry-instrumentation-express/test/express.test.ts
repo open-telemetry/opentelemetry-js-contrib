@@ -344,11 +344,54 @@ describe('ExpressInstrumentation', () => {
       );
     });
 
+    it('captures thrown endpoint errors', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let finishListenerCount: number | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
+          });
+          next();
+        });
+
+        app.get('/error', (req, res) => {
+          throw new Error('message');
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/error`);
+          rootSpan.end();
+          assert.strictEqual(finishListenerCount, 2);
+
+          const errorSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('request handler'));
+          assert.notStrictEqual(errorSpan, undefined);
+
+          assert.deepStrictEqual(errorSpan!.status, {
+            code: SpanStatusCode.ERROR,
+            message: 'message',
+          });
+          assert.notStrictEqual(
+            errorSpan!.events.find(event => event.name === 'exception'),
+            undefined
+          );
+        }
+      );
+    });
+
     it('should not create span because there are no parent', async () => {
       const app = express();
       app.use(express.json());
       app.use((req, res, next) => {
-        for (let i = 0; i < 1000000; i++) {}
+        for (let i = 0; i < 1000000; i++) { }
         return next();
       });
       const router = express.Router();
