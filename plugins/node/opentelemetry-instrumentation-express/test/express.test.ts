@@ -344,7 +344,7 @@ describe('ExpressInstrumentation', () => {
       );
     });
 
-    it('captures thrown endpoint errors', async () => {
+    it('captures thrown errors', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let finishListenerCount: number | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
@@ -355,7 +355,7 @@ describe('ExpressInstrumentation', () => {
           next();
         });
 
-        app.get('/error', (req, res) => {
+        app.get('/', (req, res, next) => {
           throw new Error('message');
         });
       });
@@ -366,7 +366,7 @@ describe('ExpressInstrumentation', () => {
       await context.with(
         trace.setSpan(context.active(), rootSpan),
         async () => {
-          await httpRequest.get(`http://localhost:${port}/error`);
+          await httpRequest.get(`http://localhost:${port}/`);
           rootSpan.end();
           assert.strictEqual(finishListenerCount, 2);
 
@@ -391,7 +391,7 @@ describe('ExpressInstrumentation', () => {
       const app = express();
       app.use(express.json());
       app.use((req, res, next) => {
-        for (let i = 0; i < 1000000; i++) { }
+        for (let i = 0; i < 1000000; i++) {}
         return next();
       });
       const router = express.Router();
