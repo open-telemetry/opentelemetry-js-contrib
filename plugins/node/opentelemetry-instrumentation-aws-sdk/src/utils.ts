@@ -22,9 +22,6 @@ import {
 import { AttributeNames } from './enums';
 import { NormalizedRequest } from './types';
 
-const toPascalCase = (str: string): string =>
-  typeof str === 'string' ? str.charAt(0).toUpperCase() + str.slice(1) : str;
-
 export const removeSuffixFromStringIfExists = (
   str: string,
   suffixToRemove: string
@@ -33,16 +30,6 @@ export const removeSuffixFromStringIfExists = (
   return str?.slice(-suffixLength) === suffixToRemove
     ? str.slice(0, str.length - suffixLength)
     : str;
-};
-
-export const normalizeV2Request = (awsV2Request: any): NormalizedRequest => {
-  const service = awsV2Request?.service;
-  return {
-    serviceName: service?.api?.serviceId?.replace(/\s+/g, ''),
-    commandName: toPascalCase(awsV2Request?.operation),
-    commandInput: awsV2Request.params,
-    region: service?.config?.region,
-  };
 };
 
 export const normalizeV3Request = (
