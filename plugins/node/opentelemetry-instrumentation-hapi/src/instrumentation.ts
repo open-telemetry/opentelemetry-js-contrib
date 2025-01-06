@@ -269,7 +269,11 @@ export class HapiInstrumentation extends InstrumentationBase {
     const pluginName = getPluginName(plugin);
     const oldHandler = plugin.register;
     const self = this;
-    const newRegisterHandler = function (server: Hapi.Server, options: T) {
+    const newRegisterHandler = function (
+      this: unknown,
+      server: Hapi.Server,
+      options: T
+    ) {
       self._wrap(server, 'route', original => {
         return instrumentation._getServerRoutePatch.bind(instrumentation)(
           original,
