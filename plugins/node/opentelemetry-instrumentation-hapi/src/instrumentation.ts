@@ -267,10 +267,10 @@ export class HapiInstrumentation extends InstrumentationBase {
   private _wrapRegisterHandler<T>(plugin: Hapi.Plugin<T>): void {
     const instrumentation: HapiInstrumentation = this;
     const pluginName = getPluginName(plugin);
-    const oldHandler = plugin.register;
+    const oldRegister = plugin.register;
     const self = this;
     const newRegisterHandler = function (
-      this: unknown,
+      this: typeof plugin,
       server: Hapi.Server,
       options: T
     ) {
@@ -291,7 +291,7 @@ export class HapiInstrumentation extends InstrumentationBase {
           pluginName
         );
       });
-      return oldHandler(server, options);
+      return oldRegister.call(this, server, options);
     };
     plugin.register = newRegisterHandler;
   }
