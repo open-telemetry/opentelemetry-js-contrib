@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-node",
-  "version": "0.55.0",
+  "version": "0.55.1",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-node#readme",
@@ -62,7 +62,7 @@
     "@opentelemetry/instrumentation-generic-pool": "^0.43.0",
     "@opentelemetry/instrumentation-graphql": "^0.47.0",
     "@opentelemetry/instrumentation-grpc": "^0.57.0",
-    "@opentelemetry/instrumentation-hapi": "^0.45.0",
+    "@opentelemetry/instrumentation-hapi": "^0.45.1",
     "@opentelemetry/instrumentation-http": "^0.57.0",
     "@opentelemetry/instrumentation-ioredis": "^0.47.0",
     "@opentelemetry/instrumentation-kafkajs": "^0.7.0",
