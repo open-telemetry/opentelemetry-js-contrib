@@ -1,11 +1,3 @@
-"aws-sdk":
-  # A small subset of releases in the range [2.308.0, 3) to reduce testing time.
-  versions:
-    include: "^2.308.0"
-    mode: max-7
-  commands:
-    - npm run test
-
 # Versions [3.363.0, 3.377.0] of all @aws-sdk/client-* were bad releases. See:
 # - https://github.com/open-telemetry/opentelemetry-js-contrib/pull/2464#issuecomment-2403652552
 # - https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1828#issuecomment-1834276719
