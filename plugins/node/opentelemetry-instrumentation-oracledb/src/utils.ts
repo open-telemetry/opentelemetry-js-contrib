@@ -39,8 +39,8 @@ import {
   DBSYSTEMVALUES_ORACLE,
 } from '@opentelemetry/semantic-conventions';
 import * as oracledbTypes from 'oracledb';
-import { OracleInstrumentationConfig, spanConnectionConfig } from './types';
-import { traceSpanData, spanCallLevelConfig } from './internal-types';
+import { OracleInstrumentationConfig, SpanConnectionConfig } from './types';
+import { TraceSpanData, SpanCallLevelConfig } from './internal-types';
 import { SpanNames } from './constants';
 
 const newmoduleExports: any = oracledbTypes;
@@ -72,7 +72,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
 
   // Returns the connection related Attributes for
   // semantic standards and module custom keys.
-  private _getConnectionSpanAttributes(config: spanConnectionConfig) {
+  private _getConnectionSpanAttributes(config: SpanConnectionConfig) {
     return {
       [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_ORACLE,
       [SEMATTRS_NET_TRANSPORT]: config.protocol,
@@ -124,7 +124,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
   // internal roundtrip spans generated for oracledb exported functions.
   private _setCallLevelAttributes(
     span: Span,
-    callConfig?: spanCallLevelConfig,
+    callConfig?: SpanCallLevelConfig,
     roundTrip = false
   ) {
     if (!callConfig) return;
@@ -150,7 +150,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
     }
   }
 
-  private _handleExecuteCustomRequest(span: Span, traceContext: traceSpanData) {
+  private _handleExecuteCustomRequest(span: Span, traceContext: TraceSpanData) {
     if (typeof this._instrumentConfig.requestHook === 'function') {
       safeExecuteInTheMiddle(
         () => {
@@ -169,7 +169,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
     }
   }
 
-  private _handleExecuteCustomResult(span: Span, traceContext: traceSpanData) {
+  private _handleExecuteCustomResult(span: Span, traceContext: TraceSpanData) {
     if (typeof this._instrumentConfig.responseHook === 'function') {
       safeExecuteInTheMiddle(
         () => {
@@ -192,7 +192,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
   // roundTrip flag will skip dumping bind values for
   // internal roundtrip spans generated for exported functions.
   private _updateFinalSpanAttributes(
-    traceContext: traceSpanData,
+    traceContext: TraceSpanData,
     roundTrip = false
   ) {
     const span = traceContext.userContext.span;
@@ -230,7 +230,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
 
   // This method is invoked before calling an exported function
   // from oracledb module.
-  onEnterFn(traceContext: traceSpanData) {
+  onEnterFn(traceContext: TraceSpanData) {
     if (this._shouldSkipInstrumentation()) {
       return;
     }
@@ -272,7 +272,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
 
   // This method is invoked after exported function from oracledb module
   // completes.
-  onExitFn(traceContext: traceSpanData) {
+  onExitFn(traceContext: TraceSpanData) {
     if (
       this._shouldSkipInstrumentation() ||
       !traceContext.userContext ||
@@ -296,7 +296,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
 
   // This method is invoked before a round trip call to DB is done
   // from the oracledb module as part of sql execution.
-  onBeginRoundTrip(traceContext: traceSpanData) {
+  onBeginRoundTrip(traceContext: TraceSpanData) {
     if (this._shouldSkipInstrumentation()) {
       return;
     }
@@ -312,7 +312,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
 
   // This method is invoked after a round trip call to DB is done
   // from the oracledb module as part of sql execution.
-  onEndRoundTrip(traceContext: traceSpanData) {
+  onEndRoundTrip(traceContext: TraceSpanData) {
     if (
       this._shouldSkipInstrumentation() ||
       !traceContext.userContext ||

@@ -19,7 +19,7 @@ import type * as api from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 // Captures connection related span data
-export interface spanConnectionConfig {
+export interface SpanConnectionConfig {
   serviceName?: string;
   connectString?: string;
   hostName?: string;
@@ -36,7 +36,7 @@ export interface spanConnectionConfig {
 
 export interface OracleRequestHookInformation {
   inputArgs: any;
-  connection: spanConnectionConfig | undefined;
+  connection: SpanConnectionConfig | undefined;
 }
 
 export interface OracleInstrumentationExecutionRequestHook {
@@ -55,12 +55,15 @@ export interface OracleInstrumentationConfig extends InstrumentationConfig {
   /**
    * If true, an attribute containing the execute method
    * bind values will be attached the spans generated.
+   *
+   * @default false
    */
   enhancedDatabaseReporting?: boolean;
 
   /**
    * If true, db.statement will have sql in the spans generated.
-   * default value is false/undefined.
+   *
+   * @default false
    */
   dbStatementDump?: boolean;
 
