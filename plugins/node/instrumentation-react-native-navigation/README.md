@@ -23,7 +23,7 @@ This package is designed to streamline your workflow by requiring minimal setup.
 
 ### Expo Router / React Native Navigation
 
-If you are using `expo-router` or `react-native/navigation` you need to wrap your entire application with the `NavigationTracker` component.
+If you are using `expo-router` or `@react-navigation/native` you need to wrap your entire application with the `NavigationTracker` component.
 
 ```javascript
 import {FC, useMemo} from 'react';
@@ -64,7 +64,7 @@ const App: FC = () => {
 export default App;
 ```
 
-If you are using the `useNavigationContainerRef()` from the `@react-navigation/native` package please make sure you wrap what it returns into the proper shape of a reference (i.e `{ current: { <useNavigationContainerRef value> } }`), otherwise it won't work as expected and you will see the mentioned console.warn message insted (in case `debug` mode is enabled).
+If you are using the `useNavigationContainerRef()` from the `@react-navigation/native` package please make sure you wrap what it returns into the proper shape of a reference (i.e `{ current: <useNavigationContainerRef value> }`), otherwise it won't work as expected and you will see the mentioned console.warn message instead (in case `debug` mode is enabled).
 
 ```javascript
 import {FC, useMemo} from 'react';
@@ -105,7 +105,7 @@ const App: FC = () => {
 export default App;
 ```
 
-### Wix React Native Navigation
+### React Native Navigation from Wix
 
 If you are using `wix/react-native-navigation` you are also able to track navigation changes by importing and implement the `NativeNavigationTracker` component. The purpose in here is to wrap the entire application with the exposed component.
 
@@ -134,11 +134,13 @@ Navigation.events().registerAppLaunchedListener(async () => {
 });
 
 const HomeScreen: FC = () => {
-  const navigationRef = useRef(Navigation.events()); // this is the important part. Make sure you pass a reference with the return of Navigation.events();
+  // important: make sure you pass a reference with the return of Navigation.events();
+  const navigationRef = useRef(Navigation.events()); 
 
-  const provider = useProvider(); // again, the provider should be passed down into the `NativeNavigationTracker` with the selected exporter and processor configured (this hook is not part of the package, it is just used here as a reference)
+  // again, the provider should be passed down into the `NativeNavigationTracker` with the selected exporter and processor configured (this hook is not part of the package, it is just used here as a reference)
   // If your choice is not to pass any custom tracer provider, the <NavigationTracker /> component will use the global one.
   // In both cases you have to make sure a tracer provider is registered BEFORE you attempt to record the first span. 
+  const provider = useProvider();
 
   const config = useMemo(() => ({
     tracerOptions: {
@@ -200,9 +202,9 @@ For instance, when the application starts and the user navigates to a new sectio
 
 If you dig into the attributes, `view.launch` refers to the moment the app is launched. It will be `true` only the first time the app mounts. Changing the status between background/foreground won't modify this attribute. For this case the `view.state.end` is used, and it can contain two possible values for Android: `active` and `background`, and a third one can be found for iOS: `inactive` (for more information about this you can visit the official [React Native - App States](https://reactnative.dev/docs/appstate#app-states) documentation).
 
-Both components (<NavigationTracker /> and <NativeNavigationTracker />) are built on top of third-party libraries and function according to the respective APIs exposed by those libraries.
+Both components (`<NavigationTracker />` and `<NativeNavigationTracker />`) are built on top of third-party libraries and function according to the respective APIs exposed by those libraries.
 
-As mentioned before, <NavigationTracker /> relies on `@react-native/navigation` and `expo-router`, implementing the `state` listener to detect changes during navigation. `<NativeNavigationTracker />` leverages the capabilities of `wix/react-native-navigation`, internally implementing the `registerComponentDidAppearListener` and `registerComponentDidDisappearListener` methods provided by the library.
+As mentioned before, `<NavigationTracker />` relies on `@react-navigation/native` and `expo-router`, implementing the `state` listener to detect changes during navigation. `<NativeNavigationTracker />` leverages the capabilities of `wix/react-native-navigation`, internally implementing the `registerComponentDidAppearListener` and `registerComponentDidDisappearListener` methods provided by the library.
 
 ### Note
 
