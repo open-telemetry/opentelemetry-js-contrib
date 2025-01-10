@@ -96,7 +96,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'tata');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 2);
+          assert.strictEqual(finishListenerCount, 3);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -201,7 +201,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'tata');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 2);
+          assert.strictEqual(finishListenerCount, 3);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
