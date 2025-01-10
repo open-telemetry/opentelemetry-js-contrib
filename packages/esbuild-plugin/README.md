@@ -21,7 +21,6 @@ Setup the node_modules in the example in the contrib repo.
 
 ```bash
 cd ~/tm/opentelemetry-js-contrib5/packages/esbuild-plugin/example   # my tm-esbuild-plugin-alternative branch
-# Note: You probably want to update to a recent '@opentelemetry/auto-instrumentations-node' dep, e.g. '^0.55.2'
 npm install   # get the initial layout
 ```
 
