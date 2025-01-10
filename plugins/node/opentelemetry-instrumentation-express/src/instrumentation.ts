@@ -269,14 +269,6 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
 
             try {
               return callback.apply(this, arguments);
-            } catch (anyError) {
-              const [error, message] = asErrorAndMessage(anyError);
-              span.recordException(error);
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message,
-              });
-              throw anyError;
             } finally {
               if (!spanHasEnded) {
                 spanHasEnded = true;
