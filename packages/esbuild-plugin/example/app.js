@@ -32,11 +32,6 @@ async function main() {
     server.close();
 
     await redis.quit();
-
-    setTimeout(function () {
-      console.log('Done lame wait for batch span send.')
-      // console.log('XXX ', process._getActiveHandles());
-    }, 10000);
 }
 
 main();
