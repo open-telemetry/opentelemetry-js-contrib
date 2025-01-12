@@ -72,9 +72,6 @@ export function getOtelPackageToInstrumentationConfig() {
       ];
 
     for (const instrumentationModuleDefinition of moduleDefinitions) {
-      // For some reason @opentelemetry/instrumentation-generic-pool reports its name as just Instrumentation
-      // TODO: See if this goes away with an upgrade
-      if (instrumentation.constructor.name === 'Instrumentation') continue;
       otelPackageToInstrumentationConfig[instrumentationModuleDefinition.name] =
         {
           oTelInstrumentationPackage:
