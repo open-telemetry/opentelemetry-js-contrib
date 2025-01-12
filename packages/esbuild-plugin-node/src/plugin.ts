@@ -114,11 +114,6 @@ export function openTelemetryPlugin(
             otelPackageToInstrumentationConfig[pluginData.instrumentationName];
           if (!config) return;
 
-          // console.log('config is', config);
-          const packageConfig =
-            pluginConfig?.instrumentationConfig?.[
-              config.oTelInstrumentationPackage
-            ];
           const extractedModule = pluginData.extractedModule;
 
           return {
@@ -129,10 +124,6 @@ export function openTelemetryPlugin(
               ),
               moduleVersion: pluginData.moduleVersion,
               instrumentationName: pluginData.instrumentationName,
-              oTelInstrumentationClass: config.oTelInstrumentationClass,
-              oTelInstrumentationPackage: config.oTelInstrumentationPackage,
-              oTelInstrumentationConstructorArgs:
-                config.configGenerator(packageConfig),
             }),
             resolveDir: dirname(path),
           };

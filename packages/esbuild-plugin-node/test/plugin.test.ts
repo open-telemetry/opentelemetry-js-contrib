@@ -79,7 +79,6 @@ describe('Esbuild can instrument packages via a plugin', function () {
     await exec(`ts-node ${__dirname}/test-app/build.ts`);
 
     const proc = startTestApp();
-
     assert.ifError(proc.error);
     assert.equal(proc.status, 0, `proc.status (${proc.status})`);
     assert.equal(proc.signal, null, `proc.signal (${proc.signal})`);
@@ -96,15 +95,7 @@ describe('Esbuild can instrument packages via a plugin', function () {
     );
   });
 
-  it('fastify and pino', async () => {
-    assert.ok(
-      stdOutLines.find(
-        logLine =>
-          logLine ===
-          'OpenTelemetry automatic instrumentation started successfully'
-      )
-    );
-
+  it('fastify and pino', () => {
     const traceId = getTraceId(
       stdOutLines,
       'request handler - fastify -> @fastify/rate-limit'
@@ -121,13 +112,13 @@ describe('Esbuild can instrument packages via a plugin', function () {
     assert.equal(traceId, trace_id, 'Pino logs include trace ID');
   });
 
-  it('redis', async () => {
+  it('redis', () => {
     const traceId = getTraceId(stdOutLines, 'redis-GET');
 
     assert.ok(traceId, 'console span output in stdout contains a redis span');
   });
 
-  it('mongodb', async () => {
+  it('mongodb', () => {
     const traceId = getTraceId(stdOutLines, 'mongodb.find');
 
     assert.ok(traceId, 'console span output in stdout contains a traceId');

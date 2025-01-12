@@ -35,9 +35,6 @@ export type OnLoadArgs = Omit<EsbuildOnLoadArgs, 'pluginData'> & {
 
 export interface ModuleParams {
   path?: string;
-  oTelInstrumentationPackage: string;
-  oTelInstrumentationClass: string;
-  oTelInstrumentationConstructorArgs?: string;
   instrumentationName?: string;
   moduleVersion: string;
 }
@@ -68,8 +65,6 @@ export type EsbuildInstrumentationConfigMap = {
 };
 
 export interface OpenTelemetryPluginParams {
-  instrumentationConfig?: EsbuildInstrumentationConfigMap;
-
   /** Modules to consider external and ignore from the plugin */
   externalModules?: string[];
 

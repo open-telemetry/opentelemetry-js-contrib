@@ -16,6 +16,22 @@
 
 const opentelemetry = require('@opentelemetry/sdk-node');
 const { DiagConsoleLogger, diag } = require('@opentelemetry/api');
+const {
+  getNodeAutoInstrumentations,
+} = require('@opentelemetry/auto-instrumentations-node');
+const {
+  FastifyInstrumentation,
+} = require('@opentelemetry/instrumentation-fastify');
+const {
+  RedisInstrumentation: RedisInstrumentationV4,
+} = require('@opentelemetry/instrumentation-redis-4');
+const { PinoInstrumentation } = require('@opentelemetry/instrumentation-pino');
+const {
+  MongoDBInstrumentation,
+} = require('@opentelemetry/instrumentation-mongodb');
+const {
+  GraphQLInstrumentation,
+} = require('@opentelemetry/instrumentation-graphql');
 
 diag.setLogger(
   new DiagConsoleLogger(),
@@ -23,8 +39,13 @@ diag.setLogger(
 );
 
 const sdk = new opentelemetry.NodeSDK({
-  // Notably instrumentation fastify, pino and graphql are not in here
-  instrumentations: [],
+  instrumentations: [
+    new FastifyInstrumentation(),
+    new RedisInstrumentationV4(),
+    new PinoInstrumentation(),
+    new MongoDBInstrumentation(),
+    new GraphQLInstrumentation(),
+  ],
 });
 
 try {
