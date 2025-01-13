@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.55.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.55.1...auto-instrumentations-node-v0.55.2) (2025-01-09)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.50.0 to ^0.50.1
+
 ## [0.55.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.55.0...auto-instrumentations-node-v0.55.1) (2025-01-07)
 
 
