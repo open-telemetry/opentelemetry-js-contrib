@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.5.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.5.2...resource-detector-container-v0.5.3) (2024-12-18)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.44.0 to ^0.45.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.18.0 to ^0.19.0
+
+## [0.5.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.5.1...resource-detector-container-v0.5.2) (2024-12-04)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.43.0 to ^0.44.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.17.0 to ^0.18.0
+
 ## [0.5.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.5.0...resource-detector-container-v0.5.1) (2024-11-18)
 
 

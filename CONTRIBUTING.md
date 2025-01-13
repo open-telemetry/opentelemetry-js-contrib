@@ -151,7 +151,9 @@ Maintainers may override the decisions of component owners, but should only do s
 
 ### Becoming a Component Owner
 
-Prior to becoming an owner, contributors MUST be become [members](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#member) of the [OpenTelemetry organization](https://github.com/open-telemetry).
+To become a component owner, contributors MUST be a [member](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#member) of the OpenTelemetry GitHub organization.
+To become a member, follow the steps in the [community guidelines for membership requirements](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#requirements).
+
 To become a component owner, contributors SHOULD demonstrate prior knowledge of the instrumented package or the concepts therein.
 
 Ways do to so may be by providing proof of:
@@ -180,6 +182,7 @@ If all these conditions are met, aspiring component owners are encouraged to sel
 information provided on the issue - either approve or deny the ownership request. If the ownership request has been
 approved, the new component owner opens a PR to add themselves to the list of owners ([.github/component_owners.yml](.github/component_owners.yml))
 for that package.
+@open-telemetry/javascript-maintainers will add the component owner to @open-telemetry/javascript-contrib-triagers.
 
 ## Component Lifecycle
 
@@ -313,6 +316,7 @@ When instrumentation cannot be included in a target package and there is good re
 Note that new instrumentation needs at least two contributors assigned to it as code-owners.  It is the responsibility
 of the requesting party to reach out and find code-owners for the proposed instrumentation. The instrumentation request
 needs to be accepted before any pull requests for the instrumentation can be considered for merging.
+Review the guidelines for [Becoming a Component Owner](#becoming-a-component-owner).
 
 Regardless of where instrumentation is hosted, it needs to be discoverable.
 The [OpenTelemetry registry](https://opentelemetry.io/registry/) exists to ensure that instrumentation is discoverable.
