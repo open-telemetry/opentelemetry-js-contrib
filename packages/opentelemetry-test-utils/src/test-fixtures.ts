@@ -236,7 +236,7 @@ export async function runTestFixture(
   const collector = new TestCollector();
   await collector.start();
 
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     execFile(
       process.execPath,
       opts.argv,
@@ -261,6 +261,8 @@ export async function runTestFixture(
           if (opts.checkCollector) {
             await opts.checkCollector(collector);
           }
+        } catch (err) {
+          reject(err);
         } finally {
           collector.close();
           resolve();
