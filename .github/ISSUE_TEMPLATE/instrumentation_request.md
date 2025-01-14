@@ -27,7 +27,7 @@ Any code-owners listed MUST fulfill all criteria laid out in the checklist below
   - [ ] I understand that the component may be subject to the [OpenTelemetry Semantic Conventions](https://github.com/open-telemetry/semantic-conventions) and agree to follow the rules set out therein
 - Owner 2
   <!-- instruct any co-owners to complete the checklist above and comment it on this issue -->
-  - [ ] Commented the checklist below and has fulfilled the criteria for becoming a component owner
+  - [ ] Commented on the issue confirming they have fulfilled all criteria for becoming a component owner
 <!-- continue listing co-owners if you have more than two -->
 
 ### Additional context
