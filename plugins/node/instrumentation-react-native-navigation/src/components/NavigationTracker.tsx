@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { forwardRef, ReactNode } from 'react';
+import React, { forwardRef, ReactNode } from 'react';
 import { TracerProvider } from '@opentelemetry/api';
 
 import useTracerRef from '../utils/hooks/useTracerRef';
@@ -43,5 +43,5 @@ const NavigationTracker = forwardRef<
 
 NavigationTracker.displayName = 'NavigationTracker';
 
-export default NavigationTracker;
+export { NavigationTracker };
 export type { NavigationTrackerRef };

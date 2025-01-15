@@ -13,7 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import NativeNavigationTracker from './components/NativeNavigationTracker';
-import NavigationTracker from './components/NavigationTracker';
-
-export { NativeNavigationTracker, NavigationTracker };
+export * from './components/NativeNavigationTracker';
+export * from './components/NavigationTracker';
