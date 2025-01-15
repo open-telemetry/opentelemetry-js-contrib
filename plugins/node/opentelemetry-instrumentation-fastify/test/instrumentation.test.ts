@@ -560,4 +560,15 @@ describe('fastify', () => {
       },
     });
   });
+
+  it('should expose errorCodes', async function () {
+    // errorCodes was added in v4.8.0
+    // ref: https://github.com/fastify/fastify/compare/v4.7.0...v4.8.0
+    if (semver.lt(fastifyVersion, '4.8.0')) {
+      this.skip();
+    }
+    assert.ok(Fastify.errorCodes);
+    assert.strictEqual(typeof Fastify.errorCodes, 'object');
+    assert.ok('FST_ERR_NOT_FOUND' in Fastify.errorCodes);
+  });
 });

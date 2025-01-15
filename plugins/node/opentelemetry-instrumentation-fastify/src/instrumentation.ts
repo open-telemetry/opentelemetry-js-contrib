@@ -27,6 +27,7 @@ import type {
   FastifyInstance,
   FastifyRequest,
   FastifyReply,
+  FastifyErrorCodes,
 } from 'fastify';
 import { hooksNamesToWrap } from './constants';
 import {
@@ -185,6 +186,7 @@ export class FastifyInstrumentation extends InstrumentationBase<FastifyInstrumen
 
   private _patchConstructor(moduleExports: {
     fastify: () => FastifyInstance;
+    errorCodes: FastifyErrorCodes | undefined;
   }): () => FastifyInstance {
     const instrumentation = this;
 
@@ -198,6 +200,9 @@ export class FastifyInstrumentation extends InstrumentationBase<FastifyInstrumen
       return app;
     }
 
+    if (moduleExports.errorCodes !== undefined) {
+      fastify.errorCodes = moduleExports.errorCodes;
+    }
     fastify.fastify = fastify;
     fastify.default = fastify;
     return fastify;
