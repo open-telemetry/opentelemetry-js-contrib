@@ -150,7 +150,7 @@ describe('Knex instrumentation', () => {
       const [span] = memoryExporter.getFinishedSpans();
       const limitedStatement = span?.attributes?.['db.statement'] as string;
       assert.strictEqual(limitedStatement.length, 52);
-      assert.ok(statement.startsWith(limitedStatement.substr(0, 50)));
+      assert.ok(statement.startsWith(limitedStatement.substring(0, 50)));
     });
 
     it('should catch errors', async () => {
