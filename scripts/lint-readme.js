@@ -4,8 +4,11 @@ const path = require('path');
 const packageRoot = process.cwd();
 const monorepoRoot = path.resolve(__dirname, '..');
 
-const autoInstrumentationNodeDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-node/package.json`).dependencies.filter(dep => dep !== '@opentelemetry/instrumentation-fastify');
+const autoInstrumentationNodeDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-node/package.json`).dependencies;
 const autoInstrumentationWebDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-web/package.json`).dependencies;
+
+// remove exempt instrumentations
+delete autoInstrumentationNodeDeps['@opentelemetry/instrumentation-fastify'];
 
 // extract info from package.json
 const packageJsonUrl = path.resolve(`${packageRoot}/package.json`);
