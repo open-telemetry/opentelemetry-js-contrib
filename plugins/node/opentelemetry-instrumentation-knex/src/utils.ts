@@ -45,7 +45,8 @@ export const getFormatter = (runner: any) => {
 
 export const cloneErrorWithNewMessage = (err: Exception, message: string) => {
   if (err && err instanceof Error) {
-    const clonedError = new (err.constructor as Exception)(message);
+    const clonedError = Object.assign({}, err);
+    clonedError.message = message;
     clonedError.code = err.code;
     clonedError.stack = err.stack;
     clonedError.errno = err.errno;
