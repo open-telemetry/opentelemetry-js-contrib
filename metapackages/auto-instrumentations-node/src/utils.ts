@@ -136,7 +136,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
 };
 
-const defaultExcludedInstrumentations = ['@opentelemetry/instrumentation-fs'];
+const defaultExcludedInstrumentations = ['@opentelemetry/instrumentation-fs', '@opentelemetry/instrumentation-fastify'];
 
 // Config types inferred automatically from the first argument of the constructor
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;
