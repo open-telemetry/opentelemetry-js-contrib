@@ -20,14 +20,15 @@ const EXPORTER = process.env.EXPORTER || '';
 export const setupTracing = (serviceName: string) => {
 
   //metrics:
-  const meterProvider = new MeterProvider()
   const metricExporter = new OTLPMetricExporter();
   const metricReader = new PeriodicExportingMetricReader({
     exporter: metricExporter,
     exportIntervalMillis: 100,
     exportTimeoutMillis: 100,
   });
-  meterProvider.addMetricReader(metricReader);
+  const meterProvider = new MeterProvider({
+    readers: [metricReader],
+  });
 
   //traces:
   const tracerProvider = new NodeTracerProvider({

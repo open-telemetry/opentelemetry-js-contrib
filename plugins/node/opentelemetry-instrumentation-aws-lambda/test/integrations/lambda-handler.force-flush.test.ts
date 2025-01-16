@@ -152,10 +152,11 @@ describe('force flush', () => {
   });
 
   it('should force flush MeterProvider', async () => {
-    const provider = new MeterProvider();
-    provider.addMetricReader(
-      new PeriodicExportingMetricReader({ exporter: metricMemoryExporter })
-    );
+    const provider = new MeterProvider({
+      readers: [
+        new PeriodicExportingMetricReader({ exporter: metricMemoryExporter }),
+      ],
+    });
     let forceFlushed = false;
     const forceFlush = () =>
       new Promise<void>(resolve => {
@@ -198,10 +199,11 @@ describe('force flush', () => {
       });
     nodeTracerProvider.forceFlush = tracerForceFlush;
 
-    const meterProvider = new MeterProvider();
-    meterProvider.addMetricReader(
-      new PeriodicExportingMetricReader({ exporter: metricMemoryExporter })
-    );
+    const meterProvider = new MeterProvider({
+      readers: [
+        new PeriodicExportingMetricReader({ exporter: metricMemoryExporter }),
+      ],
+    });
     let meterForceFlushed = false;
     const meterForceFlush = () =>
       new Promise<void>(resolve => {
