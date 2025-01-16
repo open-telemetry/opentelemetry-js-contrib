@@ -55,6 +55,25 @@ import { V4Connect, V4Session } from './internal-types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api';
 
+// Skipping mongoose-added `non-enumerable` properties
+// https://github.com/Automattic/mongoose/blob/b34aba65bd64540e330665477f542eb79c877909/lib/helpers/document/compile.js#L217C11-L228C6
+// These properties are added by mongoose and supposed to be non-enumerable
+// but they are enumerable in some versions of mongoose.
+// These properties have made non-enumerable from mongoose@5.13.14
+// https://github.com/Automattic/mongoose/commit/62b7b9c07ad3c763d5e42714ee149c28412db79e
+const KEYS_TO_SKIP_SCRUBBING = [
+  'isNew',
+  '$__',
+  '$errors',
+  'errors',
+  '_doc',
+  '$locals',
+  '$op',
+  '__parentArray',
+  '__index',
+  '$isDocumentArrayElement',
+];
+
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumentationConfig> {
   private _connectionsUsage!: UpDownCounter;
@@ -932,17 +951,29 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     return JSON.stringify(resultObj);
   }
 
-  private _scrubStatement(value: unknown): unknown {
+  private _scrubStatement(value: unknown, depth = 0): unknown {
+    if (depth >= 10) {
+      return 'Max Depth';
+    }
+
+    if (value instanceof Uint8Array || value instanceof Buffer) {
+      return 'Binary Data';
+    }
+
     if (Array.isArray(value)) {
-      return value.map(element => this._scrubStatement(element));
+      return value.map(element => this._scrubStatement(element, depth + 1));
     }
 
     if (typeof value === 'object' && value !== null) {
       return Object.fromEntries(
-        Object.entries(value).map(([key, element]) => [
-          key,
-          this._scrubStatement(element),
-        ])
+        Object.entries(value)
+          .filter(([key]) => {
+            return !KEYS_TO_SKIP_SCRUBBING.includes(key);
+          })
+          .map(([key, element]) => [
+            key,
+            this._scrubStatement(element, depth + 1),
+          ])
       );
     }
 
