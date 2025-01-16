@@ -90,7 +90,7 @@ describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}
 
     assert.strictEqual(
       utilizationMetric!.descriptor.unit,
-      's',
+      '1',
       'expected default unit'
     );
 

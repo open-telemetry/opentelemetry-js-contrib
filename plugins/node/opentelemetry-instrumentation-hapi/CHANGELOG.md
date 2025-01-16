@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.45.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-hapi-v0.45.0...instrumentation-hapi-v0.45.1) (2025-01-07)
+
+
+### Bug Fixes
+
+* **instrumentation-hapi:** fix this binding for plugin register method ([#2625](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2625)) ([f6ded2e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f6ded2e77909f2e78f40828eb9618a8fa761021c))
+
 ## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-hapi-v0.44.0...instrumentation-hapi-v0.45.0) (2024-12-18)
 
 
