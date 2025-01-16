@@ -4,7 +4,7 @@ const path = require('path');
 const packageRoot = process.cwd();
 const monorepoRoot = path.resolve(__dirname, '..');
 
-const autoInstrumentationNodeDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-node/package.json`).dependencies;
+const autoInstrumentationNodeDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-node/package.json`).dependencies.filter(dep => dep !== '@opentelemetry/instrumentation-fastify');
 const autoInstrumentationWebDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-web/package.json`).dependencies;
 
 // extract info from package.json
@@ -74,7 +74,7 @@ Compatible with OpenTelemetry JS API and SDK \`1.0+\`.
   const distText = `If total installation size is not constrained, it is recommended to use the [\`@opentelemetry/auto-instrumentations-web\`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-web) bundle with [\`@opentelemetry/sdk-trace-web\`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK \`1.0+\`.
-`;  
+`;
 
   if (!currentReadmeContent.includes(distText)) {
     throw new Error(
