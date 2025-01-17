@@ -449,7 +449,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
         const hasNoParentSpan = currentSpan === undefined;
         const requireParentSpan = instrumentation.getConfig().requireParentSpan;
-        const skipInstrumentation = requireParentSpan === true && hasNoParentSpan;
+        const skipInstrumentation =
+          requireParentSpan === true && hasNoParentSpan;
 
         const resultHandler =
           typeof options === 'function' ? options : callback;
@@ -506,7 +507,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
         const hasNoParentSpan = currentSpan === undefined;
         const requireParentSpan = instrumentation.getConfig().requireParentSpan;
-        const skipInstrumentation = requireParentSpan === true && hasNoParentSpan;
+        const skipInstrumentation =
+          requireParentSpan === true && hasNoParentSpan;
 
         const resultHandler =
           typeof options === 'function' ? options : callback;
@@ -655,7 +657,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
         const hasNoParentSpan = currentSpan === undefined;
         const requireParentSpan = instrumentation.getConfig().requireParentSpan;
-        const skipInstrumentation = requireParentSpan === true && hasNoParentSpan;
+        const skipInstrumentation =
+          requireParentSpan === true && hasNoParentSpan;
 
         const resultHandler =
           typeof options === 'function' ? options : callback;
@@ -725,7 +728,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
         const hasNoParentSpan = currentSpan === undefined;
         const requireParentSpan = instrumentation.getConfig().requireParentSpan;
-        const skipInstrumentation = requireParentSpan === true && hasNoParentSpan;
+        const skipInstrumentation =
+          requireParentSpan === true && hasNoParentSpan;
 
         const resultHandler =
           typeof options === 'function' ? options : callback;

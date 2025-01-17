@@ -653,6 +653,22 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
   });
 
   describe('requireParentSpan', () => {
+    it('should not create spans without parent span when requireParentSpan is explicitly set to true', done => {
+      create({
+        requireParentSpan: true,
+      });
+
+      collection
+        .insertOne({ a: 1 })
+        .then(() => {
+          assert.strictEqual(getTestSpans().length, 0);
+          done();
+        })
+        .catch(err => {
+          done(err);
+        });
+    });
+
     it('should create spans without parent span when requireParentSpan is false', done => {
       create({
         requireParentSpan: false,
@@ -669,7 +685,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         });
     });
 
-    it('should not create spans without parent span when requireParentSpan is set to false by setConfig', done => {
+    it('should create spans without parent span when requireParentSpan is set to false by setConfig', done => {
       create();
 
       instrumentation.setConfig({
@@ -686,7 +702,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
           done(err);
         });
     });
-  })
+  });
 
   /** Should intercept command */
   describe('Removing Instrumentation', () => {
