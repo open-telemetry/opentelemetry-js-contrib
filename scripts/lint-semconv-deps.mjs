@@ -34,11 +34,13 @@ const TOP = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const SEMCONV = '@opentelemetry/semantic-conventions';
 const USE_COLOR = process.stdout.isTTY && !process.env.NO_COLOR?.length > 0;
 
+let numProbs = 0;
 function problem(...args) {
+  numProbs += 1;
   if (USE_COLOR) {
     process.stdout.write('\x1b[31m');
   }
-  args.unshift('lint-semconv-deps error:')
+  args.unshift('lint-semconv-deps error:');
   console.log(...args);
   if (USE_COLOR) {
     process.stdout.write('\x1b[39m');
@@ -56,7 +58,6 @@ function getAllWorkspaceDirs() {
 }
 
 function lintSemconvDeps() {
-  let numProbs = 0;
   const wsDirs = getAllWorkspaceDirs();
 
   for (let wsDir of wsDirs) {
@@ -64,45 +65,34 @@ function lintSemconvDeps() {
       fs.readFileSync(path.join(wsDir, 'package.json'), 'utf8')
     );
     const depRange = pj?.dependencies?.[SEMCONV];
-    if (!depRange) {
+    const devDepRange = pj?.devDependencies?.[SEMCONV];
+    if (!(depRange || devDepRange)) {
       continue;
     }
 
-    // Is incubating entry-point in use?
+    // Rule: The semconv dep should *not* be pinned. Expect `^X.Y.Z`.
+    const pinnedVerRe = /^\d+\.\d+\.\d+$/;
+    if (depRange && pinnedVerRe.exec(depRange)) {
+      problem(`${wsDir}/package.json: package ${pj.name} pins "${SEMCONV}" in dependencies, but should not (see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#why-not-pin-the-version)`);
+    } else if (devDepRange && pinnedVerRe.exec(devDepRange)) {
+      problem(`${wsDir}/package.json: package ${pj.name} pins "${SEMCONV}" in devDependencies, but should not (see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#why-not-pin-the-version)`);
+    }
+
+    // Rule: The incubating entry-point should not be used.
     const srcFiles = globSync(path.join(wsDir, 'src', '**', '*.ts'));
-    let usesIncubating = false;
-    const usesIncubatingRe = /import \{?[^\{]* from '@opentelemetry\/semantic-conventions\/incubating'/s;
+    const usesIncubatingRe = /import\s+\{?[^{;]*\s+from\s+'@opentelemetry\/semantic-conventions\/incubating'/s;
     for (let srcFile of srcFiles) {
       const srcText = fs.readFileSync(srcFile, 'utf8');
       const match = usesIncubatingRe.exec(srcText);
       if (match) {
-        usesIncubating = true;
-        break;
-      }
-    }
-
-    // Rule: If the semconv "incubating" entry-point is used, then the dep
-    // should be pinned. Otherwise it should not be pinned.
-    const pinnedVerRe = /^\d+\.\d+\.\d+$/;
-    const pins = Boolean(pinnedVerRe.exec(depRange));
-    if (usesIncubating) {
-      if (!pins) {
-        problem(`package ${pj.name} (in ${wsDir}) imports "${SEMCONV}/incubating" but does not *pin* the dependency: \`"${SEMCONV}": "${depRange}"\``);
-        numProbs += 1;
-      }
-    } else {
-      if (pins) {
-        problem(`package ${pj.name} (in ${wsDir}) does not import "${SEMCONV}/incubating" but pins the dependency: \`"${SEMCONV}": "${depRange}"\` (it could use a caret-range)`);
-        numProbs += 1;
+        problem(`${srcFile}: uses the 'incubating' entry-point from '@opentelemetry/semantic-conventions', but should not (see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv)`)
       }
     }
   }
-
-  return numProbs;
 }
 
 // mainline
-const numProbs = await lintSemconvDeps();
+await lintSemconvDeps();
 if (numProbs > 0) {
   process.exitCode = 1;
 }
