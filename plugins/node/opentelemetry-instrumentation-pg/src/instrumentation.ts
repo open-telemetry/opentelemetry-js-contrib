@@ -65,7 +65,7 @@ import {
   METRIC_DB_CLIENT_OPERATION_DURATION,
   ATTR_DB_NAMESPACE,
   ATTR_DB_OPERATION_NAME,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from './semconv';
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   private _operationDuration!: Histogram;
