@@ -24,17 +24,17 @@ import {
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
-  SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CLOUD_PLATFORM,
-  SEMRESATTRS_CLOUD_REGION,
-  SEMRESATTRS_CLOUD_ACCOUNT_ID,
-  SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
-  SEMRESATTRS_HOST_ID,
-  SEMRESATTRS_HOST_TYPE,
-  SEMRESATTRS_HOST_NAME,
-  CLOUDPROVIDERVALUES_AWS,
-  CLOUDPLATFORMVALUES_AWS_EC2,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_PLATFORM,
+  ATTR_CLOUD_REGION,
+  ATTR_CLOUD_ACCOUNT_ID,
+  ATTR_CLOUD_AVAILABILITY_ZONE,
+  ATTR_HOST_ID,
+  ATTR_HOST_TYPE,
+  ATTR_HOST_NAME,
+  CLOUD_PROVIDER_VALUE_AWS,
+  CLOUD_PLATFORM_VALUE_AWS_EC2,
+} from '@opentelemetry/semantic-conventions/incubating';
 import * as http from 'http';
 
 /**
@@ -79,14 +79,14 @@ class AwsEc2DetectorSync implements DetectorSync {
       const hostname = await this._fetchHost(token);
 
       return {
-        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
-        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_EC2,
-        [SEMRESATTRS_CLOUD_ACCOUNT_ID]: accountId,
-        [SEMRESATTRS_CLOUD_REGION]: region,
-        [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
-        [SEMRESATTRS_HOST_ID]: instanceId,
-        [SEMRESATTRS_HOST_TYPE]: instanceType,
-        [SEMRESATTRS_HOST_NAME]: hostname,
+        [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_AWS,
+        [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_AWS_EC2,
+        [ATTR_CLOUD_ACCOUNT_ID]: accountId,
+        [ATTR_CLOUD_REGION]: region,
+        [ATTR_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
+        [ATTR_HOST_ID]: instanceId,
+        [ATTR_HOST_TYPE]: instanceType,
+        [ATTR_HOST_NAME]: hostname,
       };
     } catch {
       return {};

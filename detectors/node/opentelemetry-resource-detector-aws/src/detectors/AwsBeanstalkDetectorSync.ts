@@ -25,15 +25,15 @@ import {
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
-  SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CLOUD_PLATFORM,
-  SEMRESATTRS_SERVICE_NAME,
-  SEMRESATTRS_SERVICE_NAMESPACE,
-  SEMRESATTRS_SERVICE_VERSION,
-  SEMRESATTRS_SERVICE_INSTANCE_ID,
-  CLOUDPROVIDERVALUES_AWS,
-  CLOUDPLATFORMVALUES_AWS_ELASTIC_BEANSTALK,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_PLATFORM,
+  ATTR_SERVICE_NAME,
+  ATTR_SERVICE_NAMESPACE,
+  ATTR_SERVICE_VERSION,
+  ATTR_SERVICE_INSTANCE_ID,
+  CLOUD_PROVIDER_VALUE_AWS,
+  CLOUD_PLATFORM_VALUE_AWS_ELASTIC_BEANSTALK,
+} from '@opentelemetry/semantic-conventions/incubating';
 import * as fs from 'fs';
 import * as util from 'util';
 
@@ -95,12 +95,12 @@ export class AwsBeanstalkDetectorSync implements DetectorSync {
       const parsedData = JSON.parse(rawData);
 
       return {
-        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
-        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_ELASTIC_BEANSTALK,
-        [SEMRESATTRS_SERVICE_NAME]: CLOUDPLATFORMVALUES_AWS_ELASTIC_BEANSTALK,
-        [SEMRESATTRS_SERVICE_NAMESPACE]: parsedData.environment_name,
-        [SEMRESATTRS_SERVICE_VERSION]: parsedData.version_label,
-        [SEMRESATTRS_SERVICE_INSTANCE_ID]: parsedData.deployment_id,
+        [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_AWS,
+        [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_AWS_ELASTIC_BEANSTALK,
+        [ATTR_SERVICE_NAME]: CLOUD_PLATFORM_VALUE_AWS_ELASTIC_BEANSTALK,
+        [ATTR_SERVICE_NAMESPACE]: parsedData.environment_name,
+        [ATTR_SERVICE_VERSION]: parsedData.version_label,
+        [ATTR_SERVICE_INSTANCE_ID]: parsedData.deployment_id,
       };
     } catch (e: any) {
       diag.debug(`AwsBeanstalkDetectorSync failed: ${e.message}`);
