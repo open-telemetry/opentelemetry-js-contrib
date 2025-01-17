@@ -73,10 +73,11 @@ const isrouterCompat =
   (semver.gte(LIB_VERSION, '13.0.0') && semver.gte(NODE_VERSION, '18.0.0'));
 
 describe('Koa Instrumentation', function () {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;

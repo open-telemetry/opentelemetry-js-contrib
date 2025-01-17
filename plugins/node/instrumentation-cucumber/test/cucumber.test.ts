@@ -53,14 +53,14 @@ import {
 import { PassThrough } from 'stream';
 
 describe('CucumberInstrumentation', () => {
+  const memoryExporter = new InMemorySpanExporter();
+  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
   const provider = new NodeTracerProvider({
     resource: new Resource({
       [SEMRESATTRS_SERVICE_NAME]: 'CucumberInstrumentation',
     }),
+    spanProcessors: [spanProcessor],
   });
-  const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
   const contextManager = new AsyncHooksContextManager().enable();
 
   before(() => {
