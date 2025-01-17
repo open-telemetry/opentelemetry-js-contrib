@@ -55,13 +55,21 @@ import { V4Connect, V4Session } from './internal-types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api';
 
+const DEFAULT_CONFIG: MongoDBInstrumentationConfig = {
+  requireParentSpan: true,
+};
+
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumentationConfig> {
   private _connectionsUsage!: UpDownCounter;
   private _poolName!: string;
 
   constructor(config: MongoDBInstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+  }
+
+  override setConfig(config: MongoDBInstrumentationConfig = {}) {
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   override _updateMetricInstruments() {
@@ -438,10 +446,15 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
+
+        const hasNoParentSpan = currentSpan === undefined;
+        const requireParentSpan = instrumentation.getConfig().requireParentSpan;
+        const skipInstrumentation = requireParentSpan === true && hasNoParentSpan;
+
         const resultHandler =
           typeof options === 'function' ? options : callback;
         if (
-          !currentSpan ||
+          skipInstrumentation ||
           typeof resultHandler !== 'function' ||
           typeof ops !== 'object'
         ) {
@@ -490,10 +503,15 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
+
+        const hasNoParentSpan = currentSpan === undefined;
+        const requireParentSpan = instrumentation.getConfig().requireParentSpan;
+        const skipInstrumentation = requireParentSpan === true && hasNoParentSpan;
+
         const resultHandler =
           typeof options === 'function' ? options : callback;
         if (
-          !currentSpan ||
+          skipInstrumentation ||
           typeof resultHandler !== 'function' ||
           typeof cmd !== 'object'
         ) {
@@ -634,10 +652,15 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
+
+        const hasNoParentSpan = currentSpan === undefined;
+        const requireParentSpan = instrumentation.getConfig().requireParentSpan;
+        const skipInstrumentation = requireParentSpan === true && hasNoParentSpan;
+
         const resultHandler =
           typeof options === 'function' ? options : callback;
         if (
-          !currentSpan ||
+          skipInstrumentation ||
           typeof resultHandler !== 'function' ||
           typeof cmd !== 'object'
         ) {
@@ -699,9 +722,14 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
+
+        const hasNoParentSpan = currentSpan === undefined;
+        const requireParentSpan = instrumentation.getConfig().requireParentSpan;
+        const skipInstrumentation = requireParentSpan === true && hasNoParentSpan;
+
         const resultHandler =
           typeof options === 'function' ? options : callback;
-        if (!currentSpan || typeof resultHandler !== 'function') {
+        if (skipInstrumentation || typeof resultHandler !== 'function') {
           if (typeof options === 'function') {
             return original.call(
               this,
