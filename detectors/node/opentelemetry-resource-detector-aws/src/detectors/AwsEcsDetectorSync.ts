@@ -166,8 +166,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
 
     const accountId: string = AwsEcsDetectorSync._getAccountFromArn(taskArn);
     const region: string = AwsEcsDetectorSync._getRegionFromArn(taskArn);
-    const availabilityZone: string | undefined =
-      taskMetadata?.['AvailabilityZone'];
+    const availabilityZone: string | undefined = taskMetadata?.AvailabilityZone;
 
     const clusterArn = cluster.startsWith('arn:')
       ? cluster

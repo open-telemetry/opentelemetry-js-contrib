@@ -35,7 +35,7 @@ export const ATTR_AWS_LOG_STREAM_NAMES = 'aws.log.stream.names';
 
 // Cloud attributes
 export const ATTR_CLOUD_ACCOUNT_ID = 'cloud.account.id';
-export const ATTR_CLOUD_AVAILABILITY_ZONE = 'cloud.availability.zone';
+export const ATTR_CLOUD_AVAILABILITY_ZONE = 'cloud.availability_zone';
 export const ATTR_CLOUD_PLATFORM = 'cloud.platform';
 export const ATTR_CLOUD_PROVIDER = 'cloud.provider';
 export const ATTR_CLOUD_REGION = 'cloud.region';
