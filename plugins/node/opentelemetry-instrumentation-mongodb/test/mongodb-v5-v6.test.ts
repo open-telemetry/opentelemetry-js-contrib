@@ -653,6 +653,13 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
   });
 
   describe('requireParentSpan', () => {
+    // Resetting the behavior to default to avoid flakes in other tests
+    afterEach(() => {
+      instrumentation.setConfig({
+        requireParentSpan: true,
+      });
+    });
+
     it('should not create spans without parent span when requireParentSpan is explicitly set to true', done => {
       create({
         requireParentSpan: true,
