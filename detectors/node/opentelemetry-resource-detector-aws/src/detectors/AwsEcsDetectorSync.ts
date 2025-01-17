@@ -42,7 +42,7 @@ import {
   ATTR_AWS_LOG_STREAM_ARNS,
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_ECS,
-} from '../../lib/semconv';
+} from '../lib/semconv';
 // Patch until the OpenTelemetry SDK is updated to ship this attribute
 import { SemanticResourceAttributes as AdditionalSemanticResourceAttributes } from './SemanticResourceAttributes';
 import * as http from 'http';
