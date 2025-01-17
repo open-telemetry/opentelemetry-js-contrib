@@ -33,7 +33,7 @@ import {
   ATTR_SERVICE_INSTANCE_ID,
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_ELASTIC_BEANSTALK,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../../lib/semconv';
 import * as fs from 'fs';
 import * as util from 'util';
 
