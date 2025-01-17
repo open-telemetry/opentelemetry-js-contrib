@@ -57,5 +57,6 @@
   "dependencies": {
     "@opentelemetry/resources": "^1.10.0"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-github#readme"
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-github#readme",
+  "sideEffects": false
 }
