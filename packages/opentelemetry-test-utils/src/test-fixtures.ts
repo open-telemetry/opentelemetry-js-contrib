@@ -24,13 +24,9 @@ import type { AddressInfo } from 'net';
 import { URL } from 'url';
 import { createGunzip } from 'zlib';
 
-import {
-  IInstrumentationScope,
-  IResource,
-  ISpan,
-} from '@opentelemetry/otlp-transformer';
 import { NodeSDK, tracing } from '@opentelemetry/sdk-node';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
+import { IInstrumentationScope, IResource, ISpan } from './otlp-types';
 
 /**
  * A utility for scripts that will be run with `runTestFixture()` to create an
@@ -53,15 +49,6 @@ export function createTestNodeSdk(opts: {
     instrumentations: opts.instrumentations,
   });
   return sdk;
-}
-
-export enum OtlpSpanKind {
-  UNSPECIFIED = 0,
-  INTERNAL = 1,
-  SERVER = 2,
-  CLIENT = 3,
-  PRODUCER = 4,
-  CONSUMER = 5,
 }
 
 // TestSpan is an OTLP span plus references to `resource` and
@@ -249,7 +236,7 @@ export async function runTestFixture(
   const collector = new TestCollector();
   await collector.start();
 
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     execFile(
       process.execPath,
       opts.argv,
@@ -274,6 +261,8 @@ export async function runTestFixture(
           if (opts.checkCollector) {
             await opts.checkCollector(collector);
           }
+        } catch (err) {
+          reject(err);
         } finally {
           collector.close();
           resolve();

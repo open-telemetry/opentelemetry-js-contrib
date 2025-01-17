@@ -27,7 +27,7 @@ const options = {
 const req = http.request(options);
 req.end();
 req.on('close', () => {
-  console.log('Finshed request');
+  console.log('Finished request');
 });
 
 // Make sure there is work on the event loop
