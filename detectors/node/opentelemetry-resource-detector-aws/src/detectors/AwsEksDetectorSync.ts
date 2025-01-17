@@ -24,13 +24,13 @@ import {
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
-  SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CLOUD_PLATFORM,
-  SEMRESATTRS_K8S_CLUSTER_NAME,
-  SEMRESATTRS_CONTAINER_ID,
-  CLOUDPROVIDERVALUES_AWS,
-  CLOUDPLATFORMVALUES_AWS_EKS,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_PLATFORM,
+  ATTR_K8S_CLUSTER_NAME,
+  ATTR_CONTAINER_ID,
+  CLOUD_PROVIDER_VALUE_AWS,
+  CLOUD_PLATFORM_VALUE_AWS_EKS,
+} from '@opentelemetry/semantic-conventions/incubating';
 import * as https from 'https';
 import * as fs from 'fs';
 import * as util from 'util';
@@ -94,10 +94,10 @@ export class AwsEksDetectorSync implements DetectorSync {
       return !containerId && !clusterName
         ? {}
         : {
-            [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
-            [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_EKS,
-            [SEMRESATTRS_K8S_CLUSTER_NAME]: clusterName || '',
-            [SEMRESATTRS_CONTAINER_ID]: containerId || '',
+            [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_AWS,
+            [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_AWS_EKS,
+            [ATTR_K8S_CLUSTER_NAME]: clusterName || '',
+            [ATTR_CONTAINER_ID]: containerId || '',
           };
     } catch (e) {
       diag.debug('Process is not running on K8S', e);
