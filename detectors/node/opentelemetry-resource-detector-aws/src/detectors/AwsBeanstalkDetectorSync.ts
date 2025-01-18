@@ -25,11 +25,13 @@ import {
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
+  ATTR_SERVICE_NAME,
+  ATTR_SERVICE_VERSION,
+} from '@opentelemetry/semantic-conventions';
+import {
   ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_PLATFORM,
-  ATTR_SERVICE_NAME,
   ATTR_SERVICE_NAMESPACE,
-  ATTR_SERVICE_VERSION,
   ATTR_SERVICE_INSTANCE_ID,
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_ELASTIC_BEANSTALK,
