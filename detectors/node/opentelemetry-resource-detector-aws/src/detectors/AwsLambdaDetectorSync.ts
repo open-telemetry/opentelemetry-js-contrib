@@ -22,14 +22,14 @@ import {
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
-  SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CLOUD_PLATFORM,
-  SEMRESATTRS_CLOUD_REGION,
-  SEMRESATTRS_FAAS_VERSION,
-  SEMRESATTRS_FAAS_NAME,
-  CLOUDPROVIDERVALUES_AWS,
-  CLOUDPLATFORMVALUES_AWS_LAMBDA,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_PLATFORM,
+  ATTR_CLOUD_REGION,
+  ATTR_FAAS_VERSION,
+  ATTR_FAAS_NAME,
+  CLOUD_PROVIDER_VALUE_AWS,
+  CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
+} from '@opentelemetry/semantic-conventions/incubating';
 
 /**
  * The AwsLambdaDetector can be used to detect if a process is running in AWS Lambda
@@ -47,18 +47,18 @@ export class AwsLambdaDetectorSync implements DetectorSync {
     const region = process.env.AWS_REGION;
 
     const attributes: ResourceAttributes = {
-      [SEMRESATTRS_CLOUD_PROVIDER]: String(CLOUDPROVIDERVALUES_AWS),
-      [SEMRESATTRS_CLOUD_PLATFORM]: String(CLOUDPLATFORMVALUES_AWS_LAMBDA),
+      [ATTR_CLOUD_PROVIDER]: String(CLOUD_PROVIDER_VALUE_AWS),
+      [ATTR_CLOUD_PLATFORM]: String(CLOUD_PLATFORM_VALUE_AWS_LAMBDA),
     };
     if (region) {
-      attributes[SEMRESATTRS_CLOUD_REGION] = region;
+      attributes[ATTR_CLOUD_REGION] = region;
     }
 
     if (functionName) {
-      attributes[SEMRESATTRS_FAAS_NAME] = functionName;
+      attributes[ATTR_FAAS_NAME] = functionName;
     }
     if (functionVersion) {
-      attributes[SEMRESATTRS_FAAS_VERSION] = functionVersion;
+      attributes[ATTR_FAAS_VERSION] = functionVersion;
     }
 
     return new Resource(attributes);
