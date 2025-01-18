@@ -30,7 +30,7 @@ import {
   ATTR_CONTAINER_ID,
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_EKS,
-} from '../lib/semconv';
+} from '../semconv';
 import * as https from 'https';
 import * as fs from 'fs';
 import * as util from 'util';
