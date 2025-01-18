@@ -55,7 +55,7 @@ import {
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
   METRIC_DB_CLIENT_OPERATION_DURATION,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../src/semconv';
 
 const memoryExporter = new InMemorySpanExporter();
 
