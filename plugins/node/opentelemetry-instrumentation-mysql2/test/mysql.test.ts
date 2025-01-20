@@ -1242,15 +1242,19 @@ describe('mysql2', () => {
     let instrumentation: MySQL2Instrumentation;
 
     let contextManager: AsyncHooksContextManager;
-    const provider = new BasicTracerProvider();
     const memoryExporter = new InMemorySpanExporter();
-
+    const provider = new BasicTracerProvider({
+      spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+    });
     let connection: mysqlTypesProm.Connection;
     let rootConnection: mysqlTypesProm.Connection;
     let mysqlTypesPromReload: typeof mysqlTypesProm;
 
     before(async function () {
-      // cleanup cache for mysql2
+      // cleanup cache for 'mysql2'
+      // in previous iterations these tests would have passed since 'mysql2' was already loaded,
+      // but 'mysql2/promise' does not import 'mysql2'. Therefore, if used without ever loading 'mysql2',
+      // the relevant code would never get patched.
       delete require.cache[require.resolve('../src')];
       Object.keys(require.cache).forEach(key => {
         if (key.includes('mysql2/')) {
@@ -1271,7 +1275,6 @@ describe('mysql2', () => {
         this.test!.parent!.pending = true;
         this.skip();
       }
-      provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
       rootConnection = await mysqlTypesPromReload.createConnection({
         port,
         user: 'root',
