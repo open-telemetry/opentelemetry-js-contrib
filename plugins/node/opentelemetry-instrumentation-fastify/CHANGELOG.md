@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.44.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.44.0...instrumentation-fastify-v0.44.1) (2025-01-20)
+
+
+### Bug Fixes
+
+* **instrumentation-fastify:** add missing module export ([#2633](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2633)) ([1a6839b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1a6839b00bfb116528e620c19f118d0a920c987f))
+
 ## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.43.0...instrumentation-fastify-v0.44.0) (2024-12-18)
 
 
