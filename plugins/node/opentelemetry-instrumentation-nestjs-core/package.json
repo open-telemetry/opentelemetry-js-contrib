@@ -3,20 +3,22 @@
   "version": "0.44.0",
   "description": "OpenTelemetry instrumentation for NestJS server side applications framework",
   "main": "build/src/index.js",
+  "module": "build/esm/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "clean": "rimraf build/*",
-    "compile": "tsc -p .",
-    "compile:watch": "tsc -w",
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
+    "lint:readme": "node ../../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
+    "prewatch": "npm run precompile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc mocha --timeout 5000 'test/**/*.test.ts'",
+    "test": "nyc mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
-    "version:update": "node ../../../scripts/version-update.js"
+    "version:update": "node ../../../scripts/version-update.js",
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },
   "keywords": [
     "instrumentation",
@@ -33,6 +35,9 @@
     "node": ">=14"
   },
   "files": [
+    "build/esm/**/*.js",
+    "build/esm/**/*.js.map",
+    "build/esm/**/*.d.ts",
     "build/src/**/*.js",
     "build/src/**/*.js.map",
     "build/src/**/*.d.ts"

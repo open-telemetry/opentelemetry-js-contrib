@@ -130,10 +130,10 @@ function createWrapNestFactoryCreate(
         },
       });
       const spanContext = api.trace.setSpan(api.context.active(), span);
-
+      const _args = arguments;
       return api.context.with(spanContext, async () => {
         try {
-          return await original.apply(this, arguments as any);
+          return await original.apply(this, _args as any);
         } catch (e: any) {
           throw addError(span, e);
         } finally {
@@ -184,10 +184,10 @@ function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
           },
         });
         const spanContext = api.trace.setSpan(api.context.active(), span);
-
+        const _args = arguments;
         return api.context.with(spanContext, async () => {
           try {
-            return await handler.apply(this, arguments as any);
+            return await handler.apply(this, _args as any);
           } catch (e: any) {
             throw addError(span, e);
           } finally {
@@ -216,10 +216,10 @@ function createWrapHandler(
   const wrappedHandler = function (this: RouterExecutionContext) {
     const span = tracer.startSpan(spanName, options);
     const spanContext = api.trace.setSpan(api.context.active(), span);
-
+    const _args = arguments;
     return api.context.with(spanContext, async () => {
       try {
-        return await handler.apply(this, arguments);
+        return await handler.apply(this, _args as any);
       } catch (e: any) {
         throw addError(span, e);
       } finally {

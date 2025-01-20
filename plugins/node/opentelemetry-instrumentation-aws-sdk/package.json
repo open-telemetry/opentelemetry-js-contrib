@@ -2,21 +2,39 @@
   "name": "@opentelemetry/instrumentation-aws-sdk",
   "version": "0.49.0",
   "description": "OpenTelemetry instrumentation for `aws-sdk` and `@aws-sdk/client-*` clients for various AWS services",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "module": "build/esm/index.js",
+  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "scripts": {
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../../scripts/lint-readme.js",
+    "prepublishOnly": "npm run compile",
+    "prewatch": "npm run precompile",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
+    "version:update": "node ../../../scripts/version-update.js",
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
+  },
   "keywords": [
     "aws",
     "aws-sdk",
     "nodejs",
     "opentelemetry"
   ],
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-aws-sdk#readme",
-  "license": "Apache-2.0",
   "author": "OpenTelemetry Authors",
-  "bugs": {
-    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=14"
   },
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
   "files": [
+    "build/esm/**/*.js",
+    "build/esm/**/*.js.map",
+    "build/esm/**/*.d.ts",
     "build/src/**/*.js",
     "build/src/**/*.js.map",
     "build/src/**/*.d.ts",
@@ -25,29 +43,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "repository": "open-telemetry/opentelemetry-js-contrib",
-  "scripts": {
-    "clean": "rimraf build/*",
-    "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../../scripts/lint-readme.js",
-    "prewatch": "npm run precompile",
-    "prepublishOnly": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
-    "test-all-versions": "tav",
-    "version:update": "node ../../../scripts/version-update.js",
-    "watch": "tsc -w"
-  },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"
-  },
-  "dependencies": {
-    "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.57.0",
-    "@opentelemetry/propagation-utils": "^0.30.15",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "3.85.0",
@@ -74,7 +71,14 @@
     "test-all-versions": "6.1.0",
     "typescript": "4.4.4"
   },
-  "engines": {
-    "node": ">=14"
+  "dependencies": {
+    "@opentelemetry/core": "^1.8.0",
+    "@opentelemetry/instrumentation": "^0.57.0",
+    "@opentelemetry/propagation-utils": "^0.30.15",
+    "@opentelemetry/semantic-conventions": "^1.27.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-aws-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   }
 }

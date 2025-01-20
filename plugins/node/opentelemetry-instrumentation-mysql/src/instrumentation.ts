@@ -340,10 +340,11 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const parentContext = context.active();
 
         if (cbIndex === -1) {
+          const _args = arguments;
           const streamableQuery: mysqlTypes.Query = context.with(
             trace.setSpan(context.active(), span),
             () => {
-              return originalQuery.apply(connection, arguments);
+              return originalQuery.apply(connection, _args);
             }
           );
           context.bind(parentContext, streamableQuery);
@@ -364,9 +365,9 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
             cbIndex,
             thisPlugin._patchCallbackQuery(span, parentContext)
           );
-
+          const _args = arguments;
           return context.with(trace.setSpan(context.active(), span), () => {
-            return originalQuery.apply(connection, arguments);
+            return originalQuery.apply(connection, _args);
           });
         }
       };
@@ -387,9 +388,8 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
           });
         }
         span.end();
-        return context.with(parentContext, () =>
-          originalCallback(...arguments)
-        );
+        const _args = arguments;
+        return context.with(parentContext, () => originalCallback(..._args));
       };
     };
   }

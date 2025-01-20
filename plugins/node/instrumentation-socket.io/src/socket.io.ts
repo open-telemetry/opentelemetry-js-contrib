@@ -291,6 +291,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
         if (self.getConfig().onIgnoreEventList?.includes(ev)) {
           return original.apply(this, arguments);
         }
+        const _args = arguments;
         const wrappedListener = function (this: any, ...args: any[]) {
           const eventName = ev;
           const namespace = this.name || this.adapter?.nsp?.name;
@@ -320,7 +321,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
             );
           }
           return context.with(trace.setSpan(context.active(), span), () =>
-            self.endSpan(() => originalListener.apply(this, arguments), span)
+            self.endSpan(() => originalListener.apply(this, _args), span)
           );
         };
         return original.apply(this, [ev, wrappedListener]);
@@ -404,9 +405,10 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
             true
           );
         }
+        const _args = arguments;
         try {
           return context.with(trace.setSpan(context.active(), span), () =>
-            original.apply(this, arguments)
+            original.apply(this, _args)
           );
         } catch (error: any) {
           span.setStatus({

@@ -664,9 +664,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
         activeContextWithSpan,
         () => {
           self.servicesExtensions.requestPostSpanHook(normalizedRequest);
-          return self._callOriginalFunction(() =>
-            original.call(this, arguments)
-          );
+          return self._callOriginalFunction(() => original.apply(this, args));
         }
       );
 

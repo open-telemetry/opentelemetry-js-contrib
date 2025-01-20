@@ -3,9 +3,18 @@
   "version": "0.46.0",
   "description": "OpenTelemetry instrumentation for `redis` v4 database client for Redis",
   "main": "build/src/index.js",
+  "module": "build/esm/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../../scripts/lint-readme.js",
+    "prepublishOnly": "npm run compile",
+    "prewatch": "npm run precompile",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/redis.test.ts'",
     "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true mocha --inspect-brk --no-timeouts test/redis.test.ts",
     "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",
@@ -13,15 +22,8 @@
     "test:docker:stop": "docker stop otel-redis",
     "test-all-versions": "tav",
     "test-all-versions:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test-all-versions",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
-    "clean": "rimraf build/*",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../../scripts/lint-readme.js",
-    "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "tsc -p .",
-    "prepublishOnly": "npm run compile"
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },
   "keywords": [
     "instrumentation",
@@ -37,6 +39,9 @@
     "node": ">=14"
   },
   "files": [
+    "build/esm/**/*.js",
+    "build/esm/**/*.js.map",
+    "build/esm/**/*.d.ts",
     "build/src/**/*.js",
     "build/src/**/*.js.map",
     "build/src/**/*.d.ts"

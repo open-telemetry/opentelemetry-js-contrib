@@ -319,8 +319,9 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     return (original: Function) => {
       return function captureSpanContext(this: any) {
         const currentSpan = trace.getSpan(context.active());
+        const _args = arguments;
         const aggregate = self._callOriginalFunction(() =>
-          original.apply(this, arguments)
+          original.apply(this, _args)
         );
         if (aggregate) aggregate[_STORED_PARENT_SPAN] = currentSpan;
         return aggregate;
@@ -333,9 +334,8 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     return (original: Function) => {
       return function captureSpanContext(this: any) {
         this[_STORED_PARENT_SPAN] = trace.getSpan(context.active());
-        return self._callOriginalFunction(() =>
-          original.apply(this, arguments)
-        );
+        const _args = arguments;
+        return self._callOriginalFunction(() => original.apply(this, _args));
       };
     };
   }
