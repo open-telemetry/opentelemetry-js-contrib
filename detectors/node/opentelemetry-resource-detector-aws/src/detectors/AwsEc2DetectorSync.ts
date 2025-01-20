@@ -34,7 +34,7 @@ import {
   ATTR_HOST_NAME,
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_EC2,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../semconv';
 import * as http from 'http';
 
 /**
