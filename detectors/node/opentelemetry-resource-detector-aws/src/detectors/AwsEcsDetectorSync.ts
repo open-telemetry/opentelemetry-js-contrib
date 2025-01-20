@@ -42,7 +42,7 @@ import {
   ATTR_AWS_LOG_STREAM_ARNS,
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_ECS,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../semconv';
 // Patch until the OpenTelemetry SDK is updated to ship this attribute
 import { SemanticResourceAttributes as AdditionalSemanticResourceAttributes } from './SemanticResourceAttributes';
 import * as http from 'http';
@@ -166,8 +166,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
 
     const accountId: string = AwsEcsDetectorSync._getAccountFromArn(taskArn);
     const region: string = AwsEcsDetectorSync._getRegionFromArn(taskArn);
-    const availabilityZone: string | undefined =
-      taskMetadata?.['AvailabilityZone'];
+    const availabilityZone: string | undefined = taskMetadata?.AvailabilityZone;
 
     const clusterArn = cluster.startsWith('arn:')
       ? cluster
