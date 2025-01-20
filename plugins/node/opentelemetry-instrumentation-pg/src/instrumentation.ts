@@ -66,7 +66,7 @@ import {
   METRIC_DB_CLIENT_OPERATION_DURATION,
   ATTR_DB_NAMESPACE,
   ATTR_DB_OPERATION_NAME,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from './semconv';
 
 function extractModuleExports(module: any) {
   return module[Symbol.toStringTag] === 'Module'
