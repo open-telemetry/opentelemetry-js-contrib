@@ -23,28 +23,27 @@ import {
   ResourceAttributes,
 } from '@opentelemetry/resources';
 import {
-  ATTR_CLOUD_PROVIDER,
-  ATTR_CLOUD_PLATFORM,
-  ATTR_CONTAINER_ID,
-  ATTR_CONTAINER_NAME,
-  ATTR_AWS_ECS_CONTAINER_ARN,
   ATTR_AWS_ECS_CLUSTER_ARN,
+  ATTR_AWS_ECS_CONTAINER_ARN,
   ATTR_AWS_ECS_LAUNCHTYPE,
   ATTR_AWS_ECS_TASK_ARN,
   ATTR_AWS_ECS_TASK_FAMILY,
   ATTR_AWS_ECS_TASK_REVISION,
-  ATTR_CLOUD_ACCOUNT_ID,
-  ATTR_CLOUD_REGION,
-  ATTR_CLOUD_AVAILABILITY_ZONE,
-  ATTR_AWS_LOG_GROUP_NAMES,
   ATTR_AWS_LOG_GROUP_ARNS,
-  ATTR_AWS_LOG_STREAM_NAMES,
+  ATTR_AWS_LOG_GROUP_NAMES,
   ATTR_AWS_LOG_STREAM_ARNS,
-  CLOUD_PROVIDER_VALUE_AWS,
+  ATTR_AWS_LOG_STREAM_NAMES,
+  ATTR_CLOUD_ACCOUNT_ID,
+  ATTR_CLOUD_AVAILABILITY_ZONE,
+  ATTR_CLOUD_PLATFORM,
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_REGION,
+  ATTR_CLOUD_RESOURCE_ID,
+  ATTR_CONTAINER_ID,
+  ATTR_CONTAINER_NAME,
   CLOUD_PLATFORM_VALUE_AWS_ECS,
+  CLOUD_PROVIDER_VALUE_AWS,
 } from '../semconv';
-// Patch until the OpenTelemetry SDK is updated to ship this attribute
-import { SemanticResourceAttributes as AdditionalSemanticResourceAttributes } from './SemanticResourceAttributes';
 import * as http from 'http';
 import * as util from 'util';
 import * as fs from 'fs';
@@ -185,7 +184,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
 
       [ATTR_CLOUD_ACCOUNT_ID]: accountId,
       [ATTR_CLOUD_REGION]: region,
-      [AdditionalSemanticResourceAttributes.CLOUD_RESOURCE_ID]: containerArn,
+      [ATTR_CLOUD_RESOURCE_ID]: containerArn,
     };
 
     // The availability zone is not available in all Fargate runtimes
