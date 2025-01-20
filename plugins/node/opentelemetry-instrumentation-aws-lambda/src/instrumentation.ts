@@ -45,7 +45,7 @@ import {
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
   SEMRESATTRS_FAAS_ID,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_FAAS_COLDSTART } from '@opentelemetry/semantic-conventions/incubating';
+import { ATTR_FAAS_COLDSTART } from './semconv';
 
 import {
   APIGatewayProxyEventHeaders,
