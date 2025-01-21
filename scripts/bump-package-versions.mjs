@@ -19,7 +19,7 @@
  * after the latest tag of the package
  */
 
-import { exec, execSync } from 'child_process';
+import { execSync } from 'child_process';
 import path from 'path';
 import { readFileSync } from 'fs';
 import { globSync } from 'glob';
@@ -43,10 +43,6 @@ const getPackages = () => {
 		});
 }
 
-const getCommitsFrom = (commitOrTag) => {
-  return execSync(`git log ${commitOrTag}..HEAD --oneline`, { encoding: 'utf-8' }).split('\n');
-}
-
 const getScopedCommitsFrom = (scope, commitOrTag) => {
   const commits = execSync(`git log ${commitOrTag}..HEAD --oneline`, { encoding: 'utf-8' }).split('\n');
 
@@ -60,7 +56,6 @@ const repoTags = execSync('git tag', { encoding: 'utf-8' }).split('\n');
 // Set the latest tag on each package
 repoTags.forEach((tag) => {
   const nameParts = tag.split('-');
-  const version = nameParts.pop();
   const pkgName = `@opentelemetry/${nameParts.join('-')}`;
   const pkgInfo = publicPkgList.find((pkg) => pkg.name === pkgName);
 
@@ -93,12 +88,11 @@ publicPkgList.forEach((pkgInfo) => {
 
     console.log(`Bumping ${bumpType} version in ${pkgInfo.name}`);
     execSync(`npm version ${bumpType} --git-tag-version=false`, { cwd: pkgInfo.location });
-
   } else {
     // NOTE: this could be one of two scenairios
     // - new package
     // - package being moved here like @opentelemetry/propagator-aws-xray-lambda
-    console.log(pkgInfo.name, 'has no tag');
+    console.log(`"${pkgInfo.name}" has no tag`);
     let isNewPkg = false;
     let versions;
     try {
@@ -106,13 +100,15 @@ publicPkgList.forEach((pkgInfo) => {
         execSync(`npm info ${pkgInfo.name} --json time`, { encoding: 'utf-8' })
       );
     } catch (err) {
-      console.log(`*********\n${err.message}\n********`)
+      // We get an error for new a new package. Throw other type of errors
       isNewPkg = err.message.includes('npm ERR! 404 Not Found - GET');
+      if (!isNewPkg) {
+        throw err;
+      }
     }
 
-
     if (isNewPkg) {
-      console.log(pkgInfo.name, 'is not in the registry. No bump needed');
+      console.log(`"${pkgInfo.name}" is not in the registry. No bump needed`);
     } else {
       // - assume version is the last in npm
       // - find the commit where it was added
@@ -122,7 +118,6 @@ publicPkgList.forEach((pkgInfo) => {
       const scopedCommits = getScopedCommitsFrom(pkgScope, commitSha);
       
       console.log(`Package ${pkgInfo.name} was added in ${commitSha}`);
-  
       const isExperimental = pkgInfo.version.startsWith('0.');
       const bumpMinor = scopedCommits.some((cmt) => {
         const pattern = isExperimental ? `(${pkgScope})!:` : `feat(${pkgScope}):`
@@ -135,4 +130,4 @@ publicPkgList.forEach((pkgInfo) => {
       execSync(`npm version ${bumpType} --git-tag-version=false`, { cwd: pkgInfo.location });
     }
   }
-})
+});

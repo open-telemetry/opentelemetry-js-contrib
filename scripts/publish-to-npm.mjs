@@ -16,6 +16,7 @@
 
 /**
  * Replacement for: lerna publish from-package --no-push --no-private --no-git-tag-version --no-verify-access --yes
+ * Workflow line: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/c67a8c3e096b835e3eb91cac0642bf775ffa4350/.github/workflows/release-please.yml#L84
  * Ref: https://github.com/lerna/lerna/tree/main/commands/publish#bump-from-package
  * 
  * Usage: node ./scripts/publish-to-npm.mjs
