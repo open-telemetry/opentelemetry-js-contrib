@@ -16,6 +16,7 @@
 
 import * as assert from 'assert';
 import { assertEmptyResource } from '@opentelemetry/contrib-test-utils';
+import { awsLambdaDetectorSync } from '../../src';
 import {
   ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_PLATFORM,
@@ -27,9 +28,7 @@ import {
   ATTR_AWS_LOG_GROUP_NAMES,
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
-} from '@opentelemetry/semantic-conventions/incubating';
-
-import { awsLambdaDetectorSync } from '../../src';
+} from '../../src/semconv';
 
 describe('awsLambdaDetectorSync', () => {
   let oldEnv: NodeJS.ProcessEnv;
