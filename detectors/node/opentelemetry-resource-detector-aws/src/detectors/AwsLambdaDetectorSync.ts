@@ -31,12 +31,7 @@ import {
   // Cloud values (AWS)
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
-  // FaaS attributes
-  ATTR_FAAS_NAME,
-  ATTR_FAAS_VERSION,
-  ATTR_FAAS_INSTANCE,
-  ATTR_FAAS_MAX_MEMORY,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../semconv';
 
 /**
  * The AwsLambdaDetector can be used to detect if a process is running in AWS Lambda
