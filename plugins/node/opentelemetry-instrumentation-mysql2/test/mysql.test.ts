@@ -48,10 +48,19 @@ const instrumentation = new MySQL2Instrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
-import * as mysqlTypes from 'mysql2';
-import * as mysqlTypesProm from 'mysql2/promise';
+import type { Connection, Pool, PoolCluster, RowDataPacket } from 'mysql2';
+import {
+  createConnection,
+  createPool,
+  createPoolCluster,
+  format,
+} from 'mysql2';
+import type {
+  Connection as ConnectionAsync,
+  createConnection as createConnectionAsync,
+} from 'mysql2/promise';
 
-interface Result extends mysqlTypes.RowDataPacket {
+interface Result extends RowDataPacket {
   solution: number;
 }
 
@@ -84,10 +93,10 @@ describe('mysql2', () => {
     const provider = new BasicTracerProvider();
     const memoryExporter = new InMemorySpanExporter();
 
-    let connection: mysqlTypes.Connection;
-    let rootConnection: mysqlTypes.Connection;
-    let pool: mysqlTypes.Pool;
-    let poolCluster: mysqlTypes.PoolCluster;
+    let connection: Connection;
+    let rootConnection: Connection;
+    let pool: Pool;
+    let poolCluster: PoolCluster;
 
     const getLastQueries = (count: number) =>
       new Promise<string[]>(res => {
@@ -115,7 +124,7 @@ describe('mysql2', () => {
         this.skip();
       }
       provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-      rootConnection = mysqlTypes.createConnection({
+      rootConnection = createConnection({
         port,
         user: 'root',
         host,
@@ -137,21 +146,21 @@ describe('mysql2', () => {
       context.setGlobalContextManager(contextManager);
       instrumentation.setTracerProvider(provider);
       instrumentation.enable();
-      connection = mysqlTypes.createConnection({
+      connection = createConnection({
         port,
         user,
         host,
         password,
         database,
       });
-      pool = mysqlTypes.createPool({
+      pool = createPool({
         port,
         user,
         host,
         password,
         database,
       });
-      poolCluster = mysqlTypes.createPoolCluster();
+      poolCluster = createPoolCluster();
       // the implementation actually accepts ConnectionConfig as well,
       // but the types do not reflect that
       poolCluster.add('name', {
@@ -229,7 +238,7 @@ describe('mysql2', () => {
           const query = connection.query<Result[]>(sql);
           let rows = 0;
 
-          query.on('result', (row: mysqlTypes.RowDataPacket) => {
+          query.on('result', (row: RowDataPacket) => {
             assert.strictEqual(row.solution, 2);
             rows += 1;
           });
@@ -252,7 +261,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+1 as solution';
-          connection.query(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+          connection.query(sql, (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 2);
@@ -270,7 +279,7 @@ describe('mysql2', () => {
           const sql = 'SELECT 1+? as solution';
           connection.query(
             { sql, values: [1] },
-            (err, res: mysqlTypes.RowDataPacket[]) => {
+            (err, res: RowDataPacket[]) => {
               assert.ifError(err);
               assert.ok(res);
               assert.strictEqual(res[0].solution, 2);
@@ -287,19 +296,15 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
-          connection.query(
-            { sql },
-            [1],
-            (err, res: mysqlTypes.RowDataPacket[]) => {
-              assert.ifError(err);
-              assert.ok(res);
-              assert.strictEqual(res[0].solution, 2);
-              const spans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(spans.length, 1);
-              assertSpan(spans[0], sql, [1]);
-              done();
-            }
-          );
+          connection.query({ sql }, [1], (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql, [1]);
+            done();
+          });
         });
       });
 
@@ -307,7 +312,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT ? as solution';
-          connection.query(sql, [1], (err, res: mysqlTypes.RowDataPacket[]) => {
+          connection.query(sql, [1], (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 1);
@@ -323,7 +328,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT ? as solution';
-          connection.query(sql, 1, (err, res: mysqlTypes.RowDataPacket[]) => {
+          connection.query(sql, 1, (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 1);
@@ -427,7 +432,7 @@ describe('mysql2', () => {
           const query = connection.execute<Result[]>(sql);
           let rows = 0;
 
-          query.on('result', (row: mysqlTypes.RowDataPacket) => {
+          query.on('result', (row: RowDataPacket) => {
             assert.strictEqual(row.solution, 2);
             rows += 1;
           });
@@ -446,7 +451,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+1 as solution';
-          connection.execute(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+          connection.execute(sql, (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 2);
@@ -464,7 +469,7 @@ describe('mysql2', () => {
           const sql = 'SELECT 1+? as solution';
           connection.execute(
             { sql, values: [1] },
-            (err, res: mysqlTypes.RowDataPacket[]) => {
+            (err, res: RowDataPacket[]) => {
               assert.ifError(err);
               assert.ok(res);
               assert.strictEqual(res[0].solution, 2);
@@ -481,19 +486,15 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
-          connection.execute(
-            { sql },
-            [1],
-            (err, res: mysqlTypes.RowDataPacket[]) => {
-              assert.ifError(err);
-              assert.ok(res);
-              assert.strictEqual(res[0].solution, 2);
-              const spans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(spans.length, 1);
-              assertSpan(spans[0], sql, [1]);
-              done();
-            }
-          );
+          connection.execute({ sql }, [1], (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql, [1]);
+            done();
+          });
         });
       });
 
@@ -501,19 +502,15 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
-          connection.execute(
-            sql,
-            [1],
-            (err, res: mysqlTypes.RowDataPacket[]) => {
-              assert.ifError(err);
-              assert.ok(res);
-              assert.strictEqual(res[0].solution, 2);
-              const spans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(spans.length, 1);
-              assertSpan(spans[0], sql, [1]);
-              done();
-            }
-          );
+          connection.execute(sql, [1], (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql, [1]);
+            done();
+          });
         });
       });
 
@@ -521,19 +518,15 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
-          connection.execute(
-            sql,
-            [1],
-            (err, res: mysqlTypes.RowDataPacket[]) => {
-              assert.ifError(err);
-              assert.ok(res);
-              assert.strictEqual(res[0].solution, 2);
-              const spans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(spans.length, 1);
-              assertSpan(spans[0], sql, [1]);
-              done();
-            }
-          );
+          connection.execute(sql, [1], (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql, [1]);
+            done();
+          });
         });
       });
 
@@ -560,7 +553,7 @@ describe('mysql2', () => {
           const query = pool.query(sql);
           let rows = 0;
 
-          query.on('result', (row: mysqlTypes.RowDataPacket) => {
+          query.on('result', (row: RowDataPacket) => {
             assert.strictEqual(row.solution, 2);
             rows += 1;
           });
@@ -583,7 +576,7 @@ describe('mysql2', () => {
             const query = conn.query(sql);
             let rows = 0;
 
-            query.on('result', (row: mysqlTypes.RowDataPacket) => {
+            query.on('result', (row: RowDataPacket) => {
               assert.strictEqual(row.solution, 2);
               rows += 1;
             });
@@ -603,7 +596,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+1 as solution';
-          pool.query(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+          pool.query(sql, (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 2);
@@ -620,7 +613,7 @@ describe('mysql2', () => {
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+1 as solution';
           pool.getConnection((err, conn) => {
-            conn.query(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+            conn.query(sql, (err, res: RowDataPacket[]) => {
               assert.ifError(err);
               assert.ok(res);
               assert.strictEqual(res[0].solution, 2);
@@ -637,18 +630,15 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
-          pool.query(
-            { sql, values: [1] },
-            (err, res: mysqlTypes.RowDataPacket[]) => {
-              assert.ifError(err);
-              assert.ok(res);
-              assert.strictEqual(res[0].solution, 2);
-              const spans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(spans.length, 1);
-              assertSpan(spans[0], sql, [1]);
-              done();
-            }
-          );
+          pool.query({ sql, values: [1] }, (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql, [1]);
+            done();
+          });
         });
       });
 
@@ -656,7 +646,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
-          pool.query({ sql }, [1], (err, res: mysqlTypes.RowDataPacket[]) => {
+          pool.query({ sql }, [1], (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 2);
@@ -672,7 +662,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT ? as solution';
-          pool.query(sql, [1], (err, res: mysqlTypes.RowDataPacket[]) => {
+          pool.query(sql, [1], (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 1);
@@ -688,7 +678,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT ? as solution';
-          pool.query(sql, 1, (err, res: mysqlTypes.RowDataPacket[]) => {
+          pool.query(sql, 1, (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 1);
@@ -785,7 +775,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+1 as solution';
-          pool.execute(sql, (err, row: mysqlTypes.RowDataPacket[]) => {
+          pool.execute(sql, (err, row: RowDataPacket[]) => {
             assert(!err);
             assert.strictEqual(row[0].solution, 2);
             const spans = memoryExporter.getFinishedSpans();
@@ -804,7 +794,7 @@ describe('mysql2', () => {
             const query = conn.execute(sql);
             let rows = 0;
 
-            query.on('result', (row: mysqlTypes.RowDataPacket) => {
+            query.on('result', (row: RowDataPacket) => {
               assert.strictEqual(row.solution, 2);
               rows += 1;
             });
@@ -824,7 +814,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+1 as solution';
-          pool.execute(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+          pool.execute(sql, (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 2);
@@ -841,7 +831,7 @@ describe('mysql2', () => {
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+1 as solution';
           pool.getConnection((err, conn) => {
-            conn.execute(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+            conn.execute(sql, (err, res: RowDataPacket[]) => {
               assert.ifError(err);
               assert.ok(res);
               assert.strictEqual(res[0].solution, 2);
@@ -858,18 +848,15 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
-          pool.execute(
-            { sql, values: [1] },
-            (err, res: mysqlTypes.RowDataPacket[]) => {
-              assert.ifError(err);
-              assert.ok(res);
-              assert.strictEqual(res[0].solution, 2);
-              const spans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(spans.length, 1);
-              assertSpan(spans[0], sql);
-              done();
-            }
-          );
+          pool.execute({ sql, values: [1] }, (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql);
+            done();
+          });
         });
       });
 
@@ -877,7 +864,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
-          pool.execute({ sql }, [1], (err, res: mysqlTypes.RowDataPacket[]) => {
+          pool.execute({ sql }, [1], (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 2);
@@ -893,7 +880,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
-          pool.execute(sql, [1], (err, res: mysqlTypes.RowDataPacket[]) => {
+          pool.execute(sql, [1], (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 2);
@@ -909,7 +896,7 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
-          pool.execute(sql, [1], (err, res: mysqlTypes.RowDataPacket[]) => {
+          pool.execute(sql, [1], (err, res: RowDataPacket[]) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 2);
@@ -946,7 +933,7 @@ describe('mysql2', () => {
             const query = poolClusterConnection.query(sql);
             let rows = 0;
 
-            query.on('result', (row: mysqlTypes.RowDataPacket) => {
+            query.on('result', (row: RowDataPacket) => {
               assert.strictEqual(row.solution, 2);
               rows += 1;
             });
@@ -968,18 +955,15 @@ describe('mysql2', () => {
           const span = provider.getTracer('default').startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
             const sql = 'SELECT 1+1 as solution';
-            poolClusterConnection.query(
-              sql,
-              (err, res: mysqlTypes.RowDataPacket[]) => {
-                assert.ifError(err);
-                assert.ok(res);
-                assert.strictEqual(res[0].solution, 2);
-                const spans = memoryExporter.getFinishedSpans();
-                assert.strictEqual(spans.length, 1);
-                assertSpan(spans[0], sql);
-                done();
-              }
-            );
+            poolClusterConnection.query(sql, (err, res: RowDataPacket[]) => {
+              assert.ifError(err);
+              assert.ok(res);
+              assert.strictEqual(res[0].solution, 2);
+              const spans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(spans.length, 1);
+              assertSpan(spans[0], sql);
+              done();
+            });
           });
         });
       });
@@ -992,7 +976,7 @@ describe('mysql2', () => {
             const sql = 'SELECT 1+? as solution';
             poolClusterConnection.query(
               { sql, values: [1] },
-              (err, res: mysqlTypes.RowDataPacket[]) => {
+              (err, res: RowDataPacket[]) => {
                 assert.ifError(err);
                 assert.ok(res);
                 assert.strictEqual(res[0].solution, 2);
@@ -1015,7 +999,7 @@ describe('mysql2', () => {
             poolClusterConnection.query(
               { sql },
               [1],
-              (err, res: mysqlTypes.RowDataPacket[]) => {
+              (err, res: RowDataPacket[]) => {
                 assert.ifError(err);
                 assert.ok(res);
                 assert.strictEqual(res[0].solution, 2);
@@ -1038,7 +1022,7 @@ describe('mysql2', () => {
             poolClusterConnection.query(
               sql,
               [1],
-              (err, res: mysqlTypes.RowDataPacket[]) => {
+              (err, res: RowDataPacket[]) => {
                 assert.ifError(err);
                 assert.ok(res);
                 assert.strictEqual(res[0].solution, 1);
@@ -1058,19 +1042,15 @@ describe('mysql2', () => {
           const span = provider.getTracer('default').startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
             const sql = 'SELECT ? as solution';
-            poolClusterConnection.query(
-              sql,
-              1,
-              (err, res: mysqlTypes.RowDataPacket[]) => {
-                assert.ifError(err);
-                assert.ok(res);
-                assert.strictEqual(res[0].solution, 1);
-                const spans = memoryExporter.getFinishedSpans();
-                assert.strictEqual(spans.length, 1);
-                assertSpan(spans[0], sql, [1]);
-                done();
-              }
-            );
+            poolClusterConnection.query(sql, 1, (err, res: RowDataPacket[]) => {
+              assert.ifError(err);
+              assert.ok(res);
+              assert.strictEqual(res[0].solution, 1);
+              const spans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(spans.length, 1);
+              assertSpan(spans[0], sql, [1]);
+              done();
+            });
           });
         });
       });
@@ -1145,7 +1125,7 @@ describe('mysql2', () => {
           const span = provider.getTracer('default').startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
             const sql = 'SELECT 1+1 as solution';
-            connection.query(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+            connection.query(sql, (err, res: RowDataPacket[]) => {
               assert.ifError(err);
               assert.ok(res);
               assert.strictEqual(res[0].solution, 2);
@@ -1172,7 +1152,7 @@ describe('mysql2', () => {
           const span = provider.getTracer('default').startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
             const sql = 'SELECT 1+1 as solution';
-            connection.query(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+            connection.query(sql, (err, res: RowDataPacket[]) => {
               assert.ifError(err);
               assert.ok(res);
               assert.strictEqual(res[0].solution, 2);
@@ -1193,7 +1173,7 @@ describe('mysql2', () => {
           context.with(trace.setSpan(context.active(), span), () => {
             const sql = 'SELECT 1+1 as solution';
             pool.getConnection((err, conn) => {
-              conn.query(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+              conn.query(sql, (err, res: RowDataPacket[]) => {
                 assert.ifError(err);
                 assert.ok(res);
                 assert.strictEqual(res[0].solution, 2);
@@ -1216,22 +1196,19 @@ describe('mysql2', () => {
             const span = provider.getTracer('default').startSpan('test span');
             context.with(trace.setSpan(context.active(), span), () => {
               const sql = 'SELECT 1+1 as solution';
-              poolClusterConnection.query(
-                sql,
-                (err, res: mysqlTypes.RowDataPacket[]) => {
-                  assert.ifError(err);
-                  assert.ok(res);
-                  assert.strictEqual(res[0].solution, 2);
-                  const spans = memoryExporter.getFinishedSpans();
-                  assert.strictEqual(spans.length, 1);
-                  assertSpan(spans[0], sql);
-                  assert.strictEqual(
-                    spans[0].attributes[queryResultAttribute],
-                    JSON.stringify(res)
-                  );
-                  done();
-                }
-              );
+              poolClusterConnection.query(sql, (err, res: RowDataPacket[]) => {
+                assert.ifError(err);
+                assert.ok(res);
+                assert.strictEqual(res[0].solution, 2);
+                const spans = memoryExporter.getFinishedSpans();
+                assert.strictEqual(spans.length, 1);
+                assertSpan(spans[0], sql);
+                assert.strictEqual(
+                  spans[0].attributes[queryResultAttribute],
+                  JSON.stringify(res)
+                );
+                done();
+              });
             });
           });
         });
@@ -1246,9 +1223,9 @@ describe('mysql2', () => {
     const provider = new BasicTracerProvider({
       spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
     });
-    let connection: mysqlTypesProm.Connection;
-    let rootConnection: mysqlTypesProm.Connection;
-    let mysqlTypesPromReload: typeof mysqlTypesProm;
+    let connection: ConnectionAsync;
+    let rootConnection: ConnectionAsync;
+    let createConnection: typeof createConnectionAsync;
 
     before(async function () {
       // cleanup cache for 'mysql2'
@@ -1267,7 +1244,7 @@ describe('mysql2', () => {
       instrumentation.enable();
       instrumentation.disable();
 
-      mysqlTypesPromReload = await import('mysql2/promise');
+      createConnection = (await import('mysql2/promise')).createConnection;
 
       if (!shouldTest) {
         // this.skip() workaround
@@ -1275,7 +1252,7 @@ describe('mysql2', () => {
         this.test!.parent!.pending = true;
         this.skip();
       }
-      rootConnection = await mysqlTypesPromReload.createConnection({
+      rootConnection = await createConnection({
         port,
         user: 'root',
         host,
@@ -1294,7 +1271,7 @@ describe('mysql2', () => {
       context.setGlobalContextManager(contextManager);
       instrumentation.setTracerProvider(provider);
       instrumentation.enable();
-      connection = await mysqlTypesPromReload.createConnection({
+      connection = await createConnection({
         port,
         user,
         host,
@@ -1377,7 +1354,7 @@ function assertSpan(
   assert.strictEqual(span.attributes[SEMATTRS_DB_USER], user);
   assert.strictEqual(
     span.attributes[SEMATTRS_DB_STATEMENT],
-    mysqlTypes.format(sql, values)
+    format(sql, values)
   );
   if (errorMessage) {
     assert.strictEqual(span.status.message, errorMessage);
