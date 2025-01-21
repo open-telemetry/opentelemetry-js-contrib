@@ -90,7 +90,7 @@ describe('Register', function () {
   it('shuts down the NodeSDK when SIGTERM is received', async () => {
     const runPromise = runWithRegister('./test-app/app-server.js');
     const { child } = runPromise;
-    await waitForString(child.stdout!, 'Finshed request');
+    await waitForString(child.stdout!, 'Finished request');
     child.kill('SIGTERM');
     const { stdout } = await runPromise;
 

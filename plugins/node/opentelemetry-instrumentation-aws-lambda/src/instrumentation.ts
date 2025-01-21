@@ -37,13 +37,15 @@ import {
   TextMapGetter,
   TracerProvider,
   ROOT_CONTEXT,
+  Attributes,
 } from '@opentelemetry/api';
 import {
+  ATTR_URL_FULL,
   SEMATTRS_FAAS_EXECUTION,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
   SEMRESATTRS_FAAS_ID,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_FAAS_COLDSTART } from '@opentelemetry/semantic-conventions/incubating';
+import { ATTR_FAAS_COLDSTART } from './semconv';
 
 import {
   APIGatewayProxyEventHeaders,
@@ -244,6 +246,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
                 context.invokedFunctionArn
               ),
             [ATTR_FAAS_COLDSTART]: requestIsColdStart,
+            ...AwsLambdaInstrumentation._extractOtherEventFields(event),
           },
         },
         parent
@@ -424,6 +427,52 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     // The default extractor tries to get sampled trace header from HTTP headers.
     const httpHeaders = event.headers || {};
     return propagation.extract(otelContext.active(), httpHeaders, headerGetter);
+  }
+
+  private static _extractOtherEventFields(event: any): Attributes {
+    const answer: Attributes = {};
+    const fullUrl = this._extractFullUrl(event);
+    if (fullUrl) {
+      answer[ATTR_URL_FULL] = fullUrl;
+    }
+    return answer;
+  }
+
+  private static _extractFullUrl(event: any): string | undefined {
+    // API gateway encodes a lot of url information in various places to recompute this
+    if (!event.headers) {
+      return undefined;
+    }
+    // Helper function to deal with case variations (instead of making a tolower() copy of the headers)
+    function findAny(
+      event: any,
+      key1: string,
+      key2: string
+    ): string | undefined {
+      return event.headers[key1] ?? event.headers[key2];
+    }
+    const host = findAny(event, 'host', 'Host');
+    const proto = findAny(event, 'x-forwarded-proto', 'X-Forwarded-Proto');
+    const port = findAny(event, 'x-forwarded-port', 'X-Forwarded-Port');
+    if (!(proto && host && (event.path || event.rawPath))) {
+      return undefined;
+    }
+    let answer = proto + '://' + host;
+    if (port) {
+      answer += ':' + port;
+    }
+    answer += event.path ?? event.rawPath;
+    if (event.queryStringParameters) {
+      let first = true;
+      for (const key in event.queryStringParameters) {
+        answer += first ? '?' : '&';
+        answer += encodeURIComponent(key);
+        answer += '=';
+        answer += encodeURIComponent(event.queryStringParameters[key]);
+        first = false;
+      }
+    }
+    return answer;
   }
 
   private static _determineParent(
