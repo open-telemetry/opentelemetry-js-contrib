@@ -219,7 +219,7 @@ export const ATTR_FAAS_NAME = 'faas.name';
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_FAAS_INSTANCE = 'faas.instance' as const;
+export const ATTR_FAAS_INSTANCE = 'faas.instance';
 
 /**
  * The amount of memory available to the serverless function converted to Bytes.
@@ -230,7 +230,7 @@ export const ATTR_FAAS_INSTANCE = 'faas.instance' as const;
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_FAAS_MAX_MEMORY = 'faas.max_memory' as const;
+export const ATTR_FAAS_MAX_MEMORY = 'faas.max_memory';
 
 /**
  * The immutable version of the function being executed.
