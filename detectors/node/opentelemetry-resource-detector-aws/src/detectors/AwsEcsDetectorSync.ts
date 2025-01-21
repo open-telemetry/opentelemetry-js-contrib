@@ -41,8 +41,8 @@ import {
   ATTR_CLOUD_RESOURCE_ID,
   ATTR_CONTAINER_ID,
   ATTR_CONTAINER_NAME,
-  CLOUD_PLATFORM_VALUE_AWS_ECS,
   CLOUD_PROVIDER_VALUE_AWS,
+  CLOUD_PLATFORM_VALUE_AWS_ECS,
 } from '../semconv';
 import * as http from 'http';
 import * as util from 'util';

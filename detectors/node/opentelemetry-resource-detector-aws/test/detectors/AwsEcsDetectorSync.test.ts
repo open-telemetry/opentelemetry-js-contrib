@@ -40,8 +40,8 @@ import {
   ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_REGION,
   ATTR_CLOUD_RESOURCE_ID,
-  CLOUD_PLATFORM_VALUE_AWS_ECS,
   CLOUD_PROVIDER_VALUE_AWS,
+  CLOUD_PLATFORM_VALUE_AWS_ECS,
 } from '../../src/semconv';
 import { readFileSync } from 'fs';
 import * as os from 'os';
