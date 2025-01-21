@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-container",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "description": "Opentelemetry resource detector to get container resource attributes",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -56,5 +56,6 @@
     "@opentelemetry/resources": "^1.10.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-container#readme"
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-container#readme",
+  "sideEffects": false
 }
