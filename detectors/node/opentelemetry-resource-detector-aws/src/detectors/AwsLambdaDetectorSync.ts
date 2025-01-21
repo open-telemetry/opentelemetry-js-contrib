@@ -22,13 +22,14 @@ import {
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
-  // AWS attributes
   ATTR_AWS_LOG_GROUP_NAMES,
-  // Cloud attributes
   ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_REGION,
-  // Cloud values (AWS)
+  ATTR_FAAS_NAME,
+  ATTR_FAAS_VERSION,
+  ATTR_FAAS_INSTANCE,
+  ATTR_FAAS_MAX_MEMORY,
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
 } from '../semconv';
