@@ -47,14 +47,14 @@ export class AwsLambdaDetectorSync implements DetectorSync {
       return Resource.empty();
     }
 
-    // These environment variables are guaranteed to be present in AWS Lambda
+    // These environment variables are guaranteed to be present in Lambda environment
     // https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime
     const region = process.env.AWS_REGION;
     const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME;
     const functionVersion = process.env.AWS_LAMBDA_FUNCTION_VERSION;
     const memorySize = process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE;
 
-    // These environment variables are not available in Lambda SnapStart
+    // These environment variables are not available in Lambda SnapStart functions
     const logGroupName = process.env.AWS_LAMBDA_LOG_GROUP_NAME;
     const logStreamName = process.env.AWS_LAMBDA_LOG_STREAM_NAME;
 
