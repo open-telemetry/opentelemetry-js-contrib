@@ -27,7 +27,8 @@ import {
   isValidTraceId,
   INVALID_TRACEID,
   INVALID_SPANID,
-  INVALID_SPAN_CONTEXT,
+  propagation,
+  Baggage,
 } from '@opentelemetry/api';
 
 export const AWSXRAY_TRACE_ID_HEADER = 'x-amzn-trace-id';
@@ -49,6 +50,8 @@ const SAMPLED_FLAG_KEY = 'Sampled';
 const IS_SAMPLED = '1';
 const NOT_SAMPLED = '0';
 
+const LINEAGE_KEY = "Lineage";
+
 /**
  * Implementation of the AWS X-Ray Trace Header propagation protocol. See <a href=
  * https://https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-tracingheader>AWS
@@ -66,6 +69,8 @@ export class AWSXRayPropagator implements TextMapPropagator {
     const timestamp = otTraceId.substring(0, TRACE_ID_FIRST_PART_LENGTH);
     const randomNumber = otTraceId.substring(TRACE_ID_FIRST_PART_LENGTH);
 
+    const xrayTraceId = `${TRACE_ID_VERSION}${TRACE_ID_DELIMITER}${timestamp}${TRACE_ID_DELIMITER}${randomNumber}`;
+
     const parentId = spanContext.spanId;
     const samplingFlag =
       (TraceFlags.SAMPLED & spanContext.traceFlags) === TraceFlags.SAMPLED
@@ -73,31 +78,52 @@ export class AWSXRayPropagator implements TextMapPropagator {
         : NOT_SAMPLED;
     // TODO: Add OT trace state to the X-Ray trace header
 
-    const traceHeader = `Root=1-${timestamp}-${randomNumber};Parent=${parentId};Sampled=${samplingFlag}`;
+    let traceHeader = 
+        `${TRACE_ID_KEY}` +
+        `${KV_DELIMITER}` +
+        `${xrayTraceId}` +
+        `${TRACE_HEADER_DELIMITER}` +
+        `${PARENT_ID_KEY}` +
+        `${KV_DELIMITER}` +
+        `${parentId}` +
+        `${TRACE_HEADER_DELIMITER}` +
+        `${SAMPLED_FLAG_KEY}` +
+        `${KV_DELIMITER}` +
+        `${samplingFlag}`;
+
+    const baggage = propagation.getBaggage(context);
+    const lineageV2Header = baggage?.getEntry(LINEAGE_KEY)?.value;
+
+    if (lineageV2Header) {
+      traceHeader += 
+        `${TRACE_HEADER_DELIMITER}` +
+        `${LINEAGE_KEY}` +
+        `${KV_DELIMITER}` +
+        `${lineageV2Header}`;
+    }
+
     setter.set(carrier, AWSXRAY_TRACE_ID_HEADER, traceHeader);
   }
 
   extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
-    const spanContext = this.getSpanContextFromHeader(carrier, getter);
-    if (!isSpanContextValid(spanContext)) return context;
-
-    return trace.setSpan(context, trace.wrapSpanContext(spanContext));
+    return this.getContextFromHeader(context, carrier, getter);
   }
 
   fields(): string[] {
     return [AWSXRAY_TRACE_ID_HEADER];
   }
 
-  private getSpanContextFromHeader(
+  private getContextFromHeader(
+    context: Context,
     carrier: unknown,
     getter: TextMapGetter
-  ): SpanContext {
+  ): Context {
     const headerKeys = getter.keys(carrier);
     const relevantHeaderKey = headerKeys.find(e => {
       return e.toLowerCase() === AWSXRAY_TRACE_ID_HEADER;
     });
     if (!relevantHeaderKey) {
-      return INVALID_SPAN_CONTEXT;
+      return context;
     }
     const rawTraceHeader = getter.get(carrier, relevantHeaderKey);
     const traceHeader = Array.isArray(rawTraceHeader)
@@ -105,8 +131,10 @@ export class AWSXRayPropagator implements TextMapPropagator {
       : rawTraceHeader;
 
     if (!traceHeader || typeof traceHeader !== 'string') {
-      return INVALID_SPAN_CONTEXT;
+      return context;
     }
+
+    let baggage: Baggage = propagation.getBaggage(context) || propagation.createBaggage();
 
     let pos = 0;
     let trimmedPart: string;
@@ -133,10 +161,12 @@ export class AWSXRayPropagator implements TextMapPropagator {
         parsedSpanId = AWSXRayPropagator._parseSpanId(value);
       } else if (trimmedPart.startsWith(SAMPLED_FLAG_KEY)) {
         parsedTraceFlags = AWSXRayPropagator._parseTraceFlag(value);
+      } else if (trimmedPart.startsWith(LINEAGE_KEY)) {
+        baggage = baggage.setEntry(LINEAGE_KEY, {value});
       }
     }
     if (parsedTraceFlags === null) {
-      return INVALID_SPAN_CONTEXT;
+      return context;
     }
     const resultSpanContext: SpanContext = {
       traceId: parsedTraceId,
@@ -144,10 +174,14 @@ export class AWSXRayPropagator implements TextMapPropagator {
       traceFlags: parsedTraceFlags,
       isRemote: true,
     };
-    if (!isSpanContextValid(resultSpanContext)) {
-      return INVALID_SPAN_CONTEXT;
+    if (isSpanContextValid(resultSpanContext)) {
+      context = trace.setSpan(context, trace.wrapSpanContext(resultSpanContext));
     }
-    return resultSpanContext;
+    if (baggage.getAllEntries().length > 0) {
+      context = propagation.setBaggage(context, baggage);
+    }
+
+    return context;
   }
 
   private static _parseTraceId(xrayTraceId: string): string {
