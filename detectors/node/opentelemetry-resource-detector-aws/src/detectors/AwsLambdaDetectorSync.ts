@@ -38,9 +38,6 @@ import {
  * The AwsLambdaDetector can be used to detect if a process is running in AWS Lambda
  * and return a {@link Resource} populated with data about the environment.
  * Returns an empty Resource if detection fails.
- *
- * AWS Lambda documentation for available environment variables within the Lambda runtimes.
- * @see https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime
  */
 export class AwsLambdaDetectorSync implements DetectorSync {
   detect(_config?: ResourceDetectionConfig): IResource {
@@ -51,6 +48,7 @@ export class AwsLambdaDetectorSync implements DetectorSync {
     }
 
     // These environment variables are guaranteed to be present in AWS Lambda
+    // https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime
     const region = process.env.AWS_REGION;
     const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME;
     const functionVersion = process.env.AWS_LAMBDA_FUNCTION_VERSION;
