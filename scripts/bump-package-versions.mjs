@@ -59,7 +59,7 @@ repoTags.forEach((tag) => {
   const pkgName = `@opentelemetry/${nameParts.join('-')}`;
   const pkgInfo = publicPkgList.find((pkg) => pkg.name === pkgName);
 
-  // Assumption: `git tag` rueturs tags from old to new so we care about
+  // Assumption: `git tag` returns tags from old to new so we care about
   // the last occurrence
   if (pkgInfo) {
     pkgInfo.tag = tag;
