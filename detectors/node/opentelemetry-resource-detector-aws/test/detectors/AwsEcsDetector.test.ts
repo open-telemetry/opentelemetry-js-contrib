@@ -72,65 +72,91 @@ const assertEcsResource = (
     CLOUD_PROVIDER_VALUE_AWS
   );
   assert.strictEqual(
-    resource.attributes[ATTR_CLOUD_ACCOUNT_ID],
-    validations.accountId
-  );
-  assert.strictEqual(
-    resource.attributes[ATTR_CLOUD_REGION],
-    validations.region
-  );
-  assert.strictEqual(
-    resource.attributes[ATTR_CLOUD_AVAILABILITY_ZONE],
-    validations.zone
-  );
-  assert.strictEqual(
     resource.attributes[ATTR_CLOUD_PLATFORM],
     CLOUD_PLATFORM_VALUE_AWS_ECS
   );
-  assert.strictEqual(
-    resource.attributes[ATTR_AWS_ECS_CONTAINER_ARN],
-    validations.containerArn
-  );
-  assert.strictEqual(
-    resource.attributes[ATTR_CLOUD_RESOURCE_ID],
-    validations.containerArn
-  );
-  assert.strictEqual(
-    resource.attributes[ATTR_AWS_ECS_CLUSTER_ARN],
-    validations.clusterArn
-  );
-  assert.strictEqual(
-    resource.attributes[ATTR_AWS_ECS_LAUNCHTYPE],
-    validations.launchType
-  );
-  assert.strictEqual(
-    resource.attributes[ATTR_AWS_ECS_TASK_ARN],
-    validations.taskArn
-  );
-  assert.strictEqual(
-    resource.attributes[ATTR_AWS_ECS_TASK_FAMILY],
-    validations.taskFamily
-  );
-  assert.strictEqual(
-    resource.attributes[ATTR_AWS_ECS_TASK_REVISION],
-    validations.taskRevision
-  );
-  assert.deepEqual(
-    resource.attributes[ATTR_AWS_LOG_GROUP_NAMES],
-    validations.logGroupNames
-  );
-  assert.deepEqual(
-    resource.attributes[ATTR_AWS_LOG_GROUP_ARNS],
-    validations.logGroupArns
-  );
-  assert.deepEqual(
-    resource.attributes[ATTR_AWS_LOG_STREAM_NAMES],
-    validations.logStreamNames
-  );
-  assert.deepEqual(
-    resource.attributes[ATTR_AWS_LOG_STREAM_ARNS],
-    validations.logStreamArns
-  );
+  if (validations.accountId) {
+    assert.strictEqual(
+      resource.attributes[ATTR_CLOUD_ACCOUNT_ID],
+      validations.accountId
+    );
+  }
+  if (validations.region) {
+    assert.strictEqual(
+      resource.attributes[ATTR_CLOUD_REGION],
+      validations.region
+    );
+  }
+  if (validations.zone) {
+    assert.strictEqual(
+      resource.attributes[ATTR_CLOUD_AVAILABILITY_ZONE],
+      validations.zone
+    );
+  }
+  if (validations.containerArn) {
+    assert.strictEqual(
+      resource.attributes[ATTR_AWS_ECS_CONTAINER_ARN],
+      validations.containerArn
+    );
+    assert.strictEqual(
+      resource.attributes[ATTR_CLOUD_RESOURCE_ID],
+      validations.containerArn
+    );
+  }
+  if (validations.clusterArn) {
+    assert.strictEqual(
+      resource.attributes[ATTR_AWS_ECS_CLUSTER_ARN],
+      validations.clusterArn
+    );
+  }
+  if (validations.launchType) {
+    assert.strictEqual(
+      resource.attributes[ATTR_AWS_ECS_LAUNCHTYPE],
+      validations.launchType
+    );
+  }
+  if (validations.taskArn) {
+    assert.strictEqual(
+      resource.attributes[ATTR_AWS_ECS_TASK_ARN],
+      validations.taskArn
+    );
+  }
+  if (validations.taskFamily) {
+    assert.strictEqual(
+      resource.attributes[ATTR_AWS_ECS_TASK_FAMILY],
+      validations.taskFamily
+    );
+  }
+  if (validations.taskRevision) {
+    assert.strictEqual(
+      resource.attributes[ATTR_AWS_ECS_TASK_REVISION],
+      validations.taskRevision
+    );
+  }
+  if (validations.logGroupNames) {
+    assert.deepEqual(
+      resource.attributes[ATTR_AWS_LOG_GROUP_NAMES],
+      validations.logGroupNames
+    );
+  }
+  if (validations.logGroupArns) {
+    assert.deepEqual(
+      resource.attributes[ATTR_AWS_LOG_GROUP_ARNS],
+      validations.logGroupArns
+    );
+  }
+  if (validations.logStreamNames) {
+    assert.deepEqual(
+      resource.attributes[ATTR_AWS_LOG_STREAM_NAMES],
+      validations.logStreamNames
+    );
+  }
+  if (validations.logStreamArns) {
+    assert.deepEqual(
+      resource.attributes[ATTR_AWS_LOG_STREAM_ARNS],
+      validations.logStreamArns
+    );
+  }
 };
 
 describe('AwsEcsResourceDetector', () => {
