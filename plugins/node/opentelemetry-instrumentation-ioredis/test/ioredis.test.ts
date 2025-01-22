@@ -86,7 +86,9 @@ const sanitizeEventForAssertion = (span: ReadableSpan) => {
 };
 
 describe('ioredis', () => {
-  const provider = new NodeTracerProvider();
+  const provider = new NodeTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   let ioredis: typeof ioredisTypes.default;
   let instrumentation: IORedisInstrumentation;
   const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
@@ -115,7 +117,6 @@ describe('ioredis', () => {
       testUtils.startDocker('redis');
     }
 
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     instrumentation = new IORedisInstrumentation();
     instrumentation.setTracerProvider(provider);
     ioredis = require('ioredis');
