@@ -78,7 +78,6 @@ const getPkgCommitsFrom = (pkgInfo, commitOrTag) => {
 const getBumpType = (pkgInfo, commits) => {
   const isExperimental = pkgInfo.version.startsWith('0.');
   let bumpType = 'patch';
-  console.log('isExperimental', isExperimental)
   for (const commit of commits) {
     // commit must be in the proper format
     if (commit.indexOf(':') === -1) {
@@ -130,6 +129,7 @@ publicPkgList.forEach((pkgInfo) => {
     const scopedCommits = getPkgCommitsFrom(pkgInfo, pkgInfo.tag);
 
     if (scopedCommits.length === 0) {
+      console.log(`Package ${pkgInfo.name} has no commits. Skipping`);
       return;
     }
 
