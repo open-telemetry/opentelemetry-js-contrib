@@ -2,7 +2,7 @@
 
 import opentelemetry from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { SimpleSpanProcessor, SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
@@ -31,14 +31,18 @@ export const setupTracing = (serviceName: string) => {
   });
 
   //traces:
-  const tracerProvider = new NodeTracerProvider({
-    resource: new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: serviceName,
-  }),});
+  const spanProcessors: SpanProcessor[] = [];
 
   if (EXPORTER.toLowerCase().startsWith('z')) {
-    tracerProvider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter()));
+    spanProcessors.push(new SimpleSpanProcessor(new ZipkinExporter()));
   }
+
+  const tracerProvider = new NodeTracerProvider({
+    resource: new Resource({
+      [SEMRESATTRS_SERVICE_NAME]: serviceName,
+    }),
+    spanProcessors,
+  });
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   tracerProvider.register();
