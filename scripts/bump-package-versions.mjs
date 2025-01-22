@@ -43,11 +43,49 @@ const getPackages = () => {
 		});
 }
 
-const getScopedCommitsFrom = (scope, commitOrTag) => {
-  const commits = execSync(`git log ${commitOrTag}..HEAD --oneline`, { encoding: 'utf-8' }).split('\n');
+const getPkgCommitsFrom = (pkgInfo, commitOrTag) => {
+  const command = `git log ${commitOrTag}..HEAD --oneline ${pkgInfo.location}`;
+  const commits = execSync(command,{ encoding: 'utf-8' }).split('\n');
 
-  return commits.filter((c) => c.indexOf(`(${scope})`) !== -1);
+  return commits;
 }
+
+/**
+ * 
+ * @param {Record<string, any>} pkgInfo 
+ * @param {string[]} commits
+ * @returns {'major' | 'minor' | 'patch'}
+ */
+const getBumpType = (pkgInfo, commits) => {
+  const isExperimental = pkgInfo.version.startsWith('0.');
+  let bumpType = 'patch';
+  console.log('isExperimental', isExperimental)
+  for (const commit of commits) {
+    // commit must be in the proper format
+    if (commit.indexOf(':') === -1) {
+      continue;
+    }
+    const commitPrefix = commit.split(':').shift().trim();
+    const isBreaking = commitPrefix.endsWith('!');
+    const isFeature = commitPrefix.includes('feat');
+
+    // Experimental only accpets patch & minor
+    if (isExperimental && (isBreaking || isFeature)) {
+      return 'minor';
+    }
+
+    // Stable could be also major
+    if (!isExperimental) {
+      if (isBreaking) {
+        return 'major';
+      }
+      if (isFeature) {
+        bumpType = 'minor';
+      }
+    }
+  }
+  return bumpType;
+};
 
 // -- Main line
 const publicPkgList = getPackages().filter(pkg => !pkg.private);
@@ -55,7 +93,7 @@ const repoTags = execSync('git tag', { encoding: 'utf-8' }).split('\n');
 
 // Set the latest tag on each package
 repoTags.forEach((tag) => {
-  const nameParts = tag.split('-');
+  const nameParts = tag.split('-').slice(0, -1);
   const pkgName = `@opentelemetry/${nameParts.join('-')}`;
   const pkgInfo = publicPkgList.find((pkg) => pkg.name === pkgName);
 
@@ -71,21 +109,21 @@ repoTags.forEach((tag) => {
 publicPkgList.forEach((pkgInfo) => {
   const pkgScope = pkgInfo.name.replace('@opentelemetry/', '');
 
+  // if (pkgInfo.tag) {
+  //   console.log(`**** commits for ${pkgScope} from ${pkgInfo.tag} ****`)
+  //   const scopedCommits = getPkgCommitsFrom(pkgInfo, pkgInfo.tag);
+  //   console.log('bump type', getBumpType(pkgInfo, scopedCommits))
+  // }
+  // return
+
   if (pkgInfo.tag) {
-    const scopedCommits = getScopedCommitsFrom(pkgScope, pkgInfo.tag);
+    const scopedCommits = getPkgCommitsFrom(pkgInfo, pkgInfo.tag);
 
     if (scopedCommits.length === 0) {
       return;
     }
 
-    const isExperimental = pkgInfo.version.startsWith('0.');
-    const bumpMinor = scopedCommits.some((cmt) => {
-      const pattern = isExperimental ? `(${pkgScope})!:` : `feat(${pkgScope}):`
-      return cmt.includes(pattern);
-    });
-    const bumpMajor = !isExperimental && scopedCommits.some((cmt) => cmt.includes(`(${pkgScope})!:`));
-    const bumpType = bumpMajor ? 'major' : (bumpMinor ? 'minor' : 'patch');
-
+    const bumpType = getBumpType(pkgInfo, scopedCommits);
     console.log(`Bumping ${bumpType} version in ${pkgInfo.name}`);
     execSync(`npm version ${bumpType} --git-tag-version=false`, { cwd: pkgInfo.location });
   } else {
@@ -115,17 +153,10 @@ publicPkgList.forEach((pkgInfo) => {
       // - check for commits since then, and do the calculation
       const addCommit = execSync(`git log --diff-filter=A -- ${pkgInfo.location}/package.json`, { encoding: 'utf-8' });
       const commitSha = addCommit.substring(7, 14);
-      const scopedCommits = getScopedCommitsFrom(pkgScope, commitSha);
+      const scopedCommits = getPkgCommitsFrom(pkgInfo, commitSha);
       
       console.log(`Package ${pkgInfo.name} was added in ${commitSha}`);
-      const isExperimental = pkgInfo.version.startsWith('0.');
-      const bumpMinor = scopedCommits.some((cmt) => {
-        const pattern = isExperimental ? `(${pkgScope})!:` : `feat(${pkgScope}):`
-        return cmt.includes(pattern);
-      });
-      const bumpMajor = !isExperimental && scopedCommits.some((cmt) => cmt.includes(`(${pkgScope})!:`));
-      const bumpType = bumpMajor ? 'major' : (bumpMinor ? 'minor' : 'patch');
-  
+      const bumpType = getBumpType(pkgInfo, scopedCommits);
       console.log(`Bumping ${bumpType} version in ${pkgInfo.name}`);
       execSync(`npm version ${bumpType} --git-tag-version=false`, { cwd: pkgInfo.location });
     }
