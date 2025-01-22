@@ -89,10 +89,12 @@ describe('tedious', () => {
   let tedious: any;
   let contextManager: AsyncHooksContextManager;
   let connection: Connection;
-  const provider = new BasicTracerProvider();
+  const memoryExporter = new InMemorySpanExporter();
+  const provider = new BasicTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   const shouldTest = process.env.RUN_MSSQL_TESTS; // For CI: assumes local db is already available
   const shouldTestLocally = process.env.RUN_MSSQL_TESTS_LOCAL; // For local: spins up local db via docker
-  const memoryExporter = new InMemorySpanExporter();
 
   before(function (done) {
     if (!(shouldTest || shouldTestLocally) || incompatVersions) {
@@ -101,7 +103,6 @@ describe('tedious', () => {
       this.test!.parent!.pending = true;
       this.skip();
     }
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     if (shouldTestLocally) {
       testUtils.startDocker('mssql');
       // wait 15 seconds for docker container to start

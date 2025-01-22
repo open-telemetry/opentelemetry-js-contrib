@@ -27,9 +27,12 @@ const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { RouterInstrumentation } = require('@opentelemetry/instrumentation-router');
 
-const provider = new NodeTracerProvider();
+const provider = new NodeTracerProvider({
+  spanProcessors: [
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+  ],
+});
 
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({

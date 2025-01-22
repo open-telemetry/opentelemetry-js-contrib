@@ -66,13 +66,14 @@ const httpInstrumentation = new HttpInstrumentation();
 const instrumentation = new FastifyInstrumentation();
 const contextManager = new AsyncHooksContextManager().enable();
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
 const spanProcessor = new SimpleSpanProcessor(memoryExporter);
+const provider = new NodeTracerProvider({
+  spanProcessors: [spanProcessor],
+});
 instrumentation.setTracerProvider(provider);
 httpInstrumentation.setTracerProvider(provider);
 context.setGlobalContextManager(contextManager);
 
-provider.addSpanProcessor(spanProcessor);
 instrumentation.enable();
 httpInstrumentation.enable();
 
