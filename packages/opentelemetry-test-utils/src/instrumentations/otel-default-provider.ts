@@ -30,18 +30,22 @@ import {
 export const registerInstrumentationTestingProvider = (
   config?: NodeTracerConfig
 ): NodeTracerProvider => {
-  const otelTestingProvider = new NodeTracerProvider(config);
+  const spanProcessors = config?.spanProcessors
+    ? [...config.spanProcessors]
+    : [];
 
   setTestMemoryExporter(new InMemorySpanExporter());
-  otelTestingProvider.addSpanProcessor(
-    new SimpleSpanProcessor(getTestMemoryExporter()!)
-  );
+
+  spanProcessors.push(new SimpleSpanProcessor(getTestMemoryExporter()!));
 
   if (process.env.OTEL_EXPORTER_JAEGER_AGENT_HOST) {
-    otelTestingProvider.addSpanProcessor(
-      new SimpleSpanProcessor(new JaegerExporter())
-    );
+    spanProcessors.push(new SimpleSpanProcessor(new JaegerExporter()));
   }
+
+  const otelTestingProvider = new NodeTracerProvider({
+    ...config,
+    spanProcessors,
+  });
 
   otelTestingProvider.register();
   return otelTestingProvider;
