@@ -138,8 +138,10 @@ const provider = new NodeTracerProvider({
   resource: new Resource({
     [SEMRESATTRS_SERVICE_NAME]: 'basic-service',
   }),
+  spanProcessors: [
+    new SimpleSpanProcessor(exporter),
+  ],
 });
-provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 provider.register();
 
 registerInstrumentations({

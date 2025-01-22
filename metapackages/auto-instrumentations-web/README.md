@@ -26,8 +26,11 @@ const exporter = new CollectorTraceExporter({
   serviceName: 'auto-instrumentations-web',
 });
 
-const provider = new WebTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+const provider = new WebTracerProvider({
+  spanProcessors: [
+    new SimpleSpanProcessor(exporter),
+  ],
+});
 provider.register({
   contextManager: new ZoneContextManager(),
   propagator: new B3Propagator(),

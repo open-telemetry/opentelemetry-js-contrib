@@ -23,9 +23,11 @@ import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { LongTaskInstrumentation } from '@opentelemetry/instrumentation-long-task';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
-const provider = new WebTracerProvider();
-
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+const provider = new WebTracerProvider({
+  spanProcessors: [
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+  ],
+});
 
 registerInstrumentations({
   tracerProvider: provider,
