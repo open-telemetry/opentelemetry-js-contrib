@@ -7,13 +7,15 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 
 export default (serviceName) => {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
-  const provider = new WebTracerProvider();
   const exporter = new OTLPTraceExporter({
     url: 'http://localhost:4318/v1/traces',
   });
-
-  provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+  const provider = new WebTracerProvider({
+    spanProcessors: [
+      new SimpleSpanProcessor(new ConsoleSpanExporter()),
+      new SimpleSpanProcessor(exporter),
+    ],
+  });
 
   provider.register({
     contextManager: new ZoneContextManager(),
