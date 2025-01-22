@@ -446,11 +446,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
-
-        const hasNoParentSpan = currentSpan === undefined;
-        const requireParentSpan = instrumentation.getConfig().requireParentSpan;
         const skipInstrumentation =
-          requireParentSpan === true && hasNoParentSpan;
+          instrumentation._checkSkipInstrumentation(currentSpan);
 
         const resultHandler =
           typeof options === 'function' ? options : callback;
@@ -504,11 +501,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
-
-        const hasNoParentSpan = currentSpan === undefined;
-        const requireParentSpan = instrumentation.getConfig().requireParentSpan;
         const skipInstrumentation =
-          requireParentSpan === true && hasNoParentSpan;
+          instrumentation._checkSkipInstrumentation(currentSpan);
 
         const resultHandler =
           typeof options === 'function' ? options : callback;
@@ -555,10 +549,13 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback: any
       ) {
         const currentSpan = trace.getSpan(context.active());
+        const skipInstrumentation =
+          instrumentation._checkSkipInstrumentation(currentSpan);
         const resultHandler = callback;
         const commandType = Object.keys(cmd)[0];
 
         if (
+          skipInstrumentation ||
           typeof resultHandler !== 'function' ||
           typeof cmd !== 'object' ||
           cmd.ismaster ||
@@ -601,10 +598,18 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       ) {
         const [ns, cmd] = args;
         const currentSpan = trace.getSpan(context.active());
+        const skipInstrumentation =
+          instrumentation._checkSkipInstrumentation(currentSpan);
+
         const commandType = Object.keys(cmd)[0];
         const resultHandler = () => undefined;
 
-        if (typeof cmd !== 'object' || cmd.ismaster || cmd.hello) {
+        if (
+          skipInstrumentation ||
+          typeof cmd !== 'object' ||
+          cmd.ismaster ||
+          cmd.hello
+        ) {
           return original.apply(this, args);
         }
 
@@ -654,12 +659,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
-
-        const hasNoParentSpan = currentSpan === undefined;
-        const requireParentSpan = instrumentation.getConfig().requireParentSpan;
         const skipInstrumentation =
-          requireParentSpan === true && hasNoParentSpan;
-
+          instrumentation._checkSkipInstrumentation(currentSpan);
         const resultHandler =
           typeof options === 'function' ? options : callback;
         if (
@@ -725,11 +726,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
-
-        const hasNoParentSpan = currentSpan === undefined;
-        const requireParentSpan = instrumentation.getConfig().requireParentSpan;
         const skipInstrumentation =
-          requireParentSpan === true && hasNoParentSpan;
+          instrumentation._checkSkipInstrumentation(currentSpan);
 
         const resultHandler =
           typeof options === 'function' ? options : callback;
@@ -1052,5 +1050,11 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     const database = options.dbName;
     const poolName = `mongodb://${host}:${port}/${database}`;
     this._poolName = poolName;
+  }
+
+  private _checkSkipInstrumentation(currentSpan: Span | undefined) {
+    const requireParentSpan = this.getConfig().requireParentSpan;
+    const hasNoParentSpan = currentSpan === undefined;
+    return requireParentSpan === true && hasNoParentSpan;
   }
 }
