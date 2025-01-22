@@ -24,12 +24,27 @@ import path from 'path';
 import { readFileSync } from 'fs';
 import { globSync } from 'glob';
 
+/**
+ * @typedef {Object} PkgInfo
+ * @property {string} version
+ * @property {string} name
+ * @property {string} location
+ * @property {string} [tag]
+ */
+
 // -- Utility functions --
 // TODO: move this into a common file
+/**
+ * @param {string} filePath 
+ * @returns {Object}
+ */
 const readJson = (filePath) => {
 	return JSON.parse(readFileSync(filePath));
 };
 
+/**
+ * @returns {PkgInfo[]}
+ */
 const getPackages = () => {
 	const TOP = process.cwd();
 	const pj = readJson(path.join(TOP, 'package.json'));
@@ -43,6 +58,11 @@ const getPackages = () => {
 		});
 }
 
+/**
+ * @param {PkgInfo} pkgInfo 
+ * @param {string} commitOrTag 
+ * @returns 
+ */
 const getPkgCommitsFrom = (pkgInfo, commitOrTag) => {
   const command = `git log ${commitOrTag}..HEAD --oneline ${pkgInfo.location}`;
   const commits = execSync(command,{ encoding: 'utf-8' }).split('\n');
@@ -51,8 +71,7 @@ const getPkgCommitsFrom = (pkgInfo, commitOrTag) => {
 }
 
 /**
- * 
- * @param {Record<string, any>} pkgInfo 
+ * @param {PkgInfo} pkgInfo 
  * @param {string[]} commits
  * @returns {'major' | 'minor' | 'patch'}
  */
@@ -107,15 +126,6 @@ repoTags.forEach((tag) => {
 // Check for commits on each package
 // Assumption: current version is latest on npm (so no checking it)
 publicPkgList.forEach((pkgInfo) => {
-  const pkgScope = pkgInfo.name.replace('@opentelemetry/', '');
-
-  // if (pkgInfo.tag) {
-  //   console.log(`**** commits for ${pkgScope} from ${pkgInfo.tag} ****`)
-  //   const scopedCommits = getPkgCommitsFrom(pkgInfo, pkgInfo.tag);
-  //   console.log('bump type', getBumpType(pkgInfo, scopedCommits))
-  // }
-  // return
-
   if (pkgInfo.tag) {
     const scopedCommits = getPkgCommitsFrom(pkgInfo, pkgInfo.tag);
 
