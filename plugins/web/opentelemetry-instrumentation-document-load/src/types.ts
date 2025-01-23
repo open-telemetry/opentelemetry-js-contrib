@@ -29,6 +29,12 @@ export interface ResourceFetchCustomAttributeFunction {
  */
 export interface DocumentLoadInstrumentationConfig
   extends InstrumentationConfig {
+  /**
+   * URLs that partially match any regex or exactly match strings in allowUrls
+   * will be traced.
+   */
+  allowUrls?: Array<string | RegExp>;
+
   /** Function for adding custom attributes on the document load, document fetch and or resource fetch spans */
   applyCustomAttributesOnSpan?: {
     documentLoad?: DocumentLoadCustomAttributeFunction;
@@ -69,4 +75,11 @@ export interface DocumentLoadInstrumentationConfig
    * firstPaint
    */
   ignorePerformancePaintEvents?: boolean;
+
+  /**
+   * URLs that partially match any regex in ignoreUrls will not be traced.
+   * In addition, URLs that are _exact matches_ of strings in ignoreUrls will
+   * also not be traced.
+   */
+  ignoreUrls?: Array<string | RegExp>;
 }
