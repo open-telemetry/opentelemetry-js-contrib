@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.29.0...resource-detector-github-v0.30.0) (2025-01-20)
+
+
+### Features
+
+* **detectors:** generate esm build files too ([#2636](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2636)) ([c2ad0af](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c2ad0af34e1570f3609beefc4a8d41ddfb7f8f77))
+* **detectors:** mark as side effect free ([#2663](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2663)) ([e9263a3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9263a36255c0016cca78bf16c4598f23519d5f1))
+
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.28.2...resource-detector-github-v0.29.0) (2024-08-05)
 
 

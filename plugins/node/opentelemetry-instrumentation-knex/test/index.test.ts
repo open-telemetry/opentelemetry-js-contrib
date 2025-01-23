@@ -36,10 +36,11 @@ const plugin = new KnexInstrumentation({
 import knex from 'knex';
 
 describe('Knex instrumentation', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
@@ -150,7 +151,7 @@ describe('Knex instrumentation', () => {
       const [span] = memoryExporter.getFinishedSpans();
       const limitedStatement = span?.attributes?.['db.statement'] as string;
       assert.strictEqual(limitedStatement.length, 52);
-      assert.ok(statement.startsWith(limitedStatement.substr(0, 50)));
+      assert.ok(statement.startsWith(limitedStatement.substring(0, 50)));
     });
 
     it('should catch errors', async () => {

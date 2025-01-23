@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.32.0...resource-detector-gcp-v0.33.0) (2025-01-20)
+
+
+### Features
+
+* **detectors:** generate esm build files too ([#2636](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2636)) ([c2ad0af](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c2ad0af34e1570f3609beefc4a8d41ddfb7f8f77))
+* **detectors:** mark as side effect free ([#2663](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2663)) ([e9263a3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9263a36255c0016cca78bf16c4598f23519d5f1))
+
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.31.0...resource-detector-gcp-v0.32.0) (2024-12-18)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2608](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2608)) ([aa46705](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/aa46705d2fd1bd5ee6d763ac8cd73a7630889d34))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.44.0 to ^0.45.0
+
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.30.0...resource-detector-gcp-v0.31.0) (2024-12-04)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2582](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2582)) ([5df02cb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5df02cbb35681d2b5cce359dda7b023d7bf339f2))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.43.0 to ^0.44.0
+
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.13...resource-detector-gcp-v0.30.0) (2024-11-18)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2535](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2535)) ([5223a6c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5223a6ca10c5930cf2753271e1e670ae682d6d9c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.42.0 to ^0.43.0
+
 ## [0.29.13](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.12...resource-detector-gcp-v0.29.13) (2024-10-25)
 
 

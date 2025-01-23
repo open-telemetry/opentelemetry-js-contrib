@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.43.0...instrumentation-user-interaction-v0.44.0) (2024-12-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-user-interaction:** make getZoneWithPrototype() private to avoid leaking internal type `ZoneWithPrototype`
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2608](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2608)) ([aa46705](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/aa46705d2fd1bd5ee6d763ac8cd73a7630889d34))
+* widen peer dependency range to include zone.js v0.15.0 ([2e0cbdf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2e0cbdf28cbd406352ac3232f4dceda9e68e6e79))
+
+
+### Bug Fixes
+
+* **instrumentation-user-interaction:** make getZoneWithPrototype() private to avoid leaking internal type `ZoneWithPrototype` ([2e0cbdf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2e0cbdf28cbd406352ac3232f4dceda9e68e6e79))
+
+## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.42.0...instrumentation-user-interaction-v0.43.0) (2024-12-04)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2582](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2582)) ([5df02cb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5df02cbb35681d2b5cce359dda7b023d7bf339f2))
+
+## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.41.0...instrumentation-user-interaction-v0.42.0) (2024-11-18)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2535](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2535)) ([5223a6c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5223a6ca10c5930cf2753271e1e670ae682d6d9c))
+
 ## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.40.0...instrumentation-user-interaction-v0.41.0) (2024-10-25)
 
 

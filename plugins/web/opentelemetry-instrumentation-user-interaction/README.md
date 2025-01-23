@@ -32,10 +32,12 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 // import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 
 const provider = new WebTracerProvider({
-  contextManager: new ZoneContextManager()
+  contextManager: new ZoneContextManager(),
+  spanProcessors: [
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+  ],
 });
 
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({
@@ -151,6 +153,10 @@ registerInstrumentations({
 ![Screenshot of the running example](images/click.jpg)
 ![Screenshot of the running example](images/main-sync.jpg)
 ![Screenshot of the running example](images/click-sync.jpg)
+
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
 
 ## Useful links
 

@@ -29,8 +29,9 @@ describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}
 
   beforeEach(() => {
     metricReader = new TestMetricReader();
-    meterProvider = new MeterProvider();
-    meterProvider.addMetricReader(metricReader);
+    meterProvider = new MeterProvider({
+      readers: [metricReader],
+    });
   });
 
   it('should not export before being enabled', async function () {
@@ -90,7 +91,7 @@ describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}
 
     assert.strictEqual(
       utilizationMetric!.descriptor.unit,
-      's',
+      '1',
       'expected default unit'
     );
 
