@@ -79,7 +79,7 @@ const getBumpType = (pkgInfo, commits) => {
   const isExperimental = pkgInfo.version.startsWith('0.');
   let bumpType = 'patch';
   for (const commit of commits) {
-    // commit must be in the proper format
+    // commit must be in the proper format (<type>: <description>)
     if (commit.indexOf(':') === -1) {
       continue;
     }
