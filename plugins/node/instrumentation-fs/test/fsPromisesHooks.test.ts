@@ -37,9 +37,10 @@ const pluginConfig = {
   endHook,
 };
 
-const provider = new BasicTracerProvider();
 const memoryExporter = new InMemorySpanExporter();
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+const provider = new BasicTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+});
 
 const assertNotHookError = (err?: Error | null) => {
   assert.ok(

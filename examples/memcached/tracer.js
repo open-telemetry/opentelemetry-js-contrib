@@ -14,10 +14,14 @@ const { SEMRESATTRS_SERVICE_NAME } = require('@opentelemetry/semantic-convention
 const { MemcachedInstrumentation } = require('@opentelemetry/instrumentation-memcached');
 
 module.exports = (serviceName) => {
+  const exporter = new ConsoleSpanExporter();
   const provider = new NodeTracerProvider({
     resource: new Resource({
       [SEMRESATTRS_SERVICE_NAME]: serviceName,
     }),
+    spanProcessors: [
+      new SimpleSpanProcessor(exporter),
+    ],
   });
   registerInstrumentations({
     tracerProvider: provider,
@@ -25,10 +29,6 @@ module.exports = (serviceName) => {
       new MemcachedInstrumentation(),
     ],
   });
-
-  const exporter = new ConsoleSpanExporter();
-
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();
