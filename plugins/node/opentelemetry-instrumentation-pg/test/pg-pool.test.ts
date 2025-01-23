@@ -123,7 +123,9 @@ describe('pg-pool', () => {
   let pool: pgPool<pg.Client>;
   let contextManager: AsyncHooksContextManager;
   let instrumentation: PgInstrumentation;
-  const provider = new BasicTracerProvider();
+  const provider = new BasicTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
 
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
@@ -141,7 +143,6 @@ describe('pg-pool', () => {
       skip();
     }
 
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     if (testPostgresLocally) {
       testUtils.startDocker('postgres');
     }

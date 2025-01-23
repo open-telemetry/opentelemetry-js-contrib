@@ -45,11 +45,10 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from '../src/version';
 
 import type { pino as Pino } from 'pino';
 
-const tracerProvider = new NodeTracerProvider();
+const tracerProvider = new NodeTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(new InMemorySpanExporter())],
+});
 tracerProvider.register();
-tracerProvider.addSpanProcessor(
-  new SimpleSpanProcessor(new InMemorySpanExporter())
-);
 const tracer = tracerProvider.getTracer('default');
 
 // Setup LoggerProvider for "log sending" tests.

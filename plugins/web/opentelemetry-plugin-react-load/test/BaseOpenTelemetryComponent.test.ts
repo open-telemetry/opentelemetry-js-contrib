@@ -68,11 +68,11 @@ describe('ReactLoad Instrumentation', () => {
     contextManager = new StackContextManager().enable();
     context.setGlobalContextManager(contextManager);
 
-    provider = new BasicTracerProvider();
-
     dummyExporter = new DummyExporter();
     spanProcessor = new SimpleSpanProcessor(dummyExporter);
-    provider.addSpanProcessor(spanProcessor);
+    provider = new BasicTracerProvider({
+      spanProcessors: [spanProcessor],
+    });
     sandbox = sinon.createSandbox();
 
     trace.setGlobalTracerProvider(provider);
