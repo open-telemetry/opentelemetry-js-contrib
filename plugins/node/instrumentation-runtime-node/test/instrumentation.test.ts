@@ -27,8 +27,9 @@ describe('instrumentation', function () {
 
   beforeEach(() => {
     metricReader = new TestMetricReader();
-    meterProvider = new MeterProvider();
-    meterProvider.addMetricReader(metricReader);
+    meterProvider = new MeterProvider({
+      readers: [metricReader],
+    });
   });
 
   it('should not export before being enabled', async function () {
