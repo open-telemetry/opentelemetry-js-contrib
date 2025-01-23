@@ -11,10 +11,14 @@ import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 
 export const setupTracing = (serviceName: string) => {
+  const exporter = new OTLPTraceExporter({});
   const provider = new NodeTracerProvider({
     resource: new Resource({
       [ATTR_SERVICE_NAME]: serviceName,
     }),
+    spanProcessors: [
+      new SimpleSpanProcessor(exporter),
+    ],
     sampler: filterSampler(ignoreHealthCheck, new AlwaysOnSampler()),
   });
   registerInstrumentations({
@@ -25,10 +29,6 @@ export const setupTracing = (serviceName: string) => {
       new ExpressInstrumentation(),
     ],
   });
-
-  const exporter = new OTLPTraceExporter({});
-
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();

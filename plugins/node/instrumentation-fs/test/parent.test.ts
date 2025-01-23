@@ -25,9 +25,10 @@ import type { FsInstrumentationConfig } from '../src/types';
 import * as api from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 
-const provider = new BasicTracerProvider();
 const memoryExporter = new InMemorySpanExporter();
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+const provider = new BasicTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+});
 
 const tracer = provider.getTracer('default');
 
