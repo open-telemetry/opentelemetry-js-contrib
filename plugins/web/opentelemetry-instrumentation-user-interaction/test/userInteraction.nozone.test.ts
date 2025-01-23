@@ -90,13 +90,11 @@ describe('UserInteractionInstrumentation', () => {
 
       sandbox.useFakeTimers();
 
-      webTracerProvider = new WebTracerProvider();
-
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');
-      webTracerProvider.addSpanProcessor(
-        new tracing.SimpleSpanProcessor(dummySpanExporter)
-      );
+      webTracerProvider = new WebTracerProvider({
+        spanProcessors: [new tracing.SimpleSpanProcessor(dummySpanExporter)],
+      });
       webTracerProvider.register();
 
       registerTestInstrumentations();

@@ -90,8 +90,10 @@ describe('mysql2', () => {
 
   describe('callback API', () => {
     let contextManager: AsyncHooksContextManager;
-    const provider = new BasicTracerProvider();
     const memoryExporter = new InMemorySpanExporter();
+    const provider = new BasicTracerProvider({
+      spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+    });
 
     let connection: Connection;
     let rootConnection: Connection;
@@ -123,7 +125,6 @@ describe('mysql2', () => {
         this.test!.parent!.pending = true;
         this.skip();
       }
-      provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
       rootConnection = createConnection({
         port,
         user: 'root',
