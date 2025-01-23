@@ -462,6 +462,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
             return original.call(this, server, ns, ops, options, callback);
           }
         }
+
         const span = instrumentation.tracer.startSpan(
           `mongodb.${operationName}`,
           {
@@ -506,6 +507,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
         const resultHandler =
           typeof options === 'function' ? options : callback;
+
         if (
           skipInstrumentation ||
           typeof resultHandler !== 'function' ||
@@ -517,6 +519,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
             return original.call(this, server, ns, cmd, options, callback);
           }
         }
+
         const commandType = MongoDBInstrumentation._getCommandType(cmd);
         const type =
           commandType === MongodbCommandType.UNKNOWN ? 'command' : commandType;
@@ -554,18 +557,12 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         const resultHandler = callback;
         const commandType = Object.keys(cmd)[0];
 
-        if (
-          skipInstrumentation ||
-          typeof resultHandler !== 'function' ||
-          typeof cmd !== 'object' ||
-          cmd.ismaster ||
-          cmd.hello
-        ) {
+        if (typeof cmd !== 'object' || cmd.ismaster || cmd.hello) {
           return original.call(this, ns, cmd, options, callback);
         }
 
         let span = undefined;
-        if (currentSpan) {
+        if (!skipInstrumentation) {
           span = instrumentation.tracer.startSpan(`mongodb.${commandType}`, {
             kind: SpanKind.CLIENT,
           });
@@ -604,17 +601,12 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         const commandType = Object.keys(cmd)[0];
         const resultHandler = () => undefined;
 
-        if (
-          skipInstrumentation ||
-          typeof cmd !== 'object' ||
-          cmd.ismaster ||
-          cmd.hello
-        ) {
+        if (typeof cmd !== 'object' || cmd.ismaster || cmd.hello) {
           return original.apply(this, args);
         }
 
         let span = undefined;
-        if (currentSpan) {
+        if (!skipInstrumentation) {
           span = instrumentation.tracer.startSpan(`mongodb.${commandType}`, {
             kind: SpanKind.CLIENT,
           });
@@ -663,6 +655,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
           instrumentation._checkSkipInstrumentation(currentSpan);
         const resultHandler =
           typeof options === 'function' ? options : callback;
+
         if (
           skipInstrumentation ||
           typeof resultHandler !== 'function' ||
@@ -682,6 +675,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
             );
           }
         }
+
         const span = instrumentation.tracer.startSpan('mongodb.find', {
           kind: SpanKind.CLIENT,
         });
@@ -731,6 +725,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
         const resultHandler =
           typeof options === 'function' ? options : callback;
+
         if (skipInstrumentation || typeof resultHandler !== 'function') {
           if (typeof options === 'function') {
             return original.call(
@@ -753,6 +748,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
             );
           }
         }
+
         const span = instrumentation.tracer.startSpan('mongodb.getMore', {
           kind: SpanKind.CLIENT,
         });

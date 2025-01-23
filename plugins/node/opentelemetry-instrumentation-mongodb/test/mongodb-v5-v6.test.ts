@@ -654,60 +654,40 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
 
   describe('requireParentSpan', () => {
     // Resetting the behavior to default to avoid flakes in other tests
-    afterEach(() => {
-      instrumentation.setConfig({
-        requireParentSpan: true,
-      });
+    beforeEach(() => {
+      instrumentation.setConfig();
     });
 
     it('should not create spans without parent span when requireParentSpan is explicitly set to true', done => {
-      create({
-        requireParentSpan: true,
+      context.with(trace.deleteSpan(context.active()), () => {
+        collection
+          .insertOne({ a: 1 })
+          .then(() => {
+            assert.strictEqual(getTestSpans().length, 0);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
       });
-
-      collection
-        .insertOne({ a: 1 })
-        .then(() => {
-          assert.strictEqual(getTestSpans().length, 0);
-          done();
-        })
-        .catch(err => {
-          done(err);
-        });
     });
 
     it('should create spans without parent span when requireParentSpan is false', done => {
-      create({
-        requireParentSpan: false,
-      });
-
-      collection
-        .insertOne({ a: 1 })
-        .then(() => {
-          assert.strictEqual(getTestSpans().length, 1);
-          done();
-        })
-        .catch(err => {
-          done(err);
-        });
-    });
-
-    it('should create spans without parent span when requireParentSpan is set to false by setConfig', done => {
-      create();
-
       instrumentation.setConfig({
         requireParentSpan: false,
       });
 
-      collection
-        .insertOne({ a: 1 })
-        .then(() => {
-          assert.strictEqual(getTestSpans().length, 1);
-          done();
-        })
-        .catch(err => {
-          done(err);
-        });
+      context.with(trace.deleteSpan(context.active()), () => {
+        collection
+          .insertOne({ a: 1 })
+          .then(() => {
+            assert.strictEqual(getTestSpans().length, 1);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
     });
   });
 
@@ -731,6 +711,9 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         })
         .catch(err => {
           done(err);
+        })
+        .finally(() => {
+          span.end();
         });
     });
 
