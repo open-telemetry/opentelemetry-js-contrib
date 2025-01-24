@@ -121,7 +121,7 @@ describe('AWSXRayPropagator', () => {
 
       assert.deepStrictEqual(carrier, {});
     });
-    
+
     it('should inject with lineage', () => {
       const spanContext: SpanContext = {
         traceId: TRACE_ID,
@@ -129,9 +129,12 @@ describe('AWSXRayPropagator', () => {
         traceFlags: SAMPLED_TRACE_FLAG,
       };
       xrayPropagator.inject(
-        propagation.setBaggage(trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext)), propagation.createBaggage({
-          'Lineage': { value: LINEAGE_ID }
-        })),
+        propagation.setBaggage(
+          trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext)),
+          propagation.createBaggage({
+            Lineage: { value: LINEAGE_ID },
+          })
+        ),
         carrier,
         defaultTextMapSetter
       );
@@ -370,30 +373,45 @@ describe('AWSXRayPropagator', () => {
     it('should extract lineage into baggage', () => {
       carrier[AWSXRAY_TRACE_ID_HEADER] =
         'Root=1-8a3c60f7-d188f8fa79d48a391a778fa6;Parent=53995c3f42cd8ad8;Sampled=1;Lineage=100:e3b0c442:11';
-      const extractedContext = xrayPropagator.extract(ROOT_CONTEXT, carrier, defaultTextMapGetter)
+      const extractedContext = xrayPropagator.extract(
+        ROOT_CONTEXT,
+        carrier,
+        defaultTextMapGetter
+      );
 
-      assert.deepStrictEqual(propagation.getBaggage(extractedContext)?.getEntry('Lineage'), {
-        "value": LINEAGE_ID
-      });
+      assert.deepStrictEqual(
+        propagation.getBaggage(extractedContext)?.getEntry('Lineage'),
+        {
+          value: LINEAGE_ID,
+        }
+      );
     });
 
     const invalidLineageHeaders = [
-      "",
-      "::",
-      "1::",
-      "1::1",
-      "1:badc0de:13",
-      ":fbadc0de:13",
-      "65535:fbadc0de:255"
+      '',
+      '::',
+      '1::',
+      '1::1',
+      '1:badc0de:13',
+      ':fbadc0de:13',
+      '65535:fbadc0de:255',
     ];
 
-    invalidLineageHeaders.forEach((lineageHeader) => {
+    invalidLineageHeaders.forEach(lineageHeader => {
       it(`should ignore invalid lineage header: ${lineageHeader}`, () => {
-        carrier[AWSXRAY_TRACE_ID_HEADER] =
-          `Root=1-8a3c60f7-d188f8fa79d48a391a778fa6;Parent=53995c3f42cd8ad8;Sampled=1;Lineage=${lineageHeader}`;
-        const extractedContext = xrayPropagator.extract(ROOT_CONTEXT, carrier, defaultTextMapGetter)
+        carrier[
+          AWSXRAY_TRACE_ID_HEADER
+        ] = `Root=1-8a3c60f7-d188f8fa79d48a391a778fa6;Parent=53995c3f42cd8ad8;Sampled=1;Lineage=${lineageHeader}`;
+        const extractedContext = xrayPropagator.extract(
+          ROOT_CONTEXT,
+          carrier,
+          defaultTextMapGetter
+        );
 
-        assert.deepStrictEqual(propagation.getBaggage(extractedContext), undefined);
+        assert.deepStrictEqual(
+          propagation.getBaggage(extractedContext),
+          undefined
+        );
       });
     });
 

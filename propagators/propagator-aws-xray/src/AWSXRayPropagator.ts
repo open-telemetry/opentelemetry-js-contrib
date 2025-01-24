@@ -50,8 +50,8 @@ const SAMPLED_FLAG_KEY = 'Sampled';
 const IS_SAMPLED = '1';
 const NOT_SAMPLED = '0';
 
-const LINEAGE_KEY = "Lineage";
-const LINEAGE_DELIMITER = ":";
+const LINEAGE_KEY = 'Lineage';
+const LINEAGE_DELIMITER = ':';
 const LINEAGE_HASH_LENGTH = 8;
 const LINEAGE_MAX_REQUEST_COUNTER = 255;
 const LINEAGE_MAX_LOOP_COUNTER = 32767;
@@ -82,24 +82,24 @@ export class AWSXRayPropagator implements TextMapPropagator {
         : NOT_SAMPLED;
     // TODO: Add OT trace state to the X-Ray trace header
 
-    let traceHeader = 
-        `${TRACE_ID_KEY}` +
-        `${KV_DELIMITER}` +
-        `${xrayTraceId}` +
-        `${TRACE_HEADER_DELIMITER}` +
-        `${PARENT_ID_KEY}` +
-        `${KV_DELIMITER}` +
-        `${parentId}` +
-        `${TRACE_HEADER_DELIMITER}` +
-        `${SAMPLED_FLAG_KEY}` +
-        `${KV_DELIMITER}` +
-        `${samplingFlag}`;
+    let traceHeader =
+      `${TRACE_ID_KEY}` +
+      `${KV_DELIMITER}` +
+      `${xrayTraceId}` +
+      `${TRACE_HEADER_DELIMITER}` +
+      `${PARENT_ID_KEY}` +
+      `${KV_DELIMITER}` +
+      `${parentId}` +
+      `${TRACE_HEADER_DELIMITER}` +
+      `${SAMPLED_FLAG_KEY}` +
+      `${KV_DELIMITER}` +
+      `${samplingFlag}`;
 
     const baggage = propagation.getBaggage(context);
     const lineageV2Header = baggage?.getEntry(LINEAGE_KEY)?.value;
 
     if (lineageV2Header) {
-      traceHeader += 
+      traceHeader +=
         `${TRACE_HEADER_DELIMITER}` +
         `${LINEAGE_KEY}` +
         `${KV_DELIMITER}` +
@@ -138,7 +138,8 @@ export class AWSXRayPropagator implements TextMapPropagator {
       return context;
     }
 
-    let baggage: Baggage = propagation.getBaggage(context) || propagation.createBaggage();
+    let baggage: Baggage =
+      propagation.getBaggage(context) || propagation.createBaggage();
 
     let pos = 0;
     let trimmedPart: string;
@@ -167,7 +168,7 @@ export class AWSXRayPropagator implements TextMapPropagator {
         parsedTraceFlags = AWSXRayPropagator._parseTraceFlag(value);
       } else if (trimmedPart.startsWith(LINEAGE_KEY)) {
         if (AWSXRayPropagator._isValidLineageV2Header(value)) {
-          baggage = baggage.setEntry(LINEAGE_KEY, {value});
+          baggage = baggage.setEntry(LINEAGE_KEY, { value });
         }
       }
     }
@@ -181,7 +182,10 @@ export class AWSXRayPropagator implements TextMapPropagator {
       isRemote: true,
     };
     if (isSpanContextValid(resultSpanContext)) {
-      context = trace.setSpan(context, trace.wrapSpanContext(resultSpanContext));
+      context = trace.setSpan(
+        context,
+        trace.wrapSpanContext(resultSpanContext)
+      );
     }
     if (baggage.getAllEntries().length > 0) {
       context = propagation.setBaggage(context, baggage);
@@ -233,17 +237,21 @@ export class AWSXRayPropagator implements TextMapPropagator {
 
   private static _isValidLineageV2Header(xrayLineageHeader: string): boolean {
     const lineageSubstrings = xrayLineageHeader.split(LINEAGE_DELIMITER);
-    if (lineageSubstrings.length != 3) {
+    if (lineageSubstrings.length !== 3) {
       return false;
     }
 
     const requestCounter = parseInt(lineageSubstrings[0]);
     const hashedResourceId = lineageSubstrings[1];
     const loopCounter = parseInt(lineageSubstrings[2]);
-  
-    const isValidKey = hashedResourceId.length == LINEAGE_HASH_LENGTH && !!hashedResourceId.match(/^[0-9a-fA-F]+$/);
-    const isValidRequestCounter = requestCounter >= 0 && requestCounter <= LINEAGE_MAX_REQUEST_COUNTER;
-    const isValidLoopCounter = loopCounter >= 0 && loopCounter <= LINEAGE_MAX_LOOP_COUNTER;
+
+    const isValidKey =
+      hashedResourceId.length === LINEAGE_HASH_LENGTH &&
+      !!hashedResourceId.match(/^[0-9a-fA-F]+$/);
+    const isValidRequestCounter =
+      requestCounter >= 0 && requestCounter <= LINEAGE_MAX_REQUEST_COUNTER;
+    const isValidLoopCounter =
+      loopCounter >= 0 && loopCounter <= LINEAGE_MAX_LOOP_COUNTER;
 
     return isValidKey && isValidRequestCounter && isValidLoopCounter;
   }
