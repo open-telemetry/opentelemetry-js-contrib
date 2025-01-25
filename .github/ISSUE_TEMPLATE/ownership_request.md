@@ -5,7 +5,7 @@ labels: type:ownership-request
 ---
 
 <!--
-**NB:** Before opening a component ownership request against this repo, please read [CONTRIBUTING.md](../../CONTRIBUTING.md#component-ownership) and its subsections first.
+**NB:** Before opening a component ownership request against this repo, please read [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md#component-ownership) and its subsections first.
 -->
 
 ### Which component are you requesting ownership of?
@@ -17,7 +17,7 @@ Put a link to the component here.
 ### Related Work and Qualifications
 
 <!--
-List here why you're qualified to take ownership of the component, see [CONTRIBUTING.md](../../CONTRIBUTING.md#becoming-a-component-owner) for details.
+List here why you're qualified to take ownership of the component, see [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md#becoming-a-component-owner) for details.
 
 Examples:
 - I am working on <related open-source-project> and have deep knowledge of the instrumented package.
@@ -28,7 +28,8 @@ Examples:
 
 ### Checklist
 
-- [ ] I have read [CONTRIBUTING.md](../../CONTRIBUTING.md) and understand the responsibilities of a component owner.
+- [ ] I am a [member of the OpenTelemetry Organization](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#member)
+- [ ] I have read [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) and understand the responsibilities of a component owner.
 - [ ] I agree to follow and uphold the [mission, vision and values](https://github.com/open-telemetry/community/blob/main/mission-vision-values.md) of the OpenTelemetry project
 - [ ] I understand that the component I'm requesting ownership of may be subject to the [OpenTelemetry Semantic Conventions](https://github.com/open-telemetry/semantic-conventions) and agree to follow the rules set out therein.
 

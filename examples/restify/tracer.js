@@ -28,7 +28,16 @@ const Exporter = ((exporterParam) => {
 })(process.env.EXPORTER);
 
 module.exports = (serviceName) => {
-  const provider = new NodeTracerProvider();
+  const exporter = new Exporter({
+    serviceName,
+  });
+
+  const provider = new NodeTracerProvider({
+    spanProcessors: [
+      new SimpleSpanProcessor(exporter),
+    ],
+  });
+
   registerInstrumentations({
     tracerProvider: provider,
     instrumentations: [
@@ -36,12 +45,6 @@ module.exports = (serviceName) => {
       RestifyInstrumentation,
     ],
   });
-
-  const exporter = new Exporter({
-    serviceName,
-  });
-
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();

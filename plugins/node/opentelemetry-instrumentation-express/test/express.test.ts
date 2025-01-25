@@ -37,10 +37,11 @@ import { RPCMetadata, getRPCMetadata } from '@opentelemetry/core';
 import { Server } from 'http';
 
 describe('ExpressInstrumentation', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   const tracer = provider.getTracer('default');
   const contextManager = new AsyncHooksContextManager().enable();
 

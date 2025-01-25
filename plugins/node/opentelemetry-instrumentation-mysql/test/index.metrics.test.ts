@@ -67,7 +67,6 @@ describe('mysql@2.x-Metrics', () => {
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
 
   function initMeterProvider() {
-    otelTestingMeterProvider = new MeterProvider();
     inMemoryMetricsExporter = new InMemoryMetricExporter(
       AggregationTemporality.CUMULATIVE
     );
@@ -76,8 +75,10 @@ describe('mysql@2.x-Metrics', () => {
       exportIntervalMillis: 100,
       exportTimeoutMillis: 100,
     });
+    otelTestingMeterProvider = new MeterProvider({
+      readers: [metricReader],
+    });
 
-    otelTestingMeterProvider.addMetricReader(metricReader);
     instrumentation.setMeterProvider(otelTestingMeterProvider);
   }
 

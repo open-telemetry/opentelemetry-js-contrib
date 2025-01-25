@@ -13,11 +13,13 @@ const { GrpcInstrumentation } = require('@opentelemetry/instrumentation-grpc');
  * requested propagator
  */
 module.exports = (serviceName, binaryPropagator) => {
-  const provider = new NodeTracerProvider();
-
-  // It is recommended to use this `BatchSpanProcessor` for better performance
-  // and optimization, especially in production.
-  provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+  const provider = new NodeTracerProvider({
+    spanProcessors: [
+      // It is recommended to use `BatchSpanProcessor` for better performance
+      // and optimization, especially in production.
+      new SimpleSpanProcessor(new ConsoleSpanExporter()),
+    ],
+  });
 
   if (binaryPropagator) {
     // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings

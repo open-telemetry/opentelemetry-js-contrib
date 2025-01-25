@@ -48,8 +48,9 @@ import {
 import { ResponseHookInfo } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+const provider = new NodeTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+});
 context.setGlobalContextManager(new AsyncHooksContextManager());
 
 const testCassandra = process.env.RUN_CASSANDRA_TESTS;

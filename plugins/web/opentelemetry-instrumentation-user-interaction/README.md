@@ -32,10 +32,12 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 // import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 
 const provider = new WebTracerProvider({
-  contextManager: new ZoneContextManager()
+  contextManager: new ZoneContextManager(),
+  spanProcessors: [
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+  ],
 });
 
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({

@@ -15,10 +15,11 @@ const provider = new WebTracerProvider({
   resource: new Resource({
     [SEMRESATTRS_SERVICE_NAME]: 'web-service-dl',
   }),
+  spanProcessors: [
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+    new SimpleSpanProcessor(new OTLPTraceExporter()),
+  ],
 });
-
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
-provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter()));
 
 provider.register({
   contextManager: new ZoneContextManager(),

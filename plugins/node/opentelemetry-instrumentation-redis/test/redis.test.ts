@@ -68,7 +68,9 @@ const unsetStatus: SpanStatus = {
 };
 
 describe('redis@2.x', () => {
-  const provider = new NodeTracerProvider();
+  const provider = new NodeTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   const tracer = provider.getTracer('external');
   let redis: typeof redisTypes;
   const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
@@ -98,7 +100,6 @@ describe('redis@2.x', () => {
     }
 
     redis = require('redis');
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
   });

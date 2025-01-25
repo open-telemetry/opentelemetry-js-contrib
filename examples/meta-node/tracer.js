@@ -17,8 +17,11 @@ module.exports = () => {
     serviceName: 'basic-service',
   });
 
-  const provider = new NodeTracerProvider();
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+  const provider = new NodeTracerProvider({
+    spanProcessors: [
+      new SimpleSpanProcessor(exporter),
+    ],
+  });
   provider.register();
 
   registerInstrumentations({

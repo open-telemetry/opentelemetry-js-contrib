@@ -42,7 +42,7 @@ import {
   ATTR_DB_CLIENT_CONNECTION_STATE,
   DB_CLIENT_CONNECTION_STATE_VALUE_USED,
   DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from './semconv';
 import {
   PgClientExtended,
   PostgresCallback,

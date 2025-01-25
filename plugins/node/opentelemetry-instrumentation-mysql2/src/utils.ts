@@ -22,6 +22,9 @@ import {
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import type * as mysqlTypes from 'mysql2';
+
+type formatType = typeof mysqlTypes.format;
 
 /*
   Following types declare an expectation on mysql2 types and define a subset we
@@ -103,14 +106,12 @@ function getJDBCString(
  */
 export function getDbStatement(
   query: string | Query | QueryOptions,
-  format: (
-    sql: string,
-    values: any[],
-    stringifyObjects?: boolean,
-    timeZone?: string
-  ) => string,
+  format?: formatType,
   values?: any[]
 ): string {
+  if (!format) {
+    return typeof query === 'string' ? query : query.sql;
+  }
   if (typeof query === 'string') {
     return values ? format(query, values) : query;
   } else {

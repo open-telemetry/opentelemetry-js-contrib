@@ -58,10 +58,11 @@ const pluginConfig = {
   createHook,
   endHook,
 };
-const provider = new BasicTracerProvider();
-const tracer = provider.getTracer('default');
 const memoryExporter = new InMemorySpanExporter();
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+const provider = new BasicTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+});
+const tracer = provider.getTracer('default');
 
 describe('fs instrumentation', () => {
   let contextManager: AsyncHooksContextManager;

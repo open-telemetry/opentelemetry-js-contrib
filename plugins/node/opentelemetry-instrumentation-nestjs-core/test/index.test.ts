@@ -38,8 +38,9 @@ util.inspect.defaultOptions.depth = 3;
 util.inspect.defaultOptions.breakLength = 200;
 
 describe('nestjs-core', () => {
-  const provider = new NodeTracerProvider();
-  provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+  const provider = new NodeTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   instrumentation.setTracerProvider(provider);
   let contextManager: AsyncHooksContextManager;
   let app: App;

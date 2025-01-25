@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.55.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.55.2...auto-instrumentations-node-v0.55.3) (2025-01-20)
+
+
+### Bug Fixes
+
+* **auto-instrumentations-node:** correct typo ([#2666](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2666)) ([4cf7e6f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4cf7e6f80640538c9b5fd36135329e050c8ab8ba))
+* **auto-instrumentations-node:** make SIGTERM shutdown test more reliable ([#2667](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2667)) ([94414a1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/94414a1515c5c3b35ada2ec5370c196d8cbc03bc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.50.1 to ^0.50.2
+    * @opentelemetry/instrumentation-fastify bumped from ^0.44.0 to ^0.44.1
+    * @opentelemetry/resource-detector-alibaba-cloud bumped from ^0.29.7 to ^0.30.0
+    * @opentelemetry/resource-detector-aws bumped from ^1.10.0 to ^1.11.0
+    * @opentelemetry/resource-detector-azure bumped from ^0.5.0 to ^0.6.0
+    * @opentelemetry/resource-detector-container bumped from ^0.5.3 to ^0.6.0
+    * @opentelemetry/resource-detector-gcp bumped from ^0.32.0 to ^0.33.0
+
 ## [0.55.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.55.1...auto-instrumentations-node-v0.55.2) (2025-01-09)
 
 

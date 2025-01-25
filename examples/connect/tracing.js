@@ -22,10 +22,14 @@ function log() {
 }
 
 module.exports = (serviceName) => {
+  const exporter = new CollectorTraceExporter();
   const provider = new NodeTracerProvider({
     resource: new Resource({
       [SEMRESATTRS_SERVICE_NAME]: serviceName,
     }),
+    spanProcessors: [
+      new SimpleSpanProcessor(exporter),
+    ],
   });
   const connectInstrumentation = new ConnectInstrumentation();
   registerInstrumentations({
@@ -36,10 +40,6 @@ module.exports = (serviceName) => {
       connectInstrumentation,
     ],
   });
-
-  const exporter = new CollectorTraceExporter();
-
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register({});
