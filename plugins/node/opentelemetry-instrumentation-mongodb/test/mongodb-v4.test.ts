@@ -82,7 +82,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
     }
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    // @ts-expect-error -- v5 removed callback support
+    // @ts-ignore -- v5 removed callback support
     collection.insertMany(insertData, (err: any, result: any) => {
       resetMemoryExporter();
       done();
@@ -91,7 +91,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
 
   afterEach(done => {
     if (shouldTest) {
-      // @ts-expect-error -- v5 removed callback support
+      // @ts-ignore -- v5 removed callback support
       collection.deleteMany({}, done);
     } else {
       done();
