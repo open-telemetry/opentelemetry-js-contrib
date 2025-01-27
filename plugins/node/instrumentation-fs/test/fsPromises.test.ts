@@ -37,10 +37,11 @@ const endHook = <EndHook>sinon.spy((fnName, { args, span }) => {
 const pluginConfig = {
   endHook,
 };
-const provider = new BasicTracerProvider();
-const tracer = provider.getTracer('default');
 const memoryExporter = new InMemorySpanExporter();
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+const provider = new BasicTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+});
+const tracer = provider.getTracer('default');
 
 describe('fs/promises instrumentation', () => {
   let contextManager: AsyncHooksContextManager;
