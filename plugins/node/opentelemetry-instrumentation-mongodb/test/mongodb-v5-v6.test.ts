@@ -658,6 +658,10 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
       instrumentation.setConfig();
     });
 
+    afterEach(() => {
+      instrumentation.setConfig();
+    });
+
     it('should not create spans without parent span when requireParentSpan is explicitly set to true', done => {
       context.with(trace.deleteSpan(context.active()), () => {
         collection
@@ -712,9 +716,6 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         .catch(err => {
           done(err);
         })
-        .finally(() => {
-          span.end();
-        });
     });
 
     it('should not create a child span for cursor', done => {
