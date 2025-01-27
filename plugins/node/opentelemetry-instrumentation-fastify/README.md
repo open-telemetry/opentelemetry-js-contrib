@@ -9,7 +9,7 @@
 >
 > We will stop publishing new versions of `@opentelemetry/instrumentation-fastify` on June 30, 2025.
 
-This module provides automatic instrumentation for the [`fastify`](https://www.fastify.io/) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package.
+This module provides automatic instrumentation for the [`fastify`](https://www.fastify.dev/) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
