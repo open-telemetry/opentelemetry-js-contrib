@@ -715,7 +715,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         })
         .catch(err => {
           done(err);
-        })
+        });
     });
 
     it('should not create a child span for cursor', done => {
