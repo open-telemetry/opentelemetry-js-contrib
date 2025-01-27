@@ -15,7 +15,7 @@
     "test-v4-run": "mocha --require '@opentelemetry/contrib-test-utils' 'test/mongodb-v4-v5-v6.metrics.test.ts' 'test/**/mongodb-v4.test.ts'",
     "test-v5-v6-run": "mocha --require '@opentelemetry/contrib-test-utils' 'test/mongodb-v4-v5-v6.metrics.test.ts' 'test/**/mongodb-v5-v6.test.ts'",
     "test-all-versions": "tav",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm run test-v5-v6-run -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
