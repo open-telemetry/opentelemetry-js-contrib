@@ -6,7 +6,7 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "npm run test-v1-v2 && npm run test-v3",
+    "test": "npm run test-v1-v2 && npm run test-v3 && nyc merge .nyc_output ./coverage/coverage-final.json",
     "test-v1-v2": "tav winston 2.4.7 npm run test-run",
     "test-v3": "tav winston 3.17.0 npm run test-run",
     "test-run": "nyc mocha 'test/**/*.test.ts'",
