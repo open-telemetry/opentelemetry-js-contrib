@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.45.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.45.0...instrumentation-mysql2-v0.45.1) (2025-01-27)
+
+
+### Bug Fixes
+
+* **instrumentation-mysql2:** missing telemetry in mysql2 when importing only promise API ([#2662](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2662)) ([c67a8c3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c67a8c3e096b835e3eb91cac0642bf775ffa4350))
+
 ## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.44.0...instrumentation-mysql2-v0.45.0) (2024-12-18)
 
 
