@@ -47,7 +47,11 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export const ANONYMOUS_NAME = 'anonymous';
 
-/** Fastify instrumentation for OpenTelemetry */
+/**
+ * Fastify instrumentation for OpenTelemetry
+ * @deprecated This instrumentation is deprecated in favor of the official instrumentation package `@fastify/otel`,
+ *             which is maintained by the fastify authors.
+ */
 export class FastifyInstrumentation extends InstrumentationBase<FastifyInstrumentationConfig> {
   constructor(config: FastifyInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
