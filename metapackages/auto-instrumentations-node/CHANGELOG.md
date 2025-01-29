@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.55.3...auto-instrumentations-node-v0.56.0) (2025-01-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auto-instrumentations-node:** disable @opentelemetry/instrumentation-fastify by default ([#2652](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2652))
+
+### Features
+
+* **auto-instrumentations-node:** disable @opentelemetry/instrumentation-fastify by default ([#2652](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2652)) ([45c55a6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/45c55a6de0c6c8e8c613d4115178a480fffbf491))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.13.0 to ^0.14.0
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.45.0 to ^0.45.1
+    * @opentelemetry/instrumentation-pg bumped from ^0.50.0 to ^0.51.0
+
 ## [0.55.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.55.2...auto-instrumentations-node-v0.55.3) (2025-01-20)
 
 
