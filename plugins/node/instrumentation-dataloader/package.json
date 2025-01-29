@@ -48,7 +48,7 @@
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.18.14",
-    "dataloader": "2.2.2",
+    "dataloader": "2.2.3",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "test-all-versions": "6.1.0",
