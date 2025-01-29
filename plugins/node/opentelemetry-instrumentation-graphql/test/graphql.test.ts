@@ -99,8 +99,9 @@ const queryInvalid = `
 `;
 
 const exporter = new InMemorySpanExporter();
-const provider = new BasicTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+const provider = new BasicTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(exporter)],
+});
 graphQLInstrumentation.setTracerProvider(provider);
 
 describe('graphql', () => {

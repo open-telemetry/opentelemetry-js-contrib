@@ -38,7 +38,7 @@ export class EventLoopUtilizationCollector extends BaseCollector {
         `${this.namePrefix}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`,
         {
           description: 'Event loop utilization',
-          unit: 's',
+          unit: '1',
         }
       )
       .addCallback(async observableResult => {
