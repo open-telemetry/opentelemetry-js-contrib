@@ -25,7 +25,6 @@ import {
   trace,
   diag,
 } from '@opentelemetry/api';
-import { AttributeNames } from './constants';
 import {
   SEMATTRS_DB_SYSTEM,
   SEMATTRS_DB_NAME,
@@ -39,6 +38,9 @@ import {
   DBSYSTEMVALUES_ORACLE,
 } from '@opentelemetry/semantic-conventions';
 import * as oracledbTypes from 'oracledb';
+
+// Local modules.
+import { AttributeNames } from './constants';
 import { OracleInstrumentationConfig, SpanConnectionConfig } from './types';
 import { TraceSpanData, SpanCallLevelConfig } from './internal-types';
 import { SpanNames } from './constants';
@@ -114,7 +116,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
         return convertedValues;
       }
     } catch (e) {
-      diag.error('failed to stringify ', values, e);
+      diag.error('failed to stringify bind values:', values, e);
     }
     return convertedValues;
   }
@@ -196,7 +198,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
     roundTrip = false
   ) {
     const span = traceContext.userContext.span;
-    // Set if addtional connection and call parameters
+    // Set if additional connection and call parameters
     // are available
     if (traceContext.connectLevelConfig) {
       span.setAttributes(
@@ -236,17 +238,14 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
     }
 
     const spanName = traceContext.operation;
-    let spanAttrs = {};
-    if (traceContext.connectLevelConfig) {
-      spanAttrs = this._getConnectionSpanAttributes(
-        traceContext.connectLevelConfig
-      );
-    }
+    const spanAttributes = traceContext.connectLevelConfig
+      ? this._getConnectionSpanAttributes(traceContext.connectLevelConfig)
+      : {};
 
     traceContext.userContext = {
       span: this._tracer.startSpan(spanName, {
         kind: SpanKind.CLIENT,
-        attributes: spanAttrs,
+        attributes: spanAttributes,
       }),
     };
 
@@ -258,15 +257,11 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
       );
     }
 
-    switch (traceContext.operation) {
-      case SpanNames.EXECUTE:
-        this._handleExecuteCustomRequest(
-          traceContext.userContext.span,
-          traceContext
-        );
-        break;
-      default:
-        break;
+    if (traceContext.operation === SpanNames.EXECUTE) {
+      this._handleExecuteCustomRequest(
+        traceContext.userContext.span,
+        traceContext
+      );
     }
   }
 
