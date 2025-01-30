@@ -20,7 +20,7 @@ import { SQS } from './aws-sdk.types';
 export type CommandInput = Record<string, any>;
 
 /**
- * These are normalized request and response, which are used by both sdk v2 and v3.
+ * These are normalized request and response.
  * They organize the relevant data in one interface which can be processed in a
  * uniform manner in hooks
  */
