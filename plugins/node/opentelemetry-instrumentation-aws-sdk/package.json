@@ -50,6 +50,7 @@
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-bedrock-runtime": "3.738.0",
     "@aws-sdk/client-dynamodb": "3.85.0",
     "@aws-sdk/client-kinesis": "3.85.0",
     "@aws-sdk/client-lambda": "3.85.0",
