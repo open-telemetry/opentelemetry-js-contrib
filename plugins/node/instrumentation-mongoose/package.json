@@ -53,7 +53,7 @@
     "@types/mocha": "8.2.3",
     "@types/node": "18.18.14",
     "expect": "29.2.0",
-    "mongoose": "6.13.6",
+    "mongoose": "6.13.8",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "test-all-versions": "6.1.0",
