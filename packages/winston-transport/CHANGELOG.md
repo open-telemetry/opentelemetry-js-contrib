@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.10.0...winston-transport-v0.10.1) (2025-01-30)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2413](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2413)) ([1a55420](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1a55420d8c00ca998b57270df77857c48ebbe8d7))
+
 ## [0.10.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.9.0...winston-transport-v0.10.0) (2024-12-18)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.45.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.45.0...instrumentation-bunyan-v0.45.1) (2025-01-30)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2413](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2413)) ([1a55420](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1a55420d8c00ca998b57270df77857c48ebbe8d7))
+
 ## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.44.0...instrumentation-bunyan-v0.45.0) (2024-12-18)
 
 

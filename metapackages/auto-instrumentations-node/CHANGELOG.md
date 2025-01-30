@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.56.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.56.0...auto-instrumentations-node-v0.56.1) (2025-01-30)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.50.2 to ^0.50.3
+    * @opentelemetry/instrumentation-bunyan bumped from ^0.45.0 to ^0.45.1
+    * @opentelemetry/instrumentation-connect bumped from ^0.43.0 to ^0.43.1
+    * @opentelemetry/instrumentation-dataloader bumped from ^0.16.0 to ^0.16.1
+    * @opentelemetry/instrumentation-hapi bumped from ^0.45.1 to ^0.45.2
+    * @opentelemetry/instrumentation-mongoose bumped from ^0.46.0 to ^0.46.1
+    * @opentelemetry/instrumentation-winston bumped from ^0.44.0 to ^0.44.1
+
 ## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.55.3...auto-instrumentations-node-v0.56.0) (2025-01-27)
 
 
