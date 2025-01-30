@@ -215,6 +215,9 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
           attributes: Object.assign(attributes, metadata.attributes),
         });
 
+        const parentContext = context.active();
+        let currentContext = trace.setSpan(parentContext, span);
+
         const { requestHook } = instrumentation.getConfig();
         if (requestHook) {
           safeExecuteInTheMiddle(
@@ -234,12 +237,15 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         }
 
         let spanHasEnded = false;
+        // TODO: Fix router spans (getRouterPath does not work properly) to
+        // have useful names before removing this branch
         if (
-          metadata.attributes[AttributeNames.EXPRESS_TYPE] !==
-          ExpressLayerType.MIDDLEWARE
+          metadata.attributes[AttributeNames.EXPRESS_TYPE] ===
+          ExpressLayerType.ROUTER
         ) {
           span.end();
           spanHasEnded = true;
+          currentContext = parentContext;
         }
         // listener for response.on('finish')
         const onResponseFinish = () => {
@@ -278,12 +284,12 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
             const callback = args[callbackIdx] as Function;
-            return callback.apply(this, arguments);
+            return context.bind(parentContext, callback).apply(this, arguments);
           };
         }
 
         try {
-          return original.apply(this, arguments);
+          return context.bind(currentContext, original).apply(this, arguments);
         } catch (anyError) {
           const [error, message] = asErrorAndMessage(anyError);
           span.recordException(error);
@@ -296,7 +302,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
           /**
            * At this point if the callback wasn't called, that means either the
            * layer is asynchronous (so it will call the callback later on) or that
-           * the layer directly end the http response, so we'll hook into the "finish"
+           * the layer directly ends the http response, so we'll hook into the "finish"
            * event to handle the later case.
            */
           if (!spanHasEnded) {
