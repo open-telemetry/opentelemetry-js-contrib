@@ -53,8 +53,8 @@ const NOT_SAMPLED = '0';
 const LINEAGE_KEY = 'Lineage';
 const LINEAGE_DELIMITER = ':';
 const LINEAGE_HASH_LENGTH = 8;
-const LINEAGE_MAX_REQUEST_COUNTER = 255;
-const LINEAGE_MAX_LOOP_COUNTER = 32767;
+const LINEAGE_MAX_COUNTER_1 = 32767;
+const LINEAGE_MAX_COUNTER_2 = 255;
 
 /**
  * Implementation of the AWS X-Ray Trace Header propagation protocol. See <a href=
@@ -241,19 +241,19 @@ export class AWSXRayPropagator implements TextMapPropagator {
       return false;
     }
 
-    const requestCounter = parseInt(lineageSubstrings[0]);
-    const hashedResourceId = lineageSubstrings[1];
-    const loopCounter = parseInt(lineageSubstrings[2]);
+    const lineageCounter1 = parseInt(lineageSubstrings[0]);
+    const hashedString = lineageSubstrings[1];
+    const lineageCounter2 = parseInt(lineageSubstrings[2]);
 
-    const isValidKey =
-      hashedResourceId.length === LINEAGE_HASH_LENGTH &&
-      !!hashedResourceId.match(/^[0-9a-fA-F]+$/);
-    const isValidRequestCounter =
-      requestCounter >= 0 && requestCounter <= LINEAGE_MAX_REQUEST_COUNTER;
-    const isValidLoopCounter =
-      loopCounter >= 0 && loopCounter <= LINEAGE_MAX_LOOP_COUNTER;
+    const isValidHash =
+      hashedString.length === LINEAGE_HASH_LENGTH &&
+      !!hashedString.match(/^[0-9a-fA-F]+$/);
+    const isValidCounter1 =
+      lineageCounter1 >= 0 && lineageCounter1 <= LINEAGE_MAX_COUNTER_1;
+    const isValidCounter2 =
+      lineageCounter2 >= 0 && lineageCounter2 <= LINEAGE_MAX_COUNTER_2;
 
-    return isValidKey && isValidRequestCounter && isValidLoopCounter;
+    return isValidHash && isValidCounter1 && isValidCounter2;
   }
 
   private static _parseTraceFlag(xraySampledFlag: string): TraceFlags | null {
