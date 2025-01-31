@@ -18,6 +18,17 @@
     "prewatch": "npm run precompile",
     "watch": "tsc -w"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "FastifyInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "fastify",
     "instrumentation",

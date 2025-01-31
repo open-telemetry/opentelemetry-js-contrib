@@ -17,6 +17,17 @@
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "tsc -p ."
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "FsInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "fs",
     "instrumentation",

@@ -18,6 +18,17 @@
     "test:local": "cross-env RUN_MEMCACHED_TESTS_LOCAL=true npm run test",
     "version:update": "node ../../../scripts/version-update.js"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "MemcachedInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "instrumentation",
     "memcached",
