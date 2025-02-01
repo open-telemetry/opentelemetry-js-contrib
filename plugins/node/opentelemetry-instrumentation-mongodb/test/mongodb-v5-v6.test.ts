@@ -415,6 +415,81 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
           });
       });
     });
+
+    it('should skip `Buffer` and `Uint8Array` values', done => {
+      const buffer = Buffer.from('buffer');
+      const uint8Array = new Uint8Array([1, 2, 3, 4]);
+      const span = trace.getTracer('default').startSpan('insertRootSpan');
+      context.with(trace.setSpan(context.active(), span), () => {
+        collection
+          .insertOne({ buffer, uint8Array })
+          .then(() => {
+            span.end();
+            const spans = getTestSpans();
+            const operationName = 'mongodb.insert';
+            assertSpans(
+              spans,
+              operationName,
+              SpanKind.CLIENT,
+              'insert',
+              URL,
+              false,
+              false
+            );
+            const mongoSpan = spans.find(s => s.name === operationName);
+            const dbStatement = JSON.parse(
+              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
+            );
+            assert.strictEqual(dbStatement.buffer, 'Binary Data');
+            assert.strictEqual(dbStatement.uint8Array, 'Binary Data');
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
+
+    it('should skip nested levels of objects over the limit of 10', done => {
+      const deeplyNestedObject = {
+        a: {
+          b: { c: { d: { e: { f: { g: { h: { i: { j: { k: 1 } } } } } } } } },
+        },
+      };
+
+      const span = trace.getTracer('default').startSpan('insertRootSpan');
+      context.with(trace.setSpan(context.active(), span), () => {
+        collection
+          .insertOne({ deeplyNestedObject })
+          .then(() => {
+            span.end();
+            const spans = getTestSpans();
+            const operationName = 'mongodb.insert';
+            assertSpans(
+              spans,
+              operationName,
+              SpanKind.CLIENT,
+              'insert',
+              URL,
+              false,
+              false
+            );
+            const mongoSpan = spans.find(s => s.name === operationName);
+            const dbStatement = JSON.parse(
+              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
+            );
+            assert.deepStrictEqual(dbStatement.deeplyNestedObject, {
+              a: {
+                b: { c: { d: { e: { f: { g: { h: { i: 'Max Depth' } } } } } } },
+              },
+            });
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
   });
 
   describe('when specifying a dbStatementSerializer configuration', () => {
