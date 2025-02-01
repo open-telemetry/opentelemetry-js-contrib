@@ -15,7 +15,6 @@
  */
 
 import { Detector, IResource } from '@opentelemetry/resources';
-
 import { awsEcsDetectorSync } from './AwsEcsDetectorSync';
 
 /**
