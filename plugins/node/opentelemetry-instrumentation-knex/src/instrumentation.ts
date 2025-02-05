@@ -25,18 +25,20 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import {
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_OPERATION,
-  SEMATTRS_DB_SQL_TABLE,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-  SEMATTRS_NET_TRANSPORT,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_USER,
+} from './semconv';
 import * as utils from './utils';
 import { KnexInstrumentationConfig } from './types';
+import {
+  ATTR_NETWORK_TRANSPORT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
 const DEFAULT_CONFIG: KnexInstrumentationConfig = {
@@ -134,21 +136,21 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
           config?.connection?.filename || config?.connection?.database;
         const { maxQueryLength } = instrumentation.getConfig();
 
-        const attributes: api.SpanAttributes = {
+        const attributes: api.Attributes = {
           'knex.version': moduleVersion,
-          [SEMATTRS_DB_SYSTEM]: utils.mapSystem(config.client),
-          [SEMATTRS_DB_SQL_TABLE]: table,
-          [SEMATTRS_DB_OPERATION]: operation,
-          [SEMATTRS_DB_USER]: config?.connection?.user,
-          [SEMATTRS_DB_NAME]: name,
-          [SEMATTRS_NET_PEER_NAME]: config?.connection?.host,
-          [SEMATTRS_NET_PEER_PORT]: config?.connection?.port,
-          [SEMATTRS_NET_TRANSPORT]:
+          [ATTR_DB_SYSTEM]: utils.mapSystem(config.client),
+          [ATTR_DB_COLLECTION_NAME]: table,
+          [ATTR_DB_OPERATION_NAME]: operation,
+          [ATTR_DB_USER]: config?.connection?.user,
+          [ATTR_DB_NAMESPACE]: name,
+          [ATTR_SERVER_ADDRESS]: config?.connection?.host,
+          [ATTR_SERVER_PORT]: config?.connection?.port,
+          [ATTR_NETWORK_TRANSPORT]:
             config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
         };
         if (maxQueryLength) {
           // filters both undefined and 0
-          attributes[SEMATTRS_DB_STATEMENT] = utils.limitLength(
+          attributes[ATTR_DB_QUERY_TEXT] = utils.limitLength(
             query?.sql,
             maxQueryLength
           );
