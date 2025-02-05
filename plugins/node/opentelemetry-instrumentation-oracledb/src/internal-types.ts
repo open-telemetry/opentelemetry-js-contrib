@@ -20,26 +20,27 @@ import * as oracledbTypes from 'oracledb';
 import type * as api from '@opentelemetry/api';
 import { SpanConnectionConfig } from './types';
 
-// Captures the context associated with onEnterFn, onExitFn hooks.
+// onEnterFn returns this Context(contains only span for now) and it is
+// received in onExitFn to end the span.
 export interface InstrumentationContext {
   span: api.Span;
 }
 
 // Captures the entire span data
 export interface TraceSpanData {
-  operation: string;
+  operation: string; // RPC or exported function name.
   error?: oracledbTypes.DBError;
   connectLevelConfig?: SpanConnectionConfig;
   callLevelConfig?: SpanCallLevelConfig;
-  additionalConfig?: any;
-  fn: Function;
-  args?: any[];
+  additionalConfig?: any; // custom key/values associated with a function.
+  fn: Function; // Replaced with bind function associating the active context.
+  args?: any[]; // input arguments passed to the exported function.
   userContext: InstrumentationContext;
 }
 
 // Captures call level related span data
 export interface SpanCallLevelConfig {
-  statement?: string;
-  operation?: string;
-  values?: any[];
+  statement?: string; // SQL stmt.
+  operation?: string; // SQL op ('SELECT | INSERT ..').
+  values?: any[]; // bind values.
 }

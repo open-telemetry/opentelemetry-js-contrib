@@ -29,9 +29,9 @@ export interface SpanConnectionConfig {
   instanceName?: string;
   serverMode?: string;
   pdbName?: string;
-  poolMin?: string;
-  poolMax?: string;
-  poolIncrement?: string;
+  poolMin?: number;
+  poolMax?: number;
+  poolIncrement?: number;
 }
 
 export interface OracleRequestHookInformation {

@@ -25,10 +25,12 @@ export enum AttributeNames {
   ORACLE_EXEC_OPTIONS = 'db.oracle.exec.options',
   ORACLE_INSTANCE = 'db.oracle.instance',
   ORACLE_PDBNAME = 'db.oracle.pdbname',
-  ORACLE_IMPLICIT_RELEASE = 'db.oracle.ImplicitRelease',
+  ORACLE_IMPLICIT_RELEASE = 'db.oracle.implicit_release',
 }
 
 // Contains span names produced by instrumentation
+// It lists the RPC names (suffix with _MSG like EXECUTE_MSG) and
+// exported oracledb functions (like EXECUTE).
 export enum SpanNames {
   CONNECT = 'oracledb.getConnection',
   POOL_CONNECT = 'oracledb.Pool.getConnection',

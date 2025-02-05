@@ -25,7 +25,7 @@ import * as utils from './utils';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export class OracleInstrumentation extends InstrumentationBase {
-  private _tmHandler!: utils.OracleTelemetryTraceHandler | null;
+  private _tmHandler: utils.OracleTelemetryTraceHandler | null = null;
 
   constructor(config: OracleInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
