@@ -15,10 +15,10 @@
  */
 import { AppStateStatus } from 'react-native';
 import { MutableRefObject } from 'react';
+import { Attributes } from '@opentelemetry/api';
 
 import { TracerRef } from './hooks/useTracerRef';
 import { SpanRef } from './hooks/useSpanRef';
-import { Attributes } from '@opentelemetry/api';
 
 const ATTRIBUTES = {
   initialView: 'view.launch',
@@ -68,7 +68,7 @@ const spanEnd = (
 
     span.current.end();
 
-    // make sure we destroy any existent span
+    // make sure we destroy any existing span
     span.current = null;
   }
 };

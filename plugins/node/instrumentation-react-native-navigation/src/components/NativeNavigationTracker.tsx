@@ -13,27 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, { forwardRef, ReactNode } from 'react';
-import { TracerProvider } from '@opentelemetry/api';
+import * as React from 'react';
+import { forwardRef } from 'react';
 
 import useTracerRef from '../utils/hooks/useTracerRef';
+import { TrackerProps } from '../types/navigation';
 import useNativeNavigationTracker, {
-  NativeNavRef,
+  NativeNavRef as NativeNavigationTrackerRef,
 } from '../hooks/useNativeNavigationTracker';
-import { NavigationTrackerConfig } from '../types/navigation';
-
-type NativeNavigationTrackerRef = NativeNavRef;
-
-interface NativeNavigationTrackerProps {
-  children: ReactNode;
-  // selected provider, should be configured by the app consumer
-  provider?: TracerProvider;
-  config?: NavigationTrackerConfig;
-}
 
 const NativeNavigationTracker = forwardRef<
   NativeNavigationTrackerRef,
-  NativeNavigationTrackerProps
+  TrackerProps
 >(({ children, provider, config }, ref) => {
   // Initializing a Trace instance
   const tracer = useTracerRef(provider, config);

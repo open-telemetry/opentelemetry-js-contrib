@@ -107,7 +107,7 @@ export default App;
 
 ### React Native Navigation from Wix
 
-If you are using `wix/react-native-navigation` you are also able to track navigation changes by importing and implement the `NativeNavigationTracker` component. The purpose in here is to wrap the entire application with the exposed component.
+If you are using `wix/react-native-navigation` you are also able to track navigation changes by importing and implement the `NativeNavigationTracker` component. The purpose in here is to wrap the entry view with the exposed component.
 
 ```javascript
 import {FC, useRef} from 'react';
@@ -156,7 +156,7 @@ const HomeScreen: FC = () => {
   return (
     <NativeNavigationTracker ref={navigationRef} provider={provider} config={config}>
       {/* content of the app goes here */}
-    </NavigationTracker>
+    </NativeNavigationTracker>
   );
 };
 

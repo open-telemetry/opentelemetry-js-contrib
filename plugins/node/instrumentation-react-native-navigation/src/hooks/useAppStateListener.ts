@@ -15,10 +15,11 @@
  */
 import { AppState, AppStateStatus } from 'react-native';
 import { MutableRefObject, useCallback, useEffect } from 'react';
+import { Attributes } from '@opentelemetry/api';
+
 import { spanCreatorAppState } from '../utils/spanFactory';
 import { TracerRef } from '../utils/hooks/useTracerRef';
 import { SpanRef } from '../utils/hooks/useSpanRef';
-import { Attributes } from '@opentelemetry/api';
 
 const useAppStateListener = (
   tracer: TracerRef,
@@ -39,7 +40,7 @@ const useAppStateListener = (
 
       appStateHandler(view?.current, currentState);
     },
-    [span, tracer, attributes]
+    [tracer, span, attributes, view]
   );
 
   /**

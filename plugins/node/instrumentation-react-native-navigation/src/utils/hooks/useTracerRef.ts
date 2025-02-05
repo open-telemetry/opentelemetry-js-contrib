@@ -15,16 +15,17 @@
  */
 import { MutableRefObject, useEffect, useRef } from 'react';
 import { trace, Tracer, TracerProvider } from '@opentelemetry/api';
-/** @knipignore */
+
 import { PACKAGE_NAME, PACKAGE_VERSION } from '../../version';
+import { TrackerConfig } from '../../types/navigation';
+
 import useConsole from './useConsole';
-import { NavigationTrackerConfig } from '../../types/navigation';
 
 export type TracerRef = MutableRefObject<Tracer | null>;
 
 const useTracerRef = (
   provider?: TracerProvider,
-  config?: NavigationTrackerConfig
+  config?: TrackerConfig
 ): TracerRef => {
   const { debug, tracerOptions } = config ?? {};
   const tracerRef = useRef<Tracer | null>(null);
@@ -44,7 +45,7 @@ const useTracerRef = (
           trace.getTracer(PACKAGE_NAME, PACKAGE_VERSION);
     }
 
-    // this is useful in cases where the provider is passed but it's still `null` or `undefined` (given a re-render or something specific of the lyfecycle of the app that implements the library)
+    // this is useful in cases where the provider is passed but it's still `null` or `undefined` (given a re-render or something specific of the lifecycle of the app that implements the library)
     if (
       tracerRef.current !== null &&
       provider !== undefined &&
@@ -58,7 +59,7 @@ const useTracerRef = (
 
       console.info('Updated TracerProvider. Switching to the new instance.');
     }
-  }, [provider, tracerOptions]);
+  }, [console, provider, tracerOptions]);
 
   return tracerRef;
 };
