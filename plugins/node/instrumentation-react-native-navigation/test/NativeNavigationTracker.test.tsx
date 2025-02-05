@@ -21,19 +21,21 @@ import sinon from 'sinon';
 import { NativeNavigationTracker } from '../src';
 import useProvider from './helpers/hooks/useProvider';
 import api from '@opentelemetry/api';
-import * as rnn from './helpers/react-native-navigation';
-import {
-  INativeNavigationContainer,
-  NavigationTrackerConfig,
-} from '../src/types/navigation';
+import { TrackerConfig } from '../src/types/navigation';
+
+const sandbox = sinon.createSandbox();
+const mockDidAppearListener = sandbox.spy();
+const mockDidDisappearListener = sandbox.spy();
 
 const AppWithProvider: FC<{
   shouldPassProvider: boolean;
-  config?: NavigationTrackerConfig;
+  config?: TrackerConfig;
 }> = ({ shouldPassProvider, config }) => {
-  const { Navigation } = rnn;
   const provider = useProvider();
-  const ref = useRef(Navigation.events());
+  const ref = useRef({
+    registerComponentDidAppearListener: mockDidAppearListener,
+    registerComponentDidDisappearListener: mockDidDisappearListener,
+  });
 
   return (
     <NativeNavigationTracker
@@ -47,10 +49,6 @@ const AppWithProvider: FC<{
 };
 
 describe('NativeNavigationTracker.tsx', function () {
-  const sandbox = sinon.createSandbox();
-  const mockDidAppearListener = sandbox.spy();
-  const mockDidDisappearListener = sandbox.spy();
-
   let mockConsoleDir: sinon.SinonSpy;
   let mockConsoleInfo: sinon.SinonSpy;
   let mockConsoleWarn: sinon.SinonSpy;
@@ -59,12 +57,6 @@ describe('NativeNavigationTracker.tsx', function () {
   let mockGlobalTracer: sinon.SinonSpy;
 
   beforeEach(function () {
-    const { Navigation } = rnn;
-    sandbox.stub(Navigation, 'events').returns({
-      registerComponentDidAppearListener: mockDidAppearListener,
-      registerComponentDidDisappearListener: mockDidDisappearListener,
-    } as unknown as INativeNavigationContainer);
-
     mockAddEventListener = sandbox.spy(AppState, 'addEventListener');
     mockConsoleDir = sandbox.spy(console, 'dir');
     mockConsoleInfo = sandbox.spy(console, 'info');
