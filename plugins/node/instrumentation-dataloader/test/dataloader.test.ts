@@ -37,12 +37,13 @@ describe('DataloaderInstrumentation', () => {
   let contextManager: AsyncHooksContextManager;
 
   const memoryExporter = new InMemorySpanExporter();
-  const provider = new NodeTracerProvider();
+  const provider = new NodeTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   const tracer = provider.getTracer('default');
 
   instrumentation.setTracerProvider(provider);
   extraInstrumentation.setTracerProvider(provider);
-  provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
   beforeEach(async () => {
     instrumentation.enable();

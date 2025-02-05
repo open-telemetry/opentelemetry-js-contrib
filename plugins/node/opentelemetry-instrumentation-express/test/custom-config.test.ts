@@ -39,10 +39,10 @@ import * as express from 'express';
 import * as http from 'http';
 
 describe('ExpressInstrumentation', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   const tracer = provider.getTracer('default');
   const contextManager = new AsyncHooksContextManager().enable();
 

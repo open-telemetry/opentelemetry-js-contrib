@@ -48,10 +48,11 @@ import { EventNames } from '../src/enums/EventNames';
 const assert = chai.assert;
 
 const exporter = new InMemorySpanExporter();
-const provider = new BasicTracerProvider();
 const spanProcessor = new SimpleSpanProcessor(exporter);
+const provider = new BasicTracerProvider({
+  spanProcessors: [spanProcessor],
+});
 
-provider.addSpanProcessor(spanProcessor);
 provider.register();
 
 const resources = [

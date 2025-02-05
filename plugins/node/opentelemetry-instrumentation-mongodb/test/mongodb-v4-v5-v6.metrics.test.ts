@@ -28,7 +28,6 @@ import {
   ResourceMetrics,
 } from '@opentelemetry/sdk-metrics';
 
-const otelTestingMeterProvider = new MeterProvider();
 const inMemoryMetricsExporter = new InMemoryMetricExporter(
   AggregationTemporality.CUMULATIVE
 );
@@ -36,6 +35,9 @@ const metricReader = new PeriodicExportingMetricReader({
   exporter: inMemoryMetricsExporter,
   exportIntervalMillis: 100,
   exportTimeoutMillis: 100,
+});
+const otelTestingMeterProvider = new MeterProvider({
+  readers: [metricReader],
 });
 
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
@@ -85,7 +87,6 @@ describe('MongoDBInstrumentation-Metrics', () => {
   let collection: Collection;
 
   before(done => {
-    otelTestingMeterProvider.addMetricReader(metricReader);
     instrumentation?.setMeterProvider(otelTestingMeterProvider);
 
     shouldTest = true;

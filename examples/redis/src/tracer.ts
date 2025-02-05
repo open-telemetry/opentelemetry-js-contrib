@@ -14,11 +14,6 @@ import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 const EXPORTER = process.env.EXPORTER || '';
 
 export const setupTracing = (serviceName: string) => {
-  const provider = new NodeTracerProvider({
-    resource: new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: serviceName,
-  }),});
-
   let exporter;
   if (EXPORTER.toLowerCase().startsWith('z')) {
     exporter = new ZipkinExporter();
@@ -26,7 +21,14 @@ export const setupTracing = (serviceName: string) => {
     exporter = new JaegerExporter();
   }
 
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+  const provider = new NodeTracerProvider({
+    resource: new Resource({
+      [SEMRESATTRS_SERVICE_NAME]: serviceName,
+    }),
+    spanProcessors: [
+      new SimpleSpanProcessor(exporter),
+    ]
+  });
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();

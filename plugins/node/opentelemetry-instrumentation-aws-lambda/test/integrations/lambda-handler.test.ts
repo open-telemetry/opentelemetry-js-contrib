@@ -120,8 +120,9 @@ describe('lambda handler', () => {
   ) => {
     process.env._HANDLER = handler;
 
-    const provider = new NodeTracerProvider();
-    provider.addSpanProcessor(new BatchSpanProcessor(memoryExporter));
+    const provider = new NodeTracerProvider({
+      spanProcessors: [new BatchSpanProcessor(memoryExporter)],
+    });
     provider.register();
 
     instrumentation = new AwsLambdaInstrumentation(config);

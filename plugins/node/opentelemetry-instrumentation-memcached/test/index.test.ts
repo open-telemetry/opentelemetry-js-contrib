@@ -75,9 +75,10 @@ const shouldTestLocal = process.env.RUN_MEMCACHED_TESTS_LOCAL;
 const shouldTest = process.env.RUN_MEMCACHED_TESTS || shouldTestLocal;
 
 describe('memcached@2.x', () => {
-  const provider = new NodeTracerProvider();
+  const provider = new NodeTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   const tracer = provider.getTracer('default');
-  provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
   instrumentation.setTracerProvider(provider);
   let contextManager: AsyncHooksContextManager;
 

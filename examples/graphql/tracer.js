@@ -14,10 +14,12 @@ const provider = new NodeTracerProvider({
   resource: new Resource({
     [SEMRESATTRS_SERVICE_NAME]: 'graphql-service',
   }),
+  spanProcessors: [
+    new SimpleSpanProcessor(new OTLPTraceExporter()),
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+  ],
 });
 
-provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter()));
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({

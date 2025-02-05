@@ -50,14 +50,15 @@ const httpRequest = {
 const instrumentation = new ConnectInstrumentation();
 const contextManager = new AsyncHooksContextManager().enable();
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
 const spanProcessor = new SimpleSpanProcessor(memoryExporter);
+const provider = new NodeTracerProvider({
+  spanProcessors: [spanProcessor],
+});
 instrumentation.setTracerProvider(provider);
 context.setGlobalContextManager(contextManager);
 
 const tracer = provider.getTracer('default');
 
-provider.addSpanProcessor(spanProcessor);
 instrumentation.enable();
 
 import * as connect from 'connect';

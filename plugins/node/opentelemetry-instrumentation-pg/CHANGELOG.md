@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.50.0...instrumentation-pg-v0.51.0) (2025-01-27)
+
+
+### Features
+
+* **pg:** Patch client inside `lib` and `lib/pg-native` ([#2563](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2563)) ([5f214eb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5f214eb973702a6d77d73ff28f080b4ff7752e8f))
+
 ## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.49.0...instrumentation-pg-v0.50.0) (2024-12-18)
 
 

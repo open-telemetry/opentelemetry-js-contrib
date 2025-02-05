@@ -88,8 +88,9 @@ describe('force flush', () => {
   });
 
   it('should force flush NodeTracerProvider', async () => {
-    const provider = new NodeTracerProvider();
-    provider.addSpanProcessor(new BatchSpanProcessor(traceMemoryExporter));
+    const provider = new NodeTracerProvider({
+      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+    });
     provider.register();
     let forceFlushed = false;
     const forceFlush = () =>
@@ -118,10 +119,9 @@ describe('force flush', () => {
   });
 
   it('should force flush ProxyTracerProvider with NodeTracerProvider', async () => {
-    const nodeTracerProvider = new NodeTracerProvider();
-    nodeTracerProvider.addSpanProcessor(
-      new BatchSpanProcessor(traceMemoryExporter)
-    );
+    const nodeTracerProvider = new NodeTracerProvider({
+      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+    });
     nodeTracerProvider.register();
     const provider = new ProxyTracerProvider();
     provider.setDelegate(nodeTracerProvider);
@@ -152,10 +152,11 @@ describe('force flush', () => {
   });
 
   it('should force flush MeterProvider', async () => {
-    const provider = new MeterProvider();
-    provider.addMetricReader(
-      new PeriodicExportingMetricReader({ exporter: metricMemoryExporter })
-    );
+    const provider = new MeterProvider({
+      readers: [
+        new PeriodicExportingMetricReader({ exporter: metricMemoryExporter }),
+      ],
+    });
     let forceFlushed = false;
     const forceFlush = () =>
       new Promise<void>(resolve => {
@@ -183,10 +184,9 @@ describe('force flush', () => {
   });
 
   it('should callback once after force flush providers', async () => {
-    const nodeTracerProvider = new NodeTracerProvider();
-    nodeTracerProvider.addSpanProcessor(
-      new BatchSpanProcessor(traceMemoryExporter)
-    );
+    const nodeTracerProvider = new NodeTracerProvider({
+      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+    });
     nodeTracerProvider.register();
     const tracerProvider = new ProxyTracerProvider();
     tracerProvider.setDelegate(nodeTracerProvider);
@@ -198,10 +198,11 @@ describe('force flush', () => {
       });
     nodeTracerProvider.forceFlush = tracerForceFlush;
 
-    const meterProvider = new MeterProvider();
-    meterProvider.addMetricReader(
-      new PeriodicExportingMetricReader({ exporter: metricMemoryExporter })
-    );
+    const meterProvider = new MeterProvider({
+      readers: [
+        new PeriodicExportingMetricReader({ exporter: metricMemoryExporter }),
+      ],
+    });
     let meterForceFlushed = false;
     const meterForceFlush = () =>
       new Promise<void>(resolve => {

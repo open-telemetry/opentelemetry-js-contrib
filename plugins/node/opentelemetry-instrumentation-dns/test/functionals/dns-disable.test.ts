@@ -26,9 +26,10 @@ import * as Sinon from 'sinon';
 import * as dns from 'dns';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
+const provider = new NodeTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+});
 const tracer = provider.getTracer('default');
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
 describe('DnsInstrumentation', () => {
   let instrumentation: DnsInstrumentation;

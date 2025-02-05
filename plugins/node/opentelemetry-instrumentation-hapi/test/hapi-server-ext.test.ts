@@ -30,10 +30,11 @@ import { HapiLayerType } from '../src/internal-types';
 import { AttributeNames } from '../src/enums/AttributeNames';
 
 describe('Hapi Instrumentation - Server.Ext Tests', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
   let server: hapi.Server;

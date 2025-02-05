@@ -28,8 +28,9 @@ import { SocketEvent } from '../src/internal-types';
 import { assertIpcSpan, assertTcpSpan, IPC_PATH, HOST, PORT } from './utils';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+const provider = new NodeTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+});
 
 function getSpan() {
   const spans = memoryExporter.getFinishedSpans();

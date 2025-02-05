@@ -9,13 +9,14 @@ const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/sdk-trace-base');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 
-const provider = new NodeTracerProvider();
-
-provider.addSpanProcessor(new SimpleSpanProcessor(new JaegerExporter({
-  serviceName: 'http-client',
-})));
-
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+const provider = new NodeTracerProvider({
+  spanProcessors: [
+    new SimpleSpanProcessor(new JaegerExporter({
+      serviceName: 'http-client',
+    })),
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+  ],
+});
 
 provider.register();
 

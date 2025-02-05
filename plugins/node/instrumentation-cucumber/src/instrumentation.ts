@@ -47,7 +47,7 @@ type Cucumber = typeof cucumber;
 type Hook = (typeof hooks)[number];
 type Step = (typeof steps)[number];
 
-const supportedVersions = ['>=8.0.0 <11'];
+const supportedVersions = ['>=8.0.0 <12'];
 
 export class CucumberInstrumentation extends InstrumentationBase<CucumberInstrumentationConfig> {
   private module: Cucumber | undefined;

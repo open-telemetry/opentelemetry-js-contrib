@@ -15,6 +15,10 @@ export const setupTracing = (serviceName: string): api.Tracer => {
     resource: new Resource({
       [ATTR_SERVICE_NAME]: serviceName,
     }),
+    spanProcessors: [
+      new SimpleSpanProcessor(new ZipkinExporter()),
+      new SimpleSpanProcessor(new OTLPTraceExporter()),
+    ],
   });
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
@@ -29,9 +33,6 @@ export const setupTracing = (serviceName: string): api.Tracer => {
     ],
     tracerProvider: provider,
   });
-
-  provider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter()));
-  provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter()));
 
   return api.trace.getTracer('mongodb-example');
 };

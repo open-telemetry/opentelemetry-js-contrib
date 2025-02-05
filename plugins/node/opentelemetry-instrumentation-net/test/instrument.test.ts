@@ -27,9 +27,10 @@ import * as net from 'net';
 import { HOST, PORT } from './utils';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
+const provider = new NodeTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+});
 const tracer = provider.getTracer('default');
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
 describe('NetInstrumentation', () => {
   let instrumentation: NetInstrumentation;
