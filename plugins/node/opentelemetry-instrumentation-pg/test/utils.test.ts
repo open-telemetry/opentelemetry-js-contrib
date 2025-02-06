@@ -49,15 +49,13 @@ const getLatestSpan = () => {
 describe('utils.ts', () => {
   const client = new pg.Client(CONFIG) as PgClientExtended;
   let contextManager: AsyncHooksContextManager;
-  const provider = new BasicTracerProvider();
+  const provider = new BasicTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   const tracer = provider.getTracer('external');
 
   const instrumentationConfig: PgInstrumentationConfig & InstrumentationConfig =
     {};
-
-  before(() => {
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-  });
 
   beforeEach(() => {
     contextManager = new AsyncHooksContextManager().enable();

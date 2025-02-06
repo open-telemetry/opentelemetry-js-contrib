@@ -42,8 +42,9 @@ describe('UndiciInstrumentation `fetch` tests', function () {
   const hostname = 'localhost';
   const mockServer = new MockServer();
   const memoryExporter = new InMemorySpanExporter();
-  const provider = new NodeTracerProvider();
-  provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+  const provider = new NodeTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
 
   before(function (done) {
     // Do not test if the `fetch` global API is not available

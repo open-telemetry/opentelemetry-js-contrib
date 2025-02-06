@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.14.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.13.0...instrumentation-cucumber-v0.14.0) (2025-01-27)
+
+
+### Features
+
+* **cucumber:** support @cucumber/cucumber@11 ([#2676](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2676)) ([5c38927](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5c38927b881a74cd94d6ee339c8a449bd2fd7dbb))
+
+## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.12.0...instrumentation-cucumber-v0.13.0) (2024-12-18)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2608](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2608)) ([aa46705](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/aa46705d2fd1bd5ee6d763ac8cd73a7630889d34))
+
+## [0.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.11.0...instrumentation-cucumber-v0.12.0) (2024-12-04)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2582](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2582)) ([5df02cb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5df02cbb35681d2b5cce359dda7b023d7bf339f2))
+
 ## [0.11.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.10.0...instrumentation-cucumber-v0.11.0) (2024-11-18)
 
 
