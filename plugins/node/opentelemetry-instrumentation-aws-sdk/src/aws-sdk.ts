@@ -446,7 +446,9 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
         const serviceName =
           clientConfig?.serviceId ??
           removeSuffixFromStringIfExists(
-            awsExecutionContext.clientName,
+            // Use 'AWS' as a fallback serviceName to match type definition.
+            // In practice, `clientName` should always be set.
+            awsExecutionContext.clientName || 'AWS',
             'Client'
           );
         const commandName =
