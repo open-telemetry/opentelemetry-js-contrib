@@ -16,25 +16,26 @@
 import { Attributes, DiagLogger, Span, Tracer } from '@opentelemetry/api';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 import {
+  ATTR_GEN_AI_SYSTEM,
+  ATTR_GEN_AI_OPERATION_NAME,
+  ATTR_GEN_AI_REQUEST_MODEL,
+  ATTR_GEN_AI_REQUEST_MAX_TOKENS,
+  ATTR_GEN_AI_REQUEST_TEMPERATURE,
+  ATTR_GEN_AI_REQUEST_TOP_P,
+  ATTR_GEN_AI_REQUEST_STOP_SEQUENCES,
+  ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+  ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
+  GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+} from '../semconv';
+import {
   AwsSdkInstrumentationConfig,
   NormalizedRequest,
   NormalizedResponse,
 } from '../types';
 
-// Unstable attributes to define inline.
-const SEMATTRS_GEN_AI_SYSTEM = 'gen_ai.system';
-const SEMATTRS_GEN_AI_OPERATION_NAME = 'gen_ai.operation.name';
-const SEMATTRS_GEN_AI_REQUEST_MODEL = 'gen_ai.request.model';
-const SEMATTRS_GEN_AI_REQUEST_MAX_TOKENS = 'gen_ai.request.max_tokens';
-const SEMATTRS_GEN_AI_REQUEST_TEMPERATURE = 'gen_ai.request.temperature';
-const SEMATTRS_GEN_AI_REQUEST_TOP_P = 'gen_ai.request.top_p';
-const SEMATTRS_GEN_AI_REQUEST_STOP_SEQUENCES = 'gen_ai.request.stop_sequences';
-const SEMATTRS_GEN_AI_USAGE_INPUT_TOKENS = 'gen_ai.usage.input_tokens';
-const SEMATTRS_GEN_AI_USAGE_OUTPUT_TOKENS = 'gen_ai.usage.output_tokens';
-const SEMATTRS_GEN_AI_RESPONSE_FINISH_REASONS =
-  'gen_ai.response.finish_reasons';
-
-export class BedrockRuntimeExtension implements ServiceExtension {
+export class BedrockRuntimeServiceExtension implements ServiceExtension {
   requestPreSpanHook(
     request: NormalizedRequest,
     config: AwsSdkInstrumentationConfig,
@@ -42,19 +43,20 @@ export class BedrockRuntimeExtension implements ServiceExtension {
   ): RequestMetadata {
     let spanName: string | undefined;
     const spanAttributes: Attributes = {
-      [SEMATTRS_GEN_AI_SYSTEM]: 'bedrock',
+      [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
     };
 
     switch (request.commandName) {
       case 'Converse':
-        spanAttributes[SEMATTRS_GEN_AI_OPERATION_NAME] = 'chat';
-        spanName = 'chat';
+        spanAttributes[ATTR_GEN_AI_OPERATION_NAME] =
+          GEN_AI_OPERATION_NAME_VALUE_CHAT;
+        spanName = GEN_AI_OPERATION_NAME_VALUE_CHAT;
         break;
     }
 
     const modelId = request.commandInput.modelId;
     if (modelId) {
-      spanAttributes[SEMATTRS_GEN_AI_REQUEST_MODEL] = modelId;
+      spanAttributes[ATTR_GEN_AI_REQUEST_MODEL] = modelId;
       if (spanName) {
         spanName += ` ${modelId}`;
       }
@@ -64,16 +66,16 @@ export class BedrockRuntimeExtension implements ServiceExtension {
     if (inferenceConfig) {
       const { maxTokens, temperature, topP, stopSequences } = inferenceConfig;
       if (maxTokens !== undefined) {
-        spanAttributes[SEMATTRS_GEN_AI_REQUEST_MAX_TOKENS] = maxTokens;
+        spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = maxTokens;
       }
       if (temperature !== undefined) {
-        spanAttributes[SEMATTRS_GEN_AI_REQUEST_TEMPERATURE] = temperature;
+        spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] = temperature;
       }
       if (topP !== undefined) {
-        spanAttributes[SEMATTRS_GEN_AI_REQUEST_TOP_P] = topP;
+        spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = topP;
       }
       if (stopSequences !== undefined) {
-        spanAttributes[SEMATTRS_GEN_AI_REQUEST_STOP_SEQUENCES] = stopSequences;
+        spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = stopSequences;
       }
     }
 
@@ -97,14 +99,14 @@ export class BedrockRuntimeExtension implements ServiceExtension {
     const { stopReason, usage } = response.data;
     const { inputTokens, outputTokens } = usage;
     if (inputTokens !== undefined) {
-      span.setAttribute(SEMATTRS_GEN_AI_USAGE_INPUT_TOKENS, inputTokens);
+      span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, inputTokens);
     }
     if (outputTokens !== undefined) {
-      span.setAttribute(SEMATTRS_GEN_AI_USAGE_OUTPUT_TOKENS, outputTokens);
+      span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, outputTokens);
     }
 
     if (stopReason !== undefined) {
-      span.setAttribute(SEMATTRS_GEN_AI_RESPONSE_FINISH_REASONS, [stopReason]);
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [stopReason]);
     }
   }
 }

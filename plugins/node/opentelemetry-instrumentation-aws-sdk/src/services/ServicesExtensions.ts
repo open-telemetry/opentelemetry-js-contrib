@@ -21,7 +21,7 @@ import {
   NormalizedRequest,
   NormalizedResponse,
 } from '../types';
-import { BedrockRuntimeExtension } from './bedrock-runtime';
+import { BedrockRuntimeServiceExtension } from './bedrock-runtime';
 import { DynamodbServiceExtension } from './dynamodb';
 import { SnsServiceExtension } from './sns';
 import { LambdaServiceExtension } from './lambda';
@@ -38,7 +38,7 @@ export class ServicesExtensions implements ServiceExtension {
     this.services.set('Lambda', new LambdaServiceExtension());
     this.services.set('S3', new S3ServiceExtension());
     this.services.set('Kinesis', new KinesisServiceExtension());
-    this.services.set('BedrockRuntime', new BedrockRuntimeExtension());
+    this.services.set('BedrockRuntime', new BedrockRuntimeServiceExtension());
   }
 
   requestPreSpanHook(
