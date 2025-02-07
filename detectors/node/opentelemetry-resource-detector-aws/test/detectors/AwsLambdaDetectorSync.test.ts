@@ -18,14 +18,14 @@ import * as assert from 'assert';
 import { assertEmptyResource } from '@opentelemetry/contrib-test-utils';
 import { awsLambdaDetectorSync } from '../../src';
 import {
-  ATTR_CLOUD_PROVIDER,
-  ATTR_CLOUD_PLATFORM,
-  ATTR_CLOUD_REGION,
-  ATTR_FAAS_NAME,
-  ATTR_FAAS_VERSION,
-  ATTR_FAAS_INSTANCE,
-  ATTR_FAAS_MAX_MEMORY,
   ATTR_AWS_LOG_GROUP_NAMES,
+  ATTR_CLOUD_PLATFORM,
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_REGION,
+  ATTR_FAAS_INSTANCE,
+  ATTR_FAAS_NAME,
+  ATTR_FAAS_MAX_MEMORY,
+  ATTR_FAAS_VERSION,
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
 } from '../../src/semconv';
