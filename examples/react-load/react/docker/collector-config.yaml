@@ -3,7 +3,9 @@ receivers:
     protocols:
       http:
         endpoint: 0.0.0.0:55678
-        cors_allowed_origins: http://localhost:3000
+        cors:
+          allowed_origins:
+          - http://localhost:3000
 
 exporters:
   zipkin:
