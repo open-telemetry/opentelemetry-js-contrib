@@ -37,12 +37,13 @@ describe('UndiciInstrumentation metrics tests', function () {
   const hostname = 'localhost';
   const mockServer = new MockServer();
   const provider = new NodeTracerProvider();
-  const meterProvider = new MeterProvider();
   const metricsMemoryExporter = new InMemoryMetricExporter(
     AggregationTemporality.DELTA
   );
   const metricReader = new MockMetricsReader(metricsMemoryExporter);
-  meterProvider.addMetricReader(metricReader);
+  const meterProvider = new MeterProvider({
+    readers: [metricReader],
+  });
 
   before(function (done) {
     // Do not test if the `fetch` global API is not available

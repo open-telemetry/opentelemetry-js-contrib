@@ -185,8 +185,8 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
             const formatter = utils.getFormatter(this);
             const fullQuery = formatter(query.sql, query.bindings || []);
             const message = err.message.replace(fullQuery + ' - ', '');
-            const clonedError = utils.cloneErrorWithNewMessage(err, message);
-            span.recordException(clonedError);
+            const exc = utils.otelExceptionFromKnexError(err, message);
+            span.recordException(exc);
             span.setStatus({ code: api.SpanStatusCode.ERROR, message });
             span.end();
             throw err;
