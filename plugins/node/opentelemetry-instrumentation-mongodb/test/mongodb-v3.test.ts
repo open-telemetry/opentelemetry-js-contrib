@@ -39,6 +39,9 @@ import {
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 
+// We can't use @ts-expect-error because it will fail depending on the used mongodb version on tests
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+
 describe('MongoDBInstrumentation-Tracing-v3', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
@@ -85,7 +88,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
     }
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    // @ts-expect-error -- v5 removed callback support
+    // @ts-ignore -- v5 removed callback support
     collection.insertMany(insertData, (err: any, result: any) => {
       resetMemoryExporter();
       done();
@@ -94,7 +97,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
 
   afterEach(done => {
     if (shouldTest) {
-      // @ts-expect-error -- v5 removed callback support
+      // @ts-ignore -- v5 removed callback support
       collection.deleteMany({}, done);
     } else {
       done();
@@ -619,7 +622,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
     let collection: Collection;
     before(done => {
       accessCollection(URL, DB_NAME, COLLECTION_NAME, {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         useUnifiedTopology: true,
       })
@@ -642,7 +644,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
     it('should generate correct span attributes', done => {
       const span = trace.getTracer('default').startSpan('findRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
-        // @ts-expect-error -- v5 removed callback support
+        // @ts-ignore -- v5 removed callback support
         collection.find({ a: 1 }).toArray((err, results) => {
           span.end();
           const [mongoSpan] = getTestSpans();
@@ -766,3 +768,5 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
     });
   });
 });
+
+/* eslint-enable @typescript-eslint/ban-ts-comment */
