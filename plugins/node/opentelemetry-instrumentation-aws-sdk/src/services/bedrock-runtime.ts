@@ -41,18 +41,26 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     config: AwsSdkInstrumentationConfig,
     diag: DiagLogger
   ): RequestMetadata {
-    let spanName: string | undefined;
-    const spanAttributes: Attributes = {
-      [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
-    };
-
     switch (request.commandName) {
       case 'Converse':
-        spanAttributes[ATTR_GEN_AI_OPERATION_NAME] =
-          GEN_AI_OPERATION_NAME_VALUE_CHAT;
-        spanName = GEN_AI_OPERATION_NAME_VALUE_CHAT;
-        break;
+        return this.requestPreSpanHookConverse(request, config, diag);
     }
+
+    return {
+      isIncoming: false,
+    };
+  }
+
+  private requestPreSpanHookConverse(
+    request: NormalizedRequest,
+    config: AwsSdkInstrumentationConfig,
+    diag: DiagLogger
+  ): RequestMetadata {
+    let spanName = GEN_AI_OPERATION_NAME_VALUE_CHAT;
+    const spanAttributes: Attributes = {
+      [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+    };
 
     const modelId = request.commandInput.modelId;
     if (modelId) {
@@ -96,6 +104,18 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       return;
     }
 
+    switch (response.request.commandName) {
+      case 'Converse':
+        return this.responseHookConverse(response, span, tracer, config);
+    }
+  }
+
+  private responseHookConverse(
+    response: NormalizedResponse,
+    span: Span,
+    tracer: Tracer,
+    config: AwsSdkInstrumentationConfig
+  ) {
     const { stopReason, usage } = response.data;
     if (usage) {
       const { inputTokens, outputTokens } = usage;
