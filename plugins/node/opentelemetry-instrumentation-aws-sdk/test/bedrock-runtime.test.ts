@@ -37,6 +37,7 @@ import {
   BedrockRuntimeClient,
   ConverseCommand,
   ConversationRole,
+  InvokeModelCommand,
 } from '@aws-sdk/client-bedrock-runtime';
 import * as path from 'path';
 import { Definition, back as nockBack } from 'nock';
@@ -144,6 +145,43 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
       });
+    });
+  });
+
+  // TODO: Instrument InvokeModel
+  describe('InvokeModel', () => {
+    it('does not currently add genai conventions', async () => {
+      const modelId = 'amazon.titan-text-express-v1';
+      const inputText = 'Say this is a test';
+      const textGenerationConfig = {
+        maxTokenCount: 10,
+        temperature: 0.8,
+        topP: 1,
+        stopSequences: ['|'],
+      };
+      const body: any = {
+        inputText,
+        textGenerationConfig,
+      };
+
+      const command = new InvokeModelCommand({
+        modelId,
+        body: JSON.stringify(body),
+      });
+      const response = await client.send(command);
+      const output = JSON.parse(response.body.transformToString());
+      expect(output.results[0].outputText).toBe(
+        '\nHello! I am a computer program designed to'
+      );
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const converseSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === 'BedrockRuntime.InvokeModel';
+        }
+      );
+      expect(converseSpans.length).toBe(1);
+      expect(converseSpans[0].attributes[ATTR_GEN_AI_SYSTEM]).toBeUndefined();
     });
   });
 });
