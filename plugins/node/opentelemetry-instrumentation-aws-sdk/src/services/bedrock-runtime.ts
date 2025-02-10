@@ -97,12 +97,14 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     }
 
     const { stopReason, usage } = response.data;
-    const { inputTokens, outputTokens } = usage;
-    if (inputTokens !== undefined) {
-      span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, inputTokens);
-    }
-    if (outputTokens !== undefined) {
-      span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, outputTokens);
+    if (usage) {
+      const { inputTokens, outputTokens } = usage;
+      if (inputTokens !== undefined) {
+        span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, inputTokens);
+      }
+      if (outputTokens !== undefined) {
+        span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, outputTokens);
+      }
     }
 
     if (stopReason !== undefined) {

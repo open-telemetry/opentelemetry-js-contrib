@@ -14,20 +14,121 @@
  * limitations under the License.
  */
 
-// Gen AI conventions
+/*
+ * This file contains a copy of unstable semantic convention definitions
+ * used by this package.
+ * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
+ */
 
+/**
+ * The Generative AI product as identified by the client or server instrumentation.
+ *
+ * @example "openai"
+ *
+ * @note The `gen_ai.system` describes a family of GenAI models with specific model identified
+ * by `gen_ai.request.model` and `gen_ai.response.model` attributes.
+ *
+ * The actual GenAI product may differ from the one identified by the client.
+ * For example, when using OpenAI client libraries to communicate with Mistral, the `gen_ai.system`
+ * is set to `openai` based on the instrumentation's best knowledge.
+ *
+ * For custom model, a custom friendly name **SHOULD** be used.
+ * If none of these options apply, the `gen_ai.system` **SHOULD** be set to `_OTHER`.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
 export const ATTR_GEN_AI_SYSTEM = 'gen_ai.system';
+
+/**
+ * The name of the operation being performed.
+ *
+ * @note If one of the predefined values applies, but specific system uses a different name it's **RECOMMENDED** to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries **SHOULD** use applicable predefined value.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
 export const ATTR_GEN_AI_OPERATION_NAME = 'gen_ai.operation.name';
+
+/**
+ * The name of the GenAI model a request is being made to.
+ *
+ * @example "gpt-4"
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
 export const ATTR_GEN_AI_REQUEST_MODEL = 'gen_ai.request.model';
+
+/**
+ * The maximum number of tokens the model generates for a request.
+ *
+ * @example 100
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
 export const ATTR_GEN_AI_REQUEST_MAX_TOKENS = 'gen_ai.request.max_tokens';
+
+/**
+ * The temperature setting for the GenAI request.
+ *
+ * @example 0.0
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
 export const ATTR_GEN_AI_REQUEST_TEMPERATURE = 'gen_ai.request.temperature';
+
+/**
+ * The top_p sampling setting for the GenAI request.
+ *
+ * @example 1.0
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
 export const ATTR_GEN_AI_REQUEST_TOP_P = 'gen_ai.request.top_p';
+
+/**
+ * List of sequences that the model will use to stop generating further tokens.
+ *
+ * @example ["forest", "lived"]
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
 export const ATTR_GEN_AI_REQUEST_STOP_SEQUENCES =
   'gen_ai.request.stop_sequences';
+
+/**
+ * The number of tokens used in the GenAI input (prompt).
+ *
+ * @example 100
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
 export const ATTR_GEN_AI_USAGE_INPUT_TOKENS = 'gen_ai.usage.input_tokens';
+
+/**
+ * The number of tokens used in the GenAI response (completion).
+ *
+ * @example 180
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
 export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS = 'gen_ai.usage.output_tokens';
+
+/**
+ * Array of reasons the model stopped generating tokens, corresponding to each generation received.
+ *
+ * @example ["stop"]
+ * @example ["stop", "length"]
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
 export const ATTR_GEN_AI_RESPONSE_FINISH_REASONS =
   'gen_ai.response.finish_reasons';
 
+/**
+ * Enum value "aws.bedrock" for attribute {@link ATTR_GEN_AI_SYSTEM}.
+ */
 export const GEN_AI_SYSTEM_VALUE_AWS_BEDROCK = 'aws.bedrock';
+
+/**
+ * Enum value "chat" for attribute {@link ATTR_GEN_AI_OPERATION_NAME}.
+ */
 export const GEN_AI_OPERATION_NAME_VALUE_CHAT = 'chat';
