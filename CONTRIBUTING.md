@@ -261,7 +261,7 @@ features for unmaintained components. At least one sponsor is needed to lift the
 adding the requested feature. Sponsors are expected to provide reviews for that feature and be responsive on the issue.
 
 Components marked as unmaintained still receive semantic conventions updates and bugfixes where possible.
-[@open-telemetry/javascript-triagers](https://github.com/orgs/open-telemetry/teams/javascript-triagers) may add the
+[@open-telemetry/javascript-contrib-triagers](https://github.com/orgs/open-telemetry/teams/javascript-contrib-triagers) may add the
 `type:semconv-update` or `bug` label to mark them as exempt from being auto-closed within two weeks.
 
 A component which is unmaintained may be deprecated if there is a problem that is not fixed in a timely manner.
