@@ -16,7 +16,10 @@
 const originalSetTimeout = window.setTimeout;
 
 import { trace } from '@opentelemetry/api';
-import { registerInstrumentations, isWrapped } from '@opentelemetry/instrumentation';
+import {
+  registerInstrumentations,
+  isWrapped,
+} from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/sdk-trace-base';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
