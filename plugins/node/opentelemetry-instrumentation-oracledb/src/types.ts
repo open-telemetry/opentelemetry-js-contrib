@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright (c) 2024, Oracle and/or its affiliates.
+ * Copyright (c) 2025, Oracle and/or its affiliates.
  * */
 import type * as api from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';

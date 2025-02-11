@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright (c) 2024, Oracle and/or its affiliates.
+ * Copyright (c) 2025, Oracle and/or its affiliates.
  * */
 
 /**
@@ -24,10 +24,10 @@
 export const ATTR_DB_SYSTEM = 'db.system.name';
 
 /**
- * The name of the database, fully qualified within the server address and port.
+ * The servicename associated with the connection.
  *
  * @example FREEPDB1
- * @example XEPDB1
+ * @example inventory.example.org
  *
  * @note If a database system has multiple namespace components, they **SHOULD** be concatenated (potentially using database system specific conventions) from most general to most specific namespace component, and more specific namespaces **SHOULD NOT** be captured without the more general namespaces, to ensure that "startswith" queries for the more general namespaces will be valid.
  * Semantic conventions for individual database systems **SHOULD** document what `db.namespace` means in the context of that system.
