@@ -76,7 +76,10 @@ export class AwsEcsDetectorSync implements DetectorSync {
   }
 
   private async _getAttributes(): Promise<ResourceAttributes> {
-    if (!process.env.ECS_CONTAINER_METADATA_URI_V4 && !process.env.ECS_CONTAINER_METADATA_URI) {
+    if (
+      !process.env.ECS_CONTAINER_METADATA_URI_V4 &&
+      !process.env.ECS_CONTAINER_METADATA_URI
+    ) {
       diag.debug('AwsEcsDetector failed: Process is not on ECS');
       return {};
     }
