@@ -58,40 +58,6 @@ function getAllWorkspaceDirs() {
     .map(path.dirname);
 }
 
-function lintSemconvDeps() {
-  const wsDirs = getAllWorkspaceDirs();
-
-  for (let wsDir of wsDirs) {
-    const pj = JSON.parse(
-      fs.readFileSync(path.join(wsDir, 'package.json'), 'utf8')
-    );
-    const depRange = pj?.dependencies?.[SEMCONV];
-    const devDepRange = pj?.devDependencies?.[SEMCONV];
-    if (!(depRange || devDepRange)) {
-      continue;
-    }
-
-    // Rule: The semconv dep should *not* be pinned. Expect `^X.Y.Z`.
-    const pinnedVerRe = /^\d+\.\d+\.\d+$/;
-    if (depRange && pinnedVerRe.exec(depRange)) {
-      problem(`${wsDir}/package.json: package ${pj.name} pins "${SEMCONV}" in dependencies, but should not (see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#why-not-pin-the-version)`);
-    } else if (devDepRange && pinnedVerRe.exec(devDepRange)) {
-      problem(`${wsDir}/package.json: package ${pj.name} pins "${SEMCONV}" in devDependencies, but should not (see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#why-not-pin-the-version)`);
-    }
-
-    // Rule: The incubating entry-point should not be used.
-    const srcFiles = globSync(path.join(wsDir, 'src', '**', '*.ts'));
-    const usesIncubatingRe = /import\s+\{?[^{;]*\s+from\s+'@opentelemetry\/semantic-conventions\/incubating'/s;
-    for (let srcFile of srcFiles) {
-      const srcText = fs.readFileSync(srcFile, 'utf8');
-      const match = usesIncubatingRe.exec(srcText);
-      if (match) {
-        problem(`${srcFile}: uses the 'incubating' entry-point from '@opentelemetry/semantic-conventions', but should not (see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv)`)
-      }
-    }
-  }
-}
-
 function genSemconvTs(wsDir) {
   const semconvPath = require.resolve('@opentelemetry/semantic-conventions',
       {paths: [path.join(wsDir, 'node_modules')]});
@@ -133,7 +99,7 @@ function genSemconvTs(wsDir) {
   // Load the source from the semconv package from which we'll copy.
   // We are cheating a bit in knowing the semconv package structure. We want
   // "build/esnext/experimental_*.js" files. Use the "esnext" build because it
-  // is closed to the TypeScript we want.
+  // is closest to the TypeScript we want.
   const semconvEsnextDir = path.resolve(
     semconvPath,
     '../../esnext', // .../build/src/index.js -> .../build/esnext
