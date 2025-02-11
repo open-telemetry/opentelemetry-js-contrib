@@ -46,6 +46,9 @@ import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
 
+// We can't use @ts-expect-error because it will fail depending on the used mongodb version on tests
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+
 describe('MongoDBInstrumentation-Tracing-v5', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
@@ -652,6 +655,49 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
     });
   });
 
+  describe('requireParentSpan', () => {
+    // Resetting the behavior to default to avoid flakes in other tests
+    beforeEach(() => {
+      instrumentation.setConfig();
+    });
+
+    afterEach(() => {
+      instrumentation.setConfig();
+    });
+
+    it('should not create spans without parent span when requireParentSpan is explicitly set to true', done => {
+      context.with(trace.deleteSpan(context.active()), () => {
+        collection
+          .insertOne({ a: 1 })
+          .then(() => {
+            assert.strictEqual(getTestSpans().length, 0);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
+
+    it('should create spans without parent span when requireParentSpan is false', done => {
+      instrumentation.setConfig({
+        requireParentSpan: false,
+      });
+
+      context.with(trace.deleteSpan(context.active()), () => {
+        collection
+          .insertOne({ a: 1 })
+          .then(() => {
+            assert.strictEqual(getTestSpans().length, 1);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
+  });
+
   /** Should intercept command */
   describe('Removing Instrumentation', () => {
     it('should unpatch plugin', () => {
@@ -706,3 +752,5 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
     });
   });
 });
+
+/* eslint-enable @typescript-eslint/ban-ts-comment */
