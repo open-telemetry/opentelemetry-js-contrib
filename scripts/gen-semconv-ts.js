@@ -91,7 +91,9 @@ function genSemconvTs(wsDir) {
     }
   }
   if (names.size === 0) {
-    console.log(`Did not find any usage of unstable semconv exports in "${wsDir}/{src,test}/**/*.ts".`)
+    console.log(`Did not find any usage of unstable semconv exports in "${wsDir}/{src,test}/**/*.ts".`);
+    console.log('No changes made.');
+    return;
   } else {
     console.log(`Found import of ${names.size} unstable semconv definitions.`)
   }
