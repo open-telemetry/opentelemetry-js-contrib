@@ -642,6 +642,49 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
     });
   });
 
+  describe('requireParentSpan', () => {
+    // Resetting the behavior to default to avoid flakes in other tests
+    beforeEach(() => {
+      instrumentation.setConfig();
+    });
+
+    afterEach(() => {
+      instrumentation.setConfig();
+    });
+
+    it('should not create spans without parent span when requireParentSpan is explicitly set to true', done => {
+      context.with(trace.deleteSpan(context.active()), () => {
+        collection
+          .insertOne({ a: 1 })
+          .then(() => {
+            assert.strictEqual(getTestSpans().length, 0);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
+
+    it('should create spans without parent span when requireParentSpan is false', done => {
+      instrumentation.setConfig({
+        requireParentSpan: false,
+      });
+
+      context.with(trace.deleteSpan(context.active()), () => {
+        collection
+          .insertOne({ a: 1 })
+          .then(() => {
+            assert.strictEqual(getTestSpans().length, 1);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
+  });
+
   /** Should intercept command */
   describe('Removing Instrumentation', () => {
     it('should unpatch plugin', () => {
