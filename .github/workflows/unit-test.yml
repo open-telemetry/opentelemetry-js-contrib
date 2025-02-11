@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       memcached:
-        image: memcached:1.6.29-alpine
+        image: memcached:1.6.34-alpine
         ports:
         - 11211:11211
       mongo:
@@ -171,7 +171,7 @@ jobs:
         run: npm run test:ci:changed
       - name: Report Coverage
         if: ${{ matrix.code-coverage && !cancelled()}}
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -207,7 +207,7 @@ jobs:
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
