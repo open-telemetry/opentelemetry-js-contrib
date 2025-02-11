@@ -16,8 +16,10 @@
  */
 
 /**
- * Generate a "src/semconv.ts" in the current workspace dir, which includes
+ * Generate a "src/semconv.ts" in the given workspace dir, which includes
  * copies of the unstable semconv definitions used in this package.
+ * (It finds usages by looking for imports from
+ * `@opentelemetry/semantic-conventions/incubating`.)
  *
  * This is to support the recommendation from
  *   https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
@@ -26,12 +28,18 @@
  *
  * Usage:
  *      node scripts/gen-semconv-ts.js [WORKSPACE-DIR]
+ *
+ * If WORKSPACE-DIR is not given, it defaults to the current dir.
  */
 
 const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
 const { globSync } = require('glob');
+const rimraf = require('rimraf');
+
+const TOP = path.resolve(__dirname, '..');
+const BUILD_DIR = path.resolve(TOP, 'build', 'gen-semconv-ts');
 
 const USE_COLOR = process.stdout.isTTY && !process.env.NO_COLOR?.length > 0;
 
@@ -62,6 +70,7 @@ function genSemconvTs(wsDir) {
   const semconvPath = require.resolve('@opentelemetry/semantic-conventions',
       {paths: [path.join(wsDir, 'node_modules')]});
   const semconvStable = require(semconvPath);
+  const semconvVer = require(path.resolve(semconvPath, '../../../package.json')).version;
 
   // Gather unstable semconv imports. Consider any imports from
   // '@opentelemetry/semantic-conventions/incubating' or from an existing local
@@ -98,15 +107,34 @@ function genSemconvTs(wsDir) {
     console.log(`Found import of ${names.size} unstable semconv definitions.`)
   }
 
-  // Load the source from the semconv package from which we'll copy.
-  // We are cheating a bit in knowing the semconv package structure. We want
-  // "build/esnext/experimental_*.js" files. Use the "esnext" build because it
-  // is closest to the TypeScript we want.
-  const semconvEsnextDir = path.resolve(
-    semconvPath,
-    '../../esnext', // .../build/src/index.js -> .../build/esnext
-  );
-  const srcPaths = globSync(path.join(semconvEsnextDir, 'experimental_*.js'));
+  // Find or get a
+  let srcIsLocal = false;
+  try {
+    const gitRemoteUrl = execSync(`git -C "${wsDir}" remote get-url origin`, {encoding: 'utf8'}).trim();
+    if (gitRemoteUrl.endsWith('/opentelemetry-js.git')) {
+      srcIsLocal = true;
+    }
+  } catch {}
+
+  // Find or get semconv sources from a opentelemetry-js.git clone.
+  let semconvSrcDir;
+  if (srcIsLocal) {
+    const gitRootDir = execSync(`git -C "${wsDir}" rev-parse --show-toplevel`, {encoding: 'utf8'}).trim();
+    semconvSrcDir = path.join(gitRootDir, 'semantic-conventions');
+    console.log(`Using local sources at "${semconvSrcDir}"`);
+  } else {
+    const tag = `semconv/v${semconvVer}`;
+    console.log(`Cloning opentelemetry-js.git#${tag} to working dir "${BUILD_DIR}"`);
+    rimraf.sync(BUILD_DIR);
+    fs.mkdirSync(BUILD_DIR, { recursive: true });
+    execSync(`git clone --depth 1 --branch ${tag} https://github.com/open-telemetry/opentelemetry-js.git`, {
+      cwd: BUILD_DIR,
+      stdio: 'ignore'
+    });
+    semconvSrcDir = path.join(BUILD_DIR, 'opentelemetry-js', 'semantic-conventions');
+    console.log(`Using sources at "${semconvSrcDir}"`);
+  }
+  const srcPaths = globSync(path.join(semconvSrcDir, 'src', 'experimental_*.ts'));
   const src = srcPaths
     .map(f => fs.readFileSync(f))
     .join('\n\n');
