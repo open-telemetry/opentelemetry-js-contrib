@@ -20,7 +20,7 @@ import {
   propagation,
   trace,
 } from '@opentelemetry/api';
-import { isWrapped } from '@opentelemetry/core';
+import { isWrapped } from '@opentelemetry/instrumentation';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import {
   BasicTracerProvider,
