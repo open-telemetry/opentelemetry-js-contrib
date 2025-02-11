@@ -26,24 +26,25 @@ import {
   diag,
 } from '@opentelemetry/api';
 import {
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_NAME,
   SEMATTRS_DB_CONNECTION_STRING,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
+  ATTR_SERVER_PORT,
+  ATTR_SERVER_ADDRESS,
   SEMATTRS_NET_TRANSPORT,
   SEMATTRS_DB_USER,
   SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_OPERATION,
-  DBSYSTEMVALUES_ORACLE,
 } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DB_SYSTEM,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
+} from './semconv';
 import * as oracledbTypes from 'oracledb';
 
 // Local modules.
 import { AttributeNames } from './constants';
 import { OracleInstrumentationConfig, SpanConnectionConfig } from './types';
 import { TraceSpanData, SpanCallLevelConfig } from './internal-types';
-import { SpanNames } from './constants';
+import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from './constants';
 
 const newmoduleExports: any = oracledbTypes;
 
@@ -76,7 +77,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
   // semantic standards and module custom keys.
   private _getConnectionSpanAttributes(config: SpanConnectionConfig) {
     return {
-      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_ORACLE,
+      [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
       [SEMATTRS_NET_TRANSPORT]: config.protocol,
       [SEMATTRS_DB_USER]: config.user,
       [AttributeNames.ORACLE_INSTANCE]: config.instanceName,
@@ -84,10 +85,10 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
       [AttributeNames.ORACLE_POOL_MIN]: config.poolMin,
       [AttributeNames.ORACLE_POOL_MAX]: config.poolMax,
       [AttributeNames.ORACLE_POOL_INCR]: config.poolIncrement,
-      [SEMATTRS_DB_NAME]: config.serviceName,
+      [ATTR_DB_NAMESPACE]: config.serviceName,
       [SEMATTRS_DB_CONNECTION_STRING]: config.connectString,
-      [SEMATTRS_NET_PEER_NAME]: config.hostName,
-      [SEMATTRS_NET_PEER_PORT]: config.port,
+      [ATTR_SERVER_ADDRESS]: config.hostName,
+      [ATTR_SERVER_PORT]: config.port,
     };
   }
 
@@ -133,7 +134,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
 
     if (callConfig.statement) {
       span.setAttribute(
-        SEMATTRS_DB_OPERATION,
+        ATTR_DB_OPERATION_NAME,
         // retrieve just the first word
         callConfig.statement.split(' ')[0].toUpperCase()
       );

@@ -35,19 +35,26 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { OracleInstrumentation } from '../src';
-import { AttributeNames, SpanNames } from '../src/constants';
+import {
+  AttributeNames,
+  SpanNames,
+  DB_SYSTEM_VALUE_ORACLE,
+} from '../src/constants';
+
 import {
   SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_OPERATION,
-  SEMATTRS_NET_PEER_NAME,
+  ATTR_SERVER_ADDRESS,
   SEMATTRS_NET_TRANSPORT,
   SEMATTRS_DB_CONNECTION_STRING,
-  SEMATTRS_NET_PEER_PORT,
+  ATTR_SERVER_PORT,
   SEMATTRS_DB_USER,
-  DBSYSTEMVALUES_ORACLE,
 } from '@opentelemetry/semantic-conventions';
+
+import {
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_OPERATION_NAME,
+} from '../src/semconv';
 
 const memoryExporter = new InMemorySpanExporter();
 let contextManager: AsyncHooksContextManager;
@@ -103,11 +110,11 @@ let poolConnAttrList: Record<string, string | number>[]; // attributes per span 
 let spanNamesList: string[]; // span names for rountrips and public API spans.
 
 const DEFAULT_ATTRIBUTES = {
-  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_ORACLE,
-  [SEMATTRS_DB_NAME]: serviceName,
+  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
+  [ATTR_DB_NAMESPACE]: serviceName,
   [SEMATTRS_DB_CONNECTION_STRING]: CONFIG.connectString,
-  [SEMATTRS_NET_PEER_NAME]: hostname,
-  [SEMATTRS_NET_PEER_PORT]: pno,
+  [ATTR_SERVER_ADDRESS]: hostname,
+  [ATTR_SERVER_PORT]: pno,
   [SEMATTRS_DB_USER]: CONFIG.user,
   [SEMATTRS_NET_TRANSPORT]: 'TCP',
 };
@@ -115,14 +122,14 @@ const DEFAULT_ATTRIBUTES = {
 // for thick mode, we dont have support for
 // hostname, port and protocol.
 const DEFAULT_ATTRIBUTES_THICK = {
-  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_ORACLE,
-  [SEMATTRS_DB_NAME]: serviceName,
+  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
+  [ATTR_DB_NAMESPACE]: serviceName,
   [SEMATTRS_DB_CONNECTION_STRING]: CONFIG.connectString,
   [SEMATTRS_DB_USER]: CONFIG.user,
 };
 
 const POOL_ATTRIBUTES = {
-  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_ORACLE,
+  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
   [SEMATTRS_DB_CONNECTION_STRING]: CONFIG.connectString,
   [SEMATTRS_DB_USER]: CONFIG.user,
   [AttributeNames.ORACLE_POOL_MIN]: POOL_CONFIG.poolMin,
@@ -131,7 +138,7 @@ const POOL_ATTRIBUTES = {
 };
 
 const CONN_FAILED_ATTRIBUTES = {
-  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_ORACLE,
+  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
   [SEMATTRS_DB_CONNECTION_STRING]: CONFIG.connectString,
   [SEMATTRS_DB_USER]: CONFIG.user,
 };
@@ -170,14 +177,14 @@ function updateAttrSpanList(connection: oracledb.Connection) {
   let attributes: Record<string, string | number>;
   if (oracledb.thin) {
     attributes = { ...DEFAULT_ATTRIBUTES };
-    attributes[SEMATTRS_NET_PEER_NAME] = connAttributes[SEMATTRS_NET_PEER_NAME];
-    attributes[SEMATTRS_NET_PEER_PORT] = connAttributes[SEMATTRS_NET_PEER_PORT];
+    attributes[ATTR_SERVER_ADDRESS] = connAttributes[ATTR_SERVER_ADDRESS];
+    attributes[ATTR_SERVER_PORT] = connAttributes[ATTR_SERVER_PORT];
     attributes[SEMATTRS_NET_TRANSPORT] = connAttributes[SEMATTRS_NET_TRANSPORT];
   } else {
     attributes = { ...DEFAULT_ATTRIBUTES_THICK };
     numExecSpans = 1;
   }
-  attributes[SEMATTRS_DB_NAME] = connAttributes[SEMATTRS_DB_NAME];
+  attributes[ATTR_DB_NAMESPACE] = connAttributes[ATTR_DB_NAMESPACE];
 
   // initialize the span attributes list.
   connAttrList = [];
@@ -386,13 +393,13 @@ describe('oracledb', () => {
       connAttributes[AttributeNames.ORACLE_INSTANCE] = connection.instanceName;
     }
     if (connection.serviceName) {
-      connAttributes[SEMATTRS_DB_NAME] = connection.serviceName;
+      connAttributes[ATTR_DB_NAMESPACE] = connection.serviceName;
     }
     if (oracledb.thin && extendedConn.hostName) {
-      connAttributes[SEMATTRS_NET_PEER_NAME] = extendedConn.hostName;
+      connAttributes[ATTR_SERVER_ADDRESS] = extendedConn.hostName;
     }
     if (oracledb.thin && (extendedConn.port as number)) {
-      connAttributes[SEMATTRS_NET_PEER_PORT] = extendedConn.port;
+      connAttributes[ATTR_SERVER_PORT] = extendedConn.port;
     }
     if (oracledb.thin && extendedConn.protocol) {
       connAttributes[SEMATTRS_NET_TRANSPORT] = extendedConn.protocol;
@@ -406,24 +413,24 @@ describe('oracledb', () => {
 
     executeAttributes = {
       ...connAttributes,
-      [SEMATTRS_DB_OPERATION]: 'SELECT',
+      [ATTR_DB_OPERATION_NAME]: 'SELECT',
     };
     if (oracledb.thin) {
       // internal roundtrips don't have bind values.
       executeAttributesInternalRoundTripBinds = {
         ...connAttributes,
-        [SEMATTRS_DB_OPERATION]: 'SELECT',
+        [ATTR_DB_OPERATION_NAME]: 'SELECT',
         [SEMATTRS_DB_STATEMENT]: sqlWithBinds,
       };
     }
     attributesWithSensitiveDataNoBinds = {
       ...connAttributes,
-      [SEMATTRS_DB_OPERATION]: 'SELECT',
+      [ATTR_DB_OPERATION_NAME]: 'SELECT',
       [SEMATTRS_DB_STATEMENT]: sql,
     };
     attributesWithSensitiveDataBinds = {
       ...connAttributes,
-      [SEMATTRS_DB_OPERATION]: 'SELECT',
+      [ATTR_DB_OPERATION_NAME]: 'SELECT',
       [SEMATTRS_DB_STATEMENT]: sqlWithBinds,
       [AttributeNames.ORACLE_BIND_VALUES]: binds,
     };
@@ -1035,7 +1042,7 @@ describe('oracledb', () => {
 
         // update sql stmt, operation.
         const attrs = { ...attributesWithSensitiveDataNoBinds };
-        attrs[SEMATTRS_DB_OPERATION] = 'BEGIN';
+        attrs[ATTR_DB_OPERATION_NAME] = 'BEGIN';
         attrs[SEMATTRS_DB_STATEMENT] = sqlWithOutBinds;
 
         try {
@@ -1117,7 +1124,7 @@ describe('oracledb', () => {
             string | number | any[]
           > = {
             ...connAttributes,
-            [SEMATTRS_DB_OPERATION]: 'SELECT',
+            [ATTR_DB_OPERATION_NAME]: 'SELECT',
             [SEMATTRS_DB_STATEMENT]: sql,
             [AttributeNames.ORACLE_BIND_VALUES]: bindsM,
           };
