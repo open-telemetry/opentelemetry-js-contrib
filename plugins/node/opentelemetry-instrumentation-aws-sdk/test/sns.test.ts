@@ -47,6 +47,11 @@ const responseMockSuccess = {
 const topicName = 'topic';
 const fakeARN = `arn:aws:sns:region:000000000:${topicName}`;
 
+const hookSpy = sinon.spy(
+  (instrumentation['servicesExtensions'] as any)['services'].get('SNS'),
+  'requestPostSpanHook'
+);
+
 describe('SNS - v2', () => {
   before(() => {
     AWSv2.config.credentials = {
@@ -63,6 +68,10 @@ describe('SNS - v2', () => {
       MessageId: '1',
     } as AWS.SNS.Types.PublishResponse);
   });
+
+  afterEach(() => {
+    hookSpy.resetHistory();
+  })
 
   describe('publish', () => {
     it('topic arn', async () => {
@@ -120,10 +129,6 @@ describe('SNS - v2', () => {
 
     it('inject context propagation', async () => {
       const sns = new AWSv2.SNS();
-      const hookSpy = sinon.spy(
-        (instrumentation['servicesExtensions'] as any)['services'].get('SNS'),
-        'requestPostSpanHook'
-      );
 
       await sns
         .publish({
@@ -180,16 +185,18 @@ describe('SNS - v3', () => {
         secretAccessKey: 'abcde',
       },
     });
+  });
 
-    nock('https://sns.us-east-1.amazonaws.com/')
+  describe('publish', () => {
+    beforeEach(() => {
+      nock('https://sns.us-east-1.amazonaws.com/')
       .post('/')
       .reply(
         200,
         fs.readFileSync('./test/mock-responses/sns-publish.xml', 'utf8')
       );
-  });
+    });
 
-  describe('publish', () => {
     it('topic arn', async () => {
       const topicV3Name = 'dummy-sns-v3-topic';
       const topicV3ARN = `arn:aws:sns:us-east-1:000000000:${topicV3Name}`;
@@ -234,6 +241,31 @@ describe('SNS - v3', () => {
       expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toBe(
         PhoneNumber
       );
+    });
+  });
+
+  describe('publish batch', () => {
+    it('inject context propagation for publish batch command', async () => {
+      nock('https://sns.us-east-1.amazonaws.com/')
+        .post('/')
+        .reply(
+          200,
+          fs.readFileSync('./test/mock-responses/sns-publish-batch.xml', 'utf8')
+        );
+
+      await sns
+        .publishBatch({
+          TopicArn: fakeARN,
+          PublishBatchRequestEntries: [{ Id: '1', Message: 'sns message' }]
+        });
+
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === `${topicName} send`
+      );
+      expect(publishSpans.length).toBe(1);
+      expect(
+        hookSpy.args[0][0].commandInput.PublishBatchRequestEntries[0].MessageAttributes.traceparent
+      ).toBeDefined();
     });
   });
 });
