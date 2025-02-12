@@ -71,7 +71,7 @@ describe('SNS - v2', () => {
 
   afterEach(() => {
     hookSpy.resetHistory();
-  })
+  });
 
   describe('publish', () => {
     it('topic arn', async () => {
@@ -187,6 +187,10 @@ describe('SNS - v3', () => {
     });
   });
 
+  afterEach(() => {
+    hookSpy.resetHistory();
+  });
+
   describe('publish', () => {
     beforeEach(() => {
       nock('https://sns.us-east-1.amazonaws.com/')
@@ -245,14 +249,16 @@ describe('SNS - v3', () => {
   });
 
   describe('publish batch', () => {
-    it('inject context propagation for publish batch command', async () => {
+    beforeEach(() => {
       nock('https://sns.us-east-1.amazonaws.com/')
         .post('/')
         .reply(
           200,
           fs.readFileSync('./test/mock-responses/sns-publish-batch.xml', 'utf8')
         );
+    });
 
+    it('inject context propagation for publish batch command', async () => {
       await sns
         .publishBatch({
           TopicArn: fakeARN,
