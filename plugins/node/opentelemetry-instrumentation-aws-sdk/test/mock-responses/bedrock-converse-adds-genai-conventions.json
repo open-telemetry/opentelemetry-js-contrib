@@ -1,0 +1,62 @@
+[
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/amazon.titan-text-lite-v1/converse",
+        "body": {
+            "inferenceConfig": {
+                "maxTokens": 10,
+                "stopSequences": [
+                    "|"
+                ],
+                "temperature": 0.8,
+                "topP": 1
+            },
+            "messages": [
+                {
+                    "content": [
+                        {
+                            "text": "Say this is a test"
+                        }
+                    ],
+                    "role": "user"
+                }
+            ]
+        },
+        "status": 200,
+        "response": {
+            "metrics": {
+                "latencyMs": 620
+            },
+            "output": {
+                "message": {
+                    "content": [
+                        {
+                            "text": "Hi. I'm not sure what"
+                        }
+                    ],
+                    "role": "assistant"
+                }
+            },
+            "stopReason": "max_tokens",
+            "usage": {
+                "inputTokens": 8,
+                "outputTokens": 10,
+                "totalTokens": 18
+            }
+        },
+        "rawHeaders": [
+            "Date",
+            "Thu, 30 Jan 2025 06:45:08 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "203",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "e6c824a2-3342-4707-ac1b-593670aae521"
+        ],
+        "responseIsBinary": false
+    }
+]
