@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright (c) 2025, Oracle and/or its affiliates.
+ * Copyright (c) 2024, Oracle and/or its affiliates.
  * */
 
 // Oracle specific attributes not covered by semantic conventions
@@ -54,4 +54,4 @@ export enum SpanNames {
  * defining the new constant to explicitly mention db.
  *
  */
-export const DB_SYSTEM_VALUE_ORACLE = 'oracledb';
+export const DB_SYSTEM_VALUE_ORACLE = 'oracle.db';
