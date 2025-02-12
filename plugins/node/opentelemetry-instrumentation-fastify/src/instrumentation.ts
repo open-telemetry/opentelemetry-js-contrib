@@ -27,6 +27,7 @@ import type {
   FastifyInstance,
   FastifyRequest,
   FastifyReply,
+  FastifyErrorCodes,
 } from 'fastify';
 import { hooksNamesToWrap } from './constants';
 import {
@@ -46,7 +47,11 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export const ANONYMOUS_NAME = 'anonymous';
 
-/** Fastify instrumentation for OpenTelemetry */
+/**
+ * Fastify instrumentation for OpenTelemetry
+ * @deprecated This instrumentation is deprecated in favor of the official instrumentation package `@fastify/otel`,
+ *             which is maintained by the fastify authors.
+ */
 export class FastifyInstrumentation extends InstrumentationBase<FastifyInstrumentationConfig> {
   constructor(config: FastifyInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -185,6 +190,7 @@ export class FastifyInstrumentation extends InstrumentationBase<FastifyInstrumen
 
   private _patchConstructor(moduleExports: {
     fastify: () => FastifyInstance;
+    errorCodes: FastifyErrorCodes | undefined;
   }): () => FastifyInstance {
     const instrumentation = this;
 
@@ -198,6 +204,9 @@ export class FastifyInstrumentation extends InstrumentationBase<FastifyInstrumen
       return app;
     }
 
+    if (moduleExports.errorCodes !== undefined) {
+      fastify.errorCodes = moduleExports.errorCodes;
+    }
     fastify.fastify = fastify;
     fastify.default = fastify;
     return fastify;

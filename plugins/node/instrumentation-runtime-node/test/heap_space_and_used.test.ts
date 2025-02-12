@@ -31,8 +31,9 @@ describe('nodejs.heap_space', function () {
 
   beforeEach(() => {
     metricReader = new TestMetricReader();
-    meterProvider = new MeterProvider();
-    meterProvider.addMetricReader(metricReader);
+    meterProvider = new MeterProvider({
+      readers: [metricReader],
+    });
   });
 
   for (const metricName in metricNames) {

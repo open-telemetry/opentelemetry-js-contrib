@@ -12,15 +12,18 @@ const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const EXPORTER = process.env.EXPORTER || '';
 
 module.exports = (serviceName) => {
-  const provider = new NodeTracerProvider();
-
   let exporter;
   if (EXPORTER === 'jaeger') {
     exporter = new JaegerExporter({ serviceName });
   } else {
     exporter = new ZipkinExporter({ serviceName });
   }
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+
+  const provider = new NodeTracerProvider({
+    spanProcessors: [
+      new SimpleSpanProcessor(exporter),
+    ],
+  });
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();
