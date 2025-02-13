@@ -87,6 +87,7 @@ components:
   plugins/node/opentelemetry-instrumentation-express:
     - JamieDanielson
     - pkanal
+    - raphael-theriault-swi
   plugins/node/opentelemetry-instrumentation-fastify: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-generic-pool: []
@@ -108,8 +109,8 @@ components:
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-mysql: []
     # Unmaintained
-  plugins/node/opentelemetry-instrumentation-mysql2: []
-    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-mysql2:
+    - raphael-theriault-swi
   plugins/node/opentelemetry-instrumentation-nestjs-core: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-net:
