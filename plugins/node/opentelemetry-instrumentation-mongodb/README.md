@@ -54,6 +54,7 @@ Mongodb instrumentation has few options available to choose from. You can set th
 | [`enhancedDatabaseReporting`](./src/types.ts#L32) | `string` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
 | `responseHook` | `MongoDBInstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
 | `dbStatementSerializer` | `DbStatementSerializer` (function) | Custom serializer function for the db.statement tag |
+| `requireParentSpan` | `boolean` | Require a parent span in order to create mongodb spans, default when unset is `true` |
 
 ## Semantic Conventions
 
