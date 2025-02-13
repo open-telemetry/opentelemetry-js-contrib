@@ -48,7 +48,6 @@ import * as http from 'http';
 import * as util from 'util';
 import * as fs from 'fs';
 import * as os from 'os';
-import { getEnv } from '@opentelemetry/core';
 
 const HTTP_TIMEOUT_IN_MS = 1000;
 
@@ -77,8 +76,10 @@ export class AwsEcsDetectorSync implements DetectorSync {
   }
 
   private async _getAttributes(): Promise<ResourceAttributes> {
-    const env = getEnv();
-    if (!env.ECS_CONTAINER_METADATA_URI_V4 && !env.ECS_CONTAINER_METADATA_URI) {
+    if (
+      !process.env.ECS_CONTAINER_METADATA_URI_V4 &&
+      !process.env.ECS_CONTAINER_METADATA_URI
+    ) {
       diag.debug('AwsEcsDetector failed: Process is not on ECS');
       return {};
     }
@@ -89,7 +90,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
         [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_AWS_ECS,
       }).merge(await AwsEcsDetectorSync._getContainerIdAndHostnameResource());
 
-      const metadataUrl = getEnv().ECS_CONTAINER_METADATA_URI_V4;
+      const metadataUrl = process.env.ECS_CONTAINER_METADATA_URI_V4;
       if (metadataUrl) {
         const [containerMetadata, taskMetadata] = await Promise.all([
           AwsEcsDetectorSync._getUrlAsJson(metadataUrl),
