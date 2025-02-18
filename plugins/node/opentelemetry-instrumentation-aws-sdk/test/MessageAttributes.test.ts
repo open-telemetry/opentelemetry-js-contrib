@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+import { propagation } from '@opentelemetry/api';
 import { expect } from 'expect';
+import * as sinon from 'sinon';
 import {
   MAX_MESSAGE_ATTRIBUTES,
   contextGetter,
@@ -71,6 +73,7 @@ describe('MessageAttributes', () => {
 
   describe('injectPropagationContext', () => {
     it('should inject context if there are available attributes', () => {
+      sinon.spy(propagation, 'inject');
       const contextAttributes = {
         key1: { DataType: 'String', StringValue: 'value1' },
         key2: { DataType: 'String', StringValue: 'value2' },
@@ -79,12 +82,14 @@ describe('MessageAttributes', () => {
         key5: { DataType: 'String', StringValue: 'value5' },
       };
 
-      expect(Object.keys(contextAttributes).length).toBe(5);
       injectPropagationContext(contextAttributes);
-      expect(Object.keys(contextAttributes).length).toBeGreaterThan(5);
+      // @ts-expect-error Property 'calledOnce' does not exist on type
+      expect(propagation.inject.calledOnce).toBe(true);
+      sinon.restore();
     });
 
     it('should not inject context if there not enough available attributes', () => {
+      sinon.spy(propagation, 'inject');
       const contextAttributes = {
         key1: { DataType: 'String', StringValue: 'value1' },
         key2: { DataType: 'String', StringValue: 'value2' },
@@ -98,9 +103,10 @@ describe('MessageAttributes', () => {
         key10: { DataType: 'String', StringValue: 'value10' },
       };
 
-      expect(Object.keys(contextAttributes).length).toBe(10);
       injectPropagationContext(contextAttributes);
-      expect(Object.keys(contextAttributes).length).toBe(10);
+      // @ts-expect-error Property 'calledOnce' does not exist on type
+      expect(propagation.inject.calledOnce).toBe(false);
+      sinon.restore();
     });
   });
 
