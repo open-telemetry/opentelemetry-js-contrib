@@ -18,6 +18,17 @@
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "HapiInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "hapi",
     "instrumentation",

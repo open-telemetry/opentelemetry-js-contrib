@@ -18,6 +18,17 @@
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "NestInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "instrumentation",
     "nestjs",

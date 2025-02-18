@@ -2,10 +2,6 @@ const fs = require('fs');
 const path = require('path');
 
 const packageRoot = process.cwd();
-const monorepoRoot = path.resolve(__dirname, '..');
-
-const autoInstrumentationNodeDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-node/package.json`).dependencies;
-const autoInstrumentationWebDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-web/package.json`).dependencies;
 
 // remove exempt instrumentations
 delete autoInstrumentationNodeDeps['@opentelemetry/instrumentation-fastify'];
@@ -15,9 +11,43 @@ const packageJsonUrl = path.resolve(`${packageRoot}/package.json`);
 const pjson = require(packageJsonUrl);
 const instrumentationPackageName = pjson.name;
 
+if (!pjson.opentelemetry) {
+  throw new Error(
+    `package.json is missing the "opentelemetry" field. Please add it.`
+  );
+}
+
+// only packages that contains one component of type "instrumentation" are supported at the moment
+if (!pjson.opentelemetry.components || pjson.opentelemetry.components.length !== 1) {
+  throw new Error(
+    `package.json should contain only one component in "opentelemetry" property.`
+  );
+}
+
+// only instrumentations are supported at the moment
+const componentMetadata = pjson.opentelemetry.components[0];
+if (componentMetadata.type !== 'instrumentation') {
+  throw new Error(
+    `package.json should contain a component of type "instrumentation" in "opentelemetry" property.`
+  );
+}
+
+// each instrumentation should target either node or web
+if (!componentMetadata.platforms || componentMetadata.platforms.length !== 1) {
+  throw new Error(
+    `package.json should contain exactly one of "node" or "web" in "platforms" property of the instrumentation component.`
+  );
+}
+
 // identify if it's node or web
-const isNode = instrumentationPackageName in autoInstrumentationNodeDeps;
-const isWeb = instrumentationPackageName in autoInstrumentationWebDeps;
+const isNode = componentMetadata.platforms.includes('node');
+const isWeb = componentMetadata.platforms.includes('web');
+
+if (isNode === isWeb) {
+  throw new Error(
+    `package.json should populate exactly one of "node" or "web" in "platforms" property of the instrumentation component.`
+  );
+}
 
 // extract info from README.md
 const currentReadmeContent = fs.readFileSync(

@@ -18,6 +18,17 @@
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
   },
+  "opentelemetry": {
+    "components": [
+      {
+        "name": "KnexInstrumentation",
+        "type": "instrumentation",
+        "platforms": [
+          "node"
+        ]
+      }
+    ]
+  },
   "keywords": [
     "instrumentation",
     "knex",
