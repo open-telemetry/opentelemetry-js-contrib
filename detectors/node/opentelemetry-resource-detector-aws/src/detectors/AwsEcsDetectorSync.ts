@@ -23,33 +23,31 @@ import {
   ResourceAttributes,
 } from '@opentelemetry/resources';
 import {
-  ATTR_CLOUD_PROVIDER,
-  ATTR_CLOUD_PLATFORM,
-  ATTR_CONTAINER_ID,
-  ATTR_CONTAINER_NAME,
-  ATTR_AWS_ECS_CONTAINER_ARN,
   ATTR_AWS_ECS_CLUSTER_ARN,
+  ATTR_AWS_ECS_CONTAINER_ARN,
   ATTR_AWS_ECS_LAUNCHTYPE,
   ATTR_AWS_ECS_TASK_ARN,
   ATTR_AWS_ECS_TASK_FAMILY,
   ATTR_AWS_ECS_TASK_REVISION,
-  ATTR_CLOUD_ACCOUNT_ID,
-  ATTR_CLOUD_REGION,
-  ATTR_CLOUD_AVAILABILITY_ZONE,
-  ATTR_AWS_LOG_GROUP_NAMES,
   ATTR_AWS_LOG_GROUP_ARNS,
-  ATTR_AWS_LOG_STREAM_NAMES,
+  ATTR_AWS_LOG_GROUP_NAMES,
   ATTR_AWS_LOG_STREAM_ARNS,
+  ATTR_AWS_LOG_STREAM_NAMES,
+  ATTR_CLOUD_ACCOUNT_ID,
+  ATTR_CLOUD_AVAILABILITY_ZONE,
+  ATTR_CLOUD_PLATFORM,
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_REGION,
+  ATTR_CLOUD_RESOURCE_ID,
+  ATTR_CONTAINER_ID,
+  ATTR_CONTAINER_NAME,
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_ECS,
 } from '../semconv';
-// Patch until the OpenTelemetry SDK is updated to ship this attribute
-import { SemanticResourceAttributes as AdditionalSemanticResourceAttributes } from './SemanticResourceAttributes';
 import * as http from 'http';
 import * as util from 'util';
 import * as fs from 'fs';
 import * as os from 'os';
-import { getEnv } from '@opentelemetry/core';
 
 const HTTP_TIMEOUT_IN_MS = 1000;
 
@@ -78,8 +76,10 @@ export class AwsEcsDetectorSync implements DetectorSync {
   }
 
   private async _getAttributes(): Promise<ResourceAttributes> {
-    const env = getEnv();
-    if (!env.ECS_CONTAINER_METADATA_URI_V4 && !env.ECS_CONTAINER_METADATA_URI) {
+    if (
+      !process.env.ECS_CONTAINER_METADATA_URI_V4 &&
+      !process.env.ECS_CONTAINER_METADATA_URI
+    ) {
       diag.debug('AwsEcsDetector failed: Process is not on ECS');
       return {};
     }
@@ -90,7 +90,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
         [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_AWS_ECS,
       }).merge(await AwsEcsDetectorSync._getContainerIdAndHostnameResource());
 
-      const metadataUrl = getEnv().ECS_CONTAINER_METADATA_URI_V4;
+      const metadataUrl = process.env.ECS_CONTAINER_METADATA_URI_V4;
       if (metadataUrl) {
         const [containerMetadata, taskMetadata] = await Promise.all([
           AwsEcsDetectorSync._getUrlAsJson(metadataUrl),
@@ -185,7 +185,7 @@ export class AwsEcsDetectorSync implements DetectorSync {
 
       [ATTR_CLOUD_ACCOUNT_ID]: accountId,
       [ATTR_CLOUD_REGION]: region,
-      [AdditionalSemanticResourceAttributes.CLOUD_RESOURCE_ID]: containerArn,
+      [ATTR_CLOUD_RESOURCE_ID]: containerArn,
     };
 
     // The availability zone is not available in all Fargate runtimes
