@@ -57,12 +57,12 @@ const newmoduleExports: any = oracledbTypes;
  */
 export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
   .TraceHandlerBase {
-  private _tracer: Tracer;
+  private _getTracer: () => Tracer;
   private _instrumentConfig: OracleInstrumentationConfig;
 
-  constructor(tracer: Tracer, config: OracleInstrumentationConfig) {
+  constructor(getTracer: () => Tracer, config: OracleInstrumentationConfig) {
     super();
-    this._tracer = tracer;
+    this._getTracer = getTracer;
     this._instrumentConfig = config;
   }
 
@@ -190,6 +190,16 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
     }
   }
 
+  // Updates the spanName with suffix, serviceName seperated by delimiter, space
+  // Ex: 'oracledb.Pool.getConnection freepdb'
+  // This function is called when connectLevelConfig has serviceName populated.
+  private _updateSpanName(traceContext: TraceSpanData) {
+    const dbName = traceContext.connectLevelConfig?.serviceName ?? '';
+    traceContext.userContext.span.updateName(
+      `${traceContext.operation}${dbName ? ` ${dbName}` : ''}`
+    );
+  }
+
   // Updates the span with final traceContext atributes
   // which are updated after the exported function call.
   // roundTrip flag will skip dumping bind values for
@@ -220,9 +230,10 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
       );
     }
     if (traceContext.error) {
+      span.recordException(traceContext.error);
       span.setStatus({
         code: SpanStatusCode.ERROR,
-        message: traceContext.error?.message,
+        message: traceContext.error.message,
       });
     }
   }
@@ -244,7 +255,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
       : {};
 
     traceContext.userContext = {
-      span: this._tracer.startSpan(spanName, {
+      span: this._getTracer().startSpan(spanName, {
         kind: SpanKind.CLIENT,
         attributes: spanAttributes,
       }),
@@ -269,11 +280,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
   // This method is invoked after exported function from oracledb module
   // completes.
   onExitFn(traceContext: TraceSpanData) {
-    if (
-      this._shouldSkipInstrumentation() ||
-      !traceContext.userContext ||
-      !traceContext.userContext.span
-    ) {
+    if (!traceContext.userContext?.span) {
       return;
     }
     this._updateFinalSpanAttributes(traceContext);
@@ -287,6 +294,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
       default:
         break;
     }
+    this._updateSpanName(traceContext);
     traceContext.userContext.span.end();
   }
 
@@ -299,7 +307,7 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
     const spanName = traceContext.operation;
     const spanAttrs = {};
     traceContext.userContext = {
-      span: this._tracer.startSpan(spanName, {
+      span: this._getTracer().startSpan(spanName, {
         kind: SpanKind.CLIENT,
         attributes: spanAttrs,
       }),
@@ -309,17 +317,14 @@ export class OracleTelemetryTraceHandler extends newmoduleExports.traceHandler
   // This method is invoked after a round trip call to DB is done
   // from the oracledb module as part of sql execution.
   onEndRoundTrip(traceContext: TraceSpanData) {
-    if (
-      this._shouldSkipInstrumentation() ||
-      !traceContext.userContext ||
-      !traceContext.userContext.span
-    ) {
+    if (!traceContext.userContext?.span) {
       return;
     }
 
     // Set if addtional connection and call parameters
     // are available
     this._updateFinalSpanAttributes(traceContext, true);
+    this._updateSpanName(traceContext);
     traceContext.userContext.span.end();
   }
 }

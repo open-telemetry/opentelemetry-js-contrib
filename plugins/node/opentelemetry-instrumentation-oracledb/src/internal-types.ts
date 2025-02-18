@@ -26,7 +26,9 @@ export interface InstrumentationContext {
   span: api.Span;
 }
 
-// Captures the entire span data
+// Captures the entire span data.
+// This corresponds to js object filled by the 'oracledb' module
+// See: https://github.com/oracle/node-oracledb/blob/main/lib/traceHandler.js
 export interface TraceSpanData {
   operation: string; // RPC or exported function name.
   error?: oracledbTypes.DBError;
@@ -35,6 +37,12 @@ export interface TraceSpanData {
   additionalConfig?: any; // custom key/values associated with a function.
   fn: Function; // Replaced with bind function associating the active context.
   args?: any[]; // input arguments passed to the exported function.
+
+  /**
+   * This value is filled by instrumented module inside 'onEnterFn',
+   * 'onBeginRoundTrip' hook functions, which is passed back by oracledb module
+   * in 'onExitFn' and 'onEndRoundTrip' hook functions respectively.
+   */
   userContext: InstrumentationContext;
 }
 

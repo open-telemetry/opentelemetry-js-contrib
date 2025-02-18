@@ -34,11 +34,14 @@ export class OracleInstrumentation extends InstrumentationBase {
   protected init() {
     const moduleOracleDB = new InstrumentationNodeModuleDefinition(
       'oracledb',
-      ['>= 6.7 < 9.*'],
+      ['>= 6.7 < 7'],
       (moduleExports: typeof oracleDBTypes) => {
         const newmoduleExports: any = moduleExports;
         const config = this.getConfig();
-        const obj = new utils.OracleTelemetryTraceHandler(this.tracer, config);
+        const obj = new utils.OracleTelemetryTraceHandler(
+          () => this.tracer,
+          config
+        );
         obj.enable();
 
         // Register the instance with oracledb.

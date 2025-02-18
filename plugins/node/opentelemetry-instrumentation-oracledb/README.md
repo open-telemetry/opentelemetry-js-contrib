@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-oracledb
 
 ## Supported Versions
 
-- [`oracledb`](https://www.npmjs.com/package/oracledb) versions `>=6.7.0`
+- [`oracledb`](https://www.npmjs.com/package/oracledb) versions `>=6.7.0 <7`
 
 ## Usage
 

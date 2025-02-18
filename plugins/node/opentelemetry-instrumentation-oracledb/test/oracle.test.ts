@@ -46,6 +46,9 @@ import {
   ATTR_SERVER_ADDRESS,
   SEMATTRS_NET_TRANSPORT,
   SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_EXCEPTION_MESSAGE,
+  SEMATTRS_EXCEPTION_STACKTRACE,
+  SEMATTRS_EXCEPTION_TYPE,
   ATTR_SERVER_PORT,
   SEMATTRS_DB_USER,
 } from '@opentelemetry/semantic-conventions';
@@ -105,6 +108,7 @@ let attributesWithSensitiveDataBinds: Record<
 let connAttributes: Record<string, string | number>; // connection related span attributes.
 let poolAttributes: Record<string, string | number>; // pool related span attributes.
 let connAttrList: Record<string, string | number>[]; // attributes per span during connection establishment.
+let spanNameSuffix: string; // SpanName will be <operationName serviceName>
 let failedConnAttrList: Record<string, string | number>[]; // attributes in span for failed connection.
 let poolConnAttrList: Record<string, string | number>[]; // attributes per span when connection established from pool.
 let spanNamesList: string[]; // span names for rountrips and public API spans.
@@ -146,9 +150,7 @@ const CONN_FAILED_ATTRIBUTES = {
 const unsetStatus: SpanStatus = {
   code: SpanStatusCode.UNSET,
 };
-const errorStatus: SpanStatus = {
-  code: SpanStatusCode.ERROR,
-};
+
 const defaultEvents: testUtils.TimedEvent[] = [];
 
 if (process.env.NODE_ORACLEDB_DRIVER_MODE === 'thick') {
@@ -191,6 +193,7 @@ function updateAttrSpanList(connection: oracledb.Connection) {
   poolConnAttrList = [];
   spanNamesList = [];
   failedConnAttrList = [];
+  spanNameSuffix = ` ${attributes[ATTR_DB_NAMESPACE]}`;
   if (serverVersion >= VER_23_4) {
     if (oracledb.thin) {
       // for round trips.
@@ -243,8 +246,7 @@ const verifySpanData = (
   parentSpan: ReadableSpan | null,
   attributes: Attributes,
   events: testUtils.TimedEvent[] = defaultEvents,
-  status = unsetStatus,
-  errorMessage = ''
+  status = unsetStatus
 ) => {
   testUtils.assertSpan(
     span as unknown as ReadableSpan,
@@ -253,9 +255,7 @@ const verifySpanData = (
     events,
     status
   );
-  if (errorMessage) {
-    assert(span.status.message?.includes(errorMessage));
-  }
+
   if (parentSpan) {
     testUtils.assertPropagation(span, parentSpan as unknown as Span);
   } else {
@@ -269,20 +269,21 @@ function checkRoundTripSpans(
   attributesList: Attributes[],
   eventList: TimedEvent[][] = [defaultEvents, defaultEvents],
   statusList: SpanStatus[] = [unsetStatus, unsetStatus],
-  spanNamesList: string[] = [SpanNames.EXECUTE_MSG, SpanNames.EXECUTE],
-  errorMessageList: string[] = ['', '']
+  spanNamesList: string[] = [SpanNames.EXECUTE_MSG, SpanNames.EXECUTE]
 ) {
   // verfiy roundtrip child span or public API span if no roundtrip
   // span is generated.
   for (let index = 0; index < spans.length - 1; index++) {
-    assert.deepStrictEqual(spans[index].name, spanNamesList[index]);
+    assert.deepStrictEqual(
+      spans[index].name,
+      spanNamesList[index] + spanNameSuffix
+    );
     verifySpanData(
       spans[index],
       parentSpan,
       attributesList[index],
       eventList[index],
-      statusList[index],
-      errorMessageList[index]
+      statusList[index]
     );
   }
 }
@@ -293,14 +294,12 @@ function verifySpans(
   attributesList: Attributes[] = [executeAttributes, executeAttributes],
   spanNamesList: string[] = [SpanNames.EXECUTE_MSG, SpanNames.EXECUTE],
   eventList: testUtils.TimedEvent[][] = [defaultEvents, defaultEvents],
-  statusList: SpanStatus[] = [unsetStatus, unsetStatus],
-  errorMessageList: string[] = ['', '']
+  statusList: SpanStatus[] = [unsetStatus, unsetStatus]
 ) {
   if (!oracledb.thin) {
     attributesList = attributesList.slice(attributesList.length - 1);
     spanNamesList = spanNamesList.slice(spanNamesList.length - 1);
     statusList = statusList.slice(statusList.length - 1);
-    errorMessageList = errorMessageList.slice(errorMessageList.length - 1);
   }
   const spans = memoryExporter.getFinishedSpans();
   let spanLength = 1;
@@ -318,21 +317,50 @@ function verifySpans(
     attributesList,
     eventList,
     statusList,
-    spanNamesList,
-    errorMessageList
+    spanNamesList
   );
 
   //verify span generated from public API.
-  assert.deepStrictEqual(lastSpan.name, spanNamesList[spanLength - 1]);
+  assert.deepStrictEqual(
+    lastSpan.name,
+    spanNamesList[spanLength - 1] + spanNameSuffix
+  );
   verifySpanData(
     lastSpan as unknown as ReadableSpan,
     parentSpan as unknown as ReadableSpan,
     attributesList[spanLength - 1],
     eventList[spanLength - 1],
-    statusList[spanLength - 1],
-    errorMessageList[spanLength - 1]
+    statusList[spanLength - 1]
   );
   //}
+}
+
+function assertErrorSpan(
+  failedAttributes: Record<string, string | number>,
+  numSpans: number,
+  error: Error & { code?: number }
+) {
+  const spans = memoryExporter.getFinishedSpans();
+  assert.strictEqual(spans.length, numSpans);
+
+  const span = spans[spans.length - 1];
+  const events = [
+    {
+      name: 'exception',
+      droppedAttributesCount: 0,
+      attributes: {
+        [SEMATTRS_EXCEPTION_STACKTRACE]: error.stack,
+        [SEMATTRS_EXCEPTION_MESSAGE]: error.message,
+        [SEMATTRS_EXCEPTION_TYPE]: String(error.code),
+      },
+      time: span.events[0].time,
+    },
+  ];
+  const status = {
+    code: SpanStatusCode.ERROR,
+    message: error.message,
+  };
+  testUtils.assertSpan(span, SpanKind.CLIENT, failedAttributes, events, status);
 }
 
 const sqlDropTable = function (tableName: string) {
@@ -557,11 +585,13 @@ describe('oracledb', () => {
       let parentSpan: ReadableSpan = span as unknown as ReadableSpan;
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, numSpans);
+      let spanName: string;
 
       // check oracledb.getConnection
       if (poolAlias) {
         parentSpan = spans[1];
-        assert.deepStrictEqual(parentSpan.name, SpanNames.CONNECT);
+        spanName = SpanNames.CONNECT + spanNameSuffix;
+        assert.deepStrictEqual(parentSpan.name, spanName);
         verifySpanData(
           parentSpan,
           span as unknown as ReadableSpan,
@@ -570,7 +600,8 @@ describe('oracledb', () => {
       }
 
       // check pool.getConnection
-      assert.deepStrictEqual(spans[0].name, SpanNames.POOL_CONNECT);
+      spanName = SpanNames.POOL_CONNECT + spanNameSuffix;
+      assert.deepStrictEqual(spans[0].name, spanName);
       verifySpanData(spans[0], parentSpan, poolAttributes);
     }
 
@@ -696,18 +727,18 @@ describe('oracledb', () => {
 
     it('should intercept pool.getConnection failure', async function () {
       const span = tracer.startSpan('test span');
-      const getPoolConnFailedAttrs: Record<string, string | number> = {
+      const poolConnFailedAttrs: Record<string, string | number> = {
         ...POOL_ATTRIBUTES,
       };
       const wrongConfig = Object.assign({}, POOL_CONFIG);
       wrongConfig.password = 'null';
-      wrongConfig.poolMin = getPoolConnFailedAttrs[
+      wrongConfig.poolMin = poolConnFailedAttrs[
         AttributeNames.ORACLE_POOL_MIN
       ] = 1;
       instrumentation.disable();
       if (!oracledb.thin) {
         wrongConfig.poolMin = 0;
-        getPoolConnFailedAttrs[AttributeNames.ORACLE_POOL_MIN] = 0;
+        poolConnFailedAttrs[AttributeNames.ORACLE_POOL_MIN] = 0;
       }
       pool = await oracledb.createPool(wrongConfig);
 
@@ -715,39 +746,26 @@ describe('oracledb', () => {
       await waitForCreatePool(pool);
       instrumentation.enable();
       await context.with(trace.setSpan(context.active(), span), async () => {
-        await assert.rejects(
-          async () => await pool.getConnection(),
-          /ORA-01017:/
-        );
-        const spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans.length, 1);
-        assert.deepStrictEqual(spans[0].name, SpanNames.POOL_CONNECT);
-        verifySpanData(
-          spans[0],
-          span as unknown as ReadableSpan,
-          getPoolConnFailedAttrs,
-          defaultEvents,
-          errorStatus,
-          'ORA-01017'
-        );
+        const error = await pool.getConnection().catch(e => e);
+        assertErrorSpan(poolConnFailedAttrs, 1, error);
         span.end();
       });
     });
 
     it('should intercept pool.getConnection callback failure', async function () {
       const span = tracer.startSpan('test span');
-      const getPoolConnFailedAttrs: Record<string, string | number> = {
+      const poolConnFailedAttrs: Record<string, string | number> = {
         ...POOL_ATTRIBUTES,
       };
       const wrongConfig = Object.assign({}, POOL_CONFIG);
       wrongConfig.password = 'null';
       wrongConfig.password = 'null';
-      wrongConfig.poolMin = getPoolConnFailedAttrs[
+      wrongConfig.poolMin = poolConnFailedAttrs[
         AttributeNames.ORACLE_POOL_MIN
       ] = 1;
       instrumentation.disable();
       if (!oracledb.thin) {
-        wrongConfig.poolMin = getPoolConnFailedAttrs[
+        wrongConfig.poolMin = poolConnFailedAttrs[
           AttributeNames.ORACLE_POOL_MIN
         ] = 0;
       }
@@ -760,18 +778,7 @@ describe('oracledb', () => {
         await new Promise<void>(resolve => {
           pool.getConnection((err, conn) => {
             connection = conn;
-            assert(err.message?.includes('ORA-01017'));
-            const spans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(spans.length, 1);
-            assert.deepStrictEqual(spans[0].name, SpanNames.POOL_CONNECT);
-            verifySpanData(
-              spans[0],
-              span as unknown as ReadableSpan,
-              getPoolConnFailedAttrs,
-              defaultEvents,
-              errorStatus,
-              'ORA-01017'
-            );
+            assertErrorSpan(poolConnFailedAttrs, 1, err as any);
             resolve();
           });
         });
@@ -849,23 +856,11 @@ describe('oracledb', () => {
       await context.with(trace.setSpan(context.active(), span), async () => {
         const wrongConfig = Object.assign({}, CONFIG);
         wrongConfig.password = 'null';
-        await assert.rejects(
-          async () => await oracledb.getConnection(wrongConfig),
-          /ORA-01017:/
-        );
-        const statusList = new Array(connAttrList.length);
-        statusList.fill(unsetStatus);
-        statusList[connAttrList.length - 1] = errorStatus;
-        const errorMessageList = new Array(connAttrList.length);
-        errorMessageList.fill('');
-        errorMessageList[connAttrList.length - 1] = 'ORA-01017';
-        verifySpans(
-          span,
-          failedConnAttrList,
-          spanNamesList,
-          new Array(connAttrList.length).fill(defaultEvents),
-          statusList,
-          errorMessageList
+        const error = await oracledb.getConnection(wrongConfig).catch(e => e);
+        assertErrorSpan(
+          failedConnAttrList[connAttrList.length - 1],
+          connAttrList.length,
+          error
         );
         span.end();
       });
@@ -878,20 +873,10 @@ describe('oracledb', () => {
       context.with(trace.setSpan(context.active(), span), () => {
         oracledb.getConnection(wrongConfig, (err, conn) => {
           connection = conn;
-          assert(err.message?.includes('ORA-01017'));
-          const statusList = new Array(connAttrList.length);
-          statusList.fill(unsetStatus);
-          statusList[connAttrList.length - 1] = errorStatus;
-          const errorMessageList = new Array(connAttrList.length);
-          errorMessageList.fill('');
-          errorMessageList[connAttrList.length - 1] = 'ORA-01017';
-          verifySpans(
-            span,
-            failedConnAttrList,
-            spanNamesList,
-            new Array(connAttrList.length).fill(defaultEvents),
-            statusList,
-            errorMessageList
+          assertErrorSpan(
+            failedConnAttrList[connAttrList.length - 1],
+            connAttrList.length,
+            err as any
           );
 
           // Verify spans inside callback are child of app span
@@ -1276,73 +1261,26 @@ describe('oracledb', () => {
     });
 
     it('Verify error message for negative tests', async () => {
-      let errorMessage = 'NJS-009';
       // The error message remains same with instrumented module.
-      await assert.rejects(
-        // type assert 'connection' as 'any' preventing compilation check.
-        async () => await (connection as any).execute(),
-        /NJS-009/
-      );
-      let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 1);
-      verifySpanData(
-        spans[0],
-        null,
-        connAttributes,
-        defaultEvents,
-        errorStatus,
-        errorMessage
-      );
+      let error = await (connection as any).execute().catch((e: unknown) => e);
+      assertErrorSpan(connAttributes, 1, error);
       memoryExporter.reset();
 
-      errorMessage = 'NJS-005';
-      await assert.rejects(
-        async () => await (connection as any).execute(null),
-        /NJS-005:/
-      );
-      spans = memoryExporter.getFinishedSpans();
-      verifySpanData(
-        spans[0],
-        null,
-        connAttributes,
-        defaultEvents,
-        errorStatus,
-        errorMessage
-      );
+      error = await (connection as any).execute(null).catch((e: unknown) => e);
+      assertErrorSpan(connAttributes, 1, error);
       memoryExporter.reset();
 
-      await assert.rejects(
-        async () => await (connection as any).execute(undefined),
-        /NJS-005:/
-      );
-      spans = memoryExporter.getFinishedSpans();
-      verifySpanData(
-        spans[0],
-        null,
-        connAttributes,
-        defaultEvents,
-        errorStatus,
-        errorMessage
-      );
+      error = await (connection as any)
+        .execute(undefined)
+        .catch((e: unknown) => e);
+      assertErrorSpan(connAttributes, 1, error);
       memoryExporter.reset();
 
-      errorMessage = 'ORA-00942';
       const wrongSql = 'select 1 from nonExistTable';
-      const executeFailedAttributes = { ...executeAttributes };
-      //executeFailedAttributes[SEMATTRS_DB_STATEMENT] = wrongSql;
-      await assert.rejects(
-        async () => await (connection as any).execute(wrongSql),
-        /ORA-00942:/
-      );
-      const attrsList = [executeFailedAttributes, executeFailedAttributes];
-      verifySpans(
-        null,
-        attrsList,
-        [SpanNames.EXECUTE_MSG, SpanNames.EXECUTE],
-        [defaultEvents, defaultEvents],
-        [unsetStatus, errorStatus],
-        ['', errorMessage]
-      );
+      error = await (connection as any)
+        .execute(wrongSql)
+        .catch((e: unknown) => e);
+      assertErrorSpan(executeAttributes, numExecSpans, error);
       memoryExporter.reset();
     });
 
@@ -1358,6 +1296,31 @@ describe('oracledb', () => {
         requireParentSpan: false,
       });
       memoryExporter.reset();
+    });
+
+    it('verify updating Tracer', async () => {
+      instrumentation.setTracerProvider(provider);
+
+      const tracer = provider.getTracer(
+        instrumentation.instrumentationName,
+        instrumentation.instrumentationVersion
+      );
+      assert.strictEqual(!!tracer, true);
+      assert.ok(tracer, 'Tracer instance should not be null');
+      assert.strictEqual(
+        tracer.instrumentationLibrary.name,
+        '@opentelemetry/instrumentation-oracledb'
+      );
+
+      const res = await connection.execute(sql);
+      try {
+        assert.ok(res);
+        verifySpans(null);
+      } catch (e: any) {
+        assert.ok(false, e.message);
+      }
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, numExecSpans);
     });
   });
 
