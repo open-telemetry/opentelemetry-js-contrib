@@ -221,6 +221,36 @@ describe('pg-pool', () => {
       });
     });
 
+    // Test connection string support
+    it('should handle connection string in pool options', async () => {
+      const connectionString = `postgresql://${CONFIG.user}:${CONFIG.password}@${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`;
+      const poolWithConnString = new pgPool({
+        connectionString,
+      });
+
+      const expectedAttributes = {
+        [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+        [SEMATTRS_DB_NAME]: CONFIG.database,
+        [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
+        [SEMATTRS_DB_CONNECTION_STRING]: connectionString,
+        [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
+        [SEMATTRS_DB_USER]: CONFIG.user,
+        [AttributeNames.MAX_CLIENT]: CONFIG.maxClient,
+        [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
+      };
+
+      const events: TimedEvent[] = [];
+      const span = provider.getTracer('test-pg-pool').startSpan('test span');
+
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const client = await poolWithConnString.connect();
+        runCallbackTest(span, expectedAttributes, events, unsetStatus, 2, 1);
+        client.release();
+      });
+
+      await poolWithConnString.end();
+    });
+
     // callback - checkout a client
     it('should not return a promise if callback is provided', done => {
       const pgPoolAttributes = {
