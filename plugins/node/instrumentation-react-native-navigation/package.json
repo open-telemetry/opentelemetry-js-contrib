@@ -39,7 +39,7 @@
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha",
     "test-all-versions": "tav",
-    "version:update": "node ../../../scripts/version-update.js",
+    "version:update": "node ../../../scripts/version-update.js && npm run lint:fix",
     "watch": "tsc -w"
   },
   "peerDependencies": {
