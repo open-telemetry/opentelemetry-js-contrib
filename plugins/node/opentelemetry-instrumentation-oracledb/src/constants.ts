@@ -16,7 +16,7 @@
  * Copyright (c) 2025, Oracle and/or its affiliates.
  * */
 
-// Oracle specific attributes not covered by semantic conventions.
+// Oracle specific attributes not covered by standard semantic conventions.
 // See: https://github.com/open-telemetry/semantic-conventions/pull/1911
 export enum AttributeNames {
   ORACLE_BIND_VALUES = 'oracledb.bind_values',
@@ -25,7 +25,7 @@ export enum AttributeNames {
   ORACLE_POOL_INCR = 'oracledb.pool_incr',
   ORACLE_INSTANCE = 'oracledb.instance',
   ORACLE_PDBNAME = 'oracledb.pdbname',
-  ORACLE_IMPLICIT_RELEASE = 'db.oracle.implicit_release',
+  ORACLE_IMPLICIT_RELEASE = 'oracledb.implicit_release',
 }
 
 // Contains span names produced by instrumentation
