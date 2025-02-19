@@ -1,4 +1,9 @@
+# Note: tests must set `SKIP_TEST_IF_DISABLE=true` to override usage of
+# `mocha --require '../../../scripts/skip-test-if-old-node.js' ...`.
+
 "aws-sdk":
+  env:
+    - SKIP_TEST_IF_DISABLE=true
   # A small subset of releases in the range [2.308.0, 3) to reduce testing time.
   versions:
     include: "^2.308.0"
@@ -15,6 +20,8 @@
 # - 16.x dropped in v3.723.0 https://github.com/aws/aws-sdk-js-v3/pull/6775
 
 "@aws-sdk/client-s3":
+  env:
+    - SKIP_TEST_IF_DISABLE=true
   # - 3.529.0 was missing the fast-xml-parser dependency (https://github.com/aws/aws-sdk-js-v3/releases/tag/v3.529.1)
   jobs:
     - node: ">=18"
@@ -37,6 +44,8 @@
       commands: npm run test
 
 "@aws-sdk/client-sqs":
+  env:
+    - SKIP_TEST_IF_DISABLE=true
   jobs:
     - node: ">=18"
       versions:
