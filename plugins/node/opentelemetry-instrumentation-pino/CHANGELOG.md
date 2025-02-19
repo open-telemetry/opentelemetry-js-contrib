@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.46.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.46.0...instrumentation-pino-v0.46.1) (2025-02-19)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2701](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2701)) ([c88dd84](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c88dd84e16b1a92349c05468cad304c8d15e2236))
+* **deps:** update otel core experimental to ^0.57.1 ([#2687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2687)) ([5e20fe2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5e20fe2f450a1be4ea100e8a6d196e33ccff0cda))
+* **instrumentation-pino:** log-sending was losing records when the level was reduced ([#2699](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2699)) ([c9fdd1a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c9fdd1a900453f273e757f24336a96152dd8571a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.0 to ^0.45.1
+
 ## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.45.0...instrumentation-pino-v0.46.0) (2024-12-18)
 
 
