@@ -37,6 +37,9 @@ import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
 
+// We can't use @ts-expect-error because it will fail depending on the used mongodb version on tests
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+
 describe('MongoDBInstrumentation-Tracing-v4', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
@@ -82,7 +85,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
     }
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    // @ts-expect-error -- v5 removed callback support
+    // @ts-ignore -- v5 removed callback support
     collection.insertMany(insertData, (err: any, result: any) => {
       resetMemoryExporter();
       done();
@@ -91,7 +94,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
 
   afterEach(done => {
     if (shouldTest) {
-      // @ts-expect-error -- v5 removed callback support
+      // @ts-ignore -- v5 removed callback support
       collection.deleteMany({}, done);
     } else {
       done();
@@ -639,6 +642,49 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
     });
   });
 
+  describe('requireParentSpan', () => {
+    // Resetting the behavior to default to avoid flakes in other tests
+    beforeEach(() => {
+      instrumentation.setConfig();
+    });
+
+    afterEach(() => {
+      instrumentation.setConfig();
+    });
+
+    it('should not create spans without parent span when requireParentSpan is explicitly set to true', done => {
+      context.with(trace.deleteSpan(context.active()), () => {
+        collection
+          .insertOne({ a: 1 })
+          .then(() => {
+            assert.strictEqual(getTestSpans().length, 0);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
+
+    it('should create spans without parent span when requireParentSpan is false', done => {
+      instrumentation.setConfig({
+        requireParentSpan: false,
+      });
+
+      context.with(trace.deleteSpan(context.active()), () => {
+        collection
+          .insertOne({ a: 1 })
+          .then(() => {
+            assert.strictEqual(getTestSpans().length, 1);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
+  });
+
   /** Should intercept command */
   describe('Removing Instrumentation', () => {
     it('should unpatch plugin', () => {
@@ -693,3 +739,5 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
     });
   });
 });
+
+/* eslint-enable @typescript-eslint/ban-ts-comment */
