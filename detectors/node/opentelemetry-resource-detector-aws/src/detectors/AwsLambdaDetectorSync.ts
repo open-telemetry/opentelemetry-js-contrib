@@ -22,11 +22,14 @@ import {
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
-  ATTR_CLOUD_PROVIDER,
+  ATTR_AWS_LOG_GROUP_NAMES,
   ATTR_CLOUD_PLATFORM,
+  ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_REGION,
-  ATTR_FAAS_VERSION,
+  ATTR_FAAS_INSTANCE,
   ATTR_FAAS_NAME,
+  ATTR_FAAS_MAX_MEMORY,
+  ATTR_FAAS_VERSION,
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
 } from '../semconv';
@@ -38,27 +41,37 @@ import {
  */
 export class AwsLambdaDetectorSync implements DetectorSync {
   detect(_config?: ResourceDetectionConfig): IResource {
-    const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME;
-    if (!functionName) {
+    // Check if running inside AWS Lambda environment
+    const executionEnv = process.env.AWS_EXECUTION_ENV;
+    if (!executionEnv?.startsWith('AWS_Lambda_')) {
       return Resource.empty();
     }
 
-    const functionVersion = process.env.AWS_LAMBDA_FUNCTION_VERSION;
+    // These environment variables are guaranteed to be present in Lambda environment
+    // https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime
     const region = process.env.AWS_REGION;
+    const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME;
+    const functionVersion = process.env.AWS_LAMBDA_FUNCTION_VERSION;
+    const memorySize = process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE;
+
+    // These environment variables are not available in Lambda SnapStart functions
+    const logGroupName = process.env.AWS_LAMBDA_LOG_GROUP_NAME;
+    const logStreamName = process.env.AWS_LAMBDA_LOG_STREAM_NAME;
 
     const attributes: ResourceAttributes = {
-      [ATTR_CLOUD_PROVIDER]: String(CLOUD_PROVIDER_VALUE_AWS),
-      [ATTR_CLOUD_PLATFORM]: String(CLOUD_PLATFORM_VALUE_AWS_LAMBDA),
+      [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_AWS,
+      [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
+      [ATTR_CLOUD_REGION]: region,
+      [ATTR_FAAS_NAME]: functionName,
+      [ATTR_FAAS_VERSION]: functionVersion,
+      [ATTR_FAAS_MAX_MEMORY]: parseInt(memorySize!) * 1024 * 1024,
     };
-    if (region) {
-      attributes[ATTR_CLOUD_REGION] = region;
-    }
 
-    if (functionName) {
-      attributes[ATTR_FAAS_NAME] = functionName;
+    if (logGroupName) {
+      attributes[ATTR_AWS_LOG_GROUP_NAMES] = [logGroupName];
     }
-    if (functionVersion) {
-      attributes[ATTR_FAAS_VERSION] = functionVersion;
+    if (logStreamName) {
+      attributes[ATTR_FAAS_INSTANCE] = logStreamName;
     }
 
     return new Resource(attributes);
