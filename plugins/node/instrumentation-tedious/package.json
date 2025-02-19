@@ -50,7 +50,7 @@
     "@opentelemetry/context-async-hooks": "^1.8.0",
     "@opentelemetry/contrib-test-utils": "^0.45.1",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
-    "@types/mocha": "7.0.2",
+    "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",

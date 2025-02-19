@@ -46,7 +46,7 @@
     "@opentelemetry/context-async-hooks": "^1.8.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
-    "@types/mocha": "7.0.2",
+    "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "better-sqlite3": "11.0.0",
     "knex": "3.1.0",
