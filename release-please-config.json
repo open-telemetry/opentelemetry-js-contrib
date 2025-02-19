@@ -35,6 +35,7 @@
     "plugins/node/instrumentation-socket.io": {},
     "plugins/node/instrumentation-tedious": {},
     "plugins/node/instrumentation-undici": {},
+    "plugins/node/instrumentation-react-native-navigation": {},
     "plugins/node/opentelemetry-instrumentation-aws-lambda": {},
     "plugins/node/opentelemetry-instrumentation-aws-sdk": {},
     "plugins/node/opentelemetry-instrumentation-bunyan": {},
