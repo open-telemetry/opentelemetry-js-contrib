@@ -25,6 +25,7 @@ import {
   NormalizedResponse,
   AwsSdkInstrumentationConfig,
 } from '../types';
+import type { SNS } from '../aws-sdk.types';
 import { injectPropagationContext } from './MessageAttributes';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 
@@ -67,14 +68,35 @@ export class SnsServiceExtension implements ServiceExtension {
   }
 
   requestPostSpanHook(request: NormalizedRequest): void {
-    if (request.commandName === 'Publish') {
-      const origMessageAttributes =
-        request.commandInput['MessageAttributes'] ?? {};
-      if (origMessageAttributes) {
-        request.commandInput['MessageAttributes'] = injectPropagationContext(
-          origMessageAttributes
-        );
-      }
+    switch (request.commandName) {
+      case 'Publish':
+        {
+          const origMessageAttributes =
+            request.commandInput['MessageAttributes'] ?? {};
+          if (origMessageAttributes) {
+            request.commandInput['MessageAttributes'] = injectPropagationContext(
+              origMessageAttributes
+            );
+          }
+        }
+        break;
+
+      case 'PublishBatch':
+        {
+          const entries = request.commandInput?.PublishBatchRequestEntries;
+          if (Array.isArray(entries)) {
+            entries.forEach(
+              (messageParams: {
+                MessageAttributes: SNS.MessageAttributeMap;
+              }) => {
+                messageParams.MessageAttributes = injectPropagationContext(
+                  messageParams.MessageAttributes ?? {}
+                );
+              }
+            );
+          }
+        }
+        break;
     }
   }
 
