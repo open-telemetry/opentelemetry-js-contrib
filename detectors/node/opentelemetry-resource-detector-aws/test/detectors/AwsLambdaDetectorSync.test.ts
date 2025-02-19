@@ -15,12 +15,20 @@
  */
 
 import * as assert from 'assert';
-import {
-  assertCloudResource,
-  assertEmptyResource,
-} from '@opentelemetry/contrib-test-utils';
-
+import { assertEmptyResource } from '@opentelemetry/contrib-test-utils';
 import { awsLambdaDetectorSync } from '../../src';
+import {
+  ATTR_AWS_LOG_GROUP_NAMES,
+  ATTR_CLOUD_PLATFORM,
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_REGION,
+  ATTR_FAAS_INSTANCE,
+  ATTR_FAAS_NAME,
+  ATTR_FAAS_MAX_MEMORY,
+  ATTR_FAAS_VERSION,
+  CLOUD_PROVIDER_VALUE_AWS,
+  CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
+} from '../../src/semconv';
 
 describe('awsLambdaDetectorSync', () => {
   let oldEnv: NodeJS.ProcessEnv;
@@ -35,25 +43,54 @@ describe('awsLambdaDetectorSync', () => {
 
   describe('on lambda', () => {
     it('fills resource', async () => {
+      process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
+      process.env.AWS_REGION = 'us-east-1';
       process.env.AWS_LAMBDA_FUNCTION_NAME = 'name';
       process.env.AWS_LAMBDA_FUNCTION_VERSION = 'v1';
-      process.env.AWS_REGION = 'us-east-1';
+      process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE = '128';
+      process.env.AWS_LAMBDA_LOG_GROUP_NAME = '/aws/lambda/name';
+      process.env.AWS_LAMBDA_LOG_STREAM_NAME = '2024/03/14/[$LATEST]123456';
 
       const resource = awsLambdaDetectorSync.detect();
 
-      assertCloudResource(resource, {
-        provider: 'aws',
-        region: 'us-east-1',
-      });
-
-      assert.strictEqual(resource.attributes['faas.name'], 'name');
-      assert.strictEqual(resource.attributes['faas.version'], 'v1');
+      assert.strictEqual(
+        resource.attributes[ATTR_CLOUD_PROVIDER],
+        CLOUD_PROVIDER_VALUE_AWS
+      );
+      assert.strictEqual(
+        resource.attributes[ATTR_CLOUD_PLATFORM],
+        CLOUD_PLATFORM_VALUE_AWS_LAMBDA
+      );
+      assert.strictEqual(resource.attributes[ATTR_CLOUD_REGION], 'us-east-1');
+      assert.strictEqual(resource.attributes[ATTR_FAAS_NAME], 'name');
+      assert.strictEqual(resource.attributes[ATTR_FAAS_VERSION], 'v1');
+      assert.strictEqual(
+        resource.attributes[ATTR_FAAS_INSTANCE],
+        '2024/03/14/[$LATEST]123456'
+      );
+      assert.strictEqual(
+        resource.attributes[ATTR_FAAS_MAX_MEMORY],
+        128 * 1024 * 1024
+      );
+      assert.deepStrictEqual(resource.attributes[ATTR_AWS_LOG_GROUP_NAMES], [
+        '/aws/lambda/name',
+      ]);
     });
   });
 
   describe('not on lambda', () => {
-    it('returns empty resource', async () => {
-      process.env.AWS_LAMBDA_FUNCTION_VERSION = 'v1';
+    it('returns empty resource if AWS_EXECUTION_ENV is not set', async () => {
+      process.env.AWS_LAMBDA_FUNCTION_NAME = 'name';
+      process.env.AWS_REGION = 'us-east-1';
+
+      const resource = awsLambdaDetectorSync.detect();
+
+      assertEmptyResource(resource);
+    });
+
+    it('returns empty resource if AWS_EXECUTION_ENV is not Lambda', async () => {
+      process.env.AWS_EXECUTION_ENV = 'AWS_ECS_EC2';
+      process.env.AWS_LAMBDA_FUNCTION_NAME = 'name';
       process.env.AWS_REGION = 'us-east-1';
 
       const resource = awsLambdaDetectorSync.detect();

@@ -240,6 +240,28 @@ export const ATTR_CONTAINER_NAME = 'container.name';
 export const ATTR_FAAS_NAME = 'faas.name';
 
 /**
+ * The execution environment ID as a string, that will be potentially reused for other invocations to the same function/function version.
+ *
+ * @example 2021/06/28/[$LATEST]2f399eb14537447da05ab2a2e39309de
+ *
+ * @note * **AWS Lambda:** Use the (full) log stream name.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_FAAS_INSTANCE = 'faas.instance';
+
+/**
+ * The amount of memory available to the serverless function converted to Bytes.
+ *
+ * @example 134217728
+ *
+ * @note It's recommended to set this attribute since e.g. too little memory can easily stop a Java AWS Lambda function from working correctly. On AWS Lambda, the environment variable `AWS_LAMBDA_FUNCTION_MEMORY_SIZE` provides this information (which must be multiplied by 1,048,576).
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_FAAS_MAX_MEMORY = 'faas.max_memory';
+
+/**
  * The immutable version of the function being executed.
  *
  * @example 26

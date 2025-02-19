@@ -24,7 +24,6 @@ import {
   ResourceAttributes,
   IResource,
 } from '@opentelemetry/resources';
-import { getEnv } from '@opentelemetry/core';
 import {
   CLOUDPROVIDERVALUES_GCP,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
@@ -79,7 +78,7 @@ class GcpDetector implements DetectorSync {
     attributes[SEMRESATTRS_CLOUD_AVAILABILITY_ZONE] = zoneId;
     attributes[SEMRESATTRS_CLOUD_PROVIDER] = CLOUDPROVIDERVALUES_GCP;
 
-    if (getEnv().KUBERNETES_SERVICE_HOST)
+    if (process.env.KUBERNETES_SERVICE_HOST)
       this._addK8sAttributes(attributes, clusterName);
 
     return attributes;
@@ -90,12 +89,10 @@ class GcpDetector implements DetectorSync {
     attributes: ResourceAttributes,
     clusterName: string
   ): void {
-    const env = getEnv();
-
     attributes[SEMRESATTRS_K8S_CLUSTER_NAME] = clusterName;
-    attributes[SEMRESATTRS_K8S_NAMESPACE_NAME] = env.NAMESPACE;
-    attributes[SEMRESATTRS_K8S_POD_NAME] = env.HOSTNAME;
-    attributes[SEMRESATTRS_CONTAINER_NAME] = env.CONTAINER_NAME;
+    attributes[SEMRESATTRS_K8S_NAMESPACE_NAME] = process.env.NAMESPACE ?? '';
+    attributes[SEMRESATTRS_K8S_POD_NAME] = process.env.HOSTNAME ?? '';
+    attributes[SEMRESATTRS_CONTAINER_NAME] = process.env.CONTAINER_NAME ?? '';
   }
 
   /** Gets project id from GCP project metadata. */
