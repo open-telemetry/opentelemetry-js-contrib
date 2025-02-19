@@ -16,15 +16,15 @@
  * Copyright (c) 2025, Oracle and/or its affiliates.
  * */
 
-// Oracle specific attributes not covered by semantic conventions
+// Oracle specific attributes not covered by semantic conventions.
+// See: https://github.com/open-telemetry/semantic-conventions/pull/1911
 export enum AttributeNames {
-  ORACLE_BIND_VALUES = 'db.oracle.bind_values',
-  ORACLE_POOL_MIN = 'db.oracle.pool_min',
-  ORACLE_POOL_MAX = 'db.oracle.pool_max',
-  ORACLE_POOL_INCR = 'db.oracle.pool_incr',
-  ORACLE_EXEC_OPTIONS = 'db.oracle.exec.options',
-  ORACLE_INSTANCE = 'db.oracle.instance',
-  ORACLE_PDBNAME = 'db.oracle.pdbname',
+  ORACLE_BIND_VALUES = 'oracledb.bind_values',
+  ORACLE_POOL_MIN = 'oracledb.pool_min',
+  ORACLE_POOL_MAX = 'oracledb.pool_max',
+  ORACLE_POOL_INCR = 'oracledb.pool_incr',
+  ORACLE_INSTANCE = 'oracledb.instance',
+  ORACLE_PDBNAME = 'oracledb.pdbname',
   ORACLE_IMPLICIT_RELEASE = 'db.oracle.implicit_release',
 }
 
