@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.45.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.45.1...instrumentation-mysql2-v0.45.2) (2025-02-19)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2701](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2701)) ([c88dd84](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c88dd84e16b1a92349c05468cad304c8d15e2236))
+* **deps:** update otel core experimental to ^0.57.1 ([#2687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2687)) ([5e20fe2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5e20fe2f450a1be4ea100e8a6d196e33ccff0cda))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.0 to ^0.45.1
+
+## [0.45.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.45.0...instrumentation-mysql2-v0.45.1) (2025-01-27)
+
+
+### Bug Fixes
+
+* **instrumentation-mysql2:** missing telemetry in mysql2 when importing only promise API ([#2662](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2662)) ([c67a8c3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c67a8c3e096b835e3eb91cac0642bf775ffa4350))
+
 ## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.44.0...instrumentation-mysql2-v0.45.0) (2024-12-18)
 
 
