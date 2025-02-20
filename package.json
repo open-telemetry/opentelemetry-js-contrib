@@ -20,7 +20,7 @@
     "test:ci:changed": "nx affected -t test --base=origin/main --head=HEAD",
     "test-all-versions": "nx run-many -t test-all-versions",
     "changelog": "lerna-changelog",
-    "lint": "nx run-many -t lint && npm run lint:readme && npm run lint:markdown && npm run lint:semconv-deps",
+    "lint": "nx run-many -t lint && npm run lint:deps && npm run lint:readme && npm run lint:markdown && npm run lint:semconv-deps",
     "lint:fix": "nx run-many -t lint:fix && npm run lint:markdown:fix",
     "lint:deps": "npx --yes knip@5.33.3 --dependencies --production --tags=-knipignore",
     "lint:examples": "eslint ./examples/**/*.js",
