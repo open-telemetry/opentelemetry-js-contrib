@@ -118,7 +118,7 @@ export function parseAndMaskConnectionString(connectionString: string): string {
     return url.toString();
   } catch (e) {
     // If parsing fails, return a generic connection string
-    return 'postgresql://localhost';
+    return 'postgresql://localhost:5432/';
   }
 }
 
