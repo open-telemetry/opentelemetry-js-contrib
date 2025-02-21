@@ -257,7 +257,8 @@ describe('utils.ts', () => {
 
   describe('.parseAndMaskConnectionString()', () => {
     it('should remove all auth information from connection string', () => {
-      const connectionString = 'postgresql://user:password123@localhost:5432/dbname';
+      const connectionString =
+        'postgresql://user:password123@localhost:5432/dbname';
       assert.strictEqual(
         utils.parseAndMaskConnectionString(connectionString),
         'postgresql://localhost:5432/dbname'
@@ -281,7 +282,8 @@ describe('utils.ts', () => {
     });
 
     it('should preserve query parameters while removing auth', () => {
-      const connectionString = 'postgresql://user:pass@localhost/dbname?sslmode=verify-full&application_name=myapp';
+      const connectionString =
+        'postgresql://user:pass@localhost/dbname?sslmode=verify-full&application_name=myapp';
       assert.strictEqual(
         utils.parseAndMaskConnectionString(connectionString),
         'postgresql://localhost/dbname?sslmode=verify-full&application_name=myapp'

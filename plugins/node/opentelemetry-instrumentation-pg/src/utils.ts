@@ -122,7 +122,9 @@ export function parseAndMaskConnectionString(connectionString: string): string {
   }
 }
 
-export function getConnectionString(params: PgParsedConnectionParams | PgPoolOptionsParams) {
+export function getConnectionString(
+  params: PgParsedConnectionParams | PgPoolOptionsParams
+) {
   if ('connectionString' in params && params.connectionString) {
     return parseAndMaskConnectionString(params.connectionString);
   }
@@ -157,14 +159,16 @@ export function getSemanticAttributesFromConnection(
 }
 
 export function getSemanticAttributesFromPool(params: PgPoolOptionsParams) {
-// const connectionParams = getConnectionParams(params);
+  // const connectionParams = getConnectionParams(params);
 
-    let url: URL | undefined;
-    try {
-        url = params.connectionString ? new URL(params.connectionString) : undefined;
-    } catch (e) {
-        url = undefined;
-    }
+  let url: URL | undefined;
+  try {
+    url = params.connectionString
+      ? new URL(params.connectionString)
+      : undefined;
+  } catch (e) {
+    url = undefined;
+  }
 
   return {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
