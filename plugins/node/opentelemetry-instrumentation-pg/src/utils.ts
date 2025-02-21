@@ -157,13 +157,22 @@ export function getSemanticAttributesFromConnection(
 }
 
 export function getSemanticAttributesFromPool(params: PgPoolOptionsParams) {
+// const connectionParams = getConnectionParams(params);
+
+    let url: URL | undefined;
+    try {
+        url = params.connectionString ? new URL(params.connectionString) : undefined;
+    } catch (e) {
+        url = undefined;
+    }
+
   return {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
-    [SEMATTRS_DB_NAME]: params.database, // required
+    [SEMATTRS_DB_NAME]: url?.pathname.slice(1) ?? params.database, // required
     [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params), // required
-    [SEMATTRS_NET_PEER_NAME]: params.host, // required
-    [SEMATTRS_NET_PEER_PORT]: getPort(params.port),
-    [SEMATTRS_DB_USER]: params.user,
+    [SEMATTRS_NET_PEER_NAME]: url?.hostname ?? params.host, // required
+    [SEMATTRS_NET_PEER_PORT]: Number(url?.port) || getPort(params.port),
+    [SEMATTRS_DB_USER]: url?.username ?? params.user,
     [AttributeNames.IDLE_TIMEOUT_MILLIS]: params.idleTimeoutMillis,
     [AttributeNames.MAX_CLIENT]: params.maxClient,
   };

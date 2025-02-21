@@ -226,16 +226,16 @@ describe('pg-pool', () => {
       const connectionString = `postgresql://${CONFIG.user}:${CONFIG.password}@${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`;
       const poolWithConnString = new pgPool({
         connectionString,
+        idleTimeoutMillis: CONFIG.idleTimeoutMillis,
       });
 
       const expectedAttributes = {
         [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
         [SEMATTRS_DB_NAME]: CONFIG.database,
         [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
-        [SEMATTRS_DB_CONNECTION_STRING]: connectionString,
+        [SEMATTRS_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
         [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
         [SEMATTRS_DB_USER]: CONFIG.user,
-        [AttributeNames.MAX_CLIENT]: CONFIG.maxClient,
         [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
       };
 

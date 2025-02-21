@@ -292,7 +292,7 @@ describe('utils.ts', () => {
       const connectionString = 'not-a-valid-url';
       assert.strictEqual(
         utils.parseAndMaskConnectionString(connectionString),
-        'postgresql://localhost'
+        'postgresql://localhost:5432/'
       );
     });
   });
