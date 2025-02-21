@@ -105,8 +105,8 @@ components:
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-memcached: []
     # Unmaintained
-  plugins/node/opentelemetry-instrumentation-mongodb: []
-    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-mongodb:
+    - onurtemizkan
   plugins/node/opentelemetry-instrumentation-mysql: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-mysql2:
