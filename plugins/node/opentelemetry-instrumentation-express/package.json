@@ -52,7 +52,7 @@
     "@types/express": "4.17.21",
     "@types/mocha": "7.0.2",
     "@types/node": "18.18.14",
-    "@types/sinon": "10.0.20",
+    "@types/sinon": "17.0.4",
     "express": "4.20.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
