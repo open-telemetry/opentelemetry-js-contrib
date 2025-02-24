@@ -53,7 +53,7 @@
     "@opentelemetry/contrib-test-utils": "^0.45.1",
     "@types/amqplib": "^0.5.17",
     "@types/lodash": "4.14.199",
-    "@types/mocha": "8.2.3",
+    "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
     "amqplib": "0.8.0",
