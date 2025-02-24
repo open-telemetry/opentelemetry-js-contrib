@@ -58,7 +58,7 @@
     "nyc": "15.1.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "5.0.10",
-    "rxjs": "7.8.1",
+    "rxjs": "7.8.2",
     "rxjs-compat": "6.6.7",
     "semver": "7.7.1",
     "test-all-versions": "6.1.0",
