@@ -54,7 +54,7 @@
     "@opentelemetry/propagator-b3": "^1.26.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@opentelemetry/sdk-trace-web": "^1.0.0",
-    "@types/mocha": "10.0.6",
+    "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/react": "17.0.83",
     "@types/react-addons-test-utils": "0.14.26",
