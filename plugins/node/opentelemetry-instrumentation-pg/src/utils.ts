@@ -159,8 +159,6 @@ export function getSemanticAttributesFromConnection(
 }
 
 export function getSemanticAttributesFromPool(params: PgPoolOptionsParams) {
-  // const connectionParams = getConnectionParams(params);
-
   let url: URL | undefined;
   try {
     url = params.connectionString
