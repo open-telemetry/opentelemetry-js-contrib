@@ -114,6 +114,11 @@ export function getDbStatement(
 ): string {
   let formattedQuery: string;
   try {
+    if (maskStatement) {
+      formattedQuery = typeof query === 'string' ? query : query.sql;
+      return maskStatementHook(formattedQuery);
+    }
+
     if (!format) {
       formattedQuery = typeof query === 'string' ? query : query.sql;
     } else if (typeof query === 'string') {
@@ -126,12 +131,7 @@ export function getDbStatement(
           ? format(query.sql, values || (query as QueryOptions).values)
           : query.sql;
     }
-
-    return maskStatement
-      ? values
-        ? formattedQuery
-        : maskStatementHook(formattedQuery)
-      : formattedQuery;
+    return formattedQuery;
   } catch (e) {
     return 'Could not determine the query due to an error in masking or formatting';
   }

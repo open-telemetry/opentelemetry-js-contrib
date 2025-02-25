@@ -1360,6 +1360,25 @@ describe('mysql2', () => {
           });
         });
       });
+      it('should return masked query, if values are present', done => {
+        instrumentation.setConfig({
+          maskStatement: true,
+        });
+        const query = 'SELECT ?+? as solution';
+        const maskedQuery = 'SELECT ?+? as solution';
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          connection.query(query, [1, 1], (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], maskedQuery);
+            done();
+          });
+        });
+      });
       it('should not mask query if maskStatement is false', done => {
         instrumentation.setConfig({
           maskStatement: false,
@@ -1374,6 +1393,25 @@ describe('mysql2', () => {
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
             assertSpan(spans[0], query);
+            done();
+          });
+        });
+      });
+      it('should return query with values, if values are present and maskStatement is false', done => {
+        instrumentation.setConfig({
+          maskStatement: false,
+        });
+        const query = 'SELECT ?+? as solution';
+        const queryWithValues = 'SELECT 1+1 as solution';
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          connection.query(query, [1, 1], (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], queryWithValues);
             done();
           });
         });
