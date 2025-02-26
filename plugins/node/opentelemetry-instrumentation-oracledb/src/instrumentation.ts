@@ -21,11 +21,11 @@ import {
 } from '@opentelemetry/instrumentation';
 import type * as oracleDBTypes from 'oracledb';
 import { OracleInstrumentationConfig } from './types';
-import * as utils from './utils';
+import { getOracleTelemetryTraceHandlerClass } from './OracleTelemetryTraceHandler';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export class OracleInstrumentation extends InstrumentationBase {
-  private _tmHandler: utils.OracleTelemetryTraceHandler | null = null;
+  private _tmHandler: any;
 
   constructor(config: OracleInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -36,23 +36,31 @@ export class OracleInstrumentation extends InstrumentationBase {
       'oracledb',
       ['>= 6.7 < 7'],
       (moduleExports: typeof oracleDBTypes) => {
-        const newmoduleExports: any = moduleExports;
+        if (!moduleExports) {
+          return;
+        }
+        if (this._tmHandler) {
+          // Already registered, so unregister it.
+          (moduleExports as any).traceHandler.setTraceInstance();
+          this._tmHandler = null;
+        }
         const config = this.getConfig();
-        const obj = new utils.OracleTelemetryTraceHandler(
-          () => this.tracer,
-          config
-        );
-        obj.enable();
+        const thClass = getOracleTelemetryTraceHandlerClass();
+        if (thClass) {
+          const obj = new thClass(() => this.tracer, config);
+          obj.enable();
 
-        // Register the instance with oracledb.
-        newmoduleExports.traceHandler.setTraceInstance(obj);
-        this._tmHandler = obj;
+          // Register the instance with oracledb.
+          (moduleExports as any).traceHandler.setTraceInstance(obj);
+          this._tmHandler = obj;
+        }
         return moduleExports;
       },
       moduleExports => {
-        const newmoduleExports: any = moduleExports;
-        newmoduleExports.traceHandler.setTraceInstance();
-        this._tmHandler = null;
+        if (this._tmHandler) {
+          (moduleExports as any).traceHandler.setTraceInstance();
+          this._tmHandler = null;
+        }
       }
     );
 

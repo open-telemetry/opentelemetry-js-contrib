@@ -36,7 +36,7 @@ export interface SpanConnectionConfig {
 
 export interface OracleRequestHookInformation {
   inputArgs: any;
-  connection: SpanConnectionConfig | undefined;
+  connection: SpanConnectionConfig;
 }
 
 export interface OracleInstrumentationExecutionRequestHook {
@@ -55,13 +55,15 @@ export interface OracleInstrumentationConfig extends InstrumentationConfig {
   /**
    * If true, an attribute containing the execute method
    * bind values will be attached the spans generated.
+   * It can potentially record PII data and should be used with caution.
    *
    * @default false
    */
   enhancedDatabaseReporting?: boolean;
 
   /**
-   * If true, db.statement will have sql in the spans generated.
+   * If true, db.statement will have sql which could potentially contain
+   * sensitive unparameterized data in the spans generated.
    *
    * @default false
    */

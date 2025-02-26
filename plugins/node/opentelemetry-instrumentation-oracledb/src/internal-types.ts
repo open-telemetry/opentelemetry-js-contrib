@@ -16,7 +16,7 @@
  * Copyright (c) 2025, Oracle and/or its affiliates.
  * */
 
-import * as oracledbTypes from 'oracledb';
+import type * as oracledbTypes from 'oracledb';
 import type * as api from '@opentelemetry/api';
 import { SpanConnectionConfig } from './types';
 
@@ -32,7 +32,7 @@ export interface InstrumentationContext {
 export interface TraceSpanData {
   operation: string; // RPC or exported function name.
   error?: oracledbTypes.DBError;
-  connectLevelConfig?: SpanConnectionConfig;
+  connectLevelConfig: SpanConnectionConfig;
   callLevelConfig?: SpanCallLevelConfig;
   additionalConfig?: any; // custom key/values associated with a function.
   fn: Function; // Replaced with bind function associating the active context.
