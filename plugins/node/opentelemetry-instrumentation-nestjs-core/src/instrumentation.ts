@@ -34,7 +34,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { AttributeNames, NestType } from './enums';
 
-const supportedVersions = ['>=4.0.0 <11'];
+const supportedVersions = ['>=4.0.0 <12'];
 
 export class NestInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = '@nestjs/core';
