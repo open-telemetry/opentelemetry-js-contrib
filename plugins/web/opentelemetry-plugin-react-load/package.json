@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/plugin-react-load",
-  "version": "0.31.0",
+  "version": "0.31.1",
   "description": "OpenTelemetry instrumentation for React class component lifecycle methods",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -54,13 +54,13 @@
     "@opentelemetry/propagator-b3": "^1.26.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@opentelemetry/sdk-trace-web": "^1.0.0",
-    "@types/mocha": "10.0.6",
+    "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/react": "17.0.83",
     "@types/react-addons-test-utils": "0.14.26",
     "@types/react-dom": "18.0.2",
     "@types/shimmer": "1.0.3",
-    "@types/sinon": "10.0.20",
+    "@types/sinon": "17.0.4",
     "@types/webpack-env": "1.16.3",
     "assert": "2.0.0",
     "babel-loader": "8.3.0",
@@ -87,7 +87,7 @@
     "react": "^16.13.1 || ^17.0.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.57.1",
+    "@opentelemetry/instrumentation": "^0.57.2",
     "shimmer": "^1.2.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-plugin-react-load#readme"

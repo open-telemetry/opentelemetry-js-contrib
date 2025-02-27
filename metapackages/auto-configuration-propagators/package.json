@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-configuration-propagators",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Metapackage which bundles known propagators for configuration via an env variable.",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-configuration-propagators#readme",
@@ -33,9 +33,9 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.4.1",
-    "@types/mocha": "7.0.2",
+    "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
-    "@types/sinon": "10.0.20",
+    "@types/sinon": "17.0.4",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
@@ -43,11 +43,11 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.25.1",
-    "@opentelemetry/propagator-aws-xray": "^1.26.1",
-    "@opentelemetry/propagator-aws-xray-lambda": "^0.53.1",
+    "@opentelemetry/propagator-aws-xray": "^1.26.2",
+    "@opentelemetry/propagator-aws-xray-lambda": "^0.53.2",
     "@opentelemetry/propagator-b3": "^1.25.1",
     "@opentelemetry/propagator-jaeger": "^1.25.1",
-    "@opentelemetry/propagator-ot-trace": "^0.27.2"
+    "@opentelemetry/propagator-ot-trace": "^0.27.3"
   },
   "files": [
     "build/src/**/*.js",

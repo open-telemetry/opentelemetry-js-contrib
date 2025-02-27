@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.45.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.45.0...contrib-test-utils-v0.45.1) (2025-02-19)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.1 ([#2687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2687)) ([5e20fe2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5e20fe2f450a1be4ea100e8a6d196e33ccff0cda))
+
 ## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.44.0...contrib-test-utils-v0.45.0) (2024-12-18)
 
 

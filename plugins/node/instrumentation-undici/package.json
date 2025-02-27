@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-undici",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "OpenTelemetry instrumentation for `undici` http client and Node.js fetch()",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -44,7 +44,7 @@
     "@opentelemetry/sdk-metrics": "^1.8.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
-    "@types/mocha": "7.0.2",
+    "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
@@ -58,7 +58,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.57.1"
+    "@opentelemetry/instrumentation": "^0.57.2"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-undici",
   "sideEffects": false

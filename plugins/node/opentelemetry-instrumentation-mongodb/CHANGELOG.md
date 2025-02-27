@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.51.0...instrumentation-mongodb-v0.52.0) (2025-02-19)
+
+
+### Features
+
+* **instrumentation-mongodb:** Add `requireParentSpan` config option. ([#2658](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2658)) ([2989b94](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2989b94515ca6f62b628f63eeb881f4b91e391af))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.1 ([#2687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2687)) ([5e20fe2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5e20fe2f450a1be4ea100e8a6d196e33ccff0cda))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.0 to ^0.45.1
+
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.50.0...instrumentation-mongodb-v0.51.0) (2024-12-18)
 
 

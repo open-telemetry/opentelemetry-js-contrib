@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.47.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.47.0...instrumentation-express-v0.47.1) (2025-02-19)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.1 ([#2687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2687)) ([5e20fe2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5e20fe2f450a1be4ea100e8a6d196e33ccff0cda))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.0 to ^0.45.1
+
 ## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.46.0...instrumentation-express-v0.47.0) (2024-12-18)
 
 
