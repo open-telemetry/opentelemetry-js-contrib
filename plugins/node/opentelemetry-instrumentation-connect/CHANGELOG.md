@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.43.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.43.1...instrumentation-connect-v0.43.2) (2025-02-28)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.2 ([#2716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2716)) ([d2a9a20](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2a9a20f1cd8c46c842e18490a4eba36fd71c2da))
+
 ## [0.43.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.43.0...instrumentation-connect-v0.43.1) (2025-02-19)
 
 
