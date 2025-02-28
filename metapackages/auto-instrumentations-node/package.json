@@ -76,6 +76,7 @@
     "@opentelemetry/instrumentation-mysql2": "^0.45.2",
     "@opentelemetry/instrumentation-nestjs-core": "^0.44.1",
     "@opentelemetry/instrumentation-net": "^0.43.1",
+    "@opentelemetry/instrumentation-oracledb": "^0.26.0",
     "@opentelemetry/instrumentation-pg": "^0.51.1",
     "@opentelemetry/instrumentation-pino": "^0.46.1",
     "@opentelemetry/instrumentation-redis": "^0.46.1",
