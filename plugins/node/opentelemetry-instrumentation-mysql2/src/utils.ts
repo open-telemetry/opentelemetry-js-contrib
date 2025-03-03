@@ -112,35 +112,44 @@ export function getDbStatement(
   maskStatement: boolean = true,
   maskStatementHook: MySQL2InstrumentationQueryMaskingHook = defaultMaskingHook
 ): string {
-  let formattedQuery: string;
+  const [querySql, queryValues] =
+    typeof query === 'string'
+      ? [query, values]
+      : [query.sql, hasValues(query) ? values || query.values : values];
   try {
     if (maskStatement) {
-      formattedQuery = typeof query === 'string' ? query : query.sql;
-      return maskStatementHook(formattedQuery);
-    }
-
-    if (!format) {
-      formattedQuery = typeof query === 'string' ? query : query.sql;
-    } else if (typeof query === 'string') {
-      formattedQuery = values ? format(query, values) : query;
+      return maskStatementHook(querySql);
+    } else if (format && queryValues) {
+      return format(querySql, queryValues);
     } else {
-      // According to https://github.com/mysqljs/mysql#performing-queries
-      // The values argument will override the values in the option object.
-      formattedQuery =
-        values || (query as QueryOptions).values
-          ? format(query.sql, values || (query as QueryOptions).values)
-          : query.sql;
+      return querySql;
     }
-    return formattedQuery;
   } catch (e) {
     return 'Could not determine the query due to an error in masking or formatting';
   }
 }
 
+/**
+ * Replaces numeric values and quoted strings in the query with placeholders ('?').
+ *
+ * - `\b\d+\b`: Matches whole numbers (integers) and replaces them with '?'.
+ * - `(["'])(?:(?=(\\?))\2.)*?\1`:
+ *   - Matches quoted strings (both single `'` and double `"` quotes).
+ *   - Uses a lookahead `(?=(\\?))` to detect an optional backslash without consuming it immediately.
+ *   - Captures the optional backslash `\2` and ensures escaped quotes inside the string are handled correctly.
+ *   - Ensures that only complete quoted strings are replaced with '?'.
+ *
+ * This prevents accidental replacement of escaped quotes within strings and ensures that the
+ * query structure remains intact while masking sensitive data.
+ */
 function defaultMaskingHook(query: string): string {
   return query
     .replace(/\b\d+\b/g, '?')
     .replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, '?');
+}
+
+function hasValues(obj: any): obj is QueryOptions {
+  return obj && typeof obj === 'object' && 'values' in obj;
 }
 
 /**
