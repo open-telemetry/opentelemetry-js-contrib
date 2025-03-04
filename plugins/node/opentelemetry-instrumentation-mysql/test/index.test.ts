@@ -402,7 +402,7 @@ describe('mysql@2.x-Tracing', () => {
             parentSpanContext?.traceId
           );
           assert.strictEqual(
-            activeSpan.parentSpanContext?.spanId
+            activeSpan.parentSpanContext?.spanId,
             parentSpanContext?.spanId
           );
           assert.notStrictEqual(
