@@ -210,12 +210,12 @@ describe('SQS', () => {
       const processChildSpans = spans.filter(s => s.kind === SpanKind.INTERNAL);
       expect(processChildSpans.length).toBe(2 * numChildPerProcessSpan);
       for (let i = 0; i < numChildPerProcessSpan; i++) {
-        expect(processChildSpans[2 * i + 0].parentSpanContext?.spanId).toStrictEqual(
-          processSpans[0].spanContext().spanId
-        );
-        expect(processChildSpans[2 * i + 1].parentSpanContext?.spanId).toStrictEqual(
-          processSpans[1].spanContext().spanId
-        );
+        expect(
+          processChildSpans[2 * i + 0].parentSpanContext?.spanId
+        ).toStrictEqual(processSpans[0].spanContext().spanId);
+        expect(
+          processChildSpans[2 * i + 1].parentSpanContext?.spanId
+        ).toStrictEqual(processSpans[1].spanContext().spanId);
       }
     };
 
