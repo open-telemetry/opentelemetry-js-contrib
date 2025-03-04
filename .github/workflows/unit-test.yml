@@ -43,7 +43,6 @@ jobs:
           - "20.6.0"
           - "20"
           - "22"
-          - "23"
         include:
             - node: 18
               code-coverage: true
