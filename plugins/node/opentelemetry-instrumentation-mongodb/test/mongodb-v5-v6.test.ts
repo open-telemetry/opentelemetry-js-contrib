@@ -273,7 +273,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
 
           roots.forEach(root => {
             const rootId = root.spanContext().spanId;
-            const children = spans.filter(s => s.parentSpanId === rootId);
+            const children = spans.filter(s => s.parentSpanContext?.spanId === rootId);
             assert.strictEqual(children.length, 1);
           });
           done();
@@ -640,7 +640,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
                 );
                 assert.strictEqual(
                   mainSpan.spanContext().spanId,
-                  spans2[0].parentSpanId
+                  spans2[0].parentSpanContext?.spanId
                 );
                 done();
               })
