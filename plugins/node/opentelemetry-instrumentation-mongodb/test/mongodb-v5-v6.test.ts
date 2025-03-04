@@ -273,7 +273,9 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
 
           roots.forEach(root => {
             const rootId = root.spanContext().spanId;
-            const children = spans.filter(s => s.parentSpanContext?.spanId === rootId);
+            const children = spans.filter(
+              s => s.parentSpanContext?.spanId === rootId
+            );
             assert.strictEqual(children.length, 1);
           });
           done();
