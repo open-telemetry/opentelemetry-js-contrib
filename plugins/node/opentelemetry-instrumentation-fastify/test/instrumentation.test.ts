@@ -98,7 +98,7 @@ const assertRootContextActive = () => {
 function getSpans(): ReadableSpan[] {
   const spans = memoryExporter.getFinishedSpans().filter(s => {
     return (
-      s.instrumentationLibrary.name === '@opentelemetry/instrumentation-fastify'
+      s.instrumentationScope.name === '@opentelemetry/instrumentation-fastify'
     );
   });
   return spans;
@@ -168,7 +168,7 @@ describe('fastify', () => {
         'request handler - fastify -> @fastify/express'
       );
       const baseSpan = spans[1];
-      assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+      assert.strictEqual(span.parentSpanContext?.spanId, baseSpan.spanContext().spanId);
     });
 
     it('should generate span for named handler', async () => {
@@ -192,7 +192,7 @@ describe('fastify', () => {
       assert.strictEqual(span.name, 'request handler - namedHandler');
 
       const baseSpan = spans[1];
-      assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+      assert.strictEqual(span.parentSpanContext?.spanId, baseSpan.spanContext().spanId);
     });
 
     it('should generate span for 404 request', async () => {
@@ -209,7 +209,7 @@ describe('fastify', () => {
       });
       assert.strictEqual(span.name, 'request handler - basic404');
       const baseSpan = spans[1];
-      assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+      assert.strictEqual(span.parentSpanContext?.spanId, baseSpan.spanContext().spanId);
     });
 
     describe('when subsystem is registered', () => {
@@ -255,7 +255,7 @@ describe('fastify', () => {
         const span = spans[3];
         assert.strictEqual(changedRootSpan.name, 'GET /test/:id');
         assert.strictEqual(span.name, 'request handler - foo');
-        assert.strictEqual(span.parentSpanId, spans[2].spanContext().spanId);
+        assert.strictEqual(span.parentSpanContext?.spanId, spans[2].spanContext().spanId);
       });
 
       it('should create span for fastify express runConnect', async () => {
@@ -271,7 +271,7 @@ describe('fastify', () => {
           'hook.name': 'onRequest',
         });
 
-        assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+        assert.strictEqual(span.parentSpanContext?.spanId, baseSpan.spanContext().spanId);
       });
 
       it('should create span for fastify express for enhanceRequest', async () => {
@@ -287,7 +287,7 @@ describe('fastify', () => {
           'hook.name': 'onRequest',
         });
 
-        assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+        assert.strictEqual(span.parentSpanContext?.spanId, baseSpan.spanContext().spanId);
       });
 
       it('should create span for request', async () => {
@@ -304,7 +304,7 @@ describe('fastify', () => {
           'http.route': '/test/:id',
         });
 
-        assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+        assert.strictEqual(span.parentSpanContext?.spanId, baseSpan.spanContext().spanId);
       });
 
       it('should update http.route for http span', async () => {
@@ -328,7 +328,7 @@ describe('fastify', () => {
           'hook.name': 'onRequest',
         });
 
-        assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+        assert.strictEqual(span.parentSpanContext?.spanId, baseSpan.spanContext().spanId);
       });
 
       it('should update span with error that was raised', async () => {
