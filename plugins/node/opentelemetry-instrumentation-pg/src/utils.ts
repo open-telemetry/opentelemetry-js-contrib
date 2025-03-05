@@ -106,7 +106,28 @@ export function parseNormalizedOperationName(queryText: string) {
   return sqlCommand.endsWith(';') ? sqlCommand.slice(0, -1) : sqlCommand;
 }
 
-export function getConnectionString(params: PgParsedConnectionParams) {
+export function parseAndMaskConnectionString(connectionString: string): string {
+  try {
+    // Parse the connection string
+    const url = new URL(connectionString);
+
+    // Remove all auth information (username and password)
+    url.username = '';
+    url.password = '';
+
+    return url.toString();
+  } catch (e) {
+    // If parsing fails, return a generic connection string
+    return 'postgresql://localhost:5432/';
+  }
+}
+
+export function getConnectionString(
+  params: PgParsedConnectionParams | PgPoolOptionsParams
+) {
+  if ('connectionString' in params && params.connectionString) {
+    return parseAndMaskConnectionString(params.connectionString);
+  }
   const host = params.host || 'localhost';
   const port = params.port || 5432;
   const database = params.database || '';
@@ -138,13 +159,22 @@ export function getSemanticAttributesFromConnection(
 }
 
 export function getSemanticAttributesFromPool(params: PgPoolOptionsParams) {
+  let url: URL | undefined;
+  try {
+    url = params.connectionString
+      ? new URL(params.connectionString)
+      : undefined;
+  } catch (e) {
+    url = undefined;
+  }
+
   return {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
-    [SEMATTRS_DB_NAME]: params.database, // required
+    [SEMATTRS_DB_NAME]: url?.pathname.slice(1) ?? params.database, // required
     [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params), // required
-    [SEMATTRS_NET_PEER_NAME]: params.host, // required
-    [SEMATTRS_NET_PEER_PORT]: getPort(params.port),
-    [SEMATTRS_DB_USER]: params.user,
+    [SEMATTRS_NET_PEER_NAME]: url?.hostname ?? params.host, // required
+    [SEMATTRS_NET_PEER_PORT]: Number(url?.port) || getPort(params.port),
+    [SEMATTRS_DB_USER]: url?.username ?? params.user,
     [AttributeNames.IDLE_TIMEOUT_MILLIS]: params.idleTimeoutMillis,
     [AttributeNames.MAX_CLIENT]: params.maxClient,
   };
