@@ -54,7 +54,7 @@ describe('[Integration] ContainerDetector', () => {
     await spanProcessor.forceFlush();
     const numSpansAfterRequire = memoryExporter.getFinishedSpans().length;
 
-    const resource = detectResources({detectors: [containerDetector]});
+    const resource = detectResources({ detectors: [containerDetector] });
     await resource.waitForAsyncAttributes?.();
 
     // Wait for the next loop to let the span close properly

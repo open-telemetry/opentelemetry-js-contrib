@@ -49,7 +49,7 @@ describe('ContainerDetector', () => {
         .stub(ContainerDetector, 'readFileAsync' as any)
         .resolves(undefined);
 
-      const resource = detectResources({detectors: [containerDetector]});
+      const resource = detectResources({ detectors: [containerDetector] });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -61,7 +61,7 @@ describe('ContainerDetector', () => {
         .stub(ContainerDetector, 'readFileAsync' as any)
         .resolves(correctCgroupV1Data);
 
-      const resource = detectResources({detectors: [containerDetector]});
+      const resource = detectResources({ detectors: [containerDetector] });
       await resource.waitForAsyncAttributes?.();
 
       sinon.assert.calledOnce(readStub);
@@ -78,7 +78,7 @@ describe('ContainerDetector', () => {
       readStub.onFirstCall().resolves('');
       readStub.onSecondCall().resolves(correctCgroupV2Data);
 
-      const resource = detectResources({detectors: [containerDetector]});
+      const resource = detectResources({ detectors: [containerDetector] });
       await resource.waitForAsyncAttributes?.();
       sinon.assert.calledTwice(readStub);
 
@@ -94,7 +94,7 @@ describe('ContainerDetector', () => {
       readStub.onFirstCall().resolves('');
       readStub.onSecondCall().resolves(correctCgroupV2PodmanData);
 
-      const resource = detectResources({detectors: [containerDetector]});
+      const resource = detectResources({ detectors: [containerDetector] });
       await resource.waitForAsyncAttributes?.();
       sinon.assert.calledTwice(readStub);
 
@@ -110,7 +110,7 @@ describe('ContainerDetector', () => {
       readStub.onFirstCall().resolves('');
       readStub.onSecondCall().resolves(wrongCgroupV2Data);
 
-      const resource = detectResources({detectors: [containerDetector]});
+      const resource = detectResources({ detectors: [containerDetector] });
       await resource.waitForAsyncAttributes?.();
       sinon.assert.calledTwice(readStub);
 
@@ -132,7 +132,7 @@ describe('ContainerDetector', () => {
         .stub(ContainerDetector, 'readFileAsync' as any)
         .resolves('');
 
-      const resource = detectResources({detectors: [containerDetector]});
+      const resource = detectResources({ detectors: [containerDetector] });
       await resource.waitForAsyncAttributes?.();
       assert.deepStrictEqual(resource.attributes, {});
 
@@ -149,7 +149,7 @@ describe('ContainerDetector', () => {
         .stub(ContainerDetector, 'readFileAsync' as any)
         .rejects(errorMsg.fileNotFoundError);
 
-      const resource = detectResources({detectors: [containerDetector]});
+      const resource = detectResources({ detectors: [containerDetector] });
       await resource.waitForAsyncAttributes?.();
 
       sinon.assert.calledOnce(readStub);
@@ -167,7 +167,7 @@ describe('ContainerDetector', () => {
         .stub(ContainerDetector, 'readFileAsync' as any)
         .rejects(errorMsg.fileNotFoundError);
 
-      const resource = detectResources({detectors: [containerDetector]});
+      const resource = detectResources({ detectors: [containerDetector] });
       await resource.waitForAsyncAttributes?.();
       sinon.assert.calledOnce(readStub);
       assertEmptyResource(resource);

@@ -43,8 +43,8 @@ export class ContainerDetector implements ResourceDetector {
 
   detect(_config?: ResourceDetectionConfig): DetectedResource {
     const attributes = {
-      [SEMRESATTRS_CONTAINER_ID]: this._getContainerIdWithSuppressedTracing()
-    }
+      [SEMRESATTRS_CONTAINER_ID]: this._getContainerIdWithSuppressedTracing(),
+    };
     return { attributes };
   }
 
