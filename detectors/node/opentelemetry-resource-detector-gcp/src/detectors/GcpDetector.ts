@@ -57,7 +57,7 @@ class GcpDetector implements ResourceDetector {
 
     const attributes: DetectedResourceAttributes = {
       [SEMRESATTRS_CLOUD_PROVIDER]: (async () => {
-        return await isAvail ? CLOUDPROVIDERVALUES_GCP : undefined;
+        return (await isAvail) ? CLOUDPROVIDERVALUES_GCP : undefined;
       })(),
       [SEMRESATTRS_CLOUD_ACCOUNT_ID]: this._getProjectId(isAvail),
       [SEMRESATTRS_HOST_ID]: this._getInstanceId(isAvail),
@@ -69,13 +69,13 @@ class GcpDetector implements ResourceDetector {
     if (process.env.KUBERNETES_SERVICE_HOST) {
       attributes[SEMRESATTRS_K8S_CLUSTER_NAME] = this._getClusterName(isAvail);
       attributes[SEMRESATTRS_K8S_NAMESPACE_NAME] = (async () => {
-        return await isAvail ? process.env.NAMESPACE : undefined;
+        return (await isAvail) ? process.env.NAMESPACE : undefined;
       })();
       attributes[SEMRESATTRS_K8S_POD_NAME] = (async () => {
-        return await isAvail ? process.env.HOSTNAME : undefined;
+        return (await isAvail) ? process.env.HOSTNAME : undefined;
       })();
       attributes[SEMRESATTRS_CONTAINER_NAME] = (async () => {
-        return await isAvail ? process.env.CONTAINER_NAME : undefined;
+        return (await isAvail) ? process.env.CONTAINER_NAME : undefined;
       })();
     }
 
@@ -83,7 +83,9 @@ class GcpDetector implements ResourceDetector {
   }
 
   /** Gets project id from GCP project metadata. */
-  private async _getProjectId(isAvail: Promise<boolean>): Promise<string | undefined> {
+  private async _getProjectId(
+    isAvail: Promise<boolean>
+  ): Promise<string | undefined> {
     if (!(await isAvail)) {
       return undefined;
     }
@@ -95,7 +97,9 @@ class GcpDetector implements ResourceDetector {
   }
 
   /** Gets instance id from GCP instance metadata. */
-  private async _getInstanceId(isAvail: Promise<boolean>): Promise<string | undefined> {
+  private async _getInstanceId(
+    isAvail: Promise<boolean>
+  ): Promise<string | undefined> {
     if (!(await isAvail)) {
       return undefined;
     }
@@ -108,7 +112,9 @@ class GcpDetector implements ResourceDetector {
   }
 
   /** Gets zone from GCP instance metadata. */
-  private async _getZone(isAvail: Promise<boolean>): Promise<string | undefined> {
+  private async _getZone(
+    isAvail: Promise<boolean>
+  ): Promise<string | undefined> {
     if (!(await isAvail)) {
       return undefined;
     }
@@ -124,7 +130,9 @@ class GcpDetector implements ResourceDetector {
   }
 
   /** Gets cluster name from GCP instance metadata. */
-  private async _getClusterName(isAvail: Promise<boolean>): Promise<string | undefined> {
+  private async _getClusterName(
+    isAvail: Promise<boolean>
+  ): Promise<string | undefined> {
     if (!(await isAvail)) {
       return undefined;
     }
@@ -136,7 +144,9 @@ class GcpDetector implements ResourceDetector {
   }
 
   /** Gets hostname from GCP instance metadata. */
-  private async _getHostname(isAvail: Promise<boolean>): Promise<string | undefined> {
+  private async _getHostname(
+    isAvail: Promise<boolean>
+  ): Promise<string | undefined> {
     if (!(await isAvail)) {
       return undefined;
     }
