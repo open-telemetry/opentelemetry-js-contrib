@@ -45,7 +45,7 @@ export class OracleInstrumentation extends InstrumentationBase {
           this._tmHandler = null;
         }
         const config = this.getConfig();
-        const thClass = getOracleTelemetryTraceHandlerClass();
+        const thClass = getOracleTelemetryTraceHandlerClass(moduleExports);
         if (thClass) {
           const obj = new thClass(() => this.tracer, config);
           obj.enable();

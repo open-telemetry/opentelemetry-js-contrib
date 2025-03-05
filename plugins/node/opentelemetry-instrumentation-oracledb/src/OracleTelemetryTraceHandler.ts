@@ -39,100 +39,33 @@ import {
   ATTR_DB_OPERATION_NAME,
 } from './semconv';
 
+import type * as oracleDBTypes from 'oracledb';
+type TraceHandlerBaseCtor = new () => any;
+
 // Local modules.
 import { AttributeNames } from './constants';
 import { OracleInstrumentationConfig, SpanConnectionConfig } from './types';
 import { TraceSpanData, SpanCallLevelConfig } from './internal-types';
 import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from './constants';
 
-// extend oracledb module with traceHandler until type definations are
-// available.
-// see https://github.com/DefinitelyTyped/DefinitelyTyped/pull/72060/files
-declare module 'oracledb' {
-  /**
-   * Type representing the trace context object.
-   */
-  type TraceContext = Record<string, any>;
-
-  /**
-   * Base class for handling tracing.
-   */
-  class TraceHandlerBase {
-    constructor();
-
-    /**
-     * Checks if sending traces is enabled.
-     */
-    isEnabled(): boolean;
-
-    /**
-     * Enables sending traces.
-     */
-    enable(): void;
-
-    /**
-     * Disables sending traces.
-     */
-    disable(): void;
-
-    /**
-     * Called before invoking a public async method.
-     * @param traceContext  input/output trace context object.
-     */
-    onEnterFn(traceContext?: TraceContext): void;
-
-    /**
-     * Called after invoking a public async method.
-     * @param traceContext input/output trace context object.
-     */
-    onExitFn(traceContext?: TraceContext): void;
-
-    /**
-     * Called when a round trip is begun.
-     * @param traceContext input/output trace context object.
-     */
-    onBeginRoundTrip(traceContext?: TraceContext): void;
-
-    /**
-     * Called when a round trip has ended.
-     * @param traceContext input/output trace context object.
-     */
-    onEndRoundTrip(traceContext?: TraceContext): void;
-  }
-
-  interface traceHandler {
-    TraceHandlerBase: typeof TraceHandlerBase;
-  }
-
-  const traceHandler: traceHandler;
-}
-
-// define a constructor type used by OracleTelemetryTraceHandler
-// to extend the TraceHandlerBase class. This is needed
-// to avoid importing values from oracledb and only import types.
-interface TraceHandlerBaseConstructor {
-  new (): traceHandler['TraceHandlerBase'];
-}
-
-import type { traceHandler } from 'oracledb'; // Import only for type checking
-
-// It returns the TraceHandlerBase class, if oracledb module is available.
-function getTraceHandlerBaseClass(): TraceHandlerBaseConstructor | null {
+// It dynamically retrieves the TraceHandlerBase class from the oracledb module
+// (if available) while avoiding direct imports that could cause issues if
+// the module is missing.
+function getTraceHandlerBaseClass(
+  obj: typeof oracleDBTypes
+): TraceHandlerBaseCtor | null {
   try {
-    // Use require() for CommonJS compatibility
-    // dynamically loading the TraceHandlerBase class
-    // from the oracledb module and casting it to
-    // the TraceHandlerBaseConstructor type.
-    return require('oracledb').traceHandler
-      .TraceHandlerBase as TraceHandlerBaseConstructor;
+    return (obj as any).traceHandler.TraceHandlerBase as TraceHandlerBaseCtor;
   } catch (err) {
-    diag.error('The required module oracledb installation failed. ', err);
+    diag.error('Failed to load oracledb module.', err);
     return null;
   }
 }
 
-export function getOracleTelemetryTraceHandlerClass(): any {
-  const traceHandlerBase = getTraceHandlerBaseClass();
+export function getOracleTelemetryTraceHandlerClass(
+  obj: typeof oracleDBTypes
+): any {
+  const traceHandlerBase = getTraceHandlerBaseClass(obj);
   if (traceHandlerBase) {
     /**
      * OracleTelemetryTraceHandler extends TraceHandlerBase from oracledb module
