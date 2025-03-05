@@ -116,8 +116,8 @@ components:
   plugins/node/opentelemetry-instrumentation-net:
     - seemk
   plugins/node/opentelemetry-instrumentation-oracledb:
-    - sudarshan12s
-    - sharadraju
+    - sudarshan12s (Copyright (c) 2025, Oracle and/or its affiliates.)
+    - sharadraju (Copyright (c) 2025, Oracle and/or its affiliates.)
   plugins/node/instrumentation-runtime-node:
     - d4nyll
   plugins/node/opentelemetry-instrumentation-pg:
