@@ -19,10 +19,9 @@ import * as http from 'http';
 import { context } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import {
-  DetectorSync,
-  IResource,
-  Resource,
-  ResourceAttributes,
+  ResourceDetector,
+  DetectedResource,
+  DetectedResourceAttributes,
 } from '@opentelemetry/resources';
 import {
   CLOUDPLATFORMVALUES_AZURE_VM,
@@ -48,15 +47,15 @@ import {
  * The AzureVmDetector can be used to detect if a process is running in an Azure VM.
  * @returns a {@link Resource} populated with data about the environment or an empty Resource if detection fails.
  */
-class AzureVmResourceDetector implements DetectorSync {
-  detect(): IResource {
+class AzureVmResourceDetector implements ResourceDetector {
+  detect(): DetectedResource {
     const attributes = context.with(suppressTracing(context.active()), () =>
       this.getAzureVmMetadata()
     );
-    return new Resource({}, attributes);
+    return { attributes };
   }
 
-  async getAzureVmMetadata(): Promise<ResourceAttributes> {
+  getAzureVmMetadata(): DetectedResourceAttributes {
     const options = {
       host: AZURE_VM_METADATA_HOST,
       path: AZURE_VM_METADATA_PATH,
@@ -66,7 +65,7 @@ class AzureVmResourceDetector implements DetectorSync {
         Metadata: 'True',
       },
     };
-    const metadata: AzureVmMetadata = await new Promise((resolve, reject) => {
+    const metadataP: Promise<AzureVmMetadata> = new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         req.destroy();
         reject(new Error('Azure metadata service request timed out.'));
@@ -100,16 +99,16 @@ class AzureVmResourceDetector implements DetectorSync {
     });
 
     const attributes = {
-      [AZURE_VM_SCALE_SET_NAME_ATTRIBUTE]: metadata['vmScaleSetName'],
-      [AZURE_VM_SKU_ATTRIBUTE]: metadata['sku'],
-      [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AZURE_VM,
-      [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AZURE,
-      [SEMRESATTRS_CLOUD_REGION]: metadata['location'],
-      [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: metadata['resourceId'],
-      [SEMRESATTRS_HOST_ID]: metadata['vmId'],
-      [SEMRESATTRS_HOST_NAME]: metadata['name'],
-      [SEMRESATTRS_HOST_TYPE]: metadata['vmSize'],
-      [SEMRESATTRS_OS_VERSION]: metadata['version'],
+      [AZURE_VM_SCALE_SET_NAME_ATTRIBUTE]: metadataP.then(metadata => metadata['vmScaleSetName']),
+      [AZURE_VM_SKU_ATTRIBUTE]: metadataP.then(metadata => metadata['sku']),
+      [SEMRESATTRS_CLOUD_PLATFORM]: metadataP.then(() => CLOUDPLATFORMVALUES_AZURE_VM),
+      [SEMRESATTRS_CLOUD_PROVIDER]: metadataP.then(() => CLOUDPROVIDERVALUES_AZURE),
+      [SEMRESATTRS_CLOUD_REGION]: metadataP.then(metadata => metadata['location']),
+      [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: metadataP.then(metadata => metadata['resourceId']),
+      [SEMRESATTRS_HOST_ID]: metadataP.then(metadata => metadata['vmId']),
+      [SEMRESATTRS_HOST_NAME]: metadataP.then(metadata => metadata['name']),
+      [SEMRESATTRS_HOST_TYPE]: metadataP.then(metadata => metadata['vmSize']),
+      [SEMRESATTRS_OS_VERSION]: metadataP.then(metadata => metadata['version']),
     };
     return attributes;
   }
