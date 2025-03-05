@@ -16,7 +16,7 @@
 
 import * as nock from 'nock';
 import * as assert from 'assert';
-import { Resource } from '@opentelemetry/resources';
+import { detectResources } from '@opentelemetry/resources';
 import { CLOUDPROVIDERVALUES_ALIBABA_CLOUD } from '@opentelemetry/semantic-conventions';
 import {
   assertCloudResource,
@@ -63,7 +63,9 @@ describe('alibabaCloudEcsDetector', () => {
         .get(ALIYUN_HOST_PATH)
         .reply(200, () => mockedHostResponse);
 
-      const resource: Resource = await alibabaCloudEcsDetector.detect();
+      const resource = detectResources({
+        detectors: [alibabaCloudEcsDetector],
+      });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -93,7 +95,9 @@ describe('alibabaCloudEcsDetector', () => {
         .get(ALIYUN_HOST_PATH)
         .reply(404, () => new Error());
 
-      const resource = await alibabaCloudEcsDetector.detect();
+      const resource = detectResources({
+        detectors: [alibabaCloudEcsDetector],
+      });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -109,7 +113,9 @@ describe('alibabaCloudEcsDetector', () => {
         .delayConnection(2000)
         .reply(200, () => mockedHostResponse);
 
-      const resource = await alibabaCloudEcsDetector.detect();
+      const resource = detectResources({
+        detectors: [alibabaCloudEcsDetector],
+      });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -122,7 +128,9 @@ describe('alibabaCloudEcsDetector', () => {
         .get(ALIYUN_IDENTITY_PATH)
         .replyWithError('NOT FOUND');
 
-      const resource = await alibabaCloudEcsDetector.detect();
+      const resource = detectResources({
+        detectors: [alibabaCloudEcsDetector],
+      });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
