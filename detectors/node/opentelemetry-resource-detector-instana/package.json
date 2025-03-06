@@ -52,6 +52,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
+    "@opentelemetry/core": "^2.0.0-dev.1",
     "@opentelemetry/resources": "^2.0.0-dev.1",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
