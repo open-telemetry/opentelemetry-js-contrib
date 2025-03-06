@@ -26,9 +26,10 @@ jobs:
           OUTPUT=`node scripts/pr-labels-to-npm-workspace-args.mjs "$PR_LABELS"`
           echo "args=$OUTPUT" >> $GITHUB_OUTPUT
 
-  tav:
-    uses: ./.github/workflows/test-all-versions.yml
-    needs: parse-labels
-    with:
-      npm-workspace-args: ${{ needs.parse-labels.outputs.args }}
-    if: ${{ needs.parse-labels.outputs.args != '' }}
+  #XXX disable expensive tav run on this PR while in draft
+  # tav:
+  #   uses: ./.github/workflows/test-all-versions.yml
+  #   needs: parse-labels
+  #   with:
+  #     npm-workspace-args: ${{ needs.parse-labels.outputs.args }}
+  #   if: ${{ needs.parse-labels.outputs.args != '' }}
