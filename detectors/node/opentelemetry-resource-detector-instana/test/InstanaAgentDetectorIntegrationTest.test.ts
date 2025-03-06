@@ -20,11 +20,6 @@ import { processDetector, envDetector } from '@opentelemetry/resources';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { instanaAgentDetector } from '../src';
 
-const delay = (ms: number) =>
-  new Promise<void>(resolve => {
-    setTimeout(resolve, ms);
-  });
-
 describe('[Integration] instanaAgentDetector', () => {
   beforeEach(() => {
     nock.disableNetConnect();
