@@ -65,46 +65,58 @@ class AzureVmResourceDetector implements ResourceDetector {
         Metadata: 'True',
       },
     };
-    const metadataP: Promise<AzureVmMetadata> = new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        req.destroy();
-        reject(new Error('Azure metadata service request timed out.'));
-      }, 1000);
+    const metadataP: Promise<AzureVmMetadata> = new Promise(
+      (resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          req.destroy();
+          reject(new Error('Azure metadata service request timed out.'));
+        }, 1000);
 
-      const req = http.request(options, res => {
-        clearTimeout(timeoutId);
-        const { statusCode } = res;
-        res.setEncoding('utf8');
-        let rawData = '';
-        res.on('data', chunk => (rawData += chunk));
-        res.on('end', () => {
-          if (statusCode && statusCode >= 200 && statusCode < 300) {
-            try {
-              resolve(JSON.parse(rawData));
-            } catch (error) {
-              reject(error);
+        const req = http.request(options, res => {
+          clearTimeout(timeoutId);
+          const { statusCode } = res;
+          res.setEncoding('utf8');
+          let rawData = '';
+          res.on('data', chunk => (rawData += chunk));
+          res.on('end', () => {
+            if (statusCode && statusCode >= 200 && statusCode < 300) {
+              try {
+                resolve(JSON.parse(rawData));
+              } catch (error) {
+                reject(error);
+              }
+            } else {
+              reject(
+                new Error('Failed to load page, status code: ' + statusCode)
+              );
             }
-          } else {
-            reject(
-              new Error('Failed to load page, status code: ' + statusCode)
-            );
-          }
+          });
         });
-      });
-      req.on('error', err => {
-        clearTimeout(timeoutId);
-        reject(err);
-      });
-      req.end();
-    });
+        req.on('error', err => {
+          clearTimeout(timeoutId);
+          reject(err);
+        });
+        req.end();
+      }
+    );
 
     const attributes = {
-      [AZURE_VM_SCALE_SET_NAME_ATTRIBUTE]: metadataP.then(metadata => metadata['vmScaleSetName']),
+      [AZURE_VM_SCALE_SET_NAME_ATTRIBUTE]: metadataP.then(
+        metadata => metadata['vmScaleSetName']
+      ),
       [AZURE_VM_SKU_ATTRIBUTE]: metadataP.then(metadata => metadata['sku']),
-      [SEMRESATTRS_CLOUD_PLATFORM]: metadataP.then(() => CLOUDPLATFORMVALUES_AZURE_VM),
-      [SEMRESATTRS_CLOUD_PROVIDER]: metadataP.then(() => CLOUDPROVIDERVALUES_AZURE),
-      [SEMRESATTRS_CLOUD_REGION]: metadataP.then(metadata => metadata['location']),
-      [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: metadataP.then(metadata => metadata['resourceId']),
+      [SEMRESATTRS_CLOUD_PLATFORM]: metadataP.then(
+        () => CLOUDPLATFORMVALUES_AZURE_VM
+      ),
+      [SEMRESATTRS_CLOUD_PROVIDER]: metadataP.then(
+        () => CLOUDPROVIDERVALUES_AZURE
+      ),
+      [SEMRESATTRS_CLOUD_REGION]: metadataP.then(
+        metadata => metadata['location']
+      ),
+      [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: metadataP.then(
+        metadata => metadata['resourceId']
+      ),
       [SEMRESATTRS_HOST_ID]: metadataP.then(metadata => metadata['vmId']),
       [SEMRESATTRS_HOST_NAME]: metadataP.then(metadata => metadata['name']),
       [SEMRESATTRS_HOST_TYPE]: metadataP.then(metadata => metadata['vmSize']),
