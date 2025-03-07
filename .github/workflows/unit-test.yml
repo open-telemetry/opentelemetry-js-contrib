@@ -170,13 +170,7 @@ jobs:
         run: npm run test
       - name: Unit tests (Delta)
         if: ${{ !matrix.code-coverage }}
-        # XXX
-        # run: npm run test:ci:changed
-        # Getting a hang after testing instr-runtime-node on most Node.js versions,
-        # or perhaps on the next test being run. Node.js v18 was the odd guy out
-        # which was hanging after passing `baggage-span-processor` tests.
-        # https://github.com/open-telemetry/opentelemetry-js-contrib/actions/runs/13715917502/job/38360869756?pr=2738
-        run: npm run test:ci:changed -- --verbose --exclude @opentelemetry/baggage-span-processor,@opentelemetry/instrumentation-runtime-node
+        run: npm run test:ci:changed
       - name: Report Coverage
         if: ${{ matrix.code-coverage && !cancelled()}}
         uses: codecov/codecov-action@v5
