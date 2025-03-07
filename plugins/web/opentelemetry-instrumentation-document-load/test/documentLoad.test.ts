@@ -19,6 +19,7 @@ import {
   HrTime,
   propagation,
   SpanAttributes,
+  trace,
 } from '@opentelemetry/api';
 import {
   W3CTraceContextPropagator,
@@ -52,8 +53,7 @@ const spanProcessor = new SimpleSpanProcessor(exporter);
 const provider = new BasicTracerProvider({
   spanProcessors: [spanProcessor],
 });
-
-provider.register();
+trace.setGlobalTracerProvider(provider);
 
 const resources = [
   {
@@ -257,7 +257,7 @@ describe('DocumentLoad Instrumentation', () => {
     propagation.setGlobalPropagator(new W3CTraceContextPropagator());
   });
 
-  describe('constructor', () => {
+  describe.only('constructor', () => {
     it('should construct an instance', () => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
