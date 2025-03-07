@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  ResourceDetector,
-  DetectedResource,
-} from '@opentelemetry/resources';
+import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
 
 /**
  * The GitHubDetector can be used to detect GitHub Actions environment variables
