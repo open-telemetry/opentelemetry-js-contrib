@@ -109,7 +109,7 @@ export function getDbStatement(
   query: string | Query | QueryOptions,
   format?: formatType,
   values?: any[],
-  maskStatement: boolean = true,
+  maskStatement = true,
   maskStatementHook: MySQL2InstrumentationQueryMaskingHook = defaultMaskingHook
 ): string {
   const [querySql, queryValues] =
@@ -148,8 +148,8 @@ function defaultMaskingHook(query: string): string {
     .replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, '?');
 }
 
-function hasValues(obj: any): obj is QueryOptions {
-  return obj && typeof obj === 'object' && 'values' in obj;
+function hasValues(obj: Query | QueryOptions): obj is QueryOptions {
+  return 'values' in obj;
 }
 
 /**
