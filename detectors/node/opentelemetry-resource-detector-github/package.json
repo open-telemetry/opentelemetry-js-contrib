@@ -28,7 +28,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=14"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "build/src/**/*.js",
@@ -55,7 +55,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/resources": "^1.10.0"
+    "@opentelemetry/resources": "^2.0.0-dev.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-github#readme",
   "sideEffects": false
