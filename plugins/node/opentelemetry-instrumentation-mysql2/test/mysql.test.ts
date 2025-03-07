@@ -1240,7 +1240,7 @@ describe('mysql2', () => {
         }
       });
 
-      const { MySQL2Instrumentation } = await import('../src');
+      const { MySQL2Instrumentation } = await import('../src/index.js');
       instrumentation = new MySQL2Instrumentation();
       instrumentation.enable();
       instrumentation.disable();

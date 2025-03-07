@@ -52,7 +52,7 @@
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
-    "typescript": "4.4.4"
+    "typescript": "5.0.4"
   },
   "dependencies": {
     "@opentelemetry/resources": "^2.0.0-dev.1"

@@ -56,7 +56,7 @@
     "rimraf": "5.0.10",
     "semver": "7.7.1",
     "test-all-versions": "^6.0.0",
-    "typescript": "4.4.4"
+    "typescript": "5.0.4"
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0-dev.1",
