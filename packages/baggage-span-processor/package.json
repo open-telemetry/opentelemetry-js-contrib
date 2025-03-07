@@ -27,7 +27,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=14"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "build/src/**/*.js",
@@ -41,7 +41,7 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "dependencies": {
-    "@opentelemetry/sdk-trace-base": "^1.0.0"
+    "@opentelemetry/sdk-trace-base": "^2.0.0-dev.1"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
