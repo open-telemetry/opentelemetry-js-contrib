@@ -89,7 +89,6 @@ export class _AWSXRayRemoteSampler implements Sampler {
   private awsProxyEndpoint: string;
   private samplerDiag: DiagLogger;
   private rulePoller: NodeJS.Timeout | undefined;
-  private clientId: string;
   private rulePollingJitterMillis: number;
   private samplingClient: AWSXRaySamplingClient;
 
@@ -114,7 +113,6 @@ export class _AWSXRayRemoteSampler implements Sampler {
     this.awsProxyEndpoint = samplerConfig.endpoint
       ? samplerConfig.endpoint
       : DEFAULT_AWS_PROXY_ENDPOINT;
-    this.clientId = _AWSXRayRemoteSampler.generateClientId();
 
     this.samplingClient = new AWSXRaySamplingClient(
       this.awsProxyEndpoint,
@@ -186,31 +184,5 @@ export class _AWSXRayRemoteSampler implements Sampler {
         'SamplingRuleRecords from GetSamplingRules request is not defined'
       );
     }
-  }
-
-  private static generateClientId(): string {
-    const hexChars: string[] = [
-      '0',
-      '1',
-      '2',
-      '3',
-      '4',
-      '5',
-      '6',
-      '7',
-      '8',
-      '9',
-      'a',
-      'b',
-      'c',
-      'd',
-      'e',
-      'f',
-    ];
-    const clientIdArray: string[] = [];
-    for (let _ = 0; _ < 24; _ += 1) {
-      clientIdArray.push(hexChars[Math.floor(Math.random() * hexChars.length)]);
-    }
-    return clientIdArray.join('');
   }
 }

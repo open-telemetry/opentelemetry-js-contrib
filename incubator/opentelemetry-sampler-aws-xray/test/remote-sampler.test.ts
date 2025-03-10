@@ -46,7 +46,6 @@ describe('AWSXRayRemoteSampler', () => {
       300 * 1000
     );
     expect((sampler as any)._root._root.samplingClient).not.toBeFalsy();
-    expect((sampler as any)._root._root.clientId).toMatch(/[a-f0-9]{24}/);
   });
 
   it('testCreateRemoteSamplerWithPopulatedResource', () => {
@@ -61,7 +60,6 @@ describe('AWSXRayRemoteSampler', () => {
       300 * 1000
     );
     expect((sampler as any)._root._root.samplingClient).not.toBeFalsy();
-    expect((sampler as any)._root._root.clientId).toMatch(/[a-f0-9]{24}/);
   });
 
   it('testCreateRemoteSamplerWithAllFieldsPopulated', () => {
@@ -83,7 +81,6 @@ describe('AWSXRayRemoteSampler', () => {
     expect((sampler as any)._root._root.awsProxyEndpoint).toEqual(
       'http://abc.com'
     );
-    expect((sampler as any)._root._root.clientId).toMatch(/[a-f0-9]{24}/);
   });
 
   it('toString()', () => {
@@ -131,11 +128,5 @@ describe('_AWSXRayRemoteSampler', () => {
     clock.tick(pollingInterval * 1000 + 5000);
 
     sinon.assert.calledThrice(xrayClientSpy);
-  });
-
-  it('generates valid ClientId', () => {
-    const clientId: string = _AWSXRayRemoteSampler['generateClientId']();
-    const match: RegExpMatchArray | null = clientId.match(/[0-9a-z]{24}/g);
-    expect(match).not.toBeNull();
   });
 });
