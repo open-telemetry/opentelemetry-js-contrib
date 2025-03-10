@@ -1,7 +1,7 @@
 # OpenTelemetry Web Exception Instrumentation
 
 [![NPM Published Version][npm-img]][npm-url]
-[![Apache License][license-image]][license-image-url]
+[![Apache License][license-image]][license-image]
 
 This module provides automatic instrumentation for capturing unhandled exceptions and promise rejections in web applications.
 
@@ -83,16 +83,18 @@ throw new Error('Unhandled error');
 Promise.reject(new Error('Unhandled rejection'));
 ```
 
-## Contributing
+## Useful links
 
-This instrumentation is maintained by the OpenTelemetry authors. We welcome contributions!
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
+[discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
+[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-web-exception
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-web-exception.svg
-[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
-[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg
-[license-image-url]: https://img.shields.io/badge/license-Apache_2.0-green.svg
