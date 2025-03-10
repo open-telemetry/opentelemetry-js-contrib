@@ -56,6 +56,31 @@ describe('WebExceptionInstrumentation', () => {
     throw err;
   };
 
+  let mochaErrorHandler: OnErrorEventHandler;
+
+  beforeEach(() => {
+    mochaErrorHandler = window.onerror;
+    // We need to handle the error ourselves to prevent Mocha from failing the test.
+    window.onerror = (
+      event: Event | string,
+      source?: string,
+      lineno?: number,
+      colno?: number,
+      error?: Error
+    ) => {
+      if (error?.name !== 'ValidationError') {
+        // If we are testing our instrumentation, we want to let the error propagate.
+        // If it is any other kind of error, we want Mocha to handle the error as expected.
+        mochaErrorHandler?.call(window, event, source, lineno, colno, error);
+      }
+    };
+  });
+
+  afterEach(() => {
+    // Resume Mocha handling of uncaughtExceptions.
+    window.onerror = mochaErrorHandler;
+  });
+
   describe('constructor', () => {
     it('should construct an instance', () => {
       const instrumentation = new WebExceptionInstrumentation({
@@ -66,24 +91,8 @@ describe('WebExceptionInstrumentation', () => {
   });
 
   describe('throwing an error', () => {
-    let mochaErrorHandler: OnErrorEventHandler;
     const instr = new WebExceptionInstrumentation();
     beforeEach(() => {
-      mochaErrorHandler = window.onerror;
-      // We need to handle the error ourselves to prevent Mocha from failing the test.
-      window.onerror = (
-        event: Event | string,
-        source?: string,
-        lineno?: number,
-        colno?: number,
-        error?: Error
-      ) => {
-        if (error?.name !== 'ValidationError') {
-          // If we are testing our instrumentation, we want to let the error propagate.
-          // If it is any other kind of error, we want Mocha to handle the error as expected.
-          mochaErrorHandler?.call(window, event, source, lineno, colno, error);
-        }
-      };
       registerInstrumentations({
         instrumentations: [instr],
       });
@@ -92,8 +101,6 @@ describe('WebExceptionInstrumentation', () => {
     });
 
     afterEach(() => {
-      // Resume Mocha handling of uncaughtExceptions.
-      window.onerror = mochaErrorHandler;
       instr.disable();
       exporter.reset();
     });
@@ -131,6 +138,43 @@ describe('WebExceptionInstrumentation', () => {
         assert.strictEqual(body[ATTR_EXCEPTION_MESSAGE], 'Something happened!');
         assert.strictEqual(body[ATTR_EXCEPTION_TYPE], 'ValidationError');
         assert.strictEqual(body[ATTR_EXCEPTION_STACKTRACE], stack);
+      }, 0);
+    });
+  });
+
+  describe('adding custom attributes', () => {
+    const applyCustomAttrs = (error: Error) => {
+      return {
+        'app.custom.exception': error.message.toLocaleUpperCase(),
+      };
+    };
+    const instr = new WebExceptionInstrumentation({
+      applyCustomAttributes: applyCustomAttrs,
+    });
+    beforeEach(() => {
+      registerInstrumentations({
+        instrumentations: [instr],
+      });
+
+      instr.enable();
+    });
+
+    afterEach(() => {
+      instr.disable();
+      exporter.reset();
+    });
+    it('should add custom attributes to the event', async () => {
+      setTimeout(() => {
+        throwErr('Something happened!');
+      });
+
+      setTimeout(() => {
+        const events = exporter.getFinishedLogRecords();
+        assert.ok(events.length > 0, 'Expected at least one log record');
+        const event = events[0];
+        const body = event.body as Record<string, any>;
+        console.log(event);
+        assert.strictEqual(body['app.custom.exception'], 'SOMETHING HAPPENED!');
       }, 0);
     });
   });

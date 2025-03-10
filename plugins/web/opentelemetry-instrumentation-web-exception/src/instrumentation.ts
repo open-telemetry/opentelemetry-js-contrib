@@ -39,9 +39,12 @@ export interface GlobalErrorsInstrumentationConfig
   applyCustomAttributes?: (error: Error) => Attributes;
 }
 
-export class WebExceptionInstrumentation extends InstrumentationBase<InstrumentationConfig> {
-  constructor(config: InstrumentationConfig = {}) {
+export class WebExceptionInstrumentation extends InstrumentationBase<GlobalErrorsInstrumentationConfig> {
+  readonly applyCustomAttributes?: (error: Error) => Attributes;
+  constructor(config: GlobalErrorsInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-web-exception', '0.0.1', config);
+
+    this.applyCustomAttributes = config.applyCustomAttributes;
   }
 
   init() {}
@@ -63,12 +66,15 @@ export class WebExceptionInstrumentation extends InstrumentationBase<Instrumenta
         this.instrumentationVersion
       );
 
+      const customAttributes = this.applyCustomAttributes
+        ? this.applyCustomAttributes(error)
+        : {};
+
       eventLogger.emit({
         name: 'exception',
-        data: errorAttributes,
-        // TODO: add attributes from apply custom attributes function
+        data: { ...errorAttributes, ...customAttributes },
         severityNumber: SeverityNumber.ERROR,
-        // TODO: figure out timestamp
+        timestamp: Date.now(),
       });
     }
   };
