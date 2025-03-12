@@ -55,7 +55,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": ">=1.0.0 <1.10.0",
-    "@opentelemetry/core": "^2.0.0-dev.1",
+    "@opentelemetry/core": "^2.0.0-rc.1",
     "@types/mocha": "10.0.10",
     "@types/node": "^18.18.14",
     "@types/sinon": "17.0.4",

@@ -46,9 +46,9 @@
     "@cucumber/cucumber": "^9.0.0",
     "@cucumber/messages": "^22.0.0",
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/core": "^2.0.0-dev.1",
-    "@opentelemetry/sdk-trace-base": "^2.0.0-dev.1",
-    "@opentelemetry/sdk-trace-node": "^2.0.0-dev.1",
+    "@opentelemetry/core": "^2.0.0-rc.1",
+    "@opentelemetry/sdk-trace-base": "^2.0.0-rc.1",
+    "@opentelemetry/sdk-trace-node": "^2.0.0-rc.1",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/semver": "7.5.8",
@@ -62,7 +62,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.200.0-dev.1",
+    "@opentelemetry/instrumentation": "^0.200.0-rc.1",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-cucumber#readme"

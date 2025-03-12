@@ -43,14 +43,14 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/core": "^2.0.0-dev.1",
-    "@opentelemetry/exporter-jaeger": "^2.0.0-dev.1",
-    "@opentelemetry/instrumentation": "^0.200.0-dev.1",
-    "@opentelemetry/resources": "^2.0.0-dev.1",
-    "@opentelemetry/sdk-metrics": "^2.0.0-dev.1",
-    "@opentelemetry/sdk-node": "^0.200.0-dev.1",
-    "@opentelemetry/sdk-trace-base": "^2.0.0-dev.1",
-    "@opentelemetry/sdk-trace-node": "^2.0.0-dev.1",
+    "@opentelemetry/core": "^2.0.0-rc.1",
+    "@opentelemetry/exporter-jaeger": "^2.0.0-rc.1",
+    "@opentelemetry/instrumentation": "^0.200.0-rc.1",
+    "@opentelemetry/resources": "^2.0.0-rc.1",
+    "@opentelemetry/sdk-metrics": "^2.0.0-rc.1",
+    "@opentelemetry/sdk-node": "^0.200.0-rc.1",
+    "@opentelemetry/sdk-trace-base": "^2.0.0-rc.1",
+    "@opentelemetry/sdk-trace-node": "^2.0.0-rc.1",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   }
 }
