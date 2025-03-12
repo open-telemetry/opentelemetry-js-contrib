@@ -257,7 +257,7 @@ describe('DocumentLoad Instrumentation', () => {
     propagation.setGlobalPropagator(new W3CTraceContextPropagator());
   });
 
-  describe.only('constructor', () => {
+  describe('constructor', () => {
     it('should construct an instance', () => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
