@@ -27,6 +27,7 @@ import {
 import { events } from '@opentelemetry/api-events';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { Attributes } from '@opentelemetry/api';
+import { hrTime } from '@opentelemetry/core';
 
 export interface GlobalErrorsInstrumentationConfig
   extends InstrumentationConfig {
@@ -74,7 +75,7 @@ export class WebExceptionInstrumentation extends InstrumentationBase<GlobalError
         name: 'exception',
         data: { ...errorAttributes, ...customAttributes },
         severityNumber: SeverityNumber.ERROR,
-        timestamp: Date.now(),
+        timestamp: hrTime(),
       });
     }
   };
