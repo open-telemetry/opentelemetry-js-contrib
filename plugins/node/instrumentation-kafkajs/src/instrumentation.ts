@@ -24,14 +24,24 @@ import {
   trace,
   context,
   ROOT_CONTEXT,
+  Attributes,
 } from '@opentelemetry/api';
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import {
-  MESSAGINGOPERATIONVALUES_PROCESS,
-  MESSAGINGOPERATIONVALUES_RECEIVE,
-  SEMATTRS_MESSAGING_SYSTEM,
-  SEMATTRS_MESSAGING_DESTINATION,
-  SEMATTRS_MESSAGING_OPERATION,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_DESTINATION_PARTITION_ID,
+  ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE,
+  ATTR_MESSAGING_KAFKA_OFFSET,
+  ATTR_MESSAGING_KAFKA_MESSAGE_KEY,
+  ATTR_MESSAGING_OPERATION_NAME,
+  ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_SYSTEM,
+  MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+  MESSAGING_OPERATION_TYPE_VALUE_RECEIVE,
+  MESSAGING_OPERATION_TYPE_VALUE_SEND,
+  MESSAGING_SYSTEM_VALUE_KAFKA,
+} from './semconv';
 import type * as kafkaJs from 'kafkajs';
 import type {
   EachBatchHandler,
@@ -53,6 +63,15 @@ import {
   safeExecuteInTheMiddle,
   isWrapped,
 } from '@opentelemetry/instrumentation';
+
+interface ConsumerSpanOptions {
+  topic: string;
+  message: KafkaMessage | undefined;
+  operationType: string;
+  attributes?: Attributes;
+  context?: Context | undefined;
+  link?: Link;
+}
 
 export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumentationConfig> {
   constructor(config: KafkaJsInstrumentationConfig = {}) {
@@ -194,12 +213,17 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           payload.message.headers,
           bufferTextMapGetter
         );
-        const span = instrumentation._startConsumerSpan(
-          payload.topic,
-          payload.message,
-          MESSAGINGOPERATIONVALUES_PROCESS,
-          propagatedContext
-        );
+        const span = instrumentation._startConsumerSpan({
+          topic: payload.topic,
+          message: payload.message,
+          operationType: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+          context: propagatedContext,
+          attributes: {
+            [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
+              payload.partition
+            ),
+          },
+        });
 
         const eachMessagePromise = context.with(
           trace.setSpan(propagatedContext, span),
@@ -221,12 +245,18 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
       ): Promise<void> {
         const payload = args[0];
         // https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/semantic_conventions/messaging.md#topic-with-multiple-consumers
-        const receivingSpan = instrumentation._startConsumerSpan(
-          payload.batch.topic,
-          undefined,
-          MESSAGINGOPERATIONVALUES_RECEIVE,
-          ROOT_CONTEXT
-        );
+        const receivingSpan = instrumentation._startConsumerSpan({
+          topic: payload.batch.topic,
+          message: undefined,
+          operationType: MESSAGING_OPERATION_TYPE_VALUE_RECEIVE,
+          context: ROOT_CONTEXT,
+          attributes: {
+            [ATTR_MESSAGING_BATCH_MESSAGE_COUNT]: payload.batch.messages.length,
+            [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
+              payload.batch.partition
+            ),
+          },
+        });
         return context.with(
           trace.setSpan(context.active(), receivingSpan),
           () => {
@@ -246,13 +276,17 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
                     context: spanContext,
                   };
                 }
-                return instrumentation._startConsumerSpan(
-                  payload.batch.topic,
+                return instrumentation._startConsumerSpan({
+                  topic: payload.batch.topic,
                   message,
-                  MESSAGINGOPERATIONVALUES_PROCESS,
-                  undefined,
-                  origSpanLink
-                );
+                  operationType: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+                  link: origSpanLink,
+                  attributes: {
+                    [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
+                      payload.batch.partition
+                    ),
+                  },
+                });
               }
             );
             const batchMessagePromise: Promise<void> = original!.apply(
@@ -324,19 +358,24 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     return Promise.resolve(sendPromise)
       .catch(reason => {
         let errorMessage: string;
-        if (typeof reason === 'string') errorMessage = reason;
-        else if (
+        let errorType: string | undefined;
+        if (typeof reason === 'string') {
+          errorMessage = reason;
+        } else if (
           typeof reason === 'object' &&
           Object.prototype.hasOwnProperty.call(reason, 'message')
-        )
+        ) {
           errorMessage = reason.message;
+          errorType = reason.constructor.name;
+        }
 
-        spans.forEach(span =>
+        spans.forEach(span => {
+          if (errorType) span.setAttribute(ATTR_ERROR_TYPE, errorType);
           span.setStatus({
             code: SpanStatusCode.ERROR,
             message: errorMessage,
-          })
-        );
+          });
+        });
 
         throw reason;
       })
@@ -345,21 +384,38 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
       });
   }
 
-  private _startConsumerSpan(
-    topic: string,
-    message: KafkaMessage | undefined,
-    operation: string,
-    context: Context | undefined,
-    link?: Link
-  ) {
+  private _startConsumerSpan({
+    topic,
+    message,
+    operationType,
+    context,
+    link,
+    attributes = {},
+  }: ConsumerSpanOptions) {
+    const operationName =
+      operationType === MESSAGING_OPERATION_TYPE_VALUE_RECEIVE
+        ? 'poll' // for batch processing spans
+        : operationType; // for individual message processing spans
+
     const span = this.tracer.startSpan(
-      topic,
+      `${operationName} ${topic}`,
       {
-        kind: SpanKind.CONSUMER,
+        kind:
+          operationType === MESSAGING_OPERATION_TYPE_VALUE_RECEIVE
+            ? SpanKind.CLIENT
+            : SpanKind.CONSUMER,
         attributes: {
-          [SEMATTRS_MESSAGING_SYSTEM]: 'kafka',
-          [SEMATTRS_MESSAGING_DESTINATION]: topic,
-          [SEMATTRS_MESSAGING_OPERATION]: operation,
+          ...attributes,
+          [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+          [ATTR_MESSAGING_DESTINATION_NAME]: topic,
+          [ATTR_MESSAGING_OPERATION_TYPE]: operationType,
+          [ATTR_MESSAGING_OPERATION_NAME]: operationName,
+          [ATTR_MESSAGING_KAFKA_MESSAGE_KEY]: message?.key
+            ? String(message.key)
+            : undefined,
+          [ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE]:
+            message?.key && message?.value === null ? true : undefined,
+          [ATTR_MESSAGING_KAFKA_OFFSET]: message?.offset,
         },
         links: link ? [link] : [],
       },
@@ -381,11 +437,21 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
   }
 
   private _startProducerSpan(topic: string, message: Message) {
-    const span = this.tracer.startSpan(topic, {
+    const span = this.tracer.startSpan(`send ${topic}`, {
       kind: SpanKind.PRODUCER,
       attributes: {
-        [SEMATTRS_MESSAGING_SYSTEM]: 'kafka',
-        [SEMATTRS_MESSAGING_DESTINATION]: topic,
+        [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+        [ATTR_MESSAGING_DESTINATION_NAME]: topic,
+        [ATTR_MESSAGING_KAFKA_MESSAGE_KEY]: message.key
+          ? String(message.key)
+          : undefined,
+        [ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE]:
+          message.key && message.value === null ? true : undefined,
+        [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: message.partition
+          ? String(message.partition)
+          : undefined,
+        [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+        [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_SEND,
       },
     });
 

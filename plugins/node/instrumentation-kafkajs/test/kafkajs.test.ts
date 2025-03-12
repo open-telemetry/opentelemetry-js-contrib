@@ -25,10 +25,15 @@ import {
   Baggage,
 } from '@opentelemetry/api';
 import {
-  SEMATTRS_MESSAGING_SYSTEM,
-  SEMATTRS_MESSAGING_DESTINATION,
-  SEMATTRS_MESSAGING_OPERATION,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_MESSAGING_SYSTEM,
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_DESTINATION_PARTITION_ID,
+  ATTR_MESSAGING_KAFKA_MESSAGE_KEY,
+  ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE,
+  ATTR_MESSAGING_KAFKA_OFFSET,
+  ATTR_MESSAGING_OPERATION_NAME,
+} from '../src/semconv';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -149,6 +154,8 @@ describe('instrumentation-kafkajs', () => {
           topic: 'topic-name-1',
           messages: [
             {
+              partition: 42,
+              key: 'message-key-0',
               value: 'testing message content',
             },
           ],
@@ -161,18 +168,53 @@ describe('instrumentation-kafkajs', () => {
         assert.strictEqual(spans.length, 1);
         const span = spans[0];
         assert.strictEqual(span.kind, SpanKind.PRODUCER);
-        assert.strictEqual(span.name, 'topic-name-1');
+        assert.strictEqual(span.name, 'send topic-name-1');
         assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
-        assert.strictEqual(span.attributes[SEMATTRS_MESSAGING_SYSTEM], 'kafka');
+        assert.strictEqual(span.attributes[ATTR_MESSAGING_SYSTEM], 'kafka');
         assert.strictEqual(
-          span.attributes[SEMATTRS_MESSAGING_DESTINATION],
+          span.attributes[ATTR_MESSAGING_DESTINATION_NAME],
           'topic-name-1'
+        );
+        assert.strictEqual(
+          span.attributes[ATTR_MESSAGING_DESTINATION_PARTITION_ID],
+          '42'
+        );
+        assert.strictEqual(
+          span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE],
+          undefined
+        );
+        assert.strictEqual(
+          span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_KEY],
+          'message-key-0'
         );
 
         assert.strictEqual(messagesSent.length, 1);
         expectKafkaHeadersToMatchSpanContext(
           messagesSent[0],
           span as ReadableSpan
+        );
+      });
+
+      it('simple send create span with tombstone attribute', async () => {
+        await producer.send({
+          topic: 'topic-name-2',
+          messages: [
+            {
+              partition: 42,
+              key: 'message-key-1',
+              value: null,
+            },
+          ],
+        });
+
+        const spans = getTestSpans();
+        assert.strictEqual(spans.length, 1);
+        const span = spans[0];
+        assert.strictEqual(span.kind, SpanKind.PRODUCER);
+        assert.strictEqual(span.name, 'send topic-name-2');
+        assert.strictEqual(
+          span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE],
+          true
         );
       });
 
@@ -191,8 +233,8 @@ describe('instrumentation-kafkajs', () => {
 
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 2);
-        assert.strictEqual(spans[0].name, 'topic-name-1');
-        assert.strictEqual(spans[1].name, 'topic-name-1');
+        assert.strictEqual(spans[0].name, 'send topic-name-1');
+        assert.strictEqual(spans[1].name, 'send topic-name-1');
 
         assert.strictEqual(messagesSent.length, 2);
         expectKafkaHeadersToMatchSpanContext(
@@ -232,9 +274,9 @@ describe('instrumentation-kafkajs', () => {
 
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 3);
-        assert.strictEqual(spans[0].name, 'topic-name-1');
-        assert.strictEqual(spans[1].name, 'topic-name-1');
-        assert.strictEqual(spans[2].name, 'topic-name-2');
+        assert.strictEqual(spans[0].name, 'send topic-name-1');
+        assert.strictEqual(spans[1].name, 'send topic-name-1');
+        assert.strictEqual(spans[2].name, 'send topic-name-2');
 
         assert.strictEqual(messagesSent.length, 3);
         for (let i = 0; i < 3; i++) {
@@ -417,22 +459,34 @@ describe('instrumentation-kafkajs', () => {
   });
 
   describe('consumer', () => {
-    const createKafkaMessage = (offset: string): KafkaMessage => {
+    interface CreateMessageParams {
+      offset: string;
+      key?: string | null;
+      tombstone?: boolean;
+    }
+
+    const createKafkaMessage = ({
+      offset,
+      key = 'message-key',
+      tombstone = false,
+    }: CreateMessageParams): KafkaMessage => {
       return {
-        key: Buffer.from('message-key', 'utf8'),
-        value: Buffer.from('message content', 'utf8'),
+        key: typeof key === 'string' ? Buffer.from(key, 'utf8') : key,
+        value: tombstone ? null : Buffer.from('message content', 'utf8'),
         timestamp: '1234',
         size: 10,
         attributes: 1,
-        offset: offset,
+        offset,
       };
     };
 
-    const createEachMessagePayload = (): EachMessagePayload => {
+    const createEachMessagePayload = (
+      params: Partial<CreateMessageParams> = {}
+    ): EachMessagePayload => {
       return {
         topic: 'topic-name-1',
-        partition: 0,
-        message: createKafkaMessage('123'),
+        partition: 1,
+        message: createKafkaMessage({ offset: '123', ...params }),
         heartbeat: async () => {},
         pause: () => () => {},
       };
@@ -444,7 +498,10 @@ describe('instrumentation-kafkajs', () => {
           topic: 'topic-name-1',
           partition: 1234,
           highWatermark: '4567',
-          messages: [createKafkaMessage('124'), createKafkaMessage('125')],
+          messages: [
+            createKafkaMessage({ offset: '124' }),
+            createKafkaMessage({ offset: '125' }),
+          ],
         },
       } as EachBatchPayload;
     };
@@ -468,24 +525,79 @@ describe('instrumentation-kafkajs', () => {
             _payload: EachMessagePayload
           ): Promise<void> => {},
         });
-        const payload: EachMessagePayload = createEachMessagePayload();
+        const payload = createEachMessagePayload();
         await runConfig?.eachMessage!(payload);
 
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(span.name, 'topic-name-1');
+        assert.strictEqual(span.name, 'process topic-name-1');
         assert.strictEqual(span.parentSpanId, undefined);
         assert.strictEqual(span.kind, SpanKind.CONSUMER);
         assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
-        assert.strictEqual(span.attributes[SEMATTRS_MESSAGING_SYSTEM], 'kafka');
+        assert.strictEqual(span.attributes[ATTR_MESSAGING_SYSTEM], 'kafka');
         assert.strictEqual(
-          span.attributes[SEMATTRS_MESSAGING_DESTINATION],
+          span.attributes[ATTR_MESSAGING_DESTINATION_NAME],
           'topic-name-1'
         );
         assert.strictEqual(
-          span.attributes[SEMATTRS_MESSAGING_OPERATION],
+          span.attributes[ATTR_MESSAGING_OPERATION_TYPE],
           'process'
+        );
+        assert.strictEqual(
+          span.attributes[ATTR_MESSAGING_DESTINATION_PARTITION_ID],
+          '1'
+        );
+        assert.strictEqual(
+          span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_KEY],
+          'message-key'
+        );
+        assert.strictEqual(
+          span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE],
+          undefined
+        );
+        assert.strictEqual(span.attributes[ATTR_MESSAGING_KAFKA_OFFSET], '123');
+      });
+
+      it('consume eachMessage tombstone', async () => {
+        consumer.run({
+          eachMessage: async (
+            _payload: EachMessagePayload
+          ): Promise<void> => {},
+        });
+        const payload = createEachMessagePayload({ tombstone: true });
+        await runConfig?.eachMessage!(payload);
+
+        const spans = getTestSpans();
+        assert.strictEqual(spans.length, 1);
+        const span = spans[0];
+        assert.strictEqual(span.name, 'process topic-name-1');
+        assert.strictEqual(
+          span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_KEY],
+          'message-key'
+        );
+        assert.strictEqual(
+          span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE],
+          true
+        );
+      });
+
+      it('consume eachMessage with null key', async () => {
+        consumer.run({
+          eachMessage: async (
+            _payload: EachMessagePayload
+          ): Promise<void> => {},
+        });
+        const payload = createEachMessagePayload({ key: null });
+        await runConfig?.eachMessage!(payload);
+
+        const spans = getTestSpans();
+        assert.strictEqual(spans.length, 1);
+        const span = spans[0];
+        assert.strictEqual(span.name, 'process topic-name-1');
+        assert.strictEqual(
+          span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_KEY],
+          undefined
         );
       });
 
@@ -678,32 +790,40 @@ describe('instrumentation-kafkajs', () => {
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 3);
         spans.forEach(span => {
-          assert.strictEqual(span.name, 'topic-name-1');
           assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
+          assert.strictEqual(span.attributes[ATTR_MESSAGING_SYSTEM], 'kafka');
           assert.strictEqual(
-            span.attributes[SEMATTRS_MESSAGING_SYSTEM],
-            'kafka'
-          );
-          assert.strictEqual(
-            span.attributes[SEMATTRS_MESSAGING_DESTINATION],
+            span.attributes[ATTR_MESSAGING_DESTINATION_NAME],
             'topic-name-1'
           );
         });
 
         const [recvSpan, msg1Span, msg2Span] = spans;
 
+        assert.strictEqual(recvSpan.kind, SpanKind.CLIENT);
+        assert.strictEqual(recvSpan.name, 'poll topic-name-1');
         assert.strictEqual(recvSpan.parentSpanId, undefined);
         assert.strictEqual(
-          recvSpan.attributes[SEMATTRS_MESSAGING_OPERATION],
+          recvSpan.attributes[ATTR_MESSAGING_OPERATION_TYPE],
           'receive'
         );
+        assert.strictEqual(
+          recvSpan.attributes[ATTR_MESSAGING_OPERATION_NAME],
+          'poll'
+        );
 
+        assert.strictEqual(msg1Span.kind, SpanKind.CONSUMER);
+        assert.strictEqual(msg1Span.name, 'process topic-name-1');
         assert.strictEqual(
           msg1Span.parentSpanId,
           recvSpan.spanContext().spanId
         );
         assert.strictEqual(
-          msg1Span.attributes[SEMATTRS_MESSAGING_OPERATION],
+          msg1Span.attributes[ATTR_MESSAGING_OPERATION_TYPE],
+          'process'
+        );
+        assert.strictEqual(
+          msg1Span.attributes[ATTR_MESSAGING_OPERATION_NAME],
           'process'
         );
 
@@ -712,7 +832,11 @@ describe('instrumentation-kafkajs', () => {
           recvSpan.spanContext().spanId
         );
         assert.strictEqual(
-          msg2Span.attributes[SEMATTRS_MESSAGING_OPERATION],
+          msg2Span.attributes[ATTR_MESSAGING_OPERATION_TYPE],
+          'process'
+        );
+        assert.strictEqual(
+          msg2Span.attributes[ATTR_MESSAGING_OPERATION_NAME],
           'process'
         );
       });

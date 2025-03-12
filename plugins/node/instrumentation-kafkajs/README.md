@@ -23,7 +23,9 @@ npm install --save @opentelemetry/instrumentation-kafkajs
 
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { KafkaJsInstrumentation } = require('@opentelemetry/instrumentation-kafkajs');
+const {
+  KafkaJsInstrumentation,
+} = require('@opentelemetry/instrumentation-kafkajs');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
@@ -42,22 +44,28 @@ registerInstrumentations({
 
 You can set the following:
 
-| Options                      | Type                                   | Description                                                                                                          |
-| ---------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `producerHook`               | `KafkaProducerCustomAttributeFunction` | Function called before a producer message is sent. Allows for adding custom attributes to the span.                  |
-| `consumerHook`               | `KafkaConsumerCustomAttributeFunction` | Function called before a consumer message is processed. Allows for adding custom attributes to the span.             |
+| Options        | Type                                   | Description                                                                                              |
+| -------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `producerHook` | `KafkaProducerCustomAttributeFunction` | Function called before a producer message is sent. Allows for adding custom attributes to the span.      |
+| `consumerHook` | `KafkaConsumerCustomAttributeFunction` | Function called before a consumer message is processed. Allows for adding custom attributes to the span. |
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.24+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This package uses `@opentelemetry/semantic-conventions` version `1.30+`, which implements Semantic Convention [Version 1.30.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.30.0/docs/README.md)
 
 Attributes collected:
 
-| Attribute                    | Short Description                                     |
-| -----------------------------| ----------------------------------------------------- |
-| `messaging.system`           | An identifier for the messaging system being used.    |
-| `messaging.destination`      | The message destination name.                         |
-| `messaging.operation`        | A string identifying the kind of messaging operation. |
+| Attribute                            | Short Description                                                                                                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `messaging.system`                   | An identifier for the messaging system being used (i.e. `"kafka"`).                                                                                                |
+| `messaging.destination.name`         | The message destination name.                                                                                                                                      |
+| `messaging.operation.type`           | A string identifying the type of messaging operation.                                                                                                              |
+| `messaging.operation.name`           | The system-specific name of the messaging operation.                                                                                                               |
+| `messaging.operation.name`           | The system-specific name of the messaging operation.                                                                                                               |
+| `messaging.kafka.message.key`        | A stringified value representing the key of the Kafka message (if present).                                                                                        |
+| `messaging.kafka.message.tombstone`  | A boolean that is true if the message is a tombstone.                                                                                                              |
+| `messaging.kafka.offset`             | The offset of a record in the corresponding Kafka partition.                                                                                                       |
+| `messaging.destination.partition.id` | The identifier of the partition messages are sent to or received from, unique within the `messaging.destination.name`. **Note:** only available on producer spans. |
 
 ## Useful links
 
