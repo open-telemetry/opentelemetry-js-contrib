@@ -172,8 +172,10 @@ describe('WebExceptionInstrumentation', () => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        const body = event.body as Record<string, any>;
-        assert.strictEqual(body['app.custom.exception'], 'SOMETHING HAPPENED!');
+        assert.strictEqual(
+          event.attributes['app.custom.exception'],
+          'SOMETHING HAPPENED!'
+        );
       }, 0);
     });
   });
