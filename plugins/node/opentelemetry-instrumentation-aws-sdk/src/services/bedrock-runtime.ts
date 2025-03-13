@@ -234,6 +234,8 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     switch (response.request.commandName) {
       case 'Converse':
         return this.responseHookConverse(response, span, tracer, config);
+      case 'InvokeModel':
+        return this.responseHookInvokeModel(response, span, tracer, config);
     }
   }
 
@@ -256,6 +258,116 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
 
     if (stopReason !== undefined) {
       span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [stopReason]);
+    }
+  }
+  
+  private responseHookInvokeModel(
+    response: NormalizedResponse,
+    span: Span,
+    tracer: Tracer,
+    config: AwsSdkInstrumentationConfig
+  ) {
+    const currentModelId = response.request.commandInput?.modelId;
+    if (response.data?.body) {
+      const decodedResponseBody = new TextDecoder().decode(response.data.body);
+      const responseBody = JSON.parse(decodedResponseBody);
+      if (currentModelId.includes('amazon.titan')) {
+        if (responseBody.inputTextTokenCount !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, responseBody.inputTextTokenCount);
+        }
+        if (responseBody.results?.[0]?.tokenCount !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, responseBody.results[0].tokenCount);
+        }
+        if (responseBody.results?.[0]?.completionReason !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+            responseBody.results[0].completionReason,
+          ]);
+        }
+      } else if (currentModelId.includes('amazon.nova')) {
+        if (responseBody.usage !== undefined) {
+          if (responseBody.usage.inputTokens !== undefined) {
+            span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, responseBody.usage.inputTokens);
+          }
+          if (responseBody.usage.outputTokens !== undefined) {
+            span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, responseBody.usage.outputTokens);
+          }
+        }
+        if (responseBody.stopReason !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [responseBody.stopReason]);
+        }
+      } else if (currentModelId.includes('anthropic.claude')) {
+        if (responseBody.usage?.input_tokens !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, responseBody.usage.input_tokens);
+        }
+        if (responseBody.usage?.output_tokens !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, responseBody.usage.output_tokens);
+        }
+        if (responseBody.stop_reason !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [responseBody.stop_reason]);
+        }
+      } else if (currentModelId.includes('meta.llama')) {
+        if (responseBody.prompt_token_count !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, responseBody.prompt_token_count);
+        }
+        if (responseBody.generation_token_count !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, responseBody.generation_token_count);
+        }
+        if (responseBody.stop_reason !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [responseBody.stop_reason]);
+        }
+      } else if (currentModelId.includes('cohere.command-r')) {
+        if (responseBody.text !== undefined) {
+          // NOTE: We approximate the token count since this value is not directly available in the body
+          // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
+          // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
+          span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, Math.ceil(responseBody.text.length / 6));
+        }
+        if (responseBody.finish_reason !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [responseBody.finish_reason]);
+        }
+      } else if (currentModelId.includes('cohere.command')) {
+        if (responseBody.generations?.[0]?.text !== undefined) {
+          span.setAttribute(
+            ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+            // NOTE: We approximate the token count since this value is not directly available in the body
+            // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
+            // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
+            Math.ceil(responseBody.generations[0].text.length / 6)
+          );
+        }
+        if (responseBody.generations?.[0]?.finish_reason !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+            responseBody.generations[0].finish_reason,
+          ]);
+        }
+      } else if (currentModelId.includes('ai21.jamba')) {
+        if (responseBody.usage?.prompt_tokens !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, responseBody.usage.prompt_tokens);
+        }
+        if (responseBody.usage?.completion_tokens !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, responseBody.usage.completion_tokens);
+        }
+        if (responseBody.choices?.[0]?.finish_reason !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+            responseBody.choices[0].finish_reason,
+          ]);
+        }
+      } else if (currentModelId.includes('mistral')) {
+        if (responseBody.outputs?.[0]?.text !== undefined) {
+          span.setAttribute(
+            ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+            // NOTE: We approximate the token count since this value is not directly available in the body
+            // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
+            // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
+            Math.ceil(responseBody.outputs[0].text.length / 6)
+          );
+        }
+        if (responseBody.outputs?.[0]?.stop_reason !== undefined) {
+          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+            responseBody.outputs[0].stop_reason,
+          ]);
+        }
+      }
     }
   }
 }
