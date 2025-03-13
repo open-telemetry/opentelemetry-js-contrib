@@ -44,6 +44,8 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     switch (request.commandName) {
       case 'Converse':
         return this.requestPreSpanHookConverse(request, config, diag);
+      case 'InvokeModel':
+        return this.requestPreSpanHookInvokeModel(request, config, diag);
     }
 
     return {
@@ -84,6 +86,131 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       }
       if (stopSequences !== undefined) {
         spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = stopSequences;
+      }
+    }
+
+    return {
+      spanName,
+      isIncoming: false,
+      spanAttributes,
+    };
+  }
+
+  private requestPreSpanHookInvokeModel(
+    request: NormalizedRequest,
+    config: AwsSdkInstrumentationConfig,
+    diag: DiagLogger
+  ): RequestMetadata {
+    let spanName: string | undefined;
+    const spanAttributes: Attributes = {
+      [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT, // TODO: replace with name for invoke model in bedrock runtime
+    };
+
+    const modelId = request.commandInput.modelId;
+    if (modelId) {
+      spanAttributes[ATTR_GEN_AI_REQUEST_MODEL] = modelId;
+    }
+
+    if (request.commandInput?.body) {
+      const requestBody = JSON.parse(request.commandInput.body);
+      if (modelId.includes('amazon.titan')) {
+        if (requestBody.textGenerationConfig?.temperature !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] =
+            requestBody.textGenerationConfig.temperature;
+        }
+        if (requestBody.textGenerationConfig?.topP !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.textGenerationConfig.topP;
+        }
+        if (requestBody.textGenerationConfig?.maxTokenCount !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] =
+            requestBody.textGenerationConfig.maxTokenCount;
+        }
+      } else if (modelId.includes('amazon.nova')) {
+        if (requestBody.inferenceConfig?.temperature !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] = requestBody.inferenceConfig.temperature;
+        }
+        if (requestBody.inferenceConfig?.top_p !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.inferenceConfig.top_p;
+        }
+        if (requestBody.inferenceConfig?.max_new_tokens !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.inferenceConfig.max_new_tokens;
+        }
+      } else if (modelId.includes('anthropic.claude')) {
+        if (requestBody.max_tokens !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.max_tokens;
+        }
+        if (requestBody.temperature !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] = requestBody.temperature;
+        }
+        if (requestBody.top_p !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.top_p;
+        }
+      } else if (modelId.includes('meta.llama')) {
+        if (requestBody.max_gen_len !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.max_gen_len;
+        }
+        if (requestBody.temperature !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] = requestBody.temperature;
+        }
+        if (requestBody.top_p !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.top_p;
+        }
+      } else if (modelId.includes('cohere.command-r')) {
+        if (requestBody.max_tokens !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.max_tokens;
+        }
+        if (requestBody.temperature !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] = requestBody.temperature;
+        }
+        if (requestBody.p !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.p;
+        }
+        if (requestBody.message !== undefined) {
+          // NOTE: We approximate the token count since this value is not directly available in the body
+          // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
+          // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
+          spanAttributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS] = Math.ceil(requestBody.message.length / 6);
+        }
+      } else if (modelId.includes('cohere.command')) {
+        if (requestBody.max_tokens !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.max_tokens;
+        }
+        if (requestBody.temperature !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] = requestBody.temperature;
+        }
+        if (requestBody.p !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.p;
+        }
+        if (requestBody.prompt !== undefined) {
+          spanAttributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS] = Math.ceil(requestBody.prompt.length / 6);
+        }
+      } else if (modelId.includes('ai21.jamba')) {
+        if (requestBody.max_tokens !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.max_tokens;
+        }
+        if (requestBody.temperature !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] = requestBody.temperature;
+        }
+        if (requestBody.top_p !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.top_p;
+        }
+      } else if (modelId.includes('mistral')) {
+        if (requestBody.prompt !== undefined) {
+          // NOTE: We approximate the token count since this value is not directly available in the body
+          // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
+          // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
+          spanAttributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS] = Math.ceil(requestBody.prompt.length / 6);
+        }
+        if (requestBody.max_tokens !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.max_tokens;
+        }
+        if (requestBody.temperature !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] = requestBody.temperature;
+        }
+        if (requestBody.top_p !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.top_p;
+        }
       }
     }
 
