@@ -15,25 +15,55 @@
  */
 
 import {
-  SpanKind,
-  Span,
-  SpanStatusCode,
-  Context,
-  propagation,
-  Link,
-  trace,
-  context,
-  ROOT_CONTEXT,
   Attributes,
+  Context,
+  context,
+  Counter,
+  Histogram,
+  Link,
+  propagation,
+  ROOT_CONTEXT,
+  Span,
+  SpanKind,
+  SpanStatusCode,
+  trace,
 } from '@opentelemetry/api';
-import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import {
+  InstrumentationBase,
+  InstrumentationNodeModuleDefinition,
+  isWrapped,
+  safeExecuteInTheMiddle,
+} from '@opentelemetry/instrumentation';
+import {
+  ATTR_ERROR_TYPE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  ERROR_TYPE_VALUE_OTHER,
+} from '@opentelemetry/semantic-conventions';
+import type * as kafkaJs from 'kafkajs';
+import type {
+  Consumer,
+  ConsumerRunConfig,
+  EachBatchHandler,
+  EachMessageHandler,
+  KafkaMessage,
+  Message,
+  Producer,
+  RecordMetadata,
+} from 'kafkajs';
+import {
+  ConsumerExtended,
+  EVENT_LISTENERS_SET,
+  ProducerExtended,
+} from './internal-types';
+import { bufferTextMapGetter } from './propagator';
 import {
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_DESTINATION_PARTITION_ID,
+  ATTR_MESSAGING_KAFKA_MESSAGE_KEY,
   ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE,
   ATTR_MESSAGING_KAFKA_OFFSET,
-  ATTR_MESSAGING_KAFKA_MESSAGE_KEY,
   ATTR_MESSAGING_OPERATION_NAME,
   ATTR_MESSAGING_OPERATION_TYPE,
   ATTR_MESSAGING_SYSTEM,
@@ -41,41 +71,110 @@ import {
   MESSAGING_OPERATION_TYPE_VALUE_RECEIVE,
   MESSAGING_OPERATION_TYPE_VALUE_SEND,
   MESSAGING_SYSTEM_VALUE_KAFKA,
+  METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES,
+  METRIC_MESSAGING_CLIENT_OPERATION_DURATION,
+  METRIC_MESSAGING_CLIENT_SENT_MESSAGES,
+  METRIC_MESSAGING_PROCESS_DURATION,
 } from './semconv';
-import type * as kafkaJs from 'kafkajs';
-import type {
-  EachBatchHandler,
-  EachMessageHandler,
-  Producer,
-  RecordMetadata,
-  Message,
-  ConsumerRunConfig,
-  KafkaMessage,
-  Consumer,
-} from 'kafkajs';
 import { KafkaJsInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { bufferTextMapGetter } from './propagator';
-import {
-  InstrumentationBase,
-  InstrumentationNodeModuleDefinition,
-  safeExecuteInTheMiddle,
-  isWrapped,
-} from '@opentelemetry/instrumentation';
 
 interface ConsumerSpanOptions {
   topic: string;
   message: KafkaMessage | undefined;
   operationType: string;
   attributes?: Attributes;
-  context?: Context | undefined;
+  ctx?: Context | undefined;
   link?: Link;
 }
 
+interface StandardAttributes<OP extends string = string> extends Attributes {
+  [ATTR_MESSAGING_SYSTEM]: string;
+  [ATTR_MESSAGING_OPERATION_NAME]: OP;
+  [ATTR_ERROR_TYPE]?: string;
+}
+interface TopicAttributes {
+  [ATTR_MESSAGING_DESTINATION_NAME]: string;
+  [ATTR_MESSAGING_DESTINATION_PARTITION_ID]?: string;
+}
+
+interface ClientDurationAttributes
+  extends StandardAttributes,
+    Partial<TopicAttributes> {
+  [ATTR_SERVER_ADDRESS]: string;
+  [ATTR_SERVER_PORT]: number;
+  [ATTR_MESSAGING_OPERATION_TYPE]?: string;
+}
+interface SentMessagesAttributes
+  extends StandardAttributes<'send'>,
+    TopicAttributes {
+  [ATTR_ERROR_TYPE]?: string;
+}
+type ConsumedMessagesAttributes = StandardAttributes<'receive' | 'process'>;
+interface MessageProcessDurationAttributes
+  extends StandardAttributes<'process'>,
+    TopicAttributes {
+  [ATTR_MESSAGING_SYSTEM]: string;
+  [ATTR_MESSAGING_OPERATION_NAME]: 'process';
+  [ATTR_ERROR_TYPE]?: string;
+}
+type RecordPendingMetric = (errorType?: string | undefined) => void;
+
+function prepareCounter<T extends Attributes>(
+  meter: Counter<T>,
+  value: number,
+  attributes: T
+): RecordPendingMetric {
+  return (errorType?: string | undefined) => {
+    meter.add(value, {
+      ...attributes,
+      ...(errorType ? { [ATTR_ERROR_TYPE]: errorType } : {}),
+    });
+  };
+}
+
+function prepareDurationHistogram<T extends Attributes>(
+  meter: Histogram<T>,
+  value: number,
+  attributes: T
+): RecordPendingMetric {
+  return (errorType?: string | undefined) => {
+    meter.record((Date.now() - value) / 1000, {
+      ...attributes,
+      ...(errorType ? { [ATTR_ERROR_TYPE]: errorType } : {}),
+    });
+  };
+}
+
+const HISTOGRAM_BUCKET_BOUNDARIES = [
+  0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10,
+];
 export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumentationConfig> {
+  private _clientDuration!: Histogram<ClientDurationAttributes>;
+  private _sentMessages!: Counter<SentMessagesAttributes>;
+  private _consumedMessages!: Counter<ConsumedMessagesAttributes>;
+  private _processDuration!: Histogram<MessageProcessDurationAttributes>;
+
   constructor(config: KafkaJsInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+  }
+
+  override _updateMetricInstruments() {
+    this._clientDuration = this.meter.createHistogram(
+      METRIC_MESSAGING_CLIENT_OPERATION_DURATION,
+      { advice: { explicitBucketBoundaries: HISTOGRAM_BUCKET_BOUNDARIES } }
+    );
+    this._sentMessages = this.meter.createCounter(
+      METRIC_MESSAGING_CLIENT_SENT_MESSAGES
+    );
+    this._consumedMessages = this.meter.createCounter(
+      METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES
+    );
+    this._processDuration = this.meter.createHistogram(
+      METRIC_MESSAGING_PROCESS_DURATION,
+      { advice: { explicitBucketBoundaries: HISTOGRAM_BUCKET_BOUNDARIES } }
+    );
   }
 
   protected init() {
@@ -130,9 +229,37 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           instrumentation._getConsumerRunPatch()
         );
 
+        instrumentation._setConsumerEventListeners(newConsumer);
+
         return newConsumer;
       };
     };
+  }
+
+  private _setConsumerEventListeners(consumer: ConsumerExtended) {
+    if (consumer[EVENT_LISTENERS_SET]) return;
+
+    consumer.on(consumer.events.END_BATCH_PROCESS, event =>
+      this._consumedMessages.add(event.payload.batchSize, {
+        [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+        [ATTR_MESSAGING_OPERATION_NAME]: 'receive',
+        [ATTR_MESSAGING_DESTINATION_NAME]: event.payload.topic,
+        [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
+          event.payload.partition
+        ),
+      })
+    );
+    consumer.on(consumer.events.REQUEST, event => {
+      const [address, port] = event.payload.broker.split(':');
+      this._clientDuration.record(event.payload.duration / 1000, {
+        [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+        [ATTR_MESSAGING_OPERATION_NAME]: `${event.payload.apiName}`, // potentially suffix with @${event.payload.apiVersion}?
+        [ATTR_SERVER_ADDRESS]: address,
+        [ATTR_SERVER_PORT]: Number.parseInt(port, 10),
+      });
+    });
+
+    consumer[EVENT_LISTENERS_SET] = true;
   }
 
   private _getProducerPatch() {
@@ -162,9 +289,27 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           instrumentation._getProducerSendPatch()
         );
 
+        instrumentation._setProducerEventListeners(newProducer);
+
         return newProducer;
       };
     };
+  }
+
+  private _setProducerEventListeners(producer: ProducerExtended) {
+    if (producer[EVENT_LISTENERS_SET]) return;
+
+    producer.on(producer.events.REQUEST, event => {
+      const [address, port] = event.payload.broker.split(':');
+      this._clientDuration.record(event.payload.duration / 1000, {
+        [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+        [ATTR_MESSAGING_OPERATION_NAME]: `${event.payload.apiName}`, // potentially suffix with @${event.payload.apiVersion}?
+        [ATTR_SERVER_ADDRESS]: address,
+        [ATTR_SERVER_PORT]: Number.parseInt(port),
+      });
+    });
+
+    producer[EVENT_LISTENERS_SET] = true;
   }
 
   private _getConsumerRunPatch() {
@@ -217,7 +362,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           topic: payload.topic,
           message: payload.message,
           operationType: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
-          context: propagatedContext,
+          ctx: propagatedContext,
           attributes: {
             [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
               payload.partition
@@ -225,13 +370,32 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           },
         });
 
+        const pendingMetrics: RecordPendingMetric[] = [
+          prepareDurationHistogram(
+            instrumentation._processDuration,
+            Date.now(),
+            {
+              [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+              [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+              [ATTR_MESSAGING_DESTINATION_NAME]: payload.topic,
+              [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
+                payload.partition
+              ),
+            }
+          ),
+        ];
+
         const eachMessagePromise = context.with(
           trace.setSpan(propagatedContext, span),
           () => {
             return original!.apply(this, args);
           }
         );
-        return instrumentation._endSpansOnPromise([span], eachMessagePromise);
+        return instrumentation._endSpansOnPromise(
+          [span],
+          pendingMetrics,
+          eachMessagePromise
+        );
       };
     };
   }
@@ -249,7 +413,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           topic: payload.batch.topic,
           message: undefined,
           operationType: MESSAGING_OPERATION_TYPE_VALUE_RECEIVE,
-          context: ROOT_CONTEXT,
+          ctx: ROOT_CONTEXT,
           attributes: {
             [ATTR_MESSAGING_BATCH_MESSAGE_COUNT]: payload.batch.messages.length,
             [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
@@ -260,23 +424,26 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         return context.with(
           trace.setSpan(context.active(), receivingSpan),
           () => {
-            const spans = payload.batch.messages.map(
-              (message: KafkaMessage) => {
-                const propagatedContext: Context = propagation.extract(
-                  ROOT_CONTEXT,
-                  message.headers,
-                  bufferTextMapGetter
-                );
-                const spanContext = trace
-                  .getSpan(propagatedContext)
-                  ?.spanContext();
-                let origSpanLink: Link | undefined;
-                if (spanContext) {
-                  origSpanLink = {
-                    context: spanContext,
-                  };
-                }
-                return instrumentation._startConsumerSpan({
+            const startTime = Date.now();
+            const spans: Span[] = [];
+            const pendingMetrics: RecordPendingMetric[] = [];
+            payload.batch.messages.forEach(message => {
+              const propagatedContext: Context = propagation.extract(
+                ROOT_CONTEXT,
+                message.headers,
+                bufferTextMapGetter
+              );
+              const spanContext = trace
+                .getSpan(propagatedContext)
+                ?.spanContext();
+              let origSpanLink: Link | undefined;
+              if (spanContext) {
+                origSpanLink = {
+                  context: spanContext,
+                };
+              }
+              spans.push(
+                instrumentation._startConsumerSpan({
                   topic: payload.batch.topic,
                   message,
                   operationType: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
@@ -286,9 +453,23 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
                       payload.batch.partition
                     ),
                   },
-                });
-              }
-            );
+                })
+              );
+              pendingMetrics.push(
+                prepareDurationHistogram(
+                  instrumentation._processDuration,
+                  startTime,
+                  {
+                    [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                    [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+                    [ATTR_MESSAGING_DESTINATION_NAME]: payload.batch.topic,
+                    [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
+                      payload.batch.partition
+                    ),
+                  }
+                )
+              );
+            });
             const batchMessagePromise: Promise<void> = original!.apply(
               this,
               args
@@ -296,6 +477,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
             spans.unshift(receivingSpan);
             return instrumentation._endSpansOnPromise(
               spans,
+              pendingMetrics,
               batchMessagePromise
             );
           }
@@ -313,19 +495,40 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
       ): ReturnType<Producer['sendBatch']> {
         const batch = args[0];
         const messages = batch.topicMessages || [];
-        const spans: Span[] = messages
-          .map(topicMessage =>
-            topicMessage.messages.map(message =>
-              instrumentation._startProducerSpan(topicMessage.topic, message)
-            )
-          )
-          .reduce((acc, val) => acc.concat(val), []);
 
+        const spans: Span[] = [];
+        const pendingMetrics: RecordPendingMetric[] = [];
+
+        messages.forEach(topicMessage => {
+          topicMessage.messages.forEach(message => {
+            spans.push(
+              instrumentation._startProducerSpan(topicMessage.topic, message)
+            );
+            pendingMetrics.push(
+              prepareCounter(instrumentation._sentMessages, 1, {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+                [ATTR_MESSAGING_DESTINATION_NAME]: topicMessage.topic,
+                ...(message.partition
+                  ? {
+                      [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
+                        message.partition
+                      ),
+                    }
+                  : {}),
+              })
+            );
+          });
+        });
         const origSendResult: Promise<RecordMetadata[]> = original.apply(
           this,
           args
         );
-        return instrumentation._endSpansOnPromise(spans, origSendResult);
+        return instrumentation._endSpansOnPromise(
+          spans,
+          pendingMetrics,
+          origSendResult
+        );
       };
     };
   }
@@ -342,23 +545,46 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           return instrumentation._startProducerSpan(record.topic, message);
         });
 
+        const pendingMetrics: RecordPendingMetric[] = record.messages.map(m =>
+          prepareCounter(instrumentation._sentMessages, 1, {
+            [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+            [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+            [ATTR_MESSAGING_DESTINATION_NAME]: record.topic,
+            ...(m.partition
+              ? {
+                  [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
+                    m.partition
+                  ),
+                }
+              : {}),
+          })
+        );
         const origSendResult: Promise<RecordMetadata[]> = original.apply(
           this,
           args
         );
-        return instrumentation._endSpansOnPromise(spans, origSendResult);
+        return instrumentation._endSpansOnPromise(
+          spans,
+          pendingMetrics,
+          origSendResult
+        );
       };
     };
   }
 
   private _endSpansOnPromise<T>(
     spans: Span[],
+    pendingMetrics: RecordPendingMetric[],
     sendPromise: Promise<T>
   ): Promise<T> {
     return Promise.resolve(sendPromise)
+      .then(result => {
+        pendingMetrics.forEach(m => m());
+        return result;
+      })
       .catch(reason => {
         let errorMessage: string;
-        let errorType: string | undefined;
+        let errorType = ERROR_TYPE_VALUE_OTHER;
         if (typeof reason === 'string') {
           errorMessage = reason;
         } else if (
@@ -368,6 +594,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           errorMessage = reason.message;
           errorType = reason.constructor.name;
         }
+        pendingMetrics.forEach(m => m(errorType));
 
         spans.forEach(span => {
           if (errorType) span.setAttribute(ATTR_ERROR_TYPE, errorType);
@@ -388,7 +615,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     topic,
     message,
     operationType,
-    context,
+    ctx,
     link,
     attributes = {},
   }: ConsumerSpanOptions) {
@@ -419,7 +646,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         },
         links: link ? [link] : [],
       },
-      context
+      ctx
     );
 
     const { consumerHook } = this.getConfig();

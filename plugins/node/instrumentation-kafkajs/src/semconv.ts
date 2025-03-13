@@ -136,3 +136,44 @@ export const MESSAGING_OPERATION_TYPE_VALUE_SEND = 'send' as const;
  * Enum value "kafka" for attribute {@link ATTR_MESSAGING_SYSTEM}.
  */
 export const MESSAGING_SYSTEM_VALUE_KAFKA = 'kafka' as const;
+
+/**
+ * Number of messages that were delivered to the application.
+ *
+ * @note Records the number of messages pulled from the broker or number of messages dispatched to the application in push-based scenarios.
+ * The metric **SHOULD** be reported once per message delivery. For example, if receiving and processing operations are both instrumented for a single message delivery, this counter is incremented when the message is received and not reported when it is processed.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES =
+  'messaging.client.consumed.messages' as const;
+
+/**
+ * Duration of messaging operation initiated by a producer or consumer client.
+ *
+ * @note This metric **SHOULD NOT** be used to report processing duration - processing duration is reported in `messaging.process.duration` metric.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_MESSAGING_CLIENT_OPERATION_DURATION =
+  'messaging.client.operation.duration' as const;
+
+/**
+ * Number of messages producer attempted to send to the broker.
+ *
+ * @note This metric **MUST NOT** count messages that were created but haven't yet been sent.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_MESSAGING_CLIENT_SENT_MESSAGES =
+  'messaging.client.sent.messages' as const;
+
+/**
+ * Duration of processing operation.
+ *
+ * @note This metric **MUST** be reported for operations with `messaging.operation.type` that matches `process`.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_MESSAGING_PROCESS_DURATION =
+  'messaging.process.duration' as const;

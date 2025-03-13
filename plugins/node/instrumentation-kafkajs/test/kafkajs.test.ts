@@ -23,6 +23,7 @@ import {
   SpanKind,
   SpanStatusCode,
   Baggage,
+  Attributes,
 } from '@opentelemetry/api';
 import {
   ATTR_MESSAGING_SYSTEM,
@@ -33,16 +34,22 @@ import {
   ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE,
   ATTR_MESSAGING_KAFKA_OFFSET,
   ATTR_MESSAGING_OPERATION_NAME,
+  METRIC_MESSAGING_CLIENT_SENT_MESSAGES,
+  MESSAGING_SYSTEM_VALUE_KAFKA,
+  METRIC_MESSAGING_PROCESS_DURATION,
 } from '../src/semconv';
 import {
   getTestSpans,
+  initMeterProvider,
   registerInstrumentationTesting,
+  TestMetricReader,
 } from '@opentelemetry/contrib-test-utils';
 import { W3CBaggagePropagator, CompositePropagator } from '@opentelemetry/core';
 
 const instrumentation = registerInstrumentationTesting(
   new KafkaJsInstrumentation()
 );
+import { CollectionResult, DataPointType } from '@opentelemetry/sdk-metrics';
 
 import * as kafkajs from 'kafkajs';
 import {
@@ -60,6 +67,45 @@ import {
 } from 'kafkajs';
 import { DummyPropagation } from './DummyPropagation';
 import { bufferTextMapGetter } from '../src/propagator';
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+
+function assertMetricCollection(
+  { errors, resourceMetrics }: CollectionResult,
+  expected: Record<
+    string,
+    { count?: number; value?: number; attributes: Attributes }[]
+  >
+) {
+  assert.strictEqual(errors.length, 0);
+  const { metrics } = resourceMetrics.scopeMetrics[0];
+  assert.strictEqual(
+    Object.keys(expected).length,
+    metrics.length,
+    'A different number of metrics were found than expected'
+  );
+  Object.entries(expected).forEach(([name, values]) => {
+    const match = metrics.find(metric => metric.descriptor.name === name);
+    assert.ok(match, `metric ${name} not found`);
+
+    if (match.dataPointType === DataPointType.HISTOGRAM) {
+      assert.deepStrictEqual(
+        match.dataPoints.map(d => d.value.count),
+        values.map(v => v.count),
+        'histogram datapoints do not have the same count'
+      );
+    } else {
+      assert.deepStrictEqual(
+        match.dataPoints.map(d => d.value),
+        values.map(v => v.value),
+        'counter datapoints do not match'
+      );
+    }
+    assert.deepStrictEqual(
+      match.dataPoints.map(d => d.attributes),
+      values.map(v => v.attributes)
+    );
+  });
+}
 
 describe('instrumentation-kafkajs', () => {
   propagation.setGlobalPropagator(
@@ -112,8 +158,10 @@ describe('instrumentation-kafkajs', () => {
     };
   };
 
+  let metricReader: TestMetricReader;
   beforeEach(() => {
     messagesSent = [];
+    metricReader = initMeterProvider(instrumentation);
   });
 
   describe('producer', () => {
@@ -132,21 +180,29 @@ describe('instrumentation-kafkajs', () => {
     };
 
     describe('successful send', () => {
-      beforeEach(async () => {
-        patchProducerSend(async (): Promise<RecordMetadata[]> => {
-          return [
-            {
-              topicName: 'topic-name-1',
-              partition: 0,
-              errorCode: 123,
-              offset: '18',
-              timestamp: '123456',
-            },
-          ];
-        });
+      const defaultRecordMetadata = [
+        {
+          topicName: 'topic-name-1',
+          partition: 0,
+          errorCode: 123,
+          offset: '18',
+          timestamp: '123456',
+        },
+      ];
+      function initializeProducer(
+        recordMetadata: RecordMetadata[] = defaultRecordMetadata
+      ) {
+        patchProducerSend(
+          async (): Promise<RecordMetadata[]> => recordMetadata
+        );
         instrumentation.disable();
         instrumentation.enable();
-        producer = kafka.producer();
+        producer = kafka.producer({
+          createPartitioner: kafkajs.Partitioners.LegacyPartitioner,
+        });
+      }
+      beforeEach(() => {
+        initializeProducer();
       });
 
       it('simple send create span with right attributes, pass return value correctly and propagate context', async () => {
@@ -193,11 +249,25 @@ describe('instrumentation-kafkajs', () => {
           messagesSent[0],
           span as ReadableSpan
         );
+
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
+            {
+              value: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '42',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+              },
+            },
+          ],
+        });
       });
 
       it('simple send create span with tombstone attribute', async () => {
         await producer.send({
-          topic: 'topic-name-2',
+          topic: 'topic-name-1',
           messages: [
             {
               partition: 42,
@@ -211,14 +281,43 @@ describe('instrumentation-kafkajs', () => {
         assert.strictEqual(spans.length, 1);
         const span = spans[0];
         assert.strictEqual(span.kind, SpanKind.PRODUCER);
-        assert.strictEqual(span.name, 'send topic-name-2');
+        assert.strictEqual(span.name, 'send topic-name-1');
         assert.strictEqual(
           span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE],
           true
         );
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
+            {
+              value: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '42',
+              },
+            },
+          ],
+        });
       });
 
       it('send two messages', async () => {
+        initializeProducer([
+          {
+            topicName: 'topic-name-1',
+            partition: 0,
+            errorCode: 123,
+            offset: '18',
+            timestamp: '123456',
+          },
+          {
+            topicName: 'topic-name-1',
+            partition: 0,
+            errorCode: 123,
+            offset: '19',
+            timestamp: '123456',
+          },
+        ]);
         await producer.send({
           topic: 'topic-name-1',
           messages: [
@@ -245,9 +344,44 @@ describe('instrumentation-kafkajs', () => {
           messagesSent[1],
           spans[1] as ReadableSpan
         );
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
+            {
+              value: 2,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+              },
+            },
+          ],
+        });
       });
 
       it('send batch', async () => {
+        initializeProducer([
+          {
+            topicName: 'topic-name-1',
+            partition: 0,
+            errorCode: 123,
+            offset: '18',
+            timestamp: '123456',
+          },
+          {
+            topicName: 'topic-name-1',
+            partition: 0,
+            errorCode: 123,
+            offset: '19',
+            timestamp: '123456',
+          },
+          {
+            topicName: 'topic-name-2',
+            partition: 1,
+            errorCode: 123,
+            offset: '19',
+            timestamp: '123456',
+          },
+        ]);
         await producer.sendBatch({
           topicMessages: [
             {
@@ -285,6 +419,26 @@ describe('instrumentation-kafkajs', () => {
             spans[i] as ReadableSpan
           );
         }
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
+            {
+              value: 2,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+              },
+            },
+            {
+              value: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-2',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+              },
+            },
+          ],
+        });
       });
     });
 
@@ -297,7 +451,9 @@ describe('instrumentation-kafkajs', () => {
         });
         instrumentation.disable();
         instrumentation.enable();
-        producer = kafka.producer();
+        producer = kafka.producer({
+          createPartitioner: kafkajs.Partitioners.LegacyPartitioner,
+        });
       });
 
       it('error in send create failed span', async () => {
@@ -320,6 +476,19 @@ describe('instrumentation-kafkajs', () => {
           span.status.message,
           'error thrown from kafka client send'
         );
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
+            {
+              value: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+                [ATTR_ERROR_TYPE]: 'Error',
+              },
+            },
+          ],
+        });
       });
 
       it('error in send with multiple messages create failed spans', async () => {
@@ -345,6 +514,19 @@ describe('instrumentation-kafkajs', () => {
             span.status.message,
             'error thrown from kafka client send'
           );
+        });
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
+            {
+              value: 2,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+                [ATTR_ERROR_TYPE]: 'Error',
+              },
+            },
+          ],
         });
       });
 
@@ -384,6 +566,28 @@ describe('instrumentation-kafkajs', () => {
             'error thrown from kafka client send'
           );
         });
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
+            {
+              value: 2,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+                [ATTR_ERROR_TYPE]: 'Error',
+              },
+            },
+            {
+              value: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-2',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
+                [ATTR_ERROR_TYPE]: 'Error',
+              },
+            },
+          ],
+        });
       });
     });
 
@@ -402,7 +606,9 @@ describe('instrumentation-kafkajs', () => {
         instrumentation.disable();
         instrumentation.setConfig(config);
         instrumentation.enable();
-        producer = kafka.producer();
+        producer = kafka.producer({
+          createPartitioner: kafkajs.Partitioners.LegacyPartitioner,
+        });
       });
 
       it('producer hook add span attribute with value from message', async () => {
@@ -437,7 +643,9 @@ describe('instrumentation-kafkajs', () => {
         instrumentation.disable();
         instrumentation.setConfig(config);
         instrumentation.enable();
-        producer = kafka.producer();
+        producer = kafka.producer({
+          createPartitioner: kafkajs.Partitioners.LegacyPartitioner,
+        });
       });
 
       it('producer hook add span attribute with value from message', async () => {
@@ -557,6 +765,19 @@ describe('instrumentation-kafkajs', () => {
           undefined
         );
         assert.strictEqual(span.attributes[ATTR_MESSAGING_KAFKA_OFFSET], '123');
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_PROCESS_DURATION]: [
+            {
+              count: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+              },
+            },
+          ],
+        });
       });
 
       it('consume eachMessage tombstone', async () => {
@@ -719,6 +940,20 @@ describe('instrumentation-kafkajs', () => {
           span.status.message,
           'error thrown from eachMessage callback'
         );
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_PROCESS_DURATION]: [
+            {
+              count: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+                [ATTR_ERROR_TYPE]: 'Error',
+              },
+            },
+          ],
+        });
       });
 
       it('throwing object with no message', async () => {
@@ -745,6 +980,20 @@ describe('instrumentation-kafkajs', () => {
         const span = spans[0];
         assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
         assert.strictEqual(span.status.message, undefined);
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_PROCESS_DURATION]: [
+            {
+              count: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+                [ATTR_ERROR_TYPE]: '_OTHER',
+              },
+            },
+          ],
+        });
       });
 
       it('throwing non object', async () => {
@@ -768,6 +1017,20 @@ describe('instrumentation-kafkajs', () => {
         const span = spans[0];
         assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
         assert.strictEqual(span.status.message, undefined);
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_PROCESS_DURATION]: [
+            {
+              count: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+                [ATTR_ERROR_TYPE]: '_OTHER',
+              },
+            },
+          ],
+        });
       });
     });
 
@@ -839,6 +1102,19 @@ describe('instrumentation-kafkajs', () => {
           msg2Span.attributes[ATTR_MESSAGING_OPERATION_NAME],
           'process'
         );
+        assertMetricCollection(await metricReader.collect(), {
+          [METRIC_MESSAGING_PROCESS_DURATION]: [
+            {
+              count: 2,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1234',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+              },
+            },
+          ],
+        });
       });
 
       it('consumer eachBatch with non promise return value', async () => {
@@ -865,7 +1141,9 @@ describe('instrumentation-kafkajs', () => {
       storeRunConfig();
       instrumentation.disable();
       instrumentation.enable();
-      producer = kafka.producer();
+      producer = kafka.producer({
+        createPartitioner: kafkajs.Partitioners.LegacyPartitioner,
+      });
       consumer = kafka.consumer({ groupId: 'testing-group-id' });
     });
 
