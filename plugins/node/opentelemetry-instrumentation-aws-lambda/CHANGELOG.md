@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.50.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.50.2...instrumentation-aws-lambda-v0.50.3) (2025-02-19)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2413](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2413)) ([1a55420](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1a55420d8c00ca998b57270df77857c48ebbe8d7))
+* **deps:** update otel core experimental to ^0.57.1 ([#2687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2687)) ([5e20fe2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5e20fe2f450a1be4ea100e8a6d196e33ccff0cda))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^1.26.1 to ^1.26.2
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.53.1 to ^0.53.2
+
+## [0.50.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.50.1...instrumentation-aws-lambda-v0.50.2) (2025-01-20)
+
+
+### Bug Fixes
+
+* **instrumentation-aws-lambda:** do not import from semantic-conventions incubating entry-point ([#2670](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2670)) ([0db649f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0db649f8c59b6b4df455dd0012d735ce9b0118af))
+
 ## [0.50.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.50.0...instrumentation-aws-lambda-v0.50.1) (2025-01-09)
 
 

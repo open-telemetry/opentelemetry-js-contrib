@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/plugin-react-load-v0.31.0...plugin-react-load-v0.31.1) (2025-02-19)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2413](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2413)) ([1a55420](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1a55420d8c00ca998b57270df77857c48ebbe8d7))
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/plugin-react-load-v0.30.1...plugin-react-load-v0.31.0) (2024-09-02)
 
 

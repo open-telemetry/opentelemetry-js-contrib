@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.11.0...resource-detector-aws-v1.12.0) (2025-02-19)
+
+
+### Features
+
+* **detector-aws:** add more lambda semconv attributes ([#2589](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2589)) ([bef920a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bef920a6470d790e741a300b7b26fb5689f4070e))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.1 ([#2687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2687)) ([5e20fe2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5e20fe2f450a1be4ea100e8a6d196e33ccff0cda))
+* **detector-aws:** replace ecs deprecated semconv consts and hardcoded strings ([#2674](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2674)) ([0057f15](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0057f15057f8bc330100f1124b426b05025873b9))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.0 to ^0.45.1
+    * @opentelemetry/instrumentation-fs bumped from ^0.19.0 to ^0.19.1
+
+## [1.11.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.10.0...resource-detector-aws-v1.11.0) (2025-01-20)
+
+
+### Features
+
+* **detectors:** generate esm build files too ([#2636](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2636)) ([c2ad0af](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c2ad0af34e1570f3609beefc4a8d41ddfb7f8f77))
+* **detectors:** mark as side effect free ([#2663](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2663)) ([e9263a3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9263a36255c0016cca78bf16c4598f23519d5f1))
+
+
+### Bug Fixes
+
+* **detector-aws:** remove all deprecation warnings ([#2642](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2642)) ([f97bd70](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f97bd7099ed6ec4e99af98157608040708de15c6))
+* **detector-aws:** remove semconv incubating import ([#2668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2668)) ([3e95995](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3e95995fcdaa7aecdc47bf52f01fa2e48e4f98ce))
+
 ## [1.10.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.9.0...resource-detector-aws-v1.10.0) (2024-12-18)
 
 

@@ -40,11 +40,10 @@ import type * as BunyanLogger from 'bunyan';
 // import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
-const tracerProvider = new NodeTracerProvider();
+const tracerProvider = new NodeTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(new InMemorySpanExporter())],
+});
 tracerProvider.register();
-tracerProvider.addSpanProcessor(
-  new SimpleSpanProcessor(new InMemorySpanExporter())
-);
 const tracer = tracerProvider.getTracer('default');
 
 const resource = new Resource({

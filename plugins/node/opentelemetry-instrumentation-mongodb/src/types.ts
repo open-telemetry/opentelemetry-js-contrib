@@ -49,6 +49,11 @@ export interface MongoDBInstrumentationConfig extends InstrumentationConfig {
    * Custom serializer function for the db.statement tag
    */
   dbStatementSerializer?: DbStatementSerializer;
+
+  /**
+   * Require parent to create mongodb span, default when unset is true
+   */
+  requireParentSpan?: boolean;
 }
 
 export interface MongoResponseHookInformation {

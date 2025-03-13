@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.44.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.44.0...instrumentation-knex-v0.44.1) (2025-02-19)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.1 ([#2687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2687)) ([5e20fe2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5e20fe2f450a1be4ea100e8a6d196e33ccff0cda))
+* **instrumentation-knex:** Support better-sqlite3 errors ([#2650](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2650)) ([4560d14](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4560d144ced8b758395003966028fbf090065105))
+
 ## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.43.0...instrumentation-knex-v0.44.0) (2024-12-18)
 
 
