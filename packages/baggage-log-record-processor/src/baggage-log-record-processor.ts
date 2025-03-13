@@ -60,7 +60,6 @@ export class BaggageLogRecordProcessor implements LogRecordProcessor {
         .filter(entry => this._keyPredicate(entry[0]))
         .forEach(entry => logRecord.setAttribute(entry[0], entry[1].value));
     }
-    
   }
 
   /**

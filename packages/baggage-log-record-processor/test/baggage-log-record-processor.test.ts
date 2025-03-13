@@ -16,72 +16,121 @@
 
 import { BaggageLogRecordProcessor } from '../src/baggage-log-record-processor';
 import { ALLOW_ALL_BAGGAGE_KEYS } from '../src/types';
-import { propagation, ROOT_CONTEXT, diag, DiagLogLevel, DiagConsoleLogger } from '@opentelemetry/api';
-import { logs } from '@opentelemetry/api-logs';
-import { LoggerProvider, LogRecord, InMemoryLogRecordExporter, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
-import { LoggerProviderSharedState } from '@opentelemetry/sdk-logs/build/src/internal/LoggerProviderSharedState';
+import { propagation, ROOT_CONTEXT } from '@opentelemetry/api';
+import {
+  InMemoryLogRecordExporter,
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
 import { expect } from 'expect';
 
-describe('BaggageLogRecordProcessor with all keys filter', () => {
-  const baggageProcessor = new BaggageLogRecordProcessor(ALLOW_ALL_BAGGAGE_KEYS);
-
+describe('BaggageLogRecordProcessor with all keys', () => {
+  const baggageProcessor = new BaggageLogRecordProcessor(
+    ALLOW_ALL_BAGGAGE_KEYS
+  );
   const bag = propagation.createBaggage({
     brand: { value: 'samsonite' },
-  });
-  const expectedAttrs = {
-    brand: 'samsonite',
-  };
-
-  let logRecord: LogRecord;
-  
-
-  beforeEach(() => {
-    const loggerProvider = new LoggerProvider();
-    const memoryLogExporter = new InMemoryLogRecordExporter();
-    loggerProvider.addLogRecordProcessor(
-      new SimpleLogRecordProcessor(memoryLogExporter)
-    );
-    logs.setGlobalLoggerProvider(loggerProvider);
-
-    diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
-    diag.info('info message');
-
-    const logRecords = memoryLogExporter.getFinishedLogRecords();
-    console.log(logRecords); // <<< Returning no logs
-    logRecord = new LogRecord(
-      new LoggerProviderSharedState(
-        logRecords[0].resource, 
-        100, 
-        {attributeValueLengthLimit: 100, attributeCountLimit: 100}
-      ), 
-      logRecords[0].instrumentationScope, 
-      logRecords[0]
-    );
-    loggerProvider.getLogger('baggage-testing').emit(logRecord);
-
-    // logRecord = {
-    //   ...logRecords[0],
-    //   totalAttributesCount: 0,
-    //   _isReadonly: false,
-    //   _logRecordLimits: 100,
-    //   setAttribute: 
-    //   // severityNumber: 5,
-    //   // severityText: 'debug',
-    //   // body: 'log message',
-    //   // attributes: {},
-    //   // hrTime: [1609504210, 150000000],
-    //   // hrTimeObserved: [1609504210, 150000000],
-    // };
-    
+    color: { value: 'blue' },
   });
 
   it('onEmit adds current Baggage entries to a log record as attributes', () => {
-    expect(logRecord.attributes).toEqual({});
+    const loggerProvider = new LoggerProvider();
+    const exporter = new InMemoryLogRecordExporter();
+    loggerProvider.addLogRecordProcessor(baggageProcessor);
+    loggerProvider.addLogRecordProcessor(
+      new SimpleLogRecordProcessor(exporter)
+    );
+    const logger = loggerProvider.getLogger('my-logger');
     const ctx = propagation.setBaggage(ROOT_CONTEXT, bag);
-    
-    baggageProcessor.onEmit(logRecord, ctx);
 
-    expect(logRecord.attributes).toEqual(expectedAttrs);
+    logger.emit({
+      body: 'my log body',
+      context: ctx,
+    });
+
+    const logRecords = exporter.getFinishedLogRecords();
+    expect(logRecords.length).toBe(1);
+    expect(logRecords[0].attributes).toEqual({
+      brand: 'samsonite',
+      color: 'blue',
+    });
+  });
+
+  it('forceFlush is a no-op and does not throw error', async () => {
+    await expect(baggageProcessor.forceFlush()).resolves.not.toThrow();
+  });
+
+  it('shutdown is a no-op and does not throw error', async () => {
+    await expect(baggageProcessor.shutdown()).resolves.not.toThrow();
+  });
+});
+
+describe('BaggageLogRecordProcessor startWith key filter', () => {
+  const baggageProcessor = new BaggageLogRecordProcessor((key: string) =>
+    key.startsWith('brand')
+  );
+  const bag = propagation.createBaggage({
+    brand: { value: 'samsonite' },
+    color: { value: 'blue' },
+  });
+
+  it('onEmit adds current filtered by startWith Baggage entries to a log record as attributes', () => {
+    const loggerProvider = new LoggerProvider();
+    const exporter = new InMemoryLogRecordExporter();
+    loggerProvider.addLogRecordProcessor(baggageProcessor);
+    loggerProvider.addLogRecordProcessor(
+      new SimpleLogRecordProcessor(exporter)
+    );
+    const logger = loggerProvider.getLogger('my-logger');
+    const ctx = propagation.setBaggage(ROOT_CONTEXT, bag);
+
+    logger.emit({
+      body: 'my log body',
+      context: ctx,
+    });
+
+    const logRecords = exporter.getFinishedLogRecords();
+    expect(logRecords.length).toBe(1);
+    expect(logRecords[0].attributes).toEqual({ brand: 'samsonite' });
+  });
+
+  it('forceFlush is a no-op and does not throw error', async () => {
+    await expect(baggageProcessor.forceFlush()).resolves.not.toThrow();
+  });
+
+  it('shutdown is a no-op and does not throw error', async () => {
+    await expect(baggageProcessor.shutdown()).resolves.not.toThrow();
+  });
+});
+
+describe('BaggageLogRecordProcessor with regex key filter', () => {
+  const regex = new RegExp('^col.+');
+  const baggageProcessor = new BaggageLogRecordProcessor((key: string) =>
+    regex.test(key)
+  );
+  const bag = propagation.createBaggage({
+    brand: { value: 'samsonite' },
+    color: { value: 'blue' },
+  });
+
+  it('onEmit adds current filtered by regex Baggage entries to a log record as attributes', () => {
+    const loggerProvider = new LoggerProvider();
+    const exporter = new InMemoryLogRecordExporter();
+    loggerProvider.addLogRecordProcessor(baggageProcessor);
+    loggerProvider.addLogRecordProcessor(
+      new SimpleLogRecordProcessor(exporter)
+    );
+    const logger = loggerProvider.getLogger('my-logger');
+    const ctx = propagation.setBaggage(ROOT_CONTEXT, bag);
+
+    logger.emit({
+      body: 'my log body',
+      context: ctx,
+    });
+
+    const logRecords = exporter.getFinishedLogRecords();
+    expect(logRecords.length).toBe(1);
+    expect(logRecords[0].attributes).toEqual({ color: 'blue' });
   });
 
   it('forceFlush is a no-op and does not throw error', async () => {
