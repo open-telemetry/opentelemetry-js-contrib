@@ -10,6 +10,7 @@
   "metapackages/auto-instrumentations-node": "0.55.2",
   "metapackages/auto-instrumentations-web": "0.45.0",
   "packages/baggage-span-processor": "0.3.1",
+  "packages/baggage-log-record-processor": "0.0.1",
   "packages/opentelemetry-host-metrics": "0.35.5",
   "packages/opentelemetry-id-generator-aws-xray": "1.2.2",
   "packages/opentelemetry-propagation-utils": "0.30.15",
