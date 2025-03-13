@@ -1,5 +1,5 @@
 # Note: tests must set `SKIP_TEST_IF_DISABLE=true` to override usage of
-# `mocha --require '../../../scripts/skip-test-if-old-node.js' ...`.
+# `mocha --require '../../../scripts/skip-test-if.js' ...`.
 
 "aws-sdk":
   env:

@@ -27,26 +27,26 @@
  *    where `SKIP_TEST_IF_NODE_OLDER_THAN` indicates the minimum Node.js major
  *    version.
  *
- * 2. ".tav.yml" blocks should set SKIP_TEST_IF_OLD_NODE_DISABLE=true to
+ * 2. ".tav.yml" blocks should set SKIP_TEST_IF_DISABLE=true to
  *    disable the skipping. Via this in each test block:
  *      env:
  *        - SKIP_TEST_IF_DISABLE=true
  */
 
 function skipTestIf() {
-  if (process.env.SKIP_TEST_IF_OLD_NODE_DISABLE) {
+  if (process.env.SKIP_TEST_IF_DISABLE) {
     return;
   }
 
   const minNodeMajor = process.env.SKIP_TEST_IF_NODE_OLDER_THAN ?? Number(process.env.SKIP_TEST_IF_NODE_OLDER_THAN);
   if (!minNodeMajor || isNaN(minNodeMajor)) {
-    console.warn('exit-if-old-node warning: set a minimum Node.js major version via SKIP_TEST_IF_NODE_OLDER_THAN=<num>');
+    console.warn('skip-test-if warning: set a minimum Node.js major version via SKIP_TEST_IF_NODE_OLDER_THAN=<num>');
     return;
   }
 
   const nodeMajor = Number(process.versions.node.split('.')[0]);
   if (nodeMajor < minNodeMajor) {
-    process.stderr.write(`skip-test-if-old-node: skipping tests on old Node.js (${nodeMajor} < ${minNodeMajor})\n`);
+    process.stderr.write(`skip-test-if: skipping tests on old Node.js (${nodeMajor} < ${minNodeMajor})\n`);
     // "Skip" tests by exiting the process. Mocha is all in one process.
     process.exit(0);
   }
