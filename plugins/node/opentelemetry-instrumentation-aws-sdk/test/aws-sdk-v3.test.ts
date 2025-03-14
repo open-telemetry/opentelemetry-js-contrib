@@ -32,7 +32,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { SQS } from '@aws-sdk/client-sqs';
-import { SpanKind } from '@opentelemetry/api';
+import { propagation, SpanKind } from '@opentelemetry/api';
 
 // set aws environment variables, so tests in non aws environment are able to run
 process.env.AWS_ACCESS_KEY_ID = 'testing';
@@ -45,15 +45,14 @@ import {
   ATTR_URL_FULL,
   MESSAGINGOPERATIONVALUES_RECEIVE,
   SEMATTRS_HTTP_STATUS_CODE,
-  SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_OPERATION,
   SEMATTRS_MESSAGING_SYSTEM,
-  SEMATTRS_MESSAGING_URL,
   SEMATTRS_RPC_METHOD,
   SEMATTRS_RPC_SERVICE,
   SEMATTRS_RPC_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_MESSAGE_ID,
 } from '../src/semconv';
@@ -421,6 +420,29 @@ describe('instrumentation-aws-sdk-v3', () => {
           expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('SQS');
           expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
           expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
+          expect(span.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT]).toEqual(
+            2
+          );
+          expect(span.links.length).toBe(2);
+
+          const messages = res.Messages || [];
+          expect(messages.length).toEqual(span.links.length);
+
+          for (let i = 0; i < span.links.length; i++) {
+            const link = span.links[i];
+            const messageId = messages[i].MessageId;
+            const traceparent =
+              messages[i].MessageAttributes?.traceparent.StringValue?.split(
+                '-'
+              ) || [];
+            const traceId = traceparent[1];
+            const spanId = traceparent[2];
+            expect(link.attributes?.[ATTR_MESSAGING_MESSAGE_ID]).toEqual(
+              messageId
+            );
+            expect(link.context.traceId).toEqual(traceId);
+            expect(link.context.spanId).toEqual(spanId);
+          }
           done();
         });
       });

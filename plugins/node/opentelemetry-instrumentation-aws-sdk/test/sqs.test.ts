@@ -34,6 +34,7 @@ import {
   SEMATTRS_RPC_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_MESSAGE_ID,
 } from '../src/semconv';
@@ -370,7 +371,9 @@ describe('SQS', () => {
         .promise();
 
       const [receiveSpan] = getTestSpans();
-      expect(receiveSpan.attributes['messaging.batch.message_count']).toBe(3);
+      expect(receiveSpan.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT]).toBe(
+        3
+      );
     });
   });
 });
