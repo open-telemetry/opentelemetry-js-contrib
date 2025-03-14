@@ -38,6 +38,7 @@ import {
   MESSAGING_SYSTEM_VALUE_KAFKA,
   METRIC_MESSAGING_PROCESS_DURATION,
   METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES,
+  METRIC_MESSAGING_CLIENT_OPERATION_DURATION,
 } from '../src/semconv';
 import {
   getTestSpans,
@@ -68,7 +69,11 @@ import {
 } from 'kafkajs';
 import { DummyPropagation } from './DummyPropagation';
 import { bufferTextMapGetter } from '../src/propagator';
-import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_ERROR_TYPE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
 function assertMetricCollection(
   { errors, resourceMetrics }: CollectionResult,
@@ -1332,6 +1337,39 @@ describe('instrumentation-kafkajs', () => {
         receivingSpan.spanContext().traceId,
         producerSpan.spanContext().traceId
       );
+    });
+  });
+  describe('client duration metric', () => {
+    it('records the metric', async () => {
+      instrumentation['_recordClientDurationMetric']({
+        payload: {
+          broker: 'kafka.host:4789',
+          duration: 242,
+          apiName: 'some-operation',
+          apiKey: 123,
+          apiVersion: 1,
+          clientId: 'client-id',
+          correlationId: 456,
+          createdAt: Date.now(),
+          pendingDuration: 0,
+          sentAt: Date.now(),
+          size: 1024,
+        },
+      });
+      assertMetricCollection(await metricReader.collect(), {
+        [METRIC_MESSAGING_CLIENT_OPERATION_DURATION]: [
+          {
+            count: 1,
+            value: 0.232,
+            attributes: {
+              [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+              [ATTR_MESSAGING_OPERATION_NAME]: 'some-operation',
+              [ATTR_SERVER_ADDRESS]: 'kafka.host',
+              [ATTR_SERVER_PORT]: 4789,
+            },
+          },
+        ],
+      });
     });
   });
 

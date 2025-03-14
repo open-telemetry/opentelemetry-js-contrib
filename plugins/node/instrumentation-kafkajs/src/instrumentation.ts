@@ -251,17 +251,24 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
   private _setKafkaEventListeners(kafkaObj: KafkaEventEmitter) {
     if (kafkaObj[EVENT_LISTENERS_SET]) return;
 
-    kafkaObj.on(kafkaObj.events.REQUEST, event => {
-      const [address, port] = event.payload.broker.split(':');
-      this._clientDuration.record(event.payload.duration / 1000, {
-        [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-        [ATTR_MESSAGING_OPERATION_NAME]: `${event.payload.apiName}`, // potentially suffix with @v${event.payload.apiVersion}?
-        [ATTR_SERVER_ADDRESS]: address,
-        [ATTR_SERVER_PORT]: Number.parseInt(port, 10),
-      });
-    });
+    kafkaObj.on(
+      kafkaObj.events.REQUEST,
+      this._recordClientDurationMetric.bind(this)
+    );
 
     kafkaObj[EVENT_LISTENERS_SET] = true;
+  }
+
+  private _recordClientDurationMetric(
+    event: Pick<kafkaJs.RequestEvent, 'payload'>
+  ) {
+    const [address, port] = event.payload.broker.split(':');
+    this._clientDuration.record(event.payload.duration / 1000, {
+      [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+      [ATTR_MESSAGING_OPERATION_NAME]: `${event.payload.apiName}`, // potentially suffix with @v${event.payload.apiVersion}?
+      [ATTR_SERVER_ADDRESS]: address,
+      [ATTR_SERVER_PORT]: Number.parseInt(port, 10),
+    });
   }
 
   private _getProducerPatch() {
