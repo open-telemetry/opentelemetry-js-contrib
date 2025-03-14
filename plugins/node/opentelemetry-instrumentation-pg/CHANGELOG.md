@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.51.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.51.1...instrumentation-pg-v0.51.2) (2025-03-14)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.2 ([#2716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2716)) ([d2a9a20](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2a9a20f1cd8c46c842e18490a4eba36fd71c2da))
+* **instrumentation-pg:** connection string parsing ([#2715](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2715)) ([b520d04](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b520d048465d9b3dfdf275976010c989d2a78a2c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.1 to ^0.45.2
+
 ## [0.51.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.51.0...instrumentation-pg-v0.51.1) (2025-02-19)
 
 
