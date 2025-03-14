@@ -79,7 +79,12 @@ function assertMetricCollection(
   { errors, resourceMetrics }: CollectionResult,
   expected: Record<
     string,
-    { count?: number; value?: number; attributes: Attributes }[]
+    {
+      count?: number;
+      value?: number;
+      buckets?: Record<number, number>;
+      attributes: Attributes;
+    }[]
   >
 ) {
   assert.strictEqual(errors.length, 0);
@@ -99,6 +104,18 @@ function assertMetricCollection(
         values.map(v => v.count),
         `${name} datapoints do not have the same count`
       );
+      values.forEach(({ buckets }, i) => {
+        if (buckets) {
+          const { boundaries, counts } = match.dataPoints[i].value.buckets;
+          const actualBuckets = counts.reduce((acc, n, j) => {
+            if (n > 0) {
+              acc[boundaries[j]] = n;
+            }
+            return acc;
+          }, {} as Record<number, number>);
+          assert.deepStrictEqual(actualBuckets, buckets);
+        }
+      });
     } else {
       assert.deepStrictEqual(
         match.dataPoints.map(d => d.value),
@@ -1344,7 +1361,7 @@ describe('instrumentation-kafkajs', () => {
       instrumentation['_recordClientDurationMetric']({
         payload: {
           broker: 'kafka.host:4789',
-          duration: 242,
+          duration: 250,
           apiName: 'some-operation',
           apiKey: 123,
           apiVersion: 1,
@@ -1360,7 +1377,7 @@ describe('instrumentation-kafkajs', () => {
         [METRIC_MESSAGING_CLIENT_OPERATION_DURATION]: [
           {
             count: 1,
-            value: 0.232,
+            buckets: { '0.25': 1 },
             attributes: {
               [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
               [ATTR_MESSAGING_OPERATION_NAME]: 'some-operation',
