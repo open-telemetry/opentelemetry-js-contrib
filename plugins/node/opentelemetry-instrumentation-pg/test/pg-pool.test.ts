@@ -207,7 +207,7 @@ describe('pg-pool', () => {
         const [connectSpan, poolConnectSpan] =
           memoryExporter.getFinishedSpans();
         assert.strictEqual(
-          connectSpan.parentSpanId,
+          connectSpan.parentSpanContext?.spanId,
           poolConnectSpan.spanContext().spanId
         );
 

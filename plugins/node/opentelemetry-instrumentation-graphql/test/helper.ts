@@ -37,6 +37,6 @@ export function assertResolveSpan(
   assert.deepStrictEqual(attrs[AttributeNames.FIELD_TYPE], fieldType);
   assert.deepStrictEqual(attrs[AttributeNames.SOURCE], source);
   if (parentSpanId) {
-    assert.deepStrictEqual(span.parentSpanId, parentSpanId);
+    assert.deepStrictEqual(span.parentSpanContext?.spanId, parentSpanId);
   }
 }

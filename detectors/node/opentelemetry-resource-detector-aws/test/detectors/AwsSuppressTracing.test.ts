@@ -23,7 +23,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { DetectorSync } from '@opentelemetry/resources';
+import { ResourceDetector, detectResources } from '@opentelemetry/resources';
 
 describe('[Integration] Internal tracing', () => {
   it('should not start spans for any network or fs operation in any detector', async () => {
@@ -50,11 +50,11 @@ describe('[Integration] Internal tracing', () => {
     // tracing being exported. We do the detection outside the SDK constructor to have such
     // scenario.
     const {
-      awsBeanstalkDetectorSync,
-      awsEc2DetectorSync,
-      awsEcsDetectorSync,
-      awsEksDetectorSync,
-      awsLambdaDetectorSync,
+      awsBeanstalkDetector,
+      awsEc2Detector,
+      awsEcsDetector,
+      awsEksDetector,
+      awsLambdaDetector,
     } = require('../../build/src');
 
     // NOTE: the require process makes use of the fs API so spans are being exported.
@@ -63,15 +63,15 @@ describe('[Integration] Internal tracing', () => {
     memoryExporter.reset();
 
     const detectors = [
-      awsBeanstalkDetectorSync,
-      awsEc2DetectorSync,
-      awsEcsDetectorSync,
-      awsEksDetectorSync,
-      awsLambdaDetectorSync,
-    ] as DetectorSync[];
+      awsBeanstalkDetector,
+      awsEc2Detector,
+      awsEcsDetector,
+      awsEksDetector,
+      awsLambdaDetector,
+    ] as ResourceDetector[];
 
     for (const d of detectors) {
-      const r = d.detect();
+      const r = detectResources({ detectors: [d] });
       await r.waitForAsyncAttributes?.();
     }
 

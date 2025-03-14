@@ -436,7 +436,7 @@ describe('Koa Instrumentation', function () {
             .find(span => span.name === 'foo');
           assert.notStrictEqual(fooSpan, undefined);
           assert.strictEqual(
-            fooSpan!.parentSpanId,
+            fooSpan!.parentSpanContext?.spanId,
             fooParentSpan!.spanContext().spanId
           );
 

@@ -31,7 +31,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=14"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "bugs": {
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
@@ -49,6 +49,6 @@
     "expect": "29.2.0",
     "nyc": "15.1.0",
     "sinon": "15.2.0",
-    "typescript": "4.4.4"
+    "typescript": "5.0.4"
   }
 }

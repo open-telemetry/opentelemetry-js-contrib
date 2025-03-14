@@ -17,6 +17,8 @@
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 
+import { detectResources } from '@opentelemetry/resources';
+
 import { gitHubDetector } from '../../src/detectors';
 
 describe('GitHubResourceDetector', () => {
@@ -49,7 +51,7 @@ describe('GitHubResourceDetector', () => {
     process.env.GITHUB_HEAD_REF = 'ref/foo';
     process.env.GITHUB_BASE_REF = 'ref/bar';
 
-    const resource = await gitHubDetector.detect();
+    const resource = detectResources({ detectors: [gitHubDetector] });
 
     assert.ok(resource);
     assert.deepStrictEqual(resource.attributes, {
@@ -65,7 +67,7 @@ describe('GitHubResourceDetector', () => {
   });
 
   it('should return empty resource when no GitHub env vars exists', async () => {
-    const resource = await gitHubDetector.detect();
+    const resource = detectResources({ detectors: [gitHubDetector] });
 
     assert.ok(resource);
     assert.deepStrictEqual(resource.attributes, {});

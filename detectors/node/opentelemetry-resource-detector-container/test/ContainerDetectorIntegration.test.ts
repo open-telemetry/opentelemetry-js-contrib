@@ -22,7 +22,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { IResource } from '@opentelemetry/resources';
+import { detectResources } from '@opentelemetry/resources';
 
 describe('[Integration] ContainerDetector', () => {
   it('should not start spans for detector reads to filesystem', async () => {
@@ -54,7 +54,7 @@ describe('[Integration] ContainerDetector', () => {
     await spanProcessor.forceFlush();
     const numSpansAfterRequire = memoryExporter.getFinishedSpans().length;
 
-    const resource = containerDetector.detect() as IResource;
+    const resource = detectResources({ detectors: [containerDetector] });
     await resource.waitForAsyncAttributes?.();
 
     // Wait for the next loop to let the span close properly

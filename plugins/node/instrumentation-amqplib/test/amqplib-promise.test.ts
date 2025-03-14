@@ -216,7 +216,7 @@ describe('amqplib instrumentation promise model', () => {
       expect(consumeSpan.spanContext().traceId).toEqual(
         publishSpan.spanContext().traceId
       );
-      expect(consumeSpan.parentSpanId).toEqual(
+      expect(consumeSpan.parentSpanContext?.spanId).toEqual(
         publishSpan.spanContext().spanId
       );
 
@@ -553,7 +553,7 @@ describe('amqplib instrumentation promise model', () => {
         expect(consumeSpan.spanContext().traceId).toEqual(
           publishSpan.spanContext().traceId
         );
-        expect(consumeSpan.parentSpanId).toEqual(
+        expect(consumeSpan.parentSpanContext?.spanId).toEqual(
           publishSpan.spanContext().spanId
         );
       });
@@ -1140,7 +1140,7 @@ describe('amqplib instrumentation promise model', () => {
         expect(consumeSpan.spanContext().traceId).toEqual(
           publishSpan.spanContext().traceId
         );
-        expect(consumeSpan.parentSpanId).toEqual(
+        expect(consumeSpan.parentSpanContext?.spanId).toEqual(
           publishSpan.spanContext().spanId
         );
       });
@@ -1354,7 +1354,7 @@ describe('amqplib instrumentation promise model', () => {
       expect(consumeSpan.spanContext().traceId).not.toEqual(
         publishSpan.spanContext().traceId
       );
-      expect(consumeSpan.parentSpanId).toBeUndefined();
+      expect(consumeSpan.parentSpanContext?.spanId).toBeUndefined();
 
       // link back to publish span
       expect(consumeSpan.links.length).toBe(1);
@@ -1433,7 +1433,7 @@ describe('amqplib instrumentation promise model', () => {
         expect(consumeSpan.spanContext().traceId).not.toEqual(
           publishSpan.spanContext().traceId
         );
-        expect(consumeSpan.parentSpanId).toBeUndefined();
+        expect(consumeSpan.parentSpanContext?.spanId).toBeUndefined();
 
         // link back to publish span
         expect(consumeSpan.links.length).toBe(1);
@@ -1552,7 +1552,7 @@ describe('amqplib instrumentation promise model', () => {
       expect(consumeSpan.spanContext().traceId).not.toEqual(
         publishSpan.spanContext().traceId
       );
-      expect(consumeSpan.parentSpanId).toBeUndefined();
+      expect(consumeSpan.parentSpanContext?.spanId).toBeUndefined();
 
       // link back to publish span
       expect(consumeSpan.links.length).toBe(1);
@@ -1638,7 +1638,7 @@ describe('amqplib instrumentation promise model', () => {
         expect(consumeSpan.spanContext().traceId).not.toEqual(
           publishSpan.spanContext().traceId
         );
-        expect(consumeSpan.parentSpanId).toBeUndefined();
+        expect(consumeSpan.parentSpanContext?.spanId).toBeUndefined();
 
         // link back to publish span
         expect(consumeSpan.links.length).toBe(1);

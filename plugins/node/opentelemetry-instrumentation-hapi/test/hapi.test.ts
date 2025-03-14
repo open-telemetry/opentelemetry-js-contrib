@@ -361,7 +361,7 @@ describe('Hapi Instrumentation - Core Tests', () => {
             .find(span => span.name === 'handler');
           assert.notStrictEqual(routeSpan, undefined);
           assert.strictEqual(
-            handlerSpan?.parentSpanId,
+            handlerSpan?.parentSpanContext?.spanId,
             routeSpan?.spanContext().spanId
           );
         }
