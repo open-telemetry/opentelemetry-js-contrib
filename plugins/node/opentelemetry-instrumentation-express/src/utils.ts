@@ -33,15 +33,21 @@ import {
  * @param request The request where
  * @param [value] the value to push into the array
  */
-export const storeLayerPath = (request: PatchedRequest, value?: string) => {
+export const storeLayerPath = (
+  request: PatchedRequest,
+  value?: string
+): { isLayerPathStored: boolean } => {
   if (Array.isArray(request[_LAYERS_STORE_PROPERTY]) === false) {
     Object.defineProperty(request, _LAYERS_STORE_PROPERTY, {
       enumerable: false,
       value: [],
     });
   }
-  if (value === undefined) return;
+  if (value === undefined) return { isLayerPathStored: false };
+
   (request[_LAYERS_STORE_PROPERTY] as string[]).push(value);
+
+  return { isLayerPathStored: true };
 };
 
 /**
