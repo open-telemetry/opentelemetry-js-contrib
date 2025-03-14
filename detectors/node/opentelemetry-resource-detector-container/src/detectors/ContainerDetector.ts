@@ -13,12 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ResourceDetectionConfig,
-  ResourceDetector,
-  DetectedResource,
-} from '@opentelemetry/resources';
 
+import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
 import { SEMRESATTRS_CONTAINER_ID } from '@opentelemetry/semantic-conventions';
 
 import * as fs from 'fs';
