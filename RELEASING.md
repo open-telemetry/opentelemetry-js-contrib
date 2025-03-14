@@ -32,14 +32,13 @@ Create a new branch called `x.y.z-proposal` from the current commit.
 Decide on the next `major.minor.patch` release number based on [semver](http://semver.org/) guidelines.
 
 - Use `npm install` command to initialize all package directories
-- Use `lerna publish --skip-npm --no-git-tag-version --no-push` to bump the version in all `package.json`
-- Use `npm run bootstrap` to generate latest `version.ts` files
+- Use `node ./scripts/bump-pacakge-versions.mjs` to bump the version in all `package.json`
 
 ## Use the Changelog to create a GitHub Release
 
 ### Generate the changelog with lerna
 
-Since we use `lerna`, we can use [lerna-changelog](https://github.com/lerna/lerna-changelog#lerna-changelog)
+We use [lerna-changelog](https://github.com/lerna/lerna-changelog#lerna-changelog)
 
 #### How to use
 
@@ -90,19 +89,14 @@ Create a pull request titled `chore: x.y.z release proposal`. The commit body sh
 
 Merge the PR, and pull the changes locally (using the commands in the first step). Ensure that `chore: x.y.z release proposal` is the most recent commit.
 
+## Compile all packages
+
+Go into the root folder and run `npm ci && npm run compile` to build all packages with the latest version of the code.
+
 ## Publish all packages
 
-Go into each directory and use `npm publish` (requires permissions) to publish the package. You can use the following script to automate this.
-
-```bash
-#!/bin/bash
-
-for dir in $(ls packages); do
- pushd packages/$dir
- npm publish
- popd
-done
-```
+Use the dedicated script for publishing by running the command `node ./scripts/publish-to-npm.mjs` in the root folder. The script will
+walk over all non private packages and publish the ones that has not been published yet.
 
 Check your e-mail and make sure the number of “you’ve published this module” emails matches the number you expect.
 

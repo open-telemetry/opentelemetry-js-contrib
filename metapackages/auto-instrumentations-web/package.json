@@ -21,7 +21,6 @@
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "test:browser": "nyc karma start --single-run",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"

@@ -12,7 +12,6 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../../scripts/lint-readme",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "tsc -p ."

@@ -36,7 +36,7 @@ function runWithRegister(path: string): PromiseWithChild<{
         OTEL_NODE_RESOURCE_DETECTORS: 'none',
         OTEL_TRACES_EXPORTER: 'console',
         OTEL_LOG_LEVEL: 'debug',
-        // nx (used by lerna run) defaults `FORCE_COLOR=true`, which in
+        // nx defaults `FORCE_COLOR=true`, which in
         // node v18.17.0, v20.3.0 and later results in ANSI color escapes
         // in the ConsoleSpanExporter output that is checked below.
         FORCE_COLOR: '0',
