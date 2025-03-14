@@ -51,11 +51,7 @@ import type {
   Producer,
   RecordMetadata,
 } from 'kafkajs';
-import {
-  ConsumerExtended,
-  EVENT_LISTENERS_SET,
-  ProducerExtended,
-} from './internal-types';
+import { EVENT_LISTENERS_SET } from './internal-types';
 import { bufferTextMapGetter } from './propagator';
 import {
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
@@ -87,6 +83,22 @@ interface ConsumerSpanOptions {
   attributes: Attributes;
   ctx?: Context | undefined;
   link?: Link;
+}
+// This interface acts as a strict subset of the KafkaJS Consumer and
+// Producer interfaces (just for the event we're needing)
+interface KafkaEventEmitter {
+  on(
+    eventName:
+      | kafkaJs.ConsumerEvents['REQUEST']
+      | kafkaJs.ProducerEvents['REQUEST'],
+    listener: (event: kafkaJs.RequestEvent) => void
+  ): void;
+  events: {
+    REQUEST:
+      | kafkaJs.ConsumerEvents['REQUEST']
+      | kafkaJs.ProducerEvents['REQUEST'];
+  };
+  [EVENT_LISTENERS_SET]?: boolean;
 }
 
 interface StandardAttributes<OP extends string = string> extends Attributes {
@@ -229,37 +241,27 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           instrumentation._getConsumerRunPatch()
         );
 
-        instrumentation._setConsumerEventListeners(newConsumer);
+        instrumentation._setKafkaEventListeners(newConsumer);
 
         return newConsumer;
       };
     };
   }
 
-  private _setConsumerEventListeners(consumer: ConsumerExtended) {
-    if (consumer[EVENT_LISTENERS_SET]) return;
+  private _setKafkaEventListeners(kafkaObj: KafkaEventEmitter) {
+    if (kafkaObj[EVENT_LISTENERS_SET]) return;
 
-    consumer.on(consumer.events.END_BATCH_PROCESS, event =>
-      this._consumedMessages.add(event.payload.batchSize, {
-        [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-        [ATTR_MESSAGING_OPERATION_NAME]: 'receive',
-        [ATTR_MESSAGING_DESTINATION_NAME]: event.payload.topic,
-        [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
-          event.payload.partition
-        ),
-      })
-    );
-    consumer.on(consumer.events.REQUEST, event => {
+    kafkaObj.on(kafkaObj.events.REQUEST, event => {
       const [address, port] = event.payload.broker.split(':');
       this._clientDuration.record(event.payload.duration / 1000, {
         [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-        [ATTR_MESSAGING_OPERATION_NAME]: `${event.payload.apiName}`, // potentially suffix with @${event.payload.apiVersion}?
+        [ATTR_MESSAGING_OPERATION_NAME]: `${event.payload.apiName}`, // potentially suffix with @v${event.payload.apiVersion}?
         [ATTR_SERVER_ADDRESS]: address,
         [ATTR_SERVER_PORT]: Number.parseInt(port, 10),
       });
     });
 
-    consumer[EVENT_LISTENERS_SET] = true;
+    kafkaObj[EVENT_LISTENERS_SET] = true;
   }
 
   private _getProducerPatch() {
@@ -289,27 +291,11 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           instrumentation._getProducerSendPatch()
         );
 
-        instrumentation._setProducerEventListeners(newProducer);
+        instrumentation._setKafkaEventListeners(newProducer);
 
         return newProducer;
       };
     };
-  }
-
-  private _setProducerEventListeners(producer: ProducerExtended) {
-    if (producer[EVENT_LISTENERS_SET]) return;
-
-    producer.on(producer.events.REQUEST, event => {
-      const [address, port] = event.payload.broker.split(':');
-      this._clientDuration.record(event.payload.duration / 1000, {
-        [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-        [ATTR_MESSAGING_OPERATION_NAME]: `${event.payload.apiName}`, // potentially suffix with @${event.payload.apiVersion}?
-        [ATTR_SERVER_ADDRESS]: address,
-        [ATTR_SERVER_PORT]: Number.parseInt(port),
-      });
-    });
-
-    producer[EVENT_LISTENERS_SET] = true;
   }
 
   private _getConsumerRunPatch() {
@@ -383,6 +369,14 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
               ),
             }
           ),
+          prepareCounter(instrumentation._consumedMessages, 1, {
+            [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+            [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+            [ATTR_MESSAGING_DESTINATION_NAME]: payload.topic,
+            [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
+              payload.partition
+            ),
+          }),
         ];
 
         const eachMessagePromise = context.with(
@@ -426,7 +420,20 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           () => {
             const startTime = Date.now();
             const spans: Span[] = [];
-            const pendingMetrics: RecordPendingMetric[] = [];
+            const pendingMetrics: RecordPendingMetric[] = [
+              prepareCounter(
+                instrumentation._consumedMessages,
+                payload.batch.messages.length,
+                {
+                  [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                  [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+                  [ATTR_MESSAGING_DESTINATION_NAME]: payload.batch.topic,
+                  [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
+                    payload.batch.partition
+                  ),
+                }
+              ),
+            ];
             payload.batch.messages.forEach(message => {
               const propagatedContext: Context = propagation.extract(
                 ROOT_CONTEXT,

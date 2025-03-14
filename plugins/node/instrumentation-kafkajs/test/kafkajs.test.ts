@@ -37,6 +37,7 @@ import {
   METRIC_MESSAGING_CLIENT_SENT_MESSAGES,
   MESSAGING_SYSTEM_VALUE_KAFKA,
   METRIC_MESSAGING_PROCESS_DURATION,
+  METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES,
 } from '../src/semconv';
 import {
   getTestSpans,
@@ -91,13 +92,13 @@ function assertMetricCollection(
       assert.deepStrictEqual(
         match.dataPoints.map(d => d.value.count),
         values.map(v => v.count),
-        'histogram datapoints do not have the same count'
+        `${name} datapoints do not have the same count`
       );
     } else {
       assert.deepStrictEqual(
         match.dataPoints.map(d => d.value),
         values.map(v => v.value),
-        'counter datapoints do not match'
+        `${name} datapoint values do not match`
       );
     }
     assert.deepStrictEqual(
@@ -777,6 +778,17 @@ describe('instrumentation-kafkajs', () => {
               },
             },
           ],
+          [METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES]: [
+            {
+              value: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+              },
+            },
+          ],
         });
       });
 
@@ -953,6 +965,18 @@ describe('instrumentation-kafkajs', () => {
               },
             },
           ],
+          [METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES]: [
+            {
+              value: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+                [ATTR_ERROR_TYPE]: 'Error',
+              },
+            },
+          ],
         });
       });
 
@@ -993,6 +1017,18 @@ describe('instrumentation-kafkajs', () => {
               },
             },
           ],
+          [METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES]: [
+            {
+              value: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+                [ATTR_ERROR_TYPE]: '_OTHER',
+              },
+            },
+          ],
         });
       });
 
@@ -1021,6 +1057,18 @@ describe('instrumentation-kafkajs', () => {
           [METRIC_MESSAGING_PROCESS_DURATION]: [
             {
               count: 1,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+                [ATTR_ERROR_TYPE]: '_OTHER',
+              },
+            },
+          ],
+          [METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES]: [
+            {
+              value: 1,
               attributes: {
                 [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
                 [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
@@ -1106,6 +1154,17 @@ describe('instrumentation-kafkajs', () => {
           [METRIC_MESSAGING_PROCESS_DURATION]: [
             {
               count: 2,
+              attributes: {
+                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
+                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1234',
+                [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+              },
+            },
+          ],
+          [METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES]: [
+            {
+              value: 2,
               attributes: {
                 [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
                 [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
@@ -1282,6 +1341,12 @@ describe('instrumentation-kafkajs', () => {
         ),
         '123'
       );
+    });
+    it('exposes a keys method', () => {
+      assert.deepStrictEqual(bufferTextMapGetter.keys({ a: 1, b: 2 }), [
+        'a',
+        'b',
+      ]);
     });
   });
 });
