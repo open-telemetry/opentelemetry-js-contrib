@@ -516,7 +516,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
                 [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
                 [ATTR_MESSAGING_OPERATION_NAME]: 'send',
                 [ATTR_MESSAGING_DESTINATION_NAME]: topicMessage.topic,
-                ...(message.partition
+                ...(message.partition !== undefined
                   ? {
                       [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
                         message.partition
@@ -557,7 +557,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
             [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
             [ATTR_MESSAGING_OPERATION_NAME]: 'send',
             [ATTR_MESSAGING_DESTINATION_NAME]: record.topic,
-            ...(m.partition
+            ...(m.partition !== undefined
               ? {
                   [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
                     m.partition
@@ -681,9 +681,10 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           : undefined,
         [ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE]:
           message.key && message.value === null ? true : undefined,
-        [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: message.partition
-          ? String(message.partition)
-          : undefined,
+        [ATTR_MESSAGING_DESTINATION_PARTITION_ID]:
+          message.partition !== undefined
+            ? String(message.partition)
+            : undefined,
         [ATTR_MESSAGING_OPERATION_NAME]: 'send',
         [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_SEND,
       },

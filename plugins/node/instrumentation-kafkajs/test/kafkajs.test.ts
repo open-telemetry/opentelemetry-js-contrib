@@ -323,9 +323,11 @@ describe('instrumentation-kafkajs', () => {
           topic: 'topic-name-1',
           messages: [
             {
+              partition: 0,
               value: 'message1',
             },
             {
+              partition: 0,
               value: 'message2',
             },
           ],
@@ -352,6 +354,7 @@ describe('instrumentation-kafkajs', () => {
               attributes: {
                 [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
                 [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '0',
                 [ATTR_MESSAGING_OPERATION_NAME]: 'send',
               },
             },
@@ -400,6 +403,7 @@ describe('instrumentation-kafkajs', () => {
               topic: 'topic-name-2',
               messages: [
                 {
+                  partition: 1,
                   value: 'message2-1',
                 },
               ],
@@ -435,6 +439,7 @@ describe('instrumentation-kafkajs', () => {
               attributes: {
                 [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
                 [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-2',
+                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1',
                 [ATTR_MESSAGING_OPERATION_NAME]: 'send',
               },
             },
