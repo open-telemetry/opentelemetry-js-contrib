@@ -41,14 +41,16 @@ export class ContainerDetector implements ResourceDetector {
 
   private static readFileAsync = util.promisify(fs.readFile);
 
-  detect(_config?: ResourceDetectionConfig): DetectedResource {
+  detect(): DetectedResource {
     const attributes = {
       [SEMRESATTRS_CONTAINER_ID]: this._getContainerIdWithSuppressedTracing(),
     };
     return { attributes };
   }
 
-  private async _getContainerIdWithSuppressedTracing(): Promise<string | undefined> {
+  private async _getContainerIdWithSuppressedTracing(): Promise<
+    string | undefined
+  > {
     return context.with(suppressTracing(context.active()), () =>
       this._getContainerId()
     );
