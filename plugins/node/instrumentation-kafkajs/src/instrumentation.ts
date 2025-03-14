@@ -84,7 +84,7 @@ interface ConsumerSpanOptions {
   topic: string;
   message: KafkaMessage | undefined;
   operationType: string;
-  attributes?: Attributes;
+  attributes: Attributes;
   ctx?: Context | undefined;
   link?: Link;
 }
@@ -583,9 +583,9 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         return result;
       })
       .catch(reason => {
-        let errorMessage: string;
-        let errorType = ERROR_TYPE_VALUE_OTHER;
-        if (typeof reason === 'string') {
+        let errorMessage: string | undefined;
+        let errorType: string = ERROR_TYPE_VALUE_OTHER;
+        if (typeof reason === 'string' || reason === undefined) {
           errorMessage = reason;
         } else if (
           typeof reason === 'object' &&
@@ -597,7 +597,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         pendingMetrics.forEach(m => m(errorType));
 
         spans.forEach(span => {
-          if (errorType) span.setAttribute(ATTR_ERROR_TYPE, errorType);
+          span.setAttribute(ATTR_ERROR_TYPE, errorType);
           span.setStatus({
             code: SpanStatusCode.ERROR,
             message: errorMessage,
@@ -617,7 +617,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     operationType,
     ctx,
     link,
-    attributes = {},
+    attributes,
   }: ConsumerSpanOptions) {
     const operationName =
       operationType === MESSAGING_OPERATION_TYPE_VALUE_RECEIVE
@@ -641,7 +641,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
             ? String(message.key)
             : undefined,
           [ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE]:
-            message?.key && message?.value === null ? true : undefined,
+            message?.key && message.value === null ? true : undefined,
           [ATTR_MESSAGING_KAFKA_OFFSET]: message?.offset,
         },
         links: link ? [link] : [],

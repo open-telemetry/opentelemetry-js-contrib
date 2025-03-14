@@ -6,7 +6,7 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "mocha --require @opentelemetry/contrib-test-utils 'test/**/*.test.ts'",
+    "test": "nyc mocha --require @opentelemetry/contrib-test-utils 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
