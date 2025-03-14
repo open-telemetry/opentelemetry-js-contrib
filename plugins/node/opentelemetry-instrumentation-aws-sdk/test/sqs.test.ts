@@ -26,17 +26,17 @@ import { AWSError } from 'aws-sdk';
 import type { SQS } from 'aws-sdk';
 
 import {
-  MESSAGINGDESTINATIONKINDVALUES_QUEUE,
+  ATTR_URL_FULL,
   SEMATTRS_HTTP_STATUS_CODE,
-  SEMATTRS_MESSAGING_DESTINATION,
-  SEMATTRS_MESSAGING_DESTINATION_KIND,
-  SEMATTRS_MESSAGING_MESSAGE_ID,
   SEMATTRS_MESSAGING_SYSTEM,
-  SEMATTRS_MESSAGING_URL,
   SEMATTRS_RPC_METHOD,
   SEMATTRS_RPC_SERVICE,
   SEMATTRS_RPC_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_ID,
+} from '../src/semconv';
 import { SpanKind, trace } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { mockV2AwsSend } from './testing-utils';
@@ -186,15 +186,12 @@ describe('SQS', () => {
       expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
 
       // custom messaging attributes
-      expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual('aws.sqs');
-      expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]).toEqual(
-        MESSAGINGDESTINATIONKINDVALUES_QUEUE
-      );
-      expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
+      expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual('aws_sqs');
+      expect(span.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toEqual(
         QueueName
       );
-      expect(span.attributes[SEMATTRS_MESSAGING_URL]).toEqual(params.QueueUrl);
-      expect(span.attributes[SEMATTRS_MESSAGING_MESSAGE_ID]).toEqual(
+      expect(span.attributes[ATTR_URL_FULL]).toEqual(params.QueueUrl);
+      expect(span.attributes[ATTR_MESSAGING_MESSAGE_ID]).toEqual(
         response.MessageId
       );
       expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
@@ -348,16 +345,16 @@ describe('SQS', () => {
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
       );
       expect(links[0].context.spanId).toStrictEqual('aaaaaaaaaaaaaaaa');
-      expect(
-        links[0].attributes?.[SEMATTRS_MESSAGING_MESSAGE_ID]
-      ).toStrictEqual('1');
+      expect(links[0].attributes?.[ATTR_MESSAGING_MESSAGE_ID]).toStrictEqual(
+        '1'
+      );
       expect(links[1].context.traceId).toStrictEqual(
         'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
       );
       expect(links[1].context.spanId).toStrictEqual('bbbbbbbbbbbbbbbb');
-      expect(
-        links[1].attributes?.[SEMATTRS_MESSAGING_MESSAGE_ID]
-      ).toStrictEqual('2');
+      expect(links[1].attributes?.[ATTR_MESSAGING_MESSAGE_ID]).toStrictEqual(
+        '2'
+      );
     });
 
     it('adds message count to the receive span', async () => {

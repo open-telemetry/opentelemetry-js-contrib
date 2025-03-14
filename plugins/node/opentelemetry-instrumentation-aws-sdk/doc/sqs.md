@@ -14,10 +14,10 @@ The following methods are automatically enhanced:
 ### receiveMessage
 
 - [Messaging Attributes](https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/semantic_conventions/messaging.md#messaging-attributes) are added by this instrumentation according to the spec.
-- Additional "processing spans" are created for each message received by the application.  
-  If an application invoked `receiveMessage`, and received a 10 messages batch, a single `messaging.operation` = `receive` span will be created for the `receiveMessage` operation, and 10 `messaging.operation` = `process` spans will be created, one for each message.  
+- Additional "processing spans" are created for each message received by the application.
+  If an application invoked `receiveMessage`, and received a 10 messages batch, a single `messaging.operation` = `receive` span will be created for the `receiveMessage` operation, and 10 `messaging.operation` = `process` spans will be created, one for each message.
   Those processing spans are created by the library. This behavior is partially implemented, [See discussion below](#processing-spans).
-- Sets the inter process context correctly, so that additional spans created through the process will be linked to parent spans correctly.  
+- Sets the inter process context correctly, so that additional spans created through the process will be linked to parent spans correctly.
   This behavior is partially implemented, [See discussion below](#processing-spans).
 - Extract trace context from SQS MessageAttributes, and set span's `parent` and `links` correctly according to the spec.
 
