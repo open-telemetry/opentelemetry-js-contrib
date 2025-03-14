@@ -48,7 +48,7 @@ export class ContainerDetector implements ResourceDetector {
     return { attributes };
   }
 
-  async _getContainerIdWithSuppressedTracing(): Promise<string | undefined> {
+  private async _getContainerIdWithSuppressedTracing(): Promise<string | undefined> {
     return context.with(suppressTracing(context.active()), () =>
       this._getContainerId()
     );
