@@ -83,7 +83,6 @@
     "plugins/web/*",
     "propagators/*",
     "detectors/node/*",
-    "metapackages/*",
-    "incubator/*"
+    "metapackages/*"
   ]
 }

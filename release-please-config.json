@@ -21,6 +21,9 @@
     "packages/opentelemetry-id-generator-aws-xray": {},
     "packages/opentelemetry-propagation-utils": {},
     "packages/opentelemetry-redis-common": {},
+    "packages/opentelemetry-sampler-aws-xray": {
+      "skip-github-release": true
+    },
     "packages/opentelemetry-sql-common": {},
     "packages/opentelemetry-test-utils": {},
     "packages/winston-transport": {},

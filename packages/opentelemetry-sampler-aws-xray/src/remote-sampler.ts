@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// Includes work from:
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import {
   Attributes,
   Context,
