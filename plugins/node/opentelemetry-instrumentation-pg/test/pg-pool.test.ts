@@ -51,10 +51,11 @@ import {
   SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_DB_CLIENT_CONNECTION_STATE,
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
-  ATTR_DB_CLIENT_CONNECTION_STATE,
-} from '@opentelemetry/semantic-conventions/incubating';
+  METRIC_DB_CLIENT_OPERATION_DURATION,
+} from '../src/semconv';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -113,12 +114,18 @@ describe('pg-pool', () => {
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
     instrumentation.enable();
+
+    // Disable and enable the instrumentation to visit unwrap calls
+    instrumentation.disable();
+    instrumentation.enable();
   }
 
   let pool: pgPool<pg.Client>;
   let contextManager: AsyncHooksContextManager;
   let instrumentation: PgInstrumentation;
-  const provider = new BasicTracerProvider();
+  const provider = new BasicTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
 
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
@@ -136,7 +143,6 @@ describe('pg-pool', () => {
       skip();
     }
 
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     if (testPostgresLocally) {
       testUtils.startDocker('postgres');
     }
@@ -213,6 +219,36 @@ describe('pg-pool', () => {
           client.release();
         }
       });
+    });
+
+    // Test connection string support
+    it('should handle connection string in pool options', async () => {
+      const connectionString = `postgresql://${CONFIG.user}:${CONFIG.password}@${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`;
+      const poolWithConnString = new pgPool({
+        connectionString,
+        idleTimeoutMillis: CONFIG.idleTimeoutMillis,
+      });
+
+      const expectedAttributes = {
+        [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+        [SEMATTRS_DB_NAME]: CONFIG.database,
+        [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
+        [SEMATTRS_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+        [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
+        [SEMATTRS_DB_USER]: CONFIG.user,
+        [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
+      };
+
+      const events: TimedEvent[] = [];
+      const span = provider.getTracer('test-pg-pool').startSpan('test span');
+
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const client = await poolWithConnString.connect();
+        runCallbackTest(span, expectedAttributes, events, unsetStatus, 2, 1);
+        client.release();
+      });
+
+      await poolWithConnString.end();
     });
 
     // callback - checkout a client
@@ -525,6 +561,11 @@ describe('pg-pool', () => {
 
           const metrics = resourceMetrics.scopeMetrics[0].metrics;
           assert.strictEqual(
+            metrics[0].descriptor.name,
+            METRIC_DB_CLIENT_OPERATION_DURATION
+          );
+
+          assert.strictEqual(
             metrics[1].descriptor.name,
             METRIC_DB_CLIENT_CONNECTION_COUNT
           );
@@ -571,6 +612,40 @@ describe('pg-pool', () => {
           done();
         });
       });
+    });
+
+    it('should generate `db.client.*` metrics (Promises-style)', async (...args) => {
+      const client = await pool.connect();
+
+      try {
+        const ret = await client.query('SELECT NOW()');
+        assert.ok(ret);
+      } finally {
+        client.release();
+      }
+
+      const { resourceMetrics, errors } = await metricReader.collect();
+      assert.deepEqual(
+        errors,
+        [],
+        'expected no errors from the callback during metric collection'
+      );
+
+      // We just test the expected metric *names* here. The particulars of the
+      // metric values are already tested in other test cases.
+      const metrics = resourceMetrics.scopeMetrics[0].metrics;
+      assert.strictEqual(
+        metrics[0].descriptor.name,
+        METRIC_DB_CLIENT_OPERATION_DURATION
+      );
+      assert.strictEqual(
+        metrics[1].descriptor.name,
+        METRIC_DB_CLIENT_CONNECTION_COUNT
+      );
+      assert.strictEqual(
+        metrics[2].descriptor.name,
+        METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS
+      );
     });
 
     it('should not add duplicate event listeners to PgPool events', done => {

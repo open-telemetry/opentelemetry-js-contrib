@@ -34,6 +34,7 @@ import {
   WindowWithZone,
   ZoneTypeWithPrototype,
 } from './internal-types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
@@ -574,7 +575,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * implements enable function
    */
   override enable() {
-    const ZoneWithPrototype = this.getZoneWithPrototype();
+    const ZoneWithPrototype = this._getZoneWithPrototype();
     this._diag.debug(
       'applying patch to',
       this.moduleName,
@@ -644,7 +645,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * implements unpatch function
    */
   override disable() {
-    const ZoneWithPrototype = this.getZoneWithPrototype();
+    const ZoneWithPrototype = this._getZoneWithPrototype();
     this._diag.debug(
       'removing patch from',
       this.moduleName,
@@ -679,7 +680,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
   /**
    * returns Zone
    */
-  getZoneWithPrototype(): ZoneTypeWithPrototype | undefined {
+  private _getZoneWithPrototype(): ZoneTypeWithPrototype | undefined {
     const _window: WindowWithZone = window as unknown as WindowWithZone;
     return _window.Zone;
   }

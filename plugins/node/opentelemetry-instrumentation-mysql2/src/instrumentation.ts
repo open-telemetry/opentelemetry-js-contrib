@@ -18,6 +18,7 @@ import * as api from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
+  InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
@@ -31,13 +32,17 @@ import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationConfig } from './types';
 import {
   getConnectionAttributes,
+  getConnectionPrototypeToInstrument,
   getDbStatement,
   getSpanName,
   once,
 } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
+
+const supportedVersions = ['>=1.4.2 <4'];
 
 export class MySQL2Instrumentation extends InstrumentationBase<MySQL2InstrumentationConfig> {
   static readonly COMMON_ATTRIBUTES = {
@@ -49,45 +54,75 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
   }
 
   protected init() {
+    let format: formatType | undefined;
+    function setFormatFunction(moduleExports: any) {
+      if (!format && moduleExports.format) {
+        format = moduleExports.format;
+      }
+    }
+    const patch = (ConnectionPrototype: mysqlTypes.Connection) => {
+      if (isWrapped(ConnectionPrototype.query)) {
+        this._unwrap(ConnectionPrototype, 'query');
+      }
+      this._wrap(
+        ConnectionPrototype,
+        'query',
+        this._patchQuery(format, false) as any
+      );
+      if (isWrapped(ConnectionPrototype.execute)) {
+        this._unwrap(ConnectionPrototype, 'execute');
+      }
+      this._wrap(
+        ConnectionPrototype,
+        'execute',
+        this._patchQuery(format, true) as any
+      );
+    };
+    const unpatch = (ConnectionPrototype: mysqlTypes.Connection) => {
+      this._unwrap(ConnectionPrototype, 'query');
+      this._unwrap(ConnectionPrototype, 'execute');
+    };
     return [
       new InstrumentationNodeModuleDefinition(
         'mysql2',
-        ['>=1.4.2 <4'],
+        supportedVersions,
         (moduleExports: any) => {
-          const ConnectionPrototype: mysqlTypes.Connection =
-            moduleExports.Connection.prototype;
-          if (isWrapped(ConnectionPrototype.query)) {
-            this._unwrap(ConnectionPrototype, 'query');
-          }
-          this._wrap(
-            ConnectionPrototype,
-            'query',
-            this._patchQuery(moduleExports.format, false) as any
-          );
-
-          if (isWrapped(ConnectionPrototype.execute)) {
-            this._unwrap(ConnectionPrototype, 'execute');
-          }
-          this._wrap(
-            ConnectionPrototype,
-            'execute',
-            this._patchQuery(moduleExports.format, true) as any
-          );
-
+          setFormatFunction(moduleExports);
           return moduleExports;
         },
-        (moduleExports: any) => {
-          if (moduleExports === undefined) return;
-          const ConnectionPrototype: mysqlTypes.Connection =
-            moduleExports.Connection.prototype;
-          this._unwrap(ConnectionPrototype, 'query');
-          this._unwrap(ConnectionPrototype, 'execute');
-        }
+        () => {},
+        [
+          new InstrumentationNodeModuleFile(
+            'mysql2/promise.js',
+            supportedVersions,
+            (moduleExports: any) => {
+              setFormatFunction(moduleExports);
+              return moduleExports;
+            },
+            () => {}
+          ),
+          new InstrumentationNodeModuleFile(
+            'mysql2/lib/connection.js',
+            supportedVersions,
+            (moduleExports: any) => {
+              const ConnectionPrototype: mysqlTypes.Connection =
+                getConnectionPrototypeToInstrument(moduleExports);
+              patch(ConnectionPrototype);
+              return moduleExports;
+            },
+            (moduleExports: any) => {
+              if (moduleExports === undefined) return;
+              const ConnectionPrototype: mysqlTypes.Connection =
+                getConnectionPrototypeToInstrument(moduleExports);
+              unpatch(ConnectionPrototype);
+            }
+          ),
+        ]
       ),
     ];
   }
 
-  private _patchQuery(format: formatType, isPrepared: boolean) {
+  private _patchQuery(format: formatType | undefined, isPrepared: boolean) {
     return (originalQuery: Function): Function => {
       const thisPlugin = this;
       return function query(

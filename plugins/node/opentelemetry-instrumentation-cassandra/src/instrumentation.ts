@@ -39,6 +39,7 @@ import {
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { EventEmitter } from 'events';
 import type * as CassandraDriver from 'cassandra-driver';
@@ -391,5 +392,5 @@ function wrapPromise<T>(
 }
 
 function truncateQuery(query: unknown, maxQueryLength: number) {
-  return String(query).substr(0, maxQueryLength);
+  return String(query).substring(0, maxQueryLength);
 }

@@ -29,10 +29,11 @@ import { HapiLayerType } from '../src/internal-types';
 import { AttributeNames } from '../src/enums/AttributeNames';
 
 describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
   let server: hapi.Server;
@@ -81,12 +82,13 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
     name: 'simplePlugin',
     version: '1.0.0',
     multiple: true,
+    value: 42,
     register: async function (server: hapi.Server, options: any) {
       server.route({
         method: 'GET',
         path: '/hello',
-        handler: function (request, h) {
-          return `hello, world, ${options.name}`;
+        handler: (request, h) => {
+          return `hello, world, ${this.value} ${options.name}`;
         },
       });
     },

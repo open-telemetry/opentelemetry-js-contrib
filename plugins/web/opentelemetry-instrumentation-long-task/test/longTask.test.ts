@@ -60,12 +60,11 @@ describe('LongTaskInstrumentation', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    webTracerProvider = new WebTracerProvider();
     dummySpanExporter = new DummySpanExporter();
     exportSpy = sandbox.stub(dummySpanExporter, 'export');
-    webTracerProvider.addSpanProcessor(
-      new tracing.SimpleSpanProcessor(dummySpanExporter)
-    );
+    webTracerProvider = new WebTracerProvider({
+      spanProcessors: [new tracing.SimpleSpanProcessor(dummySpanExporter)],
+    });
     webTracerProvider.register();
 
     longTaskInstrumentation = new LongTaskInstrumentation({

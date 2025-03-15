@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { EventLoopUtilization, performance } from 'node:perf_hooks';
-const { eventLoopUtilization } = performance;
-
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
-import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { RuntimeNodeInstrumentationConfig } from './types';
+import { MetricCollector } from './types/metricCollector';
+import { EventLoopUtilizationCollector } from './metrics/eventLoopUtilizationCollector';
+import { EventLoopDelayCollector } from './metrics/eventLoopDelayCollector';
+import { GCCollector } from './metrics/gcCollector';
+import { HeapSpacesSizeAndUsedCollector } from './metrics/heapSpacesSizeAndUsedCollector';
+import { ConventionalNamePrefix } from './types/ConventionalNamePrefix';
+import { EventLoopTimeCollector } from './metrics/eventLoopTimeCollector';
+/** @knipignore */
+import { PACKAGE_VERSION, PACKAGE_NAME } from './version';
 
-const ELUS_LENGTH = 2;
 const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
-  eventLoopUtilizationMeasurementInterval: 5000,
+  monitoringPrecision: 10,
 };
 
 export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeInstrumentationConfig> {
-  private _ELUs: EventLoopUtilization[] = [];
-  private _interval: NodeJS.Timeout | undefined;
+  private readonly _collectors: MetricCollector[] = [];
 
   constructor(config: RuntimeNodeInstrumentationConfig = {}) {
     super(
@@ -36,37 +39,33 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
       PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
-  }
-
-  private _addELU() {
-    this._ELUs.unshift(eventLoopUtilization());
-    if (this._ELUs.length > ELUS_LENGTH) {
-      this._ELUs.pop();
+    this._collectors = [
+      new EventLoopUtilizationCollector(
+        this._config,
+        ConventionalNamePrefix.NodeJs
+      ),
+      new EventLoopTimeCollector(this._config, ConventionalNamePrefix.NodeJs),
+      new EventLoopDelayCollector(this._config, ConventionalNamePrefix.NodeJs),
+      new GCCollector(this._config, ConventionalNamePrefix.V8js),
+      new HeapSpacesSizeAndUsedCollector(
+        this._config,
+        ConventionalNamePrefix.V8js
+      ),
+    ];
+    if (this._config.enabled) {
+      for (const collector of this._collectors) {
+        collector.enable();
+      }
     }
-  }
-
-  private _clearELU() {
-    if (!this._ELUs) {
-      this._ELUs = [];
-    }
-    this._ELUs.length = 0;
   }
 
   // Called when a new `MeterProvider` is set
   // the Meter (result of @opentelemetry/api's getMeter) is available as this.meter within this method
   override _updateMetricInstruments() {
-    this.meter
-      .createObservableGauge('nodejs.event_loop.utilization', {
-        description: 'Event loop utilization',
-        unit: '1',
-      })
-      .addCallback(async observableResult => {
-        if (this._ELUs.length !== ELUS_LENGTH) {
-          return;
-        }
-        const elu = eventLoopUtilization(...this._ELUs);
-        observableResult.observe(elu.utilization);
-      });
+    if (!this._collectors) return;
+    for (const collector of this._collectors) {
+      collector.updateMetricInstruments(this.meter);
+    }
   }
 
   init() {
@@ -74,21 +73,16 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
   }
 
   override enable() {
-    this._clearELU();
-    this._addELU();
-    clearInterval(this._interval);
-    this._interval = setInterval(
-      () => this._addELU(),
-      this.getConfig().eventLoopUtilizationMeasurementInterval
-    );
+    if (!this._collectors) return;
 
-    // unref so that it does not keep the process running if disable() is never called
-    this._interval?.unref();
+    for (const collector of this._collectors) {
+      collector.enable();
+    }
   }
 
   override disable() {
-    this._clearELU();
-    clearInterval(this._interval);
-    this._interval = undefined;
+    for (const collector of this._collectors) {
+      collector.disable();
+    }
   }
 }

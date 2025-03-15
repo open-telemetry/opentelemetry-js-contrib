@@ -68,8 +68,9 @@ describe('UndiciInstrumentation `undici` tests', function () {
   const hostname = 'localhost';
   const mockServer = new MockServer();
   const memoryExporter = new InMemorySpanExporter();
-  const provider = new NodeTracerProvider();
-  provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+  const provider = new NodeTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
 
   before(function (done) {
     // Load `undici`. It may fail if nodejs version is <18 because the module uses
@@ -830,6 +831,34 @@ describe('UndiciInstrumentation `undici` tests', function () {
         undefined,
         'user-agent is undefined'
       );
+    });
+
+    it('should create valid span if request.path is a full URL', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      const origin = `${protocol}://${hostname}:${mockServer.port}`;
+      const fullUrl = `${origin}/?query=test`;
+      const client = new undici.Client(origin);
+      const res = await client.request({
+        path: fullUrl,
+        method: 'GET',
+      });
+      await consumeResponseBody(res.body);
+
+      spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(spans.length, 1);
+      assertSpan(span, {
+        hostname: 'localhost',
+        httpStatusCode: res.statusCode,
+        httpMethod: 'GET',
+        path: '/',
+        query: '?query=test',
+        resHeaders: res.headers,
+      });
+      assert.strictEqual(span.attributes['url.full'], fullUrl);
     });
   });
 });

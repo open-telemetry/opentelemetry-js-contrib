@@ -30,6 +30,7 @@ import {
 import { getClientAttributes } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { RedisInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
 import type { MultiErrorReply } from './internal-types';

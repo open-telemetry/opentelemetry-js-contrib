@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-restify",
-  "version": "0.41.0",
+  "version": "0.45.1",
   "description": "OpenTelemetry instrumentation for `restify` http web application framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,11 +11,10 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../../scripts/lint-readme.js",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-restify --include-dependencies",
     "prepublishOnly": "npm run compile",
     "prewatch": "npm run precompile",
     "tdd": "yarn test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",
+    "test": "nyc mocha 'test/**/*.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w"
@@ -48,22 +47,20 @@
     "@opentelemetry/context-async-hooks": "^1.8.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
-    "@types/mocha": "7.0.2",
+    "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/restify": "4.3.12",
     "@types/semver": "7.5.8",
-    "mocha": "7.2.0",
     "nyc": "15.1.0",
     "restify": "11.1.0",
     "rimraf": "5.0.10",
-    "semver": "7.6.3",
+    "semver": "7.7.1",
     "test-all-versions": "^6.0.0",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.53.0",
+    "@opentelemetry/instrumentation": "^0.57.2",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-restify#readme"

@@ -41,6 +41,7 @@ import * as assert from 'assert';
 import * as koa from 'koa';
 import * as http from 'http';
 import * as sinon from 'sinon';
+import * as semver from 'semver';
 import { AddressInfo } from 'net';
 import { KoaLayerType, KoaRequestInfo } from '../src/types';
 import { AttributeNames } from '../src/enums/AttributeNames';
@@ -65,11 +66,18 @@ const httpRequest = {
   },
 };
 
-describe('Koa Instrumentation', () => {
-  const provider = new NodeTracerProvider();
+const LIB_VERSION = require('@koa/router/package.json').version;
+const NODE_VERSION = process.version;
+const isrouterCompat =
+  semver.lt(LIB_VERSION, '13.0.0') ||
+  (semver.gte(LIB_VERSION, '13.0.0') && semver.gte(NODE_VERSION, '18.0.0'));
+
+describe('Koa Instrumentation', function () {
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
@@ -77,7 +85,7 @@ describe('Koa Instrumentation', () => {
   let server: http.Server;
   let port: number;
 
-  before(() => {
+  before(function () {
     plugin.enable();
   });
 
@@ -141,7 +149,13 @@ describe('Koa Instrumentation', () => {
       yield next;
     };
 
-  describe('Instrumenting @koa/router calls', () => {
+  describe('Instrumenting @koa/router calls', function () {
+    before(function () {
+      if (!isrouterCompat) {
+        this.skip();
+      }
+    });
+
     it('should create a child span for middlewares (string route)', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
@@ -585,7 +599,13 @@ describe('Koa Instrumentation', () => {
     });
   });
 
-  describe('Using requestHook', () => {
+  describe('Using requestHook', function () {
+    before(function () {
+      if (!isrouterCompat) {
+        this.skip();
+      }
+    });
+
     it('should ignore requestHook which throws exception', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
@@ -721,7 +741,8 @@ describe('Koa Instrumentation', () => {
     });
   });
 
-  it('should work with ESM usage', async () => {
+  const itFn = isrouterCompat ? it : it.skip;
+  itFn('should work with ESM usage', async () => {
     await testUtils.runTestFixture({
       cwd: __dirname,
       argv: ['fixtures/use-koa.mjs'],

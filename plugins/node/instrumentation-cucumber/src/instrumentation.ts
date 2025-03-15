@@ -38,6 +38,7 @@ import type {
 } from '@cucumber/cucumber/lib/support_code_library_builder/types';
 
 import { AttributeNames, CucumberInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const hooks = ['Before', 'BeforeStep', 'AfterStep', 'After'] as const;
@@ -46,7 +47,7 @@ type Cucumber = typeof cucumber;
 type Hook = (typeof hooks)[number];
 type Step = (typeof steps)[number];
 
-const supportedVersions = ['>=8.0.0 <11'];
+const supportedVersions = ['>=8.0.0 <12'];
 
 export class CucumberInstrumentation extends InstrumentationBase<CucumberInstrumentationConfig> {
   private module: Cucumber | undefined;

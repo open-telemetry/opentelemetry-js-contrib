@@ -51,8 +51,13 @@ import {
   V4ConnectionPool,
 } from './internal-types';
 import { V4Connect, V4Session } from './internal-types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api';
+
+const DEFAULT_CONFIG: MongoDBInstrumentationConfig = {
+  requireParentSpan: true,
+};
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumentationConfig> {
@@ -60,7 +65,11 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   private _poolName!: string;
 
   constructor(config: MongoDBInstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+  }
+
+  override setConfig(config: MongoDBInstrumentationConfig = {}) {
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   override _updateMetricInstruments() {
@@ -437,10 +446,13 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
+        const skipInstrumentation =
+          instrumentation._checkSkipInstrumentation(currentSpan);
+
         const resultHandler =
           typeof options === 'function' ? options : callback;
         if (
-          !currentSpan ||
+          skipInstrumentation ||
           typeof resultHandler !== 'function' ||
           typeof ops !== 'object'
         ) {
@@ -450,6 +462,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
             return original.call(this, server, ns, ops, options, callback);
           }
         }
+
         const span = instrumentation.tracer.startSpan(
           `mongodb.${operationName}`,
           {
@@ -489,10 +502,14 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
+        const skipInstrumentation =
+          instrumentation._checkSkipInstrumentation(currentSpan);
+
         const resultHandler =
           typeof options === 'function' ? options : callback;
+
         if (
-          !currentSpan ||
+          skipInstrumentation ||
           typeof resultHandler !== 'function' ||
           typeof cmd !== 'object'
         ) {
@@ -502,6 +519,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
             return original.call(this, server, ns, cmd, options, callback);
           }
         }
+
         const commandType = MongoDBInstrumentation._getCommandType(cmd);
         const type =
           commandType === MongodbCommandType.UNKNOWN ? 'command' : commandType;
@@ -534,20 +552,17 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback: any
       ) {
         const currentSpan = trace.getSpan(context.active());
+        const skipInstrumentation =
+          instrumentation._checkSkipInstrumentation(currentSpan);
         const resultHandler = callback;
         const commandType = Object.keys(cmd)[0];
 
-        if (
-          typeof resultHandler !== 'function' ||
-          typeof cmd !== 'object' ||
-          cmd.ismaster ||
-          cmd.hello
-        ) {
+        if (typeof cmd !== 'object' || cmd.ismaster || cmd.hello) {
           return original.call(this, ns, cmd, options, callback);
         }
 
         let span = undefined;
-        if (currentSpan) {
+        if (!skipInstrumentation) {
           span = instrumentation.tracer.startSpan(`mongodb.${commandType}`, {
             kind: SpanKind.CLIENT,
           });
@@ -580,6 +595,9 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       ) {
         const [ns, cmd] = args;
         const currentSpan = trace.getSpan(context.active());
+        const skipInstrumentation =
+          instrumentation._checkSkipInstrumentation(currentSpan);
+
         const commandType = Object.keys(cmd)[0];
         const resultHandler = () => undefined;
 
@@ -588,7 +606,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         }
 
         let span = undefined;
-        if (currentSpan) {
+        if (!skipInstrumentation) {
           span = instrumentation.tracer.startSpan(`mongodb.${commandType}`, {
             kind: SpanKind.CLIENT,
           });
@@ -633,10 +651,13 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
+        const skipInstrumentation =
+          instrumentation._checkSkipInstrumentation(currentSpan);
         const resultHandler =
           typeof options === 'function' ? options : callback;
+
         if (
-          !currentSpan ||
+          skipInstrumentation ||
           typeof resultHandler !== 'function' ||
           typeof cmd !== 'object'
         ) {
@@ -654,6 +675,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
             );
           }
         }
+
         const span = instrumentation.tracer.startSpan('mongodb.find', {
           kind: SpanKind.CLIENT,
         });
@@ -698,9 +720,13 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         callback?: Function
       ) {
         const currentSpan = trace.getSpan(context.active());
+        const skipInstrumentation =
+          instrumentation._checkSkipInstrumentation(currentSpan);
+
         const resultHandler =
           typeof options === 'function' ? options : callback;
-        if (!currentSpan || typeof resultHandler !== 'function') {
+
+        if (skipInstrumentation || typeof resultHandler !== 'function') {
           if (typeof options === 'function') {
             return original.call(
               this,
@@ -722,6 +748,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
             );
           }
         }
+
         const span = instrumentation.tracer.startSpan('mongodb.getMore', {
           kind: SpanKind.CLIENT,
         });
@@ -1019,5 +1046,11 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     const database = options.dbName;
     const poolName = `mongodb://${host}:${port}/${database}`;
     this._poolName = poolName;
+  }
+
+  private _checkSkipInstrumentation(currentSpan: Span | undefined) {
+    const requireParentSpan = this.getConfig().requireParentSpan;
+    const hasNoParentSpan = currentSpan === undefined;
+    return requireParentSpan === true && hasNoParentSpan;
   }
 }

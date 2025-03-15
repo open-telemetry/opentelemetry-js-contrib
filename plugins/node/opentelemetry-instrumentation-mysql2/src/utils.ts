@@ -22,6 +22,9 @@ import {
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import type * as mysqlTypes from 'mysql2';
+
+type formatType = typeof mysqlTypes.format;
 
 /*
   Following types declare an expectation on mysql2 types and define a subset we
@@ -103,14 +106,12 @@ function getJDBCString(
  */
 export function getDbStatement(
   query: string | Query | QueryOptions,
-  format: (
-    sql: string,
-    values: any[],
-    stringifyObjects?: boolean,
-    timeZone?: string
-  ) => string,
+  format?: formatType,
   values?: any[]
 ): string {
+  if (!format) {
+    return typeof query === 'string' ? query : query.sql;
+  }
   if (typeof query === 'string') {
     return values ? format(query, values) : query;
   } else {
@@ -131,7 +132,11 @@ export function getDbStatement(
 export function getSpanName(query: string | Query | QueryOptions): string {
   const rawQuery = typeof query === 'object' ? query.sql : query;
   // Extract the SQL verb
-  return rawQuery?.split(' ')?.[0];
+  const firstSpace = rawQuery?.indexOf(' ');
+  if (typeof firstSpace === 'number' && firstSpace !== -1) {
+    return rawQuery?.substring(0, firstSpace);
+  }
+  return rawQuery;
 }
 
 export const once = (fn: Function) => {
@@ -142,3 +147,22 @@ export const once = (fn: Function) => {
     return fn(...args);
   };
 };
+
+export function getConnectionPrototypeToInstrument(connection: any) {
+  const connectionPrototype = connection.prototype;
+  const basePrototype = Object.getPrototypeOf(connectionPrototype);
+
+  // mysql2@3.11.5 included a refactoring, where most code was moved out of the `Connection` class and into a shared base
+  // so we need to instrument that instead, see https://github.com/sidorares/node-mysql2/pull/3081
+  // This checks if the functions we're instrumenting are there on the base - we cannot use the presence of a base
+  // prototype since EventEmitter is the base for mysql2@<=3.11.4
+  if (
+    typeof basePrototype?.query === 'function' &&
+    typeof basePrototype?.execute === 'function'
+  ) {
+    return basePrototype;
+  }
+
+  // otherwise instrument the connection directly.
+  return connectionPrototype;
+}

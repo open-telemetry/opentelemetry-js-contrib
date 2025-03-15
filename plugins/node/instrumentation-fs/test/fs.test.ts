@@ -40,8 +40,8 @@ const TEST_VALUE = 'test.attr.value';
 
 const createHook = <CreateHook>sinon.spy(
   (fnName: FMember | FPMember, { args, span }) => {
-    // `ts-node`, which we use via `ts-mocha` also patches module loading and creates
-    // a lot of unrelated spans. Filter those out.
+    // `ts-node`, which we use via `mocha` also patches module loading and
+    // creates a lot of unrelated spans. Filter those out.
     if (['readFileSync', 'existsSync'].includes(fnName as string)) {
       const filename = args[0];
       if (!/test\/fixtures/.test(filename)) {
@@ -58,10 +58,11 @@ const pluginConfig = {
   createHook,
   endHook,
 };
-const provider = new BasicTracerProvider();
-const tracer = provider.getTracer('default');
 const memoryExporter = new InMemorySpanExporter();
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+const provider = new BasicTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+});
+const tracer = provider.getTracer('default');
 
 describe('fs instrumentation', () => {
   let contextManager: AsyncHooksContextManager;

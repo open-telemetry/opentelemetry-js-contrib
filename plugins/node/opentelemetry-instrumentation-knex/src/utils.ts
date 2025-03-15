@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
+import { Exception } from '@opentelemetry/api';
 import {
   DBSYSTEMVALUES_SQLITE,
   DBSYSTEMVALUES_POSTGRESQL,
 } from '@opentelemetry/semantic-conventions';
 
-type Exception = {
-  new (message: string): Exception;
-  constructor: Exception;
-  errno?: number;
+type KnexError = Error & {
   code?: string;
-  stack?: string;
 };
 
 export const getFormatter = (runner: any) => {
@@ -43,21 +40,27 @@ export const getFormatter = (runner: any) => {
   return () => '<noop formatter>';
 };
 
-export const cloneErrorWithNewMessage = (err: Exception, message: string) => {
-  if (err && err instanceof Error) {
-    const clonedError = new (err.constructor as Exception)(message);
-    clonedError.code = err.code;
-    clonedError.stack = err.stack;
-    clonedError.errno = err.errno;
-    return clonedError;
+export function otelExceptionFromKnexError(
+  err: KnexError,
+  message: string
+): Exception {
+  if (!(err && err instanceof Error)) {
+    return err;
   }
-  return err;
-};
+
+  return {
+    message,
+    code: err.code,
+    stack: err.stack,
+    name: err.name,
+  };
+}
 
 const systemMap = new Map([
   ['sqlite3', DBSYSTEMVALUES_SQLITE],
   ['pg', DBSYSTEMVALUES_POSTGRESQL],
 ]);
+
 export const mapSystem = (knexSystem: string) => {
   return systemMap.get(knexSystem) || knexSystem;
 };
@@ -79,7 +82,7 @@ export const limitLength = (str: string, maxLength: number) => {
     0 < maxLength &&
     maxLength < str.length
   ) {
-    return str.substr(0, maxLength) + '..';
+    return str.substring(0, maxLength) + '..';
   }
   return str;
 };

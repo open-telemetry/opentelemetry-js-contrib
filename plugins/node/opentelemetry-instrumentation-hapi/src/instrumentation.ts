@@ -24,6 +24,7 @@ import {
 } from '@opentelemetry/instrumentation';
 
 import type * as Hapi from '@hapi/hapi';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   HapiComponentName,
@@ -266,9 +267,13 @@ export class HapiInstrumentation extends InstrumentationBase {
   private _wrapRegisterHandler<T>(plugin: Hapi.Plugin<T>): void {
     const instrumentation: HapiInstrumentation = this;
     const pluginName = getPluginName(plugin);
-    const oldHandler = plugin.register;
+    const oldRegister = plugin.register;
     const self = this;
-    const newRegisterHandler = function (server: Hapi.Server, options: T) {
+    const newRegisterHandler = function (
+      this: typeof plugin,
+      server: Hapi.Server,
+      options: T
+    ) {
       self._wrap(server, 'route', original => {
         return instrumentation._getServerRoutePatch.bind(instrumentation)(
           original,
@@ -286,7 +291,7 @@ export class HapiInstrumentation extends InstrumentationBase {
           pluginName
         );
       });
-      return oldHandler(server, options);
+      return oldRegister.call(this, server, options);
     };
     plugin.register = newRegisterHandler;
   }

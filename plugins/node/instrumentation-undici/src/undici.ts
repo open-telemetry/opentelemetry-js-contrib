@@ -34,6 +34,7 @@ import {
   ValueType,
 } from '@opentelemetry/api';
 
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 import {
@@ -187,7 +188,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     const startTime = hrTime();
-    const requestUrl = new URL(request.origin + request.path);
+    let requestUrl;
+    try {
+      requestUrl = new URL(request.path, request.origin);
+    } catch (err) {
+      this._diag.warn('could not determine url.full:', err);
+      // Skip instrumenting this request.
+      return;
+    }
     const urlScheme = requestUrl.protocol.replace(':', '');
     const requestMethod = this.getRequestMethod(request.method);
     const attributes: Attributes = {

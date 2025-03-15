@@ -54,11 +54,13 @@ describe('mysql@2.x-Tracing', () => {
   let connection: mysqlTypes.Connection;
   let pool: mysqlTypes.Pool;
   let poolCluster: mysqlTypes.PoolCluster;
-  const provider = new BasicTracerProvider();
   const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
   const memoryExporter = new InMemorySpanExporter();
+  const provider = new BasicTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
 
   before(function (done) {
     if (!shouldTest) {
@@ -67,7 +69,7 @@ describe('mysql@2.x-Tracing', () => {
       this.test!.parent!.pending = true;
       this.skip();
     }
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+
     if (testMysqlLocally) {
       testUtils.startDocker('mysql');
       // wait 15 seconds for docker container to start
@@ -153,7 +155,7 @@ describe('mysql@2.x-Tracing', () => {
 
         query.on('end', () => {
           const spans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(spans[0].name, sql);
+          assert.strictEqual(spans[0].name, 'SELECT');
           done();
         });
       });

@@ -1,0 +1,48 @@
+name: Create or Update OpenTelemetry Update PR
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-or-update-deps-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fork
+        run: gh repo fork open-telemetry/opentelemetry-js-contrib
+        env:
+          GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: opentelemetrybot/opentelemetry-js-contrib
+          ref: main
+          token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+      - name: Sync with upstream
+        run: |
+          git remote show origin
+          git remote add upstream https://github.com/open-telemetry/opentelemetry-js-contrib.git
+          git fetch upstream
+          git reset --hard upstream/main
+          git push origin main --force
+
+      - uses: actions/setup-node@v4
+        with:
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+          node-version: 22
+
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+
+      - name: Create/Update Release PR
+        run: |
+          git config user.name opentelemetrybot
+          git config user.email 107717825+opentelemetrybot@users.noreply.github.com
+          git checkout -b feat/update-otel-deps
+          node ./scripts/update-otel-deps.js
+          git commit -am "feat(deps): update deps matching '@opentelemetry/*'"
+          git push --set-upstream origin feat/update-otel-deps --force
+          gh pr create --repo open-telemetry/opentelemetry-js-contrib --title "feat(deps): update deps matching '@opentelemetry/*'" --body 'Updates all `@opentelemetry/*` dependencies to latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}

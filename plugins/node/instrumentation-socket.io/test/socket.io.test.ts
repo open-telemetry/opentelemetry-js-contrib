@@ -39,6 +39,7 @@ import {
   io,
   getSocketIoSpans,
   expectSpan,
+  expectSpans,
   isV2,
 } from './utils';
 
@@ -56,7 +57,7 @@ describe('SocketIoInstrumentation', () => {
     it('emit is instrumented', () => {
       const io = createServerInstance();
       io.emit('test');
-      expectSpan('/ send', span => {
+      expectSpan('send /', span => {
         expect(span.kind).toEqual(SpanKind.PRODUCER);
         expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual('socket.io');
         expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]).toEqual(
@@ -87,14 +88,14 @@ describe('SocketIoInstrumentation', () => {
       } catch (error) {}
       if (isV2) {
         // only for v2: connect do not throw, but are just ignored
-        return expectSpan('/ send', span => {
+        return expectSpan('send /', span => {
           expect(span.kind).toEqual(SpanKind.PRODUCER);
           expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
             'socket.io'
           );
         });
       }
-      expectSpan('/ send', span => {
+      expectSpan('send /', span => {
         expect(span.status.code).toEqual(SpanStatusCode.ERROR);
         expect(span.status.message).toEqual(
           '"connect" is a reserved event name'
@@ -105,7 +106,7 @@ describe('SocketIoInstrumentation', () => {
     it('send is instrumented', () => {
       const io = createServerInstance();
       io.send('test');
-      expectSpan('/ send', span => {
+      expectSpan('send /', span => {
         expect(span.kind).toEqual(SpanKind.PRODUCER);
         expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual('socket.io');
         expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]).toEqual(
@@ -125,7 +126,7 @@ describe('SocketIoInstrumentation', () => {
 
       const io = createServerInstance();
       io.emit('test', 1234);
-      expectSpan('/ send', span => {
+      expectSpan('send /', span => {
         expect(span.attributes['payload']).toEqual(JSON.stringify([1234]));
       });
     });
@@ -164,17 +165,22 @@ describe('SocketIoInstrumentation', () => {
           socket.on('test_reply', data => {
             client.close();
             sio.close();
+
             //trace is created after the listener method is completed
             setTimeout(() => {
-              expectSpan(
-                'test_reply receive',
-                span => {
+              expectSpans(
+                'receive /',
+                spans => {
                   try {
-                    expect(span.kind).toEqual(SpanKind.CONSUMER);
-                    expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
-                      'socket.io'
-                    );
-                    expect(span.attributes['payload']).toEqual(
+                    expect(spans[0].kind).toEqual(SpanKind.CONSUMER);
+                    expect(
+                      spans[0].attributes[SEMATTRS_MESSAGING_SYSTEM]
+                    ).toEqual('socket.io');
+                    expect(spans[1].kind).toEqual(SpanKind.CONSUMER);
+                    expect(
+                      spans[1].attributes[SEMATTRS_MESSAGING_SYSTEM]
+                    ).toEqual('socket.io');
+                    expect(spans[1].attributes['payload']).toEqual(
                       JSON.stringify([data])
                     );
                     done();
@@ -207,7 +213,7 @@ describe('SocketIoInstrumentation', () => {
         sio.on('connection', () => {
           //trace is created after the listener method is completed
           setTimeout(() => {
-            expectSpan('connection receive', span => {
+            expectSpan('receive /', span => {
               expect(span.kind).toEqual(SpanKind.CONSUMER);
               expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
                 'socket.io'
@@ -238,7 +244,7 @@ describe('SocketIoInstrumentation', () => {
             //trace is created after the listener method is completed
             setTimeout(() => {
               expectSpan(
-                'test_reply receive',
+                'receive /',
                 span => {
                   try {
                     expect(span.kind).toEqual(SpanKind.CONSUMER);
@@ -291,7 +297,7 @@ describe('SocketIoInstrumentation', () => {
       const roomName = 'room';
       const sio = createServerInstance();
       sio.to(roomName).emit('broadcast', '1234');
-      expectSpan('/[room] send', span => {
+      expectSpan('send /', span => {
         expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual('/');
         expect(
           span.attributes[SocketIoInstrumentationAttributes.SOCKET_IO_ROOMS]
@@ -302,7 +308,7 @@ describe('SocketIoInstrumentation', () => {
     it('broadcast to multiple rooms', () => {
       const sio = createServerInstance();
       sio.to('room1').to('room2').emit('broadcast', '1234');
-      expectSpan('/[room1,room2] send', span => {
+      expectSpan('send /', span => {
         expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual('/');
         expect(
           span.attributes[SocketIoInstrumentationAttributes.SOCKET_IO_ROOMS]
@@ -316,7 +322,7 @@ describe('SocketIoInstrumentation', () => {
       const io = createServerInstance();
       const namespace = io.of('/testing');
       namespace.emit('namespace');
-      expectSpan('/testing send', span => {
+      expectSpan('send /testing', span => {
         expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
           '/testing'
         );
@@ -331,7 +337,7 @@ describe('SocketIoInstrumentation', () => {
       const io = createServerInstance();
       const namespace = io.of('/testing');
       namespace.to(roomName).emit('broadcast', '1234');
-      expectSpan('/testing[room] send', span => {
+      expectSpan('send /testing', span => {
         expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
           '/testing'
         );
@@ -348,7 +354,7 @@ describe('SocketIoInstrumentation', () => {
       const io = createServerInstance();
       const namespace = io.of('/testing');
       namespace.to('room1').to('room2').emit('broadcast', '1234');
-      expectSpan('/testing[room1,room2] send', span => {
+      expectSpan('send /testing', span => {
         expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
           '/testing'
         );
@@ -379,7 +385,7 @@ describe('SocketIoInstrumentation', () => {
             //trace is created after the listener method is completed
             setTimeout(() => {
               expectSpan(
-                '/testing test_reply receive',
+                'receive /testing',
                 span => {
                   try {
                     expect(span.kind).toEqual(SpanKind.CONSUMER);
@@ -421,7 +427,7 @@ describe('SocketIoInstrumentation', () => {
             client.close();
             sio.close();
             expectSpan(
-              `/[${socket.id}] send`,
+              'send /',
               span => {
                 try {
                   expect(span.kind).toEqual(SpanKind.PRODUCER);

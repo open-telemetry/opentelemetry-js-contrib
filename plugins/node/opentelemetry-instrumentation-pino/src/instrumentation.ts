@@ -27,6 +27,7 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { PinoInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getTimeConverter, OTelPinoStream } from './log-sending-utils';
 
@@ -108,8 +109,9 @@ export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentation
             const origStream = logger[moduleExports.symbols.streamSym];
             logger[moduleExports.symbols.streamSym] = moduleExports.multistream(
               [
-                { level: logger.level, stream: origStream },
-                { level: logger.level, stream: otelStream },
+                // Use level `0` to never not log a record given to the stream.
+                { level: 0, stream: origStream },
+                { level: 0, stream: otelStream },
               ],
               { levels: logger.levels.values }
             );

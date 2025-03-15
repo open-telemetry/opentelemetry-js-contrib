@@ -15,10 +15,11 @@
  */
 
 import * as api from '@opentelemetry/api';
-import { isWrapped } from '@opentelemetry/core';
+import { isWrapped } from '@opentelemetry/instrumentation';
 import * as shimmer from 'shimmer';
 import { AttributeNames } from './enums/AttributeNames';
 import * as React from 'react';
+/** @knipignore */
 import { PACKAGE_VERSION } from './version';
 import {
   RenderFunction,

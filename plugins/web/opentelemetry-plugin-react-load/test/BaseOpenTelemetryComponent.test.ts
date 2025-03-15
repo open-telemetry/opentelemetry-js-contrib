@@ -20,7 +20,7 @@ import {
   propagation,
   trace,
 } from '@opentelemetry/api';
-import { isWrapped } from '@opentelemetry/core';
+import { isWrapped } from '@opentelemetry/instrumentation';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import {
   BasicTracerProvider,
@@ -68,11 +68,11 @@ describe('ReactLoad Instrumentation', () => {
     contextManager = new StackContextManager().enable();
     context.setGlobalContextManager(contextManager);
 
-    provider = new BasicTracerProvider();
-
     dummyExporter = new DummyExporter();
     spanProcessor = new SimpleSpanProcessor(dummyExporter);
-    provider.addSpanProcessor(spanProcessor);
+    provider = new BasicTracerProvider({
+      spanProcessors: [spanProcessor],
+    });
     sandbox = sinon.createSandbox();
 
     trace.setGlobalTracerProvider(provider);

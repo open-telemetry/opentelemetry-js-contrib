@@ -22,7 +22,6 @@ import * as path from 'path';
 import {
   AwsLambdaInstrumentation,
   AwsLambdaInstrumentationConfig,
-  traceContextEnvironmentKey,
   lambdaMaxInitInMilliseconds,
 } from '../../src';
 import {
@@ -34,6 +33,7 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
+  ATTR_URL_FULL,
   SEMATTRS_EXCEPTION_MESSAGE,
   SEMATTRS_FAAS_COLDSTART,
   SEMATTRS_FAAS_EXECUTION,
@@ -49,9 +49,11 @@ import {
   SpanStatusCode,
   TextMapPropagator,
   ROOT_CONTEXT,
+  defaultTextMapGetter,
 } from '@opentelemetry/api';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
+import { AWSXRayLambdaPropagator } from '@opentelemetry/propagator-aws-xray-lambda';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -118,8 +120,9 @@ describe('lambda handler', () => {
   ) => {
     process.env._HANDLER = handler;
 
-    const provider = new NodeTracerProvider();
-    provider.addSpanProcessor(new BatchSpanProcessor(memoryExporter));
+    const provider = new NodeTracerProvider({
+      spanProcessors: [new BatchSpanProcessor(memoryExporter)],
+    });
     provider.register();
 
     instrumentation = new AwsLambdaInstrumentation(config);
@@ -140,39 +143,6 @@ describe('lambda handler', () => {
   const sampledAwsHeader = serializeSpanContext(
     sampledAwsSpanContext,
     new AWSXRayPropagator()
-  );
-
-  const sampledHttpSpanContext: SpanContext = {
-    traceId: '8a3c60f7d188f8fa79d48a391a778fa7',
-    spanId: '0000000000000457',
-    traceFlags: 1,
-    isRemote: true,
-  };
-  const sampledHttpHeader = serializeSpanContext(
-    sampledHttpSpanContext,
-    new W3CTraceContextPropagator()
-  );
-
-  const unsampledAwsSpanContext: SpanContext = {
-    traceId: '8a3c60f7d188f8fa79d48a391a778fa8',
-    spanId: '0000000000000458',
-    traceFlags: 0,
-    isRemote: true,
-  };
-  const unsampledAwsHeader = serializeSpanContext(
-    unsampledAwsSpanContext,
-    new AWSXRayPropagator()
-  );
-
-  const unsampledHttpSpanContext: SpanContext = {
-    traceId: '8a3c60f7d188f8fa79d48a391a778fa9',
-    spanId: '0000000000000459',
-    traceFlags: 0,
-    isRemote: true,
-  };
-  const unsampledHttpHeader = serializeSpanContext(
-    unsampledHttpSpanContext,
-    new W3CTraceContextPropagator()
   );
 
   const sampledGenericSpanContext: SpanContext = {
@@ -535,47 +505,17 @@ describe('lambda handler', () => {
   });
 
   describe('with remote parent', () => {
-    it('uses lambda context if sampled and no http context', async () => {
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
-      initializeHandler('lambda-test/async.handler');
-
-      const result = await lambdaRequire('lambda-test/async').handler(
-        'arg',
-        ctx
-      );
-      assert.strictEqual(result, 'ok');
-      const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext().traceId,
-        sampledAwsSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
+    beforeEach(() => {
+      propagation.disable();
     });
 
-    it('uses lambda context if unsampled and no http context', async () => {
-      process.env[traceContextEnvironmentKey] = unsampledAwsHeader;
-      initializeHandler('lambda-test/async.handler');
-
-      const result = await lambdaRequire('lambda-test/async').handler(
-        'arg',
-        ctx
-      );
-      assert.strictEqual(result, 'ok');
-      const spans = memoryExporter.getFinishedSpans();
-      // Parent unsampled so no exported spans.
-      assert.strictEqual(spans.length, 0);
-    });
-
-    it('uses lambda context if sampled and http context present', async () => {
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+    it('uses globally registered propagator', async () => {
+      propagation.setGlobalPropagator(new AWSXRayPropagator());
       initializeHandler('lambda-test/async.handler');
 
       const proxyEvent = {
         headers: {
-          traceparent: sampledHttpHeader,
+          'x-amzn-trace-id': sampledAwsHeader,
         },
       };
 
@@ -585,213 +525,55 @@ describe('lambda handler', () => {
       );
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
+
       assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext().traceId,
+      assert.equal(
+        spans[0].spanContext().traceId,
         sampledAwsSpanContext.traceId
       );
-      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
+      assert.equal(spans[0].parentSpanId, sampledAwsSpanContext.spanId);
     });
 
-    it('uses http context if sampled and lambda context unsampled', async () => {
-      process.env[traceContextEnvironmentKey] = unsampledAwsHeader;
+    it('can extract context from lambda context env variable using a global propagator', async () => {
+      process.env['_X_AMZN_TRACE_ID'] = sampledAwsHeader;
+      propagation.setGlobalPropagator(new AWSXRayLambdaPropagator());
       initializeHandler('lambda-test/async.handler');
 
-      const proxyEvent = {
-        headers: {
-          traceparent: sampledHttpHeader,
-        },
-      };
-
-      const result = await lambdaRequire('lambda-test/async').handler(
-        proxyEvent,
-        ctx
-      );
-      assert.strictEqual(result, 'ok');
-      const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext().traceId,
-        sampledHttpSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, sampledHttpSpanContext.spanId);
-    });
-
-    it('uses http context if unsampled and lambda context unsampled', async () => {
-      process.env[traceContextEnvironmentKey] = unsampledAwsHeader;
-      initializeHandler('lambda-test/async.handler');
-
-      const proxyEvent = {
-        headers: {
-          traceparent: unsampledHttpHeader,
-        },
-      };
-
-      const result = await lambdaRequire('lambda-test/async').handler(
-        proxyEvent,
-        ctx
-      );
-      assert.strictEqual(result, 'ok');
-      const spans = memoryExporter.getFinishedSpans();
-      // Parent unsampled so no spans exported.
-      assert.strictEqual(spans.length, 0);
-    });
-
-    it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "true"', async () => {
-      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'true';
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
-      initializeHandler('lambda-test/async.handler', {});
-
       const result = await lambdaRequire('lambda-test/async').handler(
         'arg',
         ctx
       );
+
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
+
       assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.notDeepStrictEqual(
-        span.spanContext().traceId,
+      assert.equal(
+        spans[0].spanContext().traceId,
         sampledAwsSpanContext.traceId
       );
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.equal(spans[0].parentSpanId, sampledAwsSpanContext.spanId);
     });
 
-    it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "TRUE"', async () => {
-      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'TRUE';
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
-      initializeHandler('lambda-test/async.handler', {});
-
-      const result = await lambdaRequire('lambda-test/async').handler(
-        'arg',
-        ctx
-      );
-      assert.strictEqual(result, 'ok');
-      const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.notDeepStrictEqual(
-        span.spanContext().traceId,
-        sampledAwsSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, undefined);
-    });
-
-    it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "True"', async () => {
-      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'True';
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
-      initializeHandler('lambda-test/async.handler', {});
-
-      const result = await lambdaRequire('lambda-test/async').handler(
-        'arg',
-        ctx
-      );
-      assert.strictEqual(result, 'ok');
-      const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.notDeepStrictEqual(
-        span.spanContext().traceId,
-        sampledAwsSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, undefined);
-    });
-
-    it('ignores OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION if `config.disableAwsContextPropagation` is set', async () => {
-      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'true';
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
-      initializeHandler('lambda-test/async.handler', {
-        disableAwsContextPropagation: false,
-      });
-
-      const result = await lambdaRequire('lambda-test/async').handler(
-        'arg',
-        ctx
-      );
-      assert.strictEqual(result, 'ok');
-      const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext().traceId,
-        sampledAwsSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
-    });
-
-    it('ignores sampled lambda context if "disableAwsContextPropagation" config option is true', async () => {
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
-      initializeHandler('lambda-test/async.handler', {
-        disableAwsContextPropagation: true,
-      });
-
-      const result = await lambdaRequire('lambda-test/async').handler(
-        'arg',
-        ctx
-      );
-      assert.strictEqual(result, 'ok');
-      const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.notDeepStrictEqual(
-        span.spanContext().traceId,
-        sampledAwsSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, undefined);
-    });
-
-    it('takes sampled http context over sampled lambda context if "disableAwsContextPropagation" config option is true', async () => {
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
-      initializeHandler('lambda-test/async.handler', {
-        disableAwsContextPropagation: true,
-      });
-
-      const proxyEvent = {
-        headers: {
-          traceparent: sampledHttpHeader,
-        },
-      };
-
-      const result = await lambdaRequire('lambda-test/async').handler(
-        proxyEvent,
-        ctx
-      );
-
-      assert.strictEqual(result, 'ok');
-      const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext().traceId,
-        sampledHttpSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, sampledHttpSpanContext.spanId);
-    });
-
-    it('takes sampled custom context over sampled lambda context if "eventContextExtractor" is defined', async () => {
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+    it('used custom eventContextExtractor over global propagator if defined', async () => {
+      propagation.setGlobalPropagator(new W3CTraceContextPropagator());
       const customExtractor = (event: any): OtelContext => {
-        return propagation.extract(context.active(), event.contextCarrier);
+        const propagator = new AWSXRayPropagator();
+        return propagator.extract(
+          context.active(),
+          event.contextCarrier,
+          defaultTextMapGetter
+        );
       };
 
       initializeHandler('lambda-test/async.handler', {
-        disableAwsContextPropagation: true,
         eventContextExtractor: customExtractor,
       });
 
       const otherEvent = {
         contextCarrier: {
           traceparent: sampledGenericSpan,
+          'x-amzn-trace-id': sampledAwsHeader,
         },
       };
 
@@ -807,44 +589,12 @@ describe('lambda handler', () => {
       assertSpanSuccess(span);
       assert.strictEqual(
         span.spanContext().traceId,
-        sampledGenericSpanContext.traceId
+        sampledAwsSpanContext.traceId
       );
-      assert.strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
+      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
     });
 
-    it('prefers to extract baggage over sampled lambda context if "eventContextExtractor" is defined', async () => {
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
-      const customExtractor = (event: any): OtelContext => {
-        return propagation.extract(
-          context.active(),
-          event.customContextCarrier
-        );
-      };
-
-      initializeHandler('lambda-test/async.handler_return_baggage', {
-        disableAwsContextPropagation: true,
-        eventContextExtractor: customExtractor,
-      });
-
-      const baggage = 'abcd=1234';
-      const customRemoteEvent = {
-        customContextCarrier: {
-          traceparent: sampledGenericSpan,
-          baggage,
-        },
-      };
-
-      const lambdaTestAsync = lambdaRequire('lambda-test/async');
-      const actual = await lambdaTestAsync.handler_return_baggage(
-        customRemoteEvent,
-        ctx
-      );
-
-      assert.strictEqual(actual, baggage);
-    });
-
-    it('creates trace from ROOT_CONTEXT when "disableAwsContextPropagation" is true, eventContextExtractor is provided, and no custom context is found', async () => {
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+    it('creates trace from ROOT_CONTEXT eventContextExtractor is provided, and no custom context is found', async () => {
       const customExtractor = (event: any): OtelContext => {
         if (!event.contextCarrier) {
           return ROOT_CONTEXT;
@@ -854,7 +604,6 @@ describe('lambda handler', () => {
       };
 
       const provider = initializeHandler('lambda-test/async.handler', {
-        disableAwsContextPropagation: true,
         eventContextExtractor: customExtractor,
       });
 
@@ -872,64 +621,6 @@ describe('lambda handler', () => {
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
       assert.strictEqual(span.parentSpanId, undefined);
-    });
-
-    it('passes the lambda context object into the eventContextExtractor for scenarios where it is the otel context carrier', async () => {
-      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
-      const customExtractor = (
-        event: any,
-        handlerContext: Context
-      ): OtelContext => {
-        const contextCarrier = handlerContext.clientContext?.Custom ?? {};
-        return propagation.extract(context.active(), contextCarrier);
-      };
-
-      initializeHandler('lambda-test/async.handler', {
-        disableAwsContextPropagation: true,
-        eventContextExtractor: customExtractor,
-      });
-
-      const otherEvent = {};
-      const ctxWithCustomData = {
-        functionName: 'my_function',
-        invokedFunctionArn: 'my_arn',
-        awsRequestId: 'aws_request_id',
-        clientContext: {
-          client: {
-            installationId: '',
-            appTitle: '',
-            appVersionName: '',
-            appVersionCode: '',
-            appPackageName: '',
-          },
-          Custom: {
-            traceparent: sampledGenericSpan,
-          },
-          env: {
-            platformVersion: '',
-            platform: '',
-            make: '',
-            model: '',
-            locale: '',
-          },
-        },
-      } as Context;
-
-      const result = await lambdaRequire('lambda-test/async').handler(
-        otherEvent,
-        ctxWithCustomData
-      );
-
-      assert.strictEqual(result, 'ok');
-      const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext().traceId,
-        sampledGenericSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
     });
   });
 
@@ -1077,6 +768,54 @@ describe('lambda handler', () => {
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
       assert.strictEqual(span.parentSpanId, undefined);
+    });
+  });
+
+  describe('url parsing', () => {
+    it('pulls url from api gateway rest events', async () => {
+      initializeHandler('lambda-test/sync.handler');
+      const event = {
+        path: '/lambda/test/path',
+        headers: {
+          Host: 'www.example.com',
+          'X-Forwarded-Proto': 'http',
+          'X-Forwarded-Port': 1234,
+        },
+        queryStringParameters: {
+          key: 'value',
+          key2: 'value2',
+        },
+      };
+
+      await lambdaRequire('lambda-test/sync').handler(event, ctx, () => {});
+      const [span] = memoryExporter.getFinishedSpans();
+      assert.ok(
+        span.attributes[ATTR_URL_FULL] ===
+          'http://www.example.com:1234/lambda/test/path?key=value&key2=value2' ||
+          span.attributes[ATTR_URL_FULL] ===
+            'http://www.example.com:1234/lambda/test/path?key2=value2&key=value'
+      );
+    });
+    it('pulls url from api gateway http events', async () => {
+      initializeHandler('lambda-test/sync.handler');
+      const event = {
+        rawPath: '/lambda/test/path',
+        headers: {
+          host: 'www.example.com',
+          'x-forwarded-proto': 'http',
+          'x-forwarded-port': 1234,
+        },
+        queryStringParameters: {
+          key: 'value',
+        },
+      };
+
+      await lambdaRequire('lambda-test/sync').handler(event, ctx, () => {});
+      const [span] = memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        span.attributes[ATTR_URL_FULL],
+        'http://www.example.com:1234/lambda/test/path?key=value'
+      );
     });
   });
 });
