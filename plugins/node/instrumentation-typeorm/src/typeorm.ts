@@ -40,6 +40,7 @@ import {
   isTypeormInternalTracingSuppressed,
   suppressTypeormInternalTracing,
 } from './utils';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import type * as typeorm from 'typeorm';
 import {
