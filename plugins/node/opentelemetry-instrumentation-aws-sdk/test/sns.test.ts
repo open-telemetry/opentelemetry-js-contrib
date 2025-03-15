@@ -13,23 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AwsInstrumentation } from '../src';
-import {
-  getTestSpans,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-const instrumentation = registerInstrumentationTesting(
-  new AwsInstrumentation()
-);
-import * as AWSv2 from 'aws-sdk';
+import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 import { SNS as SNSv3 } from '@aws-sdk/client-sns';
 import * as fs from 'fs';
 import * as nock from 'nock';
 
-import { mockV2AwsSend } from './testing-utils';
 import { expect } from 'expect';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
-import * as sinon from 'sinon';
 import {
   MESSAGINGDESTINATIONKINDVALUES_TOPIC,
   SEMATTRS_MESSAGING_DESTINATION,
@@ -38,137 +28,6 @@ import {
   SEMATTRS_RPC_METHOD,
 } from '@opentelemetry/semantic-conventions';
 import { SpanKind } from '@opentelemetry/api';
-
-const responseMockSuccess = {
-  requestId: '0000000000000',
-  error: null,
-};
-
-const topicName = 'topic';
-const fakeARN = `arn:aws:sns:region:000000000:${topicName}`;
-
-describe('SNS - v2', () => {
-  before(() => {
-    AWSv2.config.credentials = {
-      accessKeyId: 'test key id',
-      expired: false,
-      expireTime: new Date(),
-      secretAccessKey: 'test acc key',
-      sessionToken: 'test token',
-    };
-  });
-
-  beforeEach(() => {
-    mockV2AwsSend(responseMockSuccess, {
-      MessageId: '1',
-    } as AWS.SNS.Types.PublishResponse);
-  });
-
-  describe('publish', () => {
-    it('topic arn', async () => {
-      const sns = new AWSv2.SNS();
-
-      await sns
-        .publish({
-          Message: 'sns message',
-          TopicArn: fakeARN,
-        })
-        .promise();
-
-      const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${topicName} send`
-      );
-      expect(publishSpans.length).toBe(1);
-
-      const publishSpan = publishSpans[0];
-      expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]).toBe(
-        MESSAGINGDESTINATIONKINDVALUES_TOPIC
-      );
-      expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toBe(
-        topicName
-      );
-      expect(publishSpan.attributes['messaging.destination.name']).toBe(
-        fakeARN
-      );
-      expect(publishSpan.attributes[SEMATTRS_RPC_METHOD]).toBe('Publish');
-      expect(publishSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toBe('aws.sns');
-      expect(publishSpan.kind).toBe(SpanKind.PRODUCER);
-    });
-
-    it('phone number', async () => {
-      const sns = new AWSv2.SNS();
-      const PhoneNumber = 'my phone number';
-      await sns
-        .publish({
-          Message: 'sns message',
-          PhoneNumber,
-        })
-        .promise();
-
-      const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === 'phone_number send'
-      );
-      expect(publishSpans.length).toBe(1);
-      const publishSpan = publishSpans[0];
-      expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toBe(
-        PhoneNumber
-      );
-      expect(publishSpan.attributes['messaging.destination.name']).toBe(
-        PhoneNumber
-      );
-    });
-
-    it('inject context propagation', async () => {
-      const sns = new AWSv2.SNS();
-      const hookSpy = sinon.spy(
-        (instrumentation['servicesExtensions'] as any)['services'].get('SNS'),
-        'requestPostSpanHook'
-      );
-
-      await sns
-        .publish({
-          Message: 'sns message',
-          TopicArn: fakeARN,
-        })
-        .promise();
-
-      const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${topicName} send`
-      );
-      expect(publishSpans.length).toBe(1);
-      expect(
-        hookSpy.args[0][0].commandInput.MessageAttributes.traceparent
-      ).toBeDefined();
-    });
-  });
-
-  describe('createTopic', () => {
-    it('basic createTopic creates a valid span', async () => {
-      const sns = new AWSv2.SNS();
-
-      const Name = 'my new topic';
-      await sns.createTopic({ Name }).promise();
-
-      const spans = getTestSpans();
-      const createTopicSpans = spans.filter(
-        (s: ReadableSpan) => s.name === 'SNS CreateTopic'
-      );
-      expect(createTopicSpans.length).toBe(1);
-
-      const createTopicSpan = createTopicSpans[0];
-      expect(
-        createTopicSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
-      ).toBeUndefined();
-      expect(
-        createTopicSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]
-      ).toBeUndefined();
-      expect(
-        createTopicSpan.attributes['messaging.destination.name']
-      ).toBeUndefined();
-      expect(createTopicSpan.kind).toBe(SpanKind.CLIENT);
-    });
-  });
-});
 
 describe('SNS - v3', () => {
   let sns: any;
