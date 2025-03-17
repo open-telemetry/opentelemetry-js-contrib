@@ -30,6 +30,10 @@ import { SpanKind } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'expect';
 
+// set aws environment variables, so tests in non aws environment are able to run
+process.env.AWS_ACCESS_KEY_ID = 'testing';
+process.env.AWS_SECRET_ACCESS_KEY = 'testing';
+
 const region = 'us-east-1';
 
 describe('S3 - v3', () => {

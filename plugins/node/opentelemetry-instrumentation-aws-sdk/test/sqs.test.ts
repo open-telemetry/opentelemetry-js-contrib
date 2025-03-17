@@ -55,6 +55,10 @@ import * as sinon from 'sinon';
 import * as messageAttributes from '../src/services/MessageAttributes';
 import { AttributeNames } from '../src/enums';
 
+// set aws environment variables, so tests in non aws environment are able to run
+process.env.AWS_ACCESS_KEY_ID = 'testing';
+process.env.AWS_SECRET_ACCESS_KEY = 'testing';
+
 const responseMockSuccess = {
   requestId: '0000000000000',
   error: null,

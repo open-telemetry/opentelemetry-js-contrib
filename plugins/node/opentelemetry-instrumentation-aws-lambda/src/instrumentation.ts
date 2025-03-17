@@ -382,14 +382,14 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     if (this._traceForceFlusher) {
       flushers.push(this._traceForceFlusher());
     } else {
-      diag.error(
+      diag.debug(
         'Spans may not be exported for the lambda function because we are not force flushing before callback.'
       );
     }
     if (this._metricForceFlusher) {
       flushers.push(this._metricForceFlusher());
     } else {
-      diag.error(
+      diag.debug(
         'Metrics may not be exported for the lambda function because we are not force flushing before callback.'
       );
     }
