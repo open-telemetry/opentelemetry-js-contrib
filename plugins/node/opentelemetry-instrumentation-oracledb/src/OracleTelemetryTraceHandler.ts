@@ -66,6 +66,10 @@ export function getOracleTelemetryTraceHandlerClass(
   obj: typeof oracleDBTypes
 ): any {
   const traceHandlerBase = getTraceHandlerBaseClass(obj);
+  if (!traceHandlerBase) {
+    return undefined;
+  }
+
   if (traceHandlerBase) {
     /**
      * OracleTelemetryTraceHandler extends TraceHandlerBase from oracledb module
