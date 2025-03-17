@@ -7,6 +7,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "test": "mocha --require @opentelemetry/contrib-test-utils 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
@@ -52,6 +53,7 @@
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
+    "test-all-versions": "6.1.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
