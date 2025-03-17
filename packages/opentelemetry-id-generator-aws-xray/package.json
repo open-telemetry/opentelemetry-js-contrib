@@ -76,7 +76,7 @@
     "webpack-merge": "5.10.0"
   },
   "dependencies": {
-    "@opentelemetry/sdk-trace-base": "^2.0.0-rc.1"
+    "@opentelemetry/sdk-trace-base": "^2.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/opentelemetry-id-generator-aws-xray#readme"
 }
