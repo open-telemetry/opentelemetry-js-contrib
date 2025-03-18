@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.47.1...instrumentation-express-v0.48.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738))
+* **instrumentation-express:** propagate context and measure full handler spans ([#2638](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2638))
+
+### Features
+
+* **instrumentation-express:** propagate context and measure full handler spans ([#2638](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2638)) ([353dbb0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/353dbb0e8ee3823daaba9c9daacd871f63ff8533))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.2 ([#2716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2716)) ([d2a9a20](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2a9a20f1cd8c46c842e18490a4eba36fd71c2da))
+
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.1 to ^0.46.0
+
 ## [0.47.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.47.0...instrumentation-express-v0.47.1) (2025-02-19)
 
 

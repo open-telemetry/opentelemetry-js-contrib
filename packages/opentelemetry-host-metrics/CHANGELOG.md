@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.35.5...host-metrics-v0.36.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738))
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
 ## [0.35.5](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.35.4...host-metrics-v0.35.5) (2025-01-07)
 
 
