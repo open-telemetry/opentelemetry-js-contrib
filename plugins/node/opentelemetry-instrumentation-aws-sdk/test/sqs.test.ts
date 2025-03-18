@@ -92,7 +92,7 @@ describe('SQS', () => {
       expect(awsReceiveSpan.length).toBe(1);
       const internalSpan = spans.filter(s => s.kind === SpanKind.INTERNAL);
       expect(internalSpan.length).toBe(1);
-      expect(internalSpan[0].parentSpanId).toStrictEqual(
+      expect(internalSpan[0].parentSpanContext?.spanId).toStrictEqual(
         awsReceiveSpan[0].spanContext().spanId
       );
     };

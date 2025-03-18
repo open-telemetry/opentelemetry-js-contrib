@@ -71,8 +71,8 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
 export const lambdaMaxInitInMilliseconds = 10_000;
 
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
-  private _traceForceFlusher?: () => Promise<void>;
-  private _metricForceFlusher?: () => Promise<void>;
+  private declare _traceForceFlusher?: () => Promise<void>;
+  private declare _metricForceFlusher?: () => Promise<void>;
 
   constructor(config: AwsLambdaInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
