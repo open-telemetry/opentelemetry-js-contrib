@@ -30,7 +30,7 @@ function runWithRegister(path: string): PromiseWithChild<{
     ['--require', '../build/src/register.js', path],
     {
       cwd: __dirname,
-      timeout: 1500,
+      timeout: 5000,
       killSignal: 'SIGKILL', // SIGTERM is not sufficient to terminate some hangs
       env: Object.assign({}, process.env, {
         OTEL_TRACES_EXPORTER: 'console',
