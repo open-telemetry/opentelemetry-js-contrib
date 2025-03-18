@@ -35,10 +35,11 @@ import { HapiLayerType } from '../src/internal-types';
 import { AttributeNames } from '../src/enums/AttributeNames';
 
 describe('Hapi Instrumentation - Core Tests', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
   let server: hapi.Server;
@@ -557,15 +558,24 @@ describe('Hapi Instrumentation - Core Tests', () => {
         },
         checkCollector: (collector: TestCollector) => {
           const spans = collector.sortedSpans;
-          assert.strictEqual(spans.length, 2);
-          assert.strictEqual(spans[0].name, 'GET /route/{param}');
+
+          assert.strictEqual(spans.length, 3);
+
+          assert.strictEqual(spans[0].name, 'GET');
           assert.strictEqual(
             spans[0].instrumentationScope.name,
             '@opentelemetry/instrumentation-http'
           );
-          assert.strictEqual(spans[1].name, 'route - /route/{param}');
+
+          assert.strictEqual(spans[1].name, 'GET /route/{param}');
           assert.strictEqual(
             spans[1].instrumentationScope.name,
+            '@opentelemetry/instrumentation-http'
+          );
+
+          assert.strictEqual(spans[2].name, 'route - /route/{param}');
+          assert.strictEqual(
+            spans[2].instrumentationScope.name,
             '@opentelemetry/instrumentation-hapi'
           );
         },

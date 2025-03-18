@@ -53,14 +53,14 @@ import {
 import { PassThrough } from 'stream';
 
 describe('CucumberInstrumentation', () => {
+  const memoryExporter = new InMemorySpanExporter();
+  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
   const provider = new NodeTracerProvider({
     resource: new Resource({
       [SEMRESATTRS_SERVICE_NAME]: 'CucumberInstrumentation',
     }),
+    spanProcessors: [spanProcessor],
   });
-  const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
   const contextManager = new AsyncHooksContextManager().enable();
 
   before(() => {
@@ -84,15 +84,14 @@ describe('CucumberInstrumentation', () => {
     providedConfiguration?: Partial<IConfiguration>
   ) => {
     // clean-up require cache to re-register cucumber hooks for a new run
-    ['features/support/world', 'features/step_definitions/steps'].forEach(
-      search => {
-        const key = Object.keys(require.cache).find(key =>
-          key.includes(search)
-        );
-        if (key == null) return;
-        delete require.cache[key];
-      }
-    );
+    [
+      path.join('features', 'support', 'world'),
+      path.join('features', 'step_definitions', 'steps'),
+    ].forEach(search => {
+      const key = Object.keys(require.cache).find(key => key.includes(search));
+      if (key == null) return;
+      delete require.cache[key];
+    });
     const featurePath = path.join(__dirname, 'current.feature');
     await fs.promises.writeFile(featurePath, feature, 'utf-8');
     const { runConfiguration } = await loadConfiguration({
@@ -100,8 +99,8 @@ describe('CucumberInstrumentation', () => {
         ...providedConfiguration,
         paths: [featurePath],
         require: [
-          path.join(__dirname, 'features/support/world.ts'),
-          path.join(__dirname, 'features/step_definitions/steps.ts'),
+          path.join(__dirname, 'features', 'support', 'world.ts'),
+          path.join(__dirname, 'features', 'step_definitions', 'steps.ts'),
         ],
       },
     });
@@ -170,7 +169,7 @@ describe('CucumberInstrumentation', () => {
         assert(parent, 'Expected a parent span');
 
         assert.deepEqual(parent.attributes, {
-          [SEMATTRS_CODE_FILEPATH]: 'test/current.feature',
+          [SEMATTRS_CODE_FILEPATH]: path.join('test', 'current.feature'),
           [SEMATTRS_CODE_LINENO]: 7,
           [SEMATTRS_CODE_FUNCTION]: 'Button pushing',
           [SEMATTRS_CODE_NAMESPACE]: 'Basic',

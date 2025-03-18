@@ -1,21 +1,21 @@
 {
   "name": "@opentelemetry/resource-detector-github",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "description": "OpenTelemetry SDK resource detector for GitHub",
   "main": "build/src/index.js",
+  "module": "build/esm/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "clean": "rimraf build/*",
-    "compile": "tsc -p .",
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/resource-detector-github --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "watch": "tsc -w"
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },
   "keywords": [
     "opentelemetry",
@@ -33,7 +33,10 @@
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
-    "build/src/**/*.d.ts"
+    "build/src/**/*.d.ts",
+    "build/esm/**/*.js",
+    "build/esm/**/*.js.map",
+    "build/esm/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
@@ -43,9 +46,9 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@types/mocha": "8.2.3",
+    "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
-    "@types/sinon": "10.0.20",
+    "@types/sinon": "17.0.4",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
@@ -54,5 +57,6 @@
   "dependencies": {
     "@opentelemetry/resources": "^1.10.0"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-github#readme"
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-github#readme",
+  "sideEffects": false
 }

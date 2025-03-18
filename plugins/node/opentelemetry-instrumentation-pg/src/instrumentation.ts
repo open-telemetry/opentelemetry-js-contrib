@@ -18,6 +18,7 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
+  InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
 import {
   context,
@@ -65,7 +66,13 @@ import {
   METRIC_DB_CLIENT_OPERATION_DURATION,
   ATTR_DB_NAMESPACE,
   ATTR_DB_OPERATION_NAME,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from './semconv';
+
+function extractModuleExports(module: any) {
+  return module[Symbol.toStringTag] === 'Module'
+    ? module.default // ESM
+    : module; // CommonJS
+}
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   private _operationDuration!: Histogram;
@@ -125,45 +132,38 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   protected init() {
+    const SUPPORTED_PG_VERSIONS = ['>=8.0.3 <9'];
+
+    const modulePgNativeClient = new InstrumentationNodeModuleFile(
+      'pg/lib/native/client.js',
+      SUPPORTED_PG_VERSIONS,
+      this._patchPgClient.bind(this),
+      this._unpatchPgClient.bind(this)
+    );
+
+    const modulePgClient = new InstrumentationNodeModuleFile(
+      'pg/lib/client.js',
+      SUPPORTED_PG_VERSIONS,
+      this._patchPgClient.bind(this),
+      this._unpatchPgClient.bind(this)
+    );
+
     const modulePG = new InstrumentationNodeModuleDefinition(
       'pg',
-      ['>=8.0.3 <9'],
+      SUPPORTED_PG_VERSIONS,
       (module: any) => {
-        const moduleExports: typeof pgTypes =
-          module[Symbol.toStringTag] === 'Module'
-            ? module.default // ESM
-            : module; // CommonJS
-        if (isWrapped(moduleExports.Client.prototype.query)) {
-          this._unwrap(moduleExports.Client.prototype, 'query');
-        }
+        const moduleExports = extractModuleExports(module);
 
-        if (isWrapped(moduleExports.Client.prototype.connect)) {
-          this._unwrap(moduleExports.Client.prototype, 'connect');
-        }
-
-        this._wrap(
-          moduleExports.Client.prototype,
-          'query',
-          this._getClientQueryPatch() as any
-        );
-
-        this._wrap(
-          moduleExports.Client.prototype,
-          'connect',
-          this._getClientConnectPatch() as any
-        );
-
+        this._patchPgClient(moduleExports.Client);
         return module;
       },
       (module: any) => {
-        const moduleExports: typeof pgTypes =
-          module[Symbol.toStringTag] === 'Module'
-            ? module.default // ESM
-            : module; // CommonJS
-        if (isWrapped(moduleExports.Client.prototype.query)) {
-          this._unwrap(moduleExports.Client.prototype, 'query');
-        }
-      }
+        const moduleExports = extractModuleExports(module);
+
+        this._unpatchPgClient(moduleExports.Client);
+        return module;
+      },
+      [modulePgClient, modulePgNativeClient]
     );
 
     const modulePGPool = new InstrumentationNodeModuleDefinition(
@@ -188,6 +188,50 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     );
 
     return [modulePG, modulePGPool];
+  }
+
+  private _patchPgClient(module: any) {
+    if (!module) {
+      return;
+    }
+
+    const moduleExports = extractModuleExports(module);
+
+    if (isWrapped(moduleExports.prototype.query)) {
+      this._unwrap(moduleExports.prototype, 'query');
+    }
+
+    if (isWrapped(moduleExports.prototype.connect)) {
+      this._unwrap(moduleExports.prototype, 'connect');
+    }
+
+    this._wrap(
+      moduleExports.prototype,
+      'query',
+      this._getClientQueryPatch() as any
+    );
+
+    this._wrap(
+      moduleExports.prototype,
+      'connect',
+      this._getClientConnectPatch() as any
+    );
+
+    return module;
+  }
+
+  private _unpatchPgClient(module: any) {
+    const moduleExports = extractModuleExports(module);
+
+    if (isWrapped(moduleExports.prototype.query)) {
+      this._unwrap(moduleExports.prototype, 'query');
+    }
+
+    if (isWrapped(moduleExports.prototype.connect)) {
+      this._unwrap(moduleExports.prototype, 'connect');
+    }
+
+    return module;
   }
 
   private _getClientConnectPatch() {
@@ -307,14 +351,17 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         // Modify query text w/ a tracing comment before invoking original for
         // tracing, but only if args[0] has one of our expected shapes.
         if (instrumentationConfig.addSqlCommenterCommentToQueries) {
-          args[0] = firstArgIsString
-            ? addSqlCommenterComment(span, arg0)
-            : firstArgIsQueryObjectWithText
-            ? {
-                ...arg0,
-                text: addSqlCommenterComment(span, arg0.text),
-              }
-            : args[0];
+          if (firstArgIsString) {
+            args[0] = addSqlCommenterComment(span, arg0);
+          } else if (firstArgIsQueryObjectWithText && !('name' in arg0)) {
+            // In the case of a query object, we need to ensure there's no name field
+            // as this indicates a prepared query, where the comment would remain the same
+            // for every invocation and contain an outdated trace context.
+            args[0] = {
+              ...arg0,
+              text: addSqlCommenterComment(span, arg0.text),
+            };
+          }
         }
 
         // Bind callback (if any) to parent span (if any)

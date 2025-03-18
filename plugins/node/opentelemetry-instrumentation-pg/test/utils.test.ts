@@ -49,15 +49,13 @@ const getLatestSpan = () => {
 describe('utils.ts', () => {
   const client = new pg.Client(CONFIG) as PgClientExtended;
   let contextManager: AsyncHooksContextManager;
-  const provider = new BasicTracerProvider();
+  const provider = new BasicTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   const tracer = provider.getTracer('external');
 
   const instrumentationConfig: PgInstrumentationConfig & InstrumentationConfig =
     {};
-
-  before(() => {
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-  });
 
   beforeEach(() => {
     contextManager = new AsyncHooksContextManager().enable();
@@ -253,6 +251,50 @@ describe('utils.ts', () => {
       assert.strictEqual(
         utils.getPoolName(dummyPool),
         'host_name:1234/database_name'
+      );
+    });
+  });
+
+  describe('.parseAndMaskConnectionString()', () => {
+    it('should remove all auth information from connection string', () => {
+      const connectionString =
+        'postgresql://user:password123@localhost:5432/dbname';
+      assert.strictEqual(
+        utils.parseAndMaskConnectionString(connectionString),
+        'postgresql://localhost:5432/dbname'
+      );
+    });
+
+    it('should remove username when no password is present', () => {
+      const connectionString = 'postgresql://user@localhost:5432/dbname';
+      assert.strictEqual(
+        utils.parseAndMaskConnectionString(connectionString),
+        'postgresql://localhost:5432/dbname'
+      );
+    });
+
+    it('should preserve connection string when no auth is present', () => {
+      const connectionString = 'postgresql://localhost:5432/dbname';
+      assert.strictEqual(
+        utils.parseAndMaskConnectionString(connectionString),
+        'postgresql://localhost:5432/dbname'
+      );
+    });
+
+    it('should preserve query parameters while removing auth', () => {
+      const connectionString =
+        'postgresql://user:pass@localhost/dbname?sslmode=verify-full&application_name=myapp';
+      assert.strictEqual(
+        utils.parseAndMaskConnectionString(connectionString),
+        'postgresql://localhost/dbname?sslmode=verify-full&application_name=myapp'
+      );
+    });
+
+    it('should handle invalid connection string', () => {
+      const connectionString = 'not-a-valid-url';
+      assert.strictEqual(
+        utils.parseAndMaskConnectionString(connectionString),
+        'postgresql://localhost:5432/'
       );
     });
   });

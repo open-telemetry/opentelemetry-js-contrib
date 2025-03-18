@@ -2,8 +2,8 @@
 components:
   detectors/node/opentelemetry-resource-detector-alibaba-cloud:
     - legendecas
-  detectors/node/opentelemetry-resource-detector-aws: []
-    # Unmaintained
+  detectors/node/opentelemetry-resource-detector-aws:
+    - jj22ee
   detectors/node/opentelemetry-resource-detector-azure:
     - jacksonweber
     - hectorhdzg
@@ -16,8 +16,8 @@ components:
     # Unmaintained
   detectors/node/opentelemetry-resource-detector-instana:
     - kirrg001
-  incubator/opentelemetry-sampler-aws-xray: []
-    # Unmaintained
+  incubator/opentelemetry-sampler-aws-xray:
+    - jj22ee
   metapackages/auto-configuration-propagators:
     - pichlermarc
   metapackages/auto-instrumentations-node:
@@ -35,8 +35,8 @@ components:
     - jamiedanielson
   packages/opentelemetry-host-metrics:
     - legendecas
-  packages/opentelemetry-id-generator-aws-xray: []
-    # Unmaintained
+  packages/opentelemetry-id-generator-aws-xray:
+    - jj22ee
   packages/opentelemetry-propagation-utils:
     - dyladan
     - pichlermarc
@@ -69,10 +69,12 @@ components:
     - mottibec
   plugins/node/instrumentation-tedious: []
     # Unmaintained
-  plugins/node/opentelemetry-instrumentation-aws-lambda: []
-    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-aws-lambda:
+    - jj22ee
   plugins/node/opentelemetry-instrumentation-aws-sdk:
     - blumamir
+    - jj22ee
+    - trivikr
   plugins/node/opentelemetry-instrumentation-bunyan:
     - seemk
     - trentm
@@ -85,6 +87,7 @@ components:
   plugins/node/opentelemetry-instrumentation-express:
     - JamieDanielson
     - pkanal
+    - raphael-theriault-swi
   plugins/node/opentelemetry-instrumentation-fastify: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-generic-pool: []
@@ -102,12 +105,12 @@ components:
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-memcached: []
     # Unmaintained
-  plugins/node/opentelemetry-instrumentation-mongodb: []
-    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-mongodb:
+    - onurtemizkan
   plugins/node/opentelemetry-instrumentation-mysql: []
     # Unmaintained
-  plugins/node/opentelemetry-instrumentation-mysql2: []
-    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-mysql2:
+    - raphael-theriault-swi
   plugins/node/opentelemetry-instrumentation-nestjs-core: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-net:
@@ -145,8 +148,8 @@ components:
     - kirrg001
   propagators/opentelemetry-propagator-ot-trace: []
     # Unmaintained
-  propagators/propagator-aws-xray: [ ]
-  # Unmaintained
+  propagators/propagator-aws-xray:
+    - jj22ee
   propagators/propagator-aws-xray-lambda: [ ]
   # Unmaintained
 

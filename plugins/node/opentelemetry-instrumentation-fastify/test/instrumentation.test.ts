@@ -66,13 +66,14 @@ const httpInstrumentation = new HttpInstrumentation();
 const instrumentation = new FastifyInstrumentation();
 const contextManager = new AsyncHooksContextManager().enable();
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
 const spanProcessor = new SimpleSpanProcessor(memoryExporter);
+const provider = new NodeTracerProvider({
+  spanProcessors: [spanProcessor],
+});
 instrumentation.setTracerProvider(provider);
 httpInstrumentation.setTracerProvider(provider);
 context.setGlobalContextManager(contextManager);
 
-provider.addSpanProcessor(spanProcessor);
 instrumentation.enable();
 httpInstrumentation.enable();
 
@@ -559,5 +560,16 @@ describe('fastify', () => {
         );
       },
     });
+  });
+
+  it('should expose errorCodes', async function () {
+    // errorCodes was added in v4.8.0
+    // ref: https://github.com/fastify/fastify/compare/v4.7.0...v4.8.0
+    if (semver.lt(fastifyVersion, '4.8.0')) {
+      this.skip();
+    }
+    assert.ok(Fastify.errorCodes);
+    assert.strictEqual(typeof Fastify.errorCodes, 'object');
+    assert.ok('FST_ERR_NOT_FOUND' in Fastify.errorCodes);
   });
 });

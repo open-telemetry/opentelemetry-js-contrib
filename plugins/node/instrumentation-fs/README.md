@@ -50,6 +50,10 @@ You can set the following:
 | `endHook`           | `( functionName: FMember \| FPMember, info: { args: ArrayLike<unknown>; span: api.Span } ) => void` | Function called just before the span is ended. Useful for adding attributes.                                    |
 | `requireParentSpan` | `boolean`                                                                                           | Require parent to create fs span, default when unset is `false`.                                                |
 
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

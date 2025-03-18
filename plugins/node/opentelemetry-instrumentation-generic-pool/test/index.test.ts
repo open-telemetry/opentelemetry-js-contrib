@@ -67,10 +67,11 @@ const createPool = {
 }[isOldVersion ? 'v2' : 'v3'];
 
 describe('GenericPool instrumentation', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;

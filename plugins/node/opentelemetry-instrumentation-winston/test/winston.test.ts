@@ -35,9 +35,10 @@ import type { Winston2Logger, Winston3Logger } from '../src/internal-types';
 import { WinstonInstrumentation } from '../src';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
+const provider = new NodeTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+});
 const tracer = provider.getTracer('default');
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 context.setGlobalContextManager(new AsyncHooksContextManager());
 
 const loggerProvider = new LoggerProvider();

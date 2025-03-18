@@ -35,6 +35,7 @@ describe('awsLambdaDetector', () => {
 
   describe('on lambda', () => {
     it('fills resource', async () => {
+      process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
       process.env.AWS_LAMBDA_FUNCTION_NAME = 'name';
       process.env.AWS_LAMBDA_FUNCTION_VERSION = 'v1';
       process.env.AWS_REGION = 'us-east-1';

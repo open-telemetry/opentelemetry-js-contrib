@@ -25,7 +25,7 @@ import {
 } from '@opentelemetry/api';
 import { pubsubPropagation } from '@opentelemetry/propagation-utils';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
-import type { SQS } from 'aws-sdk';
+import type { SQS } from '../aws-sdk.types';
 import {
   AwsSdkInstrumentationConfig,
   NormalizedRequest,
@@ -119,7 +119,9 @@ export class SqsServiceExtension implements ServiceExtension {
           const entries = request.commandInput?.Entries;
           if (Array.isArray(entries)) {
             entries.forEach(
-              (messageParams: SQS.SendMessageBatchRequestEntry) => {
+              (messageParams: {
+                MessageAttributes: SQS.MessageBodyAttributeMap;
+              }) => {
                 messageParams.MessageAttributes = injectPropagationContext(
                   messageParams.MessageAttributes ?? {}
                 );

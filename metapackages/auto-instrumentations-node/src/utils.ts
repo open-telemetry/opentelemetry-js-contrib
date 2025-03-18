@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { diag } from '@opentelemetry/api';
+import { diag, DiagLogLevel } from '@opentelemetry/api';
 import { Instrumentation } from '@opentelemetry/instrumentation';
 
 import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
@@ -136,7 +136,21 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
 };
 
-const defaultExcludedInstrumentations = ['@opentelemetry/instrumentation-fs'];
+// The support string -> DiagLogLevel mappings
+const logLevelMap: { [key: string]: DiagLogLevel } = {
+  ALL: DiagLogLevel.ALL,
+  VERBOSE: DiagLogLevel.VERBOSE,
+  DEBUG: DiagLogLevel.DEBUG,
+  INFO: DiagLogLevel.INFO,
+  WARN: DiagLogLevel.WARN,
+  ERROR: DiagLogLevel.ERROR,
+  NONE: DiagLogLevel.NONE,
+};
+
+const defaultExcludedInstrumentations = [
+  '@opentelemetry/instrumentation-fs',
+  '@opentelemetry/instrumentation-fastify',
+];
 
 // Config types inferred automatically from the first argument of the constructor
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;
@@ -289,4 +303,17 @@ export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
     }
     return resourceDetector || [];
   });
+}
+
+export function getLogLevelFromEnv(): DiagLogLevel {
+  const rawLogLevel = process.env.OTEL_LOG_LEVEL;
+
+  // NOTE: as per specification we should actually only register if something is set, but our previous implementation
+  // always registered a logger, even when nothing was set. Falling back to 'INFO' here to keep the same behavior as
+  // with previous implementations.
+  // Also: no point in warning - no logger is registered yet
+  return (
+    logLevelMap[rawLogLevel?.trim().toUpperCase() ?? 'INFO'] ??
+    DiagLogLevel.INFO
+  );
 }

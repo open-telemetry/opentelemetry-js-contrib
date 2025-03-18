@@ -37,10 +37,11 @@ import { RPCMetadata, getRPCMetadata } from '@opentelemetry/core';
 import { Server } from 'http';
 
 describe('ExpressInstrumentation', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   const tracer = provider.getTracer('default');
   const contextManager = new AsyncHooksContextManager().enable();
 
@@ -96,7 +97,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'tata');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 2);
+          assert.strictEqual(finishListenerCount, 3);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -201,7 +202,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'tata');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 2);
+          assert.strictEqual(finishListenerCount, 3);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
