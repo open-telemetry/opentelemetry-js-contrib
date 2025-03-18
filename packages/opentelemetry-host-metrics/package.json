@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/host-metrics",
-  "version": "0.35.5",
+  "version": "0.36.0",
   "description": "OpenTelemetry Host Metrics for Node.js",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
