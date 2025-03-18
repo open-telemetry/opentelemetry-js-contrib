@@ -1,12 +1,7 @@
-# Note: tests must set `SKIP_TEST_IF_DISABLE=true` to override usage of
-# `mocha --require '../../../scripts/skip-test-if.js' ...` if calling `npm test`.
-
 # node version support in JS SDK v3:
 # - 16.x dropped in v3.723.0 https://github.com/aws/aws-sdk-js-v3/pull/6775
 
 '@aws-sdk/client-s3':
-  env:
-    - SKIP_TEST_IF_DISABLE=true
   jobs:
     - node: '>=18'
       versions:
@@ -17,8 +12,6 @@
         - mocha --require '@opentelemetry/contrib-test-utils' test/s3.test.ts
 
 '@aws-sdk/client-sqs':
-  env:
-    - SKIP_TEST_IF_DISABLE=true
   jobs:
     - node: '>=18'
       versions:
