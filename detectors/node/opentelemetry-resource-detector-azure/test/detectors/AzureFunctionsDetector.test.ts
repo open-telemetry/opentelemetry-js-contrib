@@ -27,7 +27,7 @@ import {
   SEMRESATTRS_SERVICE_INSTANCE_ID,
   SEMRESATTRS_SERVICE_NAME,
 } from '@opentelemetry/semantic-conventions';
-import { detectResourcesSync } from '@opentelemetry/resources';
+import { detectResources } from '@opentelemetry/resources';
 import { AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE } from '../../src/types';
 
 describe('AzureFunctionsDetector', () => {
@@ -49,7 +49,7 @@ describe('AzureFunctionsDetector', () => {
     process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
     process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
 
-    const resource = detectResourcesSync({
+    const resource = detectResources({
       detectors: [azureFunctionsDetector, azureAppServiceDetector],
     });
     assert.ok(resource);
@@ -91,7 +91,7 @@ describe('AzureFunctionsDetector', () => {
     process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
 
     const expectedWebsiteOwnerName = 'test-owner-name';
-    const resource = detectResourcesSync({
+    const resource = detectResources({
       detectors: [azureFunctionsDetector, azureAppServiceDetector],
     });
     assert.ok(resource);
@@ -113,7 +113,7 @@ it('should detect azure functions if websiteSku is defined as FlexConsumption', 
   process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
   process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
 
-  const resource = detectResourcesSync({
+  const resource = detectResources({
     detectors: [azureFunctionsDetector, azureAppServiceDetector],
   });
   assert.ok(resource);

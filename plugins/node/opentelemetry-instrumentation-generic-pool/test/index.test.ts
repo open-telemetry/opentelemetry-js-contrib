@@ -109,7 +109,10 @@ describe('GenericPool instrumentation', () => {
 
       const [span] = memoryExporter.getFinishedSpans();
       assert.strictEqual(span.name, 'generic-pool.acquire');
-      assert.strictEqual(span.parentSpanId, rootSpan.spanContext().spanId);
+      assert.strictEqual(
+        span.parentSpanContext?.spanId,
+        rootSpan.spanContext().spanId
+      );
     });
   });
 

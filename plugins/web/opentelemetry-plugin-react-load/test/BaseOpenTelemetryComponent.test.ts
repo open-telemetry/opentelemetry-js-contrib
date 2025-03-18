@@ -297,17 +297,17 @@ describe('ReactLoad Instrumentation', () => {
           const mountingSpan: ReadableSpan = exportSpy.args[2][0][0];
 
           assert.equal(
-            mountingSpan.parentSpanId,
+            mountingSpan.parentSpanContext?.spanId,
             undefined,
             'mounting span is should not have a parent'
           );
           assert.equal(
-            renderSpan.parentSpanId,
+            renderSpan.parentSpanContext?.spanId,
             mountingSpan.spanContext().spanId,
             'render span is not a child of the mounting span'
           );
           assert.equal(
-            componentDidMountSpan.parentSpanId,
+            componentDidMountSpan.parentSpanContext?.spanId,
             mountingSpan.spanContext().spanId,
             'componentDidMount span is not a child of the mounting span'
           );
@@ -374,32 +374,32 @@ describe('ReactLoad Instrumentation', () => {
           const updatingSpan: ReadableSpan = exportSpy.args[8][0][0];
 
           assert.equal(
-            updatingSpan.parentSpanId,
+            updatingSpan.parentSpanContext?.spanId,
             undefined,
             'updating span is should not have a parent'
           );
           assert.equal(
-            setStateSpan.parentSpanId,
+            setStateSpan.parentSpanContext?.spanId,
             updatingSpan.spanContext().spanId,
             'setState span is not a child of the updating span'
           );
           assert.equal(
-            shouldComponentUpdateSpan.parentSpanId,
+            shouldComponentUpdateSpan.parentSpanContext?.spanId,
             updatingSpan.spanContext().spanId,
             'shouldComponentUpdate span is not a child of the updating span'
           );
           assert.equal(
-            renderSpan.parentSpanId,
+            renderSpan.parentSpanContext?.spanId,
             updatingSpan.spanContext().spanId,
             'render span is not a child of the updating span'
           );
           assert.equal(
-            getSnapshotBeforeUpdateSpan.parentSpanId,
+            getSnapshotBeforeUpdateSpan.parentSpanContext?.spanId,
             updatingSpan.spanContext().spanId,
             'getSnapshotBeforeUpdate span is not a child of the updating span'
           );
           assert.equal(
-            componentDidUpdateSpan.parentSpanId,
+            componentDidUpdateSpan.parentSpanContext?.spanId,
             updatingSpan.spanContext().spanId,
             'componentDidUpdate span is not a child of the updating span'
           );
@@ -484,27 +484,27 @@ describe('ReactLoad Instrumentation', () => {
           const updatingSpan: ReadableSpan = exportSpy.args[7][0][0];
 
           assert.equal(
-            updatingSpan.parentSpanId,
+            updatingSpan.parentSpanContext?.spanId,
             undefined,
             'updating span is should not have a parent'
           );
           assert.equal(
-            forceUpdateSpan.parentSpanId,
+            forceUpdateSpan.parentSpanContext?.spanId,
             updatingSpan.spanContext().spanId,
             'forceUpdate span is not a child of the updating span'
           );
           assert.equal(
-            renderSpan.parentSpanId,
+            renderSpan.parentSpanContext?.spanId,
             updatingSpan.spanContext().spanId,
             'render span is not a child of the updating span'
           );
           assert.equal(
-            getSnapshotBeforeUpdateSpan.parentSpanId,
+            getSnapshotBeforeUpdateSpan.parentSpanContext?.spanId,
             updatingSpan.spanContext().spanId,
             'getSnapshotBeforeUpdate span is not a child of the updating span'
           );
           assert.equal(
-            componentDidUpdateSpan.parentSpanId,
+            componentDidUpdateSpan.parentSpanContext?.spanId,
             updatingSpan.spanContext().spanId,
             'componentDidUpdate span is not a child of the updating span'
           );
@@ -579,12 +579,12 @@ describe('ReactLoad Instrumentation', () => {
           const unmountingSpan: ReadableSpan = exportSpy.args[4][0][0];
 
           assert.equal(
-            unmountingSpan.parentSpanId,
+            unmountingSpan.parentSpanContext?.spanId,
             undefined,
             'unmounting span is should not have a parent'
           );
           assert.equal(
-            componentWillUnmountSpan.parentSpanId,
+            componentWillUnmountSpan.parentSpanContext?.spanId,
             unmountingSpan.spanContext().spanId,
             'componentWillUnmount span is not a child of the unmounting span'
           );
@@ -651,17 +651,17 @@ describe('ReactLoad Instrumentation', () => {
       const updatingSpan: ReadableSpan = exportSpy.args[5][0][0];
 
       assert.equal(
-        updatingSpan.parentSpanId,
+        updatingSpan.parentSpanContext?.spanId,
         undefined,
         'updating span is should not have a parent'
       );
       assert.equal(
-        setStateSpan.parentSpanId,
+        setStateSpan.parentSpanContext?.spanId,
         updatingSpan.spanContext().spanId,
         'setState span is not a child of the updating span'
       );
       assert.equal(
-        shouldComponentUpdateSpan.parentSpanId,
+        shouldComponentUpdateSpan.parentSpanContext?.spanId,
         updatingSpan.spanContext().spanId,
         'shouldComponentUpdate span is not a child of the updating span'
       );
