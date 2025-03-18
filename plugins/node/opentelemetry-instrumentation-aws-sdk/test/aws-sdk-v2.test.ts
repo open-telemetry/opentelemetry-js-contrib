@@ -66,7 +66,7 @@ describe('instrumentation-aws-sdk-v2', () => {
 
   const getAwsSpans = (): ReadableSpan[] => {
     return getTestSpans().filter(s =>
-      s.instrumentationLibrary.name.includes('aws-sdk')
+      s.instrumentationScope.name.includes('aws-sdk')
     );
   };
 

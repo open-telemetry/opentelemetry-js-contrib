@@ -126,7 +126,10 @@ export const assertPropagation = (
   const targetSpanContext = childSpan.spanContext();
   const sourceSpanContext = parentSpan.spanContext();
   assert.strictEqual(targetSpanContext.traceId, sourceSpanContext.traceId);
-  assert.strictEqual(childSpan.parentSpanId, sourceSpanContext.spanId);
+  assert.strictEqual(
+    childSpan.parentSpanContext?.spanId,
+    sourceSpanContext.spanId
+  );
   assert.strictEqual(
     targetSpanContext.traceFlags,
     sourceSpanContext.traceFlags

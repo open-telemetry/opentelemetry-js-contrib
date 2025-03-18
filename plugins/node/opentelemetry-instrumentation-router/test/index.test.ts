@@ -249,7 +249,7 @@ describe('Router instrumentation', () => {
 
         memoryExporter.getFinishedSpans().forEach((span, idx) => {
           assert.strictEqual(
-            span.parentSpanId,
+            span.parentSpanContext?.spanId,
             parentSpan.spanContext().spanId,
             `span[${idx}] has invalid parent`
           );

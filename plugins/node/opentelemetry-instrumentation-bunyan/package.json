@@ -29,7 +29,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=14"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "build/src/**/*.js",
@@ -44,10 +44,10 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/resources": "^1.8.0",
-    "@opentelemetry/sdk-logs": "^0.57.2",
-    "@opentelemetry/sdk-trace-base": "^1.8.0",
-    "@opentelemetry/sdk-trace-node": "^1.8.0",
+    "@opentelemetry/resources": "^2.0.0",
+    "@opentelemetry/sdk-logs": "^0.200.0",
+    "@opentelemetry/sdk-trace-base": "^2.0.0",
+    "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
@@ -57,11 +57,11 @@
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
     "test-all-versions": "6.1.0",
-    "typescript": "4.4.4"
+    "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/api-logs": "^0.57.2",
-    "@opentelemetry/instrumentation": "^0.57.2",
+    "@opentelemetry/api-logs": "^0.200.0",
+    "@opentelemetry/instrumentation": "^0.200.0",
     "@types/bunyan": "1.8.11"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-bunyan#readme"
