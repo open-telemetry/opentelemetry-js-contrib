@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.36.2...redis-common-v0.37.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738))
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
 ## [0.36.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.36.1...redis-common-v0.36.2) (2024-04-25)
 
 

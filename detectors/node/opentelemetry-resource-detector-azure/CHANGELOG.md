@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.6.1...resource-detector-azure-v0.7.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738))
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.2 ([#2716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2716)) ([d2a9a20](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2a9a20f1cd8c46c842e18490a4eba36fd71c2da))
+
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.1 to ^0.46.0
+
 ## [0.6.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.6.0...resource-detector-azure-v0.6.1) (2025-02-19)
 
 
