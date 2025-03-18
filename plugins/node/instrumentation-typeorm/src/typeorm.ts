@@ -92,8 +92,7 @@ const entityManagerMethods: EntityManagerMethods[] = [
   ...functionsUsingQueryBuilder,
 ];
 
-export class TypeormInstrumentation extends InstrumentationBase {
-  protected override _config!: TypeormInstrumentationConfig;
+export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumentationConfig> {
   constructor(config: TypeormInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -258,11 +257,11 @@ export class TypeormInstrumentation extends InstrumentationBase {
 
         const contextWithSpan = trace.setSpan(context.active(), span);
 
-        const traceContext = self._config.enableInternalInstrumentation
+        const traceContext = self.getConfig().enableInternalInstrumentation
           ? contextWithSpan
           : suppressTypeormInternalTracing(contextWithSpan);
 
-        const contextWithSuppressTracing = self._config
+        const contextWithSuppressTracing = self.getConfig()
           .suppressInternalInstrumentation
           ? suppressTracing(traceContext)
           : traceContext;
@@ -301,7 +300,7 @@ export class TypeormInstrumentation extends InstrumentationBase {
           [SEMATTRS_DB_STATEMENT]: sql,
           [SEMATTRS_DB_SQL_TABLE]: mainTableName,
         };
-        if (self._config.enhancedDatabaseReporting) {
+        if (self.getConfig().enhancedDatabaseReporting) {
           try {
             attributes[ExtendedDatabaseAttribute.DB_STATEMENT_PARAMETERS] =
               JSON.stringify(parameters);
@@ -319,11 +318,11 @@ export class TypeormInstrumentation extends InstrumentationBase {
 
         const contextWithSpan = trace.setSpan(context.active(), span);
 
-        const traceContext = self._config.enableInternalInstrumentation
+        const traceContext = self.getConfig().enableInternalInstrumentation
           ? contextWithSpan
           : suppressTypeormInternalTracing(contextWithSpan);
 
-        const contextWithSuppressTracing = self._config
+        const contextWithSuppressTracing = self.getConfig()
           ?.suppressInternalInstrumentation
           ? suppressTracing(traceContext)
           : traceContext;
@@ -365,11 +364,11 @@ export class TypeormInstrumentation extends InstrumentationBase {
 
         const contextWithSpan = trace.setSpan(context.active(), span);
 
-        const traceContext = self._config.enableInternalInstrumentation
+        const traceContext = self.getConfig().enableInternalInstrumentation
           ? contextWithSpan
           : suppressTypeormInternalTracing(contextWithSpan);
 
-        const contextWithSuppressTracing = self._config
+        const contextWithSuppressTracing = self.getConfig()
           ?.suppressInternalInstrumentation
           ? suppressTracing(traceContext)
           : traceContext;
@@ -384,7 +383,7 @@ export class TypeormInstrumentation extends InstrumentationBase {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _endSpan(traced: any, span: Span) {
     const executeResponseHook = (response: unknown) => {
-      const hook = this._config?.responseHook;
+      const hook = this.getConfig().responseHook;
       if (hook !== undefined) {
         safeExecuteInTheMiddle(
           () => hook(span, { response }),
