@@ -17,8 +17,8 @@
 import * as assert from 'assert';
 import * as nock from 'nock';
 import { azureVmDetector } from '../../src/detectors/AzureVmDetector';
-import { IResource } from '@opentelemetry/resources';
 import { AzureVmMetadata } from '../../src/types';
+import { detectResources } from '@opentelemetry/resources';
 
 const linuxTestResponse: AzureVmMetadata = {
   additionalCapabilities: {
@@ -387,10 +387,8 @@ describe('AzureVmServiceDetector', () => {
       .get(AZURE_VM_METADATA_PATH)
       .reply(200, linuxTestResponse);
 
-    const resource: IResource = azureVmDetector.detect();
-    if (resource.waitForAsyncAttributes) {
-      await resource.waitForAsyncAttributes();
-    }
+    const resource = detectResources({ detectors: [azureVmDetector] });
+    await resource.waitForAsyncAttributes?.();
     const attributes = resource.attributes;
     for (let i = 0; i < Object.keys(attributes).length; i++) {
       const key = Object.keys(attributes)[i];
@@ -404,10 +402,8 @@ describe('AzureVmServiceDetector', () => {
       .get(AZURE_VM_METADATA_PATH)
       .reply(200, windowsTestResponse);
 
-    const resource: IResource = azureVmDetector.detect();
-    if (resource.waitForAsyncAttributes) {
-      await resource.waitForAsyncAttributes();
-    }
+    const resource = detectResources({ detectors: [azureVmDetector] });
+    await resource.waitForAsyncAttributes?.();
     const attributes = resource.attributes;
     for (let i = 0; i < Object.keys(attributes).length; i++) {
       const key = Object.keys(attributes)[i];

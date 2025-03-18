@@ -14,4 +14,10 @@
  * limitations under the License.
  */
 
-export * from './detectors';
+export {
+  awsBeanstalkDetector,
+  awsEc2Detector,
+  awsEcsDetector,
+  awsEksDetector,
+  awsLambdaDetector,
+} from './detectors';

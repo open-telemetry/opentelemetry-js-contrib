@@ -768,7 +768,7 @@ describe('instrumentation-kafkajs', () => {
         assert.strictEqual(spans.length, 1);
         const span = spans[0];
         assert.strictEqual(span.name, 'process topic-name-1');
-        assert.strictEqual(span.parentSpanId, undefined);
+        assert.strictEqual(span.parentSpanContext?.spanId, undefined);
         assert.strictEqual(span.kind, SpanKind.CONSUMER);
         assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
         assert.strictEqual(span.attributes[ATTR_MESSAGING_SYSTEM], 'kafka');
@@ -1140,7 +1140,7 @@ describe('instrumentation-kafkajs', () => {
 
         assert.strictEqual(recvSpan.kind, SpanKind.CLIENT);
         assert.strictEqual(recvSpan.name, 'poll topic-name-1');
-        assert.strictEqual(recvSpan.parentSpanId, undefined);
+        assert.strictEqual(recvSpan.parentSpanContext?.spanId, undefined);
         assert.strictEqual(
           recvSpan.attributes[ATTR_MESSAGING_OPERATION_TYPE],
           'receive'
@@ -1153,7 +1153,7 @@ describe('instrumentation-kafkajs', () => {
         assert.strictEqual(msg1Span.kind, SpanKind.CONSUMER);
         assert.strictEqual(msg1Span.name, 'process topic-name-1');
         assert.strictEqual(
-          msg1Span.parentSpanId,
+          msg1Span.parentSpanContext?.spanId,
           recvSpan.spanContext().spanId
         );
         assert.strictEqual(
@@ -1166,7 +1166,7 @@ describe('instrumentation-kafkajs', () => {
         );
 
         assert.strictEqual(
-          msg2Span.parentSpanId,
+          msg2Span.parentSpanContext?.spanId,
           recvSpan.spanContext().spanId
         );
         assert.strictEqual(
@@ -1283,7 +1283,7 @@ describe('instrumentation-kafkajs', () => {
         producerSpan.spanContext().traceId
       );
       assert.strictEqual(
-        consumerSpan.parentSpanId,
+        consumerSpan.parentSpanContext?.spanId,
         producerSpan.spanContext().spanId
       );
       assert.strictEqual(callbackBaggage!.getAllEntries().length, 1);
@@ -1335,7 +1335,7 @@ describe('instrumentation-kafkajs', () => {
         receivingSpan.spanContext().traceId
       );
       assert.strictEqual(
-        processingSpan.parentSpanId,
+        processingSpan.parentSpanContext?.spanId,
         receivingSpan.spanContext().spanId
       );
       assert.strictEqual(processingSpan.links.length, 1);
@@ -1349,7 +1349,7 @@ describe('instrumentation-kafkajs', () => {
       );
 
       // receiving span should start a new trace
-      assert.strictEqual(receivingSpan.parentSpanId, undefined);
+      assert.strictEqual(receivingSpan.parentSpanContext?.spanId, undefined);
       assert.notStrictEqual(
         receivingSpan.spanContext().traceId,
         producerSpan.spanContext().traceId
