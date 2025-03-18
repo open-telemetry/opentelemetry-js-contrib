@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context } from '@opentelemetry/api';
+import { context, diag } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import {
   ResourceDetector,
@@ -61,38 +61,58 @@ class AlibabaCloudEcsDetector implements ResourceDetector {
    * @param config (unused) The resource detection config
    */
   detect(): DetectedResource {
-    const attributes = context.with(suppressTracing(context.active()), () =>
-      this._getAttributes()
+    const dataPromise = context.with(suppressTracing(context.active()), () =>
+      this._gatherData()
     );
+
+    const attrNames = [
+      SEMRESATTRS_CLOUD_PROVIDER,
+      SEMRESATTRS_CLOUD_PLATFORM,
+      SEMRESATTRS_CLOUD_ACCOUNT_ID,
+      SEMRESATTRS_CLOUD_REGION,
+      SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
+      SEMRESATTRS_HOST_ID,
+      SEMRESATTRS_HOST_TYPE,
+      SEMRESATTRS_HOST_NAME,
+    ];
+
+    const attributes = {} as DetectedResourceAttributes;
+    attrNames.forEach(name => {
+      // Each resource attribute is determined asynchronously in _gatherData().
+      attributes[name] = dataPromise.then(data => data[name]);
+    });
+
     return { attributes };
   }
 
   /** Gets identity and host info and returns them as attribs. Empty object if fails */
-  _getAttributes(): DetectedResourceAttributes {
-    const dataP = Promise.all([this._fetchIdentity(), this._fetchHost()]);
+  async _gatherData(): Promise<DetectedResourceAttributes> {
+    try {
+      const {
+        'owner-account-id': accountId,
+        'instance-id': instanceId,
+        'instance-type': instanceType,
+        'region-id': region,
+        'zone-id': availabilityZone,
+      } = await this._fetchIdentity();
+      const hostname = await this._fetchHost();
 
-    return {
-      [SEMRESATTRS_CLOUD_PROVIDER]: dataP.then(
-        () => CLOUDPROVIDERVALUES_ALIBABA_CLOUD
-      ),
-      [SEMRESATTRS_CLOUD_PLATFORM]: dataP.then(
-        () => CLOUDPLATFORMVALUES_ALIBABA_CLOUD_ECS
-      ),
-
-      // Data from _fetchIdentity()
-      [SEMRESATTRS_CLOUD_ACCOUNT_ID]: dataP.then(
-        data => data[0]['owner-account-id']
-      ),
-      [SEMRESATTRS_CLOUD_REGION]: dataP.then(data => data[0]['region-id']),
-      [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: dataP.then(
-        data => data[0]['zone-id']
-      ),
-      [SEMRESATTRS_HOST_ID]: dataP.then(data => data[0]['instance-id']),
-      [SEMRESATTRS_HOST_TYPE]: dataP.then(data => data[0]['instance-type']),
-
-      // Data from _fetchHost()
-      [SEMRESATTRS_HOST_NAME]: dataP.then(data => data[1]),
-    };
+      return {
+        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_ALIBABA_CLOUD,
+        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_ALIBABA_CLOUD_ECS,
+        [SEMRESATTRS_CLOUD_ACCOUNT_ID]: accountId,
+        [SEMRESATTRS_CLOUD_REGION]: region,
+        [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
+        [SEMRESATTRS_HOST_ID]: instanceId,
+        [SEMRESATTRS_HOST_TYPE]: instanceType,
+        [SEMRESATTRS_HOST_NAME]: hostname,
+      };
+    } catch (err: any) {
+      diag.debug(
+        `${this.constructor.name}: did not detect resource: ${err?.message}`
+      );
+      return {};
+    }
   }
 
   /**

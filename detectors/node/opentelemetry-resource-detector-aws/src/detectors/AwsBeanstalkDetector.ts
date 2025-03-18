@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context } from '@opentelemetry/api';
+import { context, diag } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 
 import {
@@ -65,45 +65,55 @@ export class AwsBeanstalkDetector implements ResourceDetector {
   }
 
   detect(): DetectedResource {
-    const attributes = context.with(suppressTracing(context.active()), () =>
-      this._getAttributes()
+    const dataPromise = context.with(suppressTracing(context.active()), () =>
+      this._gatherData()
     );
+
+    const attrNames = [
+      ATTR_CLOUD_PROVIDER,
+      ATTR_CLOUD_PLATFORM,
+      ATTR_SERVICE_NAME,
+      ATTR_SERVICE_NAMESPACE,
+      ATTR_SERVICE_VERSION,
+      ATTR_SERVICE_INSTANCE_ID,
+    ];
+
+    const attributes = {} as DetectedResourceAttributes;
+    attrNames.forEach(name => {
+      // Each resource attribute is determined asynchronously in _gatherData().
+      attributes[name] = dataPromise.then(data => data[name]);
+    });
+
     return { attributes };
   }
-
   /**
    * Async resource attributes for AWS Beanstalk configuration read from file.
    */
-  _getAttributes(): DetectedResourceAttributes {
-    const parsedDataP = AwsBeanstalkDetector.fileAccessAsync(
-      this.BEANSTALK_CONF_PATH,
-      fs.constants.R_OK
-    )
-      .then(() =>
-        AwsBeanstalkDetector.readFileAsync(this.BEANSTALK_CONF_PATH, 'utf8')
-      )
-      .then(rawData => {
-        return JSON.parse(rawData);
-      });
+  async _gatherData(): Promise<DetectedResourceAttributes> {
+    try {
+      await AwsBeanstalkDetector.fileAccessAsync(
+        this.BEANSTALK_CONF_PATH,
+        fs.constants.R_OK
+      );
 
-    return {
-      [ATTR_CLOUD_PROVIDER]: parsedDataP.then(() => CLOUD_PROVIDER_VALUE_AWS),
-      [ATTR_CLOUD_PLATFORM]: parsedDataP.then(
-        () => CLOUD_PLATFORM_VALUE_AWS_ELASTIC_BEANSTALK
-      ),
-      [ATTR_SERVICE_NAME]: parsedDataP.then(
-        () => CLOUD_PLATFORM_VALUE_AWS_ELASTIC_BEANSTALK
-      ),
-      [ATTR_SERVICE_NAMESPACE]: parsedDataP.then(
-        parsedData => parsedData.environment_name
-      ),
-      [ATTR_SERVICE_VERSION]: parsedDataP.then(
-        parsedData => parsedData.version_label
-      ),
-      [ATTR_SERVICE_INSTANCE_ID]: parsedDataP.then(
-        parsedData => parsedData.deployment_id
-      ),
-    };
+      const rawData = await AwsBeanstalkDetector.readFileAsync(
+        this.BEANSTALK_CONF_PATH,
+        'utf8'
+      );
+      const parsedData = JSON.parse(rawData);
+
+      return {
+        [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_AWS,
+        [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_AWS_ELASTIC_BEANSTALK,
+        [ATTR_SERVICE_NAME]: CLOUD_PLATFORM_VALUE_AWS_ELASTIC_BEANSTALK,
+        [ATTR_SERVICE_NAMESPACE]: parsedData.environment_name,
+        [ATTR_SERVICE_VERSION]: parsedData.version_label,
+        [ATTR_SERVICE_INSTANCE_ID]: parsedData.deployment_id,
+      };
+    } catch (e: any) {
+      diag.debug(`AwsBeanstalkDetector: did not detect resource: ${e.message}`);
+      return {};
+    }
   }
 }
 

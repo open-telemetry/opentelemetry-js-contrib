@@ -16,7 +16,7 @@
 
 import * as http from 'http';
 
-import { context } from '@opentelemetry/api';
+import { context, diag } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import {
   ResourceDetector,
@@ -49,24 +49,44 @@ import {
  */
 class AzureVmResourceDetector implements ResourceDetector {
   detect(): DetectedResource {
-    const attributes = context.with(suppressTracing(context.active()), () =>
+    const dataPromise = context.with(suppressTracing(context.active()), () =>
       this.getAzureVmMetadata()
     );
+
+    const attrNames = [
+      AZURE_VM_SCALE_SET_NAME_ATTRIBUTE,
+      AZURE_VM_SKU_ATTRIBUTE,
+      SEMRESATTRS_CLOUD_PLATFORM,
+      SEMRESATTRS_CLOUD_PROVIDER,
+      SEMRESATTRS_CLOUD_REGION,
+      CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
+      SEMRESATTRS_HOST_ID,
+      SEMRESATTRS_HOST_NAME,
+      SEMRESATTRS_HOST_TYPE,
+      SEMRESATTRS_OS_VERSION,
+    ];
+
+    const attributes = {} as DetectedResourceAttributes;
+    attrNames.forEach(name => {
+      // Each resource attribute is determined asynchronously in _gatherData().
+      attributes[name] = dataPromise.then(data => data[name]);
+    });
+
     return { attributes };
   }
 
-  getAzureVmMetadata(): DetectedResourceAttributes {
-    const options = {
-      host: AZURE_VM_METADATA_HOST,
-      path: AZURE_VM_METADATA_PATH,
-      method: 'GET',
-      timeout: 5000,
-      headers: {
-        Metadata: 'True',
-      },
-    };
-    const metadataP: Promise<AzureVmMetadata> = new Promise(
-      (resolve, reject) => {
+  async getAzureVmMetadata(): Promise<DetectedResourceAttributes> {
+    try {
+      const options = {
+        host: AZURE_VM_METADATA_HOST,
+        path: AZURE_VM_METADATA_PATH,
+        method: 'GET',
+        timeout: 5000,
+        headers: {
+          Metadata: 'True',
+        },
+      };
+      const metadata: AzureVmMetadata = await new Promise((resolve, reject) => {
         const timeoutId = setTimeout(() => {
           req.destroy();
           reject(new Error('Azure metadata service request timed out.'));
@@ -97,32 +117,28 @@ class AzureVmResourceDetector implements ResourceDetector {
           reject(err);
         });
         req.end();
-      }
-    );
+      });
 
-    const attributes = {
-      [AZURE_VM_SCALE_SET_NAME_ATTRIBUTE]: metadataP.then(
-        metadata => metadata['vmScaleSetName']
-      ),
-      [AZURE_VM_SKU_ATTRIBUTE]: metadataP.then(metadata => metadata['sku']),
-      [SEMRESATTRS_CLOUD_PLATFORM]: metadataP.then(
-        () => CLOUDPLATFORMVALUES_AZURE_VM
-      ),
-      [SEMRESATTRS_CLOUD_PROVIDER]: metadataP.then(
-        () => CLOUDPROVIDERVALUES_AZURE
-      ),
-      [SEMRESATTRS_CLOUD_REGION]: metadataP.then(
-        metadata => metadata['location']
-      ),
-      [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: metadataP.then(
-        metadata => metadata['resourceId']
-      ),
-      [SEMRESATTRS_HOST_ID]: metadataP.then(metadata => metadata['vmId']),
-      [SEMRESATTRS_HOST_NAME]: metadataP.then(metadata => metadata['name']),
-      [SEMRESATTRS_HOST_TYPE]: metadataP.then(metadata => metadata['vmSize']),
-      [SEMRESATTRS_OS_VERSION]: metadataP.then(metadata => metadata['version']),
-    };
-    return attributes;
+      const attributes = {
+        [AZURE_VM_SCALE_SET_NAME_ATTRIBUTE]: metadata['vmScaleSetName'],
+        [AZURE_VM_SKU_ATTRIBUTE]: metadata['sku'],
+        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AZURE_VM,
+        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AZURE,
+        [SEMRESATTRS_CLOUD_REGION]: metadata['location'],
+        [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: metadata['resourceId'],
+        [SEMRESATTRS_HOST_ID]: metadata['vmId'],
+        [SEMRESATTRS_HOST_NAME]: metadata['name'],
+        [SEMRESATTRS_HOST_TYPE]: metadata['vmSize'],
+        [SEMRESATTRS_OS_VERSION]: metadata['version'],
+      };
+      return attributes;
+    } catch (err: any) {
+      diag.debug(
+        'AzureVmResourceDetector: not running in an Azure VM:',
+        err.message
+      );
+      return {};
+    }
   }
 }
 

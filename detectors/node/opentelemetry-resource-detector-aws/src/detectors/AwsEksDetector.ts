@@ -108,8 +108,8 @@ export class AwsEksDetector implements ResourceDetector {
             [ATTR_K8S_CLUSTER_NAME]: clusterName || '',
             [ATTR_CONTAINER_ID]: containerId || '',
           };
-    } catch (e) {
-      diag.debug('AwsEksDetector: Process is not running on K8S', e);
+    } catch (e: any) {
+      diag.debug('AwsEksDetector: Process is not running on K8S:', e.message);
       return {};
     }
   }

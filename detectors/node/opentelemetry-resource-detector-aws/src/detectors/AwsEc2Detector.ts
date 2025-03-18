@@ -55,33 +55,49 @@ class AwsEc2Detector implements ResourceDetector {
   readonly MILLISECOND_TIME_OUT = 5000;
 
   detect(): DetectedResource {
-    const attributes = context.with(suppressTracing(context.active()), () =>
-      this._getAttributes()
+    const dataPromise = context.with(suppressTracing(context.active()), () =>
+      this._gatherData()
     );
+
+    const attrNames = [
+      ATTR_CLOUD_PROVIDER,
+      ATTR_CLOUD_PLATFORM,
+      ATTR_CLOUD_ACCOUNT_ID,
+      ATTR_CLOUD_REGION,
+      ATTR_CLOUD_AVAILABILITY_ZONE,
+      ATTR_HOST_ID,
+      ATTR_HOST_TYPE,
+      ATTR_HOST_NAME,
+    ];
+
+    const attributes = {} as DetectedResourceAttributes;
+    attrNames.forEach(name => {
+      // Each resource attribute is determined asynchronously in _gatherData().
+      attributes[name] = dataPromise.then(data => data[name]);
+    });
+
     return { attributes };
   }
 
-  _getAttributes(): DetectedResourceAttributes {
+  /**
+   * Attempts to connect and obtain an AWS instance Identity document.
+   */
+  async _gatherData(): Promise<DetectedResourceAttributes> {
     try {
-      const dataP = this._fetchToken().then(token =>
-        Promise.all([this._fetchIdentity(token), this._fetchHost(token)])
-      );
+      const token = await this._fetchToken();
+      const { accountId, instanceId, instanceType, region, availabilityZone } =
+        await this._fetchIdentity(token);
+      const hostname = await this._fetchHost(token);
 
       return {
-        [ATTR_CLOUD_PROVIDER]: dataP.then(() => CLOUD_PROVIDER_VALUE_AWS),
-        [ATTR_CLOUD_PLATFORM]: dataP.then(() => CLOUD_PLATFORM_VALUE_AWS_EC2),
-
-        // Data from _fetchIdentity()
-        [ATTR_CLOUD_ACCOUNT_ID]: dataP.then(data => data[0].accountId),
-        [ATTR_CLOUD_REGION]: dataP.then(data => data[0].region),
-        [ATTR_CLOUD_AVAILABILITY_ZONE]: dataP.then(
-          data => data[0].availabilityZone
-        ),
-        [ATTR_HOST_ID]: dataP.then(data => data[0].instanceId),
-        [ATTR_HOST_TYPE]: dataP.then(data => data[0].instanceType),
-
-        // Data from _fetchHost()
-        [ATTR_HOST_NAME]: dataP.then(data => data[1]),
+        [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_AWS,
+        [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_AWS_EC2,
+        [ATTR_CLOUD_ACCOUNT_ID]: accountId,
+        [ATTR_CLOUD_REGION]: region,
+        [ATTR_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
+        [ATTR_HOST_ID]: instanceId,
+        [ATTR_HOST_TYPE]: instanceType,
+        [ATTR_HOST_NAME]: hostname,
       };
     } catch {
       return {};
