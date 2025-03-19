@@ -1,13 +1,6 @@
-# Note: tests must set `SKIP_TEST_IF_DISABLE=true` to override usage of
-# `mocha --require '../../../scripts/skip-test-if.js' ...` if calling `npm test`.
-
 # Versions [3.363.0, 3.377.0] of all @aws-sdk/client-* were bad releases. See:
 # - https://github.com/open-telemetry/opentelemetry-js-contrib/pull/2464#issuecomment-2403652552
 # - https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1828#issuecomment-1834276719
-
-# node version support in JS SDK v3:
-# - 14.x dropped in v3.567.0 https://github.com/aws/aws-sdk-js-v3/pull/6034
-# - 16.x dropped in v3.723.0 https://github.com/aws/aws-sdk-js-v3/pull/6775
 
 "@aws-sdk/client-bedrock-runtime":
   env:
