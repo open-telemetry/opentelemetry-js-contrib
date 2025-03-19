@@ -17,17 +17,15 @@
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 import * as assert from 'assert';
-import { Resource } from '@opentelemetry/resources';
-import {
-  awsEksDetector,
-  awsEksDetectorSync,
-  AwsEksDetectorSync,
-} from '../../src';
+import { detectResources } from '@opentelemetry/resources';
 import {
   assertK8sResource,
   assertContainerResource,
   assertEmptyResource,
 } from '@opentelemetry/contrib-test-utils';
+
+import { awsEksDetector } from '../../src';
+import { AwsEksDetector } from '../../src/detectors/AwsEksDetector';
 
 const K8S_SVC_URL = awsEksDetector.K8S_SVC_URL;
 const AUTH_CONFIGMAP_PATH = awsEksDetector.AUTH_CONFIGMAP_PATH;
@@ -58,13 +56,13 @@ describe('awsEksDetector', () => {
   describe('on successful request', () => {
     it('should return an aws_eks_instance_resource', async () => {
       fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
+        .stub(AwsEksDetector, 'fileAccessAsync' as any)
         .resolves();
       readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
+        .stub(AwsEksDetector, 'readFileAsync' as any)
         .resolves(correctCgroupData);
       getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
+        .stub(awsEksDetector, '_getK8sCredHeader' as any)
         .resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
@@ -75,7 +73,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => mockedClusterResponse);
 
-      const resource = await awsEksDetector.detect();
+      const resource = detectResources({ detectors: [awsEksDetector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -95,14 +93,14 @@ describe('awsEksDetector', () => {
 
     it('should return a resource with clusterName attribute without cgroup file', async () => {
       fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
+        .stub(AwsEksDetector, 'fileAccessAsync' as any)
         .resolves();
       readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
+        .stub(AwsEksDetector, 'readFileAsync' as any)
         .onSecondCall()
         .rejects(errorMsg.fileNotFoundError);
       getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
+        .stub(awsEksDetector, '_getK8sCredHeader' as any)
         .resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
@@ -113,7 +111,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => mockedClusterResponse);
 
-      const resource = await awsEksDetector.detect();
+      const resource = detectResources({ detectors: [awsEksDetector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -126,13 +124,13 @@ describe('awsEksDetector', () => {
 
     it('should return a resource with container ID attribute without a clusterName', async () => {
       fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
+        .stub(AwsEksDetector, 'fileAccessAsync' as any)
         .resolves();
       readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
+        .stub(AwsEksDetector, 'readFileAsync' as any)
         .resolves(correctCgroupData);
       getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
+        .stub(awsEksDetector, '_getK8sCredHeader' as any)
         .resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
@@ -143,7 +141,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => '');
 
-      const resource = await awsEksDetector.detect();
+      const resource = detectResources({ detectors: [awsEksDetector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -156,14 +154,14 @@ describe('awsEksDetector', () => {
 
     it('should return a resource with clusterName attribute when cgroup file does not contain valid Container ID', async () => {
       fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
+        .stub(AwsEksDetector, 'fileAccessAsync' as any)
         .resolves();
       readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
+        .stub(AwsEksDetector, 'readFileAsync' as any)
         .onSecondCall()
         .resolves('');
       getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
+        .stub(awsEksDetector, '_getK8sCredHeader' as any)
         .resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
@@ -174,7 +172,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => mockedClusterResponse);
 
-      const resource = await awsEksDetector.detect();
+      const resource = detectResources({ detectors: [awsEksDetector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -188,13 +186,13 @@ describe('awsEksDetector', () => {
 
     it('should return an empty resource when not running on Eks', async () => {
       fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
+        .stub(AwsEksDetector, 'fileAccessAsync' as any)
         .resolves('');
       readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
+        .stub(AwsEksDetector, 'readFileAsync' as any)
         .resolves(correctCgroupData);
       getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
+        .stub(awsEksDetector, '_getK8sCredHeader' as any)
         .resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
@@ -202,7 +200,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => '');
 
-      const resource = await awsEksDetector.detect();
+      const resource = detectResources({ detectors: [awsEksDetector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -216,10 +214,10 @@ describe('awsEksDetector', () => {
         fileNotFoundError: new Error('cannot file k8s token file'),
       };
       fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
+        .stub(AwsEksDetector, 'fileAccessAsync' as any)
         .rejects(errorMsg.fileNotFoundError);
 
-      const resource: Resource = await awsEksDetector.detect();
+      const resource = detectResources({ detectors: [awsEksDetector] });
 
       assert.ok(resource);
       assertEmptyResource(resource);
@@ -227,15 +225,15 @@ describe('awsEksDetector', () => {
 
     it('should return an empty resource when containerId and clusterName are invalid', async () => {
       fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
+        .stub(AwsEksDetector, 'fileAccessAsync' as any)
         .resolves('');
       readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
+        .stub(AwsEksDetector, 'readFileAsync' as any)
         .onSecondCall()
         .rejects(errorMsg.fileNotFoundError);
 
       getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
+        .stub(awsEksDetector, '_getK8sCredHeader' as any)
         .resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
@@ -246,7 +244,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(200, () => '');
 
-      const resource = await awsEksDetector.detect();
+      const resource = detectResources({ detectors: [awsEksDetector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.isDone();
@@ -259,13 +257,13 @@ describe('awsEksDetector', () => {
   describe('on unsuccessful request', () => {
     it('should return an empty resource when timed out', async () => {
       fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
+        .stub(AwsEksDetector, 'fileAccessAsync' as any)
         .resolves();
       readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
+        .stub(AwsEksDetector, 'readFileAsync' as any)
         .resolves(correctCgroupData);
       getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
+        .stub(awsEksDetector, '_getK8sCredHeader' as any)
         .resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
@@ -274,7 +272,7 @@ describe('awsEksDetector', () => {
         .delayConnection(2500)
         .reply(200, () => mockedAwsAuth);
 
-      const resource = await awsEksDetector.detect();
+      const resource = detectResources({ detectors: [awsEksDetector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -285,13 +283,13 @@ describe('awsEksDetector', () => {
 
     it('should return an empty resource when receiving error response code', async () => {
       fileStub = sinon
-        .stub(AwsEksDetectorSync, 'fileAccessAsync' as any)
+        .stub(AwsEksDetector, 'fileAccessAsync' as any)
         .resolves();
       readStub = sinon
-        .stub(AwsEksDetectorSync, 'readFileAsync' as any)
+        .stub(AwsEksDetector, 'readFileAsync' as any)
         .resolves(correctCgroupData);
       getCredStub = sinon
-        .stub(awsEksDetectorSync, '_getK8sCredHeader' as any)
+        .stub(awsEksDetector, '_getK8sCredHeader' as any)
         .resolves(k8s_token);
       const scope = nock('https://' + K8S_SVC_URL)
         .persist()
@@ -299,7 +297,7 @@ describe('awsEksDetector', () => {
         .matchHeader('Authorization', k8s_token)
         .reply(404, () => new Error());
 
-      const resource = await awsEksDetector.detect();
+      const resource = detectResources({ detectors: [awsEksDetector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
