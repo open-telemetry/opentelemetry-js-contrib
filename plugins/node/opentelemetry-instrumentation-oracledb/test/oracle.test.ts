@@ -1319,7 +1319,7 @@ describe('oracledb', () => {
         assert.strictEqual(
           s.instrumentationScope.name,
           '@opentelemetry/instrumentation-oracledb',
-          `Unexpected span name: ${s.instrumentationScope.name}`
+          `Unexpected instrumentation scope name: ${s.instrumentationScope.name}`
         );
         return true;
       });
