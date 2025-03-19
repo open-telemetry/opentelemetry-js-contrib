@@ -23,7 +23,8 @@
  * otherwise a real request is made and the response is recorded.
  * To re-record all responses, set the NOCK_BACK_MODE environment variable
  * to 'update' - when recording responses, valid AWS credentials for
- * accessing bedrock are also required.
+ * accessing bedrock are also required. To record for new tests while
+ * keeping existing recordings, set NOCK_BACK_MODE to 'record'.
  */
 
 import {
@@ -39,6 +40,7 @@ import {
   ConversationRole,
   InvokeModelCommand,
 } from '@aws-sdk/client-bedrock-runtime';
+import { AwsCredentialIdentity } from '@aws-sdk/types';
 import * as path from 'path';
 import { Definition, back as nockBack } from 'nock';
 
@@ -77,12 +79,16 @@ const sanitizeRecordings = (scopes: Definition[]) => {
 };
 
 describe('Bedrock', () => {
-  const client = new BedrockRuntimeClient({ region });
-
   nockBack.fixtures = path.join(__dirname, 'mock-responses');
-  if (!process.env.NOCK_BACK_MODE) {
-    nockBack.setMode('record');
+  let credentials: AwsCredentialIdentity | undefined;
+  if (nockBack.currentMode === 'dryrun') {
+    credentials = {
+      accessKeyId: 'testing',
+      secretAccessKey: 'testing',
+    };
   }
+
+  const client = new BedrockRuntimeClient({ region, credentials });
 
   let nockDone: () => void;
   beforeEach(async function () {
