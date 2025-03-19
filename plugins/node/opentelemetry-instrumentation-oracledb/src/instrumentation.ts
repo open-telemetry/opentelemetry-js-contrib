@@ -22,6 +22,7 @@ import {
 import type * as oracleDBTypes from 'oracledb';
 import { OracleInstrumentationConfig } from './types';
 import { getOracleTelemetryTraceHandlerClass } from './OracleTelemetryTraceHandler';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export class OracleInstrumentation extends InstrumentationBase {
