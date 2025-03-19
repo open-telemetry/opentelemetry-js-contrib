@@ -61,7 +61,9 @@ import {
 
 const memoryExporter = new InMemorySpanExporter();
 let contextManager: AsyncHooksContextManager;
-const provider = new BasicTracerProvider();
+const provider = new BasicTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+});
 const tracer = provider.getTracer('external');
 const instrumentation = new OracleInstrumentation();
 instrumentation.enable();
@@ -259,7 +261,7 @@ const verifySpanData = (
   if (parentSpan) {
     testUtils.assertPropagation(span, parentSpan as unknown as Span);
   } else {
-    assert(span.parentSpanId === undefined);
+    assert(span.parentSpanContext?.spanId === undefined);
   }
 };
 
@@ -502,7 +504,6 @@ describe('oracledb', () => {
     }
     await doSetup();
     updateAttrSpanList(connection);
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
@@ -1307,11 +1308,6 @@ describe('oracledb', () => {
       );
       assert.strictEqual(!!tracer, true);
       assert.ok(tracer, 'Tracer instance should not be null');
-      assert.strictEqual(
-        tracer.instrumentationLibrary.name,
-        '@opentelemetry/instrumentation-oracledb'
-      );
-
       const res = await connection.execute(sql);
       try {
         assert.ok(res);
@@ -1319,7 +1315,14 @@ describe('oracledb', () => {
       } catch (e: any) {
         assert.ok(false, e.message);
       }
-      const spans = memoryExporter.getFinishedSpans();
+      const spans = memoryExporter.getFinishedSpans().filter(s => {
+        assert.strictEqual(
+          s.instrumentationScope.name,
+          '@opentelemetry/instrumentation-oracledb',
+          `Unexpected span name: ${s.instrumentationScope.name}`
+        );
+        return true;
+      });
       assert.strictEqual(spans.length, numExecSpans);
     });
   });
