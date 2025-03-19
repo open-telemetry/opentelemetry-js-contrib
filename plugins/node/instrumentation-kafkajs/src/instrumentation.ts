@@ -201,7 +201,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
 
     const module = new InstrumentationNodeModuleDefinition(
       'kafkajs',
-      ['>=0.1.0 <3'],
+      ['>=0.3.0 <3'],
       (moduleExports: typeof kafkaJs) => {
         unpatch(moduleExports);
         this._wrap(
