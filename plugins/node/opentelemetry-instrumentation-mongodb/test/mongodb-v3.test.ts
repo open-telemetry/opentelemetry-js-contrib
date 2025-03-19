@@ -602,7 +602,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
                 );
                 assert.strictEqual(
                   mainSpan.spanContext().spanId,
-                  spans2[0].parentSpanId
+                  spans2[0].parentSpanContext?.spanId
                 );
                 done();
               })

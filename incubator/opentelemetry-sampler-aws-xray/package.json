@@ -59,7 +59,7 @@
     "nock": "13.3.3",
     "nyc": "15.1.0",
     "sinon": "15.2.0",
-    "typescript": "4.4.4"
+    "typescript": "5.0.4"
   },
   "engines": {
     "node": ">=14"
