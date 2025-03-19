@@ -1,16 +1,6 @@
 # Note: tests must set `SKIP_TEST_IF_DISABLE=true` to override usage of
 # `mocha --require '../../../scripts/skip-test-if.js' ...` if calling `npm test`.
 
-"aws-sdk":
-  env:
-    - SKIP_TEST_IF_DISABLE=true
-  # A small subset of releases in the range [2.308.0, 3) to reduce testing time.
-  versions:
-    include: "^2.308.0"
-    mode: max-7
-  commands:
-    - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v2.test.ts
-
 # Versions [3.363.0, 3.377.0] of all @aws-sdk/client-* were bad releases. See:
 # - https://github.com/open-telemetry/opentelemetry-js-contrib/pull/2464#issuecomment-2403652552
 # - https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1828#issuecomment-1834276719
@@ -60,7 +50,6 @@
         mode: "max-7"
       commands:
         - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-sqs.test.ts
-        - mocha --require '@opentelemetry/contrib-test-utils' test/sqs.test.ts
     - node: "16"
       versions:
         include: ">=3.24.0 <3.723.0"
@@ -68,7 +57,6 @@
         mode: "max-7"
       commands:
         - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-sqs.test.ts
-        - mocha --require '@opentelemetry/contrib-test-utils' test/sqs.test.ts
     - node: "14"
       versions:
         include: ">=3.24.0 <3.567.0"
@@ -76,5 +64,4 @@
         mode: "max-7"
       commands:
         - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-sqs.test.ts
-        - mocha --require '@opentelemetry/contrib-test-utils' test/sqs.test.ts
 

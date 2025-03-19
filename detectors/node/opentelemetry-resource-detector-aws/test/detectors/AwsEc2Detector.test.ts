@@ -17,19 +17,19 @@
 import * as nock from 'nock';
 import * as assert from 'assert';
 
-import { awsEc2Detector, awsEc2DetectorSync } from '../../src';
+import { detectResources } from '@opentelemetry/resources';
 import {
   assertCloudResource,
   assertHostResource,
 } from '@opentelemetry/contrib-test-utils';
+import { awsEc2Detector } from '../../src';
 
-const AWS_HOST = 'http://' + awsEc2DetectorSync.AWS_IDMS_ENDPOINT;
-const AWS_TOKEN_PATH = awsEc2DetectorSync.AWS_INSTANCE_TOKEN_DOCUMENT_PATH;
-const AWS_IDENTITY_PATH =
-  awsEc2DetectorSync.AWS_INSTANCE_IDENTITY_DOCUMENT_PATH;
-const AWS_HOST_PATH = awsEc2DetectorSync.AWS_INSTANCE_HOST_DOCUMENT_PATH;
-const AWS_METADATA_TTL_HEADER = awsEc2DetectorSync.AWS_METADATA_TTL_HEADER;
-const AWS_METADATA_TOKEN_HEADER = awsEc2DetectorSync.AWS_METADATA_TOKEN_HEADER;
+const AWS_HOST = 'http://' + awsEc2Detector.AWS_IDMS_ENDPOINT;
+const AWS_TOKEN_PATH = awsEc2Detector.AWS_INSTANCE_TOKEN_DOCUMENT_PATH;
+const AWS_IDENTITY_PATH = awsEc2Detector.AWS_INSTANCE_IDENTITY_DOCUMENT_PATH;
+const AWS_HOST_PATH = awsEc2Detector.AWS_INSTANCE_HOST_DOCUMENT_PATH;
+const AWS_METADATA_TTL_HEADER = awsEc2Detector.AWS_METADATA_TTL_HEADER;
+const AWS_METADATA_TOKEN_HEADER = awsEc2Detector.AWS_METADATA_TOKEN_HEADER;
 
 const mockedTokenResponse = 'my-token';
 const mockedIdentityResponse = {
@@ -65,7 +65,7 @@ describe('awsEc2Detector', () => {
         .matchHeader(AWS_METADATA_TOKEN_HEADER, mockedTokenResponse)
         .reply(200, () => mockedHostResponse);
 
-      const resource = await awsEc2Detector.detect();
+      const resource = detectResources({ detectors: [awsEc2Detector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -100,7 +100,7 @@ describe('awsEc2Detector', () => {
         .matchHeader(AWS_METADATA_TOKEN_HEADER, mockedTokenResponse)
         .reply(404, () => new Error());
 
-      const resource = await awsEc2Detector.detect();
+      const resource = detectResources({ detectors: [awsEc2Detector] });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -122,7 +122,7 @@ describe('awsEc2Detector', () => {
         .delayConnection(5000)
         .reply(200, () => mockedHostResponse);
 
-      const resource = await awsEc2Detector.detect();
+      const resource = detectResources({ detectors: [awsEc2Detector] });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -140,7 +140,7 @@ describe('awsEc2Detector', () => {
         .matchHeader(AWS_METADATA_TOKEN_HEADER, mockedTokenResponse)
         .replyWithError(expectedError.message);
 
-      const resource = await awsEc2Detector.detect();
+      const resource = detectResources({ detectors: [awsEc2Detector] });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});

@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { DetectorSync, IResource, Resource } from '@opentelemetry/resources';
-
+import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
 import {
   SEMRESATTRS_FAAS_MAX_MEMORY,
   SEMRESATTRS_FAAS_INSTANCE,
@@ -46,8 +45,8 @@ const AZURE_FUNCTIONS_ATTRIBUTE_ENV_VARS = {
  * The AzureFunctionsDetector can be used to detect if a process is running in Azure Functions
  * @returns a {@link Resource} populated with data about the environment or an empty Resource if detection fails.
  */
-class AzureFunctionsDetector implements DetectorSync {
-  detect(): IResource {
+class AzureFunctionsDetector implements ResourceDetector {
+  detect(): DetectedResource {
     let attributes = {};
     const serviceName = process.env[WEBSITE_SITE_NAME];
 
@@ -102,7 +101,7 @@ class AzureFunctionsDetector implements DetectorSync {
         }
       }
     }
-    return new Resource(attributes);
+    return { attributes };
   }
 }
 
