@@ -376,7 +376,7 @@ function assertSpan(span: ReadableSpan, expected: any) {
   );
   if (expected.parentSpan) {
     assert.strictEqual(
-      span.parentSpanId,
+      span.parentSpanContext?.spanId,
       expected.parentSpan.spanContext().spanId
     );
   }

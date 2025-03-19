@@ -63,10 +63,11 @@ interface InstrumentationRecord {
 export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumentationConfig> {
   // Keep ref to avoid https://github.com/nodejs/node/issues/42170 bug and for
   // unsubscribing.
-  private _channelSubs!: Array<ListenerRecord>;
+  private declare _channelSubs: Array<ListenerRecord>;
   private _recordFromReq = new WeakMap<UndiciRequest, InstrumentationRecord>();
 
-  private _httpClientDurationHistogram!: Histogram;
+  private declare _httpClientDurationHistogram: Histogram;
+
   constructor(config: UndiciInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
