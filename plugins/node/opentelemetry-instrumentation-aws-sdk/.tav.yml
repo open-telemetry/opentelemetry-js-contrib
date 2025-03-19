@@ -9,6 +9,19 @@
 # - 14.x dropped in v3.567.0 https://github.com/aws/aws-sdk-js-v3/pull/6034
 # - 16.x dropped in v3.723.0 https://github.com/aws/aws-sdk-js-v3/pull/6775
 
+"@aws-sdk/client-bedrock-runtime":
+  env:
+    - SKIP_TEST_IF_DISABLE=true
+  # - 3.529.0 was missing the fast-xml-parser dependency (https://github.com/aws/aws-sdk-js-v3/releases/tag/v3.529.1)
+  jobs:
+    - node: ">=18"
+      versions:
+        include: "^3.587.0"
+        exclude: ">=3.363.0 <=3.377.0"
+        mode: "max-7"
+      commands:
+        - mocha --require '@opentelemetry/contrib-test-utils' test/bedrock-runtime.test.ts
+
 "@aws-sdk/client-s3":
   env:
     - SKIP_TEST_IF_DISABLE=true
