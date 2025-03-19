@@ -12,7 +12,6 @@
 "@aws-sdk/client-bedrock-runtime":
   env:
     - SKIP_TEST_IF_DISABLE=true
-  # - 3.529.0 was missing the fast-xml-parser dependency (https://github.com/aws/aws-sdk-js-v3/releases/tag/v3.529.1)
   jobs:
     - node: ">=18"
       versions:
