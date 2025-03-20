@@ -11,7 +11,7 @@ The net result is the ability to gather telemetry data from a Node application w
 
 This module also provides a simple way to manually initialize multiple Node instrumentations for use with the OpenTelemetry SDK.
 
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+Compatible with OpenTelemetry JS API and SDK `2.0+`.
 
 ## Installation
 
