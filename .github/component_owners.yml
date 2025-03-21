@@ -18,6 +18,7 @@ components:
     - kirrg001
   incubator/opentelemetry-sampler-aws-xray:
     - jj22ee
+    - yiyuan-he
   metapackages/auto-configuration-propagators:
     - pichlermarc
   metapackages/auto-instrumentations-node:
