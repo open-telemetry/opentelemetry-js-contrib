@@ -21,7 +21,7 @@ import {
   diag,
   SpanStatusCode,
 } from '@opentelemetry/api';
-import { suppressTracing } from '@opentelemetry/core';
+import { hrTime, suppressTracing } from '@opentelemetry/core';
 import { AttributeNames } from './enums';
 import { ServicesExtensions } from './services';
 import {
@@ -67,13 +67,20 @@ type V3PluginCommand = AwsV3Command<any, any, any, any, any> & {
 
 export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentationConfig> {
   static readonly component = 'aws-sdk';
-  private servicesExtensions: ServicesExtensions = new ServicesExtensions();
+  // initialized in callbacks from super constructor for ordering reasons.
+  private declare servicesExtensions: ServicesExtensions;
 
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init(): InstrumentationModuleDefinition[] {
+    // Should always have been initialized in _updateMetricInstruments, but check again
+    // for safety.
+    if (!this.servicesExtensions) {
+      this.servicesExtensions = new ServicesExtensions();
+    }
+
     const v3MiddlewareStackFileOldVersions = new InstrumentationNodeModuleFile(
       '@aws-sdk/middleware-stack/dist/cjs/MiddlewareStack.js',
       ['>=3.1.0 <3.35.0'],
@@ -341,6 +348,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
           self.getConfig(),
           self._diag
         );
+        const startTime = hrTime();
         const span = self._startAwsV3Span(normalizedRequest, requestMetadata);
         const activeContextWithSpan = trace.setSpan(context.active(), span);
 
@@ -404,7 +412,8 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                     normalizedResponse,
                     span,
                     self.tracer,
-                    self.getConfig()
+                    self.getConfig(),
+                    startTime
                   );
                   self._callUserResponseHook(span, normalizedResponse);
                   return response;
@@ -463,5 +472,12 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     } else {
       return originalFunction();
     }
+  }
+
+  override _updateMetricInstruments() {
+    if (!this.servicesExtensions) {
+      this.servicesExtensions = new ServicesExtensions();
+    }
+    this.servicesExtensions.updateMetricInstruments(this.meter);
   }
 }

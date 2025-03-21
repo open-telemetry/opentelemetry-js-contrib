@@ -138,3 +138,23 @@ export const GEN_AI_OPERATION_NAME_VALUE_CHAT = 'chat' as const;
  * Enum value "aws.bedrock" for attribute {@link ATTR_GEN_AI_SYSTEM}.
  */
 export const GEN_AI_SYSTEM_VALUE_AWS_BEDROCK = 'aws.bedrock' as const;
+
+/**
+ * The type of token being counted.
+ *
+ * @example input
+ * @example output
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_TOKEN_TYPE = 'gen_ai.token.type' as const;
+
+/**
+ * Enum value "input" for attribute {@link ATTR_GEN_AI_TOKEN_TYPE}.
+ */
+export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
+
+/**
+ * Enum value "output" for attribute {@link ATTR_GEN_AI_TOKEN_TYPE}.
+ */
+export const GEN_AI_TOKEN_TYPE_VALUE_COMPLETION = 'output' as const;
