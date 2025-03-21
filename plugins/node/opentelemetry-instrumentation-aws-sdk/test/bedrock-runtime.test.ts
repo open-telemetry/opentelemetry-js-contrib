@@ -37,9 +37,9 @@ registerInstrumentationTesting(new AwsInstrumentation());
 import {
   BedrockRuntimeClient,
   ConverseCommand,
+  ConverseStreamCommand,
   ConversationRole,
   InvokeModelCommand,
-  ConverseStreamCommand,
 } from '@aws-sdk/client-bedrock-runtime';
 import { AwsCredentialIdentity } from '@aws-sdk/types';
 import * as path from 'path';
