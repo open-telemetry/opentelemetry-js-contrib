@@ -34,6 +34,10 @@ import {
   NormalizedRequest,
   NormalizedResponse,
 } from '../types';
+import {
+  ConverseStreamOutput,
+  TokenUsage,
+} from '@aws-sdk/client-bedrock-runtime';
 
 export class BedrockRuntimeServiceExtension implements ServiceExtension {
   requestPreSpanHook(
@@ -43,7 +47,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   ): RequestMetadata {
     switch (request.commandName) {
       case 'Converse':
-        return this.requestPreSpanHookConverse(request, config, diag);
+        return this.requestPreSpanHookConverse(request, config, diag, false);
+      case 'ConverseStream':
+        return this.requestPreSpanHookConverse(request, config, diag, true);
     }
 
     return {
@@ -54,7 +60,8 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   private requestPreSpanHookConverse(
     request: NormalizedRequest,
     config: AwsSdkInstrumentationConfig,
-    diag: DiagLogger
+    diag: DiagLogger,
+    isStream: boolean
   ): RequestMetadata {
     let spanName = GEN_AI_OPERATION_NAME_VALUE_CHAT;
     const spanAttributes: Attributes = {
@@ -90,6 +97,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     return {
       spanName,
       isIncoming: false,
+      isStream,
       spanAttributes,
     };
   }
@@ -107,6 +115,8 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     switch (response.request.commandName) {
       case 'Converse':
         return this.responseHookConverse(response, span, tracer, config);
+      case 'ConverseStream':
+        return this.responseHookConverseStream(response, span, tracer, config);
     }
   }
 
@@ -117,6 +127,49 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     config: AwsSdkInstrumentationConfig
   ) {
     const { stopReason, usage } = response.data;
+
+    BedrockRuntimeServiceExtension.setStopReason(span, stopReason);
+    BedrockRuntimeServiceExtension.setUsage(span, usage);
+  }
+
+  private responseHookConverseStream(
+    response: NormalizedResponse,
+    span: Span,
+    tracer: Tracer,
+    config: AwsSdkInstrumentationConfig
+  ) {
+    return {
+      ...response.data,
+      stream: this.wrapConverseStreamResponse(response.data.stream, span),
+    };
+  }
+
+  private async *wrapConverseStreamResponse(
+    response: AsyncIterable<ConverseStreamOutput>,
+    span: Span
+  ) {
+    try {
+      for await (const item of response) {
+        BedrockRuntimeServiceExtension.setStopReason(
+          span,
+          item.messageStop?.stopReason
+        );
+        BedrockRuntimeServiceExtension.setUsage(span, item.metadata?.usage);
+        yield item;
+      }
+    } finally {
+      span.end();
+    }
+  }
+
+  private static setStopReason(span: Span, stopReason: string | undefined) {
+    if (stopReason !== undefined) {
+      console.log(stopReason);
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [stopReason]);
+    }
+  }
+
+  private static setUsage(span: Span, usage: TokenUsage | undefined) {
     if (usage) {
       const { inputTokens, outputTokens } = usage;
       if (inputTokens !== undefined) {
@@ -125,10 +178,6 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       if (outputTokens !== undefined) {
         span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, outputTokens);
       }
-    }
-
-    if (stopReason !== undefined) {
-      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [stopReason]);
     }
   }
 }

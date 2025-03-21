@@ -39,6 +39,7 @@ import {
   ConverseCommand,
   ConversationRole,
   InvokeModelCommand,
+  ConverseStreamCommand,
 } from '@aws-sdk/client-bedrock-runtime';
 import { AwsCredentialIdentity } from '@aws-sdk/types';
 import * as path from 'path';
@@ -131,6 +132,60 @@ describe('Bedrock', () => {
       expect(response.output?.message?.content?.[0].text).toBe(
         "Hi. I'm not sure what"
       );
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const converseSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === 'chat amazon.titan-text-lite-v1';
+        }
+      );
+      expect(converseSpans.length).toBe(1);
+      expect(converseSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
+    });
+  });
+
+  describe('ConverseStream', () => {
+    it('adds genai conventions', async () => {
+      const modelId = 'amazon.titan-text-lite-v1';
+      const messages = [
+        {
+          role: ConversationRole.USER,
+          content: [{ text: 'Say this is a test' }],
+        },
+      ];
+      const inferenceConfig = {
+        maxTokens: 10,
+        temperature: 0.8,
+        topP: 1,
+        stopSequences: ['|'],
+      };
+
+      const command = new ConverseStreamCommand({
+        modelId,
+        messages,
+        inferenceConfig,
+      });
+
+      const response = await client.send(command);
+      const chunks: string[] = [];
+      for await (const item of response.stream!) {
+        const text = item.contentBlockDelta?.delta?.text;
+        if (text) {
+          chunks.push(text);
+        }
+      }
+      expect(chunks.join('')).toBe('Hi! How are you? How');
 
       const testSpans: ReadableSpan[] = getTestSpans();
       const converseSpans: ReadableSpan[] = testSpans.filter(
