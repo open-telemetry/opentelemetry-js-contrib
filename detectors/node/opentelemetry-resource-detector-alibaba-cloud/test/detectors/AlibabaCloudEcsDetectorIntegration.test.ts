@@ -22,7 +22,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { IResource } from '@opentelemetry/resources';
+import { detectResources } from '@opentelemetry/resources';
 
 describe('[Integration] AlibabaCloudEcsDetector', () => {
   it('should not start spans for detector requests', async () => {
@@ -47,7 +47,7 @@ describe('[Integration] AlibabaCloudEcsDetector', () => {
     const {
       alibabaCloudEcsDetector,
     } = require('../../build/src/detectors/AlibabaCloudEcsDetector');
-    const resource = alibabaCloudEcsDetector.detect() as IResource;
+    const resource = detectResources({ detectors: [alibabaCloudEcsDetector] });
     await resource.waitForAsyncAttributes?.();
 
     // Wait for the next loop to let the span close properly

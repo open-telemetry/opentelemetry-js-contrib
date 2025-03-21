@@ -5,7 +5,7 @@
 
 [component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @blumamir @jj22ee @trivikr
 
-This module provides automatic instrumentation for the [`aws-sdk` v2](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/) and [`@aws-sdk` v3](https://github.com/aws/aws-sdk-js-v3) modules, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [AWS SDK for JavaScript v3](https://github.com/aws/aws-sdk-js-v3) modules, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -19,7 +19,6 @@ npm install --save @opentelemetry/instrumentation-aws-sdk
 
 ## Supported Versions
 
-- [`aws-sdk`](https://www.npmjs.com/package/aws-sdk) versions `>=2.308.0 <3`
 - `@aws-sdk/client-*` versions `>=3.0.0 <4`
 
 ## Usage
@@ -60,7 +59,7 @@ aws-sdk instrumentation has few options available to choose from. You can set th
 
 ## Span Attributes
 
-Both V2 and V3 instrumentations are collecting the following attributes:
+The instrumentations are collecting the following attributes:
 | Attribute Name | Type | Description | Example |
 | -------------- | ---- | ----------- | ------- |
 | `rpc.system` | string | Always equals "aws-api" | |
@@ -68,21 +67,9 @@ Both V2 and V3 instrumentations are collecting the following attributes:
 | `rpc.service` | string | The name of the service to which a request is made, as returned by the AWS SDK. If the SDK does not provide a away to retrieve a name, the name of the SDK's client interface for a service SHOULD be used, removing the suffix `Client` if present, resulting in a PascalCase name with no spaces. | `S3`, `DynamoDB`, `Route53` |
 | `aws.region` | string | Region name for the request | "eu-west-1" |
 
-### V2 attributes
-
-In addition to the above attributes, the instrumentation also collect the following for V2 ONLY:
-| Attribute Name | Type | Description | Example |
-| -------------- | ---- | ----------- | ------- |
-| `aws.operation` | string | The method name for the request. | for `SQS.sendMessage(...)` the operation is "sendMessage" |
-| `aws.signature.version` | string | AWS version of authentication signature on the request. | "v4" |
-| `aws.service.api` | string | The SDK class name for the service | "SQS" |
-| `aws.service.identifier` | string | Identifier for the service in the SDK | "sqs" |
-| `aws.service.name` | string | Abbreviation name for the service | "Amazon SQS" |
-| `aws.request.id` | uuid | Request unique id, as returned from aws on response | "01234567-89ab-cdef-0123-456789abcdef" |
-
 ### Custom User Attributes
 
-The instrumentation user can configure a `preRequestHook` function which will be called before each request, with a normalized request object (across v2 and v3) and the corresponding span.
+The instrumentation user can configure a `preRequestHook` function which will be called before each request, with a normalized request object and the corresponding span.
 This hook can be used to add custom attributes to the span with any logic.
 For example, user can add interesting attributes from the `request.params`, and write custom logic based on the service and operation.
 Usage example:
@@ -107,6 +94,7 @@ Specific service logic currently implemented for:
 - [SNS](./doc/sns.md)
 - [Lambda](./doc/lambda.md)
 - DynamoDb
+- Amazon Bedrock Runtime (See the [GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/).)
 
 ## Potential Side Effects
 

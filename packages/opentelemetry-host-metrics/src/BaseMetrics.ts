@@ -43,9 +43,6 @@ export abstract class BaseMetrics {
     // Do not use `??` operator to allow falling back to default when the
     // specified name is an empty string.
     this._name = config?.name || DEFAULT_NAME;
-    if (config?.meterProvider == null) {
-      this._logger.warn('No meter provider, using default');
-    }
     const meterProvider = config?.meterProvider ?? metrics.getMeterProvider();
     this._meter = meterProvider.getMeter(this._name, PACKAGE_VERSION);
   }

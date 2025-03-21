@@ -75,9 +75,9 @@ function extractModuleExports(module: any) {
 }
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
-  private _operationDuration!: Histogram;
-  private _connectionsCount!: UpDownCounter;
-  private _connectionPendingRequests!: UpDownCounter;
+  private declare _operationDuration: Histogram;
+  private declare _connectionsCount: UpDownCounter;
+  private declare _connectionPendingRequests: UpDownCounter;
   // Pool events connect, acquire, release and remove can be called
   // multiple times without changing the values of total, idle and waiting
   // connections. The _connectionsCounter is used to keep track of latest

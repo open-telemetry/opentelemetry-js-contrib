@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { IdGenerator } from '@opentelemetry/core';
+import { IdGenerator } from '@opentelemetry/sdk-trace-base';
 
 import {
   generateTraceId,

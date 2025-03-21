@@ -28,7 +28,7 @@ import {
   SEMATTRS_CODE_NAMESPACE,
   SEMRESATTRS_SERVICE_NAME,
 } from '@opentelemetry/semantic-conventions';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 
 import * as path from 'path';
 import * as assert from 'assert';
@@ -56,7 +56,7 @@ describe('CucumberInstrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
   const provider = new NodeTracerProvider({
-    resource: new Resource({
+    resource: resourceFromAttributes({
       [SEMRESATTRS_SERVICE_NAME]: 'CucumberInstrumentation',
     }),
     spanProcessors: [spanProcessor],
@@ -281,7 +281,7 @@ describe('CucumberInstrumentation', () => {
           assert.equal(attemptSpans.length, 3);
 
           assert.deepEqual(
-            attemptSpans.map(span => span.parentSpanId),
+            attemptSpans.map(span => span.parentSpanContext?.spanId),
             Array(3).fill(parent.spanContext().spanId)
           );
         });
@@ -296,7 +296,9 @@ describe('CucumberInstrumentation', () => {
           attemptSpans.forEach(attempt => {
             assert.equal(
               spans.filter(
-                span => span.parentSpanId === attempt.spanContext().spanId
+                span =>
+                  span.parentSpanContext?.spanId ===
+                  attempt.spanContext().spanId
               ).length,
               4
             );
