@@ -183,6 +183,11 @@ pkg:instrumentation-net:
   - changed-files:
       - any-glob-to-any-file:
           - plugins/node/opentelemetry-instrumentation-net/**
+pkg:instrumentation-oracledb:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-oracledb/**
+          - packages/opentelemetry-test-utils/**
 pkg:instrumentation-pg:
   - changed-files:
       - any-glob-to-any-file:

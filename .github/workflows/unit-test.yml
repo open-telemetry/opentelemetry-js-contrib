@@ -83,6 +83,19 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      oracledb:
+        image: gvenzl/oracle-free:slim
+        env:
+          APP_USER: otel
+          APP_USER_PASSWORD: secret
+          ORACLE_PASSWORD: oracle
+        ports:
+          - 1521:1521
+        options: >-
+          --health-cmd "sqlplus system/oracle@//localhost/FREEPDB1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       postgres:
         image: postgres:16-alpine
         env:
@@ -122,6 +135,7 @@ jobs:
       RUN_MONGODB_TESTS: 1
       RUN_MYSQL_TESTS: 1
       RUN_MSSQL_TESTS: 1
+      RUN_ORACLEDB_TESTS: 1
       RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
       RUN_RABBIT_TESTS: 1
@@ -140,6 +154,12 @@ jobs:
       OPENTELEMETRY_MEMCACHED_PORT: 11211
       OPENTELEMETRY_REDIS_HOST: localhost
       OPENTELEMETRY_REDIS_PORT: 6379
+      ORACLE_HOSTNAME: localhost
+      ORACLE_PORT: 1521
+      ORACLE_CONNECTSTRING: localhost:1521/freepdb1
+      ORACLE_USER: otel
+      ORACLE_PASSWORD: secret
+      ORACLE_SERVICENAME: FREEPDB1
       POSTGRES_DB: otel_pg_database
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
