@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.8.0...instrumentation-kafkajs-v0.9.0) (2025-03-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-kafkajs:** add .tav.yml and narrow support range to (>=0.3.0 <3) ([#2758](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2758))
+
+### Features
+
+* **instrumentation-kafkajs:** add .tav.yml and narrow support range to (&gt;=0.3.0 &lt;3) ([#2758](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2758)) ([5837997](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5837997dfb42a6ea6482999c0ca3e00cf68cdb8d))
+
 ## [0.8.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.7.1...instrumentation-kafkajs-v0.8.0) (2025-03-18)
 
 
