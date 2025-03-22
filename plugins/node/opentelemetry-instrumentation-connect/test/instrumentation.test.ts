@@ -240,7 +240,7 @@ describe('connect', () => {
       assert.strictEqual(rpcMetadata.route, '/foo');
       assert.strictEqual(span.name, 'request handler - /foo');
       assert.strictEqual(
-        span.parentSpanId,
+        span.parentSpanContext?.spanId,
         changedRootSpan.spanContext().spanId
       );
     });

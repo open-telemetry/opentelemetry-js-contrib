@@ -38,7 +38,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { IResource } from '@opentelemetry/resources';
+import { detectResources } from '@opentelemetry/resources';
 
 describe('[Integration] GcpDetector', () => {
   it('should not start spans for detector requests', async () => {
@@ -63,7 +63,7 @@ describe('[Integration] GcpDetector', () => {
     // tracing being exported. We do the detection outside the SDK constructor to have such
     // scenario.
     const { gcpDetector } = require('../../build/src/detectors/GcpDetector');
-    const resource = gcpDetector.detect() as IResource;
+    const resource = detectResources({ detectors: [gcpDetector] });
     await resource.waitForAsyncAttributes?.();
 
     // Wait for the next loop to let the span close properly

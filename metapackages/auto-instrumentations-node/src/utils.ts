@@ -68,13 +68,12 @@ import {
 import { containerDetector } from '@opentelemetry/resource-detector-container';
 import { gcpDetector } from '@opentelemetry/resource-detector-gcp';
 import {
-  Detector,
-  DetectorSync,
-  envDetectorSync,
-  hostDetectorSync,
-  osDetectorSync,
-  processDetectorSync,
-  serviceInstanceIdDetectorSync,
+  ResourceDetector,
+  envDetector,
+  hostDetector,
+  osDetector,
+  processDetector,
+  serviceInstanceIdDetector,
 } from '@opentelemetry/resources';
 import {
   azureAppServiceDetector,
@@ -254,17 +253,17 @@ function getDisabledInstrumentationsFromEnv() {
   return instrumentationsFromEnv;
 }
 
-export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
+export function getResourceDetectorsFromEnv(): Array<ResourceDetector> {
   const resourceDetectors = new Map<
     string,
-    Detector | DetectorSync | Detector[] | DetectorSync[]
+    ResourceDetector | ResourceDetector[]
   >([
     [RESOURCE_DETECTOR_CONTAINER, containerDetector],
-    [RESOURCE_DETECTOR_ENVIRONMENT, envDetectorSync],
-    [RESOURCE_DETECTOR_HOST, hostDetectorSync],
-    [RESOURCE_DETECTOR_OS, osDetectorSync],
-    [RESOURCE_DETECTOR_SERVICE_INSTANCE_ID, serviceInstanceIdDetectorSync],
-    [RESOURCE_DETECTOR_PROCESS, processDetectorSync],
+    [RESOURCE_DETECTOR_ENVIRONMENT, envDetector],
+    [RESOURCE_DETECTOR_HOST, hostDetector],
+    [RESOURCE_DETECTOR_OS, osDetector],
+    [RESOURCE_DETECTOR_SERVICE_INSTANCE_ID, serviceInstanceIdDetector],
+    [RESOURCE_DETECTOR_PROCESS, processDetector],
     [RESOURCE_DETECTOR_ALIBABA, alibabaCloudEcsDetector],
     [RESOURCE_DETECTOR_GCP, gcpDetector],
     [

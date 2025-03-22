@@ -181,7 +181,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
     });
 
     it('should record error', async () => {
@@ -198,7 +198,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanFailure(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
     });
 
     it('should record string error', async () => {
@@ -214,7 +214,7 @@ describe('lambda handler', () => {
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
       assertSpanFailure(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
     });
 
     it('context should have parent trace', async () => {
@@ -264,7 +264,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
     });
 
     it('should record coldstart', async () => {
@@ -298,12 +298,12 @@ describe('lambda handler', () => {
 
       assert.strictEqual(result1, 'ok');
       assertSpanSuccess(span1);
-      assert.strictEqual(span1.parentSpanId, undefined);
+      assert.strictEqual(span1.parentSpanContext?.spanId, undefined);
       assert.strictEqual(span1.attributes[SEMATTRS_FAAS_COLDSTART], true);
 
       assert.strictEqual(result2, 'ok');
       assertSpanSuccess(span2);
-      assert.strictEqual(span2.parentSpanId, undefined);
+      assert.strictEqual(span2.parentSpanContext?.spanId, undefined);
       assert.strictEqual(span2.attributes[SEMATTRS_FAAS_COLDSTART], false);
     });
 
@@ -330,7 +330,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
       assert.strictEqual(span.attributes[SEMATTRS_FAAS_COLDSTART], false);
     });
 
@@ -357,7 +357,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
       assert.strictEqual(span.attributes[SEMATTRS_FAAS_COLDSTART], false);
     });
 
@@ -379,7 +379,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanFailure(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
     });
 
     it('should record error in callback', async () => {
@@ -408,7 +408,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanFailure(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
     });
 
     it('should record string error', async () => {
@@ -429,7 +429,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanFailure(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
     });
 
     it('context should have parent trace', async () => {
@@ -501,7 +501,7 @@ describe('lambda handler', () => {
     const [span] = spans;
     assert.strictEqual(spans.length, 1);
     assertSpanFailure(span);
-    assert.strictEqual(span.parentSpanId, undefined);
+    assert.strictEqual(span.parentSpanContext?.spanId, undefined);
   });
 
   describe('with remote parent', () => {
@@ -531,7 +531,10 @@ describe('lambda handler', () => {
         spans[0].spanContext().traceId,
         sampledAwsSpanContext.traceId
       );
-      assert.equal(spans[0].parentSpanId, sampledAwsSpanContext.spanId);
+      assert.equal(
+        spans[0].parentSpanContext?.spanId,
+        sampledAwsSpanContext.spanId
+      );
     });
 
     it('can extract context from lambda context env variable using a global propagator', async () => {
@@ -552,7 +555,10 @@ describe('lambda handler', () => {
         spans[0].spanContext().traceId,
         sampledAwsSpanContext.traceId
       );
-      assert.equal(spans[0].parentSpanId, sampledAwsSpanContext.spanId);
+      assert.equal(
+        spans[0].parentSpanContext?.spanId,
+        sampledAwsSpanContext.spanId
+      );
     });
 
     it('used custom eventContextExtractor over global propagator if defined', async () => {
@@ -591,7 +597,10 @@ describe('lambda handler', () => {
         span.spanContext().traceId,
         sampledAwsSpanContext.traceId
       );
-      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
+      assert.strictEqual(
+        span.parentSpanContext?.spanId,
+        sampledAwsSpanContext.spanId
+      );
     });
 
     it('creates trace from ROOT_CONTEXT eventContextExtractor is provided, and no custom context is found', async () => {
@@ -620,7 +629,7 @@ describe('lambda handler', () => {
 
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
     });
   });
 
@@ -745,7 +754,7 @@ describe('lambda handler', () => {
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
         assertSpanSuccess(span);
-        assert.strictEqual(span.parentSpanId, undefined);
+        assert.strictEqual(span.parentSpanContext?.spanId, undefined);
       });
     });
   });
@@ -767,7 +776,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
-      assert.strictEqual(span.parentSpanId, undefined);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
     });
   });
 

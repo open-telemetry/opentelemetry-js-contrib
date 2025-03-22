@@ -13,28 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import { context, diag } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import {
-  DetectorSync,
-  Resource,
-  IResource,
-  ResourceAttributes,
+  ResourceDetector,
+  DetectedResource,
+  DetectedResourceAttributes,
 } from '@opentelemetry/resources';
-import { diag } from '@opentelemetry/api';
 import {
   SEMRESATTRS_PROCESS_PID,
   SEMRESATTRS_SERVICE_INSTANCE_ID,
 } from '@opentelemetry/semantic-conventions';
 import * as http from 'http';
 
-class InstanaAgentDetector implements DetectorSync {
+class InstanaAgentDetector implements ResourceDetector {
   readonly INSTANA_AGENT_DEFAULT_HOST = 'localhost';
   readonly INSTANA_AGENT_DEFAULT_PORT = 42699;
 
-  detect(): IResource {
-    return new Resource({}, this._getAttributes());
+  detect(): DetectedResource {
+    const dataPromise = context.with(suppressTracing(context.active()), () =>
+      this._gatherData()
+    );
+
+    const attrNames = [
+      SEMRESATTRS_PROCESS_PID,
+      SEMRESATTRS_SERVICE_INSTANCE_ID,
+    ];
+
+    const attributes = {} as DetectedResourceAttributes;
+    attrNames.forEach(name => {
+      // Each resource attribute is determined asynchronously in _gatherData().
+      attributes[name] = dataPromise.then(data => data[name]);
+    });
+
+    return { attributes };
   }
 
-  private async _getAttributes(): Promise<ResourceAttributes> {
+  private async _gatherData(): Promise<DetectedResourceAttributes> {
     const host =
       process.env.INSTANA_AGENT_HOST || this.INSTANA_AGENT_DEFAULT_HOST;
     const port = Number(

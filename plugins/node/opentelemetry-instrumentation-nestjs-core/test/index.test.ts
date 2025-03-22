@@ -240,7 +240,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       );
       if (typeof expected.parentSpanIdx === 'number') {
         assert.strictEqual(
-          span.parentSpanId,
+          span.parentSpanContext?.spanId,
           actualSpans[expected.parentSpanIdx].spanContext().spanId
         );
       } else if (typeof expected.parentSpanName === 'string') {
@@ -253,18 +253,19 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
           `Cannot find span named ${expected.parentSpanName} expected to be the parent of ${span.name}`
         );
         assert.strictEqual(
-          span.parentSpanId,
+          span.parentSpanContext?.spanId,
           parentSpan.spanContext().spanId,
           `Expected "${expected.parentSpanName}" to be the parent of "${
             span.name
           }", but found "${
-            actualSpans.find(s => s.spanContext().spanId === span.parentSpanId)
-              .name
+            actualSpans.find(
+              s => s.spanContext().spanId === span.parentSpanContext?.spanId
+            ).name
           }"`
         );
       } else if (expected.parentSpan !== null) {
         assert.strictEqual(
-          span.parentSpanId,
+          span.parentSpanContext?.spanId,
           expected.parentSpan?.spanContext().spanId
         );
       }

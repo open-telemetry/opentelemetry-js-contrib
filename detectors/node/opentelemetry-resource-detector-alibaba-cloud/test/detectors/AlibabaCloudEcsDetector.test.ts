@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+import { setTimeout as setTimeoutP } from 'timers/promises';
 import * as nock from 'nock';
 import * as assert from 'assert';
-import { Resource } from '@opentelemetry/resources';
+import { detectResources } from '@opentelemetry/resources';
 import { CLOUDPROVIDERVALUES_ALIBABA_CLOUD } from '@opentelemetry/semantic-conventions';
 import {
   assertCloudResource,
@@ -63,7 +64,9 @@ describe('alibabaCloudEcsDetector', () => {
         .get(ALIYUN_HOST_PATH)
         .reply(200, () => mockedHostResponse);
 
-      const resource: Resource = await alibabaCloudEcsDetector.detect();
+      const resource = detectResources({
+        detectors: [alibabaCloudEcsDetector],
+      });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -93,7 +96,9 @@ describe('alibabaCloudEcsDetector', () => {
         .get(ALIYUN_HOST_PATH)
         .reply(404, () => new Error());
 
-      const resource = await alibabaCloudEcsDetector.detect();
+      const resource = detectResources({
+        detectors: [alibabaCloudEcsDetector],
+      });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -109,7 +114,9 @@ describe('alibabaCloudEcsDetector', () => {
         .delayConnection(2000)
         .reply(200, () => mockedHostResponse);
 
-      const resource = await alibabaCloudEcsDetector.detect();
+      const resource = detectResources({
+        detectors: [alibabaCloudEcsDetector],
+      });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -122,10 +129,46 @@ describe('alibabaCloudEcsDetector', () => {
         .get(ALIYUN_IDENTITY_PATH)
         .replyWithError('NOT FOUND');
 
-      const resource = await alibabaCloudEcsDetector.detect();
+      const resource = detectResources({
+        detectors: [alibabaCloudEcsDetector],
+      });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
+
+      scope.done();
+    });
+  });
+
+  describe('with delay in calling .waitForAsyncAttributes()', () => {
+    // Note any `unhandledRejection` process events during the test run.
+    let gotUnhandledRejections: Error[];
+    const unhandleRejectionHandler = (err: any) => {
+      gotUnhandledRejections.push(err);
+    };
+    beforeEach(() => {
+      gotUnhandledRejections = [];
+      process.on('unhandledRejection', unhandleRejectionHandler);
+    });
+    afterEach(() => {
+      process.removeListener('unhandledRejection', unhandleRejectionHandler);
+    });
+
+    it('should return empty resource when receiving error', async () => {
+      const scope = nock(ALIYUN_HOST)
+        .get(ALIYUN_IDENTITY_PATH)
+        .replyWithError('NOT FOUND');
+
+      const resource = detectResources({
+        detectors: [alibabaCloudEcsDetector],
+      });
+      // This pause simulates the delay between `detectResources` and
+      // `waitForAsyncAttributes` typically called later in an exporter.
+      await setTimeoutP(200); // Hope this is enough time to get error response.
+      await resource.waitForAsyncAttributes?.();
+
+      assert.deepStrictEqual(resource.attributes, {});
+      assert.deepStrictEqual(gotUnhandledRejections, []);
 
       scope.done();
     });

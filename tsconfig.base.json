@@ -4,9 +4,13 @@
     "allowUnusedLabels": false,
     "declaration": true,
     "declarationMap": true,
+    "esModuleInterop": false,
     "forceConsistentCasingInFileNames": true,
+    "incremental": true,
     "inlineSources": true,
-    "module": "commonjs",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "newLine": "LF",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
@@ -16,9 +20,7 @@
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
-    "target": "es2017",
-    "incremental": true,
-    "newLine": "LF"
+    "target": "es2022"
   },
   "exclude": [
     "node_modules"
