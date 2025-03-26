@@ -150,23 +150,60 @@ describe('Bedrock', () => {
 
   // TODO: Instrument InvokeModel
   describe('InvokeModel', () => {
-    it('does not currently add genai conventions', async () => {
-      const modelId = 'amazon.titan-text-express-v1';
-      const inputText = 'Say this is a test';
-      const textGenerationConfig = {
-        maxTokenCount: 10,
+    it('adds ai21 jamba model attributes to span', async () => {
+      const modelId = 'ai21.jamba-1-5-large-v1:0';
+      const prompt = 'Say this is a test';
+      const nativeRequest: any = {
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        max_tokens: 10,
         temperature: 0.8,
-        topP: 1,
-        stopSequences: ['|'],
+        top_p: 1,
       };
-      const body: any = {
-        inputText,
-        textGenerationConfig,
-      };
-
       const command = new InvokeModelCommand({
         modelId,
-        body: JSON.stringify(body),
+        body: JSON.stringify(nativeRequest),
+      });
+      const response = await client.send(command);
+      const output = JSON.parse(response.body.transformToString());
+      expect(output.choices[0].message.content).toBe(
+        '\nHello! I am a computer program designed to'
+      );
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
+        return s.name === 'BedrockRuntime.InvokeModel';
+      });
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
+    });
+    it('adds amazon titan model attributes to span', async () => {
+      const modelId = 'amazon.titan-text-express-v1';
+      const prompt = 'Say this is a test';
+      const nativeRequest: any = {
+        inputText: prompt,
+        textGenerationConfig: {
+          maxTokenCount: 10,
+          temperature: 0.8,
+          topP: 1,
+        },
+      };
+      const command = new InvokeModelCommand({
+        modelId,
+        body: JSON.stringify(nativeRequest),
       });
       const response = await client.send(command);
       const output = JSON.parse(response.body.transformToString());
@@ -175,13 +212,243 @@ describe('Bedrock', () => {
       );
 
       const testSpans: ReadableSpan[] = getTestSpans();
-      const converseSpans: ReadableSpan[] = testSpans.filter(
-        (s: ReadableSpan) => {
-          return s.name === 'BedrockRuntime.InvokeModel';
-        }
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
+        return s.name === 'BedrockRuntime.InvokeModel';
+      });
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
+    });
+    it('adds amazon nova model attributes to span', async () => {
+      const modelId = 'amazon.nova-pro-v1:0';
+      const prompt = 'Say this is a test';
+      const nativeRequest: any = {
+        inputText: prompt,
+        inferenceConfig: {
+          max_new_tokens: 10,
+          temperature: 0.8,
+          top_p: 1,
+        },
+      };
+      const command = new InvokeModelCommand({
+        modelId,
+        body: JSON.stringify(nativeRequest),
+      });
+      const response = await client.send(command);
+      const output = JSON.parse(response.body.transformToString());
+      expect(output.output.message.content[0].text).toBe(
+        '\nHello! I am a computer program designed to'
       );
-      expect(converseSpans.length).toBe(1);
-      expect(converseSpans[0].attributes[ATTR_GEN_AI_SYSTEM]).toBeUndefined();
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
+        return s.name === 'BedrockRuntime.InvokeModel';
+      });
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
+    });
+    it('adds anthropic claude model attributes to span', async () => {
+      const modelId = 'anthropic.claude-3-5-sonnet-20240620-v1:0';
+      const prompt = 'Say this is a test';
+      const nativeRequest: any = {
+        anthropic_version: 'bedrock-2023-05-31',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: prompt,
+              },
+            ],
+          },
+        ],
+        max_tokens: 10,
+        temperature: 0.8,
+        top_p: 1,
+      };
+      const command = new InvokeModelCommand({
+        modelId,
+        body: JSON.stringify(nativeRequest),
+      });
+      const response = await client.send(command);
+      const output = JSON.parse(response.body.transformToString());
+      expect(output.completion).toBe(
+        '\nHello! I am a computer program designed to'
+      );
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
+        return s.name === 'BedrockRuntime.InvokeModel';
+      });
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
+    });
+    it('adds cohere command model attributes to span', async () => {
+      const modelId = 'cohere.command-light-text-v14';
+      const prompt = 'Say this is a test Say this is a test Say this';
+      const nativeRequest: any = {
+        prompt: prompt,
+        max_tokens: 10,
+        temperature: 0.8,
+        p: 1,
+      };
+      const command = new InvokeModelCommand({
+        modelId,
+        body: JSON.stringify(nativeRequest),
+      });
+      const response = await client.send(command);
+      const output = JSON.parse(response.body.transformToString());
+      expect(output.generations[0].text).toBe(
+        '\nHello! I am a computer program designed to help you with'
+      );
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
+        return s.name === 'BedrockRuntime.InvokeModel';
+      });
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
+    });
+    it('adds cohere command r model attributes to span', async () => {
+      const modelId = 'cohere.command-r-v1:0';
+      const prompt = 'Say this is a test Say this is a test Say this';
+      const nativeRequest: any = {
+        message: prompt,
+        max_tokens: 10,
+        temperature: 0.8,
+        p: 1,
+      };
+      const command = new InvokeModelCommand({
+        modelId,
+        body: JSON.stringify(nativeRequest),
+      });
+      const response = await client.send(command);
+      const output = JSON.parse(response.body.transformToString());
+      expect(output.text).toBe(
+        '\nHello! I am a computer program designed to help you with'
+      );
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
+        return s.name === 'BedrockRuntime.InvokeModel';
+      });
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
+    });
+    it('adds meta llama model attributes to span', async () => {
+      const modelId = 'meta.llama2-13b-chat-v1';
+      const prompt = 'Say this is a test';
+      const nativeRequest: any = {
+        prompt: prompt,
+        max_gen_len: 10,
+        temperature: 0.8,
+        top_p: 1,
+      };
+      const command = new InvokeModelCommand({
+        modelId,
+        body: JSON.stringify(nativeRequest),
+      });
+      const response = await client.send(command);
+      const output = JSON.parse(response.body.transformToString());
+      expect(output.generation).toBe(
+        '\nHello! I am a computer program designed to'
+      );
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
+        return s.name === 'BedrockRuntime.InvokeModel';
+      });
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
+    });
+    it('adds mistral ai model attributes to span', async () => {
+      const modelId = 'mistral.mistral-7b-instruct-v0:2';
+      const prompt = 'Say this is a test Say this is a test Say this';
+      const nativeRequest: any = {
+        prompt: prompt,
+        max_tokens: 10,
+        temperature: 0.8,
+        top_p: 1,
+      };
+      const command = new InvokeModelCommand({
+        modelId,
+        body: JSON.stringify(nativeRequest),
+      });
+      const response = await client.send(command);
+      const output = JSON.parse(response.body.transformToString());
+      expect(output.outputs[0].text).toBe(
+        '\nHello! I am a computer program designed to help you with'
+      );
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
+        return s.name === 'BedrockRuntime.InvokeModel';
+      });
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
     });
   });
 });

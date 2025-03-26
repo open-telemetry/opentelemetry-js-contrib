@@ -104,7 +104,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     let spanName: string | undefined;
     const spanAttributes: Attributes = {
       [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
-      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT, // TODO: replace with name for invoke model in bedrock runtime
+      // add operation name for InvokeModel API
     };
 
     const modelId = request.commandInput.modelId;
