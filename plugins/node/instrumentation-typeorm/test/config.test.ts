@@ -15,15 +15,15 @@
  */
 import * as assert from 'assert';
 import {
-  SEMATTRS_NET_PEER_PORT,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_DB_SQL_TABLE,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_USER,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_OPERATION,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_NET_PEER_PORT,
+  ATTR_NET_PEER_NAME,
+  ATTR_DB_SQL_TABLE,
+  ATTR_DB_NAME,
+  ATTR_DB_USER,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_OPERATION,
+} from '../src/semconv';
 import {
   ExtendedDatabaseAttribute,
   TypeormInstrumentation,
@@ -63,8 +63,8 @@ describe('TypeormInstrumentationConfig', () => {
     const attributes = typeOrmSpans[0].attributes;
 
     assert.strictEqual(attributes['test'], JSON.stringify(user));
-    assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'save');
-    assert.strictEqual(attributes[SEMATTRS_DB_SYSTEM], defaultOptions.type);
+    assert.strictEqual(attributes[ATTR_DB_OPERATION], 'save');
+    assert.strictEqual(attributes[ATTR_DB_SYSTEM], defaultOptions.type);
     await connection.close();
   });
 
@@ -83,18 +83,15 @@ describe('TypeormInstrumentationConfig', () => {
     );
     assert.notStrictEqual(findAndCountSpan, undefined);
     assert.strictEqual(
-      findAndCountSpan?.attributes[SEMATTRS_DB_OPERATION],
+      findAndCountSpan?.attributes[ATTR_DB_OPERATION],
       'findAndCount'
     );
-    assert.strictEqual(
-      findAndCountSpan?.attributes[SEMATTRS_DB_SQL_TABLE],
-      'user'
-    );
+    assert.strictEqual(findAndCountSpan?.attributes[ATTR_DB_SQL_TABLE], 'user');
 
     const selectSpan = spans.find(s => s.name.indexOf('select') !== -1);
     assert.notStrictEqual(selectSpan, undefined);
-    assert.strictEqual(selectSpan?.attributes[SEMATTRS_DB_OPERATION], 'select');
-    assert.strictEqual(selectSpan?.attributes[SEMATTRS_DB_SQL_TABLE], 'user');
+    assert.strictEqual(selectSpan?.attributes[ATTR_DB_OPERATION], 'select');
+    assert.strictEqual(selectSpan?.attributes[ATTR_DB_SQL_TABLE], 'user');
     await connection.close();
   });
 
@@ -108,9 +105,9 @@ describe('TypeormInstrumentationConfig', () => {
     const spans = getTestSpans();
     assert.strictEqual(spans.length, 1);
     const attributes = spans[0].attributes;
-    assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'findAndCount');
-    assert.strictEqual(attributes[SEMATTRS_DB_SYSTEM], defaultOptions.type);
-    assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'user');
+    assert.strictEqual(attributes[ATTR_DB_OPERATION], 'findAndCount');
+    assert.strictEqual(attributes[ATTR_DB_SYSTEM], defaultOptions.type);
+    assert.strictEqual(attributes[ATTR_DB_SQL_TABLE], 'user');
     await connection.close();
   });
 
@@ -132,26 +129,14 @@ describe('TypeormInstrumentationConfig', () => {
     assert.strictEqual(typeOrmSpans.length, 1);
     assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
     const attributes = typeOrmSpans[0].attributes;
-    assert.strictEqual(attributes[SEMATTRS_DB_SYSTEM], connectionOptions.type);
+    assert.strictEqual(attributes[ATTR_DB_SYSTEM], connectionOptions.type);
+    assert.strictEqual(attributes[ATTR_DB_USER], connectionOptions.username);
+    assert.strictEqual(attributes[ATTR_NET_PEER_NAME], connectionOptions.host);
+    assert.strictEqual(attributes[ATTR_NET_PEER_PORT], connectionOptions.port);
+    assert.strictEqual(attributes[ATTR_DB_NAME], connectionOptions.database);
+    assert.strictEqual(attributes[ATTR_DB_SQL_TABLE], 'user');
     assert.strictEqual(
-      attributes[SEMATTRS_DB_USER],
-      connectionOptions.username
-    );
-    assert.strictEqual(
-      attributes[SEMATTRS_NET_PEER_NAME],
-      connectionOptions.host
-    );
-    assert.strictEqual(
-      attributes[SEMATTRS_NET_PEER_PORT],
-      connectionOptions.port
-    );
-    assert.strictEqual(
-      attributes[SEMATTRS_DB_NAME],
-      connectionOptions.database
-    );
-    assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'user');
-    assert.strictEqual(
-      attributes[SEMATTRS_DB_STATEMENT],
+      attributes[ATTR_DB_STATEMENT],
       'SELECT "user"."id" AS "user_id", "user"."firstName" AS "user_firstName", "user"."lastName" AS "user_lastName" FROM "user" "user" WHERE "user"."id" = :userId AND "user"."firstName" = :firstName AND "user"."lastName" = :lastName'
     );
     assert.strictEqual(

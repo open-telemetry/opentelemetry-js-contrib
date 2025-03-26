@@ -16,14 +16,14 @@
 import * as assert from 'assert';
 import { SpanStatusCode } from '@opentelemetry/api';
 import {
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_SQL_TABLE,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_DB_NAME,
+  ATTR_DB_SQL_TABLE,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_USER,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from '../src/semconv';
 import { TypeormInstrumentation } from '../src';
 import {
   getTestSpans,
@@ -60,26 +60,14 @@ describe('QueryBuilder', () => {
     assert.strictEqual(typeOrmSpans.length, 1);
     assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
     const attributes = typeOrmSpans[0].attributes;
-    assert.strictEqual(attributes[SEMATTRS_DB_SYSTEM], connectionOptions.type);
+    assert.strictEqual(attributes[ATTR_DB_SYSTEM], connectionOptions.type);
+    assert.strictEqual(attributes[ATTR_DB_USER], connectionOptions.username);
+    assert.strictEqual(attributes[ATTR_NET_PEER_NAME], connectionOptions.host);
+    assert.strictEqual(attributes[ATTR_NET_PEER_PORT], connectionOptions.port);
+    assert.strictEqual(attributes[ATTR_DB_NAME], connectionOptions.database);
+    assert.strictEqual(attributes[ATTR_DB_SQL_TABLE], 'user');
     assert.strictEqual(
-      attributes[SEMATTRS_DB_USER],
-      connectionOptions.username
-    );
-    assert.strictEqual(
-      attributes[SEMATTRS_NET_PEER_NAME],
-      connectionOptions.host
-    );
-    assert.strictEqual(
-      attributes[SEMATTRS_NET_PEER_PORT],
-      connectionOptions.port
-    );
-    assert.strictEqual(
-      attributes[SEMATTRS_DB_NAME],
-      connectionOptions.database
-    );
-    assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'user');
-    assert.strictEqual(
-      attributes[SEMATTRS_DB_STATEMENT],
+      attributes[ATTR_DB_STATEMENT],
       'SELECT "user"."id" AS "user_id", "user"."firstName" AS "user_firstName", "user"."lastName" AS "user_lastName" FROM "user" "user" WHERE "user"."id" = :userId'
     );
     await connection.close();

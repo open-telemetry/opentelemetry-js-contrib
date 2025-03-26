@@ -16,11 +16,11 @@
 import * as assert from 'assert';
 import { SpanStatusCode } from '@opentelemetry/api';
 import {
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_OPERATION,
-  SEMATTRS_DB_STATEMENT,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_DB_SYSTEM,
+  ATTR_DB_NAME,
+  ATTR_DB_OPERATION,
+  ATTR_DB_STATEMENT,
+} from '../src/semconv';
 import { TypeormInstrumentation } from '../src';
 import {
   getTestSpans,
@@ -56,10 +56,10 @@ describe('Connection', () => {
       assert.strictEqual(typeOrmSpans.length, 1);
       assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
       const attributes = typeOrmSpans[0].attributes;
-      assert.strictEqual(attributes[SEMATTRS_DB_SYSTEM], options.type);
-      assert.strictEqual(attributes[SEMATTRS_DB_NAME], options.database);
-      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'raw query');
-      assert.strictEqual(attributes[SEMATTRS_DB_STATEMENT], query);
+      assert.strictEqual(attributes[ATTR_DB_SYSTEM], options.type);
+      assert.strictEqual(attributes[ATTR_DB_NAME], options.database);
+      assert.strictEqual(attributes[ATTR_DB_OPERATION], 'raw query');
+      assert.strictEqual(attributes[ATTR_DB_STATEMENT], query);
       await connection.close();
     });
   });

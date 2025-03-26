@@ -26,7 +26,7 @@ const instrumentation = registerInstrumentationTesting(
 
 import { defaultOptions, User } from './utils';
 import * as typeorm from 'typeorm';
-import { SEMATTRS_DB_SQL_TABLE } from '@opentelemetry/semantic-conventions';
+import { ATTR_DB_SQL_TABLE } from '../src/semconv';
 
 describe('Repository', () => {
   beforeEach(() => {
@@ -46,7 +46,7 @@ describe('Repository', () => {
     assert.strictEqual(spans.length, 1);
     const span = spans[0];
     const attributes = span.attributes;
-    assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'user');
-    await connection.close();
+    assert.strictEqual(attributes[ATTR_DB_SQL_TABLE], 'user');
+    await connection.destroy();
   });
 });
