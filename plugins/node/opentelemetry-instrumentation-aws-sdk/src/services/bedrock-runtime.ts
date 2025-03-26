@@ -197,6 +197,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
           spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.p;
         }
         if (requestBody.prompt !== undefined) {
+          // NOTE: We approximate the token count since this value is not directly available in the body
+          // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
+          // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
           spanAttributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS] = Math.ceil(requestBody.prompt.length / 6);
         }
         if (requestBody.stop_sequences !== undefined) {
