@@ -163,6 +163,7 @@ describe('Bedrock', () => {
         max_tokens: 10,
         temperature: 0.8,
         top_p: 1,
+        stop: ['|'],
       };
       const command = new InvokeModelCommand({
         modelId,
@@ -185,6 +186,7 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
         [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
@@ -199,6 +201,7 @@ describe('Bedrock', () => {
           maxTokenCount: 10,
           temperature: 0.8,
           topP: 1,
+          stopSequences: ['|'],
         },
       };
       const command = new InvokeModelCommand({
@@ -222,6 +225,7 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
         [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
@@ -236,6 +240,7 @@ describe('Bedrock', () => {
           max_new_tokens: 10,
           temperature: 0.8,
           top_p: 1,
+          stopSequences: ['|'],
         },
       };
       const command = new InvokeModelCommand({
@@ -259,6 +264,7 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
         [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
@@ -283,6 +289,7 @@ describe('Bedrock', () => {
         max_tokens: 10,
         temperature: 0.8,
         top_p: 1,
+        stop_sequences: ['|'],
       };
       const command = new InvokeModelCommand({
         modelId,
@@ -305,6 +312,7 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
         [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
@@ -318,6 +326,7 @@ describe('Bedrock', () => {
         max_tokens: 10,
         temperature: 0.8,
         p: 1,
+        stop_sequences: ['|'],
       };
       const command = new InvokeModelCommand({
         modelId,
@@ -340,6 +349,7 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
         [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
@@ -353,6 +363,7 @@ describe('Bedrock', () => {
         max_tokens: 10,
         temperature: 0.8,
         p: 1,
+        stop_sequences: ['|'],
       };
       const command = new InvokeModelCommand({
         modelId,
@@ -375,6 +386,7 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
         [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
@@ -423,6 +435,7 @@ describe('Bedrock', () => {
         max_tokens: 10,
         temperature: 0.8,
         top_p: 1,
+        stop: ['|'],
       };
       const command = new InvokeModelCommand({
         modelId,
@@ -445,6 +458,7 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
         [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],

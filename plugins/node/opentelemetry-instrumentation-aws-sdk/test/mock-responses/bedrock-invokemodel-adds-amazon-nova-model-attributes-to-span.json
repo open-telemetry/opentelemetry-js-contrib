@@ -8,7 +8,8 @@
             "inferenceConfig": {
                 "max_new_tokens": 10,
                 "temperature": 0.8,
-                "top_p": 1
+                "top_p": 1,
+                "stopSequences": ["|"]
             }
         },
         "status": 200,

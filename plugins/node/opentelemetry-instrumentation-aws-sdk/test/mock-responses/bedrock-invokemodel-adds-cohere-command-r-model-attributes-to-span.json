@@ -7,7 +7,8 @@
             "message": "Say this is a test Say this is a test Say this",
             "max_tokens": 10,
             "temperature": 0.8,
-            "p": 1
+            "p": 1,
+            "stop_sequences": ["|"]
         },
         "status": 200,
         "response": {

@@ -126,6 +126,10 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
           spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] =
             requestBody.textGenerationConfig.maxTokenCount;
         }
+        if (requestBody.textGenerationConfig?.stopSequences !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] =
+            requestBody.textGenerationConfig.stopSequences;
+        }
       } else if (modelId.includes('amazon.nova')) {
         if (requestBody.inferenceConfig?.temperature !== undefined) {
           spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] = requestBody.inferenceConfig.temperature;
@@ -135,6 +139,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         }
         if (requestBody.inferenceConfig?.max_new_tokens !== undefined) {
           spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.inferenceConfig.max_new_tokens;
+        }
+        if (requestBody.inferenceConfig?.stopSequences !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = requestBody.inferenceConfig.stopSequences;
         }
       } else if (modelId.includes('anthropic.claude')) {
         if (requestBody.max_tokens !== undefined) {
@@ -146,6 +153,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         if (requestBody.top_p !== undefined) {
           spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.top_p;
         }
+        if (requestBody.stop_sequences !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = requestBody.stop_sequences;
+        }
       } else if (modelId.includes('meta.llama')) {
         if (requestBody.max_gen_len !== undefined) {
           spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.max_gen_len;
@@ -156,6 +166,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         if (requestBody.top_p !== undefined) {
           spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.top_p;
         }
+        // request for meta llama models does not contain stop_sequences field
       } else if (modelId.includes('cohere.command-r')) {
         if (requestBody.max_tokens !== undefined) {
           spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.max_tokens;
@@ -172,6 +183,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
           // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
           spanAttributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS] = Math.ceil(requestBody.message.length / 6);
         }
+        if (requestBody.stop_sequences !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = requestBody.stop_sequences;
+        }
       } else if (modelId.includes('cohere.command')) {
         if (requestBody.max_tokens !== undefined) {
           spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.max_tokens;
@@ -185,6 +199,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         if (requestBody.prompt !== undefined) {
           spanAttributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS] = Math.ceil(requestBody.prompt.length / 6);
         }
+        if (requestBody.stop_sequences !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = requestBody.stop_sequences;
+        }
       } else if (modelId.includes('ai21.jamba')) {
         if (requestBody.max_tokens !== undefined) {
           spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.max_tokens;
@@ -194,6 +211,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         }
         if (requestBody.top_p !== undefined) {
           spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.top_p;
+        }
+        if (requestBody.stop !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = requestBody.stop;
         }
       } else if (modelId.includes('mistral')) {
         if (requestBody.prompt !== undefined) {
@@ -210,6 +230,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         }
         if (requestBody.top_p !== undefined) {
           spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.top_p;
+        }
+        if (requestBody.stop !== undefined) {
+          spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = requestBody.stop;
         }
       }
     }

@@ -7,7 +7,8 @@
             "prompt": "Say this is a test Say this is a test Say this",
             "max_tokens": 10,
             "temperature": 0.8,
-            "top_p": 1
+            "top_p": 1,
+            "stop": ["|"]
         },
         "status": 200,
         "response": {
