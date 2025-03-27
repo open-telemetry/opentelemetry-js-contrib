@@ -100,7 +100,7 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
   protected init() {
     const selectQueryBuilder = new InstrumentationNodeModuleFile(
       'typeorm/query-builder/SelectQueryBuilder.js',
-      ['>=0.2.29 <1'],
+      ['>=0.3.0 <1'],
       moduleExports => {
         selectQueryBuilderExecuteMethods.map(method => {
           if (isWrapped(moduleExports.SelectQueryBuilder.prototype?.[method])) {
@@ -121,29 +121,6 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
             this._unwrap(moduleExports.SelectQueryBuilder.prototype, method);
           }
         });
-        return moduleExports;
-      }
-    );
-
-    const connection = new InstrumentationNodeModuleFile(
-      'typeorm/connection/Connection.js',
-      ['>0.2.28 <0.3.0'],
-      moduleExports => {
-        if (isWrapped(moduleExports.Connection.prototype?.[rawQueryFuncName])) {
-          this._unwrap(moduleExports.Connection.prototype, rawQueryFuncName);
-        }
-        this._wrap(
-          moduleExports.Connection.prototype,
-          rawQueryFuncName,
-          this._patchRawQuery()
-        );
-
-        return moduleExports;
-      },
-      moduleExports => {
-        if (isWrapped(moduleExports.Connection.prototype?.[rawQueryFuncName])) {
-          this._unwrap(moduleExports.Connection.prototype, rawQueryFuncName);
-        }
         return moduleExports;
       }
     );
@@ -173,7 +150,7 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
 
     const entityManager = new InstrumentationNodeModuleFile(
       'typeorm/entity-manager/EntityManager.js',
-      ['>=0.2.29 <1'],
+      ['>=0.3.0 <1'],
       moduleExports => {
         entityManagerMethods.map(method => {
           if (isWrapped(moduleExports.EntityManager.prototype?.[method])) {
@@ -200,10 +177,10 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
 
     const module = new InstrumentationNodeModuleDefinition(
       'typeorm',
-      ['>=0.2.29 <1'],
+      ['>=0.3.0 <1'],
       undefined,
       undefined,
-      [selectQueryBuilder, entityManager, connection, dataSource]
+      [selectQueryBuilder, entityManager, dataSource]
     );
     return module;
   }
