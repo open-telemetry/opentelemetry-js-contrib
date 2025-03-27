@@ -1,4 +1,4 @@
-# OpenTelemetry Baggage Log Record Processor for Node.js
+# OpenTelemetry Baggage Log Record Processor
 
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-url]
