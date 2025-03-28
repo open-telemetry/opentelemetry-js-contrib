@@ -14,6 +14,8 @@ components:
     - punya
   detectors/node/opentelemetry-resource-detector-github: []
     # Unmaintained
+  detectors/node/opentelemetry-resource-detector-gitlab:
+    - seiyar81
   detectors/node/opentelemetry-resource-detector-instana:
     - kirrg001
   incubator/opentelemetry-sampler-aws-xray:
