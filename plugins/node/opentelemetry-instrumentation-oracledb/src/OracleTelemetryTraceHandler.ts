@@ -31,16 +31,18 @@ import {
   ATTR_SERVER_ADDRESS,
   SEMATTRS_NET_TRANSPORT,
   SEMATTRS_DB_USER,
-  SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_SYSTEM,
   ATTR_DB_NAMESPACE,
   ATTR_DB_OPERATION_NAME,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_OPERATION_PARAMETER,
 } from './semconv';
 
 import type * as oracleDBTypes from 'oracledb';
 type TraceHandlerBaseCtor = new () => any;
+const OUT_BIND = 3003; // bindinfo direction value.
 
 // Local modules.
 import { AttributeNames } from './constants';
@@ -98,6 +100,19 @@ export function getOracleTelemetryTraceHandlerClass(
         );
       }
 
+      // It returns db.namespace as mentioned in semantic conventions
+      // Ex: ORCL1|PDB1|db_high.adb.oraclecloud.com
+      private _getDBNameSpace(
+        instanceName?: string,
+        pdbName?: string,
+        serviceName?: string
+      ): string | undefined {
+        if (instanceName == null && pdbName == null && serviceName == null) {
+          return undefined;
+        }
+        return `${instanceName ?? ''}|${pdbName ?? ''}|${serviceName ?? ''}`;
+      }
+
       // Returns the connection related Attributes for
       // semantic standards and module custom keys.
       private _getConnectionSpanAttributes(config: SpanConnectionConfig) {
@@ -105,12 +120,11 @@ export function getOracleTelemetryTraceHandlerClass(
           [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
           [SEMATTRS_NET_TRANSPORT]: config.protocol,
           [SEMATTRS_DB_USER]: config.user,
-          [AttributeNames.ORACLE_INSTANCE]: config.instanceName,
-          [AttributeNames.ORACLE_PDBNAME]: config.pdbName,
-          [AttributeNames.ORACLE_POOL_MIN]: config.poolMin,
-          [AttributeNames.ORACLE_POOL_MAX]: config.poolMax,
-          [AttributeNames.ORACLE_POOL_INCR]: config.poolIncrement,
-          [ATTR_DB_NAMESPACE]: config.serviceName,
+          [ATTR_DB_NAMESPACE]: this._getDBNameSpace(
+            config.instanceName,
+            config.pdbName,
+            config.serviceName
+          ),
           [SEMATTRS_DB_CONNECTION_STRING]: config.connectString,
           [ATTR_SERVER_ADDRESS]: config.hostName,
           [ATTR_SERVER_PORT]: config.port,
@@ -126,34 +140,66 @@ export function getOracleTelemetryTraceHandlerClass(
         );
       }
 
-      // Transforms the bind values array into string values.
+      // Transforms the bind values array or bindinfo into an object
+      // 'db.operation.parameter'.
+      // Ex:
+      //   db.operation.parameter.0 = "someval" // for bind by position
+      //   db.operation.parameter.name = "someval" // for bind by name
       // It is only called if config 'enhancedDatabaseReporting' is true.
       private _getValues(values: any) {
-        let convertedValues;
+        const convertedValues: Record<string, string> = {};
+
         try {
           if (Array.isArray(values)) {
-            // bind by position
-            convertedValues = values.map(value => {
-              if (value == null) {
-                return 'null';
-              } else if (
-                value instanceof Buffer ||
-                this._isLobInstance(value)
-              ) {
-                return value.toString();
-              } else if (typeof value === 'object') {
-                return JSON.stringify(value);
-              } else {
-                // number, string, boolean,
-                return value.toString();
+            // Handle indexed (positional) parameters
+            values.forEach((value, index) => {
+              const key = `${ATTR_DB_OPERATION_PARAMETER}.${index}`;
+              const extractedValue = this._extractValue(value);
+              if (extractedValue !== undefined) {
+                convertedValues[key] = extractedValue;
               }
             });
-            return convertedValues;
+          } else if (values && typeof values === 'object') {
+            // Handle named parameters
+            for (const [paramName, value] of Object.entries(values)) {
+              const key = `${ATTR_DB_OPERATION_PARAMETER}.${paramName}`;
+              let inVal: any = value;
+
+              if (inVal && typeof inVal === 'object') {
+                // Check bind info if present.
+                if (inVal.dir === OUT_BIND) {
+                  // outbinds
+                  convertedValues[key] = '';
+                  continue;
+                }
+                if ('val' in inVal) {
+                  inVal = inVal.val;
+                }
+              }
+              const extractedValue = this._extractValue(inVal);
+              if (extractedValue !== undefined) {
+                convertedValues[key] = extractedValue;
+              }
+            }
           }
         } catch (e) {
           diag.error('failed to stringify bind values:', values, e);
         }
         return convertedValues;
+      }
+
+      private _extractValue(value: any): string | undefined {
+        if (value == null) {
+          return 'null';
+        }
+        if (value instanceof Buffer || this._isLobInstance(value)) {
+          return value.toString();
+        }
+        if (typeof value === 'object') {
+          return JSON.stringify(value);
+        }
+        // number, string, boolean,
+        return value.toString();
       }
 
       // Updates the call level attributes in span.
@@ -176,14 +222,14 @@ export function getOracleTelemetryTraceHandlerClass(
             this._instrumentConfig.dbStatementDump ||
             this._instrumentConfig.enhancedDatabaseReporting
           ) {
-            span.setAttribute(SEMATTRS_DB_STATEMENT, callConfig.statement);
+            span.setAttribute(ATTR_DB_STATEMENT, callConfig.statement);
             if (
               this._instrumentConfig.enhancedDatabaseReporting &&
               !roundTrip
             ) {
               const values = this._getValues(callConfig.values);
               if (values) {
-                span.setAttribute(AttributeNames.ORACLE_BIND_VALUES, values);
+                span.setAttributes(values);
               }
             }
           }
@@ -233,13 +279,30 @@ export function getOracleTelemetryTraceHandlerClass(
         }
       }
 
-      // Updates the spanName with suffix, serviceName seperated by delimiter, space
-      // Ex: 'oracledb.Pool.getConnection freepdb'
-      // This function is called when connectLevelConfig has serviceName populated.
+      // Updates the spanName following the format
+      // {FunctionName:[sqlCommand] db.namespace}
+      // Ex: 'oracledb.Pool.getConnection:[SELECT] ORCL1|PDB1|db_high.adb.oraclecloud.com'
+      // This function is called when connectLevelConfig has required paramters populated.
       private _updateSpanName(traceContext: TraceSpanData) {
-        const dbName = traceContext.connectLevelConfig?.serviceName ?? '';
-        traceContext.userContext.span.updateName(
-          `${traceContext.operation}${dbName ? ` ${dbName}` : ''}`
+        const { connectLevelConfig, callLevelConfig, userContext, operation } =
+          traceContext;
+        if (
+          ![
+            SpanNames.EXECUTE,
+            SpanNames.EXECUTE_MANY,
+            SpanNames.EXECUTE_MSG,
+          ].includes(operation as SpanNames)
+        ) {
+          // Ignore for connection establishment functions.
+          return;
+        }
+
+        const { instanceName, pdbName, serviceName } = connectLevelConfig;
+        const dbName = this._getDBNameSpace(instanceName, pdbName, serviceName);
+        const sqlCommand =
+          callLevelConfig?.statement?.split(' ')[0].toUpperCase() || '';
+        userContext.span.updateName(
+          `${operation}:${sqlCommand}${dbName && ` ${dbName}`}`
         );
       }
 

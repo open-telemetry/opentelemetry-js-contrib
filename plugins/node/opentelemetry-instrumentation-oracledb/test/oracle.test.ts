@@ -35,14 +35,9 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { OracleInstrumentation } from '../src';
-import {
-  AttributeNames,
-  SpanNames,
-  DB_SYSTEM_VALUE_ORACLE,
-} from '../src/constants';
+import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from '../src/constants';
 
 import {
-  SEMATTRS_DB_STATEMENT,
   ATTR_SERVER_ADDRESS,
   SEMATTRS_NET_TRANSPORT,
   SEMATTRS_DB_CONNECTION_STRING,
@@ -57,6 +52,8 @@ import {
   ATTR_DB_NAMESPACE,
   ATTR_DB_SYSTEM,
   ATTR_DB_OPERATION_NAME,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_OPERATION_PARAMETER,
 } from '../src/semconv';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -102,8 +99,15 @@ let attributesWithSensitiveDataNoBinds: Record<
   string,
   string | number | string[]
 >;
-// span attributes when enhancedDatabaseReporting is enabled for sql with binds
+// span attributes when enhancedDatabaseReporting is enabled for sql with
+// bind by position.
 let attributesWithSensitiveDataBinds: Record<
+  string,
+  string | number | string[]
+>;
+// span attributes when enhancedDatabaseReporting is enabled for sql with
+// bind by name.
+let attributesWithSensitiveDataBindsByName: Record<
   string,
   string | number | string[]
 >;
@@ -138,9 +142,6 @@ const POOL_ATTRIBUTES = {
   [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
   [SEMATTRS_DB_CONNECTION_STRING]: CONFIG.connectString,
   [SEMATTRS_DB_USER]: CONFIG.user,
-  [AttributeNames.ORACLE_POOL_MIN]: POOL_CONFIG.poolMin,
-  [AttributeNames.ORACLE_POOL_MAX]: POOL_CONFIG.poolMax,
-  [AttributeNames.ORACLE_POOL_INCR]: POOL_CONFIG.poolIncrement,
 };
 
 const CONN_FAILED_ATTRIBUTES = {
@@ -175,6 +176,8 @@ if (process.env.NODE_ORACLEDB_DRIVER_MODE === 'thick') {
   oracledb.initOracleClient(clientOpts); // enable node-oracledb Thick mode
 }
 
+// Updates span attributes for both thick and thin modes.
+// Additionally, adjusts the number of roundtrip spans based on the database version.
 function updateAttrSpanList(connection: oracledb.Connection) {
   serverVersion = connection.oracleServerVersion;
 
@@ -188,14 +191,14 @@ function updateAttrSpanList(connection: oracledb.Connection) {
     attributes = { ...DEFAULT_ATTRIBUTES_THICK };
     numExecSpans = 1;
   }
-  attributes[ATTR_DB_NAMESPACE] = connAttributes[ATTR_DB_NAMESPACE];
+  attributes[ATTR_DB_NAMESPACE] = `||${connection.serviceName}`;
 
   // initialize the span attributes list.
   connAttrList = [];
   poolConnAttrList = [];
   spanNamesList = [];
   failedConnAttrList = [];
-  spanNameSuffix = ` ${attributes[ATTR_DB_NAMESPACE]}`;
+  spanNameSuffix = ` ${connAttributes[ATTR_DB_NAMESPACE]}`;
   if (serverVersion >= VER_23_4) {
     if (oracledb.thin) {
       // for round trips.
@@ -276,10 +279,7 @@ function checkRoundTripSpans(
   // verfiy roundtrip child span or public API span if no roundtrip
   // span is generated.
   for (let index = 0; index < spans.length - 1; index++) {
-    assert.deepStrictEqual(
-      spans[index].name,
-      spanNamesList[index] + spanNameSuffix
-    );
+    assert.deepStrictEqual(spans[index].name, spanNamesList[index]);
     verifySpanData(
       spans[index],
       parentSpan,
@@ -290,11 +290,18 @@ function checkRoundTripSpans(
   }
 }
 
+function getDBNameSpace(instanceName = '', pdbName = '', servicename = '') {
+  return [instanceName, pdbName, servicename].join('|');
+}
+
 // It verifies the spans, its attributes and the parent child relationship.
 function verifySpans(
   parentSpan: Span | null,
   attributesList: Attributes[] = [executeAttributes, executeAttributes],
-  spanNamesList: string[] = [SpanNames.EXECUTE_MSG, SpanNames.EXECUTE],
+  spanNamesList: string[] = [
+    SpanNames.EXECUTE_MSG + ':SELECT' + spanNameSuffix,
+    SpanNames.EXECUTE + ':SELECT' + spanNameSuffix,
+  ],
   eventList: testUtils.TimedEvent[][] = [defaultEvents, defaultEvents],
   statusList: SpanStatus[] = [unsetStatus, unsetStatus]
 ) {
@@ -323,10 +330,7 @@ function verifySpans(
   );
 
   //verify span generated from public API.
-  assert.deepStrictEqual(
-    lastSpan.name,
-    spanNamesList[spanLength - 1] + spanNameSuffix
-  );
+  assert.deepStrictEqual(lastSpan.name, spanNamesList[spanLength - 1]);
   verifySpanData(
     lastSpan as unknown as ReadableSpan,
     parentSpan as unknown as ReadableSpan,
@@ -334,7 +338,6 @@ function verifySpans(
     eventList[spanLength - 1],
     statusList[spanLength - 1]
   );
-  //}
 }
 
 function assertErrorSpan(
@@ -413,17 +416,12 @@ describe('oracledb', () => {
 
   async function doSetup() {
     const extendedConn: any = connection;
+    let dbName;
 
     if (oracledb.thin) {
       connAttributes = { ...DEFAULT_ATTRIBUTES };
     } else {
       connAttributes = { ...DEFAULT_ATTRIBUTES_THICK };
-    }
-    if (connection.instanceName) {
-      connAttributes[AttributeNames.ORACLE_INSTANCE] = connection.instanceName;
-    }
-    if (connection.serviceName) {
-      connAttributes[ATTR_DB_NAMESPACE] = connection.serviceName;
     }
     if (oracledb.thin && extendedConn.hostName) {
       connAttributes[ATTR_SERVER_ADDRESS] = extendedConn.hostName;
@@ -435,10 +433,15 @@ describe('oracledb', () => {
       connAttributes[SEMATTRS_NET_TRANSPORT] = extendedConn.protocol;
     }
     if (connection.dbName) {
-      connAttributes[AttributeNames.ORACLE_PDBNAME] = oracledb.thin
+      dbName = oracledb.thin
         ? connection.dbName.toUpperCase()
         : connection.dbName;
     }
+    connAttributes[ATTR_DB_NAMESPACE] = getDBNameSpace(
+      connection.instanceName,
+      dbName,
+      connection.serviceName
+    );
     poolAttributes = { ...connAttributes, ...POOL_ATTRIBUTES };
 
     executeAttributes = {
@@ -450,19 +453,25 @@ describe('oracledb', () => {
       executeAttributesInternalRoundTripBinds = {
         ...connAttributes,
         [ATTR_DB_OPERATION_NAME]: 'SELECT',
-        [SEMATTRS_DB_STATEMENT]: sqlWithBinds,
+        [ATTR_DB_STATEMENT]: sqlWithBinds,
       };
     }
     attributesWithSensitiveDataNoBinds = {
       ...connAttributes,
       [ATTR_DB_OPERATION_NAME]: 'SELECT',
-      [SEMATTRS_DB_STATEMENT]: sql,
+      [ATTR_DB_STATEMENT]: sql,
     };
     attributesWithSensitiveDataBinds = {
       ...connAttributes,
       [ATTR_DB_OPERATION_NAME]: 'SELECT',
-      [SEMATTRS_DB_STATEMENT]: sqlWithBinds,
-      [AttributeNames.ORACLE_BIND_VALUES]: binds,
+      [ATTR_DB_STATEMENT]: sqlWithBinds,
+      [`${ATTR_DB_OPERATION_PARAMETER}.0`]: '0',
+    };
+    attributesWithSensitiveDataBindsByName = {
+      ...connAttributes,
+      [ATTR_DB_OPERATION_NAME]: 'SELECT',
+      [ATTR_DB_STATEMENT]: sqlWithBindsByName,
+      [`${ATTR_DB_OPERATION_PARAMETER}.name`]: '0',
     };
     await sqlCreateTable(connection, tableName, sqlCreate);
   }
@@ -591,7 +600,7 @@ describe('oracledb', () => {
       // check oracledb.getConnection
       if (poolAlias) {
         parentSpan = spans[1];
-        spanName = SpanNames.CONNECT + spanNameSuffix;
+        spanName = SpanNames.CONNECT;
         assert.deepStrictEqual(parentSpan.name, spanName);
         verifySpanData(
           parentSpan,
@@ -601,7 +610,7 @@ describe('oracledb', () => {
       }
 
       // check pool.getConnection
-      spanName = SpanNames.POOL_CONNECT + spanNameSuffix;
+      spanName = SpanNames.POOL_CONNECT;
       assert.deepStrictEqual(spans[0].name, spanName);
       verifySpanData(spans[0], parentSpan, poolAttributes);
     }
@@ -733,13 +742,10 @@ describe('oracledb', () => {
       };
       const wrongConfig = Object.assign({}, POOL_CONFIG);
       wrongConfig.password = 'null';
-      wrongConfig.poolMin = poolConnFailedAttrs[
-        AttributeNames.ORACLE_POOL_MIN
-      ] = 1;
+      wrongConfig.poolMin = 1;
       instrumentation.disable();
       if (!oracledb.thin) {
         wrongConfig.poolMin = 0;
-        poolConnFailedAttrs[AttributeNames.ORACLE_POOL_MIN] = 0;
       }
       pool = await oracledb.createPool(wrongConfig);
 
@@ -761,14 +767,10 @@ describe('oracledb', () => {
       const wrongConfig = Object.assign({}, POOL_CONFIG);
       wrongConfig.password = 'null';
       wrongConfig.password = 'null';
-      wrongConfig.poolMin = poolConnFailedAttrs[
-        AttributeNames.ORACLE_POOL_MIN
-      ] = 1;
+      wrongConfig.poolMin = 1;
       instrumentation.disable();
       if (!oracledb.thin) {
-        wrongConfig.poolMin = poolConnFailedAttrs[
-          AttributeNames.ORACLE_POOL_MIN
-        ] = 0;
+        wrongConfig.poolMin = 0;
       }
       pool = await oracledb.createPool(wrongConfig);
 
@@ -1001,13 +1003,16 @@ describe('oracledb', () => {
           bindsByName
         );
 
-        // update sql stmt. bindByName values are not dumped.
-        const attrs = { ...attributesWithSensitiveDataNoBinds };
-        attrs[SEMATTRS_DB_STATEMENT] = sqlWithBindsByName;
+        // roundtrip span wont have bind values.
+        const roundtripAttrs = { ...attributesWithSensitiveDataNoBinds };
+        roundtripAttrs[ATTR_DB_STATEMENT] = sqlWithBindsByName;
 
         try {
           assert.ok(resPromise);
-          verifySpans(span, [attrs, attrs]);
+          verifySpans(span, [
+            roundtripAttrs,
+            attributesWithSensitiveDataBindsByName,
+          ]);
         } catch (e: any) {
           assert.ok(false, e.message);
         }
@@ -1029,11 +1034,24 @@ describe('oracledb', () => {
         // update sql stmt, operation.
         const attrs = { ...attributesWithSensitiveDataNoBinds };
         attrs[ATTR_DB_OPERATION_NAME] = 'BEGIN';
-        attrs[SEMATTRS_DB_STATEMENT] = sqlWithOutBinds;
+        attrs[ATTR_DB_STATEMENT] = sqlWithOutBinds;
 
         try {
           assert.ok(resPromise);
-          verifySpans(span, [attrs, attrs]);
+          verifySpans(
+            span,
+            [
+              attrs,
+              {
+                ...attrs,
+                [`${ATTR_DB_OPERATION_PARAMETER}.n`]: '',
+              },
+            ],
+            [
+              SpanNames.EXECUTE_MSG + ':BEGIN' + spanNameSuffix,
+              SpanNames.EXECUTE + ':BEGIN' + spanNameSuffix,
+            ]
+          );
         } catch (e: any) {
           assert.ok(false, e.message);
         }
@@ -1077,32 +1095,34 @@ describe('oracledb', () => {
       const localDateString = `"${date.toISOString()}"`;
       const sql =
         'select to_clob(:1), :2, TO_NUMBER(:3), to_char(:4), :5, :6, :7, :8, :9, :10 from dual';
+      const binds = [
+        'Hello é World',
+        lob,
+        '43',
+        43,
+        date,
+        buf,
+        varchar2List,
+        null,
+        undefined,
+        true,
+      ];
+      const expectedBinds = {
+        [`${ATTR_DB_OPERATION_PARAMETER}.0`]: 'Hello é World',
+        [`${ATTR_DB_OPERATION_PARAMETER}.1`]: '[object Object]',
+        [`${ATTR_DB_OPERATION_PARAMETER}.2`]: '43',
+        [`${ATTR_DB_OPERATION_PARAMETER}.3`]: '43',
+        [`${ATTR_DB_OPERATION_PARAMETER}.4`]: localDateString,
+        [`${ATTR_DB_OPERATION_PARAMETER}.5`]: 'hello',
+        [`${ATTR_DB_OPERATION_PARAMETER}.6`]:
+          '["TEST OBJECT","DATA","from","node-oracledb-instrument"]',
+        [`${ATTR_DB_OPERATION_PARAMETER}.7`]: 'null',
+        [`${ATTR_DB_OPERATION_PARAMETER}.8`]: 'null',
+        [`${ATTR_DB_OPERATION_PARAMETER}.9`]: 'true',
+      };
       await context.with(trace.setSpan(context.active(), span), async () => {
         instrumentation.setConfig({ enhancedDatabaseReporting: true });
-        const binds = [
-          'Hello é World',
-          lob,
-          '43',
-          43,
-          date,
-          buf,
-          varchar2List,
-          null,
-          undefined,
-          true,
-        ];
-        const bindsM = [
-          'Hello é World',
-          '[object Object]',
-          '43',
-          '43',
-          localDateString,
-          'hello',
-          '["TEST OBJECT","DATA","from","node-oracledb-instrument"]',
-          'null',
-          'null',
-          'true',
-        ];
+
         const resPromise = await connection.execute(sql, binds);
         try {
           const attributesWithSensitiveData: Record<
@@ -1111,18 +1131,109 @@ describe('oracledb', () => {
           > = {
             ...connAttributes,
             [ATTR_DB_OPERATION_NAME]: 'SELECT',
-            [SEMATTRS_DB_STATEMENT]: sql,
-            [AttributeNames.ORACLE_BIND_VALUES]: bindsM,
+            [ATTR_DB_STATEMENT]: sql,
+            ...expectedBinds,
           };
+
+          // Attributes for roundtrips do not contain bindvalues.
           const attrs = { ...attributesWithSensitiveDataNoBinds };
-          attrs[SEMATTRS_DB_STATEMENT] = sql;
+          attrs[ATTR_DB_STATEMENT] = sql;
+
+          assert.ok(resPromise);
+
+          // LOBs will cause an additional round trip for define types...
+          verifySpans(
+            span,
+            [attrs, attrs, attributesWithSensitiveData],
+            [
+              SpanNames.EXECUTE_MSG + ':SELECT' + spanNameSuffix,
+              SpanNames.EXECUTE_MSG + ':SELECT' + spanNameSuffix,
+              SpanNames.EXECUTE + ':SELECT' + spanNameSuffix,
+            ]
+          );
+        } catch (e: any) {
+          assert.ok(false, e.message);
+        }
+        span.end();
+        lob.destroy();
+      });
+    });
+
+    it('should intercept connection.execute with bindbyName and enhancedDatabaseReporting = true', async () => {
+      const span = tracer.startSpan('test span');
+      const buf = Buffer.from('hello');
+      instrumentation.disable();
+      const lob = await connection.createLob(oracledb.CLOB);
+
+      // Get an pre-defined object type SYS.ODCIVARCHAR2LIST (a collection of VARCHAR2)
+      const ODCIVarchar2List = await connection.getDbObjectClass(
+        'SYS.ODCIVARCHAR2LIST'
+      );
+      const varchar2List = new ODCIVarchar2List([
+        'TEST OBJECT',
+        'DATA',
+        'from',
+        'node-oracledb-instrument',
+      ]);
+      instrumentation.enable();
+      const date = new Date(1969, 11, 31, 0, 0, 0, 0);
+      const localDateString = `"${date.toISOString()}"`;
+      const sql =
+        'select to_clob(:b1), :b2, TO_NUMBER(:b3), to_char(:b4), :b5, :b6, :b7, :b8, :b9, :b10 from dual';
+      const binds: any = {
+        b1: 'Hello é World',
+        b2: lob,
+        b3: '43',
+        b4: 43,
+        b5: date,
+        b6: buf,
+        b7: varchar2List,
+        b8: null,
+        b9: undefined,
+        b10: true,
+      };
+      const expectedBinds = {
+        [`${ATTR_DB_OPERATION_PARAMETER}.b1`]: 'Hello é World',
+        [`${ATTR_DB_OPERATION_PARAMETER}.b2`]: '[object Object]',
+        [`${ATTR_DB_OPERATION_PARAMETER}.b3`]: '43',
+        [`${ATTR_DB_OPERATION_PARAMETER}.b4`]: '43',
+        [`${ATTR_DB_OPERATION_PARAMETER}.b5`]: localDateString,
+        [`${ATTR_DB_OPERATION_PARAMETER}.b6`]: 'hello',
+        [`${ATTR_DB_OPERATION_PARAMETER}.b7`]:
+          '["TEST OBJECT","DATA","from","node-oracledb-instrument"]',
+        [`${ATTR_DB_OPERATION_PARAMETER}.b8`]: 'null',
+        [`${ATTR_DB_OPERATION_PARAMETER}.b9`]: 'null',
+        [`${ATTR_DB_OPERATION_PARAMETER}.b10`]: 'true',
+      };
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        instrumentation.setConfig({ enhancedDatabaseReporting: true });
+
+        const resPromise = await connection.execute(sql, binds);
+        try {
+          const attributesWithSensitiveData: Record<
+            string,
+            string | number | any[]
+          > = {
+            ...connAttributes,
+            [ATTR_DB_OPERATION_NAME]: 'SELECT',
+            [ATTR_DB_STATEMENT]: sql,
+            ...expectedBinds,
+          };
+
+          // Attributes for roundtrips do not contain bindvalues.
+          const attrs = { ...attributesWithSensitiveDataNoBinds };
+          attrs[ATTR_DB_STATEMENT] = sql;
 
           assert.ok(resPromise);
           // LOBs will cause an additional round trip for define types...
           verifySpans(
             span,
             [attrs, attrs, attributesWithSensitiveData],
-            [SpanNames.EXECUTE_MSG, SpanNames.EXECUTE_MSG, SpanNames.EXECUTE]
+            [
+              SpanNames.EXECUTE_MSG + ':SELECT' + spanNameSuffix,
+              SpanNames.EXECUTE_MSG + ':SELECT' + spanNameSuffix,
+              SpanNames.EXECUTE + ':SELECT' + spanNameSuffix,
+            ]
           );
         } catch (e: any) {
           assert.ok(false, e.message);
@@ -1155,7 +1266,7 @@ describe('oracledb', () => {
         try {
           assert.ok(resPromise);
           const attrs = { ...executeAttributes };
-          attrs[SEMATTRS_DB_STATEMENT] = sqlWithBinds;
+          attrs[ATTR_DB_STATEMENT] = sqlWithBinds;
           verifySpans(span, [attrs, attrs]);
         } catch (e: any) {
           assert.ok(false, e.message);
@@ -1225,7 +1336,10 @@ describe('oracledb', () => {
           verifySpans(
             span,
             [connAttributes, connAttributes],
-            [SpanNames.EXECUTE_MSG, SpanNames.EXECUTE_MANY]
+            [
+              SpanNames.EXECUTE_MSG + ':' + spanNameSuffix,
+              SpanNames.EXECUTE_MANY + ':' + spanNameSuffix,
+            ]
           );
         } catch (e: any) {
           assert.ok(false, e.message);
@@ -1252,7 +1366,10 @@ describe('oracledb', () => {
         verifySpans(
           null,
           [connAttributes, connAttributes],
-          [SpanNames.EXECUTE_MSG, SpanNames.EXECUTE_MANY]
+          [
+            SpanNames.EXECUTE_MSG + ':' + spanNameSuffix,
+            SpanNames.EXECUTE_MANY + ':' + spanNameSuffix,
+          ]
         );
       } catch (e: any) {
         assert.ok(false, e.message);
