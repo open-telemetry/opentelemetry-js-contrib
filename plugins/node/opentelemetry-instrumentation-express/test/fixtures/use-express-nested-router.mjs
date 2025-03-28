@@ -46,6 +46,14 @@ app.use(async function simpleMiddleware(req, res, next) {
 
 const userRouter = express.Router();
 const postsRouter = express.Router();
+postsRouter.use(async function simpleMiddleware2(req, res, next) {
+  // Wait a short delay to ensure this "middleware - ..." span clearly starts
+  // before the "router - ..." span. The test rely on a start-time-based sort
+  // of the produced spans. If they start in the same millisecond, then tests
+  // can be flaky.
+  await promisify(setTimeout)(10);
+  next();
+});
 
 postsRouter.get('/:postId', (req, res, next) => {
   res.json({ hello: 'yes' });
@@ -74,7 +82,7 @@ await new Promise(resolve => {
     res.on('end', data => {
       resolve(data);
     });
-  })
+  });
 });
 
 await new Promise(resolve => server.close(resolve));
