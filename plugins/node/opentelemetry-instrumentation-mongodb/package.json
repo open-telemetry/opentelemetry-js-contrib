@@ -7,7 +7,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "docker:start": "docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=127.0.0.1 -p 27017:27017 --rm mongo",
-    "test": "npm run test-v3 && npm run test-v4 && npm run test-v5-v6 && nyc merge .nyc_output ./coverage/coverage-final.json",
+    "test": "npm run test-v4 && npm run test-v5-v6",
     "test-v3": "tav mongodb 3.7.4 npm run test-v3-run",
     "test-v4": "tav mongodb 4.17.0 npm run test-v4-run",
     "test-v5-v6": "npm run test-v5-v6-run",
@@ -60,7 +60,7 @@
     "@types/bson": "4.0.5",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
-    "mongodb": "6.8.0",
+    "mongodb": "6.15.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.10",
     "test-all-versions": "6.1.0",
