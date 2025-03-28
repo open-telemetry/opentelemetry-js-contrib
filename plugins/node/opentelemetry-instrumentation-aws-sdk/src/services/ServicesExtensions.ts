@@ -67,6 +67,6 @@ export class ServicesExtensions implements ServiceExtension {
     config: AwsSdkInstrumentationConfig
   ) {
     const serviceExtension = this.services.get(response.request.serviceName);
-    serviceExtension?.responseHook?.(response, span, tracer, config);
+    return serviceExtension?.responseHook?.(response, span, tracer, config);
   }
 }
