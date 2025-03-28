@@ -27,6 +27,10 @@ pkg:resource-detector-github:
   - changed-files:
       - any-glob-to-any-file:
           - detectors/node/opentelemetry-resource-detector-github/**
+pkg:resource-detector-gitlab:
+  - changed-files:
+      - any-glob-to-any-file:
+          - detectors/node/opentelemetry-resource-detector-gitlab/**
 pkg:resource-detector-instana:
   - changed-files:
       - any-glob-to-any-file:

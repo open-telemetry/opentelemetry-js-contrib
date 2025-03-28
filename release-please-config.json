@@ -12,6 +12,7 @@
     "detectors/node/opentelemetry-resource-detector-container": {},
     "detectors/node/opentelemetry-resource-detector-gcp": {},
     "detectors/node/opentelemetry-resource-detector-github": {},
+    "detectors/node/opentelemetry-resource-detector-gitlab": {},
     "detectors/node/opentelemetry-resource-detector-instana": {},
     "metapackages/auto-configuration-propagators": {},
     "metapackages/auto-instrumentations-node": {},

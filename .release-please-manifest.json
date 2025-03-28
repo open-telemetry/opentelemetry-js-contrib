@@ -5,6 +5,7 @@
   "detectors/node/opentelemetry-resource-detector-container": "0.7.0",
   "detectors/node/opentelemetry-resource-detector-gcp": "0.34.0",
   "detectors/node/opentelemetry-resource-detector-github": "0.31.0",
+  "detectors/node/opentelemetry-resource-detector-gitlab": "0.1.0",
   "detectors/node/opentelemetry-resource-detector-instana": "0.19.0",
   "metapackages/auto-configuration-propagators": "0.4.0",
   "metapackages/auto-instrumentations-node": "0.57.0",
