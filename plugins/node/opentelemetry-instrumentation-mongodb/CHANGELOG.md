@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.52.0...instrumentation-mongodb-v0.53.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* chore!: Update to 2.x and 0.200.x @opentelemetry/* packages from opentelemetry-js.git per [2.x upgrade guide](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/upgrade-to-2.x.md)
+  * The minimum supported Node.js has been raised to ^18.19.0 || >=20.6.0. This means that support for Node.js 14 and 16 has been dropped.
+  * The minimum supported TypeScript version has been raised to 5.0.4.
+  * The compilation target for transpiled TypeScript has been raised to ES2022 (from ES2017).
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.2 ([#2716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2716)) ([d2a9a20](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2a9a20f1cd8c46c842e18490a4eba36fd71c2da))
+
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.1 to ^0.46.0
+
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.51.0...instrumentation-mongodb-v0.52.0) (2025-02-19)
+
+
+### Features
+
+* **instrumentation-mongodb:** Add `requireParentSpan` config option. ([#2658](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2658)) ([2989b94](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2989b94515ca6f62b628f63eeb881f4b91e391af))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.1 ([#2687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2687)) ([5e20fe2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5e20fe2f450a1be4ea100e8a6d196e33ccff0cda))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.0 to ^0.45.1
+
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.50.0...instrumentation-mongodb-v0.51.0) (2024-12-18)
 
 

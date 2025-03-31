@@ -23,7 +23,7 @@ import { INVALID_SPAN_CONTEXT, context, trace, Span } from '@opentelemetry/api';
 import { diag, DiagLogLevel } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -52,7 +52,7 @@ tracerProvider.register();
 const tracer = tracerProvider.getTracer('default');
 
 // Setup LoggerProvider for "log sending" tests.
-const resource = new Resource({
+const resource = resourceFromAttributes({
   [SEMRESATTRS_SERVICE_NAME]: 'test-instrumentation-pino',
 });
 const loggerProvider = new LoggerProvider({ resource });
@@ -471,6 +471,49 @@ describe('PinoInstrumentation', () => {
         assert.strictEqual(rec.attributes.span_id, undefined);
         assert.strictEqual(rec.attributes.trace_flags, undefined);
       });
+    });
+
+    it('emits log records to a lower level after level change', () => {
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      logger.debug('first msg at debug');
+      logger.trace('first msg at trace'); // Should *not* see this.
+
+      logger.level = 'trace';
+      logger.debug('second msg at debug');
+      logger.trace('second msg at trace'); // *Should* see this.
+
+      assert.strictEqual(logRecords.length, 3);
+      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
+      assert.strictEqual(logRecords[0].severityText, 'debug');
+      assert.strictEqual(logRecords[0].body, 'first msg at debug');
+      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.DEBUG);
+      assert.strictEqual(logRecords[1].severityText, 'debug');
+      assert.strictEqual(logRecords[1].body, 'second msg at debug');
+      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.TRACE);
+      assert.strictEqual(logRecords[2].severityText, 'trace');
+      assert.strictEqual(logRecords[2].body, 'second msg at trace');
+    });
+
+    it('emits log records from child logger at lower level', () => {
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      const child = logger.child({ childField: 42 }, { level: 'trace' });
+
+      logger.debug('logger at debug level');
+      logger.trace('logger at trace level'); // Should *not* see this one.
+      child.debug('child at debug level');
+      child.trace('child at trace level'); // *Should* see this one.
+      assert.strictEqual(logRecords.length, 3);
+      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
+      assert.strictEqual(logRecords[0].severityText, 'debug');
+      assert.strictEqual(logRecords[0].body, 'logger at debug level');
+      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.DEBUG);
+      assert.strictEqual(logRecords[1].severityText, 'debug');
+      assert.strictEqual(logRecords[1].body, 'child at debug level');
+      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.TRACE);
+      assert.strictEqual(logRecords[2].severityText, 'trace');
+      assert.strictEqual(logRecords[2].body, 'child at trace level');
     });
 
     it('does not emit to the Logs SDK if disableLogSending=true', () => {

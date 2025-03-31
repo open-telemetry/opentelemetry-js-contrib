@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/sql-common",
-  "version": "0.40.1",
+  "version": "0.41.0",
   "description": "Utilities for SQL instrumentations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -30,7 +30,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=14"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "bugs": {
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
@@ -40,13 +40,13 @@
     "@opentelemetry/api": "^1.1.0"
   },
   "dependencies": {
-    "@opentelemetry/core": "^1.1.0"
+    "@opentelemetry/core": "^2.0.0"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.1.0",
-    "@types/mocha": "^7.0.2",
+    "@types/mocha": "^10.0.0",
     "@types/node": "18.18.14",
     "nyc": "15.1.0",
-    "typescript": "4.4.4"
+    "typescript": "5.0.4"
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright The OpenTelemetry Authors
+ * Copyright The OpenTelemetry Authors, Aspecto
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export const SemanticResourceAttributes = {
-  /**
-   * Cloud provider-specific native identifier of the monitored cloud resource
-   * (e.g. an ARN on AWS, a fully qualified resource ID on Azure, a full resource
-   * name on GCP)
-   */
-  CLOUD_RESOURCE_ID: 'cloud.resource_id',
-};
+
+import type * as KafkaJSTypes from 'kafkajs';
+
+export const EVENT_LISTENERS_SET = Symbol(
+  'opentelemetry.instrumentation.kafkajs.eventListenersSet'
+);
+
+export interface ConsumerExtended extends KafkaJSTypes.Consumer {
+  [EVENT_LISTENERS_SET]?: boolean; // flag to identify if the event listeners for instrumentation have been set
+}
+
+export interface ProducerExtended extends KafkaJSTypes.Producer {
+  [EVENT_LISTENERS_SET]?: boolean; // flag to identify if the event listeners for instrumentation have been set
+}
