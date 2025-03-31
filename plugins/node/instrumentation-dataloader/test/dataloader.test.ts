@@ -105,7 +105,7 @@ describe('DataloaderInstrumentation', () => {
 
           const [_, loadSpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
-            loadSpan.parentSpanId,
+            loadSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
           );
         }
@@ -126,7 +126,7 @@ describe('DataloaderInstrumentation', () => {
 
           const [_, loadSpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
-            loadSpan.parentSpanId,
+            loadSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
           );
         }
@@ -211,7 +211,7 @@ describe('DataloaderInstrumentation', () => {
       assert.strictEqual(loadSpan.name, 'dataloader.load');
       assert.strictEqual(loadSpan.kind, SpanKind.CLIENT);
       assert.strictEqual(
-        loadSpan.parentSpanId,
+        loadSpan.parentSpanContext?.spanId,
         loadManySpan.spanContext().spanId
       );
     });
@@ -228,7 +228,7 @@ describe('DataloaderInstrumentation', () => {
 
           const [, , loadManySpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
-            loadManySpan.parentSpanId,
+            loadManySpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
           );
         }
@@ -248,7 +248,7 @@ describe('DataloaderInstrumentation', () => {
 
           const [, , loadManySpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
-            loadManySpan.parentSpanId,
+            loadManySpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
           );
         }

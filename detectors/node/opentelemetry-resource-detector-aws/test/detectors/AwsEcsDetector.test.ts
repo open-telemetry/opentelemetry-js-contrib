@@ -17,33 +17,37 @@
 import * as assert from 'assert';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
-import { awsEcsDetector, AwsEcsDetectorSync } from '../../src';
 import {
   assertEmptyResource,
-  assertCloudResource,
   assertContainerResource,
 } from '@opentelemetry/contrib-test-utils';
-import { Resource } from '@opentelemetry/resources';
+import { Resource, detectResources } from '@opentelemetry/resources';
 import {
-  SEMRESATTRS_CLOUD_PLATFORM,
-  SEMRESATTRS_AWS_ECS_CONTAINER_ARN,
-  SEMRESATTRS_AWS_ECS_CLUSTER_ARN,
-  SEMRESATTRS_AWS_ECS_LAUNCHTYPE,
-  SEMRESATTRS_AWS_ECS_TASK_ARN,
-  SEMRESATTRS_AWS_ECS_TASK_REVISION,
-  SEMRESATTRS_AWS_ECS_TASK_FAMILY,
-  SEMRESATTRS_AWS_LOG_GROUP_NAMES,
-  SEMRESATTRS_AWS_LOG_GROUP_ARNS,
-  SEMRESATTRS_AWS_LOG_STREAM_NAMES,
-  SEMRESATTRS_AWS_LOG_STREAM_ARNS,
-  CLOUDPROVIDERVALUES_AWS,
-  CLOUDPLATFORMVALUES_AWS_ECS,
-} from '@opentelemetry/semantic-conventions';
-// Patch until the OpenTelemetry SDK is updated to ship this attribute
-import { SemanticResourceAttributes as AdditionalSemanticResourceAttributes } from '../../src/detectors/SemanticResourceAttributes';
+  ATTR_AWS_ECS_CLUSTER_ARN,
+  ATTR_AWS_ECS_CONTAINER_ARN,
+  ATTR_AWS_ECS_LAUNCHTYPE,
+  ATTR_AWS_ECS_TASK_ARN,
+  ATTR_AWS_ECS_TASK_FAMILY,
+  ATTR_AWS_ECS_TASK_REVISION,
+  ATTR_AWS_LOG_GROUP_ARNS,
+  ATTR_AWS_LOG_GROUP_NAMES,
+  ATTR_AWS_LOG_STREAM_ARNS,
+  ATTR_AWS_LOG_STREAM_NAMES,
+  ATTR_CLOUD_ACCOUNT_ID,
+  ATTR_CLOUD_AVAILABILITY_ZONE,
+  ATTR_CLOUD_PLATFORM,
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_REGION,
+  ATTR_CLOUD_RESOURCE_ID,
+  CLOUD_PROVIDER_VALUE_AWS,
+  CLOUD_PLATFORM_VALUE_AWS_ECS,
+} from '../../src/semconv';
 import { readFileSync } from 'fs';
 import * as os from 'os';
 import { join } from 'path';
+
+import { awsEcsDetector } from '../../src';
+import { AwsEcsDetector } from '../../src/detectors/AwsEcsDetector';
 
 interface EcsResourceAttributes {
   readonly accountId?: string;
@@ -65,70 +69,96 @@ const assertEcsResource = (
   resource: Resource,
   validations: EcsResourceAttributes
 ) => {
-  assertCloudResource(resource, {
-    provider: CLOUDPROVIDERVALUES_AWS,
-    accountId: validations.accountId,
-    region: validations.region,
-    zone: validations.zone,
-  });
   assert.strictEqual(
-    resource.attributes[SEMRESATTRS_CLOUD_PLATFORM],
-    CLOUDPLATFORMVALUES_AWS_ECS
+    resource.attributes[ATTR_CLOUD_PROVIDER],
+    CLOUD_PROVIDER_VALUE_AWS
   );
-  if (validations.containerArn)
+  assert.strictEqual(
+    resource.attributes[ATTR_CLOUD_PLATFORM],
+    CLOUD_PLATFORM_VALUE_AWS_ECS
+  );
+  if (validations.accountId) {
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_AWS_ECS_CONTAINER_ARN],
+      resource.attributes[ATTR_CLOUD_ACCOUNT_ID],
+      validations.accountId
+    );
+  }
+  if (validations.region) {
+    assert.strictEqual(
+      resource.attributes[ATTR_CLOUD_REGION],
+      validations.region
+    );
+  }
+  if (validations.zone) {
+    assert.strictEqual(
+      resource.attributes[ATTR_CLOUD_AVAILABILITY_ZONE],
+      validations.zone
+    );
+  }
+  if (validations.containerArn) {
+    assert.strictEqual(
+      resource.attributes[ATTR_AWS_ECS_CONTAINER_ARN],
       validations.containerArn
     );
-  assert.strictEqual(
-    resource.attributes[AdditionalSemanticResourceAttributes.CLOUD_RESOURCE_ID],
-    validations.containerArn
-  );
-  if (validations.clusterArn)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_AWS_ECS_CLUSTER_ARN],
+      resource.attributes[ATTR_CLOUD_RESOURCE_ID],
+      validations.containerArn
+    );
+  }
+  if (validations.clusterArn) {
+    assert.strictEqual(
+      resource.attributes[ATTR_AWS_ECS_CLUSTER_ARN],
       validations.clusterArn
     );
-  if (validations.launchType)
+  }
+  if (validations.launchType) {
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_AWS_ECS_LAUNCHTYPE],
+      resource.attributes[ATTR_AWS_ECS_LAUNCHTYPE],
       validations.launchType
     );
-  if (validations.taskArn)
+  }
+  if (validations.taskArn) {
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_AWS_ECS_TASK_ARN],
+      resource.attributes[ATTR_AWS_ECS_TASK_ARN],
       validations.taskArn
     );
-  if (validations.taskFamily)
+  }
+  if (validations.taskFamily) {
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_AWS_ECS_TASK_FAMILY],
+      resource.attributes[ATTR_AWS_ECS_TASK_FAMILY],
       validations.taskFamily
     );
-  if (validations.taskRevision)
+  }
+  if (validations.taskRevision) {
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_AWS_ECS_TASK_REVISION],
+      resource.attributes[ATTR_AWS_ECS_TASK_REVISION],
       validations.taskRevision
     );
-  if (validations.logGroupNames)
+  }
+  if (validations.logGroupNames) {
     assert.deepEqual(
-      resource.attributes[SEMRESATTRS_AWS_LOG_GROUP_NAMES],
+      resource.attributes[ATTR_AWS_LOG_GROUP_NAMES],
       validations.logGroupNames
     );
-  if (validations.logGroupArns)
+  }
+  if (validations.logGroupArns) {
     assert.deepEqual(
-      resource.attributes[SEMRESATTRS_AWS_LOG_GROUP_ARNS],
+      resource.attributes[ATTR_AWS_LOG_GROUP_ARNS],
       validations.logGroupArns
     );
-  if (validations.logStreamNames)
+  }
+  if (validations.logStreamNames) {
     assert.deepEqual(
-      resource.attributes[SEMRESATTRS_AWS_LOG_STREAM_NAMES],
+      resource.attributes[ATTR_AWS_LOG_STREAM_NAMES],
       validations.logStreamNames
     );
-  if (validations.logStreamArns)
+  }
+  if (validations.logStreamArns) {
     assert.deepEqual(
-      resource.attributes[SEMRESATTRS_AWS_LOG_STREAM_ARNS],
+      resource.attributes[ATTR_AWS_LOG_STREAM_ARNS],
       validations.logStreamArns
     );
+  }
 };
 
 describe('AwsEcsResourceDetector', () => {
@@ -159,10 +189,10 @@ describe('AwsEcsResourceDetector', () => {
     process.env.ECS_CONTAINER_METADATA_URI = 'ecs_metadata_v3_uri';
     sinon.stub(os, 'hostname').returns(hostNameData);
     readStub = sinon
-      .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
+      .stub(AwsEcsDetector, 'readFileAsync' as any)
       .resolves(noisyCgroupData);
 
-    const resource = await awsEcsDetector.detect();
+    const resource = detectResources({ detectors: [awsEcsDetector] });
     await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(readStub);
@@ -178,10 +208,10 @@ describe('AwsEcsResourceDetector', () => {
     process.env.ECS_CONTAINER_METADATA_URI = 'ecs_metadata_v3_uri';
     sinon.stub(os, 'hostname').returns(hostNameData);
     readStub = sinon
-      .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
+      .stub(AwsEcsDetector, 'readFileAsync' as any)
       .resolves(multiValidCgroupData);
 
-    const resource = await awsEcsDetector.detect();
+    const resource = detectResources({ detectors: [awsEcsDetector] });
     await resource.waitForAsyncAttributes?.();
 
     sinon.assert.calledOnce(readStub);
@@ -196,10 +226,10 @@ describe('AwsEcsResourceDetector', () => {
   it('should empty resource without accessing files', async () => {
     sinon.stub(os, 'hostname').returns(hostNameData);
     readStub = sinon
-      .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
+      .stub(AwsEcsDetector, 'readFileAsync' as any)
       .resolves(correctCgroupData);
 
-    const resource = await awsEcsDetector.detect();
+    const resource = detectResources({ detectors: [awsEcsDetector] });
     await resource.waitForAsyncAttributes?.();
 
     sinon.assert.notCalled(readStub);
@@ -256,10 +286,10 @@ describe('AwsEcsResourceDetector', () => {
         it('should successfully return resource data', async () => {
           sinon.stub(os, 'hostname').returns(hostNameData);
           readStub = sinon
-            .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
+            .stub(AwsEcsDetector, 'readFileAsync' as any)
             .resolves(correctCgroupData);
 
-          const resource = await awsEcsDetector.detect();
+          const resource = detectResources({ detectors: [awsEcsDetector] });
           await resource.waitForAsyncAttributes?.();
 
           sinon.assert.calledOnce(readStub);
@@ -274,10 +304,10 @@ describe('AwsEcsResourceDetector', () => {
         it('should return resource only with hostname attribute without cgroup file', async () => {
           sinon.stub(os, 'hostname').returns(hostNameData);
           readStub = sinon
-            .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
+            .stub(AwsEcsDetector, 'readFileAsync' as any)
             .rejects(errorMsg.fileNotFoundError);
 
-          const resource = await awsEcsDetector.detect();
+          const resource = detectResources({ detectors: [awsEcsDetector] });
           await resource.waitForAsyncAttributes?.();
 
           sinon.assert.calledOnce(readStub);
@@ -291,10 +321,10 @@ describe('AwsEcsResourceDetector', () => {
         it('should return resource only with hostname attribute when cgroup file does not contain valid container ID', async () => {
           sinon.stub(os, 'hostname').returns(hostNameData);
           readStub = sinon
-            .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
+            .stub(AwsEcsDetector, 'readFileAsync' as any)
             .resolves('');
 
-          const resource = await awsEcsDetector.detect();
+          const resource = detectResources({ detectors: [awsEcsDetector] });
           await resource.waitForAsyncAttributes?.();
 
           sinon.assert.calledOnce(readStub);
@@ -308,10 +338,10 @@ describe('AwsEcsResourceDetector', () => {
         it('should return resource only with container ID attribute without hostname', async () => {
           sinon.stub(os, 'hostname').returns('');
           readStub = sinon
-            .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
+            .stub(AwsEcsDetector, 'readFileAsync' as any)
             .resolves(correctCgroupData);
 
-          const resource = await awsEcsDetector.detect();
+          const resource = detectResources({ detectors: [awsEcsDetector] });
           await resource.waitForAsyncAttributes?.();
 
           sinon.assert.calledOnce(readStub);
@@ -325,10 +355,10 @@ describe('AwsEcsResourceDetector', () => {
         it('should return metadata v4 resource attributes when both hostname and container ID are invalid', async () => {
           sinon.stub(os, 'hostname').returns('');
           readStub = sinon
-            .stub(AwsEcsDetectorSync, 'readFileAsync' as any)
+            .stub(AwsEcsDetector, 'readFileAsync' as any)
             .rejects(errorMsg.fileNotFoundError);
 
-          const resource = await awsEcsDetector.detect();
+          const resource = detectResources({ detectors: [awsEcsDetector] });
           await resource.waitForAsyncAttributes?.();
 
           sinon.assert.calledOnce(readStub);
@@ -411,11 +441,11 @@ describe('AwsEcsResourceDetector', () => {
       const error = new Error('ERROR');
 
       beforeEach(() => {
-        sinon.stub(AwsEcsDetectorSync, '_getUrlAsJson' as any).rejects(error);
+        sinon.stub(AwsEcsDetector, '_getUrlAsJson' as any).rejects(error);
       });
 
       it('should return empty resource if when there is an error', async () => {
-        const resource = await awsEcsDetector.detect();
+        const resource = detectResources({ detectors: [awsEcsDetector] });
         await resource.waitForAsyncAttributes?.();
 
         assert.deepStrictEqual(resource.attributes, {});
