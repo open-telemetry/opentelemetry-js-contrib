@@ -61,8 +61,8 @@ const DEFAULT_CONFIG: MongoDBInstrumentationConfig = {
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumentationConfig> {
-  private _connectionsUsage!: UpDownCounter;
-  private _poolName!: string;
+  private declare _connectionsUsage: UpDownCounter;
+  private declare _poolName: string;
 
   constructor(config: MongoDBInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });

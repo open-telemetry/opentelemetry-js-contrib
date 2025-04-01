@@ -30,6 +30,8 @@ components:
     - pichlermarc
     - legendecas
     - blumamir
+  packages/baggage-log-record-processor:
+    - maryliag
   packages/baggage-span-processor:
     - mikegoldsmith
     - jamiedanielson

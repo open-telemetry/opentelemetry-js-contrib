@@ -30,10 +30,9 @@ function runWithRegister(path: string): PromiseWithChild<{
     ['--require', '../build/src/register.js', path],
     {
       cwd: __dirname,
-      timeout: 1500,
+      timeout: 5000,
       killSignal: 'SIGKILL', // SIGTERM is not sufficient to terminate some hangs
       env: Object.assign({}, process.env, {
-        OTEL_NODE_RESOURCE_DETECTORS: 'none',
         OTEL_TRACES_EXPORTER: 'console',
         OTEL_LOG_LEVEL: 'debug',
         // nx (used by lerna run) defaults `FORCE_COLOR=true`, which in

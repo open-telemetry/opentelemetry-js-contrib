@@ -13,14 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  DetectorSync,
-  IResource,
-  Resource,
-  ResourceAttributes,
-  ResourceDetectionConfig,
-} from '@opentelemetry/resources';
 
+import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
 import { SEMRESATTRS_CONTAINER_ID } from '@opentelemetry/semantic-conventions';
 
 import * as fs from 'fs';
@@ -29,7 +23,7 @@ import { context, diag } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import { extractContainerIdFromLine } from './utils';
 
-export class ContainerDetector implements DetectorSync {
+export class ContainerDetector implements ResourceDetector {
   readonly CONTAINER_ID_LENGTH = 64;
   readonly DEFAULT_CGROUP_V1_PATH = '/proc/self/cgroup';
   readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
@@ -43,35 +37,19 @@ export class ContainerDetector implements DetectorSync {
 
   private static readFileAsync = util.promisify(fs.readFile);
 
-  detect(_config?: ResourceDetectionConfig): IResource {
-    const attributes = context.with(suppressTracing(context.active()), () =>
-      this._getAttributes()
-    );
-    return new Resource({}, attributes);
+  detect(): DetectedResource {
+    const attributes = {
+      [SEMRESATTRS_CONTAINER_ID]: this._getContainerIdWithSuppressedTracing(),
+    };
+    return { attributes };
   }
 
-  /**
-   * Attempts to obtain the container ID from the file system. If the
-   * file read is successful it returns a promise containing a {@link ResourceAttributes}
-   * object with the container ID. Returns a promise containing an
-   * empty {@link ResourceAttributes} if the paths do not exist or fail
-   * to read.
-   */
-  async _getAttributes(): Promise<ResourceAttributes> {
-    try {
-      const containerId = await this._getContainerId();
-      return !containerId
-        ? {}
-        : {
-            [SEMRESATTRS_CONTAINER_ID]: containerId,
-          };
-    } catch (e) {
-      diag.debug(
-        'Container Detector did not identify running inside a supported container, no container attributes will be added to resource: ',
-        e
-      );
-      return {};
-    }
+  private async _getContainerIdWithSuppressedTracing(): Promise<
+    string | undefined
+  > {
+    return context.with(suppressTracing(context.active()), () =>
+      this._getContainerId()
+    );
   }
 
   private async _getContainerIdV1(): Promise<string | undefined> {
