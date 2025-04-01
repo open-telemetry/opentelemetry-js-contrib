@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-import {
-  getTestSpans,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-import { AwsInstrumentation } from '../src';
+import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 import { AttributeNames } from '../src/enums';
-registerInstrumentationTesting(new AwsInstrumentation());
+import './load-instrumentation';
 
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as fs from 'fs';

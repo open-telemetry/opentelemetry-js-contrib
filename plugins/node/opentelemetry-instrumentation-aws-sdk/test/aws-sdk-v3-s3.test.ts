@@ -15,17 +15,12 @@
  */
 
 import {
-  AwsInstrumentation,
   AwsSdkRequestHookInformation,
   AwsSdkResponseHookInformation,
 } from '../src';
-import {
-  getTestSpans,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-const instrumentation = registerInstrumentationTesting(
-  new AwsInstrumentation()
-);
+import { getTestSpans } from '@opentelemetry/contrib-test-utils';
+import { instrumentation } from './load-instrumentation';
+
 import {
   PutObjectCommand,
   PutObjectCommandOutput,
