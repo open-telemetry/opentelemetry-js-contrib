@@ -30,6 +30,8 @@ components:
     - pichlermarc
     - legendecas
     - blumamir
+  packages/baggage-log-record-processor:
+    - maryliag
   packages/baggage-span-processor:
     - mikegoldsmith
     - jamiedanielson
@@ -87,6 +89,7 @@ components:
   plugins/node/opentelemetry-instrumentation-express:
     - JamieDanielson
     - pkanal
+    - raphael-theriault-swi
   plugins/node/opentelemetry-instrumentation-fastify: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-generic-pool: []
@@ -104,12 +107,12 @@ components:
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-memcached: []
     # Unmaintained
-  plugins/node/opentelemetry-instrumentation-mongodb: []
-    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-mongodb:
+    - onurtemizkan
   plugins/node/opentelemetry-instrumentation-mysql: []
     # Unmaintained
-  plugins/node/opentelemetry-instrumentation-mysql2: []
-    # Unmaintained
+  plugins/node/opentelemetry-instrumentation-mysql2:
+    - raphael-theriault-swi
   plugins/node/opentelemetry-instrumentation-nestjs-core: []
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-net:

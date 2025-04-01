@@ -310,7 +310,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       );
       assert.strictEqual(span.attributes['db.operation'], expected.op);
       assert.strictEqual(
-        span.parentSpanId,
+        span.parentSpanContext?.spanId,
         expected.parentSpan?.spanContext().spanId
       );
     } catch (e: any) {

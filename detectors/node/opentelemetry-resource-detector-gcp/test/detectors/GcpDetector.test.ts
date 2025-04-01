@@ -31,6 +31,7 @@ import {
   assertContainerResource,
   assertEmptyResource,
 } from '@opentelemetry/contrib-test-utils';
+import { detectResources } from '@opentelemetry/resources';
 
 const HEADERS = {
   [HEADER_NAME.toLowerCase()]: HEADER_VALUE,
@@ -77,15 +78,13 @@ describe('gcpDetector', () => {
         .reply(200, () => 'my-project-id', HEADERS)
         .get(ZONE_PATH)
         .reply(200, () => 'project/zone/my-zone', HEADERS)
-        .get(CLUSTER_NAME_PATH)
-        .reply(404)
         .get(HOSTNAME_PATH)
         .reply(200, () => 'dev.my-project.local', HEADERS);
       const secondaryScope = nock(SECONDARY_HOST_ADDRESS)
         .get(INSTANCE_PATH)
         .reply(200, {}, HEADERS);
 
-      const resource = gcpDetector.detect();
+      const resource = detectResources({ detectors: [gcpDetector] });
       await resource.waitForAsyncAttributes?.();
 
       secondaryScope.done();
@@ -124,7 +123,7 @@ describe('gcpDetector', () => {
         .get(INSTANCE_PATH)
         .reply(200, {}, HEADERS);
 
-      const resource = gcpDetector.detect();
+      const resource = detectResources({ detectors: [gcpDetector] });
       await resource.waitForAsyncAttributes?.();
 
       secondaryScope.done();
@@ -144,6 +143,9 @@ describe('gcpDetector', () => {
     });
 
     it('should return resource and empty data for non-available metadata attributes', async () => {
+      // Set KUBERNETES_SERVICE_HOST to have the implementation call
+      // CLUSTER_NAME_PATH, to be able to test it handling the HTTP 413.
+      process.env.KUBERNETES_SERVICE_HOST = 'my-host';
       const scope = nock(HOST_ADDRESS)
         .get(INSTANCE_PATH)
         .reply(200, {}, HEADERS)
@@ -161,7 +163,7 @@ describe('gcpDetector', () => {
         .get(INSTANCE_PATH)
         .reply(200, {}, HEADERS);
 
-      const resource = gcpDetector.detect();
+      const resource = detectResources({ detectors: [gcpDetector] });
       await resource.waitForAsyncAttributes?.();
 
       secondaryScope.done();
@@ -175,7 +177,7 @@ describe('gcpDetector', () => {
     });
 
     it('returns empty resource if not detected', async () => {
-      const resource = gcpDetector.detect();
+      const resource = detectResources({ detectors: [gcpDetector] });
       await resource.waitForAsyncAttributes?.();
       assertEmptyResource(resource);
     });

@@ -23,7 +23,8 @@
  * otherwise a real request is made and the response is recorded.
  * To re-record all responses, set the NOCK_BACK_MODE environment variable
  * to 'update' - when recording responses, valid AWS credentials for
- * accessing bedrock are also required.
+ * accessing bedrock are also required. To record for new tests while
+ * keeping existing recordings, set NOCK_BACK_MODE to 'record'.
  */
 
 import {
@@ -39,6 +40,7 @@ import {
   ConversationRole,
   InvokeModelCommand,
 } from '@aws-sdk/client-bedrock-runtime';
+import { AwsCredentialIdentity } from '@aws-sdk/types';
 import * as path from 'path';
 import { Definition, back as nockBack } from 'nock';
 
@@ -77,12 +79,16 @@ const sanitizeRecordings = (scopes: Definition[]) => {
 };
 
 describe('Bedrock', () => {
-  const client = new BedrockRuntimeClient({ region });
-
   nockBack.fixtures = path.join(__dirname, 'mock-responses');
-  if (!process.env.NOCK_BACK_MODE) {
-    nockBack.setMode('record');
+  let credentials: AwsCredentialIdentity | undefined;
+  if (nockBack.currentMode === 'dryrun') {
+    credentials = {
+      accessKeyId: 'testing',
+      secretAccessKey: 'testing',
+    };
   }
+
+  const client = new BedrockRuntimeClient({ region, credentials });
 
   let nockDone: () => void;
   beforeEach(async function () {
@@ -150,63 +156,23 @@ describe('Bedrock', () => {
 
   // TODO: Instrument InvokeModel
   describe('InvokeModel', () => {
-    it('adds ai21 jamba model attributes to span', async () => {
-      const modelId = 'ai21.jamba-1-5-large-v1:0';
-      const prompt = 'Say this is a test';
-      const nativeRequest: any = {
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        max_tokens: 10,
-        temperature: 0.8,
-        top_p: 1,
-        stop: ['|'],
-      };
-      const command = new InvokeModelCommand({
-        modelId,
-        body: JSON.stringify(nativeRequest),
-      });
-      const response = await client.send(command);
-      const output = JSON.parse(response.body.transformToString());
-      expect(output.choices[0].message.content).toBe(
-        '\nHello! I am a computer program designed to'
-      );
-
-      const testSpans: ReadableSpan[] = getTestSpans();
-      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
-        return s.name === 'BedrockRuntime.InvokeModel';
-      });
-      expect(invokeModelSpans.length).toBe(1);
-      expect(invokeModelSpans[0].attributes).toMatchObject({
-        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
-        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
-        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
-        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
-        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
-        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
-        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
-        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
-        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
-      });
-    });
-    it('adds amazon titan model attributes to span', async () => {
+    it('does not currently add genai conventions', async () => {
       const modelId = 'amazon.titan-text-express-v1';
-      const prompt = 'Say this is a test';
-      const nativeRequest: any = {
-        inputText: prompt,
-        textGenerationConfig: {
-          maxTokenCount: 10,
-          temperature: 0.8,
-          topP: 1,
-          stopSequences: ['|'],
-        },
+      const inputText = 'Say this is a test';
+      const textGenerationConfig = {
+        maxTokenCount: 10,
+        temperature: 0.8,
+        topP: 1,
+        stopSequences: ['|'],
       };
+      const body: any = {
+        inputText,
+        textGenerationConfig,
+      };
+
       const command = new InvokeModelCommand({
         modelId,
-        body: JSON.stringify(nativeRequest),
+        body: JSON.stringify(body),
       });
       const response = await client.send(command);
       const output = JSON.parse(response.body.transformToString());
