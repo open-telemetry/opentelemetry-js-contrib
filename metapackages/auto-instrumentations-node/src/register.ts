@@ -15,10 +15,7 @@
  */
 import * as opentelemetry from '@opentelemetry/sdk-node';
 import { diag, DiagConsoleLogger } from '@opentelemetry/api';
-import {
-  getStringFromEnv,
-  diagLogLevelFromString,
-} from '@opentelemetry/core';
+import { getStringFromEnv, diagLogLevelFromString } from '@opentelemetry/core';
 import {
   getNodeAutoInstrumentations,
   getResourceDetectorsFromEnv,
