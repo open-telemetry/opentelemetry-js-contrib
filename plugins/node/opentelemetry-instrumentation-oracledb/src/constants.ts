@@ -16,12 +16,6 @@
  * Copyright (c) 2025, Oracle and/or its affiliates.
  * */
 
-// Oracle specific attributes not covered by standard semantic conventions.
-// See: https://github.com/open-telemetry/semantic-conventions/pull/1911
-export enum AttributeNames {
-  ORACLE_IMPLICIT_RELEASE = 'oracle.db.implicit_release',
-}
-
 // Contains span names produced by instrumentation
 // It lists the RPC names (suffix with _MSG like EXECUTE_MSG) and
 // exported oracledb functions (like EXECUTE).

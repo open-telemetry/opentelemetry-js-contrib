@@ -45,7 +45,6 @@ type TraceHandlerBaseCtor = new () => any;
 const OUT_BIND = 3003; // bindinfo direction value.
 
 // Local modules.
-import { AttributeNames } from './constants';
 import { OracleInstrumentationConfig, SpanConnectionConfig } from './types';
 import { TraceSpanData, SpanCallLevelConfig } from './internal-types';
 import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from './constants';
@@ -327,12 +326,6 @@ export function getOracleTelemetryTraceHandlerClass(
             span,
             traceContext.callLevelConfig,
             roundTrip
-          );
-        }
-        if (traceContext.additionalConfig.implicitRelease) {
-          span.setAttribute(
-            AttributeNames.ORACLE_IMPLICIT_RELEASE,
-            traceContext.additionalConfig.implicitRelease
           );
         }
         if (traceContext.error) {
