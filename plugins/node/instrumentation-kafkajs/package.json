@@ -6,7 +6,7 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "mocha --require @opentelemetry/contrib-test-utils 'test/**/*.test.ts'",
+    "test": "nyc mocha --require @opentelemetry/contrib-test-utils 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
@@ -57,7 +57,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.200.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/semantic-conventions": "^1.30.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-kafkajs#readme"
 }

@@ -34,7 +34,7 @@
     "lint:readme": "node ../../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "SKIP_TEST_IF_NODE_OLDER_THAN=18 nyc mocha --require '../../../scripts/skip-test-if.js' --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w"
@@ -49,6 +49,7 @@
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.587.0",
     "@aws-sdk/client-dynamodb": "^3.85.0",
     "@aws-sdk/client-kinesis": "^3.85.0",
     "@aws-sdk/client-lambda": "^3.85.0",

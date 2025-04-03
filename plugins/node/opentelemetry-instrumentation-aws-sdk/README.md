@@ -94,6 +94,7 @@ Specific service logic currently implemented for:
 - [SNS](./doc/sns.md)
 - [Lambda](./doc/lambda.md)
 - DynamoDb
+- Amazon Bedrock Runtime (See the [GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/).)
 
 ## Potential Side Effects
 
