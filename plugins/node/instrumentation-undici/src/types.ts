@@ -22,9 +22,10 @@ export interface UndiciRequest {
   path: string;
   /**
    * Serialized string of headers in the form `name: value\r\n` for v5
-   * Array of strings v6
+   * Array of strings `[key1, value1, key2, value2]`, where values are
+   * `string | string[]` for v6
    */
-  headers: string | string[];
+  headers: string | (string | string[])[];
   /**
    * Helper method to add headers (from v6)
    */
