@@ -1,0 +1,38 @@
+[
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/mistral.mistral-7b-instruct-v0%3A2/invoke",
+        "body": {
+            "prompt": "Say this is a test Say this is a test Say this",
+            "max_tokens": 10,
+            "temperature": 0.8,
+            "top_p": 1,
+            "stop": ["|"]
+        },
+        "status": 200,
+        "response": {
+            "outputs": [
+                {
+                  "text": "\nHello! I am a computer program designed to help you with",
+                  "stop_reason": "max_tokens"
+                }
+            ]
+        },
+        "rawHeaders": [
+            "Date",
+            "Tue, 25 Mar 2025 23:50:27 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "68",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "e452f9eb-3cec-4a5f-aa32-768ce8ac81f3",
+            "x-amzn-ErrorType",
+            "UnrecognizedClientException:http://internal.amazon.com/coral/com.amazon.coral.service/"
+        ],
+        "responseIsBinary": false
+    }
+]
