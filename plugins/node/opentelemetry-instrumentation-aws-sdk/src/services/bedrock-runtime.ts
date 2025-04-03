@@ -205,19 +205,6 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         if (requestBody.stop_sequences !== undefined) {
           spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = requestBody.stop_sequences;
         }
-      } else if (modelId.includes('ai21.jamba')) {
-        if (requestBody.max_tokens !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestBody.max_tokens;
-        }
-        if (requestBody.temperature !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] = requestBody.temperature;
-        }
-        if (requestBody.top_p !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.top_p;
-        }
-        if (requestBody.stop !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = requestBody.stop;
-        }
       } else if (modelId.includes('mistral')) {
         if (requestBody.prompt !== undefined) {
           // NOTE: We approximate the token count since this value is not directly available in the body
@@ -364,18 +351,6 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         if (responseBody.generations?.[0]?.finish_reason !== undefined) {
           span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
             responseBody.generations[0].finish_reason,
-          ]);
-        }
-      } else if (currentModelId.includes('ai21.jamba')) {
-        if (responseBody.usage?.prompt_tokens !== undefined) {
-          span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, responseBody.usage.prompt_tokens);
-        }
-        if (responseBody.usage?.completion_tokens !== undefined) {
-          span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, responseBody.usage.completion_tokens);
-        }
-        if (responseBody.choices?.[0]?.finish_reason !== undefined) {
-          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
-            responseBody.choices[0].finish_reason,
           ]);
         }
       } else if (currentModelId.includes('mistral')) {
