@@ -7,7 +7,7 @@ This module provides automatic instrumentation for the [`typeorm`](https://www.n
 
 If total installation size is not constrained, it is recommended to use [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+Compatible with OpenTelemetry JS API `^1.3.0` and SDK `2.0+`.
 
 ## Installation
 
