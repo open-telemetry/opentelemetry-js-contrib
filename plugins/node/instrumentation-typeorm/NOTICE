@@ -8,3 +8,5 @@ The library contains the following changes compared to the original:
 * Removed parsing of db operation from raw queries.
 * Changed db.database.parameters to db.typeorm.parameters.
 * Updated to OpenTelemetry semantic conventions 1.32.0.
+
+Refer to the changelog for any future changes.

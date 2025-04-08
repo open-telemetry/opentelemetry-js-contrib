@@ -57,8 +57,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.200.0",
-    "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/semantic-conventions": "^1.30.0"
+    "@opentelemetry/core": "^2.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-typeorm#readme"
 }
