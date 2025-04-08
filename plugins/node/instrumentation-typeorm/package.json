@@ -25,7 +25,6 @@
     "instrumentation",
     "nodejs",
     "opentelemetry",
-    "profiling",
     "tracing"
   ],
   "author": "OpenTelemetry Authors",
