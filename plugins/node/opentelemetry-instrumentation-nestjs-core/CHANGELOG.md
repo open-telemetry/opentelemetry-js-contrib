@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.45.0...instrumentation-nestjs-core-v0.46.0) (2025-04-08)
+
+
+### Features
+
+* **instrumentation-nestjs-core:** add support for NestJS 11 ([#2685](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2685)) ([67e37b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/67e37b78ab46273e937fb959b6c8cdcf9e16c8fb))
+
 ## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.44.1...instrumentation-nestjs-core-v0.45.0) (2025-03-18)
 
 
