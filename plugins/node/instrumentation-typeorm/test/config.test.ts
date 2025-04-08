@@ -55,7 +55,7 @@ describe('TypeormInstrumentationConfig', () => {
     instrumentation.enable();
 
     const connection = await typeorm.createConnection(defaultOptions);
-    const user = new User(1, 'aspecto', 'io');
+    const user = new User(1, 'opentelemetry', 'io');
     await connection.manager.save(user);
     const typeOrmSpans = getTestSpans();
     assert.strictEqual(typeOrmSpans.length, 1);
@@ -64,7 +64,7 @@ describe('TypeormInstrumentationConfig', () => {
     assert.strictEqual(attributes['test'], JSON.stringify(user));
     assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'save');
     assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], defaultOptions.type);
-    await connection.close();
+    await connection.destroy();
   });
 
   it('enableInternalInstrumentation:true', async () => {
@@ -97,7 +97,7 @@ describe('TypeormInstrumentationConfig', () => {
       'select'
     );
     assert.strictEqual(selectSpan?.attributes[ATTR_DB_COLLECTION_NAME], 'user');
-    await connection.close();
+    await connection.destroy();
   });
 
   it('enableInternalInstrumentation:false', async () => {
@@ -113,7 +113,7 @@ describe('TypeormInstrumentationConfig', () => {
     assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'findAndCount');
     assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], defaultOptions.type);
     assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
-    await connection.close();
+    await connection.destroy();
   });
 
   it('enhancedDatabaseReporting:true', async () => {
@@ -150,6 +150,6 @@ describe('TypeormInstrumentationConfig', () => {
       attributes[ExtendedDatabaseAttribute.DB_STATEMENT_PARAMETERS],
       JSON.stringify({ userId: '1', firstName: 'bob', lastName: 'dow' })
     );
-    await connection.close();
+    await connection.destroy();
   });
 });

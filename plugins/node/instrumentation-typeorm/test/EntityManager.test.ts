@@ -49,7 +49,7 @@ describe('EntityManager', () => {
     it('save using connection.manager', async () => {
       const options = defaultOptions;
       const connection = await typeorm.createConnection(defaultOptions);
-      const user = new User(1, 'aspecto', 'io');
+      const user = new User(1, 'opentelemetry', 'io');
       await connection.manager.save(user);
       const typeOrmSpans = getTestSpans();
 
@@ -64,14 +64,14 @@ describe('EntityManager', () => {
         attributes[ATTR_DB_QUERY_TEXT],
         JSON.stringify({ targetOrEntity: user })
       );
-      await connection.close();
+      await connection.destroy();
     });
 
     it('save', async () => {
       const options = defaultOptions;
       const connection = await typeorm.createConnection(defaultOptions);
       const manager = connection.createEntityManager();
-      const user = new User(1, 'aspecto', 'io');
+      const user = new User(1, 'opentelemetry', 'io');
       await manager.save(user);
       const typeOrmSpans = getTestSpans();
 
@@ -86,7 +86,7 @@ describe('EntityManager', () => {
         attributes[ATTR_DB_QUERY_TEXT],
         JSON.stringify({ targetOrEntity: user })
       );
-      await connection.close();
+      await connection.destroy();
     });
 
     it('remove', async () => {
@@ -94,7 +94,7 @@ describe('EntityManager', () => {
       const connection = await typeorm.createConnection(defaultOptions);
       const manager = connection.createEntityManager();
 
-      const user = new User(56, 'aspecto', 'io');
+      const user = new User(56, 'opentelemetry', 'io');
       await manager.save(user);
       await manager.remove(user);
       const typeOrmSpans = getTestSpans();
@@ -109,17 +109,21 @@ describe('EntityManager', () => {
       assert.strictEqual(
         attributes[ATTR_DB_QUERY_TEXT],
         JSON.stringify({
-          targetOrEntity: { id: 56, firstName: 'aspecto', lastName: 'io' },
+          targetOrEntity: {
+            id: 56,
+            firstName: 'opentelemetry',
+            lastName: 'io',
+          },
         })
       );
-      await connection.close();
+      await connection.destroy();
     });
 
     it('update', async () => {
       const options = defaultOptions;
       const connection = await typeorm.createConnection(defaultOptions);
       const manager = connection.createEntityManager();
-      const user = new User(56, 'aspecto', 'io');
+      const user = new User(56, 'opentelemetry', 'io');
       await manager.save(user);
       const partialEntity = { lastName: '.io' };
       await manager.update(User, 56, partialEntity);
@@ -136,7 +140,7 @@ describe('EntityManager', () => {
         attributes[ATTR_DB_QUERY_TEXT],
         JSON.stringify({ target: 'User', criteria: 56, partialEntity })
       );
-      await connection.close();
+      await connection.destroy();
     });
 
     it('Sets failure status when function throws', async () => {
@@ -153,7 +157,7 @@ describe('EntityManager', () => {
         typeOrmSpans[0].status.message,
         'No metadata for "[object Object]" was found.'
       );
-      await connection.close();
+      await connection.destroy();
     });
   });
 
@@ -174,7 +178,7 @@ describe('EntityManager', () => {
       const manager1 = sqlite1.createEntityManager();
       const manager2 = sqlite2.createEntityManager();
 
-      const user = new User(1, 'aspecto', 'io');
+      const user = new User(1, 'opentelemetry', 'io');
       await manager1.save(user);
       await manager2.remove(user);
 
@@ -216,8 +220,8 @@ describe('EntityManager', () => {
         sqlite2Span.attributes[ATTR_DB_COLLECTION_NAME],
         'user'
       );
-      await sqlite1.close();
-      await sqlite2.close();
+      await sqlite1.destroy();
+      await sqlite2.destroy();
     });
   });
 });

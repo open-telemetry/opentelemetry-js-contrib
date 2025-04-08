@@ -60,7 +60,7 @@ describe('Connection', () => {
       assert.strictEqual(attributes[ATTR_DB_NAMESPACE], options.database);
       assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'raw query');
       assert.strictEqual(attributes[ATTR_DB_QUERY_TEXT], query);
-      await connection.close();
+      await connection.destroy();
     });
   });
 });

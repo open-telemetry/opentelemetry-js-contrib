@@ -71,6 +71,6 @@ describe('QueryBuilder', () => {
       attributes[ATTR_DB_QUERY_TEXT],
       'SELECT "user"."id" AS "user_id", "user"."firstName" AS "user_firstName", "user"."lastName" AS "user_lastName" FROM "user" "user" WHERE "user"."id" = :userId'
     );
-    await connection.close();
+    await connection.destroy();
   });
 });
