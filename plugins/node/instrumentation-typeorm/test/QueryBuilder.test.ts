@@ -16,13 +16,12 @@
 import * as assert from 'assert';
 import { SpanStatusCode } from '@opentelemetry/api';
 import {
-  ATTR_DB_NAME,
-  ATTR_DB_SQL_TABLE,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
 } from '../src/semconv';
 import { TypeormInstrumentation } from '../src';
 import {
@@ -60,14 +59,16 @@ describe('QueryBuilder', () => {
     assert.strictEqual(typeOrmSpans.length, 1);
     assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
     const attributes = typeOrmSpans[0].attributes;
-    assert.strictEqual(attributes[ATTR_DB_SYSTEM], connectionOptions.type);
-    assert.strictEqual(attributes[ATTR_DB_USER], connectionOptions.username);
-    assert.strictEqual(attributes[ATTR_NET_PEER_NAME], connectionOptions.host);
-    assert.strictEqual(attributes[ATTR_NET_PEER_PORT], connectionOptions.port);
-    assert.strictEqual(attributes[ATTR_DB_NAME], connectionOptions.database);
-    assert.strictEqual(attributes[ATTR_DB_SQL_TABLE], 'user');
+    assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], connectionOptions.type);
+    assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], connectionOptions.host);
+    assert.strictEqual(attributes[ATTR_SERVER_PORT], connectionOptions.port);
     assert.strictEqual(
-      attributes[ATTR_DB_STATEMENT],
+      attributes[ATTR_DB_NAMESPACE],
+      connectionOptions.database
+    );
+    assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
+    assert.strictEqual(
+      attributes[ATTR_DB_QUERY_TEXT],
       'SELECT "user"."id" AS "user_id", "user"."firstName" AS "user_firstName", "user"."lastName" AS "user_lastName" FROM "user" "user" WHERE "user"."id" = :userId'
     );
     await connection.close();

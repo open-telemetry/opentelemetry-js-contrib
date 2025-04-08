@@ -16,11 +16,11 @@
 import * as assert from 'assert';
 import { SpanStatusCode } from '@opentelemetry/api';
 import {
-  ATTR_DB_SQL_TABLE,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_NAME,
-  ATTR_DB_OPERATION,
-  ATTR_DB_STATEMENT,
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
 } from '../src/semconv';
 import { TypeormInstrumentation } from '../src';
 import {
@@ -56,12 +56,12 @@ describe('EntityManager', () => {
       assert.strictEqual(typeOrmSpans.length, 1);
       assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
       const attributes = typeOrmSpans[0].attributes;
-      assert.strictEqual(attributes[ATTR_DB_SQL_TABLE], 'user');
-      assert.strictEqual(attributes[ATTR_DB_SYSTEM], options.type);
-      assert.strictEqual(attributes[ATTR_DB_NAME], options.database);
-      assert.strictEqual(attributes[ATTR_DB_OPERATION], 'save');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
+      assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], options.type);
+      assert.strictEqual(attributes[ATTR_DB_NAMESPACE], options.database);
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'save');
       assert.strictEqual(
-        attributes[ATTR_DB_STATEMENT],
+        attributes[ATTR_DB_QUERY_TEXT],
         JSON.stringify({ targetOrEntity: user })
       );
       await connection.close();
@@ -78,12 +78,12 @@ describe('EntityManager', () => {
       assert.strictEqual(typeOrmSpans.length, 1);
       assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
       const attributes = typeOrmSpans[0].attributes;
-      assert.strictEqual(attributes[ATTR_DB_SQL_TABLE], 'user');
-      assert.strictEqual(attributes[ATTR_DB_SYSTEM], options.type);
-      assert.strictEqual(attributes[ATTR_DB_NAME], options.database);
-      assert.strictEqual(attributes[ATTR_DB_OPERATION], 'save');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
+      assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], options.type);
+      assert.strictEqual(attributes[ATTR_DB_NAMESPACE], options.database);
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'save');
       assert.strictEqual(
-        attributes[ATTR_DB_STATEMENT],
+        attributes[ATTR_DB_QUERY_TEXT],
         JSON.stringify({ targetOrEntity: user })
       );
       await connection.close();
@@ -102,12 +102,12 @@ describe('EntityManager', () => {
       assert.strictEqual(typeOrmSpans.length, 2);
       assert.strictEqual(typeOrmSpans[1].status.code, SpanStatusCode.UNSET);
       const attributes = typeOrmSpans[1].attributes;
-      assert.strictEqual(attributes[ATTR_DB_SQL_TABLE], 'user');
-      assert.strictEqual(attributes[ATTR_DB_SYSTEM], options.type);
-      assert.strictEqual(attributes[ATTR_DB_NAME], options.database);
-      assert.strictEqual(attributes[ATTR_DB_OPERATION], 'remove');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
+      assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], options.type);
+      assert.strictEqual(attributes[ATTR_DB_NAMESPACE], options.database);
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'remove');
       assert.strictEqual(
-        attributes[ATTR_DB_STATEMENT],
+        attributes[ATTR_DB_QUERY_TEXT],
         JSON.stringify({
           targetOrEntity: { id: 56, firstName: 'aspecto', lastName: 'io' },
         })
@@ -128,12 +128,12 @@ describe('EntityManager', () => {
       assert.strictEqual(typeOrmSpans.length, 2);
       assert.strictEqual(typeOrmSpans[1].status.code, SpanStatusCode.UNSET);
       const attributes = typeOrmSpans[1].attributes;
-      assert.strictEqual(attributes[ATTR_DB_SQL_TABLE], 'user');
-      assert.strictEqual(attributes[ATTR_DB_SYSTEM], options.type);
-      assert.strictEqual(attributes[ATTR_DB_NAME], options.database);
-      assert.strictEqual(attributes[ATTR_DB_OPERATION], 'update');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
+      assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], options.type);
+      assert.strictEqual(attributes[ATTR_DB_NAMESPACE], options.database);
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'update');
       assert.strictEqual(
-        attributes[ATTR_DB_STATEMENT],
+        attributes[ATTR_DB_QUERY_TEXT],
         JSON.stringify({ target: 'User', criteria: 56, partialEntity })
       );
       await connection.close();
@@ -184,23 +184,38 @@ describe('EntityManager', () => {
       const sqlite2Span = spans[1];
 
       assert.strictEqual(
-        sqlite1Span.attributes[ATTR_DB_SYSTEM],
+        sqlite1Span.attributes[ATTR_DB_SYSTEM_NAME],
         defaultOptions.type
       );
       assert.strictEqual(
-        sqlite1Span.attributes[ATTR_DB_NAME],
+        sqlite1Span.attributes[ATTR_DB_NAMESPACE],
         defaultOptions.database
       );
-      assert.strictEqual(sqlite1Span.attributes[ATTR_DB_OPERATION], 'save');
-      assert.strictEqual(sqlite1Span.attributes[ATTR_DB_SQL_TABLE], 'user');
-
-      assert.strictEqual(sqlite2Span.attributes[ATTR_DB_SYSTEM], options2.type);
       assert.strictEqual(
-        sqlite2Span.attributes[ATTR_DB_NAME],
+        sqlite1Span.attributes[ATTR_DB_OPERATION_NAME],
+        'save'
+      );
+      assert.strictEqual(
+        sqlite1Span.attributes[ATTR_DB_COLLECTION_NAME],
+        'user'
+      );
+
+      assert.strictEqual(
+        sqlite2Span.attributes[ATTR_DB_SYSTEM_NAME],
+        options2.type
+      );
+      assert.strictEqual(
+        sqlite2Span.attributes[ATTR_DB_NAMESPACE],
         options2.database
       );
-      assert.strictEqual(sqlite2Span.attributes[ATTR_DB_OPERATION], 'remove');
-      assert.strictEqual(sqlite2Span.attributes[ATTR_DB_SQL_TABLE], 'user');
+      assert.strictEqual(
+        sqlite2Span.attributes[ATTR_DB_OPERATION_NAME],
+        'remove'
+      );
+      assert.strictEqual(
+        sqlite2Span.attributes[ATTR_DB_COLLECTION_NAME],
+        'user'
+      );
       await sqlite1.close();
       await sqlite2.close();
     });

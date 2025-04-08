@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-export const ATTR_DB_NAME = 'db.name' as const;
-export const ATTR_DB_OPERATION = 'db.operation' as const;
-export const ATTR_DB_SQL_TABLE = 'db.sql.table' as const;
-export const ATTR_DB_STATEMENT = 'db.statement' as const;
-export const ATTR_DB_SYSTEM = 'db.system' as const;
-export const ATTR_DB_USER = 'db.user' as const;
-export const ATTR_NET_PEER_NAME = 'net.peer.name' as const;
-export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
+export const ATTR_DB_NAMESPACE = 'db.namespace' as const;
+export const ATTR_DB_COLLECTION_NAME = 'db.collection.name' as const;
+export const ATTR_DB_OPERATION_NAME = 'db.operation.name' as const;
+export const ATTR_DB_QUERY_TEXT = 'db.query.text' as const;
+export const ATTR_DB_SYSTEM_NAME = 'db.system.name' as const;
+export const ATTR_SERVER_ADDRESS = 'server.address' as const;
+export const ATTR_SERVER_PORT = 'server.port' as const;

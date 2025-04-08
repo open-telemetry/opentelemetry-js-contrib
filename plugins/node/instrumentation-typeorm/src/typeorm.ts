@@ -22,14 +22,13 @@ import {
 } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import {
-  ATTR_DB_NAME,
-  ATTR_DB_OPERATION,
-  ATTR_DB_SQL_TABLE,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
 } from './semconv';
 import {
   ExtendedDatabaseAttribute,
@@ -195,26 +194,25 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
         }
         const connectionOptions = this?.connection?.options ?? {};
         const attributes: Record<string, any> = {
-          [ATTR_DB_SYSTEM]: connectionOptions.type,
-          [ATTR_DB_USER]: connectionOptions.username,
-          [ATTR_NET_PEER_NAME]: connectionOptions.host,
-          [ATTR_NET_PEER_PORT]: connectionOptions.port,
-          [ATTR_DB_NAME]: connectionOptions.database,
-          [ATTR_DB_OPERATION]: opName,
-          [ATTR_DB_STATEMENT]: JSON.stringify(buildStatement(original, args)),
+          [ATTR_DB_SYSTEM_NAME]: connectionOptions.type,
+          [ATTR_SERVER_ADDRESS]: connectionOptions.host,
+          [ATTR_SERVER_PORT]: connectionOptions.port,
+          [ATTR_DB_NAMESPACE]: connectionOptions.database,
+          [ATTR_DB_OPERATION_NAME]: opName,
+          [ATTR_DB_QUERY_TEXT]: JSON.stringify(buildStatement(original, args)),
         };
 
         //ignore EntityMetadataNotFoundError
         try {
           if (this.metadata) {
-            attributes[ATTR_DB_SQL_TABLE] = this.metadata.tableName;
+            attributes[ATTR_DB_COLLECTION_NAME] = this.metadata.tableName;
           } else {
             const entity = args[0];
             const name =
               typeof entity === 'object' ? entity?.constructor?.name : entity;
             const metadata = this.connection.getMetadata(name);
             if (metadata?.tableName) {
-              attributes[ATTR_DB_SQL_TABLE] = metadata.tableName;
+              attributes[ATTR_DB_COLLECTION_NAME] = metadata.tableName;
             }
           }
         } catch {
@@ -266,14 +264,13 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const connectionOptions: any = this.connection?.options;
         const attributes: Record<string, any> = {
-          [ATTR_DB_SYSTEM]: connectionOptions.type,
-          [ATTR_DB_USER]: connectionOptions.username,
-          [ATTR_NET_PEER_NAME]: connectionOptions.host,
-          [ATTR_NET_PEER_PORT]: connectionOptions.port,
-          [ATTR_DB_NAME]: connectionOptions.database,
-          [ATTR_DB_OPERATION]: operation,
-          [ATTR_DB_STATEMENT]: sql,
-          [ATTR_DB_SQL_TABLE]: mainTableName,
+          [ATTR_DB_SYSTEM_NAME]: connectionOptions.type,
+          [ATTR_SERVER_ADDRESS]: connectionOptions.host,
+          [ATTR_SERVER_PORT]: connectionOptions.port,
+          [ATTR_DB_NAMESPACE]: connectionOptions.database,
+          [ATTR_DB_OPERATION_NAME]: operation,
+          [ATTR_DB_QUERY_TEXT]: sql,
+          [ATTR_DB_COLLECTION_NAME]: mainTableName,
         };
         if (self.getConfig().enhancedDatabaseReporting) {
           try {
@@ -323,13 +320,12 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const connectionOptions: any = this.options;
         const attributes = {
-          [ATTR_DB_SYSTEM]: connectionOptions.type,
-          [ATTR_DB_USER]: connectionOptions.username,
-          [ATTR_NET_PEER_NAME]: connectionOptions.host,
-          [ATTR_NET_PEER_PORT]: connectionOptions.port,
-          [ATTR_DB_NAME]: connectionOptions.database,
-          [ATTR_DB_OPERATION]: operation,
-          [ATTR_DB_STATEMENT]: sql,
+          [ATTR_DB_SYSTEM_NAME]: connectionOptions.type,
+          [ATTR_SERVER_ADDRESS]: connectionOptions.host,
+          [ATTR_SERVER_PORT]: connectionOptions.port,
+          [ATTR_DB_NAMESPACE]: connectionOptions.database,
+          [ATTR_DB_OPERATION_NAME]: operation,
+          [ATTR_DB_QUERY_TEXT]: sql,
         };
 
         const span: Span = self.tracer.startSpan(`TypeORM ${operation}`, {

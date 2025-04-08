@@ -15,14 +15,13 @@
  */
 import * as assert from 'assert';
 import {
-  ATTR_NET_PEER_PORT,
-  ATTR_NET_PEER_NAME,
-  ATTR_DB_SQL_TABLE,
-  ATTR_DB_NAME,
-  ATTR_DB_USER,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_OPERATION,
+  ATTR_SERVER_PORT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_DB_OPERATION_NAME,
 } from '../src/semconv';
 import {
   ExtendedDatabaseAttribute,
@@ -63,8 +62,8 @@ describe('TypeormInstrumentationConfig', () => {
     const attributes = typeOrmSpans[0].attributes;
 
     assert.strictEqual(attributes['test'], JSON.stringify(user));
-    assert.strictEqual(attributes[ATTR_DB_OPERATION], 'save');
-    assert.strictEqual(attributes[ATTR_DB_SYSTEM], defaultOptions.type);
+    assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'save');
+    assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], defaultOptions.type);
     await connection.close();
   });
 
@@ -83,15 +82,21 @@ describe('TypeormInstrumentationConfig', () => {
     );
     assert.notStrictEqual(findAndCountSpan, undefined);
     assert.strictEqual(
-      findAndCountSpan?.attributes[ATTR_DB_OPERATION],
+      findAndCountSpan?.attributes[ATTR_DB_OPERATION_NAME],
       'findAndCount'
     );
-    assert.strictEqual(findAndCountSpan?.attributes[ATTR_DB_SQL_TABLE], 'user');
+    assert.strictEqual(
+      findAndCountSpan?.attributes[ATTR_DB_COLLECTION_NAME],
+      'user'
+    );
 
     const selectSpan = spans.find(s => s.name.indexOf('select') !== -1);
     assert.notStrictEqual(selectSpan, undefined);
-    assert.strictEqual(selectSpan?.attributes[ATTR_DB_OPERATION], 'select');
-    assert.strictEqual(selectSpan?.attributes[ATTR_DB_SQL_TABLE], 'user');
+    assert.strictEqual(
+      selectSpan?.attributes[ATTR_DB_OPERATION_NAME],
+      'select'
+    );
+    assert.strictEqual(selectSpan?.attributes[ATTR_DB_COLLECTION_NAME], 'user');
     await connection.close();
   });
 
@@ -105,9 +110,9 @@ describe('TypeormInstrumentationConfig', () => {
     const spans = getTestSpans();
     assert.strictEqual(spans.length, 1);
     const attributes = spans[0].attributes;
-    assert.strictEqual(attributes[ATTR_DB_OPERATION], 'findAndCount');
-    assert.strictEqual(attributes[ATTR_DB_SYSTEM], defaultOptions.type);
-    assert.strictEqual(attributes[ATTR_DB_SQL_TABLE], 'user');
+    assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'findAndCount');
+    assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], defaultOptions.type);
+    assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
     await connection.close();
   });
 
@@ -129,14 +134,16 @@ describe('TypeormInstrumentationConfig', () => {
     assert.strictEqual(typeOrmSpans.length, 1);
     assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
     const attributes = typeOrmSpans[0].attributes;
-    assert.strictEqual(attributes[ATTR_DB_SYSTEM], connectionOptions.type);
-    assert.strictEqual(attributes[ATTR_DB_USER], connectionOptions.username);
-    assert.strictEqual(attributes[ATTR_NET_PEER_NAME], connectionOptions.host);
-    assert.strictEqual(attributes[ATTR_NET_PEER_PORT], connectionOptions.port);
-    assert.strictEqual(attributes[ATTR_DB_NAME], connectionOptions.database);
-    assert.strictEqual(attributes[ATTR_DB_SQL_TABLE], 'user');
+    assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], connectionOptions.type);
+    assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], connectionOptions.host);
+    assert.strictEqual(attributes[ATTR_SERVER_PORT], connectionOptions.port);
     assert.strictEqual(
-      attributes[ATTR_DB_STATEMENT],
+      attributes[ATTR_DB_NAMESPACE],
+      connectionOptions.database
+    );
+    assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
+    assert.strictEqual(
+      attributes[ATTR_DB_QUERY_TEXT],
       'SELECT "user"."id" AS "user_id", "user"."firstName" AS "user_firstName", "user"."lastName" AS "user_lastName" FROM "user" "user" WHERE "user"."id" = :userId AND "user"."firstName" = :firstName AND "user"."lastName" = :lastName'
     );
     assert.strictEqual(

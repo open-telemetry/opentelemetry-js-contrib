@@ -53,16 +53,15 @@ You can set the following:
 
 Attributes collected:
 
-| Attribute       | Short Description                                                           |
-| ----------------| --------------------------------------------------------------------------- |
-| `db.name`       | The name of the database being accessed.                                    |
-| `db.operation`  | The name of the operation being executed (e.g. the SQL keyword).            |
-| `db.sql.table`  | The name of the table being accessed.                                       |
-| `db.statement`  | The database statement being executed.                                      |
-| `db.system`     | An identifier for the database management system (DBMS) product being used. |
-| `db.user`       | Username for accessing the database.                                        |
-| `net.peer.name` | Remote address of the database.                                             |
-| `net.peer.port` | Peer port number of the network connection.                                 |
+| Attribute            | Short Description                                                           |
+| ---------------------| --------------------------------------------------------------------------- |
+| `db.namespace`       | The name of the database being accessed.                                    |
+| `db.operation.name`  | The name of the operation being executed (e.g. the SQL keyword).            |
+| `db.collection.name` | The name of the table being accessed.                                       |
+| `db.query.text`      | The database statement being executed.                                      |
+| `db.system.name`     | An identifier for the database management system (DBMS) product being used. |
+| `server.address`     | Remote address of the database.                                             |
+| `server.port`        | Peer port number of the network connection.                                 |
 
 ## Useful links
 
