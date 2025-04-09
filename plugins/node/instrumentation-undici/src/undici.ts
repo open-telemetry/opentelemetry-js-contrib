@@ -166,14 +166,12 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
   }
 
   /**
-   * For each header in the request, call the callback. Skips likely-invalid
-   * headers. Multi-valued headers are passed through. The loop exits early if
-   * the callback returns true.
+   * Yield an object { key, value } for each header in the request. Skips
+   * likely-invalid headers. Multi-valued headers are passed through.
    */
-  private forEachRequestHeader(
-    request: UndiciRequest,
-    callback: (key: string, value: string | string[]) => boolean | undefined
-  ): void {
+  private *requestHeaders(
+    request: UndiciRequest
+  ): Generator<{ key: string; value: string }, never, never> {
     if (Array.isArray(request.headers)) {
       // headers are an array [k1, v2, k2, v2] (undici v6+)
       for (let i = 0; i < request.headers.length; i += 2) {
@@ -182,9 +180,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
           // Shouldn't happen, but the types don't know that, and let's be safe
           continue;
         }
-        if (callback(key, request.headers[i + 1])) {
-          break;
-        }
+        yield { key, value: request.headers[i + 1] };
       }
     } else if (typeof request.headers === 'string') {
       // headers are a raw string (undici v5)
@@ -199,11 +195,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
           continue;
         }
         const key = line.substring(0, colonIndex);
-        const value = line.substring(0, colonIndex + 1);
-
-        if (callback(key, value)) {
-          break;
-        }
+        const value = line.substring(colonIndex + 1).trim();
+        yield { key, value };
       }
     }
   }
@@ -261,16 +254,15 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     // Get user agent from headers
-    this.forEachRequestHeader(request, (key, value) => {
+    for (const { key, value } of this.requestHeaders(request)) {
       if (key.toLowerCase() === 'user-agent') {
         // user-agent should only appear once per the spec, but the library doesn't
         // prevent passing it multiple times, so we handle that to be safe.
         const userAgent = Array.isArray(value) ? value[0] : value;
         attributes[SemanticAttributes.USER_AGENT_ORIGINAL] = userAgent;
-        return true; // no need to keep iterating
+        break;
       }
-      return false;
-    });
+    }
 
     // Get attributes from the hook if present
     const hookAttributes = safeExecuteInTheMiddle(
@@ -363,15 +355,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
         config.headersToSpanAttributes.requestHeaders.map(n => n.toLowerCase())
       );
 
-      this.forEachRequestHeader(request, (key, value) => {
+      for (const { key, value } of this.requestHeaders(request)) {
         const name = key.toLowerCase();
         if (headersToAttribs.has(name)) {
           spanAttributes[`http.request.header.${name}`] = value
             .toString()
             .trim();
         }
-        return false; // keep iterating always, there may be more
-      });
+      }
     }
 
     span.setAttributes(spanAttributes);
