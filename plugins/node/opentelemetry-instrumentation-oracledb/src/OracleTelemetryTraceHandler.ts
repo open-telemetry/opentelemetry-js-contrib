@@ -146,6 +146,7 @@ export function getOracleTelemetryTraceHandlerClass(
       //   db.operation.parameter.name = "someval" // for bind by name
       // It is only called if config 'enhancedDatabaseReporting' is true.
       private _getValues(values: any) {
+        if (!values) return undefined;
         const convertedValues: Record<string, string> = {};
 
         try {
@@ -183,6 +184,7 @@ export function getOracleTelemetryTraceHandlerClass(
           }
         } catch (e) {
           diag.error('failed to stringify bind values:', values, e);
+          return undefined;
         }
         return convertedValues;
       }
