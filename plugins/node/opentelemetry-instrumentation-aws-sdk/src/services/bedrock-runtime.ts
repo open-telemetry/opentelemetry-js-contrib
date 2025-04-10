@@ -57,6 +57,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   private operationDuration!: Histogram;
 
   updateMetricInstruments(meter: Meter) {
+    // https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/#metric-gen_aiclienttokenusage
     this.tokenUsage = meter.createHistogram('gen_ai.client.token.usage', {
       unit: '{token}',
       description: 'Measures number of input and output tokens used',
@@ -68,6 +69,8 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         ],
       },
     });
+
+    // https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/#metric-gen_aiclientoperationduration
     this.operationDuration = meter.createHistogram(
       'gen_ai.client.operation.duration',
       {

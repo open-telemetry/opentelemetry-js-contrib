@@ -13,6 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * Because all tests in this folder are run in the same process, if instantiating
+ * instrumentation within tests with different configurations such as metrics support,
+ * it can be difficult to ensure the correct instrumentation is applied during the
+ * specific test. We instead instantiate a single instrumentation instance here to
+ * use within all tests.
+ */
 import {
   initMeterProvider,
   registerInstrumentationTesting,
@@ -21,5 +29,4 @@ import { AwsInstrumentation } from '../src';
 
 export const instrumentation = new AwsInstrumentation();
 export const metricReader = initMeterProvider(instrumentation);
-instrumentation._updateMetricInstruments();
 registerInstrumentationTesting(instrumentation);
