@@ -3,11 +3,9 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`fs`](http://nodejs.org/dist/latest/docs/api/fs.html) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`fs`](http://nodejs.org/dist/latest/docs/api/fs.html) module, which can be registered using the [`@opentelemetry/instrumentation`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation) package.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
-
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+Compatible with OpenTelemetry JS API `1.3+`.
 
 See the full list of instrumented functions in [constants.ts](src/constants.ts);
 
@@ -19,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-fs
 
 ## Supported Versions
 
-- Node.js `>=14`
+- Node.js `>=18`
 
 ## Usage
 
