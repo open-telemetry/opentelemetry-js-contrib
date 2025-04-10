@@ -34,7 +34,7 @@ import {
   NormalizedRequest,
   NormalizedResponse,
 } from '../types';
-import {
+import type {
   ConverseStreamOutput,
   TokenUsage,
 } from '@aws-sdk/client-bedrock-runtime';
