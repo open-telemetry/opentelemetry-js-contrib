@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-import {
-  getTestSpans,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-import { AwsInstrumentation } from '../src';
-import { AttributeNames } from '../src/enums';
-registerInstrumentationTesting(new AwsInstrumentation());
+import { getTestSpans } from '@opentelemetry/contrib-test-utils';
+import './load-instrumentation';
 
+import { AttributeNames } from '../src/enums';
 import { DescribeStreamCommand, KinesisClient } from '@aws-sdk/client-kinesis';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import * as fs from 'fs';
