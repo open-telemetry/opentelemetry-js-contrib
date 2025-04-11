@@ -19,7 +19,7 @@
 import { isWrapped, InstrumentationBase } from '@opentelemetry/instrumentation';
 
 import * as api from '@opentelemetry/api';
-import { hrTime } from '@opentelemetry/core';
+import { TRACE_PARENT_HEADER, hrTime } from '@opentelemetry/core';
 import { getElementXPath } from '@opentelemetry/sdk-trace-web';
 import { AttributeNames } from './enums/AttributeNames';
 import {
@@ -133,6 +133,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     }
     const xpath = getElementXPath(element, true);
     try {
+      const context = this._getContext();
       const span = this.tracer.startSpan(
         eventName,
         {
@@ -144,8 +145,8 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
           },
         },
         parentSpan
-          ? api.trace.setSpan(api.context.active(), parentSpan)
-          : undefined
+          ? api.trace.setSpan(context, parentSpan)
+          : context
       );
 
       if (this._shouldPreventSpanCreation(eventName, element, span) === true) {
@@ -176,6 +177,20 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
         this._tryToEndSpan(span, spanData.hrTimeLastTimeout);
       }
     }
+  }
+
+  /**
+   * 
+   * Returns the current context from meta tag
+   */
+  private _getContext(): api.Context {
+    const metaElement = Array.from(document.getElementsByTagName('meta')).find(
+      e => e.getAttribute('name') === TRACE_PARENT_HEADER
+    );
+    const traceparent = (metaElement && metaElement.content) || '';
+    const context = api.propagation.extract(api.context.active(), { traceparent });
+
+    return context;
   }
 
   /**
