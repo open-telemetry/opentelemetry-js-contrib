@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.57.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.57.1...auto-instrumentations-node-v0.57.2) (2025-04-11)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-kafkajs bumped from ^0.9.0 to ^0.9.1
+
 ## [0.57.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.57.0...auto-instrumentations-node-v0.57.1) (2025-04-08)
 
 
