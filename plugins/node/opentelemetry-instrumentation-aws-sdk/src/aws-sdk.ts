@@ -75,12 +75,6 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
   }
 
   protected init(): InstrumentationModuleDefinition[] {
-    // Should always have been initialized in _updateMetricInstruments, but check again
-    // for safety.
-    if (!this.servicesExtensions) {
-      this.servicesExtensions = new ServicesExtensions();
-    }
-
     const v3MiddlewareStackFileOldVersions = new InstrumentationNodeModuleFile(
       '@aws-sdk/middleware-stack/dist/cjs/MiddlewareStack.js',
       ['>=3.1.0 <3.35.0'],

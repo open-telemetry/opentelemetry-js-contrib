@@ -39,7 +39,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
   GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-  GEN_AI_TOKEN_TYPE_VALUE_COMPLETION,
+  GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
 } from '../semconv';
 import {
   AwsSdkInstrumentationConfig,
@@ -201,7 +201,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
 
         this.tokenUsage.record(outputTokens, {
           ...sharedMetricAttrs,
-          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_COMPLETION,
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
         });
       }
     }
