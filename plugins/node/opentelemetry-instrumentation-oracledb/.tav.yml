@@ -1,0 +1,4 @@
+oracledb:
+    # a sample from supported versions
+  - versions: ">=6.7.0 <7"
+    commands: npm run test
