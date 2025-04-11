@@ -1,0 +1,40 @@
+[
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/amazon.titan-text-express-v1/invoke",
+        "body": {
+            "inputText": "Say this is a test",
+            "textGenerationConfig": {
+                "maxTokenCount": 10,
+                "temperature": 0.8,
+                "topP": 1,
+                "stopSequences": ["|"]
+            }
+        },
+        "status": 200,
+        "response": {
+            "results": [
+                {
+                    "tokenCount": 10,
+                    "outputText": "\nHello! I am a computer program designed to",
+                    "completionReason": "max_tokens"
+                }
+            ],
+            "inputTextTokenCount": 8
+        },
+        "rawHeaders": [
+            "Date",
+            "Mon, 10 Feb 2025 01:39:12 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "143",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "81039412-bc01-4c17-a89f-12534a3aca0a"
+        ],
+        "responseIsBinary": false
+    }
+]
