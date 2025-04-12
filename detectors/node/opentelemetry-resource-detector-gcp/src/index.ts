@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-export * from './detectors';
+export { gcpDetector } from './detectors';
 
 // Internal - used for tests only
 export { resetIsAvailableCache } from 'gcp-metadata';

@@ -147,7 +147,10 @@ describe('graphql', () => {
         const validateSpan = spans[1];
 
         assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
-        assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          validateSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument execute', () => {
@@ -171,7 +174,10 @@ describe('graphql', () => {
           undefined
         );
         assert.deepStrictEqual(executeSpan.name, 'query');
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          executeSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument resolvers', () => {
@@ -275,7 +281,10 @@ describe('graphql', () => {
         const validateSpan = spans[1];
 
         assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
-        assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          validateSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument execute', () => {
@@ -299,7 +308,10 @@ describe('graphql', () => {
           undefined
         );
         assert.deepStrictEqual(executeSpan.name, 'query');
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          executeSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument resolvers', () => {
@@ -369,7 +381,10 @@ describe('graphql', () => {
         const validateSpan = spans[1];
 
         assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
-        assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          validateSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument execute', () => {
@@ -397,7 +412,10 @@ describe('graphql', () => {
           undefined
         );
         assert.deepStrictEqual(executeSpan.name, 'query Query1');
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          executeSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument resolvers', () => {
@@ -465,7 +483,10 @@ describe('graphql', () => {
         const validateSpan = spans[1];
 
         assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
-        assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          validateSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument execute', () => {
@@ -489,7 +510,10 @@ describe('graphql', () => {
           undefined
         );
         assert.deepStrictEqual(executeSpan.name, 'query');
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          executeSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
     });
   });
@@ -533,7 +557,10 @@ describe('graphql', () => {
         const validateSpan = spans[1];
 
         assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
-        assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          validateSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument execute', () => {
@@ -557,7 +584,10 @@ describe('graphql', () => {
           undefined
         );
         assert.deepStrictEqual(executeSpan.name, 'query');
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          executeSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
     });
 
@@ -761,7 +791,10 @@ describe('graphql', () => {
         const validateSpan = spans[1];
 
         assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
-        assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          validateSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument execute', () => {
@@ -785,7 +818,10 @@ describe('graphql', () => {
           undefined
         );
         assert.deepStrictEqual(executeSpan.name, 'query');
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          executeSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument resolvers', () => {
@@ -854,7 +890,10 @@ describe('graphql', () => {
         const validateSpan = spans[1];
 
         assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
-        assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          validateSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument execute', () => {
@@ -881,7 +920,10 @@ describe('graphql', () => {
           'AddBook'
         );
         assert.deepStrictEqual(executeSpan.name, 'mutation AddBook');
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          executeSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument resolvers', () => {
@@ -951,7 +993,10 @@ describe('graphql', () => {
         const validateSpan = spans[1];
 
         assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
-        assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          validateSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument execute', () => {
@@ -979,7 +1024,10 @@ describe('graphql', () => {
           2
         );
         assert.deepStrictEqual(executeSpan.name, 'query Query1');
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+        assert.deepStrictEqual(
+          executeSpan.parentSpanContext?.spanId,
+          undefined
+        );
       });
 
       it('should instrument resolvers', () => {
@@ -1050,7 +1098,7 @@ describe('graphql', () => {
       const validateSpan = spans[1];
 
       assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
-      assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+      assert.deepStrictEqual(validateSpan.parentSpanContext?.spanId, undefined);
     });
 
     it('should instrument execute', () => {
@@ -1077,7 +1125,7 @@ describe('graphql', () => {
         'AddBook'
       );
       assert.deepStrictEqual(executeSpan.name, 'mutation AddBook');
-      assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+      assert.deepStrictEqual(executeSpan.parentSpanContext?.spanId, undefined);
     });
 
     it('should instrument resolvers', () => {
@@ -1175,7 +1223,7 @@ describe('graphql', () => {
       const validateSpan = spans[1];
 
       assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
-      assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+      assert.deepStrictEqual(validateSpan.parentSpanContext?.spanId, undefined);
       const event = validateSpan.events[0];
 
       assert.deepStrictEqual(event.name, 'exception');
@@ -1296,7 +1344,7 @@ describe('graphql', () => {
       const validateSpan = spans[1];
 
       assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
-      assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+      assert.deepStrictEqual(validateSpan.parentSpanContext?.spanId, undefined);
       const event = validateSpan.events[0];
 
       assert.ok(!event);
@@ -1319,7 +1367,7 @@ describe('graphql', () => {
         'Operation "foo" not supported'
       );
       assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
-      assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+      assert.deepStrictEqual(executeSpan.parentSpanContext?.spanId, undefined);
     });
   });
 

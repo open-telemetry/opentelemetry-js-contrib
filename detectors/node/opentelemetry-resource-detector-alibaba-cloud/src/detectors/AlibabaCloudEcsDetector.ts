@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-import { context } from '@opentelemetry/api';
+import { context, diag } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import {
-  DetectorSync,
-  IResource,
-  Resource,
-  ResourceAttributes,
-  ResourceDetectionConfig,
+  ResourceDetector,
+  DetectedResource,
+  DetectedResourceAttributes,
 } from '@opentelemetry/resources';
 import {
   CLOUDPLATFORMVALUES_ALIBABA_CLOUD_ECS,
@@ -43,7 +41,7 @@ import * as http from 'http';
  * AlibabaCloud ECS and return a {@link Resource} populated with metadata about
  * the ECS instance. Returns an empty Resource if detection fails.
  */
-class AlibabaCloudEcsDetector implements DetectorSync {
+class AlibabaCloudEcsDetector implements ResourceDetector {
   /**
    * See https://www.alibabacloud.com/help/doc-detail/67254.htm for
    * documentation about the AlibabaCloud instance identity document.
@@ -62,36 +60,59 @@ class AlibabaCloudEcsDetector implements DetectorSync {
    *
    * @param config (unused) The resource detection config
    */
-  detect(_config?: ResourceDetectionConfig): IResource {
-    const attributes = context.with(suppressTracing(context.active()), () =>
-      this._getAttributes()
+  detect(): DetectedResource {
+    const dataPromise = context.with(suppressTracing(context.active()), () =>
+      this._gatherData()
     );
-    return new Resource({}, attributes);
+
+    const attrNames = [
+      SEMRESATTRS_CLOUD_PROVIDER,
+      SEMRESATTRS_CLOUD_PLATFORM,
+      SEMRESATTRS_CLOUD_ACCOUNT_ID,
+      SEMRESATTRS_CLOUD_REGION,
+      SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
+      SEMRESATTRS_HOST_ID,
+      SEMRESATTRS_HOST_TYPE,
+      SEMRESATTRS_HOST_NAME,
+    ];
+
+    const attributes = {} as DetectedResourceAttributes;
+    attrNames.forEach(name => {
+      // Each resource attribute is determined asynchronously in _gatherData().
+      attributes[name] = dataPromise.then(data => data[name]);
+    });
+
+    return { attributes };
   }
 
   /** Gets identity and host info and returns them as attribs. Empty object if fails */
-  async _getAttributes(
-    _config?: ResourceDetectionConfig
-  ): Promise<ResourceAttributes> {
-    const {
-      'owner-account-id': accountId,
-      'instance-id': instanceId,
-      'instance-type': instanceType,
-      'region-id': region,
-      'zone-id': availabilityZone,
-    } = await this._fetchIdentity();
-    const hostname = await this._fetchHost();
+  async _gatherData(): Promise<DetectedResourceAttributes> {
+    try {
+      const {
+        'owner-account-id': accountId,
+        'instance-id': instanceId,
+        'instance-type': instanceType,
+        'region-id': region,
+        'zone-id': availabilityZone,
+      } = await this._fetchIdentity();
+      const hostname = await this._fetchHost();
 
-    return {
-      [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_ALIBABA_CLOUD,
-      [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_ALIBABA_CLOUD_ECS,
-      [SEMRESATTRS_CLOUD_ACCOUNT_ID]: accountId,
-      [SEMRESATTRS_CLOUD_REGION]: region,
-      [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
-      [SEMRESATTRS_HOST_ID]: instanceId,
-      [SEMRESATTRS_HOST_TYPE]: instanceType,
-      [SEMRESATTRS_HOST_NAME]: hostname,
-    };
+      return {
+        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_ALIBABA_CLOUD,
+        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_ALIBABA_CLOUD_ECS,
+        [SEMRESATTRS_CLOUD_ACCOUNT_ID]: accountId,
+        [SEMRESATTRS_CLOUD_REGION]: region,
+        [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
+        [SEMRESATTRS_HOST_ID]: instanceId,
+        [SEMRESATTRS_HOST_TYPE]: instanceType,
+        [SEMRESATTRS_HOST_NAME]: hostname,
+      };
+    } catch (err: any) {
+      diag.debug(
+        `${this.constructor.name}: did not detect resource: ${err?.message}`
+      );
+      return {};
+    }
   }
 
   /**

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { diag, DiagLogLevel } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import { Instrumentation } from '@opentelemetry/instrumentation';
 
 import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
@@ -68,13 +68,12 @@ import {
 import { containerDetector } from '@opentelemetry/resource-detector-container';
 import { gcpDetector } from '@opentelemetry/resource-detector-gcp';
 import {
-  Detector,
-  DetectorSync,
-  envDetectorSync,
-  hostDetectorSync,
-  osDetectorSync,
-  processDetectorSync,
-  serviceInstanceIdDetectorSync,
+  ResourceDetector,
+  envDetector,
+  hostDetector,
+  osDetector,
+  processDetector,
+  serviceInstanceIdDetector,
 } from '@opentelemetry/resources';
 import {
   azureAppServiceDetector,
@@ -134,17 +133,6 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-tedious': TediousInstrumentation,
   '@opentelemetry/instrumentation-undici': UndiciInstrumentation,
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
-};
-
-// The support string -> DiagLogLevel mappings
-const logLevelMap: { [key: string]: DiagLogLevel } = {
-  ALL: DiagLogLevel.ALL,
-  VERBOSE: DiagLogLevel.VERBOSE,
-  DEBUG: DiagLogLevel.DEBUG,
-  INFO: DiagLogLevel.INFO,
-  WARN: DiagLogLevel.WARN,
-  ERROR: DiagLogLevel.ERROR,
-  NONE: DiagLogLevel.NONE,
 };
 
 const defaultExcludedInstrumentations = [
@@ -254,17 +242,17 @@ function getDisabledInstrumentationsFromEnv() {
   return instrumentationsFromEnv;
 }
 
-export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
+export function getResourceDetectorsFromEnv(): Array<ResourceDetector> {
   const resourceDetectors = new Map<
     string,
-    Detector | DetectorSync | Detector[] | DetectorSync[]
+    ResourceDetector | ResourceDetector[]
   >([
     [RESOURCE_DETECTOR_CONTAINER, containerDetector],
-    [RESOURCE_DETECTOR_ENVIRONMENT, envDetectorSync],
-    [RESOURCE_DETECTOR_HOST, hostDetectorSync],
-    [RESOURCE_DETECTOR_OS, osDetectorSync],
-    [RESOURCE_DETECTOR_SERVICE_INSTANCE_ID, serviceInstanceIdDetectorSync],
-    [RESOURCE_DETECTOR_PROCESS, processDetectorSync],
+    [RESOURCE_DETECTOR_ENVIRONMENT, envDetector],
+    [RESOURCE_DETECTOR_HOST, hostDetector],
+    [RESOURCE_DETECTOR_OS, osDetector],
+    [RESOURCE_DETECTOR_SERVICE_INSTANCE_ID, serviceInstanceIdDetector],
+    [RESOURCE_DETECTOR_PROCESS, processDetector],
     [RESOURCE_DETECTOR_ALIBABA, alibabaCloudEcsDetector],
     [RESOURCE_DETECTOR_GCP, gcpDetector],
     [
@@ -303,17 +291,4 @@ export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
     }
     return resourceDetector || [];
   });
-}
-
-export function getLogLevelFromEnv(): DiagLogLevel {
-  const rawLogLevel = process.env.OTEL_LOG_LEVEL;
-
-  // NOTE: as per specification we should actually only register if something is set, but our previous implementation
-  // always registered a logger, even when nothing was set. Falling back to 'INFO' here to keep the same behavior as
-  // with previous implementations.
-  // Also: no point in warning - no logger is registered yet
-  return (
-    logLevelMap[rawLogLevel?.trim().toUpperCase() ?? 'INFO'] ??
-    DiagLogLevel.INFO
-  );
 }

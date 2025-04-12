@@ -113,7 +113,10 @@ export function assertParentChild(
     childSpan.spanContext().traceId,
     parentSpan.spanContext().traceId
   );
-  assert.strictEqual(childSpan.parentSpanId, parentSpan.spanContext().spanId);
+  assert.strictEqual(
+    childSpan.parentSpanContext?.spanId,
+    parentSpan.spanContext().spanId
+  );
 }
 
 export const TLS_SERVER_CERT = fs
