@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import { diag, DiagLogLevel } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { getNodeAutoInstrumentations } from '../src';
-import { getLogLevelFromEnv, getResourceDetectorsFromEnv } from '../src/utils';
+import { getResourceDetectorsFromEnv } from '../src/utils';
 
 describe('utils', () => {
   describe('getNodeAutoInstrumentations', () => {
@@ -221,46 +221,6 @@ describe('utils', () => {
 
       spy.restore();
       delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
-    });
-  });
-
-  describe('getLogLevelFromEnv', function () {
-    afterEach(function () {
-      delete process.env.OTEL_LOG_LEVEL;
-    });
-
-    it('should select log level based on env var', function () {
-      process.env.OTEL_LOG_LEVEL = 'NONE';
-      assert.strictEqual(getLogLevelFromEnv(), DiagLogLevel.NONE);
-      process.env.OTEL_LOG_LEVEL = 'VERBOSE';
-      assert.strictEqual(getLogLevelFromEnv(), DiagLogLevel.VERBOSE);
-      process.env.OTEL_LOG_LEVEL = 'DEBUG';
-      assert.strictEqual(getLogLevelFromEnv(), DiagLogLevel.DEBUG);
-      process.env.OTEL_LOG_LEVEL = 'INFO';
-      assert.strictEqual(getLogLevelFromEnv(), DiagLogLevel.INFO);
-      process.env.OTEL_LOG_LEVEL = 'WARN';
-      assert.strictEqual(getLogLevelFromEnv(), DiagLogLevel.WARN);
-      process.env.OTEL_LOG_LEVEL = 'ERROR';
-      assert.strictEqual(getLogLevelFromEnv(), DiagLogLevel.ERROR);
-      process.env.OTEL_LOG_LEVEL = 'ALL';
-      assert.strictEqual(getLogLevelFromEnv(), DiagLogLevel.ALL);
-    });
-
-    it('should ignore casing', function () {
-      process.env.OTEL_LOG_LEVEL = 'warn';
-      assert.strictEqual(getLogLevelFromEnv(), DiagLogLevel.WARN);
-      process.env.OTEL_LOG_LEVEL = 'WaRN';
-      assert.strictEqual(getLogLevelFromEnv(), DiagLogLevel.WARN);
-    });
-
-    it('should fall back to INFO on bogus input', function () {
-      process.env.OTEL_LOG_LEVEL = 'bogus';
-      assert.strictEqual(getLogLevelFromEnv(), DiagLogLevel.INFO);
-    });
-
-    it('should use INFO when unset', function () {
-      delete process.env.OTEL_LOG_LEVEL;
-      assert.strictEqual(getLogLevelFromEnv(), DiagLogLevel.INFO);
     });
   });
 });
