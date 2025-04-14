@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 import 'mocha';
+import * as assert from 'assert';
 import { expect } from 'expect';
 import { context, ROOT_CONTEXT } from '@opentelemetry/api';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   SEMATTRS_DB_OPERATION,
   SEMATTRS_DB_STATEMENT,
@@ -35,6 +37,8 @@ import * as mongoose from 'mongoose';
 import User, { IUser, loadUsers } from './user';
 import { assertSpan, getStatement } from './asserts';
 import { DB_NAME, MONGO_URI } from './config';
+import * as testUtils from "@opentelemetry/contrib-test-utils";
+import assert from "assert";
 
 // Please run mongodb in the background: docker run -d -p 27017:27017 -v ~/data:/data/db mongo
 describe('mongoose instrumentation [common]', () => {
@@ -546,6 +550,29 @@ describe('mongoose instrumentation [common]', () => {
 
       const spans = getTestSpans();
       expect(spans.length).toBe(0);
+    });
+  });
+
+  it('should work with ESM usage', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-mongoose.mjs', MONGO_URI, DB_NAME],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans[0].name, 'manual');
+        assert.strictEqual(spans[1].name, 'mongoose.Test.save');
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'mongoose.Test.findOne');
+        assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+      },
     });
   });
 });
