@@ -107,7 +107,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       // add operation name for InvokeModel API
     };
 
-    const modelId = request.commandInput.modelId;
+    const modelId = request.commandInput?.modelId;
     if (modelId) {
       spanAttributes[ATTR_GEN_AI_REQUEST_MODEL] = modelId;
     }

@@ -154,9 +154,8 @@ describe('Bedrock', () => {
     });
   });
 
-  // TODO: Instrument InvokeModel
   describe('InvokeModel', () => {
-    it('does not currently add genai conventions', async () => {
+    it('adds amazon titan model attributes to span', async () => {
       const modelId = 'amazon.titan-text-express-v1';
       const inputText = 'Say this is a test';
       const textGenerationConfig = {
