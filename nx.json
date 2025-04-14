@@ -18,8 +18,8 @@
         "^compile"
       ],
       "inputs": [
-        "{projectRoot}/src",
-        "{projectRoot}/test"
+        "{projectRoot}/src/**/*.ts",
+        "{projectRoot}/test/**/*.ts"
       ],
       "outputs": [
         "{projectRoot}/build"
@@ -27,8 +27,8 @@
     },
     "lint": {
       "inputs": [
-        "{projectRoot}/src",
-        "{projectRoot}/test"
+        "{projectRoot}/src/**/*.ts",
+        "{projectRoot}/test/**/*.ts"
       ]
     },
     "version:update": {
