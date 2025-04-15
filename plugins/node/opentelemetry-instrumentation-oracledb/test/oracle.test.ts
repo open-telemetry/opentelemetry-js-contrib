@@ -117,7 +117,7 @@ let connAttrList: Record<string, string | number>[]; // attributes per span duri
 let spanNameSuffix: string; // SpanName will be <operationName serviceName>
 let failedConnAttrList: Record<string, string | number>[]; // attributes in span for failed connection.
 let poolConnAttrList: Record<string, string | number>[]; // attributes per span when connection established from pool.
-let spanNamesList: string[]; // span names for rountrips and public API spans.
+let spanNamesList: string[]; // span names for roundtrips and public API spans.
 
 const DEFAULT_ATTRIBUTES = {
   [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
@@ -129,7 +129,7 @@ const DEFAULT_ATTRIBUTES = {
   [SEMATTRS_NET_TRANSPORT]: 'TCP',
 };
 
-// for thick mode, we dont have support for
+// for thick mode, we don't have support for
 // hostname, port and protocol.
 const DEFAULT_ATTRIBUTES_THICK = {
   [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
@@ -276,7 +276,7 @@ function checkRoundTripSpans(
   statusList: SpanStatus[] = [unsetStatus, unsetStatus],
   spanNamesList: string[] = [SpanNames.EXECUTE_MSG, SpanNames.EXECUTE]
 ) {
-  // verfiy roundtrip child span or public API span if no roundtrip
+  // verify roundtrip child span or public API span if no roundtrip
   // span is generated.
   for (let index = 0; index < spans.length - 1; index++) {
     assert.deepStrictEqual(spans[index].name, spanNamesList[index]);
@@ -501,12 +501,12 @@ describe('oracledb', () => {
           connection = await oracledb.getConnection(CONFIG);
           break;
         } catch (err) {
-          console.log(' retry count %d failed waiting for DB', retries);
+          console.log('retry count %d failed waiting for DB', retries);
           await new Promise(r => setTimeout(r, 10000));
         }
       }
       if (retries < 0) {
-        throw new Error(' docker setup Failed');
+        throw new Error('docker setup Failed');
       }
     } else {
       connection = await oracledb.getConnection(CONFIG);

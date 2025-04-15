@@ -93,3 +93,21 @@ export const ATTR_DB_STATEMENT = 'db.query.text';
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_DB_OPERATION_PARAMETER = 'db.operation.parameter';
+
+/**
+ * The connection string used to connect to the database. It is recommended to remove embedded credentials.
+ *
+ */
+export const ATTR_DB_CONNECTION_STRING = 'db.connection_string';
+
+/**
+ * Transport protocol used. See note below.
+ *
+ */
+export const ATTR_NET_TRANSPORT = 'net.transport';
+
+/**
+ * Username for accessing the database.
+ *
+ */
+export const ATTR_DB_USER = 'db.user';
