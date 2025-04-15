@@ -48,9 +48,11 @@ describe('EntityManager', () => {
   describe('single connection', () => {
     it('save using connection.manager', async () => {
       const options = defaultOptions;
-      const connection = await typeorm.createConnection(defaultOptions);
+      const ds = new typeorm.DataSource(options);
+      await ds.initialize();
+
       const user = new User(1, 'opentelemetry', 'io');
-      await connection.manager.save(user);
+      await ds.manager.save(user);
       const typeOrmSpans = getTestSpans();
 
       assert.strictEqual(typeOrmSpans.length, 1);
@@ -64,13 +66,14 @@ describe('EntityManager', () => {
         attributes[ATTR_DB_QUERY_TEXT],
         JSON.stringify({ targetOrEntity: user })
       );
-      await connection.destroy();
+      await ds.destroy();
     });
 
     it('save', async () => {
       const options = defaultOptions;
-      const connection = await typeorm.createConnection(defaultOptions);
-      const manager = connection.createEntityManager();
+      const ds = new typeorm.DataSource(options);
+      await ds.initialize();
+      const manager = ds.manager;
       const user = new User(1, 'opentelemetry', 'io');
       await manager.save(user);
       const typeOrmSpans = getTestSpans();
@@ -86,13 +89,14 @@ describe('EntityManager', () => {
         attributes[ATTR_DB_QUERY_TEXT],
         JSON.stringify({ targetOrEntity: user })
       );
-      await connection.destroy();
+      await ds.destroy();
     });
 
     it('remove', async () => {
       const options = defaultOptions;
-      const connection = await typeorm.createConnection(defaultOptions);
-      const manager = connection.createEntityManager();
+      const ds = new typeorm.DataSource(options);
+      await ds.initialize();
+      const manager = ds.manager;
 
       const user = new User(56, 'opentelemetry', 'io');
       await manager.save(user);
@@ -116,13 +120,14 @@ describe('EntityManager', () => {
           },
         })
       );
-      await connection.destroy();
+      await ds.destroy();
     });
 
     it('update', async () => {
       const options = defaultOptions;
-      const connection = await typeorm.createConnection(defaultOptions);
-      const manager = connection.createEntityManager();
+      const ds = new typeorm.DataSource(options);
+      await ds.initialize();
+      const manager = ds.manager;
       const user = new User(56, 'opentelemetry', 'io');
       await manager.save(user);
       const partialEntity = { lastName: '.io' };
@@ -140,12 +145,13 @@ describe('EntityManager', () => {
         attributes[ATTR_DB_QUERY_TEXT],
         JSON.stringify({ target: 'User', criteria: 56, partialEntity })
       );
-      await connection.destroy();
+      await ds.destroy();
     });
 
     it('Sets failure status when function throws', async () => {
-      const connection = await typeorm.createConnection(defaultOptions);
-      const manager = connection.createEntityManager();
+      const ds = new typeorm.DataSource(defaultOptions);
+      await ds.initialize();
+      const manager = ds.manager;
       try {
         await manager.find({} as any);
       } catch (err) {}
@@ -157,7 +163,7 @@ describe('EntityManager', () => {
         typeOrmSpans[0].status.message,
         'No metadata for "[object Object]" was found.'
       );
-      await connection.destroy();
+      await ds.destroy();
     });
   });
 
@@ -171,12 +177,13 @@ describe('EntityManager', () => {
     };
 
     it('appends matching connection details to span', async () => {
-      const [sqlite1, sqlite2] = await typeorm.createConnections([
-        defaultOptions,
-        options2,
-      ]);
-      const manager1 = sqlite1.createEntityManager();
-      const manager2 = sqlite2.createEntityManager();
+      const ds1 = new typeorm.DataSource(defaultOptions);
+      await ds1.initialize();
+      const ds2 = new typeorm.DataSource(options2);
+      await ds2.initialize();
+
+      const manager1 = ds1.manager;
+      const manager2 = ds2.manager;
 
       const user = new User(1, 'opentelemetry', 'io');
       await manager1.save(user);
@@ -220,8 +227,8 @@ describe('EntityManager', () => {
         sqlite2Span.attributes[ATTR_DB_COLLECTION_NAME],
         'user'
       );
-      await sqlite1.destroy();
-      await sqlite2.destroy();
+      await ds1.destroy();
+      await ds2.destroy();
     });
   });
 });

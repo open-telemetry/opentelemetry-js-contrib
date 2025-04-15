@@ -48,9 +48,10 @@ describe('Connection', () => {
   describe('single connection', () => {
     it('raw query', async () => {
       const options = rawQueryOptions;
-      const connection = await typeorm.createConnection(rawQueryOptions);
+      const ds = new typeorm.DataSource(options);
+      await ds.initialize();
       const query = 'select * from user';
-      await connection.query(query);
+      await ds.query(query);
       const typeOrmSpans = getTestSpans();
 
       assert.strictEqual(typeOrmSpans.length, 1);
@@ -60,7 +61,7 @@ describe('Connection', () => {
       assert.strictEqual(attributes[ATTR_DB_NAMESPACE], options.database);
       assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'raw query');
       assert.strictEqual(attributes[ATTR_DB_QUERY_TEXT], query);
-      await connection.destroy();
+      await ds.destroy();
     });
   });
 });

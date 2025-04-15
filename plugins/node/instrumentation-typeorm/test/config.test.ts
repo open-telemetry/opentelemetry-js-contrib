@@ -54,9 +54,10 @@ describe('TypeormInstrumentationConfig', () => {
     instrumentation.setConfig(config);
     instrumentation.enable();
 
-    const connection = await typeorm.createConnection(defaultOptions);
+    const ds = new typeorm.DataSource(defaultOptions);
+    await ds.initialize();
     const user = new User(1, 'opentelemetry', 'io');
-    await connection.manager.save(user);
+    await ds.manager.save(user);
     const typeOrmSpans = getTestSpans();
     assert.strictEqual(typeOrmSpans.length, 1);
     const attributes = typeOrmSpans[0].attributes;
@@ -64,7 +65,7 @@ describe('TypeormInstrumentationConfig', () => {
     assert.strictEqual(attributes['test'], JSON.stringify(user));
     assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'save');
     assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], defaultOptions.type);
-    await connection.destroy();
+    await ds.destroy();
   });
 
   it('enableInternalInstrumentation:true', async () => {
@@ -72,8 +73,9 @@ describe('TypeormInstrumentationConfig', () => {
       enableInternalInstrumentation: true,
     };
     instrumentation.setConfig(config);
-    const connection = await typeorm.createConnection(defaultOptions);
-    await connection.manager.findAndCount(User);
+    const ds = new typeorm.DataSource(defaultOptions);
+    await ds.initialize();
+    await ds.manager.findAndCount(User);
     const spans = getTestSpans();
     assert.strictEqual(spans.length, 2);
 
@@ -97,7 +99,7 @@ describe('TypeormInstrumentationConfig', () => {
       'select'
     );
     assert.strictEqual(selectSpan?.attributes[ATTR_DB_COLLECTION_NAME], 'user');
-    await connection.destroy();
+    await ds.destroy();
   });
 
   it('enableInternalInstrumentation:false', async () => {
@@ -105,15 +107,16 @@ describe('TypeormInstrumentationConfig', () => {
       enableInternalInstrumentation: false,
     };
     instrumentation.setConfig(config);
-    const connection = await typeorm.createConnection(defaultOptions);
-    await connection.manager.findAndCount(User);
+    const ds = new typeorm.DataSource(defaultOptions);
+    await ds.initialize();
+    await ds.manager.findAndCount(User);
     const spans = getTestSpans();
     assert.strictEqual(spans.length, 1);
     const attributes = spans[0].attributes;
     assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'findAndCount');
     assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], defaultOptions.type);
     assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
-    await connection.destroy();
+    await ds.destroy();
   });
 
   it('enhancedDatabaseReporting:true', async () => {
@@ -121,9 +124,10 @@ describe('TypeormInstrumentationConfig', () => {
       enhancedDatabaseReporting: true,
     };
     instrumentation.setConfig(config);
-    const connectionOptions = defaultOptions as any;
-    const connection = await typeorm.createConnection(connectionOptions);
-    await connection
+    const connectionOptions = defaultOptions;
+    const ds = new typeorm.DataSource(connectionOptions);
+    await ds.initialize();
+    await ds
       .getRepository(User)
       .createQueryBuilder('user')
       .where('user.id = :userId', { userId: '1' })
@@ -150,6 +154,6 @@ describe('TypeormInstrumentationConfig', () => {
       attributes[ExtendedDatabaseAttribute.DB_STATEMENT_PARAMETERS],
       JSON.stringify({ userId: '1', firstName: 'bob', lastName: 'dow' })
     );
-    await connection.destroy();
+    await ds.destroy();
   });
 });

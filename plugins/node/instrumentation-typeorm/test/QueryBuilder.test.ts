@@ -46,11 +46,9 @@ describe('QueryBuilder', () => {
   });
 
   it('getManyAndCount', async () => {
-    const connectionOptions = defaultOptions as any;
-    const connection = await typeorm.createConnection(connectionOptions);
-    const queryBuilder = connection
-      .getRepository(User)
-      .createQueryBuilder('user');
+    const ds = new typeorm.DataSource(defaultOptions);
+    await ds.initialize();
+    const queryBuilder = ds.getRepository(User).createQueryBuilder('user');
     const users = await queryBuilder
       .where('user.id = :userId', { userId: '1' })
       .getManyAndCount();
@@ -59,18 +57,15 @@ describe('QueryBuilder', () => {
     assert.strictEqual(typeOrmSpans.length, 1);
     assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
     const attributes = typeOrmSpans[0].attributes;
-    assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], connectionOptions.type);
-    assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], connectionOptions.host);
-    assert.strictEqual(attributes[ATTR_SERVER_PORT], connectionOptions.port);
-    assert.strictEqual(
-      attributes[ATTR_DB_NAMESPACE],
-      connectionOptions.database
-    );
+    assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], defaultOptions.type);
+    assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], defaultOptions.host);
+    assert.strictEqual(attributes[ATTR_SERVER_PORT], defaultOptions.port);
+    assert.strictEqual(attributes[ATTR_DB_NAMESPACE], defaultOptions.database);
     assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
     assert.strictEqual(
       attributes[ATTR_DB_QUERY_TEXT],
       'SELECT "user"."id" AS "user_id", "user"."firstName" AS "user_firstName", "user"."lastName" AS "user_lastName" FROM "user" "user" WHERE "user"."id" = :userId'
     );
-    await connection.destroy();
+    await ds.destroy();
   });
 });

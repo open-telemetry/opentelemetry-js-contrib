@@ -38,8 +38,9 @@ describe('Repository', () => {
   });
 
   it('findAndCount', async () => {
-    const connection = await typeorm.createConnection(defaultOptions);
-    const repo = connection.getRepository(User);
+    const ds = new typeorm.DataSource(defaultOptions);
+    await ds.initialize();
+    const repo = ds.getRepository(User);
     const [_users, count] = await repo.findAndCount();
     assert(count === 0);
     const spans = getTestSpans();
@@ -47,6 +48,6 @@ describe('Repository', () => {
     const span = spans[0];
     const attributes = span.attributes;
     assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
-    await connection.destroy();
+    await ds.destroy();
   });
 });
