@@ -55,6 +55,7 @@ describe('Connection', () => {
       const typeOrmSpans = getTestSpans();
 
       assert.strictEqual(typeOrmSpans.length, 1);
+      assert.strictEqual(typeOrmSpans[0].name, 'raw query');
       assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
       const attributes = typeOrmSpans[0].attributes;
       assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], options.type);

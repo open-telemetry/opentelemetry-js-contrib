@@ -56,6 +56,7 @@ describe('EntityManager', () => {
       const typeOrmSpans = getTestSpans();
 
       assert.strictEqual(typeOrmSpans.length, 1);
+      assert.strictEqual(typeOrmSpans[0].name, 'save user');
       assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
       const attributes = typeOrmSpans[0].attributes;
       assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
@@ -79,6 +80,7 @@ describe('EntityManager', () => {
       const typeOrmSpans = getTestSpans();
 
       assert.strictEqual(typeOrmSpans.length, 1);
+      assert.strictEqual(typeOrmSpans[0].name, 'save user');
       assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
       const attributes = typeOrmSpans[0].attributes;
       assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
@@ -104,6 +106,7 @@ describe('EntityManager', () => {
       const typeOrmSpans = getTestSpans();
 
       assert.strictEqual(typeOrmSpans.length, 2);
+      assert.strictEqual(typeOrmSpans[1].name, 'remove user');
       assert.strictEqual(typeOrmSpans[1].status.code, SpanStatusCode.UNSET);
       const attributes = typeOrmSpans[1].attributes;
       assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
@@ -135,6 +138,7 @@ describe('EntityManager', () => {
       const typeOrmSpans = getTestSpans();
 
       assert.strictEqual(typeOrmSpans.length, 2);
+      assert.strictEqual(typeOrmSpans[1].name, 'update user');
       assert.strictEqual(typeOrmSpans[1].status.code, SpanStatusCode.UNSET);
       const attributes = typeOrmSpans[1].attributes;
       assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
@@ -158,6 +162,7 @@ describe('EntityManager', () => {
 
       const typeOrmSpans = getTestSpans();
       assert.strictEqual(typeOrmSpans.length, 1);
+      assert.strictEqual(typeOrmSpans[0].name, 'find');
       assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.ERROR);
       assert.strictEqual(
         typeOrmSpans[0].status.message,
@@ -194,6 +199,7 @@ describe('EntityManager', () => {
       const sqlite1Span = spans[0];
       const sqlite2Span = spans[1];
 
+      assert.strictEqual(sqlite1Span.name, 'save user');
       assert.strictEqual(
         sqlite1Span.attributes[ATTR_DB_SYSTEM_NAME],
         defaultOptions.type
@@ -211,6 +217,7 @@ describe('EntityManager', () => {
         'user'
       );
 
+      assert.strictEqual(sqlite2Span.name, 'remove user');
       assert.strictEqual(
         sqlite2Span.attributes[ATTR_DB_SYSTEM_NAME],
         options2.type

@@ -55,6 +55,7 @@ describe('QueryBuilder', () => {
     assert.strictEqual(users.length, 2);
     const typeOrmSpans = getTestSpans();
     assert.strictEqual(typeOrmSpans.length, 1);
+    assert.strictEqual(typeOrmSpans[0].name, 'select user');
     assert.strictEqual(typeOrmSpans[0].status.code, SpanStatusCode.UNSET);
     const attributes = typeOrmSpans[0].attributes;
     assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], defaultOptions.type);

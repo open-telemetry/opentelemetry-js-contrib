@@ -223,10 +223,13 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
           if (value === undefined) delete attributes[key];
         });
 
-        const span: Span = self.tracer.startSpan(`TypeORM ${opName}`, {
-          kind: SpanKind.CLIENT,
-          attributes,
-        });
+        const span: Span = self.tracer.startSpan(
+          buildSpanName(opName, attributes[ATTR_DB_COLLECTION_NAME]),
+          {
+            kind: SpanKind.CLIENT,
+            attributes,
+          }
+        );
 
         const contextWithSpan = trace.setSpan(context.active(), span);
 
@@ -281,7 +284,7 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
           }
         }
         const span: Span = self.tracer.startSpan(
-          `TypeORM ${operation} ${mainTableName}`,
+          buildSpanName(operation, attributes[ATTR_DB_COLLECTION_NAME]),
           {
             kind: SpanKind.CLIENT,
             attributes,
@@ -328,7 +331,7 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
           [ATTR_DB_QUERY_TEXT]: sql,
         };
 
-        const span: Span = self.tracer.startSpan(`TypeORM ${operation}`, {
+        const span: Span = self.tracer.startSpan(operation, {
           kind: SpanKind.CLIENT,
           attributes,
         });
@@ -426,3 +429,11 @@ const buildStatement = (func: Function, args: any[]) => {
   });
   return statement;
 };
+
+function buildSpanName(operation: string, target: string | undefined): string {
+  if (target !== undefined) {
+    return `${operation} ${target}`;
+  }
+
+  return operation;
+}

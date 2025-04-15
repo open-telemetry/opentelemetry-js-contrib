@@ -47,6 +47,7 @@ describe('Repository', () => {
     assert.strictEqual(spans.length, 1);
     const span = spans[0];
     const attributes = span.attributes;
+    assert.strictEqual(span.name, 'findAndCount user');
     assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'user');
     await ds.destroy();
   });
