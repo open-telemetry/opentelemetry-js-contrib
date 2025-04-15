@@ -27,7 +27,7 @@ import {
 import * as utils from './utils';
 import { KnexInstrumentationConfig } from './types';
 import { SemconvStability } from './internal-types';
-import { getStringListFromEnv } from './env';
+import { getStringListFromEnv } from '@opentelemetry/core';
 import {
   ATTR_NETWORK_TRANSPORT,
   ATTR_SERVER_ADDRESS,
