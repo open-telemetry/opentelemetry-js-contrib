@@ -32,7 +32,7 @@ const instrumentation = registerInstrumentationTesting(
 );
 
 import * as typeorm from 'typeorm';
-import { rawQueryOptions } from './utils';
+import { defaultOptions } from './utils';
 
 describe('Connection', () => {
   after(() => {
@@ -47,7 +47,7 @@ describe('Connection', () => {
 
   describe('single connection', () => {
     it('raw query', async () => {
-      const options = rawQueryOptions;
+      const options = { ...defaultOptions, name: 'rawQuery' };
       const ds = new typeorm.DataSource(options);
       await ds.initialize();
       const query = 'select * from user';

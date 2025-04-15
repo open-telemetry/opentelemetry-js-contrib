@@ -40,12 +40,3 @@ export const defaultOptions: any = {
   synchronize: true,
   entities: [User],
 };
-
-export const rawQueryOptions: any = {
-  type: 'sqlite',
-  database: ':memory:',
-  dropSchema: true,
-  synchronize: true,
-  entities: [User],
-  name: 'rawQuery',
-};
