@@ -180,9 +180,11 @@ describe('Bedrock', () => {
       );
 
       const testSpans: ReadableSpan[] = getTestSpans();
-      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
-        return s.name === 'BedrockRuntime.InvokeModel';
-      });
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === 'BedrockRuntime.InvokeModel';
+        }
+      );
       expect(invokeModelSpans.length).toBe(1);
       expect(invokeModelSpans[0].attributes).toMatchObject({
         [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
@@ -219,9 +221,11 @@ describe('Bedrock', () => {
       );
 
       const testSpans: ReadableSpan[] = getTestSpans();
-      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
-        return s.name === 'BedrockRuntime.InvokeModel';
-      });
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === 'BedrockRuntime.InvokeModel';
+        }
+      );
       expect(invokeModelSpans.length).toBe(1);
       expect(invokeModelSpans[0].attributes).toMatchObject({
         [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
@@ -267,9 +271,11 @@ describe('Bedrock', () => {
       );
 
       const testSpans: ReadableSpan[] = getTestSpans();
-      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
-        return s.name === 'BedrockRuntime.InvokeModel';
-      });
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === 'BedrockRuntime.InvokeModel';
+        }
+      );
       expect(invokeModelSpans.length).toBe(1);
       expect(invokeModelSpans[0].attributes).toMatchObject({
         [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
@@ -304,9 +310,11 @@ describe('Bedrock', () => {
       );
 
       const testSpans: ReadableSpan[] = getTestSpans();
-      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
-        return s.name === 'BedrockRuntime.InvokeModel';
-      });
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === 'BedrockRuntime.InvokeModel';
+        }
+      );
       expect(invokeModelSpans.length).toBe(1);
       expect(invokeModelSpans[0].attributes).toMatchObject({
         [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
@@ -341,9 +349,11 @@ describe('Bedrock', () => {
       );
 
       const testSpans: ReadableSpan[] = getTestSpans();
-      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
-        return s.name === 'BedrockRuntime.InvokeModel';
-      });
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === 'BedrockRuntime.InvokeModel';
+        }
+      );
       expect(invokeModelSpans.length).toBe(1);
       expect(invokeModelSpans[0].attributes).toMatchObject({
         [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
@@ -377,9 +387,11 @@ describe('Bedrock', () => {
       );
 
       const testSpans: ReadableSpan[] = getTestSpans();
-      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
-        return s.name === 'BedrockRuntime.InvokeModel';
-      });
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === 'BedrockRuntime.InvokeModel';
+        }
+      );
       expect(invokeModelSpans.length).toBe(1);
       expect(invokeModelSpans[0].attributes).toMatchObject({
         [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
@@ -413,9 +425,11 @@ describe('Bedrock', () => {
       );
 
       const testSpans: ReadableSpan[] = getTestSpans();
-      const invokeModelSpans: ReadableSpan[] = testSpans.filter((s: ReadableSpan) => {
-        return s.name === 'BedrockRuntime.InvokeModel';
-      });
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === 'BedrockRuntime.InvokeModel';
+        }
+      );
       expect(invokeModelSpans.length).toBe(1);
       expect(invokeModelSpans[0].attributes).toMatchObject({
         [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
