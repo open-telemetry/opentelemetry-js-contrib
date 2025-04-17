@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.48.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.48.0...instrumentation-express-v0.48.1) (2025-04-16)
+
+
+### Bug Fixes
+
+* **express:** span name if middleware on nested router is used ([#2682](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2682)) ([d579630](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d5796309c424d30f89082f6c6f610011ac86b9c8))
+
 ## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.47.1...instrumentation-express-v0.48.0) (2025-03-18)
 
 
