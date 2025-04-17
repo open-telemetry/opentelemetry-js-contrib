@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.13.0...instrumentation-runtime-node-v0.14.0) (2025-04-16)
+
+
+### Features
+
+* **auto-instrumentations-node:** enable runtime-node ([#2786](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2786)) ([f637c87](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f637c8729ac6899f3a87aac93e555fd42d46ab71))
+
 ## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.12.2...instrumentation-runtime-node-v0.13.0) (2025-03-18)
 
 
