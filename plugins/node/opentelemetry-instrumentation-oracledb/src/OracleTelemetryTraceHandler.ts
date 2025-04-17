@@ -195,7 +195,6 @@ export function getOracleTelemetryTraceHandlerClass(
       if (typeof value === 'object') {
         return JSON.stringify(value);
       }
-      // number, string, boolean,
       return value.toString();
     }
 
