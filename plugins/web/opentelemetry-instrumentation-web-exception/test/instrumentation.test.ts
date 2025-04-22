@@ -38,7 +38,7 @@ describe('WebExceptionInstrumentation', () => {
   const logRecordProcessor = new SimpleLogRecordProcessor(exporter);
   loggerProvider.addLogRecordProcessor(logRecordProcessor);
 
-  const eventLoggerProvider = new EventLoggerProvider(loggerProvider);
+  const eventLoggerProvider = new EventLoggerProvider(loggerProvider as any);
   events.setGlobalEventLoggerProvider(eventLoggerProvider);
 
   // Helper function to throw an error of a specific type so that we can allow the error to propagate and test the instrumentation.
