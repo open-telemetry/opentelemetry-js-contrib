@@ -72,7 +72,7 @@ export class WebExceptionInstrumentation extends InstrumentationBase<GlobalError
         : {};
 
       eventLogger.emit({
-        name: 'browser.exception',
+        name: 'exception',
         data: errorAttributes,
         attributes: customAttributes,
         severityNumber: SeverityNumber.ERROR,
