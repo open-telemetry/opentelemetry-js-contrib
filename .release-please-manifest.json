@@ -60,6 +60,7 @@
   "plugins/web/opentelemetry-instrumentation-long-task": "0.45.0",
   "plugins/web/opentelemetry-instrumentation-user-interaction": "0.45.0",
   "plugins/web/opentelemetry-plugin-react-load": "0.32.0",
+  "plugins/web/opentelemetry-instrumentation-web-exception": "0.0.1",
   "propagators/opentelemetry-propagator-instana": "0.4.0",
   "propagators/opentelemetry-propagator-ot-trace": "0.28.0",
   "propagators/propagator-aws-xray": "2.0.0",
