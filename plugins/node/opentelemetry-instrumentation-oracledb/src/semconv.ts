@@ -95,12 +95,6 @@ export const ATTR_DB_STATEMENT = 'db.query.text';
 export const ATTR_DB_OPERATION_PARAMETER = 'db.operation.parameter';
 
 /**
- * The connection string used to connect to the database. It is recommended to remove embedded credentials.
- *
- */
-export const ATTR_DB_CONNECTION_STRING = 'db.connection_string';
-
-/**
  * Username for accessing the database.
  *
  */

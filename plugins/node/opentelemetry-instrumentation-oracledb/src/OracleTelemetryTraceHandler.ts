@@ -36,7 +36,6 @@ import {
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_STATEMENT,
   ATTR_DB_OPERATION_PARAMETER,
-  ATTR_DB_CONNECTION_STRING,
   ATTR_DB_USER,
 } from './semconv';
 
@@ -120,7 +119,6 @@ export function getOracleTelemetryTraceHandlerClass(
           config.pdbName,
           config.serviceName
         ),
-        [ATTR_DB_CONNECTION_STRING]: config.connectString,
         [ATTR_SERVER_ADDRESS]: config.hostName,
         [ATTR_SERVER_PORT]: config.port,
       };
