@@ -38,22 +38,22 @@ import { OracleInstrumentation } from '../src';
 import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from '../src/constants';
 
 import {
+  ATTR_NETWORK_TRANSPORT,
   ATTR_SERVER_ADDRESS,
-  SEMATTRS_NET_TRANSPORT,
-  SEMATTRS_DB_CONNECTION_STRING,
-  SEMATTRS_EXCEPTION_MESSAGE,
-  SEMATTRS_EXCEPTION_STACKTRACE,
-  SEMATTRS_EXCEPTION_TYPE,
   ATTR_SERVER_PORT,
-  SEMATTRS_DB_USER,
+  ATTR_EXCEPTION_MESSAGE,
+  ATTR_EXCEPTION_STACKTRACE,
+  ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
 
 import {
   ATTR_DB_NAMESPACE,
   ATTR_DB_SYSTEM,
-  ATTR_DB_OPERATION_NAME,
   ATTR_DB_STATEMENT,
   ATTR_DB_OPERATION_PARAMETER,
+  ATTR_DB_USER,
+  ATTR_DB_CONNECTION_STRING,
+  ATTR_DB_OPERATION_NAME,
 } from '../src/semconv';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -122,11 +122,11 @@ let spanNamesList: string[]; // span names for roundtrips and public API spans.
 const DEFAULT_ATTRIBUTES = {
   [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
   [ATTR_DB_NAMESPACE]: serviceName,
-  [SEMATTRS_DB_CONNECTION_STRING]: CONFIG.connectString,
+  [ATTR_DB_CONNECTION_STRING]: CONFIG.connectString,
   [ATTR_SERVER_ADDRESS]: hostname,
   [ATTR_SERVER_PORT]: pno,
-  [SEMATTRS_DB_USER]: CONFIG.user,
-  [SEMATTRS_NET_TRANSPORT]: 'TCP',
+  [ATTR_DB_USER]: CONFIG.user,
+  [ATTR_NETWORK_TRANSPORT]: 'TCP',
 };
 
 // for thick mode, we don't have support for
@@ -134,20 +134,20 @@ const DEFAULT_ATTRIBUTES = {
 const DEFAULT_ATTRIBUTES_THICK = {
   [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
   [ATTR_DB_NAMESPACE]: serviceName,
-  [SEMATTRS_DB_CONNECTION_STRING]: CONFIG.connectString,
-  [SEMATTRS_DB_USER]: CONFIG.user,
+  [ATTR_DB_CONNECTION_STRING]: CONFIG.connectString,
+  [ATTR_DB_USER]: CONFIG.user,
 };
 
 const POOL_ATTRIBUTES = {
   [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
-  [SEMATTRS_DB_CONNECTION_STRING]: CONFIG.connectString,
-  [SEMATTRS_DB_USER]: CONFIG.user,
+  [ATTR_DB_CONNECTION_STRING]: CONFIG.connectString,
+  [ATTR_DB_USER]: CONFIG.user,
 };
 
 const CONN_FAILED_ATTRIBUTES = {
   [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
-  [SEMATTRS_DB_CONNECTION_STRING]: CONFIG.connectString,
-  [SEMATTRS_DB_USER]: CONFIG.user,
+  [ATTR_DB_CONNECTION_STRING]: CONFIG.connectString,
+  [ATTR_DB_USER]: CONFIG.user,
 };
 
 const unsetStatus: SpanStatus = {
@@ -186,7 +186,7 @@ function updateAttrSpanList(connection: oracledb.Connection) {
     attributes = { ...DEFAULT_ATTRIBUTES };
     attributes[ATTR_SERVER_ADDRESS] = connAttributes[ATTR_SERVER_ADDRESS];
     attributes[ATTR_SERVER_PORT] = connAttributes[ATTR_SERVER_PORT];
-    attributes[SEMATTRS_NET_TRANSPORT] = connAttributes[SEMATTRS_NET_TRANSPORT];
+    attributes[ATTR_NETWORK_TRANSPORT] = connAttributes[ATTR_NETWORK_TRANSPORT];
   } else {
     attributes = { ...DEFAULT_ATTRIBUTES_THICK };
     numExecSpans = 1;
@@ -354,9 +354,9 @@ function assertErrorSpan(
       name: 'exception',
       droppedAttributesCount: 0,
       attributes: {
-        [SEMATTRS_EXCEPTION_STACKTRACE]: error.stack,
-        [SEMATTRS_EXCEPTION_MESSAGE]: error.message,
-        [SEMATTRS_EXCEPTION_TYPE]: String(error.code),
+        [ATTR_EXCEPTION_STACKTRACE]: error.stack,
+        [ATTR_EXCEPTION_MESSAGE]: error.message,
+        [ATTR_EXCEPTION_TYPE]: String(error.code),
       },
       time: span.events[0].time,
     },
@@ -430,7 +430,7 @@ describe('oracledb', () => {
       connAttributes[ATTR_SERVER_PORT] = extendedConn.port;
     }
     if (oracledb.thin && extendedConn.protocol) {
-      connAttributes[SEMATTRS_NET_TRANSPORT] = extendedConn.protocol;
+      connAttributes[ATTR_NETWORK_TRANSPORT] = extendedConn.protocol;
     }
     if (connection.dbName) {
       dbName = oracledb.thin

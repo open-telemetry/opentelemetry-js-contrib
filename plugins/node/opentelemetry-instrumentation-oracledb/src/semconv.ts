@@ -101,12 +101,6 @@ export const ATTR_DB_OPERATION_PARAMETER = 'db.operation.parameter';
 export const ATTR_DB_CONNECTION_STRING = 'db.connection_string';
 
 /**
- * Transport protocol used. See note below.
- *
- */
-export const ATTR_NET_TRANSPORT = 'net.transport';
-
-/**
  * Username for accessing the database.
  *
  */

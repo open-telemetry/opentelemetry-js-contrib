@@ -28,6 +28,7 @@ import {
 import {
   ATTR_SERVER_PORT,
   ATTR_SERVER_ADDRESS,
+  ATTR_NETWORK_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_SYSTEM,
@@ -37,7 +38,6 @@ import {
   ATTR_DB_OPERATION_PARAMETER,
   ATTR_DB_CONNECTION_STRING,
   ATTR_DB_USER,
-  ATTR_NET_TRANSPORT,
 } from './semconv';
 
 import type * as oracleDBTypes from 'oracledb';
@@ -113,7 +113,7 @@ export function getOracleTelemetryTraceHandlerClass(
     private _getConnectionSpanAttributes(config: SpanConnectionConfig) {
       return {
         [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
-        [ATTR_NET_TRANSPORT]: config.protocol,
+        [ATTR_NETWORK_TRANSPORT]: config.protocol,
         [ATTR_DB_USER]: config.user,
         [ATTR_DB_NAMESPACE]: this._getDBNameSpace(
           config.instanceName,
