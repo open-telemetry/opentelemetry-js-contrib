@@ -50,7 +50,7 @@ Caveats with  ``oracledb`` Thick mode:
 
 | Options | Type | Default | Description |
 | ------- | ---- | --------| ----------- |
-| `enhancedDatabaseReporting` | `boolean` | `false` | If true, additional details about the sql statement's bind values, ``db.operation.parameter.<key>`` will be attached to the spans generated to represent the database operations inaddition to the SQL statement in ``db.query.text`` |
+| `enhancedDatabaseReporting` | `boolean` | `false` | If true, details about the sql statement's bind values (being set on parameters ``db.operation.parameter.<key>``) and the sql string (being set on parameter ``db.query.text``) will be attached to the spans generated |
 | `dbStatementDump` | `boolean` | `false` | If true, ``db.query.text`` will contain the sql string in the spans generated |
 | `requestHook` | `OracleInstrumentationExecutionRequestHook` (function) | | Function for adding custom span attributes using information about the data for the sql statement being executed |
 | `responseHook` | `OracleInstrumentationExecutionResponseHook` (function) | | Function for adding custom span attributes from the db response |
