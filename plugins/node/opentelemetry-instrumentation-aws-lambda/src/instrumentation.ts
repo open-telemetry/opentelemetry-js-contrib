@@ -157,11 +157,16 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
               if (isWrapped(moduleExports[functionName])) {
                 this._unwrap(moduleExports, functionName);
               }
+              // try {
               this._wrap(
                 moduleExports,
                 functionName,
                 this._getHandler(lambdaStartTime)
               );
+              // } catch (error) {
+              //   // _wrap is not error safe. We do not want the instrumented lambda to fail if wrapping fails.
+              //   diag.error('patching handler function failed', error);
+              // }
               return moduleExports;
             },
             (moduleExports?: LambdaModule) => {
