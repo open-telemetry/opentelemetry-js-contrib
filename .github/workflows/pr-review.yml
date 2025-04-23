@@ -6,8 +6,10 @@ on:
     types:
       - submitted
 
+permissions: read-all
+
 jobs:
-  approved:
+  add-owner-approved-label:
     if: github.event.review.state == 'approved'
     runs-on: ubuntu-latest
     steps:
@@ -21,6 +23,6 @@ jobs:
         run: ./.github/workflows/scripts/add-labels-to-reviewed-pr.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE: ${{ github.event.issue.number }}
-          COMMENT: ${{ github.event.comment.body }}
-          SENDER: ${{ github.event.sender.login }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.number }}
+          
