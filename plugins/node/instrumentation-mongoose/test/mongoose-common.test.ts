@@ -37,8 +37,6 @@ import * as mongoose from 'mongoose';
 import User, { IUser, loadUsers } from './user';
 import { assertSpan, getStatement } from './asserts';
 import { DB_NAME, MONGO_URI } from './config';
-import * as testUtils from "@opentelemetry/contrib-test-utils";
-import assert from "assert";
 
 // Please run mongodb in the background: docker run -d -p 27017:27017 -v ~/data:/data/db mongo
 describe('mongoose instrumentation [common]', () => {
