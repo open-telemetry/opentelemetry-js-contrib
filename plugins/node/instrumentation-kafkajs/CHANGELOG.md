@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.9.0...instrumentation-kafkajs-v0.9.1) (2025-04-16)
+
+
+### Bug Fixes
+
+* **instrumentation-kafkajs:** fix instr to work with kafkajs@1.7.0 and earlier ([#2787](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2787)) ([e88ca9d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e88ca9d614159e682997bef671e12d20ca5f8c34)), closes [#2784](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2784)
+
 ## [0.9.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.8.0...instrumentation-kafkajs-v0.9.0) (2025-04-08)
 
 
