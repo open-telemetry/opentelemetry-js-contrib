@@ -13,6 +13,9 @@
     "detectors/node/opentelemetry-resource-detector-gcp": {},
     "detectors/node/opentelemetry-resource-detector-github": {},
     "detectors/node/opentelemetry-resource-detector-instana": {},
+    "incubator/opentelemetry-sampler-aws-xray": {
+      "skip-github-release": true
+    },
     "metapackages/auto-configuration-propagators": {},
     "metapackages/auto-instrumentations-node": {},
     "metapackages/auto-instrumentations-web": {},
@@ -22,9 +25,6 @@
     "packages/opentelemetry-id-generator-aws-xray": {},
     "packages/opentelemetry-propagation-utils": {},
     "packages/opentelemetry-redis-common": {},
-    "packages/opentelemetry-sampler-aws-xray": {
-      "skip-github-release": true
-    },
     "packages/opentelemetry-sql-common": {},
     "packages/opentelemetry-test-utils": {},
     "packages/winston-transport": {},
