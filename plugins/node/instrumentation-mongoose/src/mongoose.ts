@@ -106,10 +106,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     return module;
   }
 
-  private patch(
-    module: any,
-    moduleVersion: string | undefined
-  ) {
+  private patch(module: any, moduleVersion: string | undefined) {
     const moduleExports: typeof mongoose =
       module[Symbol.toStringTag] === 'Module'
         ? module.default // ESM
@@ -159,10 +156,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     return moduleExports;
   }
 
-  private unpatch(
-    module: any,
-    moduleVersion: string | undefined
-  ): void {
+  private unpatch(module: any, moduleVersion: string | undefined): void {
     const moduleExports: typeof mongoose =
       module[Symbol.toStringTag] === 'Module'
         ? module.default // ESM
