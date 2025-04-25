@@ -1,23 +1,18 @@
-# Note: tests must set `SKIP_TEST_IF_DISABLE=true` to override usage of
-# `mocha --require '../../../scripts/skip-test-if.js' ...` if calling `npm test`.
-
-"aws-sdk":
-  env:
-    - SKIP_TEST_IF_DISABLE=true
-  # A small subset of releases in the range [2.308.0, 3) to reduce testing time.
-  versions:
-    include: "^2.308.0"
-    mode: max-7
-  commands:
-    - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v2.test.ts
-
 # Versions [3.363.0, 3.377.0] of all @aws-sdk/client-* were bad releases. See:
 # - https://github.com/open-telemetry/opentelemetry-js-contrib/pull/2464#issuecomment-2403652552
 # - https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1828#issuecomment-1834276719
 
-# node version support in JS SDK v3:
-# - 14.x dropped in v3.567.0 https://github.com/aws/aws-sdk-js-v3/pull/6034
-# - 16.x dropped in v3.723.0 https://github.com/aws/aws-sdk-js-v3/pull/6775
+"@aws-sdk/client-bedrock-runtime":
+  env:
+    - SKIP_TEST_IF_DISABLE=true
+  jobs:
+    - node: ">=18"
+      versions:
+        include: "^3.587.0"
+        exclude: ">=3.363.0 <=3.377.0"
+        mode: "max-7"
+      commands:
+        - mocha --require '@opentelemetry/contrib-test-utils' test/bedrock-runtime.test.ts
 
 "@aws-sdk/client-s3":
   env:
@@ -27,22 +22,6 @@
     - node: ">=18"
       versions:
         include: "^3.6.1"
-        exclude: "3.529.0 || >=3.363.0 <=3.377.0"
-        mode: "max-7"
-      commands:
-        - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-s3.test.ts
-        - mocha --require '@opentelemetry/contrib-test-utils' test/s3.test.ts
-    - node: "16"
-      versions:
-        include: ">=3.6.1 <3.723.0"
-        exclude: "3.529.0 || >=3.363.0 <=3.377.0"
-        mode: "max-7"
-      commands:
-        - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-s3.test.ts
-        - mocha --require '@opentelemetry/contrib-test-utils' test/s3.test.ts
-    - node: "14"
-      versions:
-        include: ">=3.6.1 <3.567.0"
         exclude: "3.529.0 || >=3.363.0 <=3.377.0"
         mode: "max-7"
       commands:
@@ -60,21 +39,3 @@
         mode: "max-7"
       commands:
         - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-sqs.test.ts
-        - mocha --require '@opentelemetry/contrib-test-utils' test/sqs.test.ts
-    - node: "16"
-      versions:
-        include: ">=3.24.0 <3.723.0"
-        exclude: ">=3.363.0 <=3.377.0"
-        mode: "max-7"
-      commands:
-        - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-sqs.test.ts
-        - mocha --require '@opentelemetry/contrib-test-utils' test/sqs.test.ts
-    - node: "14"
-      versions:
-        include: ">=3.24.0 <3.567.0"
-        exclude: ">=3.363.0 <=3.377.0"
-        mode: "max-7"
-      commands:
-        - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-sqs.test.ts
-        - mocha --require '@opentelemetry/contrib-test-utils' test/sqs.test.ts
-

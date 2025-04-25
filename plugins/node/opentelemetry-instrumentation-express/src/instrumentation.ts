@@ -171,7 +171,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         req: PatchedRequest,
         res: express.Response
       ) {
-        storeLayerPath(req, layerPath);
+        const { isLayerPathStored } = storeLayerPath(req, layerPath);
         const route = (req[_LAYERS_STORE_PROPERTY] as string[])
           .filter(path => path !== '/' && path !== '/*')
           .join('')
@@ -280,7 +280,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
               req.res?.removeListener('finish', onResponseFinish);
               span.end();
             }
-            if (!(req.route && isError)) {
+            if (!(req.route && isError) && isLayerPathStored) {
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
             const callback = args[callbackIdx] as Function;
