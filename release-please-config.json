@@ -13,9 +13,6 @@
     "detectors/node/opentelemetry-resource-detector-gcp": {},
     "detectors/node/opentelemetry-resource-detector-github": {},
     "detectors/node/opentelemetry-resource-detector-instana": {},
-    "incubator/opentelemetry-sampler-aws-xray": {
-      "skip-github-release": true
-    },
     "metapackages/auto-configuration-propagators": {},
     "metapackages/auto-instrumentations-node": {},
     "metapackages/auto-instrumentations-web": {},

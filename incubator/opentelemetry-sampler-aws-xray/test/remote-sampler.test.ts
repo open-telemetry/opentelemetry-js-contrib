@@ -18,7 +18,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes, emptyResource } from '@opentelemetry/resources';
 import {
   SEMRESATTRS_CLOUD_PLATFORM,
   ATTR_SERVICE_NAME,
@@ -42,7 +42,7 @@ describe('AWSXRayRemoteSampler', () => {
 
   it('testCreateRemoteSamplerWithEmptyResource', () => {
     sampler = new AWSXRayRemoteSampler({
-      resource: Resource.EMPTY,
+      resource: emptyResource(),
     });
 
     expect((sampler as any)._root._root.rulePoller).not.toBeFalsy();
@@ -53,7 +53,7 @@ describe('AWSXRayRemoteSampler', () => {
   });
 
   it('testCreateRemoteSamplerWithPopulatedResource', () => {
-    const resource = new Resource({
+    const resource = resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'test-service-name',
       [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
     });
@@ -67,7 +67,7 @@ describe('AWSXRayRemoteSampler', () => {
   });
 
   it('testCreateRemoteSamplerWithAllFieldsPopulated', () => {
-    const resource = new Resource({
+    const resource = resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'test-service-name',
       [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
     });
@@ -89,7 +89,7 @@ describe('AWSXRayRemoteSampler', () => {
 
   it('toString()', () => {
     expect(
-      new AWSXRayRemoteSampler({ resource: Resource.EMPTY }).toString()
+      new AWSXRayRemoteSampler({ resource: emptyResource() }).toString()
     ).toEqual(
       'AWSXRayRemoteSampler{root=ParentBased{root=_AWSXRayRemoteSampler{awsProxyEndpoint=http://localhost:2000, rulePollingIntervalMillis=300000}, remoteParentSampled=AlwaysOnSampler, remoteParentNotSampled=AlwaysOffSampler, localParentSampled=AlwaysOnSampler, localParentNotSampled=AlwaysOffSampler}'
     );
@@ -117,7 +117,7 @@ describe('_AWSXRayRemoteSampler', () => {
 
   it('should make a POST request to the /GetSamplingRules endpoint upon initialization', async () => {
     sampler = new _AWSXRayRemoteSampler({
-      resource: Resource.EMPTY,
+      resource: emptyResource(),
       pollingInterval: pollingInterval,
     });
     sinon.assert.calledOnce(xrayClientSpy);
@@ -125,7 +125,7 @@ describe('_AWSXRayRemoteSampler', () => {
 
   it('should make 3 POST requests to the /GetSamplingRules endpoint after 3 intervals have passed', async () => {
     sampler = new _AWSXRayRemoteSampler({
-      resource: Resource.EMPTY,
+      resource: emptyResource(),
       pollingInterval: pollingInterval,
     });
     clock.tick(pollingInterval * 1000 + 5000);
