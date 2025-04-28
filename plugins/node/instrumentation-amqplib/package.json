@@ -59,7 +59,7 @@
     "amqplib": "0.8.0",
     "expect": "29.2.0",
     "lodash": "4.17.21",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "sinon": "15.2.0",
     "test-all-versions": "6.1.0",
     "typescript": "5.0.4"
