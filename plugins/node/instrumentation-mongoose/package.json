@@ -54,7 +54,7 @@
     "@types/node": "18.18.14",
     "expect": "29.2.0",
     "mongoose": "6.13.8",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "test-all-versions": "6.1.0",
     "typescript": "5.0.4"
