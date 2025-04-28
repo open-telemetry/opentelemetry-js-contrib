@@ -251,10 +251,13 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
   private _setKafkaEventListeners(kafkaObj: KafkaEventEmitter) {
     if (kafkaObj[EVENT_LISTENERS_SET]) return;
 
-    kafkaObj.on(
-      kafkaObj.events.REQUEST,
-      this._recordClientDurationMetric.bind(this)
-    );
+    // The REQUEST Consumer event was added in kafkajs@1.5.0.
+    if (kafkaObj.events?.REQUEST) {
+      kafkaObj.on(
+        kafkaObj.events.REQUEST,
+        this._recordClientDurationMetric.bind(this)
+      );
+    }
 
     kafkaObj[EVENT_LISTENERS_SET] = true;
   }
