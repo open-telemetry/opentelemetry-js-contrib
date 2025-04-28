@@ -57,7 +57,7 @@
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
     "cross-env": "7.0.3",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "oracledb": "^6.7.0",
     "rimraf": "5.0.10",
     "safe-stable-stringify": "^2.4.1",
