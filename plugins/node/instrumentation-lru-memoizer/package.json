@@ -48,7 +48,7 @@
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "expect": "29.2.0",
-    "lru-memoizer": "2.1.4",
+    "lru-memoizer": "3.0.0",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "test-all-versions": "6.1.0",
