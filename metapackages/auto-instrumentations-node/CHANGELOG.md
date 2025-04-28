@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.57.1...auto-instrumentations-node-v0.58.0) (2025-04-16)
+
+
+### Features
+
+* **auto-instrumentations-node:** enable runtime-node ([#2786](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2786)) ([f637c87](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f637c8729ac6899f3a87aac93e555fd42d46ab71))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-express bumped from ^0.48.0 to ^0.48.1
+    * @opentelemetry/instrumentation-kafkajs bumped from ^0.9.0 to ^0.9.1
+    * @opentelemetry/instrumentation-runtime-node bumped from ^0.13.0 to ^0.14.0
+
+## [0.57.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.57.0...auto-instrumentations-node-v0.57.1) (2025-04-08)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.50.0 to ^0.51.0
+    * @opentelemetry/instrumentation-kafkajs bumped from ^0.8.0 to ^0.9.0
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.45.0 to ^0.46.0
+
 ## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.56.1...auto-instrumentations-node-v0.57.0) (2025-03-18)
 
 
