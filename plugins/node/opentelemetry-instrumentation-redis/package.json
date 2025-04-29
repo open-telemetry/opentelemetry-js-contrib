@@ -57,7 +57,7 @@
     "@types/node": "18.18.14",
     "@types/redis": "2.8.32",
     "cross-env": "7.0.3",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "redis": "3.1.2",
     "rimraf": "5.0.10",
     "test-all-versions": "6.1.0",
