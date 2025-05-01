@@ -89,6 +89,7 @@ describe('Bedrock', () => {
     };
   }
 
+  // Use NodeHttpHandler to use HTTP instead of HTTP2 because nock does not support HTTP2
   const client = new BedrockRuntimeClient({
     region,
     credentials,
