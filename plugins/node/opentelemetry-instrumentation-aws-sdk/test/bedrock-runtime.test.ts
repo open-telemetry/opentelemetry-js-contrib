@@ -43,6 +43,7 @@ import {
 import { AwsCredentialIdentity } from '@aws-sdk/types';
 import * as path from 'path';
 import { Definition, back as nockBack } from 'nock';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
@@ -88,7 +89,11 @@ describe('Bedrock', () => {
     };
   }
 
-  const client = new BedrockRuntimeClient({ region, credentials });
+  const client = new BedrockRuntimeClient({
+    region,
+    credentials,
+    requestHandler: new NodeHttpHandler(),
+  });
 
   let nockDone: () => void;
   beforeEach(async function () {
