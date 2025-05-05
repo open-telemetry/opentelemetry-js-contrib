@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-typeorm",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "OpenTelemetry instrumentation for `typeorm` database data-mapper ORM",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
