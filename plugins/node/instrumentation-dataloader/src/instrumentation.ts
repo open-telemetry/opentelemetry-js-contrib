@@ -44,6 +44,12 @@ type DataloaderInternal = typeof Dataloader.prototype & {
 type LoadFn = (typeof Dataloader.prototype)['load'];
 type LoadManyFn = (typeof Dataloader.prototype)['loadMany'];
 
+function extractModuleExports(module: any) {
+  return module[Symbol.toStringTag] === 'Module'
+    ? module.default // ESM
+    : module; // CommonJS
+}
+
 export class DataloaderInstrumentation extends InstrumentationBase<DataloaderInstrumentationConfig> {
   constructor(config: DataloaderInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -55,18 +61,20 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
         MODULE_NAME,
         ['>=2.0.0 <3'],
         dataloader => {
-          this._patchLoad(dataloader.prototype);
-          this._patchLoadMany(dataloader.prototype);
+          const dataloaderExports = extractModuleExports(dataloader);
+          this._patchLoad(dataloaderExports.prototype);
+          this._patchLoadMany(dataloaderExports.prototype);
 
-          return this._getPatchedConstructor(dataloader);
+          return this._getPatchedConstructor(dataloaderExports);
         },
         dataloader => {
-          if (isWrapped(dataloader.prototype.load)) {
-            this._unwrap(dataloader.prototype, 'load');
+          const dataloaderExports = extractModuleExports(dataloader);
+          if (isWrapped(dataloaderExports.prototype.load)) {
+            this._unwrap(dataloaderExports.prototype, 'load');
           }
 
-          if (isWrapped(dataloader.prototype.loadMany)) {
-            this._unwrap(dataloader.prototype, 'loadMany');
+          if (isWrapped(dataloaderExports.prototype.loadMany)) {
+            this._unwrap(dataloaderExports.prototype, 'loadMany');
           }
         }
       ) as InstrumentationNodeModuleDefinition,
