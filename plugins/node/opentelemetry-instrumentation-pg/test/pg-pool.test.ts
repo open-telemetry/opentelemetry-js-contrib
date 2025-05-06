@@ -650,6 +650,12 @@ describe('pg-pool', () => {
 
     it('should not add duplicate event listeners to PgPool events', done => {
       const poolAux: pgPool<pg.Client> = new pgPool(CONFIG);
+
+      const finish = () => {
+        poolAux.end();
+        done();
+      }
+
       let completed = 0;
       poolAux.connect((err, client, release) => {
         if (err) {
@@ -687,7 +693,7 @@ describe('pg-pool', () => {
 
         completed++;
         if (completed >= 2) {
-          done();
+          finish();
         }
       });
 
@@ -727,7 +733,7 @@ describe('pg-pool', () => {
 
         completed++;
         if (completed >= 2) {
-          done();
+          finish();
         }
       });
     });
@@ -808,6 +814,8 @@ describe('pg-pool', () => {
             1,
             'expected to have 1 used connection'
           );
+
+          poolAux.end();
           done();
         });
       });
@@ -816,6 +824,12 @@ describe('pg-pool', () => {
     it('when creating multiple pools, all of them should be instrumented', done => {
       const pool1: pgPool<pg.Client> = new pgPool(CONFIG);
       const pool2: pgPool<pg.Client> = new pgPool(CONFIG);
+
+      const finish = () => {
+        pool1.end();
+        pool2.end();
+        done();
+      }
 
       let completed = 0;
       pool1.connect((err, client, release) => {
@@ -862,7 +876,7 @@ describe('pg-pool', () => {
 
         completed++;
         if (completed >= 2) {
-          done();
+          finish();
         }
       });
 
@@ -910,7 +924,7 @@ describe('pg-pool', () => {
 
         completed++;
         if (completed >= 2) {
-          done();
+          finish();
         }
       });
     });
@@ -937,14 +951,24 @@ describe('pg-pool (ESM)', () => {
       checkCollector: (collector: testUtils.TestCollector) => {
         const spans = collector.sortedSpans;
 
-        assert.strictEqual(spans.length, 3);
+        assert.strictEqual(spans.length, 6);
 
-        assert.strictEqual(spans[0].name, 'pgPool.connect');
-        assert.strictEqual(spans[0].kind, 3);
-        assert.strictEqual(spans[1].name, 'test-span');
-        assert.strictEqual(spans[1].kind, 1);
-        assert.strictEqual(spans[2].name, 'pgPool.query:SELECT NOW()');
-        assert.strictEqual(spans[2].kind, 3);
+        let span = spans.shift()!;
+        assert.strictEqual(span.name, 'test-span');
+        assert.strictEqual(span.kind, 1 /* OtlpSpanKind.INTERNAL */);
+        const expectedRemainingSpanNames = [
+          // I believe two sets of `*.connect` spans because pg-pool opens
+          // two connections to start.
+          'pg-pool.connect',
+          'pg.connect',
+          'pg-pool.connect',
+          'pg.connect',
+          'pg.query:SELECT otel_pg_database'
+        ];
+        for (let expectedName of expectedRemainingSpanNames) {
+          span = spans.shift()!;
+          assert.strictEqual(span.name, expectedName);
+        }
       },
     });
   });

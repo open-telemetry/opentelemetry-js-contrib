@@ -26,7 +26,7 @@ import { PgInstrumentation } from '../../build/src/index.js';
 const CONFIG = {
   user: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'postgres',
-  database: process.env.POSTGRES_DB || 'postgres',
+  database: process.env.POSTGRES_DB || 'otel_pg_database',
   host: process.env.POSTGRES_HOST || 'localhost',
   port: process.env.POSTGRES_PORT
     ? parseInt(process.env.POSTGRES_PORT, 10)
@@ -39,20 +39,21 @@ const sdk = createTestNodeSdk({
 });
 sdk.start();
 
-import pool from 'pg-pool';
-const pgPool = new pool(CONFIG);
+import Pool from 'pg-pool';
+const pgPool = new Pool(CONFIG);
 
 const tracer = trace.getTracer();
 
 await tracer.startActiveSpan('test-span', async span => {
-  pgPool.connect((connectErr, _, release) => {
-    assert.ifError(connectErr)
-    pgPool.query('SELECT NOW()', (err, res) => {
-      assert.ok(res);
-      assert.ifError(err)
-    });
-    release();
+  const client = await pgPool.connect();
+  try {
+    const res = await pgPool.query('SELECT NOW()');
+    assert.ok(res);
+    console.log('rows:', res.rows);
+  } finally {
+    client.release();
+    pgPool.end();
     span.end();
     sdk.shutdown();
-  });
+  }
 });
