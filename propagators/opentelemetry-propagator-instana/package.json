@@ -62,7 +62,7 @@
     "karma-mocha": "2.0.1",
     "karma-spec-reporter": "0.0.36",
     "karma-webpack": "5.0.1",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "process": "0.11.10",
     "ts-loader": "9.5.2",
     "typescript": "5.0.4",

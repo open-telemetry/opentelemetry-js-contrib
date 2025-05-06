@@ -67,7 +67,7 @@ describe('ExpressInstrumentation hooks', () => {
       rootSpan = tracer.startSpan('rootSpan');
 
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
-        app.get('*', (req, res) => {
+        app.get(/.*/, (req, res) => {
           rpcMetadata = getRPCMetadata(context.active());
           res.send('ok');
         });
@@ -97,7 +97,7 @@ describe('ExpressInstrumentation hooks', () => {
           assert.strictEqual(spans.length, 2);
 
           assert.notStrictEqual(
-            spans.find(span => span.name === 'custom: request_handler - *'),
+            spans.find(span => span.name === 'custom: request_handler - /.*/'),
             undefined
           );
         }
@@ -120,9 +120,9 @@ describe('ExpressInstrumentation hooks', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 2);
 
-          assert.strictEqual(rpcMetadata?.route, '*');
+          assert.strictEqual(rpcMetadata?.route, '/.*/');
           assert.notStrictEqual(
-            spans.find(span => span.name === 'request handler - *'),
+            spans.find(span => span.name === 'request handler - /.*/'),
             undefined
           );
         }
@@ -146,9 +146,9 @@ describe('ExpressInstrumentation hooks', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 2);
 
-          assert.strictEqual(rpcMetadata?.route, '*');
+          assert.strictEqual(rpcMetadata?.route, '/.*/');
           assert.notStrictEqual(
-            spans.find(span => span.name === 'request handler - *'),
+            spans.find(span => span.name === 'request handler - /.*/'),
             undefined
           );
         }
@@ -165,7 +165,7 @@ describe('ExpressInstrumentation hooks', () => {
       rootSpan = tracer.startSpan('rootSpan');
 
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
-        app.get('*', (req, res) => {
+        app.get(/.*/, (req, res) => {
           res.send('ok');
         });
       });
@@ -198,7 +198,7 @@ describe('ExpressInstrumentation hooks', () => {
 
           const spans = memoryExporter.getFinishedSpans();
           const requestHandlerSpan = spans.find(
-            span => span.name === 'request handler - *'
+            span => span.name === 'request handler - /.*/'
           );
 
           assert.strictEqual(spans.length, 2);
@@ -234,7 +234,7 @@ describe('ExpressInstrumentation hooks', () => {
 
           const spans = memoryExporter.getFinishedSpans();
           const requestHandlerSpan = spans.find(
-            span => span.name === 'request handler - *'
+            span => span.name === 'request handler - /.*/'
           );
 
           assert.strictEqual(spans.length, 2);

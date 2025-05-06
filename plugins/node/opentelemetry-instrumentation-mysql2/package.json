@@ -51,7 +51,7 @@
     "@types/node": "18.18.14",
     "@types/semver": "7.5.8",
     "mysql2": "3.11.5",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "semver": "7.7.1",
     "test-all-versions": "6.1.0",

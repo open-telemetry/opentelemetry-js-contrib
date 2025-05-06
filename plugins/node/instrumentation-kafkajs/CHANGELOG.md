@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.9.1...instrumentation-kafkajs-v0.9.2) (2025-05-02)
+
+
+### Bug Fixes
+
+* **instrumentation-kafkajs:** add missing delcare keyword for metric instruments ([#2805](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2805)) ([32f41ee](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/32f41ee3feab7b58b48330469037fa4ca308055c))
+
 ## [0.9.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.9.0...instrumentation-kafkajs-v0.9.1) (2025-04-16)
 
 

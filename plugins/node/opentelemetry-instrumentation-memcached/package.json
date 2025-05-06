@@ -52,7 +52,7 @@
     "@types/node": "18.18.14",
     "cross-env": "7.0.3",
     "memcached": "2.2.2",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "typescript": "5.0.4"
   },

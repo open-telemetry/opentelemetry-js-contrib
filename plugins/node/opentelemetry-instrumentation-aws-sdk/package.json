@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-sdk",
-  "version": "0.51.0",
+  "version": "0.52.0",
   "description": "OpenTelemetry instrumentation for `aws-sdk` and `@aws-sdk/client-*` clients for various AWS services",
   "keywords": [
     "aws",
@@ -68,7 +68,7 @@
     "eslint": "8.7.0",
     "expect": "29.2.0",
     "nock": "13.3.3",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
     "test-all-versions": "6.1.0",

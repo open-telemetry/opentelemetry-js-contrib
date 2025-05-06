@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.47.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.47.0...instrumentation-mongoose-v0.47.1) (2025-05-02)
+
+
+### Bug Fixes
+
+* instrumentation of ESM-imported mongoose ([#2793](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2793)) ([64d358e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/64d358e58c8ba493a18596648157d55f06ff30ca))
+
 ## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.46.1...instrumentation-mongoose-v0.47.0) (2025-03-18)
 
 
