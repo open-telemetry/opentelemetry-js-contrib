@@ -39,7 +39,7 @@ const sdk = createTestNodeSdk({
 });
 sdk.start();
 
-import { Pool as PGPool } from 'pg';
+import * as PGPool from 'pg-pool';
 const pgPool = new PGPool(CONFIG);
 const tracer = trace.getTracer();
 
