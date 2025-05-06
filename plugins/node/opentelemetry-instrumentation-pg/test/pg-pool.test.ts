@@ -916,3 +916,32 @@ describe('pg-pool', () => {
     });
   });
 });
+
+describe('pg-pool (ESM)', () => {
+  it('should work with ESM usage', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-pg-pool.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        const spans = collector.sortedSpans;
+
+        assert.strictEqual(spans.length, 3);
+
+        assert.strictEqual(spans[0].name, 'pgPool.connect');
+        assert.strictEqual(spans[0].kind, 3);
+        assert.strictEqual(spans[1].name, 'test-span');
+        assert.strictEqual(spans[1].kind, 1);
+        assert.strictEqual(spans[2].name, 'pgPool.query:SELECT NOW()');
+        assert.strictEqual(spans[2].kind, 3);
+      },
+    });
+  });
+});
