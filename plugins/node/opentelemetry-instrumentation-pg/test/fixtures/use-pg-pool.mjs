@@ -39,8 +39,9 @@ const sdk = createTestNodeSdk({
 });
 sdk.start();
 
-import * as PGPool from 'pg-pool';
+const PGPool = require('pg-pool');
 const pgPool = new PGPool(CONFIG);
+
 const tracer = trace.getTracer();
 
 await tracer.startActiveSpan('test-span', async span => {
