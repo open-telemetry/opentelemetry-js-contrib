@@ -918,6 +918,10 @@ describe('pg-pool', () => {
 });
 
 describe('pg-pool (ESM)', () => {
+  after(done => {
+    done();
+  });
+
   it('should work with ESM usage', async () => {
     await testUtils.runTestFixture({
       cwd: __dirname,
