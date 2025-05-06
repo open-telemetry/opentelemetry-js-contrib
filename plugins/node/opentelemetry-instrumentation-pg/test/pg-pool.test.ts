@@ -654,7 +654,7 @@ describe('pg-pool', () => {
       const finish = () => {
         poolAux.end();
         done();
-      }
+      };
 
       let completed = 0;
       poolAux.connect((err, client, release) => {
@@ -829,7 +829,7 @@ describe('pg-pool', () => {
         pool1.end();
         pool2.end();
         done();
-      }
+      };
 
       let completed = 0;
       pool1.connect((err, client, release) => {
@@ -963,9 +963,9 @@ describe('pg-pool (ESM)', () => {
           'pg.connect',
           'pg-pool.connect',
           'pg.connect',
-          'pg.query:SELECT otel_pg_database'
+          'pg.query:SELECT otel_pg_database',
         ];
-        for (let expectedName of expectedRemainingSpanNames) {
+        for (const expectedName of expectedRemainingSpanNames) {
           span = spans.shift()!;
           assert.strictEqual(span.name, expectedName);
         }
