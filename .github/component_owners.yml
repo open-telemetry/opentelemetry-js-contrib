@@ -123,6 +123,9 @@ components:
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-net:
     - seemk
+  plugins/node/opentelemetry-instrumentation-oracledb:
+    - sudarshan12s
+    - sharadraju
   plugins/node/instrumentation-runtime-node:
     - d4nyll
   plugins/node/opentelemetry-instrumentation-pg:
