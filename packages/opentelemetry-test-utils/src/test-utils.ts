@@ -45,7 +45,7 @@ const dockerRunCmds = {
   oracledb:
     'docker run --rm -d --name otel-oracledb -p 1521:1521 -e ORACLE_PASSWORD=oracle -e APP_USER=otel -e APP_USER_PASSWORD=secret gvenzl/oracle-free:slim',
   postgres:
-    'docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres postgres:16-alpine',
+    'docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=otel_pg_database postgres:16-alpine',
   redis: 'docker run --rm -d --name otel-redis -p 63790:6379 redis:alpine',
 };
 
