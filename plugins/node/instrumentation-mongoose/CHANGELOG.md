@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.47.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.47.1...instrumentation-mongoose-v0.47.2) (2025-05-08)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
 ## [0.47.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.47.0...instrumentation-mongoose-v0.47.1) (2025-05-02)
 
 
