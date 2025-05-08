@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-// Use postgres from an ES module:
-//    node --experimental-loader=@opentelemetry/instrumentation/hook.mjs use-pg.mjs
+// Use pg-pool from an ES module:
+//    node --experimental-loader=@opentelemetry/instrumentation/hook.mjs use-pg-pool.mjs
 
 import { trace } from '@opentelemetry/api';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
@@ -34,24 +34,26 @@ const CONFIG = {
 };
 
 const sdk = createTestNodeSdk({
-  serviceName: 'use-pg',
+  serviceName: 'use-pg-pool',
   instrumentations: [new PgInstrumentation()],
 });
 sdk.start();
 
-import pg from 'pg';
-const client = new pg.Client(CONFIG);
-
-await client.connect();
+import Pool from 'pg-pool';
+const pgPool = new Pool(CONFIG);
 
 const tracer = trace.getTracer();
 
 await tracer.startActiveSpan('test-span', async span => {
-  const res = await client.query('SELECT NOW()');
-
-  assert.ok(res);
-  span.end();
-
-  await client.end();
-  await sdk.shutdown();
+  const client = await pgPool.connect();
+  try {
+    const res = await pgPool.query('SELECT NOW()');
+    assert.ok(res);
+    console.log('rows:', res.rows);
+  } finally {
+    client.release();
+    pgPool.end();
+    span.end();
+    sdk.shutdown();
+  }
 });
