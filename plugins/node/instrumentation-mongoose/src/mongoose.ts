@@ -106,10 +106,12 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     return module;
   }
 
-  private patch(
-    moduleExports: typeof mongoose,
-    moduleVersion: string | undefined
-  ) {
+  private patch(module: any, moduleVersion: string | undefined) {
+    const moduleExports: typeof mongoose =
+      module[Symbol.toStringTag] === 'Module'
+        ? module.default // ESM
+        : module; // CommonJS
+
     this._wrap(
       moduleExports.Model.prototype,
       'save',
@@ -154,10 +156,12 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     return moduleExports;
   }
 
-  private unpatch(
-    moduleExports: typeof mongoose,
-    moduleVersion: string | undefined
-  ): void {
+  private unpatch(module: any, moduleVersion: string | undefined): void {
+    const moduleExports: typeof mongoose =
+      module[Symbol.toStringTag] === 'Module'
+        ? module.default // ESM
+        : module; // CommonJS
+
     const contextCaptureFunctions = getContextCaptureFunctions(moduleVersion);
 
     this._unwrap(moduleExports.Model.prototype, 'save');
