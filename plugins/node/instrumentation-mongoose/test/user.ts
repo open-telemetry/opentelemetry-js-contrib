@@ -15,6 +15,8 @@
  */
 import { Schema, Document } from 'mongoose';
 import * as mongoose from 'mongoose';
+import { context } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 
 export interface IUser extends Document {
   email: string;
@@ -35,25 +37,27 @@ const User = mongoose.model<IUser>('User', UserSchema);
 export default User;
 
 export const loadUsers = async () => {
-  await User.insertMany([
-    new User({
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      age: 18,
-    }),
-    new User({
-      firstName: 'Jane',
-      lastName: 'Doe',
-      email: 'jane.doe@example.com',
-      age: 19,
-    }),
-    new User({
-      firstName: 'Michael',
-      lastName: 'Fox',
-      email: 'michael.fox@example.com',
-      age: 16,
-    }),
-  ]);
+  await context.with(suppressTracing(context.active()), async () => {
+    await User.insertMany([
+      new User({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        age: 18,
+      }),
+      new User({
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: 'jane.doe@example.com',
+        age: 19,
+      }),
+      new User({
+        firstName: 'Michael',
+        lastName: 'Fox',
+        email: 'michael.fox@example.com',
+        age: 16,
+      }),
+    ]);
+  });
   await User.createIndexes();
 };
