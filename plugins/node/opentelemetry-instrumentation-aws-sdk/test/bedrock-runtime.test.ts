@@ -27,12 +27,8 @@
  * keeping existing recordings, set NOCK_BACK_MODE to 'record'.
  */
 
-import {
-  getTestSpans,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-import { AwsInstrumentation } from '../src';
-registerInstrumentationTesting(new AwsInstrumentation());
+import { getTestSpans } from '@opentelemetry/contrib-test-utils';
+import { metricReader } from './load-instrumentation';
 
 import {
   BedrockRuntimeClient,
@@ -157,6 +153,74 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
       });
+
+      const { resourceMetrics } = await metricReader.collect();
+      expect(resourceMetrics.scopeMetrics.length).toBe(1);
+      const scopeMetrics = resourceMetrics.scopeMetrics[0];
+      const tokenUsage = scopeMetrics.metrics.filter(
+        m => m.descriptor.name === 'gen_ai.client.token.usage'
+      );
+      expect(tokenUsage.length).toBe(1);
+      expect(tokenUsage[0].descriptor).toMatchObject({
+        name: 'gen_ai.client.token.usage',
+        type: 'HISTOGRAM',
+        description: 'Measures number of input and output tokens used',
+        unit: '{token}',
+      });
+      expect(tokenUsage[0].dataPoints.length).toBe(2);
+      expect(tokenUsage[0].dataPoints).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            value: expect.objectContaining({
+              sum: 8,
+            }),
+            attributes: {
+              'gen_ai.system': 'aws.bedrock',
+              'gen_ai.operation.name': 'chat',
+              'gen_ai.request.model': 'amazon.titan-text-lite-v1',
+              'gen_ai.token.type': 'input',
+            },
+          }),
+          expect.objectContaining({
+            value: expect.objectContaining({
+              sum: 10,
+            }),
+            attributes: {
+              'gen_ai.system': 'aws.bedrock',
+              'gen_ai.operation.name': 'chat',
+              'gen_ai.request.model': 'amazon.titan-text-lite-v1',
+              'gen_ai.token.type': 'output',
+            },
+          }),
+        ])
+      );
+
+      const operationDuration = scopeMetrics.metrics.filter(
+        m => m.descriptor.name === 'gen_ai.client.operation.duration'
+      );
+      expect(operationDuration.length).toBe(1);
+      expect(operationDuration[0].descriptor).toMatchObject({
+        name: 'gen_ai.client.operation.duration',
+        type: 'HISTOGRAM',
+        description: 'GenAI operation duration',
+        unit: 's',
+      });
+      expect(operationDuration[0].dataPoints.length).toBe(1);
+      expect(operationDuration[0].dataPoints).toEqual([
+        expect.objectContaining({
+          value: expect.objectContaining({
+            sum: expect.any(Number),
+          }),
+          attributes: {
+            'gen_ai.system': 'aws.bedrock',
+            'gen_ai.operation.name': 'chat',
+            'gen_ai.request.model': 'amazon.titan-text-lite-v1',
+          },
+        }),
+      ]);
+      expect(
+        (operationDuration[0].dataPoints[0].value as any).sum
+      ).toBeGreaterThan(0);
     });
   });
 
