@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.52.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.52.0...instrumentation-pg-v0.52.1) (2025-05-08)
+
+
+### Bug Fixes
+
+* **pg:** fix instrumentation of ESM-imported pg-pool ([#2807](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2807)) ([f6bc4cc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f6bc4ccca0bf3469aa55f225192fedcae432d41f)), closes [#2759](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2759)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
 ## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.51.1...instrumentation-pg-v0.52.0) (2025-03-18)
 
 

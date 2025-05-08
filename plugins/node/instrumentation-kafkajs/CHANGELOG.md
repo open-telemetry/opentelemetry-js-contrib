@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.9.2...instrumentation-kafkajs-v0.9.3) (2025-05-08)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
 ## [0.9.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.9.1...instrumentation-kafkajs-v0.9.2) (2025-05-02)
 
 

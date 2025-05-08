@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.49.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.49.0...instrumentation-express-v0.49.1) (2025-05-08)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
 ## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.48.1...instrumentation-express-v0.49.0) (2025-05-02)
 
 
