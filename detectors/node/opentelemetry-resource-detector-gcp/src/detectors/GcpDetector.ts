@@ -34,6 +34,9 @@ import {
   SEMRESATTRS_K8S_CLUSTER_NAME,
   SEMRESATTRS_K8S_NAMESPACE_NAME,
   SEMRESATTRS_K8S_POD_NAME,
+  SEMRESATTRS_FAAS_NAME,
+  SEMRESATTRS_FAAS_INSTANCE,
+  SEMRESATTRS_FAAS_VERSION,
 } from '@opentelemetry/semantic-conventions';
 
 /**
@@ -64,6 +67,13 @@ class GcpDetector implements ResourceDetector {
       [SEMRESATTRS_HOST_NAME]: this._getHostname(isAvail),
       [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: this._getZone(isAvail),
     };
+
+    // Add resource attributes for Cloud Run.
+    if (process.env.K_SERVICE) {
+      attributes[SEMRESATTRS_FAAS_NAME] = process.env.K_SERVICE;
+      attributes[SEMRESATTRS_FAAS_VERSION] = process.env.K_REVISION;
+      attributes[SEMRESATTRS_FAAS_INSTANCE] = this._getInstanceId(isAvail);
+    }
 
     // Add resource attributes for K8s.
     if (process.env.KUBERNETES_SERVICE_HOST) {
