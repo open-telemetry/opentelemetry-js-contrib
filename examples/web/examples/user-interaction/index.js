@@ -7,11 +7,11 @@ import { B3Propagator } from '@opentelemetry/propagator-b3';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
 const providerWithZone = new WebTracerProvider({
   resource: new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: 'web-service-ui',
+    [ATTR_SERVICE_NAME]: 'web-service-ui',
   }),
   spanProcessors: [
     new SimpleSpanProcessor(new ConsoleSpanExporter()),
