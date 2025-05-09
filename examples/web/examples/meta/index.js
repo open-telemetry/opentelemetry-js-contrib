@@ -6,11 +6,11 @@ import { B3Propagator } from '@opentelemetry/propagator-b3';
 import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
 const providerWithZone = new WebTracerProvider({
   resource: new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: 'web-service-meta',
+    [ATTR_SERVICE_NAME]: 'web-service-meta',
   }),
   spanProcessors: [
     new SimpleSpanProcessor(new ConsoleSpanExporter()),

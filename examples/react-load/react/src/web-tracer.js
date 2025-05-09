@@ -5,7 +5,7 @@ import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
 import { diag, DiagConsoleLogger } from '@opentelemetry/api';
 import { Resource } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
 
 export default (serviceName) => {
   const exporter = new CollectorTraceExporter({
@@ -14,7 +14,7 @@ export default (serviceName) => {
 
   const provider = new WebTracerProvider({
     resource: new Resource({
-        [SEMRESATTRS_SERVICE_NAME]: "react-load-example"
+        [ATTR_SERVICE_NAME]: "react-load-example"
     }),
     spanProcessors: [
       new SimpleSpanProcessor(new ConsoleSpanExporter()),
