@@ -13,5 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from './remote-sampler';
-export { AWSXRayRemoteSamplerConfig } from './types';
+
+// Includes work from:
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+import { ISamplingRule, SamplingTargetDocument } from './types';
+import { SamplingRule } from './sampling-rule';
+import { Statistics } from './statistics';
+
+export class SamplingRuleApplier {
+  public samplingRule: SamplingRule;
+
+  constructor(
+    samplingRule: ISamplingRule,
+    statistics: Statistics = new Statistics(),
+    target?: SamplingTargetDocument
+  ) {
+    this.samplingRule = new SamplingRule(samplingRule);
+  }
+}
