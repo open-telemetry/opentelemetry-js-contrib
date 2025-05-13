@@ -26,6 +26,9 @@ import {
   SEMRESATTRS_CONTAINER_IMAGE_NAME,
   SEMRESATTRS_CONTAINER_IMAGE_TAG,
   SEMRESATTRS_CONTAINER_NAME,
+  SEMRESATTRS_FAAS_INSTANCE,
+  SEMRESATTRS_FAAS_NAME,
+  SEMRESATTRS_FAAS_VERSION,
   SEMRESATTRS_HOST_ID,
   SEMRESATTRS_HOST_IMAGE_ID,
   SEMRESATTRS_HOST_IMAGE_NAME,
@@ -322,6 +325,40 @@ export const assertProcessResource = (
     assert.strictEqual(
       resource.attributes[SEMRESATTRS_PROCESS_COMMAND_LINE],
       validations.commandLine
+    );
+  }
+};
+
+/**
+ * Test utility method to validate a faas resource
+ *
+ * @param resource the Resource to validate
+ * @param validations validations for the resource attributes
+ */
+export const assertFaasResource = (
+  resource: Resource,
+  validations: {
+    name?: string;
+    instance?: string;
+    version?: string;
+  }
+) => {
+  if (validations.name) {
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_FAAS_NAME],
+      validations.name
+    );
+  }
+  if (validations.instance) {
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_FAAS_INSTANCE],
+      validations.instance
+    );
+  }
+  if (validations.version) {
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_FAAS_VERSION],
+      validations.version
     );
   }
 };
