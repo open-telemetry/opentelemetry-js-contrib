@@ -31,7 +31,15 @@ import {
   assertContainerResource,
   assertEmptyResource,
 } from '@opentelemetry/contrib-test-utils';
-import { detectResources } from '@opentelemetry/resources';
+import { detectResources, Resource } from '@opentelemetry/resources';
+import * as assert from 'assert';
+import {
+  CLOUDPLATFORMVALUES_GCP_CLOUD_RUN,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_FAAS_INSTANCE,
+  SEMRESATTRS_FAAS_NAME,
+  SEMRESATTRS_FAAS_VERSION,
+} from '@opentelemetry/semantic-conventions';
 
 const HEADERS = {
   [HEADER_NAME.toLowerCase()]: HEADER_VALUE,
@@ -42,6 +50,34 @@ const PROJECT_ID_PATH = BASE_PATH + '/project/project-id';
 const ZONE_PATH = BASE_PATH + '/instance/zone';
 const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
 const HOSTNAME_PATH = BASE_PATH + '/instance/hostname';
+
+const assertFaasResource = (
+  resource: Resource,
+  validations: {
+    name?: string;
+    instance?: string;
+    version?: string;
+  }
+) => {
+  if (validations.name) {
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_FAAS_NAME],
+      validations.name
+    );
+  }
+  if (validations.instance) {
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_FAAS_INSTANCE],
+      validations.instance
+    );
+  }
+  if (validations.version) {
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_FAAS_VERSION],
+      validations.version
+    );
+  }
+};
 
 describe('gcpDetector', () => {
   describe('.detect', () => {
@@ -210,7 +246,8 @@ describe('gcpDetector', () => {
     
       secondaryScope.done();
       scope.done();
-    
+  
+      assert.strictEqual(resource.attributes[SEMRESATTRS_CLOUD_PLATFORM],CLOUDPLATFORMVALUES_GCP_CLOUD_RUN)
       assertCloudResource(resource, {
         provider: 'gcp',
         accountId: 'my-project-id',
@@ -220,30 +257,11 @@ describe('gcpDetector', () => {
         id: '4520031799277581759',
         name: 'dev.my-project.local',
       });
-    
-      const attrs = resource.attributes;
-      
-      // This should be moved to the @opentelemetry/contrib-test-utils and replaced once available.
-      // Check faas.name and faas.version which are simple string values
-      if (attrs['faas.name'] !== 'my-cloud-run-service') {
-        throw new Error(`Cloud Run faas.name is "${attrs['faas.name']}" instead of "my-cloud-run-service"`);
-      }
-      
-      if (attrs['faas.version'] !== 'my-cloud-run-revision') {
-        throw new Error(`Cloud Run faas.version is "${attrs['faas.version']}" instead of "my-cloud-run-revision"`);
-      }
-      
-      // For faas.instance, it could be a resolved value or a Promise 
-      if (attrs['faas.instance'] instanceof Promise) {
-        const resolvedInstance = await attrs['faas.instance'];
-        if (resolvedInstance !== '4520031799277581759') {
-          throw new Error(`Cloud Run faas.instance resolved to "${resolvedInstance}" instead of "4520031799277581759"`);
-        }
-      } else if (attrs['faas.instance'] !== '' && attrs['faas.instance'] !== '4520031799277581759') {
-        // The current implementation is returning an empty string, but the correct value would be the instance ID
-        // We accept either for test compatibility
-        throw new Error(`Cloud Run faas.instance is "${attrs['faas.instance']}" which is not empty or the instance ID`);
-      }
-    }).timeout(3000);    
+      assertFaasResource(resource, {
+        name: 'my-cloud-run-service',
+        version: 'my-cloud-run-revision',
+        instance: '4520031799277581759',
+      })
+    });    
   });
 });

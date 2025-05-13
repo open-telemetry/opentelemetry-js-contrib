@@ -24,6 +24,8 @@ import {
   DetectedResourceAttributes,
 } from '@opentelemetry/resources';
 import {
+  CLOUDPLATFORMVALUES_GCP_KUBERNETES_ENGINE,
+  CLOUDPLATFORMVALUES_GCP_CLOUD_RUN,
   CLOUDPROVIDERVALUES_GCP,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
   SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
@@ -37,6 +39,7 @@ import {
   SEMRESATTRS_FAAS_NAME,
   SEMRESATTRS_FAAS_INSTANCE,
   SEMRESATTRS_FAAS_VERSION,
+  SEMRESATTRS_CLOUD_PLATFORM,
 } from '@opentelemetry/semantic-conventions';
 
 /**
@@ -57,26 +60,29 @@ class GcpDetector implements ResourceDetector {
    */
   private _getAttributes(): DetectedResourceAttributes {
     const isAvail = gcpMetadata.isAvailable();
-
+    const instanceId = this._getInstanceId(isAvail); 
+    
     const attributes: DetectedResourceAttributes = {
       [SEMRESATTRS_CLOUD_PROVIDER]: (async () => {
         return (await isAvail) ? CLOUDPROVIDERVALUES_GCP : undefined;
       })(),
       [SEMRESATTRS_CLOUD_ACCOUNT_ID]: this._getProjectId(isAvail),
-      [SEMRESATTRS_HOST_ID]: this._getInstanceId(isAvail),
+      [SEMRESATTRS_HOST_ID]: instanceId,
       [SEMRESATTRS_HOST_NAME]: this._getHostname(isAvail),
       [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: this._getZone(isAvail),
     };
 
     // Add resource attributes for Cloud Run.
     if (process.env.K_SERVICE) {
+      attributes[SEMRESATTRS_CLOUD_PLATFORM] = CLOUDPLATFORMVALUES_GCP_CLOUD_RUN;
       attributes[SEMRESATTRS_FAAS_NAME] = process.env.K_SERVICE;
       attributes[SEMRESATTRS_FAAS_VERSION] = process.env.K_REVISION;
-      attributes[SEMRESATTRS_FAAS_INSTANCE] = this._getInstanceId(isAvail);
+      attributes[SEMRESATTRS_FAAS_INSTANCE] = instanceId;
     }
 
     // Add resource attributes for K8s.
     if (process.env.KUBERNETES_SERVICE_HOST) {
+      attributes[SEMRESATTRS_CLOUD_PLATFORM] = CLOUDPLATFORMVALUES_GCP_KUBERNETES_ENGINE;
       attributes[SEMRESATTRS_K8S_CLUSTER_NAME] = this._getClusterName(isAvail);
       attributes[SEMRESATTRS_K8S_NAMESPACE_NAME] = (async () => {
         return (await isAvail) ? process.env.NAMESPACE : undefined;
