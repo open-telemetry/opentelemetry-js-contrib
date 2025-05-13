@@ -14,101 +14,179 @@
  * limitations under the License.
  */
 
+// Includes work from:
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import {
+  Attributes,
+  Context,
+  DiagLogger,
+  Link,
+  SpanKind,
+  diag,
+} from '@opentelemetry/api';
+import {
+  ParentBasedSampler,
   Sampler,
   SamplingDecision,
   SamplingResult,
 } from '@opentelemetry/sdk-trace-base';
-import { diag, DiagLogger } from '@opentelemetry/api';
+import { AWSXRaySamplingClient } from './aws-xray-sampling-client';
 import {
-  SamplingRule,
-  AWSXRaySamplerConfig,
+  AWSXRayRemoteSamplerConfig,
+  GetSamplingRulesResponse,
   SamplingRuleRecord,
 } from './types';
-import axios from 'axios';
+import { SamplingRuleApplier } from './sampling-rule-applier';
 
-// 5 minute interval on sampling rules fetch (default polling interval)
-const DEFAULT_INTERVAL_MS = 5 * 60 * 1000;
+// 5 minute default sampling rules polling interval
+const DEFAULT_RULES_POLLING_INTERVAL_SECONDS: number = 5 * 60;
 // Default endpoint for awsproxy : https://aws-otel.github.io/docs/getting-started/remote-sampling#enable-awsproxy-extension
 const DEFAULT_AWS_PROXY_ENDPOINT = 'http://localhost:2000';
-const SAMPLING_RULES_PATH = '/GetSamplingRules';
+
+// Wrapper class to ensure that all XRay Sampler Functionality in _AWSXRayRemoteSampler
+// uses ParentBased logic to respect the parent span's sampling decision
+export class AWSXRayRemoteSampler implements Sampler {
+  private _root: ParentBasedSampler;
+  private internalXraySampler: _AWSXRayRemoteSampler;
+  constructor(samplerConfig: AWSXRayRemoteSamplerConfig) {
+    this.internalXraySampler = new _AWSXRayRemoteSampler(samplerConfig);
+    this._root = new ParentBasedSampler({
+      root: this.internalXraySampler,
+    });
+  }
+  public shouldSample(
+    context: Context,
+    traceId: string,
+    spanName: string,
+    spanKind: SpanKind,
+    attributes: Attributes,
+    links: Link[]
+  ): SamplingResult {
+    return this._root.shouldSample(
+      context,
+      traceId,
+      spanName,
+      spanKind,
+      attributes,
+      links
+    );
+  }
+
+  public toString(): string {
+    return `AWSXRayRemoteSampler{root=${this._root.toString()}`;
+  }
+
+  public stopPollers() {
+    this.internalXraySampler.stopPollers();
+  }
+}
 
 // IN PROGRESS - SKELETON CLASS
-export class AWSXRayRemoteSampler implements Sampler {
-  private _pollingInterval: number;
-  private _awsProxyEndpoint: string;
-  private _samplerDiag: DiagLogger;
+//
+// _AWSXRayRemoteSampler contains all core XRay Sampler Functionality,
+// however it is NOT Parent-based (e.g. Sample logic runs for each span)
+// Not intended for external use, use Parent-based `AWSXRayRemoteSampler` instead.
+export class _AWSXRayRemoteSampler implements Sampler {
+  private rulePollingIntervalMillis: number;
+  private awsProxyEndpoint: string;
+  private samplerDiag: DiagLogger;
+  private rulePoller: NodeJS.Timeout | undefined;
+  private rulePollingJitterMillis: number;
+  private samplingClient: AWSXRaySamplingClient;
 
-  constructor(samplerConfig: AWSXRaySamplerConfig) {
-    this._pollingInterval =
-      samplerConfig.pollingIntervalMs ?? DEFAULT_INTERVAL_MS;
-    this._awsProxyEndpoint = samplerConfig.endpoint
+  constructor(samplerConfig: AWSXRayRemoteSamplerConfig) {
+    this.samplerDiag = diag;
+
+    if (
+      samplerConfig.pollingInterval == null ||
+      samplerConfig.pollingInterval < 10
+    ) {
+      this.samplerDiag.warn(
+        `'pollingInterval' is undefined or too small. Defaulting to ${DEFAULT_RULES_POLLING_INTERVAL_SECONDS} seconds`
+      );
+      this.rulePollingIntervalMillis =
+        DEFAULT_RULES_POLLING_INTERVAL_SECONDS * 1000;
+    } else {
+      this.rulePollingIntervalMillis = samplerConfig.pollingInterval * 1000;
+    }
+
+    this.rulePollingJitterMillis = Math.random() * 5 * 1000;
+
+    this.awsProxyEndpoint = samplerConfig.endpoint
       ? samplerConfig.endpoint
       : DEFAULT_AWS_PROXY_ENDPOINT;
 
-    if (this._pollingInterval <= 0) {
-      throw new TypeError('pollingInterval must be a positive integer');
-    }
+    this.samplingClient = new AWSXRaySamplingClient(
+      this.awsProxyEndpoint,
+      this.samplerDiag
+    );
 
-    this._samplerDiag = diag.createComponentLogger({
-      namespace: '@opentelemetry/sampler-aws-xray',
-    });
+    // Start the Sampling Rules poller
+    this.startSamplingRulesPoller();
 
-    // execute first get Sampling rules update using polling interval
-    this.startRulePoller();
+    // TODO: Start the Sampling Targets poller
   }
 
-  shouldSample(): SamplingResult {
+  public shouldSample(
+    context: Context,
+    traceId: string,
+    spanName: string,
+    spanKind: SpanKind,
+    attributes: Attributes,
+    links: Link[]
+  ): SamplingResult {
     // Implementation to be added
     return { decision: SamplingDecision.NOT_RECORD };
   }
 
-  toString(): string {
-    return `AWSXRayRemoteSampler{endpoint=${this._awsProxyEndpoint}, pollingInterval=${this._pollingInterval}}`;
+  public toString(): string {
+    return `_AWSXRayRemoteSampler{awsProxyEndpoint=${
+      this.awsProxyEndpoint
+    }, rulePollingIntervalMillis=${this.rulePollingIntervalMillis.toString()}}`;
   }
 
-  private getAndUpdateSamplingRules = async (): Promise<void> => {
-    let samplingRules: SamplingRule[] = []; // reset rules array
+  public stopPollers() {
+    clearInterval(this.rulePoller);
+  }
 
-    const requestConfig = {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
+  private startSamplingRulesPoller(): void {
+    // Execute first update
+    this.getAndUpdateSamplingRules();
+    // Update sampling rules every 5 minutes (or user-defined polling interval)
+    this.rulePoller = setInterval(
+      () => this.getAndUpdateSamplingRules(),
+      this.rulePollingIntervalMillis + this.rulePollingJitterMillis
+    );
+    this.rulePoller.unref();
+  }
 
-    try {
-      const samplingRulesEndpoint =
-        this._awsProxyEndpoint + SAMPLING_RULES_PATH;
-      const response = await axios.post(
-        samplingRulesEndpoint,
-        {},
-        requestConfig
+  private getAndUpdateSamplingRules(): void {
+    this.samplingClient.fetchSamplingRules(this.updateSamplingRules.bind(this));
+  }
+
+  private updateSamplingRules(responseObject: GetSamplingRulesResponse): void {
+    let samplingRules: SamplingRuleApplier[] = [];
+
+    samplingRules = [];
+    if (responseObject.SamplingRuleRecords) {
+      responseObject.SamplingRuleRecords.forEach(
+        (record: SamplingRuleRecord) => {
+          if (record.SamplingRule) {
+            samplingRules.push(
+              new SamplingRuleApplier(record.SamplingRule, undefined)
+            );
+          }
+        }
       );
-      const responseJson = response.data;
-
-      samplingRules =
-        responseJson?.SamplingRuleRecords.map(
-          (record: SamplingRuleRecord) => record.SamplingRule
-        ).filter(Boolean) ?? [];
 
       // TODO: pass samplingRules to rule cache, temporarily logging the samplingRules array
-      this._samplerDiag.debug('sampling rules: ', samplingRules);
-    } catch (error) {
-      // Log error
-      this._samplerDiag.warn('Error fetching sampling rules: ', error);
+      this.samplerDiag.debug('sampling rules: ', samplingRules);
+    } else {
+      this.samplerDiag.error(
+        'SamplingRuleRecords from GetSamplingRules request is not defined'
+      );
     }
-  };
-
-  // fetch sampling rules every polling interval
-  private startRulePoller(): void {
-    // execute first update
-    // this.getAndUpdateSamplingRules() never rejects. Using void operator to suppress @typescript-eslint/no-floating-promises.
-    void this.getAndUpdateSamplingRules();
-    // Update sampling rules every 5 minutes (or user-defined polling interval)
-    const rulePoller = setInterval(
-      () => this.getAndUpdateSamplingRules(),
-      this._pollingInterval
-    );
-    rulePoller.unref();
   }
 }
