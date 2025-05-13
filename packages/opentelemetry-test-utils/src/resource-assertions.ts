@@ -22,6 +22,7 @@ import {
   SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
   SEMRESATTRS_CLOUD_PROVIDER,
   SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_CLOUD_PLATFORM,
   SEMRESATTRS_CONTAINER_ID,
   SEMRESATTRS_CONTAINER_IMAGE_NAME,
   SEMRESATTRS_CONTAINER_IMAGE_TAG,
@@ -63,6 +64,7 @@ export const assertCloudResource = (
     accountId?: string;
     region?: string;
     zone?: string;
+    platform?: string;
   }
 ) => {
   assertHasOneLabel('cloud', resource);
@@ -85,6 +87,11 @@ export const assertCloudResource = (
     assert.strictEqual(
       resource.attributes[SEMRESATTRS_CLOUD_AVAILABILITY_ZONE],
       validations.zone
+    );
+  if (validations.platform)
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_CLOUD_PLATFORM],
+      validations.platform
     );
 };
 
