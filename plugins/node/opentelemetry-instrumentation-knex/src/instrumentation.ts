@@ -171,7 +171,7 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
         const transport =
           config?.connection?.filename === ':memory:' ? 'inproc' : undefined;
 
-        if ((semConv & SemconvStability.OLD) === SemconvStability.OLD) {
+        if (semConv & SemconvStability.OLD) {
           Object.assign(attributes, {
             [SEMATTRS_DB_SYSTEM]: mapSystem(config.client),
             [SEMATTRS_DB_SQL_TABLE]: table,
@@ -183,7 +183,7 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
             [SEMATTRS_NET_TRANSPORT]: transport,
           });
         }
-        if ((semConv & SemconvStability.STABLE) === SemconvStability.STABLE) {
+        if (semConv & SemconvStability.STABLE) {
           Object.assign(attributes, {
             [ATTR_DB_SYSTEM_NAME]: mapSystem(config.client),
             [ATTR_DB_COLLECTION_NAME]: table,

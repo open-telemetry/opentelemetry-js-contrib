@@ -73,7 +73,7 @@ When upgrading to the new semantic conventions, it is recommended to do so in th
 
 This will cause both the old and new semantic conventions to be emitted during the transition period.
 
-### ### Legacy Behavior (default)
+### Legacy Behavior (default)
 
 Enabled when `OTEL_SEMCONV_STABILITY_OPT_IN` contains `database/dup` or DOES NOT CONTAIN `database`.
 
