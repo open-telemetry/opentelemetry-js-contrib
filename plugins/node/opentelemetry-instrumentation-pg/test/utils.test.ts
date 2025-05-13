@@ -246,6 +246,10 @@ describe('utils.ts', () => {
         database: 'database_name',
         idleTimeoutMillis: 10,
         maxClient: 5,
+        max: 5,
+        maxUses: 5,
+        allowExitOnIdle: true,
+        maxLifetimeSeconds: 10,
       };
 
       assert.strictEqual(
