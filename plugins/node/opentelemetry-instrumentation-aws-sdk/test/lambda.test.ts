@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-import { AwsInstrumentation } from '../src';
-import {
-  getTestSpans,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-registerInstrumentationTesting(new AwsInstrumentation());
+import './load-instrumentation';
 
+import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 import {
   SEMATTRS_FAAS_EXECUTION,
   SEMATTRS_FAAS_INVOKED_NAME,
