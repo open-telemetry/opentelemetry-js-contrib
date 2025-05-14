@@ -25,11 +25,16 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import * as utils from './utils';
+import { mapSystem } from './utils';
 import { KnexInstrumentationConfig } from './types';
 import { SemconvStability } from './internal-types';
 import { getStringListFromEnv } from '@opentelemetry/core';
 import {
-  ATTR_NETWORK_TRANSPORT,
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   SEMATTRS_DB_NAME,
@@ -42,15 +47,6 @@ import {
   SEMATTRS_NET_PEER_PORT,
   SEMATTRS_NET_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_DB_COLLECTION_NAME,
-  ATTR_DB_NAMESPACE,
-  ATTR_DB_OPERATION_NAME,
-  ATTR_DB_QUERY_TEXT,
-  ATTR_DB_SYSTEM_NAME,
-  ATTR_DB_USER,
-} from './semconv';
-import { mapSystem } from './utils';
 
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
 const DEFAULT_CONFIG: KnexInstrumentationConfig = {
@@ -150,9 +146,6 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
   private createQueryWrapper(moduleVersion?: string) {
     const instrumentation = this;
 
-    // We need to bind it here, because `this` is not the same in the wrapper
-    const semConv = this._semconvStability;
-
     return function wrapQuery(original: (...args: any[]) => any) {
       return function wrapped_logging_method(this: any, query: any) {
         const config = this.client.config;
@@ -171,7 +164,7 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
         const transport =
           config?.connection?.filename === ':memory:' ? 'inproc' : undefined;
 
-        if (semConv & SemconvStability.OLD) {
+        if (instrumentation._semconvStability & SemconvStability.OLD) {
           Object.assign(attributes, {
             [SEMATTRS_DB_SYSTEM]: mapSystem(config.client),
             [SEMATTRS_DB_SQL_TABLE]: table,
@@ -183,25 +176,23 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
             [SEMATTRS_NET_TRANSPORT]: transport,
           });
         }
-        if (semConv & SemconvStability.STABLE) {
+        if (instrumentation._semconvStability & SemconvStability.STABLE) {
           Object.assign(attributes, {
             [ATTR_DB_SYSTEM_NAME]: mapSystem(config.client),
             [ATTR_DB_COLLECTION_NAME]: table,
             [ATTR_DB_OPERATION_NAME]: operation,
-            [ATTR_DB_USER]: config?.connection?.user,
             [ATTR_DB_NAMESPACE]: name,
             [ATTR_SERVER_ADDRESS]: config?.connection?.host,
             [ATTR_SERVER_PORT]: config?.connection?.port,
-            [ATTR_NETWORK_TRANSPORT]: transport,
           });
         }
         if (maxQueryLength) {
           // filters both undefined and 0
           const queryText = utils.limitLength(query?.sql, maxQueryLength);
-          if (semConv & SemconvStability.STABLE) {
+          if (instrumentation._semconvStability & SemconvStability.STABLE) {
             attributes[ATTR_DB_QUERY_TEXT] = queryText;
           }
-          if (semConv & SemconvStability.OLD) {
+          if (instrumentation._semconvStability & SemconvStability.OLD) {
             attributes[SEMATTRS_DB_STATEMENT] = queryText;
           }
         }

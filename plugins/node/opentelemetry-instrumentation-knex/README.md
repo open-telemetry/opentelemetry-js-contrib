@@ -54,9 +54,9 @@ registerInstrumentations({
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.27+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This package uses `@opentelemetry/semantic-conventions` version `1.33+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
-This package is capable of emitting both Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md) and [Version 1.32.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.32.0/docs/database/database-metrics.md)
+This package is capable of emitting both Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md) and [Version 1.33.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.33.0/docs/database/database-metrics.md)
 It is controlled using the environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`, which is a comma separated list of values.
 The values `database` and `database/dup` control this instrumentation.
 See details for the behavior of each of these values below.
@@ -73,42 +73,19 @@ When upgrading to the new semantic conventions, it is recommended to do so in th
 
 This will cause both the old and new semantic conventions to be emitted during the transition period.
 
-### Legacy Behavior (default)
-
-Enabled when `OTEL_SEMCONV_STABILITY_OPT_IN` contains `database/dup` or DOES NOT CONTAIN `database`.
-
 Attributes collected:
 
-| Attribute               | Short Description                                                              |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| `db.name`               | This attribute is used to report the name of the database being accessed.      |
-| `db.operation`          | The name of the operation being executed.                                      |
-| `db.sql.table`          | The name of the primary table that the operation is acting upon.               |
-| `db.statement`          | The database statement being executed.                                         |
-| `db.system`             | An identifier for the database management system (DBMS) product being used.    |
-| `db.user`               | Username for accessing the database.                                           |
-| `net.peer.name`         | Remote hostname or similar.                                                    |
-| `net.peer.port`         | Remote port number.                                                            |
-| `net.transport`         | Transport protocol used.                                                       |
-
-### RC Semantic Conventions 1.32
-
-Enabled when `OTEL_SEMCONV_STABILITY_OPT_IN` contains `database` OR `database/dup`.
-This is the recommended configuration, and will soon become the default behavior.
-
-Attributes collected:
-
-| Attribute            | Short Description                                                           |
-|----------------------|-----------------------------------------------------------------------------|
-| `db.namespace`       | This attribute is used to report the name of the database being accessed.   |
-| `db.operation.name`  | The name of the operation being executed.                                   |
-| `db.collection.name` | The name of the primary table that the operation is acting upon.            |
-| `db.query.text`      | The database statement being executed.                                      |
-| `db.system`          | An identifier for the database management system (DBMS) product being used. |
-| `db.user`            | Username for accessing the database.                                        |
-| `server.address`     | Remote hostname or similar.                                                 |
-| `server.port`        | Remote port number.                                                         |
-| `network.transport`  | Transport protocol used.                                                    |
+| v1.7.0 semconv  | v1.23.0 semconv      | Short Description                                                           |
+|-----------------|----------------------|-----------------------------------------------------------------------------|
+| `db.name`       | `db.namespace`       | This attribute is used to report the name of the database being accessed.   |
+| `db.operation`  | `db.operation.name`  | The name of the operation being executed.                                   |
+| `db.sql.table`  | `db.collection.name` | The name of the primary table that the operation is acting upon.            |
+| `db.statement`  | `db.query.text`      | The database statement being executed.                                      |
+| `db.system`     | `db.system.name`     | An identifier for the database management system (DBMS) product being used. |
+| `db.user`       | (not included)       | Username for accessing the database.                                        |
+| `net.peer.name` | `server.address`     | Remote hostname or similar.                                                 |
+| `net.peer.port` | `server.port`        | Remote port number.                                                         |
+| `net.transport` | (not included)       | Transport protocol used.                                                    |
 
 ## Useful links
 
