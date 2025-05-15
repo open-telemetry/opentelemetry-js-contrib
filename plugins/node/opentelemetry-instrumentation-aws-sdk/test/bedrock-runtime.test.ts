@@ -28,7 +28,7 @@
  */
 
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
-import { metricReader } from './load-instrumentation';
+import { meterProvider, metricExporter } from './load-instrumentation';
 
 import {
   BedrockRuntimeClient,
@@ -107,6 +107,9 @@ describe('Bedrock', () => {
 
   afterEach(async function () {
     nockDone();
+
+    await meterProvider.forceFlush();
+    metricExporter.reset();
   });
 
   describe('Converse', () => {
@@ -155,7 +158,8 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
       });
 
-      const { resourceMetrics } = await metricReader.collect();
+      await meterProvider.forceFlush();
+      const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
       const tokenUsage = scopeMetrics.metrics.filter(
@@ -277,7 +281,8 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
       });
 
-      const { resourceMetrics } = await metricReader.collect();
+      await meterProvider.forceFlush();
+      const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
       const tokenUsage = scopeMetrics.metrics.filter(

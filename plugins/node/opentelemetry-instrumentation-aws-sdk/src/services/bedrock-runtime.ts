@@ -47,6 +47,7 @@ import {
   NormalizedResponse,
 } from '../types';
 import type {
+  ConverseStreamOutput,
   TokenUsage,
 } from '@aws-sdk/client-bedrock-runtime';
 import {
@@ -370,24 +371,32 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   ) {
     return {
       ...response.data,
-      stream: this.wrapConverseStreamResponse(response, span, startTime),
+      stream: this.wrapConverseStreamResponse(
+        response,
+        response.data.stream,
+        span,
+        startTime
+      ),
     };
   }
 
   private async *wrapConverseStreamResponse(
     response: NormalizedResponse,
+    stream: AsyncIterable<ConverseStreamOutput>,
     span: Span,
     startTime: HrTime
   ) {
     try {
-      for await (const item of response.data.stream) {
+      let usage: TokenUsage | undefined;
+      for await (const item of stream) {
         BedrockRuntimeServiceExtension.setStopReason(
           span,
           item.messageStop?.stopReason
         );
-        this.setUsage(response, span, item.metadata?.usage, startTime);
+        usage = item.metadata?.usage;
         yield item;
       }
+      this.setUsage(response, span, usage, startTime);
     } finally {
       span.end();
     }
