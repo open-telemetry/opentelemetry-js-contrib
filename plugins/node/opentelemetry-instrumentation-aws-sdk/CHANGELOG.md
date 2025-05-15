@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.52.0...instrumentation-aws-sdk-v0.53.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+* **instrumentation-aws-sdk:** add gen ai metrics for bedrock ([#2771](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2771)) ([64fcbf3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/64fcbf3b70e7293e143266838ff94b94cf2c30da))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.31.0 to ^0.31.1
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
 ## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.51.0...instrumentation-aws-sdk-v0.52.0) (2025-05-02)
 
 
