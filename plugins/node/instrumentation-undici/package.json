@@ -51,7 +51,7 @@
     "semver": "^7.6.0",
     "test-all-versions": "6.1.0",
     "typescript": "5.0.4",
-    "undici": "6.21.1"
+    "undici": "6.21.2"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.7.0"
