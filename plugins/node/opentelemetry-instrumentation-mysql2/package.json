@@ -58,7 +58,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.200.0",
+    "@opentelemetry/instrumentation": "^0.201.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@opentelemetry/sql-common": "^0.41.0"
   },
