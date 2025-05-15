@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.51.0...instrumentation-aws-sdk-v0.52.0) (2025-05-02)
+
+
+### Features
+
+* **instrumentation-aws-sdk:** add gen ai instrumentation for InvokeModel API ([#2777](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2777)) ([41d0d4b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/41d0d4b8c404f4e11f17b79f53d949208751f616))
+
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.50.0...instrumentation-aws-sdk-v0.51.0) (2025-04-08)
 
 

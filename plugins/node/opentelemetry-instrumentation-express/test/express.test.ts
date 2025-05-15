@@ -22,6 +22,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
+import * as semver from 'semver';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
 import { createServer, httpRequest, serverWithMiddleware } from './utils';
@@ -35,6 +36,9 @@ instrumentation.disable();
 import * as express from 'express';
 import { RPCMetadata, getRPCMetadata } from '@opentelemetry/core';
 import { Server } from 'http';
+
+const LIB_VERSION = require('express/package.json').version;
+const isExpressV5 = semver.satisfies(LIB_VERSION, '>=5.0.0');
 
 describe('ExpressInstrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
@@ -496,7 +500,7 @@ describe('ExpressInstrumentation', () => {
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use(express.json());
         app.get('/bare_route', (req, res) => {
-          const stack = req.app._router.stack as any[];
+          const stack = (req.app._router || req.app.router).stack as any[];
           routerLayer = stack.find(layer => layer.name === 'router');
           return res.status(200).end('test');
         });
@@ -531,7 +535,7 @@ describe('ExpressInstrumentation', () => {
         next
       ) => router(req, res, next);
       router.use('/:slug', (req, res, next) => {
-        const stack = req.app._router.stack as any[];
+        const stack = (req.app._router || req.app.router).stack as any[];
         routerLayer = stack.find(router => router.name === 'CustomRouter');
         return res.status(200).end('bar');
       });
@@ -616,8 +620,8 @@ describe('ExpressInstrumentation', () => {
         // a `simpleMiddleware`, then makes a single 'GET /post/0' request. We
         // expect to see spans like this:
         //    span 'GET /post/:id'
-        //     `- span 'middleware - query'
-        //     `- span 'middleware - expressInit'
+        //     `- span 'middleware - query'            // not in express@5
+        //     `- span 'middleware - expressInit'      // not in express@5
         //     `- span 'middleware - simpleMiddleware'
         //     `- span 'request handler - /post/:id'
         const spans = collector.sortedSpans;
@@ -626,18 +630,21 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[1].name, 'GET /post/:id');
         assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
         assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
-        assert.strictEqual(spans[2].name, 'middleware - query');
-        assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[3].name, 'middleware - expressInit');
-        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[5].name, 'request handler - /post/:id');
-        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+        const expectedSpanNames = isExpressV5
+          ? ['middleware - simpleMiddleware', 'request handler - /post/:id']
+          : [
+              'middleware - query',
+              'middleware - expressInit',
+              'middleware - simpleMiddleware',
+              'request handler - /post/:id',
+            ];
+        const remainingSpans = spans.slice(2);
+        for (const expectedSpanName of expectedSpanNames) {
+          const span = remainingSpans.shift()!;
+          assert.strictEqual(span.name, expectedSpanName);
+          assert.strictEqual(span.kind, testUtils.OtlpSpanKind.INTERNAL);
+          assert.strictEqual(span.parentSpanId, spans[1].spanId);
+        }
       },
     });
   });
@@ -662,18 +669,26 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[1].name, 'GET /api/user/:id');
         assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
         assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
-        assert.strictEqual(spans[2].name, 'middleware - query');
-        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[5].name, 'router - /api/user/:id');
-        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[6].name, 'request handler - /api/user/:id');
-        assert.strictEqual(spans[6].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[6].parentSpanId, spans[1].spanId);
+        const expectedSpanNames = isExpressV5
+          ? [
+              'middleware - simpleMiddleware',
+              'router - /api/user/:id',
+              'request handler - /api/user/:id',
+            ]
+          : [
+              'middleware - query',
+              'middleware - expressInit',
+              'middleware - simpleMiddleware',
+              'router - /api/user/:id',
+              'request handler - /api/user/:id',
+            ];
+        const remainingSpans = spans.slice(2);
+        for (const expectedSpanName of expectedSpanNames) {
+          const span = remainingSpans.shift()!;
+          assert.strictEqual(span.name, expectedSpanName);
+          assert.strictEqual(span.kind, testUtils.OtlpSpanKind.INTERNAL);
+          assert.strictEqual(span.parentSpanId, spans[1].spanId);
+        }
       },
     });
   });
@@ -697,27 +712,31 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[0].kind, testUtils.OtlpSpanKind.CLIENT);
         assert.strictEqual(spans[1].name, 'GET /api/user/:id/posts/:postId');
         assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
-        assert.strictEqual(spans[2].name, 'middleware - query');
-        assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[3].name, 'middleware - expressInit');
-        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[5].name, 'router - /api/user/:id');
-        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[6].name, 'router - /:postId');
-        assert.strictEqual(spans[6].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[6].parentSpanId, spans[1].spanId);
-        assert.strictEqual(
-          spans[7].name,
-          'request handler - /api/user/:id/posts/:postId'
-        );
-        assert.strictEqual(spans[7].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[7].parentSpanId, spans[1].spanId);
+        const expectedSpanNames = isExpressV5
+          ? [
+              'middleware - simpleMiddleware',
+              'router - /api/user/:id',
+              'router - /api/user/:id/posts',
+              'middleware - simpleMiddleware2',
+              'request handler - /api/user/:id/posts/:postId',
+            ]
+          : [
+              'middleware - query',
+              'middleware - expressInit',
+              'middleware - simpleMiddleware',
+              'router - /api/user/:id',
+              'router - /api/user/:id/posts',
+              'middleware - simpleMiddleware2',
+              'request handler - /api/user/:id/posts/:postId',
+            ];
+
+        const remainingSpans = spans.slice(2);
+        for (const expectedSpanName of expectedSpanNames) {
+          const span = remainingSpans.shift()!;
+          assert.strictEqual(span.name, expectedSpanName);
+          assert.strictEqual(span.kind, testUtils.OtlpSpanKind.INTERNAL);
+          assert.strictEqual(span.parentSpanId, spans[1].spanId);
+        }
       },
     });
   });
@@ -743,21 +762,24 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[1].name, 'GET /\\/test\\/regex/');
         assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
         assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
-        assert.strictEqual(spans[2].name, 'middleware - query');
-        assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[3].name, 'middleware - expressInit');
-        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-        assert.strictEqual(
-          spans[5].name,
-          'request handler - /\\/test\\/regex/'
-        );
-        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+        const expectedSpanNames = isExpressV5
+          ? [
+              'middleware - simpleMiddleware',
+              'request handler - /\\/test\\/regex/',
+            ]
+          : [
+              'middleware - query',
+              'middleware - expressInit',
+              'middleware - simpleMiddleware',
+              'request handler - /\\/test\\/regex/',
+            ];
+        const remainingSpans = spans.slice(2);
+        for (const expectedSpanName of expectedSpanNames) {
+          const span = remainingSpans.shift()!;
+          assert.strictEqual(span.name, expectedSpanName);
+          assert.strictEqual(span.kind, testUtils.OtlpSpanKind.INTERNAL);
+          assert.strictEqual(span.parentSpanId, spans[1].spanId);
+        }
       },
     });
   });
@@ -782,18 +804,24 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[0].kind, testUtils.OtlpSpanKind.CLIENT);
         assert.strictEqual(spans[1].name, 'GET /test,6,/test/');
         assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
-        assert.strictEqual(spans[2].name, 'middleware - query');
-        assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[3].name, 'middleware - expressInit');
-        assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-        assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-        assert.strictEqual(spans[5].name, 'request handler - /test,6,/test/');
-        assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-        assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+        const expectedSpanNames = isExpressV5
+          ? [
+              'middleware - simpleMiddleware',
+              'request handler - /test,6,/test/',
+            ]
+          : [
+              'middleware - query',
+              'middleware - expressInit',
+              'middleware - simpleMiddleware',
+              'request handler - /test,6,/test/',
+            ];
+        const remainingSpans = spans.slice(2);
+        for (const expectedSpanName of expectedSpanNames) {
+          const span = remainingSpans.shift()!;
+          assert.strictEqual(span.name, expectedSpanName);
+          assert.strictEqual(span.kind, testUtils.OtlpSpanKind.INTERNAL);
+          assert.strictEqual(span.parentSpanId, spans[1].spanId);
+        }
       },
     });
   });
@@ -822,21 +850,24 @@ describe('ExpressInstrumentation', () => {
             'GET /test/array1,/\\/test\\/array[2-9]/'
           );
           assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
-          assert.strictEqual(spans[2].name, 'middleware - query');
-          assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-          assert.strictEqual(spans[3].name, 'middleware - expressInit');
-          assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-          assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-          assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-          assert.strictEqual(
-            spans[5].name,
-            'request handler - /test/array1,/\\/test\\/array[2-9]/'
-          );
-          assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+          const expectedSpanNames = isExpressV5
+            ? [
+                'middleware - simpleMiddleware',
+                'request handler - /test/array1,/\\/test\\/array[2-9]/',
+              ]
+            : [
+                'middleware - query',
+                'middleware - expressInit',
+                'middleware - simpleMiddleware',
+                'request handler - /test/array1,/\\/test\\/array[2-9]/',
+              ];
+          const remainingSpans = spans.slice(2);
+          for (const expectedSpanName of expectedSpanNames) {
+            const span = remainingSpans.shift()!;
+            assert.strictEqual(span.name, expectedSpanName);
+            assert.strictEqual(span.kind, testUtils.OtlpSpanKind.INTERNAL);
+            assert.strictEqual(span.parentSpanId, spans[1].spanId);
+          }
         },
       });
     });
@@ -849,8 +880,8 @@ describe('ExpressInstrumentation', () => {
     'arr/requiredPath',
     'arr/required/lastParam',
     'arr55/required/lastParam',
-    'arr/requiredPath/optionalPath/',
-    'arr/requiredPath/optionalPath/lastParam',
+    'arr/requiredpath/optionalPath/',
+    'arr/requiredpath/optionalPath/lastParam',
   ]) {
     it('should handle more complex regexes in route arrays correctly', async () => {
       await testUtils.runTestFixture({
@@ -875,21 +906,25 @@ describe('ExpressInstrumentation', () => {
             'GET /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/'
           );
           assert.strictEqual(spans[1].kind, testUtils.OtlpSpanKind.SERVER);
-          assert.strictEqual(spans[2].name, 'middleware - query');
-          assert.strictEqual(spans[2].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
-          assert.strictEqual(spans[3].name, 'middleware - expressInit');
-          assert.strictEqual(spans[3].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[3].parentSpanId, spans[1].spanId);
-          assert.strictEqual(spans[4].name, 'middleware - simpleMiddleware');
-          assert.strictEqual(spans[4].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[4].parentSpanId, spans[1].spanId);
-          assert.strictEqual(
-            spans[5].name,
-            'request handler - /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/'
-          );
-          assert.strictEqual(spans[5].kind, testUtils.OtlpSpanKind.INTERNAL);
-          assert.strictEqual(spans[5].parentSpanId, spans[1].spanId);
+
+          const expectedSpanNames = isExpressV5
+            ? [
+                'middleware - simpleMiddleware',
+                'request handler - /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/',
+              ]
+            : [
+                'middleware - query',
+                'middleware - expressInit',
+                'middleware - simpleMiddleware',
+                'request handler - /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/',
+              ];
+          const remainingSpans = spans.slice(2);
+          for (const expectedSpanName of expectedSpanNames) {
+            const span = remainingSpans.shift()!;
+            assert.strictEqual(span.name, expectedSpanName);
+            assert.strictEqual(span.kind, testUtils.OtlpSpanKind.INTERNAL);
+            assert.strictEqual(span.parentSpanId, spans[1].spanId);
+          }
         },
       });
     });

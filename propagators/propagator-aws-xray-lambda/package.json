@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/propagator-aws-xray-lambda",
-  "version": "0.54.0",
+  "version": "0.55.0",
   "description": "OpenTelemetry AWS Xray propagator provides context propagation for systems that are using AWS X-Ray format.",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -47,18 +47,18 @@
     "@babel/preset-env": "7.24.6",
     "@opentelemetry/api": "1.9.0",
     "@types/mocha": "10.0.10",
-    "@types/node": "^18.18.14",
+    "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
     "babel-loader": "8.3.0",
     "babel-plugin-istanbul": "7.0.0",
     "lerna": "6.6.2",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "sinon": "15.1.2",
     "ts-loader": "9.5.2",
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/propagator-aws-xray": "^2.0.0"
+    "@opentelemetry/propagator-aws-xray": "^2.1.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js/tree/main/propagators/propagator-aws-xray-lambda#readme"
 }

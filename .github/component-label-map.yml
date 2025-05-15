@@ -131,6 +131,11 @@ pkg:instrumentation-ioredis:
           - plugins/node/opentelemetry-instrumentation-ioredis/**
           - packages/opentelemetry-test-utils/**
           - packages/opentelemetry-redis-common/**
+pkg:instrumentation-kafkajs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-kafkajs/**
+          - packages/opentelemetry-test-utils/**
 pkg:instrumentation-knex:
   - changed-files:
       - any-glob-to-any-file:
@@ -183,6 +188,11 @@ pkg:instrumentation-net:
   - changed-files:
       - any-glob-to-any-file:
           - plugins/node/opentelemetry-instrumentation-net/**
+pkg:instrumentation-oracledb:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-oracledb/**
+          - packages/opentelemetry-test-utils/**
 pkg:instrumentation-pg:
   - changed-files:
       - any-glob-to-any-file:

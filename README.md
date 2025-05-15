@@ -38,7 +38,7 @@
 
 # OpenTelemetry JavaScript Contrib
 
-A repository for OpenTelemetry JavaScript contributions that are not part of the [core repository](https://github.com/open-telemetry/opentelemetry-js) and core distribution of the API and the SDK.
+A repository for community-maintained OpenTelemetry JavaScript contributions that are not part of the [core repository](https://github.com/open-telemetry/opentelemetry-js) and core distribution of the API and the SDK.
 
 This project includes:
 
@@ -51,6 +51,19 @@ This project includes:
 Please read the [contributing guidelines on adding new instrumentation](CONTRIBUTING.md#new-instrumentation) before opening any PRs.
 
 **Resource Detectors**: OpenTelemetry can collect resource attributes of the entity that producing telemetry. For example, a process producing telemetry that is running in a container on Kubernetes has a Pod name, it is in a namespace and possibly is part of a Deployment which also has a name. All three of these attributes can be included in the `Resource`.
+
+## Component Ownership
+
+This repository includes various components, each maintained by one or more designated component owners. Unless
+necessary to resolve disagreements, [@open-telemetry/javascript-maintainers](https://github.com/orgs/open-telemetry/teams/javascript-maintainers)
+take a more passive role when it comes to Maintaining these components.
+
+Component owners have the authority to make decisions on implementation and feature requests, following the best practices
+and the [mission, vision and values](https://github.com/open-telemetry/community/blob/main/mission-vision-values.md) of the OpenTelemetry Project. They are also assigned the Triager role to manage issues
+related to their components, and are the primary contact for conducting PR reviews for their components.
+
+Component owners are automatically assigned to pull requests as reviewers. The source of truth for component ownership
+is [.github/component_owners.yml](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml).
 
 ## Stability levels
 

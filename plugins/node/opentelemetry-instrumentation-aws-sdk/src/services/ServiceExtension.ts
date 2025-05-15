@@ -15,6 +15,8 @@
  */
 import {
   DiagLogger,
+  HrTime,
+  Meter,
   Span,
   SpanAttributes,
   SpanKind,
@@ -55,5 +57,8 @@ export interface ServiceExtension {
     span: Span,
     tracer: Tracer,
     config: AwsSdkInstrumentationConfig
+    startTime: HrTime
   ) => any | undefined;
+
+  updateMetricInstruments?: (meter: Meter) => void;
 }

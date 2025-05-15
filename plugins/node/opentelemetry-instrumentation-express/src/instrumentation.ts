@@ -60,9 +60,13 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
     return [
       new InstrumentationNodeModuleDefinition(
         'express',
-        ['>=4.0.0 <5'],
+        ['>=4.0.0 <6'],
         moduleExports => {
-          const routerProto = moduleExports.Router as unknown as express.Router;
+          const isExpressWithRouterPrototype =
+            typeof moduleExports?.Router?.prototype?.route === 'function';
+          const routerProto = isExpressWithRouterPrototype
+            ? moduleExports.Router.prototype // Express v5
+            : moduleExports.Router; // Express v4
           // patch express.Router.route
           if (isWrapped(routerProto.route)) {
             this._unwrap(routerProto, 'route');
@@ -82,13 +86,17 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
             moduleExports.application,
             'use',
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this._getAppUsePatch() as any
+            this._getAppUsePatch(isExpressWithRouterPrototype) as any
           );
           return moduleExports;
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          const routerProto = moduleExports.Router as unknown as express.Router;
+          const isExpressWithRouterPrototype =
+            typeof moduleExports?.Router?.prototype?.route === 'function';
+          const routerProto = isExpressWithRouterPrototype
+            ? moduleExports.Router.prototype
+            : moduleExports.Router;
           this._unwrap(routerProto, 'route');
           this._unwrap(routerProto, 'use');
           this._unwrap(moduleExports.application, 'use');
@@ -136,16 +144,24 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
   /**
    * Get the patch for Application.use function
    */
-  private _getAppUsePatch() {
+  private _getAppUsePatch(isExpressWithRouterPrototype: boolean) {
     const instrumentation = this;
     return function (original: express.Application['use']) {
       return function use(
-        this: { _router: ExpressRouter },
+        // `router` in express@5, `_router` in express@4.
+        this: { _router?: ExpressRouter; router?: ExpressRouter },
         ...args: Parameters<typeof original>
       ) {
+        // If we access app.router in express 4.x we trigger an assertion error.
+        // This property existed in v3, was removed in v4 and then re-added in v5.
+        const router = isExpressWithRouterPrototype
+          ? this.router
+          : this._router;
         const route = original.apply(this, args);
-        const layer = this._router.stack[this._router.stack.length - 1];
-        instrumentation._applyPatch(layer, getLayerPath(args));
+        if (router) {
+          const layer = router.stack[router.stack.length - 1];
+          instrumentation._applyPatch(layer, getLayerPath(args));
+        }
         return route;
       };
     };
@@ -171,7 +187,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         req: PatchedRequest,
         res: express.Response
       ) {
-        storeLayerPath(req, layerPath);
+        const { isLayerPathStored } = storeLayerPath(req, layerPath);
         const route = (req[_LAYERS_STORE_PROPERTY] as string[])
           .filter(path => path !== '/' && path !== '/*')
           .join('')
@@ -280,7 +296,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
               req.res?.removeListener('finish', onResponseFinish);
               span.end();
             }
-            if (!(req.route && isError)) {
+            if (!(req.route && isError) && isLayerPathStored) {
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
             const callback = args[callbackIdx] as Function;
