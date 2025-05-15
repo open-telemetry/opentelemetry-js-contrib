@@ -56,7 +56,7 @@ export interface ServiceExtension {
     response: NormalizedResponse,
     span: Span,
     tracer: Tracer,
-    config: AwsSdkInstrumentationConfig
+    config: AwsSdkInstrumentationConfig,
     startTime: HrTime
   ) => any | undefined;
 

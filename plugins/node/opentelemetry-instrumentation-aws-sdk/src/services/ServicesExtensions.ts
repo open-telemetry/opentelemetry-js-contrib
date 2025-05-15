@@ -69,7 +69,13 @@ export class ServicesExtensions implements ServiceExtension {
   ) {
     const serviceExtension = this.services.get(response.request.serviceName);
 
-    return serviceExtension?.responseHook?.(response, span, tracer, config, startTime);
+    return serviceExtension?.responseHook?.(
+      response,
+      span,
+      tracer,
+      config,
+      startTime
+    );
   }
 
   updateMetricInstruments(meter: Meter) {

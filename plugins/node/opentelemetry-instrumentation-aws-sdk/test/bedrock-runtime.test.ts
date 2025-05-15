@@ -277,8 +277,6 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
       });
 
-
-
       const { resourceMetrics } = await metricReader.collect();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];

@@ -47,7 +47,6 @@ import {
   NormalizedResponse,
 } from '../types';
 import type {
-  ConverseStreamOutput,
   TokenUsage,
 } from '@aws-sdk/client-bedrock-runtime';
 import {
@@ -329,9 +328,21 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
 
     switch (response.request.commandName) {
       case 'Converse':
-        return this.responseHookConverse(response, span, tracer, config, startTime);
+        return this.responseHookConverse(
+          response,
+          span,
+          tracer,
+          config,
+          startTime
+        );
       case 'ConverseStream':
-        return this.responseHookConverseStream(response, span, tracer, config, startTime);
+        return this.responseHookConverseStream(
+          response,
+          span,
+          tracer,
+          config,
+          startTime
+        );
       case 'InvokeModel':
         return this.responseHookInvokeModel(response, span, tracer, config);
     }
@@ -389,7 +400,12 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     }
   }
 
-  private setUsage(response: NormalizedResponse, span: Span, usage: TokenUsage | undefined, startTime: HrTime) {
+  private setUsage(
+    response: NormalizedResponse,
+    span: Span,
+    usage: TokenUsage | undefined,
+    startTime: HrTime
+  ) {
     const sharedMetricAttrs: Attributes = {
       [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
