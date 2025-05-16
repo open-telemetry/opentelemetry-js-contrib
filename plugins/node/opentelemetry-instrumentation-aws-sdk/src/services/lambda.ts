@@ -109,8 +109,8 @@ const injectLambdaPropagationContext = (
 
     const updatedClientContext = {
       ...parsedClientContext,
-      Custom: {
-        ...parsedClientContext.Custom,
+      custom: {
+        ...parsedClientContext.custom,
         ...propagatedContext,
       },
     };
