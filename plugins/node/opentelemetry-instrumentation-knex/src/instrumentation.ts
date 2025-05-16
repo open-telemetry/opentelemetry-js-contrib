@@ -23,12 +23,12 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import * as utils from './utils';
 import { mapSystem } from './utils';
 import { KnexInstrumentationConfig } from './types';
-import { SemconvStability } from './internal-types';
-import { getStringListFromEnv } from '@opentelemetry/core';
 import {
   ATTR_DB_COLLECTION_NAME,
   ATTR_DB_NAMESPACE,
@@ -60,16 +60,10 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
   constructor(config: KnexInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
 
-    for (const entry of getStringListFromEnv('OTEL_SEMCONV_STABILITY_OPT_IN') ??
-      []) {
-      if (entry.toLowerCase() === 'database/dup') {
-        // database/dup takes highest precedence. If it is found, there is no need to read the rest of the list
-        this._semconvStability = SemconvStability.DUPLICATE;
-        break;
-      } else if (entry.toLowerCase() === 'database') {
-        this._semconvStability = SemconvStability.STABLE;
-      }
-    }
+    this._semconvStability = semconvStabilityFromStr(
+      'database',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   override setConfig(config: KnexInstrumentationConfig = {}) {
