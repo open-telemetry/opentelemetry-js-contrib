@@ -402,13 +402,17 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                     request: normalizedRequest,
                     requestId: requestId,
                   };
-                  self.servicesExtensions.responseHook(
+                  const override = self.servicesExtensions.responseHook(
                     normalizedResponse,
                     span,
                     self.tracer,
                     self.getConfig(),
                     startTime
                   );
+                  if (override) {
+                    response.output = override;
+                    normalizedResponse.data = override;
+                  }
                   self._callUserResponseHook(span, normalizedResponse);
                   return response;
                 })
@@ -442,7 +446,9 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                   throw err;
                 })
                 .finally(() => {
-                  span.end();
+                  if (!requestMetadata.isStream) {
+                    span.end();
+                  }
                 });
               promiseWithResponseLogic
                 .then(res => {

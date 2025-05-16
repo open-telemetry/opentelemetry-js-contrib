@@ -28,11 +28,12 @@
  */
 
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
-import { metricReader } from './load-instrumentation';
+import { meterProvider, metricExporter } from './load-instrumentation';
 
 import {
   BedrockRuntimeClient,
   ConverseCommand,
+  ConverseStreamCommand,
   ConversationRole,
   InvokeModelCommand,
 } from '@aws-sdk/client-bedrock-runtime';
@@ -106,6 +107,9 @@ describe('Bedrock', () => {
 
   afterEach(async function () {
     nockDone();
+
+    await meterProvider.forceFlush();
+    metricExporter.reset();
   });
 
   describe('Converse', () => {
@@ -154,7 +158,131 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
       });
 
-      const { resourceMetrics } = await metricReader.collect();
+      await meterProvider.forceFlush();
+      const [resourceMetrics] = metricExporter.getMetrics();
+      expect(resourceMetrics.scopeMetrics.length).toBe(1);
+      const scopeMetrics = resourceMetrics.scopeMetrics[0];
+      const tokenUsage = scopeMetrics.metrics.filter(
+        m => m.descriptor.name === 'gen_ai.client.token.usage'
+      );
+      expect(tokenUsage.length).toBe(1);
+      expect(tokenUsage[0].descriptor).toMatchObject({
+        name: 'gen_ai.client.token.usage',
+        type: 'HISTOGRAM',
+        description: 'Measures number of input and output tokens used',
+        unit: '{token}',
+      });
+      expect(tokenUsage[0].dataPoints.length).toBe(2);
+      expect(tokenUsage[0].dataPoints).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            value: expect.objectContaining({
+              sum: 8,
+            }),
+            attributes: {
+              'gen_ai.system': 'aws.bedrock',
+              'gen_ai.operation.name': 'chat',
+              'gen_ai.request.model': 'amazon.titan-text-lite-v1',
+              'gen_ai.token.type': 'input',
+            },
+          }),
+          expect.objectContaining({
+            value: expect.objectContaining({
+              sum: 10,
+            }),
+            attributes: {
+              'gen_ai.system': 'aws.bedrock',
+              'gen_ai.operation.name': 'chat',
+              'gen_ai.request.model': 'amazon.titan-text-lite-v1',
+              'gen_ai.token.type': 'output',
+            },
+          }),
+        ])
+      );
+
+      const operationDuration = scopeMetrics.metrics.filter(
+        m => m.descriptor.name === 'gen_ai.client.operation.duration'
+      );
+      expect(operationDuration.length).toBe(1);
+      expect(operationDuration[0].descriptor).toMatchObject({
+        name: 'gen_ai.client.operation.duration',
+        type: 'HISTOGRAM',
+        description: 'GenAI operation duration',
+        unit: 's',
+      });
+      expect(operationDuration[0].dataPoints.length).toBe(1);
+      expect(operationDuration[0].dataPoints).toEqual([
+        expect.objectContaining({
+          value: expect.objectContaining({
+            sum: expect.any(Number),
+          }),
+          attributes: {
+            'gen_ai.system': 'aws.bedrock',
+            'gen_ai.operation.name': 'chat',
+            'gen_ai.request.model': 'amazon.titan-text-lite-v1',
+          },
+        }),
+      ]);
+      expect(
+        (operationDuration[0].dataPoints[0].value as any).sum
+      ).toBeGreaterThan(0);
+    });
+  });
+
+  describe('ConverseStream', () => {
+    it('adds genai conventions', async () => {
+      const modelId = 'amazon.titan-text-lite-v1';
+      const messages = [
+        {
+          role: ConversationRole.USER,
+          content: [{ text: 'Say this is a test' }],
+        },
+      ];
+      const inferenceConfig = {
+        maxTokens: 10,
+        temperature: 0.8,
+        topP: 1,
+        stopSequences: ['|'],
+      };
+
+      const command = new ConverseStreamCommand({
+        modelId,
+        messages,
+        inferenceConfig,
+      });
+
+      const response = await client.send(command);
+      const chunks: string[] = [];
+      for await (const item of response.stream!) {
+        const text = item.contentBlockDelta?.delta?.text;
+        if (text) {
+          chunks.push(text);
+        }
+      }
+      expect(chunks.join('')).toBe('Hi! How are you? How');
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const converseSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === 'chat amazon.titan-text-lite-v1';
+        }
+      );
+      expect(converseSpans.length).toBe(1);
+      expect(converseSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
+
+      await meterProvider.forceFlush();
+      const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
       const tokenUsage = scopeMetrics.metrics.filter(
