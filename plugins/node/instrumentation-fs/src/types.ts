@@ -59,11 +59,20 @@ export type CreateHook = (
 ) => boolean;
 export type EndHook = (
   functionName: FMember | FPMember,
-  info: { args: ArrayLike<unknown>; span: api.Span; error?: Error }
+  info: {
+    args: ArrayLike<unknown>;
+    span: api.Span;
+    error?: NodeJS.ErrnoException;
+  }
 ) => void;
+export type ErrorHook = (
+  functionName: FMember | FPMember,
+  error: NodeJS.ErrnoException
+) => boolean;
 
 export interface FsInstrumentationConfig extends InstrumentationConfig {
   createHook?: CreateHook;
   endHook?: EndHook;
+  errorHook?: ErrorHook;
   requireParentSpan?: boolean;
 }
