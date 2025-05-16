@@ -1,0 +1,17 @@
+{
+  "name": "opentelemetry-esbuild-plugin-example",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "OTEL_LOG_LEVEL=debug node esbuild.mjs"
+  },
+  "XXX dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.47.1",
+    "@opentelemetry/instrumentation": "file:../../../../opentelemetry-js10/experimental/packages/opentelemetry-instrumentation"
+  },
+  "dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.55.2",
+    "fastify": "^4.28.0",
+    "redis": "^4.6.14"
+  }
+}
