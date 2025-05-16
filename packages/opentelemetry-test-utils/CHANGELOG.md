@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.46.0...contrib-test-utils-v0.47.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+* **oracledb:** Add support for Oracle DB instrumentation ([#2612](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2612)) ([e8e3cbd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e8e3cbdadf439c5bd16dfe5d6fc0714fe0e8235a))
+
+
+### Bug Fixes
+
+* **pg:** fix instrumentation of ESM-imported pg-pool ([#2807](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2807)) ([f6bc4cc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f6bc4ccca0bf3469aa55f225192fedcae432d41f)), closes [#2759](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2759)
+
 ## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.45.1...contrib-test-utils-v0.46.0) (2025-03-18)
 
 
