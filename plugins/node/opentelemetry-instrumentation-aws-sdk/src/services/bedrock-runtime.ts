@@ -404,7 +404,6 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
 
   private static setStopReason(span: Span, stopReason: string | undefined) {
     if (stopReason !== undefined) {
-      console.log(stopReason);
       span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [stopReason]);
     }
   }

@@ -352,7 +352,6 @@ describe('Bedrock', () => {
     });
   });
 
-  // TODO: Instrument InvokeModel
   describe('InvokeModel', () => {
     it('adds amazon titan model attributes to span', async () => {
       const modelId = 'amazon.titan-text-express-v1';
