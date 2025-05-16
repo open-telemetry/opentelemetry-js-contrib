@@ -15,6 +15,7 @@
  */
 
 import {
+  AnyValue,
   LogAttributes,
   LogRecord,
   Logger,
@@ -67,7 +68,7 @@ export function emitLogRecord(
   const attributes: LogAttributes = {};
   for (const key in splat) {
     if (Object.prototype.hasOwnProperty.call(splat, key)) {
-      attributes[key] = splat[key];
+      attributes[key] = serializeAttribute(splat[key]);
     }
   }
   const logRecord: LogRecord = {
@@ -77,4 +78,38 @@ export function emitLogRecord(
     attributes: attributes,
   };
   logger.emit(logRecord);
+}
+
+// Serialize objects and errors
+function serializeAttribute(value: any): AnyValue {
+  if (typeof value === 'object') {
+    if (value instanceof Error) {
+      return `[object Error] { message: "${value.message}", name: "${value.name}", stack: "${value.stack}"}`;
+    }
+    // TypedArrays
+    else if (
+      value instanceof Int8Array ||
+      value instanceof Uint8Array ||
+      value instanceof Uint8ClampedArray ||
+      value instanceof Int16Array ||
+      value instanceof Uint16Array ||
+      value instanceof Int32Array ||
+      value instanceof Uint32Array ||
+      value instanceof Float32Array ||
+      value instanceof Float64Array ||
+      value instanceof BigInt64Array ||
+      value instanceof BigUint64Array
+    ) {
+      return value as any; // TODO: Remove as any, when AnyValue type is updated to support TypedArrays
+    } else {
+      try {
+        return JSON.stringify(value);
+      } catch (err: unknown) {
+        // Failed to serialize, return string cast
+        return String(value);
+      }
+    }
+  }
+  // Return scalar and undefined values without serialization
+  return value;
 }
