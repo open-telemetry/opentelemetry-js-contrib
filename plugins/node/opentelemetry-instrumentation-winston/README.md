@@ -139,7 +139,22 @@ const logger = winston.createLogger({
 ```
 
 > [!IMPORTANT]
-> Logs will be duplicated if `@opentelemetry/winston-transport` is added as a transport in `winston` and `@opentelemetry/instrumentation-winston` is configured with `disableLogSending: false`.
+> Logs will be duplicated if `@opentelemetry/winston-transport` is added as a transport in `winston` and `@opentelemetry/instrumentation-winston` is configured with `disableLogSending: false`. You must import `winston` after you have called `registerInstrumentations`. 
+> ```js
+>const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winston');
+>const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+>registerInstrumentations({
+>    instrumentations: [
+>        new WinstonInstrumentation({
+>          // Disable the duplicate logging from the auto instrumentation
+>          disableLogSending: true
+>        }),
+>    ],
+>});
+>// Winston import must be after the WinstonInstrumentation creation
+>const { OpenTelemetryTransportV3 } = require('@opentelemetry/winston-transport');
+>const winston = require('winston');
+> ```
 
 ## Semantic Conventions
 
