@@ -95,8 +95,11 @@ Go into the root folder and run `npm ci && npm run compile` to build all package
 
 ## Publish all packages
 
-Use the dedicated script for publishing by running the command `node ./scripts/publish-to-npm.mjs` in the root folder. The script will
-walk over all non private packages and publish the ones that has not been published yet.
+Use lerna's `publish` command to walk over all non private packages and publish the ones that has not been published yet.
+
+```sh
+npx lerna publish from-package --no-push --no-private --no-git-tag-version --no-verify-access --yes
+```
 
 Check your e-mail and make sure the number of “you’ve published this module” emails matches the number you expect.
 
