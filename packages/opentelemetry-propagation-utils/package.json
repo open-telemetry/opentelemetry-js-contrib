@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/propagation-utils",
-  "version": "0.31.0",
+  "version": "0.31.1",
   "description": "Propagation utilities for opentelemetry instrumentations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.46.0",
+    "@opentelemetry/contrib-test-utils": "^0.47.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "18.18.14",
     "@types/sinon": "^17.0.0",

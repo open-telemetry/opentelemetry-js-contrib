@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.14.0...instrumentation-runtime-node-v0.15.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
 ## [0.14.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.13.0...instrumentation-runtime-node-v0.14.0) (2025-04-16)
 
 
