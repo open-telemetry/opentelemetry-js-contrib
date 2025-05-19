@@ -96,7 +96,7 @@ Please also see [GitHub workflow](https://github.com/open-telemetry/community/bl
 
 - [NPM](https://npmjs.com)
 - [TypeScript](https://www.typescriptlang.org/)
-- [nx](https://github.com/nrwl/nx) to manage dependencies, compilations, and links between packages. Most nx commands should be run by calling the provided npm scripts.
+- [lerna](https://github.com/lerna/lerna) to manage dependencies, compilations, and links between packages. Most lerna commands should be run by calling the provided npm scripts.
 - [npm workspaces](https://docs.npmjs.com/cli/v10/using-npm/workspaces)
 - [MochaJS](https://mochajs.org/) for tests
 - [eslint](https://eslint.org/)

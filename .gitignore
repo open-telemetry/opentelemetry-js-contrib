@@ -69,6 +69,7 @@ docs
 
 #lerna
 .changelog
+.nx
 
 # OS generated files
 .DS_Store

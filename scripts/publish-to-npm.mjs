@@ -15,7 +15,11 @@
  */
 
 /**
- * Replacement for: lerna publish from-package --no-push --no-private --no-git-tag-version --no-verify-access --yes
+ * Helper script to publish packages from the command line. The behaviour is similar to lerna
+ * publish command used in `release-please` workflow
+ * ```sh
+ * lerna publish from-package --no-push --no-private --no-git-tag-version --no-verify-access --yes
+ * ````
  * Workflow line: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/c67a8c3e096b835e3eb91cac0642bf775ffa4350/.github/workflows/release-please.yml#L84
  * Ref: https://github.com/lerna/lerna/tree/main/commands/publish#bump-from-package
  * 
@@ -73,7 +77,7 @@ publicPkgList.forEach((pkg, idx) => {
 
   // Add tasks if no version matches the current
   if (!versions.has(pkg.version)) {
-    publishTasks.push({ cmd: 'npm publish', opts: { cwd: pkg.location} });
+    publishTasks.push({ cmd: 'npm publish', opts: { cwd: pkg.location } });
   }
 });
 
