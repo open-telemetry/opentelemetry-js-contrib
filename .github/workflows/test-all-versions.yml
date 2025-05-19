@@ -33,11 +33,13 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run compile
+      - name: Snapshot build state
+        run: tar -czvf nx-snapshot.tar.gz ./.nx
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: tav-build-cache-${{ github.run_number }}
-          path: .nx/cache
+          path: nx-snapshot.tar.gz
           retention-days: 1
 
   tav:
@@ -169,7 +171,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tav-build-cache-${{ github.run_number }}
-          path: .nx/cache
+          path: .nx
       - name: Build
         run: npm run compile
       - name: Run test-all-versions
