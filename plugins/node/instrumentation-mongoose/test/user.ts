@@ -15,8 +15,6 @@
  */
 import { Schema, Document } from 'mongoose';
 import * as mongoose from 'mongoose';
-import { context } from '@opentelemetry/api';
-import { suppressTracing } from '@opentelemetry/core';
 
 export interface IUser extends Document {
   email: string;

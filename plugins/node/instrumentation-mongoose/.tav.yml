@@ -1,10 +1,6 @@
 mongoose:
   - versions:
-      include: ">=5.10.19 <6"
-      mode: latest-minors
-    commands: npm run test-v5-v6
-  - versions:
-      include: ">=6.7.5 <7"
+      include: ">=5.9.7 <7"
       mode: latest-minors
     commands: npm run test-v5-v6
   - versions:

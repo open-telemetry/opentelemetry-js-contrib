@@ -99,7 +99,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
   protected init(): InstrumentationModuleDefinition {
     const module = new InstrumentationNodeModuleDefinition(
       'mongoose',
-      ['>=5.10.19 <6', '>=6.7.5 <9'],
+      ['>=5.9.7 <9'],
       this.patch.bind(this),
       this.unpatch.bind(this)
     );
@@ -343,8 +343,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         ) {
           return original.apply(this, arguments);
         }
-
-        if (options instanceof Function) {
+        if (typeof options === 'function') {
           callback = options;
           options = undefined;
         }

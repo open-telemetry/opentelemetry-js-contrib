@@ -69,7 +69,6 @@ describe('mongoose instrumentation [v7/v8]', () => {
       },
     });
     await loadUsers();
-    await User.createIndexes();
     instrumentation.enable();
   });
 
