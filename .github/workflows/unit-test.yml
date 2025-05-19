@@ -25,11 +25,13 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run compile
+      - name: Snapshot build state
+        run: tar -czvf nx-snapshot.tar.gz ./.nx
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: tests-build-cache-${{ github.run_number }}
-          path: .nx
+          path: nx-snapshot.tar.gz
           retention-days: 1
 
   unit-test:
@@ -184,7 +186,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tests-build-cache-${{ github.run_number }}
-          path: .nx
+          path: nx-snapshot.tar.gz
+      - name: Restore build snapshot
+        run: rm -rf .nx && tar -xvzf nx-snapshot.tar.gz
       - name: Build
         run: npm run compile
       - name: Unit tests (Full)
