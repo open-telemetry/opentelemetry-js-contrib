@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-mongoose
 
 ## Supported Versions
 
-- [`mongoose`](https://www.npmjs.com/package/mongoose) versions `>=5.10.19 <6` and `>=6.7.5 <9`
+- [`mongoose`](https://www.npmjs.com/package/mongoose) versions `>=5.9.7 <9`
 
 ## Usage
 
