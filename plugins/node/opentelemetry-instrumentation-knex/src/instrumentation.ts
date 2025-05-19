@@ -27,7 +27,6 @@ import {
   semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import * as utils from './utils';
-import { mapSystem } from './utils';
 import { KnexInstrumentationConfig } from './types';
 import {
   ATTR_DB_COLLECTION_NAME,
@@ -55,7 +54,7 @@ const DEFAULT_CONFIG: KnexInstrumentationConfig = {
 };
 
 export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentationConfig> {
-  private _semconvStability: SemconvStability = SemconvStability.OLD;
+  private _semconvStability: SemconvStability;
 
   constructor(config: KnexInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
@@ -160,7 +159,7 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
 
         if (instrumentation._semconvStability & SemconvStability.OLD) {
           Object.assign(attributes, {
-            [SEMATTRS_DB_SYSTEM]: mapSystem(config.client),
+            [SEMATTRS_DB_SYSTEM]: utils.mapSystem(config.client),
             [SEMATTRS_DB_SQL_TABLE]: table,
             [SEMATTRS_DB_OPERATION]: operation,
             [SEMATTRS_DB_USER]: config?.connection?.user,
@@ -172,7 +171,7 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
         }
         if (instrumentation._semconvStability & SemconvStability.STABLE) {
           Object.assign(attributes, {
-            [ATTR_DB_SYSTEM_NAME]: mapSystem(config.client),
+            [ATTR_DB_SYSTEM_NAME]: utils.mapSystem(config.client),
             [ATTR_DB_COLLECTION_NAME]: table,
             [ATTR_DB_OPERATION_NAME]: operation,
             [ATTR_DB_NAMESPACE]: name,
