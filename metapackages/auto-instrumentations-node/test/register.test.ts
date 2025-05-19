@@ -39,6 +39,9 @@ function runWithRegister(path: string): PromiseWithChild<{
         // node v18.17.0, v20.3.0 and later results in ANSI color escapes
         // in the ConsoleSpanExporter output that is checked below.
         FORCE_COLOR: '0',
+        // Cloud resource detectors can take a few seconds, resulting in hitting
+        // a test timeout.
+        OTEL_NODE_RESOURCE_DETECTORS: 'none',
       }),
     }
   );
@@ -60,6 +63,8 @@ function waitForString(stream: Readable, str: string): Promise<void> {
 }
 
 describe('Register', function () {
+  this.timeout(5000); // Same timeout as in the execFile() above.
+
   it('can load auto instrumentation from command line', async () => {
     const runPromise = runWithRegister('./test-app/app.js');
     const { child } = runPromise;

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.51.1...instrumentation-aws-lambda-v0.52.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
+## [0.51.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.51.0...instrumentation-aws-lambda-v0.51.1) (2025-05-02)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.0.0 to ^2.1.0
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.54.0 to ^0.55.0
+
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.50.3...instrumentation-aws-lambda-v0.51.0) (2025-03-18)
 
 
