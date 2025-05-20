@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-configuration-propagators-v0.4.0...auto-configuration-propagators-v0.4.1) (2025-05-02)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.0.0 to ^2.1.0
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.54.0 to ^0.55.0
+
 ## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-configuration-propagators-v0.3.3...auto-configuration-propagators-v0.4.0) (2025-03-18)
 
 

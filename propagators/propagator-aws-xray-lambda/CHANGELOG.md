@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-aws-xray-lambda-v0.54.0...propagator-aws-xray-lambda-v0.55.0) (2025-05-02)
+
+
+### Features
+
+* **deps:** lock file maintenance ([#2749](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2749)) ([cea4407](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cea44078e0c6cc3df1b4c2b791f0976ffd961a54))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.0.0 to ^2.1.0
+
 ## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-aws-xray-lambda-v0.53.2...propagator-aws-xray-lambda-v0.54.0) (2025-03-18)
 
 

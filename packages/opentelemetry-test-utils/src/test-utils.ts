@@ -42,8 +42,10 @@ const dockerRunCmds = {
     'docker run --rm -d --name otel-mssql -p 1433:1433 -e MSSQL_SA_PASSWORD=mssql_passw0rd -e ACCEPT_EULA=Y mcr.microsoft.com/mssql/server:2022-latest',
   mysql:
     'docker run --rm -d --name otel-mysql -p 33306:3306 -e MYSQL_ROOT_PASSWORD=rootpw -e MYSQL_DATABASE=test_db -e MYSQL_USER=otel -e MYSQL_PASSWORD=secret mysql:5.7 --log_output=TABLE --general_log=ON',
+  oracledb:
+    'docker run --rm -d --name otel-oracledb -p 1521:1521 -e ORACLE_PASSWORD=oracle -e APP_USER=otel -e APP_USER_PASSWORD=secret gvenzl/oracle-free:slim',
   postgres:
-    'docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres postgres:16-alpine',
+    'docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=otel_pg_database postgres:16-alpine',
   redis: 'docker run --rm -d --name otel-redis -p 63790:6379 redis:alpine',
 };
 
