@@ -177,13 +177,13 @@ jobs:
       - name: Set MySQL variables
         run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
       - name: Install
-        run: npm ci && rm -rf .nx
+        run: npm ci
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
           name: tests-build-cache-${{ github.run_number }}
-      - name: Check dowloaded artifacts 
-        run: ls -la
+      # Note: `Install` step created a `.nx` folder. We should replace it
+      # with the packed one from `build-and-cache` job
       - name: Unpack artifacts and Build
         run: rm -rf .nx && tar -xvf nx-pack.tar.gz && npm run compile
       - name: Unit tests (Full)

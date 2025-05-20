@@ -26,10 +26,9 @@ jobs:
           OUTPUT=`node scripts/pr-labels-to-npm-workspace-args.mjs "$PR_LABELS"`
           echo "args=$OUTPUT" >> $GITHUB_OUTPUT
 
-  # TODO: uncomment once the build cache issue is solved
-  # tav:
-  #   uses: ./.github/workflows/test-all-versions.yml
-  #   needs: parse-labels
-  #   with:
-  #     npm-workspace-args: ${{ needs.parse-labels.outputs.args }}
-  #   if: ${{ needs.parse-labels.outputs.args != '' }}
+  tav:
+    uses: ./.github/workflows/test-all-versions.yml
+    needs: parse-labels
+    with:
+      npm-workspace-args: ${{ needs.parse-labels.outputs.args }}
+    if: ${{ needs.parse-labels.outputs.args != '' }}

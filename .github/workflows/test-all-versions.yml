@@ -31,15 +31,13 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci
-      - name: Build
-        run: npm run compile
-      - name: Snapshot build state
-        run: tar -czvf nx-snapshot.tar.gz ./.nx
+      - name: Build and pack artifacts
+        run: npm run compile && tar -czvf nx-pack.tar.gz .nx
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: tav-build-cache-${{ github.run_number }}
-          path: nx-snapshot.tar.gz
+          path: nx-pack.tar.gz
           retention-days: 1
 
   tav:
@@ -171,8 +169,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tav-build-cache-${{ github.run_number }}
-          path: .nx
-      - name: Build
-        run: npm run compile
+      # Note: `Install` step created a `.nx` folder. We should replace it
+      # with the packed one from `build-and-cache` job
+      - name: Unpack artifacts and Build
+        run: rm -rf .nx && tar -xvf nx-pack.tar.gz && npm run compile
       - name: Run test-all-versions
         run: npm run --if-present --workspaces test-all-versions ${{ inputs.npm-workspace-args }}
