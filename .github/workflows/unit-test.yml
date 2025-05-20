@@ -29,7 +29,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tests-build-cache-${{ github.run_number }}
-          path: .nx/
+          path: .nx
           retention-days: 1
 
   unit-test:
