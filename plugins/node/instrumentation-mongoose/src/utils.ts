@@ -105,6 +105,8 @@ export function handleCallbackResponse(
   let callbackArgumentIndex = 0;
   if (args.length === 2) {
     callbackArgumentIndex = 1;
+  } else if (args.length === 3) {
+    callbackArgumentIndex = 2;
   }
 
   args[callbackArgumentIndex] = (err: Error, response: any): any => {
