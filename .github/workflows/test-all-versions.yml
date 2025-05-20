@@ -31,14 +31,24 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci
-      - name: Build and pack artifacts
-        run: npm run compile && tar -czvf nx-pack.tar.gz .nx
+      - name: Build
+        run: npm run compile
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: tav-build-cache-${{ github.run_number }}
-          path: nx-pack.tar.gz
+          path: .nx
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 1
+      # - name: Build and pack artifacts
+      #   run: npm run compile && tar -czvf nx-pack.tar.gz .nx
+      # - name: Upload Build Artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: tav-build-cache-${{ github.run_number }}
+      #     path: nx-pack.tar.gz
+      #     retention-days: 1
 
   tav:
     name: Run test-all-versions
@@ -171,7 +181,11 @@ jobs:
           name: tav-build-cache-${{ github.run_number }}
       # Note: `Install` step created a `.nx` folder. We should replace it
       # with the packed one from `build-and-cache` job
-      - name: Unpack artifacts and Build
-        run: rm -rf .nx && tar -xvf nx-pack.tar.gz && npm run compile
+      # - name: Unpack artifacts and Build
+      #   run: rm -rf .nx && tar -xvf nx-pack.tar.gz && npm run compile
+      - name: check folders
+        run: ls -la
+      - name: Build
+        run: npm run compile
       - name: Run test-all-versions
         run: npm run --if-present --workspaces test-all-versions ${{ inputs.npm-workspace-args }}
