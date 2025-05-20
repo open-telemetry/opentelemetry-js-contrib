@@ -224,9 +224,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tests-build-cache-${{ github.run_number }}
-          path: .nx
-      - name: Build
-        run: npm run compile
+      # Note: `Install` step created a `.nx` folder. We should replace it
+      # with the packed one from `build-and-cache` job
+      - name: Unpack artifacts and Build
+        run: rm -rf .nx && tar -xvf nx-pack.tar.gz && npm run compile
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
