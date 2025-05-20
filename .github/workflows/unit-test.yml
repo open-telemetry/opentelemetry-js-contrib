@@ -28,7 +28,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: tav-build-cache-${{ github.run_number }}
+          name: tests-build-cache-${{ github.run_number }}
           path: .nx
           include-hidden-files: true
           if-no-files-found: error
@@ -192,6 +192,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tests-build-cache-${{ github.run_number }}
+          path: .nx
       # Note: `Install` step created a `.nx` folder. We should replace it
       # with the packed one from `build-and-cache` job
       # - name: Unpack artifacts and Build
@@ -238,10 +239,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tests-build-cache-${{ github.run_number }}
+          path: .nx
       # Note: `Install` step created a `.nx` folder. We should replace it
       # with the packed one from `build-and-cache` job
-      - name: Unpack artifacts and Build
-        run: rm -rf .nx && tar -xvf nx-pack.tar.gz && npm run compile
+      # - name: Unpack artifacts and Build
+      #   run: rm -rf .nx && tar -xvf nx-pack.tar.gz && npm run compile
+      - name: Build
+        run: npm run compile
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
