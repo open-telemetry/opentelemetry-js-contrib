@@ -74,9 +74,8 @@ describe('mongoose instrumentation [common]', () => {
         });
       },
     });
-    instrumentation.enable();
     await loadUsers();
-    await User.createIndexes();
+    instrumentation.enable();
   });
 
   afterEach(async () => {
@@ -319,6 +318,107 @@ describe('mongoose instrumentation [common]', () => {
     const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.document).toEqual(expect.objectContaining(document));
+  });
+
+  it('instrumenting insertMany operation', async () => {
+    const documents = [
+      {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe+1@example.com',
+      },
+      {
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: 'jane.doe+1@example.com',
+      },
+    ];
+    await User.insertMany(documents);
+
+    const spans = getTestSpans();
+    expect(spans.length).toBe(1);
+    assertSpan(spans[0] as ReadableSpan);
+    expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('insertMany');
+    const statement = getStatement(spans[0] as ReadableSpan);
+    expect(statement.documents).toEqual(documents);
+  });
+
+  it('instrumenting bulkWrite operation', async () => {
+    const operations = [
+      {
+        insertOne: {
+          document: {
+            firstName: 'Jane',
+            lastName: 'Doe',
+            email: 'jane.doe+2@example.com',
+            age: 25,
+          },
+        },
+      },
+      {
+        updateMany: {
+          filter: { age: { $lte: 20 } },
+          update: { $set: { age: 20 } },
+        },
+      },
+      {
+        updateOne: {
+          filter: { firstName: 'Jane' },
+          update: { $inc: { age: 1 } },
+        },
+      },
+      { deleteOne: { filter: { firstName: 'Michael' } } },
+      {
+        updateOne: {
+          filter: { firstName: 'Zara' },
+          update: {
+            $set: { lastName: 'Doe', age: 40, email: 'zara@example.com' },
+          },
+          upsert: true,
+        },
+      },
+    ];
+    await User.bulkWrite(operations);
+
+    const spans = getTestSpans();
+    expect(spans.length).toBe(1);
+    assertSpan(spans[0] as ReadableSpan);
+    expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('bulkWrite');
+    const statement = getStatement(spans[0] as ReadableSpan);
+    expect(statement.operations).toEqual([
+      {
+        insertOne: {
+          document: {
+            firstName: 'Jane',
+            lastName: 'Doe',
+            email: 'jane.doe+2@example.com',
+            age: 25,
+          },
+        },
+      },
+      {
+        updateMany: {
+          filter: { age: { $lte: 20 } },
+          update: { $set: { age: 20 } },
+        },
+      },
+      {
+        updateOne: {
+          filter: { firstName: 'Jane' },
+          update: { $inc: { age: 1 } },
+        },
+      },
+      { deleteOne: { filter: { firstName: 'Michael' } } },
+      {
+        updateOne: {
+          filter: { firstName: 'Zara' },
+          update: {
+            $set: { lastName: 'Doe', age: 40, email: 'zara@example.com' },
+          },
+          upsert: true,
+        },
+      },
+    ]);
   });
 
   it('instrumenting aggregate operation', async () => {
