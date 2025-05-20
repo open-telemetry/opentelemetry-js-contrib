@@ -33,14 +33,6 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
-      # - name: Build and pack artifacts
-      #   run: npm run compile && tar -czvf nx-pack.tar.gz .nx
-      # - name: Upload build artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: tests-build-cache-${{ github.run_number }}
-      #     path: nx-pack.tar.gz
-      #     retention-days: 1
 
   unit-test:
     needs: build-and-cache
@@ -193,12 +185,6 @@ jobs:
         with:
           name: tests-build-cache-${{ github.run_number }}
           path: .nx
-      # Note: `Install` step created a `.nx` folder. We should replace it
-      # with the packed one from `build-and-cache` job
-      # - name: Unpack artifacts and Build
-      #   run: rm -rf .nx && tar -xvf nx-pack.tar.gz && npm run compile
-      - name: check folders
-        run: ls -la
       - name: Build
         run: npm run compile
       - name: Unit tests (Full)
@@ -240,10 +226,6 @@ jobs:
         with:
           name: tests-build-cache-${{ github.run_number }}
           path: .nx
-      # Note: `Install` step created a `.nx` folder. We should replace it
-      # with the packed one from `build-and-cache` job
-      # - name: Unpack artifacts and Build
-      #   run: rm -rf .nx && tar -xvf nx-pack.tar.gz && npm run compile
       - name: Build
         run: npm run compile
       - name: Unit tests
