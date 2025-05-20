@@ -371,6 +371,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   ) {
     return {
       ...response.data,
+      // Wrap and replace the response stream to allow processing events to telemetry.
       stream: this.wrapConverseStreamResponse(
         response,
         response.data.stream,
