@@ -70,7 +70,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.201.0",
+    "@opentelemetry/instrumentation": "^0.201.1",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@opentelemetry/sql-common": "^0.41.0",
     "@types/pg": "8.15.1",
