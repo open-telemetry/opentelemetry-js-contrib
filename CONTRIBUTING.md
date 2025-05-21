@@ -119,7 +119,7 @@ Some tests depend on other packages to be installed, so these steps are also req
 
 Each of these commands can also be run in individual packages, as long as the initial install and compile are done first in the root directory.
 
-If you're going to work on a single package and want to quickly jump into its development you can make use of the `focus` script. This scritp will run
+If you're going to work on a single package and want to quickly jump into its development you can make use of the `focus` script. This script will run
 the necessary tasks to have only that package ready for development saving time. For example, if you want to work with `@opentelemetry/resource-detector-aws`
 run the following command in the root folder
 
