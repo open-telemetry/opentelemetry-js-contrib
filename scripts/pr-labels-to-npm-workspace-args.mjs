@@ -8,7 +8,6 @@
 
 const labels = JSON.parse(process.argv[2]);
 
-console.error('process.argv', process.argv)
 console.error('Labels:', labels);
 
 const workspaces = labels
