@@ -16,7 +16,7 @@
 
 import { Exception } from '@opentelemetry/api';
 import { DB_SYSTEM_NAME_VALUE_POSTGRESQL } from '@opentelemetry/semantic-conventions';
-import { DB_SYSTEM_NAME_VALUE_SQLITE } from '@opentelemetry/semantic-conventions/incubating';
+import { DB_SYSTEM_NAME_VALUE_SQLITE } from './semconv';
 
 type KnexError = Error & {
   code?: string;
