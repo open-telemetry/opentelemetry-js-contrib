@@ -56,7 +56,7 @@ registerInstrumentations({
 
 This package uses `@opentelemetry/semantic-conventions` version `1.33+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
-This package is capable of emitting both Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md) and [Version 1.33.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.33.0/docs/database/database-metrics.md)
+This package is capable of emitting both Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md) and [Version 1.33.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.33.0/docs/database/database-spans.md)
 It is controlled using the environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`, which is a comma separated list of values.
 The values `database` and `database/dup` control this instrumentation.
 See details for the behavior of each of these values below.
