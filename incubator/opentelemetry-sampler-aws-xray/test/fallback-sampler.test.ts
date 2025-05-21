@@ -14,5 +14,19 @@
  * limitations under the License.
  */
 
-export * from './remote-sampler';
-export { AWSXRayRemoteSamplerConfig } from './types';
+// Includes work from:
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+import { expect } from 'expect';
+import { FallbackSampler } from '../src/fallback-sampler';
+
+describe('FallBackSampler', () => {
+  // TODO: Add tests for Fallback sampler when Rate Limiter is implemented
+
+  it('toString()', () => {
+    expect(new FallbackSampler().toString()).toEqual(
+      'FallbackSampler{fallback sampling with sampling config of 1 req/sec and 5% of additional requests'
+    );
+  });
+});
