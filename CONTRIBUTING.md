@@ -117,7 +117,7 @@ The required steps to start development on a pacakge are:
 
 - `npm ci` from root folder to install dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
 - `cd` into the pacakge you want to apply changes.
-- `npm run setup:dev` checks for dependencies of the current within the repository and prepares them.
+- `npm run setup:dev` compiles the TypeScript files for this package and its dependencies within the repository.
 
 Then you can proceed to do apply the changes and use the scripts below for development workflow
 
