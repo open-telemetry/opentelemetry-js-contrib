@@ -14,6 +14,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../../scripts/lint-readme.js",
     "version:update": "node ../../../scripts/version-update.js",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-express",
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"

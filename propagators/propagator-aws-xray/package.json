@@ -8,6 +8,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "prepublishOnly": "npm run compile",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/propagator-aws-xray",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "test": "nyc mocha test/**/*.test.ts",
     "test:browser": "nyc karma start --single-run",

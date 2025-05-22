@@ -108,39 +108,22 @@ Refer to the root-level [package.json](https://github.com/open-telemetry/opentel
 
 The `opentelemetry-js-contrib` project is written in TypeScript.
 
-As a general rule, installing and then compiling from the root directory should always be done first before anything else.
-After making changes to a specific package, compile again from the specific package directory you are working in.
-Some tests depend on other packages to be installed, so these steps are also required for running tests.
+As a general rule, installing from the root directory should always be done first before anything else.
+Packages within this repository might have dependencies between them. This means the dependencies should
+be built before if you want to `compile` or `test` the changes you've made in a package. Each package
+has a script to ensure these dependecies are ready.
 
-- `npm ci` installs dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
+The required steps to start development on a pacakge are:
+
+- `npm ci` from root folder to install dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
+- `cd` into the pacakge you want to apply changes.
+- `npm run setup:dev` checks for dependencies of the current within the repository and prepares them.
+
+Then you can proceed to do apply the changes and use the scripts below for development workflow 
+
 - `npm run compile` compiles the code, checking for type errors.
 - `npm test` runs most unit tests, though some packages require other dependencies so are only run in CI or with a separate command in the package's `package.json` file.
 - `npm run lint:fix` lint any changes and fix if needed.
-
-Each of these commands can also be run in individual packages, as long as the initial install and compile are done first in the root directory.
-
-If you're going to work on a single package and want to quickly jump into its development you can make use of the `focus` script. This script will run
-the necessary tasks to have only that package ready for development, saving time. For example, if you want to work with `@opentelemetry/resource-detector-aws`
-run the following command in the root folder
-
-```sh
-npm run focus @opentelemetry/resource-detector-aws
-
-> opentelemetry-contrib@0.1.0 focus
-> nx run-many -t compile -p @opentelemetry/resource-detector-aws
-
-
-    ✔  nx run @opentelemetry/instrumentation-fs:version:update (796ms)
-    ✔  nx run @opentelemetry/contrib-test-utils:compile (3s)
-    ✔  nx run @opentelemetry/instrumentation-fs:compile (3s)
-    ✔  nx run @opentelemetry/resource-detector-aws:compile (3s)
-
- ———————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
-
- >  NX   Successfully ran target compile for project @opentelemetry/resource-detector-aws and 3 tasks it depends on (7s)
-```
-
-Once the command is done you can `cd` into the package and start using the usual commands.
 
 ### CHANGELOG
 

@@ -10,6 +10,7 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/contrib-test-utils",
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"

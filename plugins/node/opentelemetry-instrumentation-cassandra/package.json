@@ -14,6 +14,7 @@
     "lint:readme": "node ../../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-cassandra-driver",
     "compile": "tsc -p ."
   },
   "keywords": [

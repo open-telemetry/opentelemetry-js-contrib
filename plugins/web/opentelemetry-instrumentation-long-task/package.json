@@ -13,6 +13,7 @@
     "lint:readme": "node ../../../scripts/lint-readme.js",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "version:update": "node ../../../scripts/version-update.js",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-long-task",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "prepublishOnly": "npm run compile",
     "tdd": "karma start",

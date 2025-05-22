@@ -13,6 +13,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/winston-transport",
     "compile": "tsc -p ."
   },
   "keywords": [
