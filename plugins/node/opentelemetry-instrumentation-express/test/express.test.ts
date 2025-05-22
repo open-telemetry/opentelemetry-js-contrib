@@ -67,6 +67,46 @@ describe('ExpressInstrumentation', () => {
       server?.close();
     });
 
+    it('does not attach semantic route attribute for 404 page', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          try {
+            await httpRequest.get(
+              `http://localhost:${port}/non-existing-route`
+            );
+          } catch (error) {}
+          rootSpan.end();
+
+          const spans = memoryExporter.getFinishedSpans();
+
+          // Should have middleware spans but no request handler span
+          const middlewareSpans = spans.filter(span =>
+            span.name.includes('middleware') ||
+            span.name.includes('expressInit') ||
+            span.name.includes('jsonParser')
+          );
+
+          assert.ok(middlewareSpans.length > 0, 'Middleware spans should be created');
+
+          for (const span of spans) {
+            assert.strictEqual(
+              span.attributes[SEMATTRS_HTTP_ROUTE],
+              undefined, // none of the spans have the HTTP route attribute
+              `Span "${span.name}" should not have HTTP route attribute for non-existing route`
+            );
+          }
+        }
+      );
+    });
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const customMiddleware: express.RequestHandler = (req, res, next) => {

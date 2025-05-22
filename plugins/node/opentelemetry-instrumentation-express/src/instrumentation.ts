@@ -194,8 +194,10 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
           // remove duplicate slashes to normalize route
           .replace(/\/{2,}/g, '/');
 
+        const actualRoute = route.length > 0 ? route : undefined;
+
         const attributes: Attributes = {
-          [ATTR_HTTP_ROUTE]: route.length > 0 ? route : '/',
+          [ATTR_HTTP_ROUTE]: actualRoute,
         };
         const metadata = getLayerMetadata(route, layer, layerPath);
         const type = metadata.attributes[
@@ -204,7 +206,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
 
         const rpcMetadata = getRPCMetadata(context.active());
         if (rpcMetadata?.type === RPCType.HTTP) {
-          rpcMetadata.route = route || '/';
+          rpcMetadata.route = actualRoute;
         }
 
         // verify against the config if the layer should be ignored
