@@ -13,5 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export { getWebAutoInstrumentations, InstrumentationConfigMap } from './utils';
+export { getWebAutoInstrumentations } from './utils';
+export type { InstrumentationConfigMap } from './utils';

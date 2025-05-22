@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
-export * from './OpenTelemetryBunyanStream';
+export { BunyanInstrumentation } from './instrumentation';
+export { OpenTelemetryBunyanStream } from './OpenTelemetryBunyanStream';
+export type { BunyanInstrumentationConfig, LogHookFunction } from './types';

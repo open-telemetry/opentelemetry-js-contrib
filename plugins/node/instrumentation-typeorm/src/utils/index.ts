@@ -13,5 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from './get-func-param-names';
-export * from './suppressTracing';
+export { getParamNames } from './get-func-param-names';
+export {
+  isTypeormInternalTracingSuppressed,
+  suppressTypeormInternalTracing,
+} from './suppressTracing';
