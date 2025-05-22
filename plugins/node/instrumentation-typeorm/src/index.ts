@@ -13,5 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from './typeorm';
-export * from './types';
+export { TypeormInstrumentation } from './typeorm';
+export { ExtendedDatabaseAttribute } from './types';
+export type {
+  HookInfo,
+  TypeormInstrumentationConfig,
+  TypeormResponseCustomAttributesFunction,
+} from './types';

@@ -23,6 +23,8 @@ export interface SerializerPayload {
   document?: any;
   aggregatePipeline?: any;
   fields?: any;
+  documents?: any;
+  operations?: any;
 }
 
 export type DbStatementSerializer = (

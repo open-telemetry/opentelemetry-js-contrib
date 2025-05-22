@@ -16,5 +16,12 @@
  * Copyright (c) 2025, Oracle and/or its affiliates.
  * */
 
-export * from './instrumentation';
-export * from './types';
+export { OracleInstrumentation } from './instrumentation';
+export type {
+  OracleInstrumentationConfig,
+  OracleInstrumentationExecutionRequestHook,
+  OracleInstrumentationExecutionResponseHook,
+  OracleRequestHookInformation,
+  OracleResponseHookInformation,
+  SpanConnectionConfig,
+} from './types';
