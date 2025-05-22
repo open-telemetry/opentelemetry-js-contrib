@@ -37,7 +37,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tav-build-cache-${{ github.run_number }}
-          path: node_modules/.cache/nx
+          path: .nx
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 1
 
   tav:
@@ -169,7 +171,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tav-build-cache-${{ github.run_number }}
-          path: node_modules/.cache/nx
+          path: .nx
       - name: Build
         run: npm run compile
       - name: Run test-all-versions

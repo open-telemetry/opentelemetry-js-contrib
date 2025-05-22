@@ -7,6 +7,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "rimraf build/*",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-fastify",
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
@@ -15,7 +16,6 @@
     "test": "nyc mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js",
-    "prewatch": "npm run precompile",
     "watch": "tsc -w"
   },
   "keywords": [

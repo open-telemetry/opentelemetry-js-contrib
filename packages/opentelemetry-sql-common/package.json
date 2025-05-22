@@ -10,8 +10,8 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/sql-common",
     "compile": "tsc --build tsconfig.json",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "watch": "tsc -w"
