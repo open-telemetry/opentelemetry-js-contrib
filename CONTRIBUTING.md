@@ -119,7 +119,7 @@ The required steps to start development on a pacakge are:
 - `cd` into the pacakge you want to apply changes.
 - `npm run setup:dev` checks for dependencies of the current within the repository and prepares them.
 
-Then you can proceed to do apply the changes and use the scripts below for development workflow 
+Then you can proceed to do apply the changes and use the scripts below for development workflow
 
 - `npm run compile` compiles the code, checking for type errors.
 - `npm test` runs most unit tests, though some packages require other dependencies so are only run in CI or with a separate command in the package's `package.json` file.
