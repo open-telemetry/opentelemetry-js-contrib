@@ -226,13 +226,12 @@ export function getConstructedRoute(req: {
     path => path !== '/' && path !== '/*'
   );
 
-  // Handle standalone wildcard case
   if (meaningfulPaths.length === 1 && meaningfulPaths[0] === '*') {
     return '*';
   }
 
-  // Construct the route by joining paths and normalizing
-  return meaningfulPaths.join('').replace(/\/{2,}/g, '/'); // Remove duplicate slashes
+  // Join parts and remove duplicate slashes
+  return meaningfulPaths.join('').replace(/\/{2,}/g, '/');
 }
 
 /**
@@ -257,6 +256,7 @@ export function getActualMatchedRoute(req: {
   }
 
   // Handle root path case - if all paths are root, only return root if originalUrl is also root
+  // The layer store also includes root paths in case a non-existing url was requested
   if (layersStore.every(path => path === '/')) {
     return req.originalUrl === '/' ? '/' : undefined;
   }
