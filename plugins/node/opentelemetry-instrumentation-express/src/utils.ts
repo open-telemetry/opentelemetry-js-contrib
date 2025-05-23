@@ -213,3 +213,81 @@ const extractLayerPathSegment = (arg: LayerPathSegment) => {
 
   return;
 };
+
+export function getConstructedRoute(req: {
+  originalUrl: PatchedRequest['originalUrl'];
+  [_LAYERS_STORE_PROPERTY]?: string[];
+}) {
+  const layersStore: string[] = Array.isArray(req[_LAYERS_STORE_PROPERTY])
+    ? (req[_LAYERS_STORE_PROPERTY] as string[])
+    : [];
+
+  const meaningfulPaths = layersStore.filter(
+    path => path !== '/' && path !== '/*'
+  );
+
+  // Handle standalone wildcard case
+  if (meaningfulPaths.length === 1 && meaningfulPaths[0] === '*') {
+    return '*';
+  }
+
+  // Construct the route by joining paths and normalizing
+  return meaningfulPaths.join('').replace(/\/{2,}/g, '/'); // Remove duplicate slashes
+}
+
+/**
+ * Extracts the actual matched route from Express request for OpenTelemetry instrumentation.
+ * Returns the route that should be used as the http.route attribute.
+ *
+ * @param req - The Express request object with layers store
+ * @param layersStoreProperty - The property name where layer paths are stored
+ * @returns The matched route string or undefined if no valid route is found
+ */
+export function getActualMatchedRoute(req: {
+  originalUrl: PatchedRequest['originalUrl'];
+  [_LAYERS_STORE_PROPERTY]?: string[];
+}): string | undefined {
+  const layersStore: string[] = Array.isArray(req[_LAYERS_STORE_PROPERTY])
+    ? (req[_LAYERS_STORE_PROPERTY] as string[])
+    : [];
+
+  // If no layers are stored, no route can be determined
+  if (layersStore.length === 0) {
+    return undefined;
+  }
+
+  // Handle root path case - if all paths are root, only return root if originalUrl is also root
+  if (layersStore.every(path => path === '/')) {
+    return req.originalUrl === '/' ? '/' : undefined;
+  }
+
+  const constructedRoute = getConstructedRoute(req);
+  if (constructedRoute === '*') {
+    return constructedRoute;
+  }
+
+  // Ensure route starts with '/' if it doesn't already
+  const normalizedRoute = constructedRoute.startsWith('/')
+    ? constructedRoute
+    : `/${constructedRoute}`;
+
+  // Validate that this appears to be a matched route
+  // A route is considered matched if:
+  // 1. We have a constructed route
+  // 2. The original URL matches or starts with our route pattern
+  const isValidRoute =
+    normalizedRoute.length > 0 &&
+    (req.originalUrl === normalizedRoute ||
+      req.originalUrl.startsWith(normalizedRoute) ||
+      isRoutePattern(normalizedRoute));
+
+  return isValidRoute ? normalizedRoute : undefined;
+}
+
+/**
+ * Checks if a route contains parameter patterns (e.g., :id, :userId)
+ * which are valid even if they don't exactly match the original URL
+ */
+function isRoutePattern(route: string): boolean {
+  return route.includes(':') || route.includes('*');
+}

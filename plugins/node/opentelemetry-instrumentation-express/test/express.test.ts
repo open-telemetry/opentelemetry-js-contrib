@@ -89,13 +89,17 @@ describe('ExpressInstrumentation', () => {
           const spans = memoryExporter.getFinishedSpans();
 
           // Should have middleware spans but no request handler span
-          const middlewareSpans = spans.filter(span =>
-            span.name.includes('middleware') ||
-            span.name.includes('expressInit') ||
-            span.name.includes('jsonParser')
+          const middlewareSpans = spans.filter(
+            span =>
+              span.name.includes('middleware') ||
+              span.name.includes('expressInit') ||
+              span.name.includes('jsonParser')
           );
 
-          assert.ok(middlewareSpans.length > 0, 'Middleware spans should be created');
+          assert.ok(
+            middlewareSpans.length > 0,
+            'Middleware spans should be created'
+          );
 
           for (const span of spans) {
             assert.strictEqual(
