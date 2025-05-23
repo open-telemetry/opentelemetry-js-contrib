@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.48.0...instrumentation-mongoose-v0.49.0) (2025-05-23)
+
+
+### Features
+
+* **instrumentation-mongoose:** add instrumentation of static methods ([#2748](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2748)) ([55cc256](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/55cc2568505179652ce423c5874bccd7404d4b99))
+
 ## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.47.1...instrumentation-mongoose-v0.48.0) (2025-05-15)
 
 
