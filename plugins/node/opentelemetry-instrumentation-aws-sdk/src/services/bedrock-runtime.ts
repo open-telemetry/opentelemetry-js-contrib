@@ -46,6 +46,10 @@ import {
   NormalizedRequest,
   NormalizedResponse,
 } from '../types';
+import type {
+  ConverseStreamOutput,
+  TokenUsage,
+} from '@aws-sdk/client-bedrock-runtime';
 import {
   hrTime,
   hrTimeDuration,
@@ -93,7 +97,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   ): RequestMetadata {
     switch (request.commandName) {
       case 'Converse':
-        return this.requestPreSpanHookConverse(request, config, diag);
+        return this.requestPreSpanHookConverse(request, config, diag, false);
+      case 'ConverseStream':
+        return this.requestPreSpanHookConverse(request, config, diag, true);
       case 'InvokeModel':
         return this.requestPreSpanHookInvokeModel(request, config, diag);
     }
@@ -106,7 +112,8 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   private requestPreSpanHookConverse(
     request: NormalizedRequest,
     config: AwsSdkInstrumentationConfig,
-    diag: DiagLogger
+    diag: DiagLogger,
+    isStream: boolean
   ): RequestMetadata {
     let spanName = GEN_AI_OPERATION_NAME_VALUE_CHAT;
     const spanAttributes: Attributes = {
@@ -142,6 +149,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     return {
       spanName,
       isIncoming: false,
+      isStream,
       spanAttributes,
     };
   }
@@ -328,6 +336,14 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
           config,
           startTime
         );
+      case 'ConverseStream':
+        return this.responseHookConverseStream(
+          response,
+          span,
+          tracer,
+          config,
+          startTime
+        );
       case 'InvokeModel':
         return this.responseHookInvokeModel(response, span, tracer, config);
     }
@@ -342,6 +358,64 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   ) {
     const { stopReason, usage } = response.data;
 
+    BedrockRuntimeServiceExtension.setStopReason(span, stopReason);
+    this.setUsage(response, span, usage, startTime);
+  }
+
+  private responseHookConverseStream(
+    response: NormalizedResponse,
+    span: Span,
+    tracer: Tracer,
+    config: AwsSdkInstrumentationConfig,
+    startTime: HrTime
+  ) {
+    return {
+      ...response.data,
+      // Wrap and replace the response stream to allow processing events to telemetry
+      // before yielding to the user.
+      stream: this.wrapConverseStreamResponse(
+        response,
+        response.data.stream,
+        span,
+        startTime
+      ),
+    };
+  }
+
+  private async *wrapConverseStreamResponse(
+    response: NormalizedResponse,
+    stream: AsyncIterable<ConverseStreamOutput>,
+    span: Span,
+    startTime: HrTime
+  ) {
+    try {
+      let usage: TokenUsage | undefined;
+      for await (const item of stream) {
+        BedrockRuntimeServiceExtension.setStopReason(
+          span,
+          item.messageStop?.stopReason
+        );
+        usage = item.metadata?.usage;
+        yield item;
+      }
+      this.setUsage(response, span, usage, startTime);
+    } finally {
+      span.end();
+    }
+  }
+
+  private static setStopReason(span: Span, stopReason: string | undefined) {
+    if (stopReason !== undefined) {
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [stopReason]);
+    }
+  }
+
+  private setUsage(
+    response: NormalizedResponse,
+    span: Span,
+    usage: TokenUsage | undefined,
+    startTime: HrTime
+  ) {
     const sharedMetricAttrs: Attributes = {
       [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
@@ -370,10 +444,6 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
           [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
         });
       }
-    }
-
-    if (stopReason !== undefined) {
-      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [stopReason]);
     }
   }
 
