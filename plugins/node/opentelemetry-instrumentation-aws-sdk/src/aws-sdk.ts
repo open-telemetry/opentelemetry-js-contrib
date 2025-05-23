@@ -350,7 +350,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
           Promise.resolve(regionPromise)
             .then(resolvedRegion => {
               normalizedRequest.region = resolvedRegion;
-              span.setAttribute(AttributeNames.AWS_REGION, resolvedRegion);
+              span.setAttribute(AttributeNames.CLOUD_REGION, resolvedRegion);
             })
             .catch(e => {
               // there is nothing much we can do in this case.

@@ -73,7 +73,7 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
         'ot-demo-test'
       );
-      expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+      expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
       expect(span.kind).toEqual(SpanKind.CLIENT);
       expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
@@ -100,7 +100,7 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
         expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
           'ot-demo-test'
         );
-        expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+        expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
         expect(span.name).toEqual('S3.PutObject');
         expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
         done();
@@ -129,7 +129,7 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
         'ot-demo-test'
       );
-      expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+      expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
       expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
     });
@@ -166,7 +166,7 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
           'invalid-bucket-name'
         );
         expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(403);
-        expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+        expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
         expect(span.attributes[AttributeNames.AWS_REQUEST_ID]).toEqual(
           'MS95GTS7KXQ34X2S'
         );
