@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-mongoose",
-  "version": "0.48.0",
+  "version": "0.49.0",
   "description": "OpenTelemetry instrumentation for `mongoose` database object data modeling (ODM) library for MongoDB",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

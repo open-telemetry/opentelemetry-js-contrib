@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.53.0...instrumentation-aws-sdk-v0.54.0) (2025-05-23)
+
+
+### Features
+
+* **instrumentation-aws-sdk:** add gen ai conventions for converse stream span ([#2769](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2769)) ([ab438a0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab438a04f5d7605f2336a549d63ae48085c50857))
+
 ## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.52.0...instrumentation-aws-sdk-v0.53.0) (2025-05-15)
 
 
