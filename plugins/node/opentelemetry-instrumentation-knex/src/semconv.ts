@@ -14,4 +14,13 @@
  * limitations under the License.
  */
 
-export { LruMemoizerInstrumentation } from './instrumentation';
+/*
+ * This file contains a copy of unstable semantic convention definitions
+ * used by this package.
+ * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
+ */
+
+/**
+ * Enum value "sqlite" for attribute {@link ATTR_DB_SYSTEM_NAME}.
+ */
+export const DB_SYSTEM_NAME_VALUE_SQLITE = 'sqlite' as const;

@@ -68,7 +68,14 @@ export class ServicesExtensions implements ServiceExtension {
     startTime: HrTime
   ) {
     const serviceExtension = this.services.get(response.request.serviceName);
-    serviceExtension?.responseHook?.(response, span, tracer, config, startTime);
+
+    return serviceExtension?.responseHook?.(
+      response,
+      span,
+      tracer,
+      config,
+      startTime
+    );
   }
 
   updateMetricInstruments(meter: Meter) {
