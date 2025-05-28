@@ -23,8 +23,19 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
+import * as utils from './utils';
+import { KnexInstrumentationConfig } from './types';
 import {
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
   SEMATTRS_DB_NAME,
   SEMATTRS_DB_OPERATION,
   SEMATTRS_DB_SQL_TABLE,
@@ -35,8 +46,6 @@ import {
   SEMATTRS_NET_PEER_PORT,
   SEMATTRS_NET_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
-import * as utils from './utils';
-import { KnexInstrumentationConfig } from './types';
 
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
 const DEFAULT_CONFIG: KnexInstrumentationConfig = {
@@ -45,8 +54,15 @@ const DEFAULT_CONFIG: KnexInstrumentationConfig = {
 };
 
 export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentationConfig> {
+  private _semconvStability: SemconvStability;
+
   constructor(config: KnexInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+
+    this._semconvStability = semconvStabilityFromStr(
+      'database',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   override setConfig(config: KnexInstrumentationConfig = {}) {
@@ -122,6 +138,7 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
 
   private createQueryWrapper(moduleVersion?: string) {
     const instrumentation = this;
+
     return function wrapQuery(original: (...args: any[]) => any) {
       return function wrapped_logging_method(this: any, query: any) {
         const config = this.client.config;
@@ -134,24 +151,43 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
           config?.connection?.filename || config?.connection?.database;
         const { maxQueryLength } = instrumentation.getConfig();
 
-        const attributes: api.SpanAttributes = {
+        const attributes: api.Attributes = {
           'knex.version': moduleVersion,
-          [SEMATTRS_DB_SYSTEM]: utils.mapSystem(config.client),
-          [SEMATTRS_DB_SQL_TABLE]: table,
-          [SEMATTRS_DB_OPERATION]: operation,
-          [SEMATTRS_DB_USER]: config?.connection?.user,
-          [SEMATTRS_DB_NAME]: name,
-          [SEMATTRS_NET_PEER_NAME]: config?.connection?.host,
-          [SEMATTRS_NET_PEER_PORT]: config?.connection?.port,
-          [SEMATTRS_NET_TRANSPORT]:
-            config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
         };
+        const transport =
+          config?.connection?.filename === ':memory:' ? 'inproc' : undefined;
+
+        if (instrumentation._semconvStability & SemconvStability.OLD) {
+          Object.assign(attributes, {
+            [SEMATTRS_DB_SYSTEM]: utils.mapSystem(config.client),
+            [SEMATTRS_DB_SQL_TABLE]: table,
+            [SEMATTRS_DB_OPERATION]: operation,
+            [SEMATTRS_DB_USER]: config?.connection?.user,
+            [SEMATTRS_DB_NAME]: name,
+            [SEMATTRS_NET_PEER_NAME]: config?.connection?.host,
+            [SEMATTRS_NET_PEER_PORT]: config?.connection?.port,
+            [SEMATTRS_NET_TRANSPORT]: transport,
+          });
+        }
+        if (instrumentation._semconvStability & SemconvStability.STABLE) {
+          Object.assign(attributes, {
+            [ATTR_DB_SYSTEM_NAME]: utils.mapSystem(config.client),
+            [ATTR_DB_COLLECTION_NAME]: table,
+            [ATTR_DB_OPERATION_NAME]: operation,
+            [ATTR_DB_NAMESPACE]: name,
+            [ATTR_SERVER_ADDRESS]: config?.connection?.host,
+            [ATTR_SERVER_PORT]: config?.connection?.port,
+          });
+        }
         if (maxQueryLength) {
           // filters both undefined and 0
-          attributes[SEMATTRS_DB_STATEMENT] = utils.limitLength(
-            query?.sql,
-            maxQueryLength
-          );
+          const queryText = utils.limitLength(query?.sql, maxQueryLength);
+          if (instrumentation._semconvStability & SemconvStability.STABLE) {
+            attributes[ATTR_DB_QUERY_TEXT] = queryText;
+          }
+          if (instrumentation._semconvStability & SemconvStability.OLD) {
+            attributes[SEMATTRS_DB_STATEMENT] = queryText;
+          }
         }
 
         const parentContext =

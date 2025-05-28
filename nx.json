@@ -25,6 +25,11 @@
         "{projectRoot}/build"
       ]
     },
+    "watch": {
+      "dependsOn": [
+        "compile"
+      ]
+    },
     "lint": {
       "inputs": [
         "{projectRoot}/src/**/*.ts",

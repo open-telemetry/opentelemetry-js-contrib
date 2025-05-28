@@ -25,11 +25,13 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run compile
-      - name: Upload build artifact
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: tests-build-cache-${{ github.run_number }}
-          path: node_modules/.cache/nx
+          path: .nx
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 1
 
   unit-test:
@@ -182,7 +184,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tests-build-cache-${{ github.run_number }}
-          path: node_modules/.cache/nx
+          path: .nx
       - name: Build
         run: npm run compile
       - name: Unit tests (Full)
@@ -223,7 +225,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tests-build-cache-${{ github.run_number }}
-          path: node_modules/.cache/nx
+          path: .nx
       - name: Build
         run: npm run compile
       - name: Unit tests

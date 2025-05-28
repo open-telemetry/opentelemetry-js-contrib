@@ -18,12 +18,8 @@
 // covered multiple `client-*` packages. Its tests could be merged into
 // sqs.test.ts.
 
-import { AwsInstrumentation } from '../src';
-import {
-  getTestSpans,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-registerInstrumentationTesting(new AwsInstrumentation());
+import { getTestSpans } from '@opentelemetry/contrib-test-utils';
+import './load-instrumentation';
 
 import { SQS } from '@aws-sdk/client-sqs';
 
