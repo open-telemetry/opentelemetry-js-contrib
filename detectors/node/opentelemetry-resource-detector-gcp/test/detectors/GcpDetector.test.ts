@@ -176,6 +176,46 @@ describe('gcpDetector', () => {
       });
     });
 
+    it('should return resource and undefined for non-available kubernetes attributes', async () => {
+      process.env.KUBERNETES_SERVICE_HOST = 'my-host';
+      process.env.HOSTNAME = 'my-hostname';
+      process.env.CONTAINER_NAME = 'my-container-name';
+      const scope = nock(HOST_ADDRESS)
+        .get(INSTANCE_PATH)
+        .reply(200, {}, HEADERS)
+        .get(INSTANCE_ID_PATH)
+        .reply(200, () => '4520031799277581759', HEADERS)
+        .get(CLUSTER_NAME_PATH)
+        .reply(200, () => 'my-cluster', HEADERS)
+        .get(PROJECT_ID_PATH)
+        .reply(200, () => 'my-project-id', HEADERS)
+        .get(ZONE_PATH)
+        .reply(200, () => 'project/zone/my-zone', HEADERS)
+        .get(HOSTNAME_PATH)
+        .reply(200, () => 'dev.my-project.local', HEADERS);
+      const secondaryScope = nock(SECONDARY_HOST_ADDRESS)
+        .get(INSTANCE_PATH)
+        .reply(200, {}, HEADERS);
+
+      const resource = detectResources({ detectors: [gcpDetector] });
+      await resource.waitForAsyncAttributes?.();
+
+      secondaryScope.done();
+      scope.done();
+
+      assertCloudResource(resource, {
+        provider: 'gcp',
+        accountId: 'my-project-id',
+        zone: 'my-zone',
+      });
+      assertK8sResource(resource, {
+        clusterName: 'my-cluster',
+        podName: 'my-hostname',
+        namespaceName: undefined,
+      });
+      assertContainerResource(resource, { name: 'my-container-name' });
+    });
+
     it('returns empty resource if not detected', async () => {
       const resource = detectResources({ detectors: [gcpDetector] });
       await resource.waitForAsyncAttributes?.();
