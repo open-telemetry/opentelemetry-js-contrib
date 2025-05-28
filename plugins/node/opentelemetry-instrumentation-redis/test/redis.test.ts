@@ -80,6 +80,9 @@ describe('redis@2.x', () => {
   beforeEach(() => {
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
+    // set the default tracer provider before each test
+    // specific ones can override it to assert certain things
+    instrumentation.setTracerProvider(provider);
   });
 
   afterEach(() => {
@@ -141,30 +144,30 @@ describe('redis@2.x', () => {
       expectedDbStatement: string;
       method: (cb: redisTypes.Callback<unknown>) => unknown;
     }> = [
-      {
-        description: 'insert',
-        command: 'hset',
-        args: ['hash', 'random', 'random'],
-        expectedDbStatement: 'hash random [1 other arguments]',
-        method: (cb: redisTypes.Callback<number>) =>
-          client.hset('hash', 'random', 'random', cb),
-      },
-      {
-        description: 'get',
-        command: 'get',
-        args: ['test'],
-        expectedDbStatement: 'test',
-        method: (cb: redisTypes.Callback<string | null>) =>
-          client.get('test', cb),
-      },
-      {
-        description: 'delete',
-        command: 'del',
-        args: ['test'],
-        expectedDbStatement: 'test',
-        method: (cb: redisTypes.Callback<number>) => client.del('test', cb),
-      },
-    ];
+        {
+          description: 'insert',
+          command: 'hset',
+          args: ['hash', 'random', 'random'],
+          expectedDbStatement: 'hash random [1 other arguments]',
+          method: (cb: redisTypes.Callback<number>) =>
+            client.hset('hash', 'random', 'random', cb),
+        },
+        {
+          description: 'get',
+          command: 'get',
+          args: ['test'],
+          expectedDbStatement: 'test',
+          method: (cb: redisTypes.Callback<string | null>) =>
+            client.get('test', cb),
+        },
+        {
+          description: 'delete',
+          command: 'del',
+          args: ['test'],
+          expectedDbStatement: 'test',
+          method: (cb: redisTypes.Callback<number>) => client.del('test', cb),
+        },
+      ];
 
     before(done => {
       client = redis.createClient(URL);
@@ -387,6 +390,35 @@ describe('redis@2.x', () => {
             });
           });
         });
+      });
+    });
+
+    describe('setTracerProvider', () => {
+      before(() => {
+        instrumentation.disable();
+        instrumentation.setConfig({});
+        instrumentation.enable();
+      });
+
+      it('should use new tracer provider after setTracerProvider is called', done => {
+        const testSpecificMemoryExporter = new InMemorySpanExporter();
+        const spanProcessor = new SimpleSpanProcessor(testSpecificMemoryExporter);
+        const tracerProvider = new NodeTracerProvider({
+          spanProcessors: [spanProcessor],
+        });
+
+        // key point of this test, setting new tracer provider and making sure
+        // new spans use it.
+        instrumentation.setTracerProvider(tracerProvider);
+
+        client.set('foo', 'bar-value-from-test', (err) => {
+          assert.ifError(err);
+          // assert that the span was exported by the new tracer provider
+          // which is using the test specific span processor
+          const spans = testSpecificMemoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          done();
+        })
       });
     });
   });
