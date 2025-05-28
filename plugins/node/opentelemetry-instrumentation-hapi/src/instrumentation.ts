@@ -395,7 +395,11 @@ export class HapiInstrumentation extends InstrumentationBase {
         if (rpcMetadata?.type === RPCType.HTTP) {
           rpcMetadata.route = route.path;
         }
-        const metadata = getRouteMetadata(route, instrumentation._semconvStability, pluginName);
+        const metadata = getRouteMetadata(
+          route,
+          instrumentation._semconvStability,
+          pluginName
+        );
         const span = instrumentation.tracer.startSpan(metadata.name, {
           attributes: metadata.attributes,
         });
