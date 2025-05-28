@@ -58,7 +58,9 @@ describe('UndiciInstrumentation metrics tests', function () {
     instrumentation.setTracerProvider(provider);
     instrumentation.setMeterProvider(meterProvider);
 
-    context.setGlobalContextManager(new AsyncLocalStorageContextManager().enable());
+    context.setGlobalContextManager(
+      new AsyncLocalStorageContextManager().enable()
+    );
     mockServer.start(done);
     mockServer.mockListener((req, res) => {
       // Return a valid response always

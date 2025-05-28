@@ -59,7 +59,9 @@ describe('UndiciInstrumentation `fetch` tests', function () {
     instrumentation.setTracerProvider(provider);
 
     propagation.setGlobalPropagator(new MockPropagation());
-    context.setGlobalContextManager(new AsyncLocalStorageContextManager().enable());
+    context.setGlobalContextManager(
+      new AsyncLocalStorageContextManager().enable()
+    );
     mockServer.start(done);
     mockServer.mockListener((req, res) => {
       // There are some situations where there is no way to access headers
