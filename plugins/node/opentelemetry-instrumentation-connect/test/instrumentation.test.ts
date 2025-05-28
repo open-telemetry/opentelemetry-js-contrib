@@ -18,7 +18,7 @@ import * as assert from 'assert';
 import { context, trace } from '@opentelemetry/api';
 import { RPCType, setRPCMetadata, RPCMetadata } from '@opentelemetry/core';
 import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
   InMemorySpanExporter,
@@ -48,7 +48,7 @@ const httpRequest = {
 };
 
 const instrumentation = new ConnectInstrumentation();
-const contextManager = new AsyncHooksContextManager().enable();
+const contextManager = new AsyncLocalStorageContextManager().enable();
 const memoryExporter = new InMemorySpanExporter();
 const spanProcessor = new SimpleSpanProcessor(memoryExporter);
 const provider = new NodeTracerProvider({

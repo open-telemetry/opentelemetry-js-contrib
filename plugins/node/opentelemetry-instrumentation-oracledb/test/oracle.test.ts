@@ -24,7 +24,7 @@ import {
   SpanStatus,
   trace,
 } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   BasicTracerProvider,
@@ -56,7 +56,7 @@ import {
 } from '../src/semconv';
 
 const memoryExporter = new InMemorySpanExporter();
-let contextManager: AsyncHooksContextManager;
+let contextManager: AsyncLocalStorageContextManager;
 const provider = new BasicTracerProvider({
   spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
 });
@@ -508,7 +508,7 @@ describe('oracledb', () => {
     }
     await doSetup();
     updateAttrSpanList(connection);
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
@@ -527,7 +527,7 @@ describe('oracledb', () => {
   });
 
   beforeEach(() => {
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
   });
 

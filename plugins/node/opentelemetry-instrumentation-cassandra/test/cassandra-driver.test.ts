@@ -28,7 +28,7 @@ import {
   SpanStatusCode,
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   DBSYSTEMVALUES_CASSANDRA,
   SEMATTRS_DB_STATEMENT,
@@ -51,7 +51,7 @@ const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider({
   spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
 });
-context.setGlobalContextManager(new AsyncHooksContextManager());
+context.setGlobalContextManager(new AsyncLocalStorageContextManager());
 
 const testCassandra = process.env.RUN_CASSANDRA_TESTS;
 const testCassandraLocally = process.env.RUN_CASSANDRA_TESTS_LOCAL;

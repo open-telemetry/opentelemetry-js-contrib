@@ -17,7 +17,7 @@
 import { context, trace, Span } from '@opentelemetry/api';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -124,7 +124,7 @@ describe('Restify Instrumentation', () => {
   });
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let server: restify.Server;
   let port: number;
 
@@ -137,7 +137,7 @@ describe('Restify Instrumentation', () => {
   });
 
   beforeEach(async () => {
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
 
     server = await createServer();
