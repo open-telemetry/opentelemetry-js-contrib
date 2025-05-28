@@ -44,6 +44,9 @@ export class RuleCache {
   public getMatchedRule(
     attributes: Attributes
   ): SamplingRuleApplier | undefined {
+    // `this.ruleAppliers` should be sorted by priority, so `find()` is used here
+    // to determine the first highest priority rule that is matched. The last rule
+    // in the list should be the 'Default' rule with hardcoded priority of 10000.
     return this.ruleAppliers.find(
       rule =>
         rule.matches(attributes, this.samplerResource) ||
@@ -65,17 +68,16 @@ export class RuleCache {
   }
 
   public updateRules(newRuleAppliers: SamplingRuleApplier[]): void {
-    const oldRuleAppliersMap: { [key: string]: SamplingRuleApplier } = {};
+    const oldRuleAppliersMap = new Map<string, SamplingRuleApplier>();
 
     this.ruleAppliers.forEach((rule: SamplingRuleApplier) => {
-      oldRuleAppliersMap[rule.samplingRule.RuleName] = rule;
+      oldRuleAppliersMap.set(rule.samplingRule.RuleName, rule);
     });
 
     newRuleAppliers.forEach((newRule: SamplingRuleApplier, index: number) => {
       const ruleNameToCheck: string = newRule.samplingRule.RuleName;
-      if (ruleNameToCheck in oldRuleAppliersMap) {
-        const oldRule: SamplingRuleApplier =
-          oldRuleAppliersMap[ruleNameToCheck];
+      const oldRule = oldRuleAppliersMap.get(ruleNameToCheck);
+      if (oldRule) {
         if (newRule.samplingRule.equals(oldRule.samplingRule)) {
           newRuleAppliers[index] = oldRule;
         }

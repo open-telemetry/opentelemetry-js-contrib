@@ -24,6 +24,7 @@ import {
   Context,
   Link,
   SpanKind,
+  diag,
 } from '@opentelemetry/api';
 import { Resource } from '@opentelemetry/resources';
 import {
@@ -119,11 +120,16 @@ export class SamplingRuleApplier {
       // Per spec, url.full is always populated with scheme://
       // If scheme is not present, assume it's bad instrumentation and ignore.
       if (schemeEndIndex > -1) {
-        // urlparse("scheme://netloc/path;parameters?query#fragment")
-        httpTarget = new URL(httpUrl).pathname;
-        if (httpTarget === '') httpTarget = '/';
+        try {
+          httpTarget = new URL(httpUrl).pathname;
+          if (httpTarget === '') httpTarget = '/';
+        } catch (e: unknown) {
+          diag.debug(`Unable to create URL object from url: ${httpUrl}`, e);
+        }
       }
-    } else if (httpTarget === undefined && httpUrl === undefined) {
+    }
+
+    if (httpTarget === undefined) {
       // When missing, the URL Path is assumed to be '/'
       httpTarget = '/';
     }

@@ -47,6 +47,6 @@ export class FallbackSampler implements Sampler {
   }
 
   public toString(): string {
-    return 'FallbackSampler{fallback sampling with sampling config of 1 req/sec and 5% of additional requests';
+    return 'FallbackSampler{fallback sampling with sampling config of 1 req/sec and 5% of additional requests}';
   }
 }
