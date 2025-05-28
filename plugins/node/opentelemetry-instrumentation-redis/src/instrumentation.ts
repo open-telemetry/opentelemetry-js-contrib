@@ -1,123 +1,37 @@
-/*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-import {
-  isWrapped,
-  InstrumentationBase,
-  InstrumentationNodeModuleDefinition,
-} from '@opentelemetry/instrumentation';
-import {
-  getTracedCreateClient,
-  getTracedCreateStreamTrace,
-  getTracedInternalSendCommand,
-} from './utils';
-import { RedisInstrumentationConfig } from './types';
-/** @knipignore */
-import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { InstrumentationBase } from "@opentelemetry/instrumentation";
+import { RedisInstrumentationConfig } from "./types";
+import { PACKAGE_NAME, PACKAGE_VERSION } from "./version";
+import { RedisInstrumentationV1_2_3 } from "./v1-2-3/instrumentation";
 
 const DEFAULT_CONFIG: RedisInstrumentationConfig = {
-  requireParentSpan: false,
+    requireParentSpan: false,
 };
 
+// Wrapper RedisInstrumentation that address all supported versions
 export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentationConfig> {
-  static readonly COMPONENT = 'redis';
 
-  constructor(config: RedisInstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
-  }
+    private instrumentationV1_2_3?: RedisInstrumentationV1_2_3;
 
-  override setConfig(config: RedisInstrumentationConfig = {}) {
-    super.setConfig({ ...DEFAULT_CONFIG, ...config });
-  }
+    constructor(config: RedisInstrumentationConfig = {}) {
+        super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+    }
 
-  protected init() {
-    return [
-      new InstrumentationNodeModuleDefinition(
-        'redis',
-        ['>=2.6.0 <4'],
-        moduleExports => {
-          if (
-            isWrapped(
-              moduleExports.RedisClient.prototype['internal_send_command']
-            )
-          ) {
-            this._unwrap(
-              moduleExports.RedisClient.prototype,
-              'internal_send_command'
-            );
-          }
-          this._wrap(
-            moduleExports.RedisClient.prototype,
-            'internal_send_command',
-            this._getPatchInternalSendCommand()
-          );
+    override setConfig(config: RedisInstrumentationConfig = {}) {
+        const newConfig = { ...DEFAULT_CONFIG, ...config };
+        super.setConfig(newConfig);
 
-          if (isWrapped(moduleExports.RedisClient.prototype['create_stream'])) {
-            this._unwrap(moduleExports.RedisClient.prototype, 'create_stream');
-          }
-          this._wrap(
-            moduleExports.RedisClient.prototype,
-            'create_stream',
-            this._getPatchCreateStream()
-          );
+        // set the configs on all specific version instrumentations
+        // this function is also called in constructor, before the specific version instrumentations are initialized
+        // which we need to avoid.
+        this.instrumentationV1_2_3?.setConfig(newConfig);
+    }
 
-          if (isWrapped(moduleExports.createClient)) {
-            this._unwrap(moduleExports, 'createClient');
-          }
-          this._wrap(
-            moduleExports,
-            'createClient',
-            this._getPatchCreateClient()
-          );
-          return moduleExports;
-        },
-        moduleExports => {
-          if (moduleExports === undefined) return;
-          this._unwrap(
-            moduleExports.RedisClient.prototype,
-            'internal_send_command'
-          );
-          this._unwrap(moduleExports.RedisClient.prototype, 'create_stream');
-          this._unwrap(moduleExports, 'createClient');
-        }
-      ),
-    ];
-  }
-  /**
-   * Patch internal_send_command(...) to trace requests
-   */
-  private _getPatchInternalSendCommand() {
-    const tracer = this.tracer;
-    const config = this.getConfig();
-    return function internal_send_command(original: Function) {
-      return getTracedInternalSendCommand(tracer, original, config);
-    };
-  }
-
-  private _getPatchCreateClient() {
-    const tracer = this.tracer;
-    return function createClient(original: Function) {
-      return getTracedCreateClient(tracer, original);
-    };
-  }
-
-  private _getPatchCreateStream() {
-    const tracer = this.tracer;
-    return function createReadStream(original: Function) {
-      return getTracedCreateStreamTrace(tracer, original);
-    };
-  }
+    override init() {
+        this.instrumentationV1_2_3 = new RedisInstrumentationV1_2_3(this.getConfig());
+        const v1_2_3_patches = this.instrumentationV1_2_3.init();
+        
+        return [
+            ...v1_2_3_patches,
+        ];
+    }
 }

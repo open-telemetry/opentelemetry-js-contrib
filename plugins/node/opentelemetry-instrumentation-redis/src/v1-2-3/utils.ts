@@ -24,9 +24,8 @@ import {
   trace,
   diag,
 } from '@opentelemetry/api';
-import { RedisCommand, RedisInstrumentationConfig } from './types';
+import { RedisCommand, RedisInstrumentationConfig } from '../types';
 import { EventEmitter } from 'events';
-import { RedisInstrumentation } from './';
 import {
   DBSYSTEMVALUES_REDIS,
   SEMATTRS_DB_CONNECTION_STRING,
@@ -100,7 +99,7 @@ export const getTracedInternalSendCommand = (
     const dbStatementSerializer =
       config?.dbStatementSerializer || defaultDbStatementSerializer;
     const span = tracer.startSpan(
-      `${RedisInstrumentation.COMPONENT}-${cmd.command}`,
+      `redis-${cmd.command}`,
       {
         kind: SpanKind.CLIENT,
         attributes: {
