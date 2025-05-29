@@ -15,11 +15,7 @@
  */
 
 import type * as redisTypes from 'redis';
-import {
-  context,
-  Span,
-  SpanStatusCode,
-} from '@opentelemetry/api';
+import { context, Span, SpanStatusCode } from '@opentelemetry/api';
 import { EventEmitter } from 'events';
 
 export const endSpan = (span: Span, err?: Error | null) => {
@@ -39,9 +35,7 @@ export const getTracedCreateClient = (original: Function) => {
   };
 };
 
-export const getTracedCreateStreamTrace = (
-  original: Function
-) => {
+export const getTracedCreateStreamTrace = (original: Function) => {
   return function create_stream_trace(this: redisTypes.RedisClient) {
     if (!Object.prototype.hasOwnProperty.call(this, 'stream')) {
       Object.defineProperty(this, 'stream', {
