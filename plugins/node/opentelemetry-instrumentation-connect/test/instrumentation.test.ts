@@ -17,7 +17,7 @@ import * as assert from 'assert';
 
 import { context, trace } from '@opentelemetry/api';
 import { RPCType, setRPCMetadata, RPCMetadata } from '@opentelemetry/core';
-import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
@@ -145,7 +145,7 @@ describe('connect', () => {
       assert.deepStrictEqual(span.attributes, {
         'connect.type': 'middleware',
         'connect.name': ANONYMOUS_NAME,
-        [SEMATTRS_HTTP_ROUTE]: '/',
+        [ATTR_HTTP_ROUTE]: '/',
       });
       assert.strictEqual(span.name, 'middleware - anonymous');
     });
@@ -164,7 +164,7 @@ describe('connect', () => {
       assert.deepStrictEqual(span.attributes, {
         'connect.type': 'middleware',
         'connect.name': 'middleware1',
-        [SEMATTRS_HTTP_ROUTE]: '/',
+        [ATTR_HTTP_ROUTE]: '/',
       });
       assert.strictEqual(span.name, 'middleware - middleware1');
     });
@@ -182,7 +182,7 @@ describe('connect', () => {
       assert.deepStrictEqual(span.attributes, {
         'connect.type': 'request_handler',
         'connect.name': '/foo',
-        [SEMATTRS_HTTP_ROUTE]: '/foo',
+        [ATTR_HTTP_ROUTE]: '/foo',
       });
       assert.strictEqual(span.name, 'request handler - /foo');
     });
