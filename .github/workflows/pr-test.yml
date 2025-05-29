@@ -191,14 +191,16 @@ jobs:
       - name: Unit tests (Delta)
         run: npm run test-all-versions:ci:changed
       # TODO: save coverage for later
-      # - name: Upload Test Artifacts
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: tests-coverage-cache-${{ github.run_number }}-${{ matrix.node }}
-      #     path: .nx
-      #     include-hidden-files: true
-      #     if-no-files-found: error
-      #     retention-days: 1
+      - name: Upload Test Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-coverage-cache-${{ github.run_number }}-${{ matrix.node }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            **/.nyc_output/**
+            **/coverage/**
   # TODO: how to put back everythign in coverage???
   # test-coverage-report:
   #   runs-on: ubuntu-latest
