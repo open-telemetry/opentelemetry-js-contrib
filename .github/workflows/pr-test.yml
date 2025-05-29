@@ -188,7 +188,7 @@ jobs:
         run: npm run compile:ci:changed
       - name: Unit tests (Delta)
         run: npm run test:ci:changed
-      - name: Unit tests (Delta)
+      - name: Test All Versions (Delta)
         run: npm run test-all-versions:ci:changed
       # TODO: save coverage for later
       - name: Upload Test Artifacts
@@ -199,24 +199,36 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           path: |
+            !node_modules
             **/.nyc_output/**
             **/coverage/**
   # TODO: how to put back everythign in coverage???
-  # test-coverage-report:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Download Test Artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: tests-build-cache-${{ github.run_number }}
-  #         path: .nx
-
-  #     - name: Report Coverage
-  #       uses: codecov/codecov-action@v5
-  #       env:
-  #         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  #       with:
-  #         verbose: true
+  test-coverage-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Test Artifacts (18)
+        uses: actions/download-artifact@v4
+        with:
+          name: tests-coverage-cache-${{ github.run_number }}-18
+          path: .
+      - name: Download Test Artifacts (20)
+        uses: actions/download-artifact@v4
+        with:
+          name: tests-coverage-cache-${{ github.run_number }}-20
+          path: .
+      - name: Download Test Artifacts (22)
+        uses: actions/download-artifact@v4
+        with:
+          name: tests-coverage-cache-${{ github.run_number }}-22
+          path: .
+      - name: List all directories
+        run: find . -type d
+      # - name: Report Coverage
+      #   uses: codecov/codecov-action@v5
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      #   with:
+      #     verbose: true
 
   # browser-test:
   #   needs: build-and-cache
