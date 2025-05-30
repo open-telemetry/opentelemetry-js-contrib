@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.59.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.59.0...auto-instrumentations-node-v0.59.1) (2025-05-30)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.53.0 to ^0.54.0
+    * @opentelemetry/instrumentation-knex bumped from ^0.46.0 to ^0.47.0
+    * @opentelemetry/instrumentation-mongoose bumped from ^0.48.0 to ^0.49.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.53.0 to ^0.54.0
+
 ## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.58.1...auto-instrumentations-node-v0.59.0) (2025-05-15)
 
 
