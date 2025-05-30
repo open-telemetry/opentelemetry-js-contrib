@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.53.0...instrumentation-pg-v0.54.0) (2025-05-30)
+
+
+### Features
+
+* **opentelemetry-instrumentation-pg:** update types/pg version ([#2823](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2823)) ([6844e16](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6844e16e99b3fcef6f7606873d473d0c862efe5a))
+
 ## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.52.0...instrumentation-pg-v0.53.0) (2025-05-15)
 
 

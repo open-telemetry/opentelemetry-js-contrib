@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.53.0...instrumentation-aws-sdk-v0.54.0) (2025-05-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* **opentelemetry-instrumentation-aws-sdk:** rename aws.region to `cloud.region` ([#2842](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2842))
+
+### Features
+
+* **instrumentation-aws-sdk:** add gen ai conventions for converse stream span ([#2769](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2769)) ([ab438a0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab438a04f5d7605f2336a549d63ae48085c50857))
+
+
+### Bug Fixes
+
+* **aws-sdk:** use `custom` client_context prop ([#2718](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2718)) ([e0858f9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e0858f95f18eef71b6c3d9c292c5b7231bc88eba))
+* **opentelemetry-instrumentation-aws-sdk:** rename aws.region to `cloud.region` ([#2842](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2842)) ([6f65523](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6f655230c6f2a7b47f41ff796e625f569d6430bd))
+
 ## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.52.0...instrumentation-aws-sdk-v0.53.0) (2025-05-15)
 
 
