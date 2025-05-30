@@ -57,7 +57,7 @@ await new Promise(resolve => {
     res.on('end', () => {
       resolve();
     });
-  })
+  });
 });
 
 await server.stop();
