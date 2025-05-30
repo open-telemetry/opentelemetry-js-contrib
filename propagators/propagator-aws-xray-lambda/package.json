@@ -51,7 +51,7 @@
     "babel-loader": "8.3.0",
     "babel-plugin-istanbul": "7.0.0",
     "nyc": "17.1.0",
-    "sinon": "15.1.2",
+    "sinon": "15.2.0",
     "ts-loader": "9.5.2",
     "typescript": "5.0.4"
   },
