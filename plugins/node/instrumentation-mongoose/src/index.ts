@@ -13,5 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from './mongoose';
-export * from './types';
+export { MongooseInstrumentation } from './mongoose';
+export type {
+  DbStatementSerializer,
+  MongooseInstrumentationConfig,
+  MongooseResponseCustomAttributesFunction,
+  ResponseInfo,
+  SerializerPayload,
+} from './types';

@@ -20,7 +20,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as assert from 'assert';
 import * as tls from 'tls';
 import { NetInstrumentation } from '../src';
@@ -50,7 +50,7 @@ function getTLSSpans() {
 
 describe('NetInstrumentation', () => {
   let instrumentation: NetInstrumentation;
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
 
   let tlsServer: tls.Server;
   let tlsSocket: tls.TLSSocket;
@@ -58,7 +58,7 @@ describe('NetInstrumentation', () => {
   before(() => {
     instrumentation = new NetInstrumentation();
     instrumentation.setTracerProvider(provider);
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager.enable());
     require('net');
   });

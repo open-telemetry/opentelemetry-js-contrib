@@ -18,12 +18,8 @@
 // covered multiple `client-*` packages. Its tests could be merged into
 // sqs.test.ts.
 
-import { AwsInstrumentation } from '../src';
-import {
-  getTestSpans,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-registerInstrumentationTesting(new AwsInstrumentation());
+import { getTestSpans } from '@opentelemetry/contrib-test-utils';
+import './load-instrumentation';
 
 import { SQS } from '@aws-sdk/client-sqs';
 
@@ -88,7 +84,7 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
     expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
     expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('SendMessage');
     expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('SQS');
-    expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+    expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
 
     // custom messaging attributes
     expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual('aws.sqs');
@@ -144,7 +140,7 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
     expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
     expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('SendMessageBatch');
     expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('SQS');
-    expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+    expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
 
     // messaging semantic attributes
     expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual('aws.sqs');
@@ -187,7 +183,7 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
       expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
       expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('ReceiveMessage');
       expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('SQS');
-      expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+      expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
       done();
     });

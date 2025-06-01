@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.10.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.9.2...instrumentation-kafkajs-v0.10.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
+## [0.9.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.9.1...instrumentation-kafkajs-v0.9.2) (2025-05-02)
+
+
+### Bug Fixes
+
+* **instrumentation-kafkajs:** add missing delcare keyword for metric instruments ([#2805](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2805)) ([32f41ee](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/32f41ee3feab7b58b48330469037fa4ca308055c))
+
+## [0.9.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.9.0...instrumentation-kafkajs-v0.9.1) (2025-04-16)
+
+
+### Bug Fixes
+
+* **instrumentation-kafkajs:** fix instr to work with kafkajs@1.7.0 and earlier ([#2787](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2787)) ([e88ca9d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e88ca9d614159e682997bef671e12d20ca5f8c34)), closes [#2784](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2784)
+
+## [0.9.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.8.0...instrumentation-kafkajs-v0.9.0) (2025-04-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-kafkajs:** add .tav.yml and narrow support range to (>=0.3.0 <3) ([#2758](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2758))
+
+### Features
+
+* **instrumentation-kafkajs:** add .tav.yml and narrow support range to (&gt;=0.3.0 &lt;3) ([#2758](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2758)) ([5837997](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5837997dfb42a6ea6482999c0ca3e00cf68cdb8d))
+* **instrumentation-kafkajs:** update semantic conventions ([#2752](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2752)) ([407f615](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/407f61591ba69a39a6908264379d4d98a48dbec4))
+
 ## [0.8.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.7.1...instrumentation-kafkajs-v0.8.0) (2025-03-18)
 
 

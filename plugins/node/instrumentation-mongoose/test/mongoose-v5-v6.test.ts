@@ -71,9 +71,8 @@ describe('mongoose instrumentation [v5/v6]', () => {
         });
       },
     });
-    instrumentation.enable();
     await loadUsers();
-    await User.createIndexes();
+    instrumentation.enable();
   });
 
   afterEach(async () => {
@@ -147,6 +146,61 @@ describe('mongoose instrumentation [v5/v6]', () => {
         expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
         const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.document).toEqual(expect.objectContaining(document));
+        done();
+      });
+    });
+  });
+
+  describe('when insertMany call has callback', async () => {
+    it('instrumenting insertMany operation with generic options and callback', done => {
+      const documents = [
+        {
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john.doe+1@example.com',
+        },
+        {
+          firstName: 'Jane',
+          lastName: 'Doe',
+          email: 'jane.doe+1@example.com',
+        },
+      ];
+      // @ts-ignore - v7 removed callback support
+      // https://mongoosejs.com/docs/migrating_to_7.html#dropped-callback-support
+      User.insertMany(documents, { ordered: true }, () => {
+        const spans = getTestSpans();
+        expect(spans.length).toBe(1);
+        assertSpan(spans[0] as ReadableSpan);
+        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('insertMany');
+        const statement = getStatement(spans[0] as ReadableSpan);
+        expect(statement.documents).toEqual(documents);
+        expect(statement.options.ordered).toEqual(true);
+        done();
+      });
+    });
+
+    it('instrumenting insertMany operation with only callback', done => {
+      const documents = [
+        {
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john.doe+1@example.com',
+        },
+        {
+          firstName: 'Jane',
+          lastName: 'Doe',
+          email: 'jane.doe+1@example.com',
+        },
+      ];
+      // @ts-ignore - v7 removed callback support
+      // https://mongoosejs.com/docs/migrating_to_7.html#dropped-callback-support
+      User.insertMany(documents, () => {
+        const spans = getTestSpans();
+        expect(spans.length).toBe(1);
+        assertSpan(spans[0] as ReadableSpan);
+        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('insertMany');
+        const statement = getStatement(spans[0] as ReadableSpan);
+        expect(statement.documents).toEqual(documents);
         done();
       });
     });

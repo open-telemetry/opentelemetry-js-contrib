@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 export {
   getNodeAutoInstrumentations,
   getResourceDetectorsFromEnv as getResourceDetectors,
-  InstrumentationConfigMap,
 } from './utils';
+export type { InstrumentationConfigMap } from './utils';

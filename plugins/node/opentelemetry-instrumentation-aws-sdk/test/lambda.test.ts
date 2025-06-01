@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-import { AwsInstrumentation } from '../src';
-import {
-  getTestSpans,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-registerInstrumentationTesting(new AwsInstrumentation());
+import './load-instrumentation';
 
+import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 import {
   SEMATTRS_FAAS_EXECUTION,
   SEMATTRS_FAAS_INVOKED_NAME,
@@ -152,7 +148,7 @@ describe('Lambda', () => {
             'base64'
           ).toString()
         ) as Record<string, any>;
-        expect(clientContext.Custom).toHaveProperty('traceparent');
+        expect(clientContext.custom).toHaveProperty('traceparent');
       });
 
       it('should skip context propagation in the event it would push the ClientContext over 3583 bytes', async () => {
@@ -172,7 +168,7 @@ describe('Lambda', () => {
 
         const existingClientContext = Buffer.from(
           JSON.stringify({
-            Custom: {
+            custom: {
               text: [...Array(2600)]
                 .map(x => String.fromCharCode(48 + Math.random() * 74))
                 .join(''),
@@ -225,7 +221,7 @@ describe('Lambda', () => {
           ),
           ClientContext: Buffer.from(
             JSON.stringify({
-              Custom: {
+              custom: {
                 existing: 'data',
               },
             })
@@ -242,8 +238,8 @@ describe('Lambda', () => {
             'base64'
           ).toString()
         ) as Record<string, any>;
-        expect(clientContext.Custom).toHaveProperty('existing', 'data');
-        expect(clientContext.Custom).toHaveProperty('traceparent');
+        expect(clientContext.custom).toHaveProperty('existing', 'data');
+        expect(clientContext.custom).toHaveProperty('traceparent');
       });
 
       it('should maintain any existing top-level fields in the client context', async () => {
@@ -269,7 +265,7 @@ describe('Lambda', () => {
             platform: 'Symbian',
             platformVersion: '9.2',
           },
-          Custom: {
+          custom: {
             existing: 'data',
           },
         };
@@ -297,7 +293,7 @@ describe('Lambda', () => {
           ).toString()
         ) as Record<string, any>;
         expect(updatedClientContext.env).toStrictEqual(clientContext.env);
-        expect(updatedClientContext.Custom).toHaveProperty('traceparent');
+        expect(updatedClientContext.custom).toHaveProperty('traceparent');
       });
 
       // It probably should be valid JSON, and I'm not sure what the lambda internals make of it if

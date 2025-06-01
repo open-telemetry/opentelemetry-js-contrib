@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.20.0...instrumentation-fs-v0.21.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
 ## [0.20.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.19.1...instrumentation-fs-v0.20.0) (2025-03-18)
 
 

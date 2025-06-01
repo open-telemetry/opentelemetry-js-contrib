@@ -38,7 +38,7 @@ sdk.start()
 
 ## Available detectors
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This package implements Semantic Convention v1.33.1.
 
 ### Instana Agent Detector
 

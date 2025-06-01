@@ -106,10 +106,12 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     return module;
   }
 
-  private patch(
-    moduleExports: typeof mongoose,
-    moduleVersion: string | undefined
-  ) {
+  private patch(module: any, moduleVersion: string | undefined) {
+    const moduleExports: typeof mongoose =
+      module[Symbol.toStringTag] === 'Module'
+        ? module.default // ESM
+        : module; // CommonJS
+
     this._wrap(
       moduleExports.Model.prototype,
       'save',
@@ -151,13 +153,26 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     });
     this._wrap(moduleExports.Model, 'aggregate', this.patchModelAggregate());
 
+    this._wrap(
+      moduleExports.Model,
+      'insertMany',
+      this.patchModelStatic('insertMany', moduleVersion)
+    );
+    this._wrap(
+      moduleExports.Model,
+      'bulkWrite',
+      this.patchModelStatic('bulkWrite', moduleVersion)
+    );
+
     return moduleExports;
   }
 
-  private unpatch(
-    moduleExports: typeof mongoose,
-    moduleVersion: string | undefined
-  ): void {
+  private unpatch(module: any, moduleVersion: string | undefined): void {
+    const moduleExports: typeof mongoose =
+      module[Symbol.toStringTag] === 'Module'
+        ? module.default // ESM
+        : module; // CommonJS
+
     const contextCaptureFunctions = getContextCaptureFunctions(moduleVersion);
 
     this._unwrap(moduleExports.Model.prototype, 'save');
@@ -175,6 +190,9 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
       this._unwrap(moduleExports.Query.prototype, funcName as any);
     });
     this._unwrap(moduleExports.Model, 'aggregate');
+
+    this._unwrap(moduleExports.Model, 'insertMany');
+    this._unwrap(moduleExports.Model, 'bulkWrite');
   }
 
   private patchAggregateExec(moduleVersion: string | undefined) {
@@ -301,6 +319,70 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         return self._handleResponse(
           span,
           originalOnModelFunction,
+          this,
+          arguments,
+          callback,
+          moduleVersion
+        );
+      };
+    };
+  }
+
+  private patchModelStatic(op: string, moduleVersion: string | undefined) {
+    const self = this;
+    return (original: Function) => {
+      return function patchedStatic(
+        this: any,
+        docsOrOps: any,
+        options?: any,
+        callback?: Function
+      ) {
+        if (
+          self.getConfig().requireParentSpan &&
+          trace.getSpan(context.active()) === undefined
+        ) {
+          return original.apply(this, arguments);
+        }
+        if (typeof options === 'function') {
+          callback = options;
+          options = undefined;
+        }
+
+        const serializePayload: SerializerPayload = {};
+        switch (op) {
+          case 'insertMany':
+            serializePayload.documents = docsOrOps;
+            break;
+          case 'bulkWrite':
+            serializePayload.operations = docsOrOps;
+            break;
+          default:
+            serializePayload.document = docsOrOps;
+            break;
+        }
+        if (options !== undefined) {
+          serializePayload.options = options;
+        }
+
+        const attributes: Attributes = {};
+        const { dbStatementSerializer } = self.getConfig();
+        if (dbStatementSerializer) {
+          attributes[SEMATTRS_DB_STATEMENT] = dbStatementSerializer(
+            op,
+            serializePayload
+          );
+        }
+
+        const span = self._startSpan(
+          this.collection,
+          this.modelName,
+          op,
+          attributes
+        );
+
+        return self._handleResponse(
+          span,
+          original,
           this,
           arguments,
           callback,

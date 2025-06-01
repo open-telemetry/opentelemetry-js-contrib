@@ -27,7 +27,7 @@ import {
 import { context, trace, Span, INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { isWrapped } from '@opentelemetry/instrumentation';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
@@ -39,7 +39,7 @@ const provider = new NodeTracerProvider({
   spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
 });
 const tracer = provider.getTracer('default');
-context.setGlobalContextManager(new AsyncHooksContextManager());
+context.setGlobalContextManager(new AsyncLocalStorageContextManager());
 
 const loggerProvider = new LoggerProvider();
 const memoryLogExporter = new InMemoryLogRecordExporter();

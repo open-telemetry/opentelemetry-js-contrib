@@ -20,9 +20,17 @@ import { getInstrumentation } from './instrumentation-singleton';
 import { registerInstrumentationTestingProvider } from './otel-default-provider';
 import { resetMemoryExporter } from './otel-provider-api';
 
-export * from './instrumentation-singleton';
-export * from './otel-provider-api';
-export * from './otel-default-provider';
+export {
+  getInstrumentation,
+  registerInstrumentationTesting,
+} from './instrumentation-singleton';
+export {
+  getTestMemoryExporter,
+  getTestSpans,
+  resetMemoryExporter,
+  setTestMemoryExporter,
+} from './otel-provider-api';
+export { registerInstrumentationTestingProvider } from './otel-default-provider';
 
 export const mochaHooks = {
   beforeAll(done: Function) {

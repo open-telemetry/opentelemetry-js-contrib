@@ -220,9 +220,7 @@ describe('instrumentation-kafkajs', () => {
         );
         instrumentation.disable();
         instrumentation.enable();
-        producer = kafka.producer({
-          createPartitioner: kafkajs.Partitioners.LegacyPartitioner,
-        });
+        producer = kafka.producer();
       }
       beforeEach(() => {
         initializeProducer();
@@ -479,9 +477,7 @@ describe('instrumentation-kafkajs', () => {
         });
         instrumentation.disable();
         instrumentation.enable();
-        producer = kafka.producer({
-          createPartitioner: kafkajs.Partitioners.LegacyPartitioner,
-        });
+        producer = kafka.producer();
       });
 
       it('error in send create failed span', async () => {
@@ -634,9 +630,7 @@ describe('instrumentation-kafkajs', () => {
         instrumentation.disable();
         instrumentation.setConfig(config);
         instrumentation.enable();
-        producer = kafka.producer({
-          createPartitioner: kafkajs.Partitioners.LegacyPartitioner,
-        });
+        producer = kafka.producer();
       });
 
       it('producer hook add span attribute with value from message', async () => {
@@ -671,9 +665,7 @@ describe('instrumentation-kafkajs', () => {
         instrumentation.disable();
         instrumentation.setConfig(config);
         instrumentation.enable();
-        producer = kafka.producer({
-          createPartitioner: kafkajs.Partitioners.LegacyPartitioner,
-        });
+        producer = kafka.producer();
       });
 
       it('producer hook add span attribute with value from message', async () => {
@@ -1227,9 +1219,7 @@ describe('instrumentation-kafkajs', () => {
       storeRunConfig();
       instrumentation.disable();
       instrumentation.enable();
-      producer = kafka.producer({
-        createPartitioner: kafkajs.Partitioners.LegacyPartitioner,
-      });
+      producer = kafka.producer();
       consumer = kafka.consumer({ groupId: 'testing-group-id' });
     });
 

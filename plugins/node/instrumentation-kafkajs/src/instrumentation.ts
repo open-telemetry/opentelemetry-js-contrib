@@ -163,10 +163,10 @@ const HISTOGRAM_BUCKET_BOUNDARIES = [
   0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10,
 ];
 export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumentationConfig> {
-  private _clientDuration!: Histogram<ClientDurationAttributes>;
-  private _sentMessages!: Counter<SentMessagesAttributes>;
-  private _consumedMessages!: Counter<ConsumedMessagesAttributes>;
-  private _processDuration!: Histogram<MessageProcessDurationAttributes>;
+  private declare _clientDuration: Histogram<ClientDurationAttributes>;
+  private declare _sentMessages: Counter<SentMessagesAttributes>;
+  private declare _consumedMessages: Counter<ConsumedMessagesAttributes>;
+  private declare _processDuration: Histogram<MessageProcessDurationAttributes>;
 
   constructor(config: KafkaJsInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -251,10 +251,13 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
   private _setKafkaEventListeners(kafkaObj: KafkaEventEmitter) {
     if (kafkaObj[EVENT_LISTENERS_SET]) return;
 
-    kafkaObj.on(
-      kafkaObj.events.REQUEST,
-      this._recordClientDurationMetric.bind(this)
-    );
+    // The REQUEST Consumer event was added in kafkajs@1.5.0.
+    if (kafkaObj.events?.REQUEST) {
+      kafkaObj.on(
+        kafkaObj.events.REQUEST,
+        this._recordClientDurationMetric.bind(this)
+      );
+    }
 
     kafkaObj[EVENT_LISTENERS_SET] = true;
   }

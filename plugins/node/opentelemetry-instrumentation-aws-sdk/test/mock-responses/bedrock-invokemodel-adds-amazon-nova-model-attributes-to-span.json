@@ -1,0 +1,47 @@
+[
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/amazon.nova-pro-v1%3A0/invoke",
+        "body": {
+            "inputText": "Say this is a test",
+            "inferenceConfig": {
+                "max_new_tokens": 10,
+                "temperature": 0.8,
+                "top_p": 1,
+                "stopSequences": ["|"]
+            }
+        },
+        "status": 200,
+        "response": {
+            "output": {
+                "message": {
+                    "content": [
+                        {
+                            "text": "\nHello! I am a computer program designed to",
+                            "role": "assistant"
+                        }
+                    ]
+                }
+            },
+            "stopReason": "max_tokens",
+            "usage": {
+                "inputTokens": 8,
+                "outputTokens": 10
+            }
+        },
+        "rawHeaders": [
+            "Date",
+            "Tue, 25 Mar 2025 22:58:26 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "68",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "08262634-df46-483e-b51d-76f8a5208a78"
+        ],
+        "responseIsBinary": false
+    }
+]

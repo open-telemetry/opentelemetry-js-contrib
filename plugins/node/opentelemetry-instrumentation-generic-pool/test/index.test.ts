@@ -16,7 +16,7 @@
 
 import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -74,13 +74,13 @@ describe('GenericPool instrumentation', () => {
   });
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let acquire: Function;
 
   beforeEach(async () => {
     plugin.enable();
     acquire = createPool();
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });

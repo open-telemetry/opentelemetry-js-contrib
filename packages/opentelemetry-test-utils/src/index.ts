@@ -28,20 +28,19 @@ export { OtlpSpanKind } from './otlp-types';
 export {
   createTestNodeSdk,
   runTestFixture,
-  TestSpan,
-  RunTestFixtureOptions,
   TestCollector,
 } from './test-fixtures';
+export type { TestSpan, RunTestFixtureOptions } from './test-fixtures';
 export {
   assertPropagation,
   assertSpan,
   cleanUpDocker,
   getPackageVersion,
   initMeterProvider,
-  TimedEvent,
   startDocker,
   TestMetricReader,
 } from './test-utils';
+export type { TimedEvent } from './test-utils';
 export {
   getInstrumentation,
   getTestMemoryExporter,

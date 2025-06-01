@@ -8,7 +8,7 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
 import { Resource } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
   MeterProvider,
   PeriodicExportingMetricReader,
@@ -39,7 +39,7 @@ export const setupTracing = (serviceName: string) => {
 
   const tracerProvider = new NodeTracerProvider({
     resource: new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: serviceName,
+      [ATTR_SERVICE_NAME]: serviceName,
     }),
     spanProcessors,
   });

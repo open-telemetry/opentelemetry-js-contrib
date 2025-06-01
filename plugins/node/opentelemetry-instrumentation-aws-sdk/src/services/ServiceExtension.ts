@@ -15,6 +15,8 @@
  */
 import {
   DiagLogger,
+  HrTime,
+  Meter,
   Span,
   SpanAttributes,
   SpanKind,
@@ -29,6 +31,10 @@ import {
 export interface RequestMetadata {
   // isIncoming - if true, then the operation callback / promise should be bind with the operation's span
   isIncoming: boolean;
+  // isStream - if true, then the response is a stream so the span should not be ended by the middleware.
+  // the ServiceExtension must end the span itself, generally by wrapping the stream and ending after it is
+  // consumed.
+  isStream?: boolean;
   spanAttributes?: SpanAttributes;
   spanKind?: SpanKind;
   spanName?: string;
@@ -45,10 +51,14 @@ export interface ServiceExtension {
   // called before request is sent, and after span is started
   requestPostSpanHook?: (request: NormalizedRequest) => void;
 
+  // called after response is received. If value is returned, it replaces the response output.
   responseHook?: (
     response: NormalizedResponse,
     span: Span,
     tracer: Tracer,
-    config: AwsSdkInstrumentationConfig
-  ) => void;
+    config: AwsSdkInstrumentationConfig,
+    startTime: HrTime
+  ) => any | undefined;
+
+  updateMetricInstruments?: (meter: Meter) => void;
 }

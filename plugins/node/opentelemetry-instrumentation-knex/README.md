@@ -54,21 +54,38 @@ registerInstrumentations({
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This package uses `@opentelemetry/semantic-conventions` version `1.33+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+This package is capable of emitting both Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md) and [Version 1.33.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.33.0/docs/database/database-spans.md)
+It is controlled using the environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`, which is a comma separated list of values.
+The values `database` and `database/dup` control this instrumentation.
+See details for the behavior of each of these values below.
+If neither `database` or `database/dup` is included in `OTEL_SEMCONV_STABILITY_OPT_IN`, the old experimental semantic conventions will be used by default.
+
+### Upgrading Semantic Conventions
+
+When upgrading to the new semantic conventions, it is recommended to do so in the following order:
+
+1. Upgrade `@opentelemetry/instrumentation-knex` to the latest version
+2. Set `OTEL_SEMCONV_STABILITY_OPT_IN=database/dup` to emit both old and new semantic conventions
+3. Modify alerts, dashboards, metrics, and other processes to expect the new semantic conventions
+4. Set `OTEL_SEMCONV_STABILITY_OPT_IN=database` to emit only the new semantic conventions
+
+This will cause both the old and new semantic conventions to be emitted during the transition period.
 
 Attributes collected:
 
-| Attribute               | Short Description                                                              |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| `db.name`               | This attribute is used to report the name of the database being accessed.      |
-| `db.operation`          | The name of the operation being executed.                                      |
-| `db.sql.table`          | The name of the primary table that the operation is acting upon.               |
-| `db.statement`          | The database statement being executed.                                         |
-| `db.system`             | An identifier for the database management system (DBMS) product being used.    |
-| `db.user`               | Username for accessing the database.                                           |
-| `net.peer.name`         | Remote hostname or similar.                                                    |
-| `net.peer.port`         | Remote port number.                                                            |
-| `net.transport`         | Transport protocol used.                                                       |
+| v1.7.0 semconv  | v1.23.0 semconv      | Short Description                                                           |
+|-----------------|----------------------|-----------------------------------------------------------------------------|
+| `db.name`       | `db.namespace`       | This attribute is used to report the name of the database being accessed.   |
+| `db.operation`  | `db.operation.name`  | The name of the operation being executed.                                   |
+| `db.sql.table`  | `db.collection.name` | The name of the primary table that the operation is acting upon.            |
+| `db.statement`  | `db.query.text`      | The database statement being executed.                                      |
+| `db.system`     | `db.system.name`     | An identifier for the database management system (DBMS) product being used. |
+| `db.user`       | (not included)       | Username for accessing the database.                                        |
+| `net.peer.name` | `server.address`     | Remote hostname or similar.                                                 |
+| `net.peer.port` | `server.port`        | Remote port number.                                                         |
+| `net.transport` | (not included)       | Transport protocol used.                                                    |
 
 ## Useful links
 

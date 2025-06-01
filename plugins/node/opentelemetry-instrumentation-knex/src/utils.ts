@@ -15,10 +15,8 @@
  */
 
 import { Exception } from '@opentelemetry/api';
-import {
-  DBSYSTEMVALUES_SQLITE,
-  DBSYSTEMVALUES_POSTGRESQL,
-} from '@opentelemetry/semantic-conventions';
+import { DB_SYSTEM_NAME_VALUE_POSTGRESQL } from '@opentelemetry/semantic-conventions';
+import { DB_SYSTEM_NAME_VALUE_SQLITE } from './semconv';
 
 type KnexError = Error & {
   code?: string;
@@ -57,8 +55,8 @@ export function otelExceptionFromKnexError(
 }
 
 const systemMap = new Map([
-  ['sqlite3', DBSYSTEMVALUES_SQLITE],
-  ['pg', DBSYSTEMVALUES_POSTGRESQL],
+  ['sqlite3', DB_SYSTEM_NAME_VALUE_SQLITE],
+  ['pg', DB_SYSTEM_NAME_VALUE_POSTGRESQL],
 ]);
 
 export const mapSystem = (knexSystem: string) => {

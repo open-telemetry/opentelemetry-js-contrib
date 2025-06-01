@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { NetInstrumentation } from './instrumentation';
+export type { TLSAttributes } from './types';

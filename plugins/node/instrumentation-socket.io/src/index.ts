@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from './socket.io';
-export * from './types';
-export * from './AttributeNames';
+export { SocketIoInstrumentation } from './socket.io';
+export { SocketIoInstrumentationAttributes } from './AttributeNames';
+export { defaultSocketIoPath } from './types';
+export type {
+  SocketIoHookFunction,
+  SocketIoHookInfo,
+  SocketIoInstrumentationConfig,
+} from './types';

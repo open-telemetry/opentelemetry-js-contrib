@@ -24,7 +24,7 @@ import {
   propagation,
   trace,
 } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -85,7 +85,9 @@ describe('UndiciInstrumentation `undici` tests', function () {
     instrumentation.setTracerProvider(provider);
 
     propagation.setGlobalPropagator(new MockPropagation());
-    context.setGlobalContextManager(new AsyncHooksContextManager().enable());
+    context.setGlobalContextManager(
+      new AsyncLocalStorageContextManager().enable()
+    );
     mockServer.start(done);
     mockServer.mockListener((req, res) => {
       // There are some situations where there is no way to access headers

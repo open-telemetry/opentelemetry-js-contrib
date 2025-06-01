@@ -1,5 +1,5 @@
 express:
   - versions:
-      include: "^4.16.2"
+      include: ">=4.16.2 <6"
       mode: latest-minors
-    commands: npm run test
+    commands: npm test

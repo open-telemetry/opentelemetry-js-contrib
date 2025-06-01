@@ -54,6 +54,10 @@ export interface PgPoolOptionsParams {
   idleTimeoutMillis: number; // the minimum amount of time that an object may sit idle in the pool before it is eligible for eviction due to idle time
   maxClient: number; // maximum size of the pool
   connectionString?: string; // connection string if provided directly
+  max: number;
+  maxUses: number;
+  allowExitOnIdle: boolean;
+  maxLifetimeSeconds: number;
 }
 
 export const EVENT_LISTENERS_SET = Symbol(

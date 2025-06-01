@@ -15,7 +15,7 @@
  */
 
 import { context, trace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   DBSYSTEMVALUES_MSSQL,
   SEMATTRS_DB_NAME,
@@ -87,7 +87,7 @@ const incompatVersions =
 
 describe('tedious', () => {
   let tedious: any;
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let connection: Connection;
   const memoryExporter = new InMemorySpanExporter();
   const provider = new BasicTracerProvider({
@@ -124,7 +124,7 @@ describe('tedious', () => {
     // connecting often takes more time even if the DB is running locally
     this.timeout(10000);
     instrumentation.disable();
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();

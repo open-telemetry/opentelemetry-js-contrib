@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './enums/ExpressLayerType';
-export * from './enums/AttributeNames';
-export * from './types';
+export { ExpressInstrumentation } from './instrumentation';
+export { ExpressLayerType } from './enums/ExpressLayerType';
+export { AttributeNames } from './enums/AttributeNames';
+export type {
+  ExpressInstrumentationConfig,
+  ExpressRequestCustomAttributeFunction,
+  ExpressRequestInfo,
+  IgnoreMatcher,
+  LayerPathSegment,
+  SpanNameHook,
+} from './types';

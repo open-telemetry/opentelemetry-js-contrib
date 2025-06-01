@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { diag, DiagLogLevel } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import { Instrumentation } from '@opentelemetry/instrumentation';
 
 import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
@@ -46,12 +46,14 @@ import { MySQL2Instrumentation } from '@opentelemetry/instrumentation-mysql2';
 import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 import { NetInstrumentation } from '@opentelemetry/instrumentation-net';
+import { OracleInstrumentation } from '@opentelemetry/instrumentation-oracledb';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
 import { RedisInstrumentation as RedisInstrumentationV2 } from '@opentelemetry/instrumentation-redis';
 import { RedisInstrumentation as RedisInstrumentationV4 } from '@opentelemetry/instrumentation-redis-4';
 import { RestifyInstrumentation } from '@opentelemetry/instrumentation-restify';
 import { RouterInstrumentation } from '@opentelemetry/instrumentation-router';
+import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
 import { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.io';
 import { TediousInstrumentation } from '@opentelemetry/instrumentation-tedious';
 import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
@@ -123,27 +125,18 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
   '@opentelemetry/instrumentation-nestjs-core': NestInstrumentation,
   '@opentelemetry/instrumentation-net': NetInstrumentation,
+  '@opentelemetry/instrumentation-oracledb': OracleInstrumentation,
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
   '@opentelemetry/instrumentation-pino': PinoInstrumentation,
   '@opentelemetry/instrumentation-redis': RedisInstrumentationV2,
   '@opentelemetry/instrumentation-redis-4': RedisInstrumentationV4,
   '@opentelemetry/instrumentation-restify': RestifyInstrumentation,
   '@opentelemetry/instrumentation-router': RouterInstrumentation,
+  '@opentelemetry/instrumentation-runtime-node': RuntimeNodeInstrumentation,
   '@opentelemetry/instrumentation-socket.io': SocketIoInstrumentation,
   '@opentelemetry/instrumentation-tedious': TediousInstrumentation,
   '@opentelemetry/instrumentation-undici': UndiciInstrumentation,
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
-};
-
-// The support string -> DiagLogLevel mappings
-const logLevelMap: { [key: string]: DiagLogLevel } = {
-  ALL: DiagLogLevel.ALL,
-  VERBOSE: DiagLogLevel.VERBOSE,
-  DEBUG: DiagLogLevel.DEBUG,
-  INFO: DiagLogLevel.INFO,
-  WARN: DiagLogLevel.WARN,
-  ERROR: DiagLogLevel.ERROR,
-  NONE: DiagLogLevel.NONE,
 };
 
 const defaultExcludedInstrumentations = [
@@ -302,17 +295,4 @@ export function getResourceDetectorsFromEnv(): Array<ResourceDetector> {
     }
     return resourceDetector || [];
   });
-}
-
-export function getLogLevelFromEnv(): DiagLogLevel {
-  const rawLogLevel = process.env.OTEL_LOG_LEVEL;
-
-  // NOTE: as per specification we should actually only register if something is set, but our previous implementation
-  // always registered a logger, even when nothing was set. Falling back to 'INFO' here to keep the same behavior as
-  // with previous implementations.
-  // Also: no point in warning - no logger is registered yet
-  return (
-    logLevelMap[rawLogLevel?.trim().toUpperCase() ?? 'INFO'] ??
-    DiagLogLevel.INFO
-  );
 }

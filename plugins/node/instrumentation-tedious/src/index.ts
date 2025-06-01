@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { TediousInstrumentation } from './instrumentation';
+export type { TediousInstrumentationConfig } from './types';

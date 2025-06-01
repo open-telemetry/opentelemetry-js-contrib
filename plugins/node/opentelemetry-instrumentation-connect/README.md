@@ -55,7 +55,7 @@ See [examples/connect](https://github.com/open-telemetry/opentelemetry-js-contri
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This package implements Semantic Convention v1.33.1.
 
 Attributes collected:
 

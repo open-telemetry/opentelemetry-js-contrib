@@ -14,5 +14,11 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { CassandraDriverInstrumentation } from './instrumentation';
+export type {
+  CassandraDriverInstrumentationConfig,
+  CassandraDriverResponseCustomAttributeFunction,
+  ResponseHookInfo,
+  ResultSet,
+  Row,
+} from './types';

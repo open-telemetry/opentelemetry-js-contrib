@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.20.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.19.0...instrumentation-tedious-v0.20.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
 ## [0.19.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.18.1...instrumentation-tedious-v0.19.0) (2025-03-18)
 
 

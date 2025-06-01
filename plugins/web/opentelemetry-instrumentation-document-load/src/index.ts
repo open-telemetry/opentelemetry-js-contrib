@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './enums/AttributeNames';
-export * from './types';
+export { DocumentLoadInstrumentation } from './instrumentation';
+export { AttributeNames } from './enums/AttributeNames';
+export type {
+  DocumentLoadCustomAttributeFunction,
+  DocumentLoadInstrumentationConfig,
+  ResourceFetchCustomAttributeFunction,
+} from './types';

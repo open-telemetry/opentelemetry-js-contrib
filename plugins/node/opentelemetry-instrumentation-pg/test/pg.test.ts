@@ -23,7 +23,7 @@ import {
   SpanStatus,
   trace,
 } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   BasicTracerProvider,
@@ -117,7 +117,7 @@ describe('pg', () => {
   let postgres: typeof pg;
   let client: pg.Client;
   let instrumentation: PgInstrumentation;
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   const provider = new BasicTracerProvider({
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
@@ -151,7 +151,7 @@ describe('pg', () => {
 
     instrumentation = new PgInstrumentation();
 
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
 
@@ -170,7 +170,7 @@ describe('pg', () => {
   });
 
   beforeEach(() => {
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
 
     // Add a spy on the underlying client's internal query queue so that

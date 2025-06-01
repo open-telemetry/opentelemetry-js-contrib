@@ -16,7 +16,7 @@
 
 import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -35,7 +35,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
     spanProcessors: [spanProcessor],
   });
   const tracer = provider.getTracer('default');
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let server: hapi.Server;
 
   before(() => {
@@ -44,7 +44,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
   });
 
   beforeEach(async () => {
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
     server = hapi.server({
       port: 3000,

@@ -16,7 +16,7 @@
 
 import { context, trace, Span } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -47,7 +47,7 @@ describe('ExpressInstrumentation', () => {
     spanProcessors: [spanProcessor],
   });
   const tracer = provider.getTracer('default');
-  const contextManager = new AsyncHooksContextManager().enable();
+  const contextManager = new AsyncLocalStorageContextManager().enable();
 
   before(() => {
     instrumentation.setTracerProvider(provider);

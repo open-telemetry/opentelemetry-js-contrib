@@ -21,7 +21,7 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -43,7 +43,7 @@ describe('Knex instrumentation', () => {
   });
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let client: any;
 
   before(() => {
@@ -55,7 +55,7 @@ describe('Knex instrumentation', () => {
   });
 
   beforeEach(async () => {
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
 
     client = knex({

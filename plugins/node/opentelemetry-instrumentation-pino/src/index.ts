@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { PinoInstrumentation } from './instrumentation';
+export type { LogHookFunction, PinoInstrumentationConfig } from './types';

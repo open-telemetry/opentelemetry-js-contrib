@@ -16,7 +16,7 @@
 
 import * as semver from 'semver';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   DBSYSTEMVALUES_MYSQL,
   SEMATTRS_DB_NAME,
@@ -89,7 +89,7 @@ describe('mysql2', () => {
   });
 
   describe('callback API', () => {
-    let contextManager: AsyncHooksContextManager;
+    let contextManager: AsyncLocalStorageContextManager;
     const memoryExporter = new InMemorySpanExporter();
     const provider = new BasicTracerProvider({
       spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
@@ -143,7 +143,7 @@ describe('mysql2', () => {
 
     beforeEach(() => {
       instrumentation.disable();
-      contextManager = new AsyncHooksContextManager().enable();
+      contextManager = new AsyncLocalStorageContextManager().enable();
       context.setGlobalContextManager(contextManager);
       instrumentation.setTracerProvider(provider);
       instrumentation.enable();
@@ -1219,7 +1219,7 @@ describe('mysql2', () => {
   describe('promise API', () => {
     let instrumentation: MySQL2Instrumentation;
 
-    let contextManager: AsyncHooksContextManager;
+    let contextManager: AsyncLocalStorageContextManager;
     const memoryExporter = new InMemorySpanExporter();
     const provider = new BasicTracerProvider({
       spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
@@ -1284,7 +1284,7 @@ describe('mysql2', () => {
 
     beforeEach(async () => {
       instrumentation.disable();
-      contextManager = new AsyncHooksContextManager().enable();
+      contextManager = new AsyncLocalStorageContextManager().enable();
       context.setGlobalContextManager(contextManager);
       instrumentation.setTracerProvider(provider);
       instrumentation.enable();

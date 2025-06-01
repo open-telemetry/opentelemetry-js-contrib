@@ -16,12 +16,12 @@
 
 import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
@@ -44,7 +44,7 @@ describe('ExpressInstrumentation', () => {
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
   const tracer = provider.getTracer('default');
-  const contextManager = new AsyncHooksContextManager().enable();
+  const contextManager = new AsyncLocalStorageContextManager().enable();
 
   before(() => {
     instrumentation.setTracerProvider(provider);
@@ -145,7 +145,7 @@ describe('ExpressInstrumentation', () => {
             .find(span => span.name.includes('request handler'));
           assert.notStrictEqual(requestHandlerSpan, undefined);
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/mw'
           );
 
@@ -196,7 +196,7 @@ describe('ExpressInstrumentation', () => {
             .find(span => span.name.includes('request handler'));
           assert.notStrictEqual(requestHandlerSpan, undefined);
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/'
           );
 
