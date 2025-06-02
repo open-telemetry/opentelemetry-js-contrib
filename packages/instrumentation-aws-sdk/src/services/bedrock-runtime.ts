@@ -101,14 +101,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       case 'ConverseStream':
         return this.requestPreSpanHookConverse(request, config, diag, true);
       case 'InvokeModel':
-        return this.requestPreSpanHookInvokeModel(request, config, diag);
+        return this.requestPreSpanHookInvokeModel(request, config, diag, false);
       case 'InvokeModelWithResponseStream':
-        return this.requestPreSpanHookInvokeModelWithResponseStream(
-          request,
-          config,
-          diag,
-          true
-        );
+        return this.requestPreSpanHookInvokeModel(request, config, diag, true);
     }
 
     return {
@@ -164,7 +159,8 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   private requestPreSpanHookInvokeModel(
     request: NormalizedRequest,
     config: AwsSdkInstrumentationConfig,
-    diag: DiagLogger
+    diag: DiagLogger,
+    isStream: boolean
   ): RequestMetadata {
     let spanName: string | undefined;
     const spanAttributes: Attributes = {
@@ -319,87 +315,8 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     return {
       spanName,
       isIncoming: false,
-      spanAttributes,
-    };
-  }
-
-  private requestPreSpanHookInvokeModelWithResponseStream(
-    request: NormalizedRequest,
-    config: AwsSdkInstrumentationConfig,
-    diag: DiagLogger,
-    isStream: boolean
-  ): RequestMetadata {
-    let spanName: string | undefined;
-    const spanAttributes: Attributes = {
-      [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
-      // add operation name for InvokeModel API
-    };
-
-    const modelId = request.commandInput?.modelId;
-    if (modelId) {
-      spanAttributes[ATTR_GEN_AI_REQUEST_MODEL] = modelId;
-    }
-
-    if (request.commandInput?.body) {
-      const requestBody = JSON.parse(request.commandInput.body);
-      if (modelId.includes('amazon.titan')) {
-        if (requestBody.textGenerationConfig?.temperature !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] =
-            requestBody.textGenerationConfig.temperature;
-        }
-        if (requestBody.textGenerationConfig?.topP !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] =
-            requestBody.textGenerationConfig.topP;
-        }
-        if (requestBody.textGenerationConfig?.maxTokenCount !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] =
-            requestBody.textGenerationConfig.maxTokenCount;
-        }
-        if (requestBody.textGenerationConfig?.stopSequences !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] =
-            requestBody.textGenerationConfig.stopSequences;
-        }
-      } else if (modelId.includes('anthropic.claude')) {
-        if (requestBody.max_tokens !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] =
-            requestBody.max_tokens;
-        }
-        if (requestBody.temperature !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] =
-            requestBody.temperature;
-        }
-        if (requestBody.top_p !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] = requestBody.top_p;
-        }
-        if (requestBody.stop_sequences !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] =
-            requestBody.stop_sequences;
-        }
-      } else if (modelId.includes('amazon.nova')) {
-        if (requestBody.inferenceConfig?.temperature !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_TEMPERATURE] =
-            requestBody.inferenceConfig.temperature;
-        }
-        if (requestBody.inferenceConfig?.top_p !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_TOP_P] =
-            requestBody.inferenceConfig.top_p;
-        }
-        if (requestBody.inferenceConfig?.max_new_tokens !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS] =
-            requestBody.inferenceConfig.max_new_tokens;
-        }
-        if (requestBody.inferenceConfig?.stopSequences !== undefined) {
-          spanAttributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] =
-            requestBody.inferenceConfig.stopSequences;
-        }
-      }
-    }
-
-    return {
-      spanName,
-      isIncoming: false,
-      spanAttributes,
       isStream,
+      spanAttributes,
     };
   }
 
