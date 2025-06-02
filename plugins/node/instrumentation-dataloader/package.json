@@ -1,16 +1,16 @@
 {
   "name": "@opentelemetry/instrumentation-dataloader",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "description": "OpenTelemetry instrumentation for `dataloader` data fetching layer",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "rimraf build/*",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-dataloader",
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.test.ts'",
@@ -55,7 +55,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.201.0"
+    "@opentelemetry/instrumentation": "^0.202.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-dataloader#readme"
 }

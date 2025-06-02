@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-runtime-node",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "OpenTelemetry instrumentation for Node.js Performance measurement API",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -8,10 +8,10 @@
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-runtime-node",
   "scripts": {
     "clean": "rimraf build/*",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-runtime-node",
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "version:update": "node ../../../scripts/version-update.js"
@@ -38,7 +38,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.201.0"
+    "@opentelemetry/instrumentation": "^0.202.0"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",

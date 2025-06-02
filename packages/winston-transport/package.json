@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/winston-transport",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "OpenTelemetry Transport for winston",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,9 +11,9 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/winston-transport",
     "compile": "tsc -p ."
   },
   "keywords": [
@@ -47,7 +47,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/api-logs": "^0.201.0",
+    "@opentelemetry/api-logs": "^0.202.0",
     "winston-transport": "4.*"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/winston-transport#readme"

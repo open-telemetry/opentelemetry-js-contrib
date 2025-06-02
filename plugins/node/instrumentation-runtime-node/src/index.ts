@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { RuntimeNodeInstrumentation } from './instrumentation';
+export type { RuntimeNodeInstrumentationConfig } from './types';

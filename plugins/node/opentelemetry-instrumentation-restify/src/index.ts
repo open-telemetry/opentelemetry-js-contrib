@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './enums/AttributeNames';
-export * from './types';
+export { RestifyInstrumentation } from './instrumentation';
+export { AttributeNames } from './enums/AttributeNames';
+export type {
+  LayerType,
+  RestifyCustomAttributeFunction,
+  RestifyInstrumentationConfig,
+  RestifyRequestInfo,
+} from './types';

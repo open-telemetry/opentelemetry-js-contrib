@@ -15,7 +15,7 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "prewatch": "npm run precompile",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/id-generator-aws-xray",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "test": "nyc mocha test/**/*.test.ts",

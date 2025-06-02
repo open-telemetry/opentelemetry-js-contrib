@@ -56,7 +56,7 @@ export const extractAttributesFromNormalizedRequest = (
     [SEMATTRS_RPC_SYSTEM]: 'aws-api',
     [SEMATTRS_RPC_METHOD]: normalizedRequest.commandName,
     [SEMATTRS_RPC_SERVICE]: normalizedRequest.serviceName,
-    [AttributeNames.AWS_REGION]: normalizedRequest.region,
+    [AttributeNames.CLOUD_REGION]: normalizedRequest.region,
   };
 };
 

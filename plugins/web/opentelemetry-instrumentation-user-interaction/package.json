@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-user-interaction",
-  "version": "0.46.0",
+  "version": "0.47.0",
   "description": "OpenTelemetry instrumentation for user interactions as click events in a web application",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -12,8 +12,8 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../../scripts/lint-readme.js",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-user-interaction",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "prepublishOnly": "npm run compile",
     "tdd": "karma start",
@@ -52,7 +52,7 @@
     "@babel/preset-env": "7.24.6",
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-zone-peer-dep": "^2.0.0",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.201.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.202.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@types/jquery": "3.5.32",
     "@types/mocha": "10.0.10",
@@ -80,7 +80,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.201.0",
+    "@opentelemetry/instrumentation": "^0.202.0",
     "@opentelemetry/sdk-trace-web": "^2.0.0"
   },
   "peerDependencies": {

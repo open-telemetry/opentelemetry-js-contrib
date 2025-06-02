@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cucumber",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "OpenTelemetry instrumentation for `@cucumber/cucumber` automated tests runner",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -13,9 +13,9 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../../scripts/lint-readme.js",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-cucumber",
     "compile": "tsc -p ."
   },
   "keywords": [
@@ -43,7 +43,7 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
-    "@cucumber/cucumber": "^9.0.0",
+    "@cucumber/cucumber": "^11.0.0",
     "@cucumber/messages": "^22.0.0",
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/core": "^2.0.0",
@@ -62,7 +62,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.201.0",
+    "@opentelemetry/instrumentation": "^0.202.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-cucumber#readme"

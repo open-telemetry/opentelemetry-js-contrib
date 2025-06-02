@@ -21,12 +21,25 @@
  * specific test. We instead instantiate a single instrumentation instance here to
  * use within all tests.
  */
+import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 import {
-  initMeterProvider,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
+  AggregationTemporality,
+  InMemoryMetricExporter,
+  MeterProvider,
+  PeriodicExportingMetricReader,
+} from '@opentelemetry/sdk-metrics';
 import { AwsInstrumentation } from '../src';
 
 export const instrumentation = new AwsInstrumentation();
-export const metricReader = initMeterProvider(instrumentation);
+export const metricExporter = new InMemoryMetricExporter(
+  AggregationTemporality.DELTA
+);
+export const meterProvider = new MeterProvider({
+  readers: [
+    new PeriodicExportingMetricReader({
+      exporter: metricExporter,
+    }),
+  ],
+});
+instrumentation.setMeterProvider(meterProvider);
 registerInstrumentationTesting(instrumentation);
