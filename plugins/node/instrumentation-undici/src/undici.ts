@@ -259,7 +259,9 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
         // user-agent should only appear once per the spec, but the library doesn't
         // prevent passing it multiple times, so we handle that to be safe.
         // we will pick last value set
-        const userAgent = Array.isArray(value) ? value[value.length - 1] : value;
+        const userAgent = Array.isArray(value)
+          ? value[value.length - 1]
+          : value;
         attributes[SemanticAttributes.USER_AGENT_ORIGINAL] = userAgent;
         break;
       }
