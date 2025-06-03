@@ -50,7 +50,7 @@ export class WebExceptionInstrumentation extends InstrumentationBase<GlobalError
 
   init() {}
 
-  onError = (event: ErrorEvent | PromiseRejectionEvent) => {
+  onError(event: ErrorEvent | PromiseRejectionEvent) {
     const EXCEPTION_EVENT_NAME = 'exception';
     const error: Error | undefined =
       'reason' in event ? event.reason : event.error;
@@ -97,7 +97,7 @@ export class WebExceptionInstrumentation extends InstrumentationBase<GlobalError
         timestamp: hrTime(),
       });
     }
-  };
+  }
 
   override disable(): void {
     window.removeEventListener('error', this.onError);
