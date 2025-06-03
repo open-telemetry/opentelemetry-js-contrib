@@ -169,9 +169,9 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
    * Yield an object { key, value } for each header in the request. Skips
    * likely-invalid headers. Multi-valued headers are passed through.
    */
-  private *requestHeaders(
+  private *parseRequestHeaders(
     request: UndiciRequest
-  ): Generator<{ key: string; value: string }, never, never> {
+  ): Generator<{ key: string; value: string | string[] }> {
     if (Array.isArray(request.headers)) {
       // headers are an array [k1, v2, k2, v2] (undici v6+)
       for (let i = 0; i < request.headers.length; i += 2) {
@@ -254,7 +254,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     // Get user agent from headers
-    for (const { key, value } of this.requestHeaders(request)) {
+    for (const { key, value } of this.parseRequestHeaders(request)) {
       if (key.toLowerCase() === 'user-agent') {
         // user-agent should only appear once per the spec, but the library doesn't
         // prevent passing it multiple times, so we handle that to be safe.
@@ -355,7 +355,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
         config.headersToSpanAttributes.requestHeaders.map(n => n.toLowerCase())
       );
 
-      for (const { key, value } of this.requestHeaders(request)) {
+      for (const { key, value } of this.parseRequestHeaders(request)) {
         const name = key.toLowerCase();
         if (headersToAttribs.has(name)) {
           spanAttributes[`http.request.header.${name}`] = value
