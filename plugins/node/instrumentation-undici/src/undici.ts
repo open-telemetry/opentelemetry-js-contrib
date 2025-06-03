@@ -258,7 +258,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       if (key.toLowerCase() === 'user-agent') {
         // user-agent should only appear once per the spec, but the library doesn't
         // prevent passing it multiple times, so we handle that to be safe.
-        const userAgent = Array.isArray(value) ? value[0] : value;
+        // we will pick last value set
+        const userAgent = Array.isArray(value) ? value[value.length - 1] : value;
         attributes[SemanticAttributes.USER_AGENT_ORIGINAL] = userAgent;
         break;
       }
@@ -358,9 +359,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       for (const { key, value } of this.parseRequestHeaders(request)) {
         const name = key.toLowerCase();
         if (headersToAttribs.has(name)) {
-          spanAttributes[`http.request.header.${name}`] = value
-            .toString()
-            .trim();
+          const attrValue = Array.isArray(value) ? value.join(', ') : value;
+          spanAttributes[`http.request.header.${name}`] = attrValue.trim();
         }
       }
     }
