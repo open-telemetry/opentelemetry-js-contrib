@@ -51,8 +51,31 @@ export class WebExceptionInstrumentation extends InstrumentationBase<GlobalError
   init() {}
 
   onError = (event: ErrorEvent | PromiseRejectionEvent) => {
+    const EXCEPTION_EVENT_NAME = 'exception';
     const error: Error | undefined =
       'reason' in event ? event.reason : event.error;
+
+    const eventLogger = events.getEventLogger(
+      this.instrumentationName,
+      this.instrumentationVersion
+    );
+
+    if (typeof error === 'string') {
+      const customAttributes = this.applyCustomAttributes
+        ? this.applyCustomAttributes(error)
+        : {};
+
+      eventLogger.emit({
+        name: EXCEPTION_EVENT_NAME,
+        data: {
+          [ATTR_EXCEPTION_MESSAGE]: error,
+        },
+        attributes: customAttributes,
+        severityNumber: SeverityNumber.ERROR,
+        timestamp: hrTime(),
+      });
+    }
+
     if (error) {
       const message = error.message;
       const type = error.name;
@@ -62,17 +85,12 @@ export class WebExceptionInstrumentation extends InstrumentationBase<GlobalError
         [ATTR_EXCEPTION_STACKTRACE]: error.stack,
       };
 
-      const eventLogger = events.getEventLogger(
-        this.instrumentationName,
-        this.instrumentationVersion
-      );
-
       const customAttributes = this.applyCustomAttributes
         ? this.applyCustomAttributes(error)
         : {};
 
       eventLogger.emit({
-        name: 'exception',
+        name: EXCEPTION_EVENT_NAME,
         data: errorAttributes,
         attributes: customAttributes,
         severityNumber: SeverityNumber.ERROR,

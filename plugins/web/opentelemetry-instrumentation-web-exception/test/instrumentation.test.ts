@@ -66,12 +66,19 @@ describe('WebExceptionInstrumentation', () => {
       source?: string,
       lineno?: number,
       colno?: number,
-      error?: Error
+      error?: Error | string
     ) => {
-      if (error?.name !== 'ValidationError') {
+      console.log(error);
+      if (error instanceof Error && error.name !== 'ValidationError') {
         // If we are testing our instrumentation, we want to let the error propagate.
         // If it is any other kind of error, we want Mocha to handle the error as expected.
         mochaErrorHandler?.call(window, event, source, lineno, colno, error);
+      }
+
+      if (typeof error === 'string' && error !== 'string') {
+        // If we are testing our instrumentation, we want to let the error propagate.
+        // If it is any other kind of error, we want Mocha to handle the error as expected.
+        mochaErrorHandler?.call(window, event, source, lineno, colno);
       }
     };
   });
@@ -140,10 +147,27 @@ describe('WebExceptionInstrumentation', () => {
         assert.strictEqual(body[ATTR_EXCEPTION_STACKTRACE], stack);
       }, 0);
     });
+
+    it('should handle throwing an error as a string', async () => {
+      setTimeout(() => {
+        throw 'string';
+      });
+
+      setTimeout(() => {
+        const events = exporter.getFinishedLogRecords();
+        // assert.ok(events.length > 0, 'Expected at least one log record');
+        const event = events[0];
+        const body = event.body as Record<string, any>;
+        assert.strictEqual(body[ATTR_EXCEPTION_MESSAGE], 'string');
+      }, 0);
+    });
   });
 
   describe('adding custom attributes', () => {
-    const applyCustomAttrs = (error: Error) => {
+    const applyCustomAttrs = (error: Error | string) => {
+      if (typeof error === 'string') {
+        return { 'app.custom.exception': error.toLocaleUpperCase() };
+      }
       return {
         'app.custom.exception': error.message.toLocaleUpperCase(),
       };
@@ -176,6 +200,21 @@ describe('WebExceptionInstrumentation', () => {
           event.attributes['app.custom.exception'],
           'SOMETHING HAPPENED!'
         );
+      }, 0);
+    });
+
+    it('should add custom attributes if the error is a string', async () => {
+      setTimeout(() => {
+        throw 'string';
+      });
+
+      setTimeout(() => {
+        const events = exporter.getFinishedLogRecords();
+        assert.ok(events.length > 0, 'Expected at least one log record');
+        const event = events[0];
+        const body = event.body as Record<string, any>;
+        assert.strictEqual(body[ATTR_EXCEPTION_MESSAGE], 'string');
+        assert.strictEqual(event.attributes['app.custom.exception'], 'STRING');
       }, 0);
     });
   });
