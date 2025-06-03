@@ -10,8 +10,8 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/sql-common",
     "compile": "tsc --build tsconfig.json",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "watch": "tsc -w"
@@ -46,7 +46,7 @@
     "@opentelemetry/api": "^1.1.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "18.18.14",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "typescript": "5.0.4"
   }
 }

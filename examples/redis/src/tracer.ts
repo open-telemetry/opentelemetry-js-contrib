@@ -9,7 +9,7 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
 import { Resource } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
 const EXPORTER = process.env.EXPORTER || '';
 
@@ -23,7 +23,7 @@ export const setupTracing = (serviceName: string) => {
 
   const provider = new NodeTracerProvider({
     resource: new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: serviceName,
+      [ATTR_SERVICE_NAME]: serviceName,
     }),
     spanProcessors: [
       new SimpleSpanProcessor(exporter),

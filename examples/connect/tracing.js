@@ -6,7 +6,7 @@ const { diag, DiagConsoleLogger, DiagLogLevel } = opentelemetry;
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
 const { Resource } = require('@opentelemetry/resources');
-const { SEMRESATTRS_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
+const { ATTR_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
@@ -25,7 +25,7 @@ module.exports = (serviceName) => {
   const exporter = new CollectorTraceExporter();
   const provider = new NodeTracerProvider({
     resource: new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: serviceName,
+      [ATTR_SERVICE_NAME]: serviceName,
     }),
     spanProcessors: [
       new SimpleSpanProcessor(exporter),

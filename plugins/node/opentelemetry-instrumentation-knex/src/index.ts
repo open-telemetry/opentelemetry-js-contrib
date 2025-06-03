@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { KnexInstrumentation } from './instrumentation';
+export type { KnexInstrumentationConfig } from './types';
