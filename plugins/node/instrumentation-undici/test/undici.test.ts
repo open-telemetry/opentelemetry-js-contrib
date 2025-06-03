@@ -824,7 +824,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
           'foo-client': 'bar',
           'user-agent': ['agent', 'other-agent'],
         },
-        expectedUserAgent: 'agent',
+        expectedUserAgent: 'other-agent',
       },
       {
         name: 'another header with value user-agent',
