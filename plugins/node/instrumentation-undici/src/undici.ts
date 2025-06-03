@@ -165,25 +165,24 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     });
   }
 
-  /**
-   * Yield an object { key, value } for each header in the request. Skips
-   * likely-invalid headers. Multi-valued headers are passed through.
-   */
-  private *parseRequestHeaders(
-    request: UndiciRequest
-  ): Generator<{ key: string; value: string | string[] }> {
+  private parseRequestHeaders(request: UndiciRequest) {
+    const result = new Map<string, string | string[]>();
+
     if (Array.isArray(request.headers)) {
       // headers are an array [k1, v2, k2, v2] (undici v6+)
+      // values could be string or a string[] for multiple values
       for (let i = 0; i < request.headers.length; i += 2) {
         const key = request.headers[i];
-        if (typeof key !== 'string') {
-          // Shouldn't happen, but the types don't know that, and let's be safe
-          continue;
+        const value = request.headers[i + 1];
+
+        // Key should always be a string, but the types don't know that, and let's be safe
+        if (typeof key === 'string') {
+          result.set(key.toLowerCase(), value);
         }
-        yield { key, value: request.headers[i + 1] };
       }
     } else if (typeof request.headers === 'string') {
       // headers are a raw string (undici v5)
+      // headers could be repeated in several lines for multiple values
       const headers = request.headers.split('\r\n');
       for (const line of headers) {
         if (!line) {
@@ -194,11 +193,20 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
           // Invalid header? Probably this can't happen, but again let's be safe.
           continue;
         }
-        const key = line.substring(0, colonIndex);
+        const key = line.substring(0, colonIndex).toLowerCase();
         const value = line.substring(colonIndex + 1).trim();
-        yield { key, value };
+        const allValues = result.get(key);
+
+        if (allValues && Array.isArray(allValues)) {
+          allValues.push(value);
+        } else if (allValues) {
+          result.set(key, [allValues, value]);
+        } else {
+          result.set(key, value);
+        }
       }
     }
+    return result;
   }
 
   // This is the 1st message we receive for each request (fired after request creation). Here we will
@@ -254,17 +262,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     // Get user agent from headers
-    for (const { key, value } of this.parseRequestHeaders(request)) {
-      if (key.toLowerCase() === 'user-agent') {
-        // user-agent should only appear once per the spec, but the library doesn't
-        // prevent passing it multiple times, so we handle that to be safe.
-        // we will pick last value set
-        const userAgent = Array.isArray(value)
-          ? value[value.length - 1]
-          : value;
-        attributes[SemanticAttributes.USER_AGENT_ORIGINAL] = userAgent;
-        break;
-      }
+    const headersMap = this.parseRequestHeaders(request);
+    const userAgentValues = headersMap.get('user-agent');
+
+    if (userAgentValues) {
+      const userAgent = Array.isArray(userAgentValues)
+        ? userAgentValues[userAgentValues.length - 1]
+        : userAgentValues;
+      attributes[SemanticAttributes.USER_AGENT_ORIGINAL] = userAgent;
     }
 
     // Get attributes from the hook if present
@@ -357,9 +362,9 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       const headersToAttribs = new Set(
         config.headersToSpanAttributes.requestHeaders.map(n => n.toLowerCase())
       );
+      const headersMap = this.parseRequestHeaders(request);
 
-      for (const { key, value } of this.parseRequestHeaders(request)) {
-        const name = key.toLowerCase();
+      for (const [name, value] of headersMap.entries()) {
         if (headersToAttribs.has(name)) {
           const attrValue = Array.isArray(value) ? value.join(', ') : value;
           spanAttributes[`http.request.header.${name}`] = attrValue.trim();
