@@ -103,7 +103,7 @@ describe('ExpressInstrumentation', () => {
 
           for (const span of spans) {
             assert.strictEqual(
-              span.attributes[SEMATTRS_HTTP_ROUTE],
+              span.attributes[ATTR_HTTP_ROUTE],
               undefined, // none of the spans have the HTTP route attribute
               `Span "${span.name}" should not have HTTP route attribute for non-existing route`
             );
