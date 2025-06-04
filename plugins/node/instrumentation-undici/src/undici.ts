@@ -266,6 +266,9 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     const userAgentValues = headersMap.get('user-agent');
 
     if (userAgentValues) {
+      // NOTE: having multiple user agents is not expected so
+      // we're going to take last one like `curl` does
+      // ref: https://curl.se/docs/manpage.html#-A
       const userAgent = Array.isArray(userAgentValues)
         ? userAgentValues[userAgentValues.length - 1]
         : userAgentValues;
@@ -367,7 +370,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       for (const [name, value] of headersMap.entries()) {
         if (headersToAttribs.has(name)) {
           const attrValue = Array.isArray(value) ? value.join(', ') : value;
-          spanAttributes[`http.request.header.${name}`] = attrValue.trim();
+          spanAttributes[`http.request.header.${name}`] = attrValue;
         }
       }
     }
