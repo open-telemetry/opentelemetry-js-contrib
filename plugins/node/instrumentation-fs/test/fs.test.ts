@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { context, trace } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,
@@ -65,12 +65,12 @@ const provider = new BasicTracerProvider({
 const tracer = provider.getTracer('default');
 
 describe('fs instrumentation', () => {
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let fs: typeof FSType;
   let plugin: FsInstrumentation;
 
   beforeEach(async () => {
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
     plugin = new FsInstrumentation(pluginConfig);
     plugin.setTracerProvider(provider);

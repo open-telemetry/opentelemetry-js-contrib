@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.18.0...instrumentation-dataloader-v0.19.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
 ## [0.18.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.17.0...instrumentation-dataloader-v0.18.0) (2025-05-15)
 
 

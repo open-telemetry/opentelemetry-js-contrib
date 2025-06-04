@@ -15,7 +15,7 @@
  */
 
 import { context, Context, trace, SpanStatusCode } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   DBSYSTEMVALUES_MYSQL,
   SEMATTRS_DB_NAME,
@@ -50,7 +50,7 @@ import * as mysqlTypes from 'mysql';
 import { AttributeNames } from '../src/AttributeNames';
 
 describe('mysql@2.x-Tracing', () => {
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let connection: mysqlTypes.Connection;
   let pool: mysqlTypes.Pool;
   let poolCluster: mysqlTypes.PoolCluster;
@@ -89,7 +89,7 @@ describe('mysql@2.x-Tracing', () => {
 
   beforeEach(() => {
     instrumentation.disable();
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
