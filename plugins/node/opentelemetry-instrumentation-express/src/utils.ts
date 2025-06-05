@@ -268,11 +268,13 @@ export function getActualMatchedRoute(req: {
 
   // For RegExp routes or route arrays, return the constructed route
   // This handles the case where the route is defined using RegExp or an array
-  if (constructedRoute.includes('/') &&
-      (constructedRoute.includes(',') ||
-       constructedRoute.includes('\\') ||
-       constructedRoute.includes('*') ||
-       constructedRoute.includes('['))) {
+  if (
+    constructedRoute.includes('/') &&
+    (constructedRoute.includes(',') ||
+      constructedRoute.includes('\\') ||
+      constructedRoute.includes('*') ||
+      constructedRoute.includes('['))
+  ) {
     return constructedRoute;
   }
 
