@@ -32,6 +32,8 @@ import {
   getLayerPath,
   isLayerIgnored,
   storeLayerPath,
+  getActualMatchedRoute,
+  getConstructedRoute,
 } from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -188,23 +190,21 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         res: express.Response
       ) {
         const { isLayerPathStored } = storeLayerPath(req, layerPath);
-        const route = (req[_LAYERS_STORE_PROPERTY] as string[])
-          .filter(path => path !== '/' && path !== '/*')
-          .join('')
-          // remove duplicate slashes to normalize route
-          .replace(/\/{2,}/g, '/');
+
+        const constructedRoute = getConstructedRoute(req);
+        const actualMatchedRoute = getActualMatchedRoute(req);
 
         const attributes: Attributes = {
-          [ATTR_HTTP_ROUTE]: route.length > 0 ? route : '/',
+          [ATTR_HTTP_ROUTE]: actualMatchedRoute,
         };
-        const metadata = getLayerMetadata(route, layer, layerPath);
+        const metadata = getLayerMetadata(constructedRoute, layer, layerPath);
         const type = metadata.attributes[
           AttributeNames.EXPRESS_TYPE
         ] as ExpressLayerType;
 
         const rpcMetadata = getRPCMetadata(context.active());
         if (rpcMetadata?.type === RPCType.HTTP) {
-          rpcMetadata.route = route || '/';
+          rpcMetadata.route = actualMatchedRoute;
         }
 
         // verify against the config if the layer should be ignored
@@ -223,7 +223,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
           {
             request: req,
             layerType: type,
-            route,
+            route: constructedRoute,
           },
           metadata.name
         );
@@ -241,7 +241,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
               requestHook(span, {
                 request: req,
                 layerType: type,
-                route,
+                route: constructedRoute,
               }),
             e => {
               if (e) {
