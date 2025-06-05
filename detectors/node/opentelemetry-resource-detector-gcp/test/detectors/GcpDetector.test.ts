@@ -31,7 +31,15 @@ import {
   assertContainerResource,
   assertEmptyResource,
 } from '@opentelemetry/contrib-test-utils';
-import { detectResources } from '@opentelemetry/resources';
+import { detectResources, Resource } from '@opentelemetry/resources';
+import * as assert from 'assert';
+import {
+  CLOUDPLATFORMVALUES_GCP_CLOUD_RUN,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_FAAS_INSTANCE,
+  SEMRESATTRS_FAAS_NAME,
+  SEMRESATTRS_FAAS_VERSION,
+} from '@opentelemetry/semantic-conventions';
 
 const HEADERS = {
   [HEADER_NAME.toLowerCase()]: HEADER_VALUE,
@@ -42,6 +50,34 @@ const PROJECT_ID_PATH = BASE_PATH + '/project/project-id';
 const ZONE_PATH = BASE_PATH + '/instance/zone';
 const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
 const HOSTNAME_PATH = BASE_PATH + '/instance/hostname';
+
+const assertFaasResource = (
+  resource: Resource,
+  validations: {
+    name?: string;
+    instance?: string;
+    version?: string;
+  }
+) => {
+  if (validations.name) {
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_FAAS_NAME],
+      validations.name
+    );
+  }
+  if (validations.instance) {
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_FAAS_INSTANCE],
+      validations.instance
+    );
+  }
+  if (validations.version) {
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_FAAS_VERSION],
+      validations.version
+    );
+  }
+};
 
 describe('gcpDetector', () => {
   describe('.detect', () => {
@@ -55,6 +91,8 @@ describe('gcpDetector', () => {
       delete process.env.NAMESPACE;
       delete process.env.CONTAINER_NAME;
       delete process.env.HOSTNAME;
+      delete process.env.K_SERVICE;
+      delete process.env.K_REVISION;
     });
 
     beforeEach(() => {
@@ -64,6 +102,8 @@ describe('gcpDetector', () => {
       delete process.env.NAMESPACE;
       delete process.env.CONTAINER_NAME;
       delete process.env.HOSTNAME;
+      delete process.env.K_SERVICE;
+      delete process.env.K_REVISION;
     });
 
     it('should return resource with GCP metadata', async () => {
@@ -221,5 +261,47 @@ describe('gcpDetector', () => {
       await resource.waitForAsyncAttributes?.();
       assertEmptyResource(resource);
     });
+
+    it('should populate Cloud Run attributes when K_SERVICE is set', async () => {
+      process.env.K_SERVICE = 'my-cloud-run-service';
+      process.env.K_REVISION = 'my-cloud-run-revision';
+    
+      const scope = nock(HOST_ADDRESS)
+        .get(INSTANCE_PATH)
+        .reply(200, {}, HEADERS)
+        .get(INSTANCE_ID_PATH)
+        .reply(200, () => '4520031799277581759', HEADERS)
+        .get(PROJECT_ID_PATH)
+        .reply(200, () => 'my-project-id', HEADERS)
+        .get(ZONE_PATH)
+        .reply(200, () => 'project/zone/my-zone', HEADERS)
+        .get(HOSTNAME_PATH)
+        .reply(200, () => 'dev.my-project.local', HEADERS);
+      const secondaryScope = nock(SECONDARY_HOST_ADDRESS)
+        .get(INSTANCE_PATH)
+        .reply(200, {}, HEADERS);
+    
+      const resource = detectResources({ detectors: [gcpDetector] });
+      await resource.waitForAsyncAttributes?.();
+    
+      secondaryScope.done();
+      scope.done();
+  
+      assert.strictEqual(resource.attributes[SEMRESATTRS_CLOUD_PLATFORM],CLOUDPLATFORMVALUES_GCP_CLOUD_RUN)
+      assertCloudResource(resource, {
+        provider: 'gcp',
+        accountId: 'my-project-id',
+        zone: 'my-zone',
+      });
+      assertHostResource(resource, {
+        id: '4520031799277581759',
+        name: 'dev.my-project.local',
+      });
+      assertFaasResource(resource, {
+        name: 'my-cloud-run-service',
+        version: 'my-cloud-run-revision',
+        instance: '4520031799277581759',
+      })
+    });    
   });
 });
