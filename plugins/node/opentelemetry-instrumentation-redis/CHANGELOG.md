@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.49.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.49.0...instrumentation-redis-v0.49.1) (2025-06-05)
+
+
+### Bug Fixes
+
+* **redis:** use new tracer after setTracerProvider ([#2865](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2865)) ([5861dfa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5861dfa3aa4ca59f7ec3fba051329f13895a6e46))
+
 ## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.48.0...instrumentation-redis-v0.49.0) (2025-06-02)
 
 

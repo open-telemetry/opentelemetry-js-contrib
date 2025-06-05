@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-hapi-v0.48.0...instrumentation-hapi-v0.49.0) (2025-06-05)
+
+
+### Features
+
+* **instrumentation-hapi:** support migration to stable HTTP semconv, v1.23.1 ([#2863](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2863)) ([2317e2f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2317e2f06a0479e570d62394ea6d3390397dd347))
+
 ## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-hapi-v0.47.0...instrumentation-hapi-v0.48.0) (2025-06-02)
 
 

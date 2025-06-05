@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.13.0...instrumentation-undici-v0.13.1) (2025-06-05)
+
+
+### Bug Fixes
+
+* **instr-undici:** fix user agent extraction and handle of multiple values on headers ([#2875](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2875)) ([8820f65](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8820f6569ac95d351b63d9e08375824775e9e561))
+
 ## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.12.0...instrumentation-undici-v0.13.0) (2025-06-02)
 
 
