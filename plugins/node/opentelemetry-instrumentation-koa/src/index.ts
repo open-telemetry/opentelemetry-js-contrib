@@ -18,7 +18,7 @@ export { KoaInstrumentation } from './instrumentation';
 export { AttributeNames } from './enums/AttributeNames';
 export { KoaLayerType } from './types';
 export type {
-  KoaInstrumentationConfig,  
+  KoaInstrumentationConfig,
   KoaRequestCustomAttributeFunction,
   KoaRequestInfo,
 } from './types';
