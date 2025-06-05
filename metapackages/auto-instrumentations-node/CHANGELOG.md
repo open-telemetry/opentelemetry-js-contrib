@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.60.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.60.0...auto-instrumentations-node-v0.60.1) (2025-06-05)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-hapi bumped from ^0.48.0 to ^0.49.0
+    * @opentelemetry/instrumentation-koa bumped from ^0.50.0 to ^0.50.1
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.55.0 to ^0.55.1
+    * @opentelemetry/instrumentation-net bumped from ^0.46.0 to ^0.46.1
+    * @opentelemetry/instrumentation-redis bumped from ^0.49.0 to ^0.49.1
+    * @opentelemetry/instrumentation-restify bumped from ^0.48.0 to ^0.48.1
+    * @opentelemetry/instrumentation-undici bumped from ^0.13.0 to ^0.13.1
+
 ## [0.60.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.59.0...auto-instrumentations-node-v0.60.0) (2025-06-02)
 
 
