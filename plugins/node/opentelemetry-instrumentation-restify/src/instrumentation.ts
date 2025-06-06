@@ -103,7 +103,7 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
     return module;
   }
 
-  private _middlewarePatcher(original: Function, methodName?: string) {
+  private _middlewarePatcher(original: Function, methodName?: any) {
     const instrumentation = this;
     return function (this: Server, ...handler: types.NestedRequestHandlers) {
       return original.call(
@@ -116,7 +116,7 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
     };
   }
 
-  private _methodPatcher(original: Function, methodName?: string) {
+  private _methodPatcher(original: Function, methodName?: any) {
     const instrumentation = this;
     return function (
       this: Server,

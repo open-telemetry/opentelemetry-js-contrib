@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-import { SpanAttributes } from '@opentelemetry/api';
+import { Attributes } from '@opentelemetry/api';
 import {
-  SEMATTRS_HTTP_METHOD,
-  SEMATTRS_HTTP_ROUTE,
+  ATTR_HTTP_ROUTE,
+  ATTR_HTTP_REQUEST_METHOD,
 } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_METHOD } from './semconv';
 import type * as Hapi from '@hapi/hapi';
 import {
   HapiLayerType,
@@ -28,6 +29,7 @@ import {
   ServerExtDirectInput,
 } from './internal-types';
 import { AttributeNames } from './enums/AttributeNames';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 
 export function getPluginName<T>(plugin: Hapi.Plugin<T>): string {
   if ((plugin as Hapi.PluginNameVersion).name) {
@@ -72,37 +74,45 @@ export const isPatchableExtMethod = (
 
 export const getRouteMetadata = (
   route: Hapi.ServerRoute,
+  semconvStability: SemconvStability,
   pluginName?: string
 ): {
-  attributes: SpanAttributes;
+  attributes: Attributes;
   name: string;
 } => {
-  if (pluginName) {
-    return {
-      attributes: {
-        [SEMATTRS_HTTP_ROUTE]: route.path,
-        [SEMATTRS_HTTP_METHOD]: route.method,
-        [AttributeNames.HAPI_TYPE]: HapiLayerType.PLUGIN,
-        [AttributeNames.PLUGIN_NAME]: pluginName,
-      },
-      name: `${pluginName}: route - ${route.path}`,
-    };
-  }
-  return {
-    attributes: {
-      [SEMATTRS_HTTP_ROUTE]: route.path,
-      [SEMATTRS_HTTP_METHOD]: route.method,
-      [AttributeNames.HAPI_TYPE]: HapiLayerType.ROUTER,
-    },
-    name: `route - ${route.path}`,
+  const attributes: Attributes = {
+    [ATTR_HTTP_ROUTE]: route.path,
   };
+  if (semconvStability & SemconvStability.OLD) {
+    attributes[ATTR_HTTP_METHOD] = route.method;
+  }
+  if (semconvStability & SemconvStability.STABLE) {
+    // Note: This currently does *not* normalize the method name to uppercase
+    // and conditionally include `http.request.method.original` as described
+    // at https://opentelemetry.io/docs/specs/semconv/http/http-spans/
+    // These attributes are for a *hapi* span, and not the parent HTTP span,
+    // so the HTTP span guidance doesn't strictly apply.
+    attributes[ATTR_HTTP_REQUEST_METHOD] = route.method;
+  }
+
+  let name;
+  if (pluginName) {
+    attributes[AttributeNames.HAPI_TYPE] = HapiLayerType.PLUGIN;
+    attributes[AttributeNames.PLUGIN_NAME] = pluginName;
+    name = `${pluginName}: route - ${route.path}`;
+  } else {
+    attributes[AttributeNames.HAPI_TYPE] = HapiLayerType.ROUTER;
+    name = `route - ${route.path}`;
+  }
+
+  return { attributes, name };
 };
 
 export const getExtMetadata = (
   extPoint: Hapi.ServerRequestExtType,
   pluginName?: string
 ): {
-  attributes: SpanAttributes;
+  attributes: Attributes;
   name: string;
 } => {
   if (pluginName) {

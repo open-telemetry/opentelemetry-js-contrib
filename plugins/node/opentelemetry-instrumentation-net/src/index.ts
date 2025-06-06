@@ -15,4 +15,4 @@
  */
 
 export { NetInstrumentation } from './instrumentation';
-export type { TLSAttributes } from './types';
+export { TLSAttributes } from './types';

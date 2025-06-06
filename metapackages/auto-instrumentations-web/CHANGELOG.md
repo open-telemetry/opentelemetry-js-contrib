@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.47.0...auto-instrumentations-web-v0.48.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.46.0 to ^0.47.0
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.46.0 to ^0.47.0
+
 ## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.46.0...auto-instrumentations-web-v0.47.0) (2025-05-15)
 
 

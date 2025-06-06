@@ -1,5 +1,62 @@
 # Changelog
 
+## [0.60.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.59.0...auto-instrumentations-node-v0.60.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-amqplib bumped from ^0.48.0 to ^0.49.0
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.52.0 to ^0.53.0
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.53.0 to ^0.54.0
+    * @opentelemetry/instrumentation-bunyan bumped from ^0.47.0 to ^0.48.0
+    * @opentelemetry/instrumentation-cassandra-driver bumped from ^0.47.0 to ^0.48.0
+    * @opentelemetry/instrumentation-connect bumped from ^0.45.0 to ^0.46.0
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.16.0 to ^0.17.0
+    * @opentelemetry/instrumentation-dataloader bumped from ^0.18.0 to ^0.19.0
+    * @opentelemetry/instrumentation-dns bumped from ^0.45.0 to ^0.46.0
+    * @opentelemetry/instrumentation-express bumped from ^0.50.0 to ^0.51.0
+    * @opentelemetry/instrumentation-fastify bumped from ^0.46.0 to ^0.47.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.21.0 to ^0.22.0
+    * @opentelemetry/instrumentation-generic-pool bumped from ^0.45.0 to ^0.46.0
+    * @opentelemetry/instrumentation-graphql bumped from ^0.49.0 to ^0.50.0
+    * @opentelemetry/instrumentation-hapi bumped from ^0.47.0 to ^0.48.0
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.49.0 to ^0.50.0
+    * @opentelemetry/instrumentation-kafkajs bumped from ^0.10.0 to ^0.11.0
+    * @opentelemetry/instrumentation-knex bumped from ^0.46.0 to ^0.47.0
+    * @opentelemetry/instrumentation-koa bumped from ^0.49.0 to ^0.50.0
+    * @opentelemetry/instrumentation-lru-memoizer bumped from ^0.46.0 to ^0.47.0
+    * @opentelemetry/instrumentation-memcached bumped from ^0.45.0 to ^0.46.0
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.54.0 to ^0.55.0
+    * @opentelemetry/instrumentation-mongoose bumped from ^0.48.0 to ^0.49.0
+    * @opentelemetry/instrumentation-mysql bumped from ^0.47.0 to ^0.48.0
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.47.0 to ^0.48.0
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.47.0 to ^0.48.0
+    * @opentelemetry/instrumentation-net bumped from ^0.45.0 to ^0.46.0
+    * @opentelemetry/instrumentation-oracledb bumped from ^0.27.0 to ^0.28.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.53.0 to ^0.54.0
+    * @opentelemetry/instrumentation-pino bumped from ^0.48.0 to ^0.49.0
+    * @opentelemetry/instrumentation-redis bumped from ^0.48.0 to ^0.49.0
+    * @opentelemetry/instrumentation-redis-4 bumped from ^0.48.0 to ^0.49.0
+    * @opentelemetry/instrumentation-restify bumped from ^0.47.0 to ^0.48.0
+    * @opentelemetry/instrumentation-router bumped from ^0.46.0 to ^0.47.0
+    * @opentelemetry/instrumentation-runtime-node bumped from ^0.15.0 to ^0.16.0
+    * @opentelemetry/instrumentation-socket.io bumped from ^0.48.0 to ^0.49.0
+    * @opentelemetry/instrumentation-tedious bumped from ^0.20.0 to ^0.21.0
+    * @opentelemetry/instrumentation-undici bumped from ^0.12.0 to ^0.13.0
+    * @opentelemetry/instrumentation-winston bumped from ^0.46.0 to ^0.47.0
+    * @opentelemetry/resource-detector-alibaba-cloud bumped from ^0.31.1 to ^0.31.2
+    * @opentelemetry/resource-detector-aws bumped from ^2.1.0 to ^2.2.0
+    * @opentelemetry/resource-detector-azure bumped from ^0.8.0 to ^0.9.0
+    * @opentelemetry/resource-detector-container bumped from ^0.7.1 to ^0.7.2
+    * @opentelemetry/resource-detector-gcp bumped from ^0.35.0 to ^0.36.0
+
 ## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.58.1...auto-instrumentations-node-v0.59.0) (2025-05-15)
 
 

@@ -80,6 +80,9 @@ describe('redis@2.x', () => {
   beforeEach(() => {
     contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
+    // set the default tracer provider before each test
+    // specific ones can override it to assert certain things
+    instrumentation.setTracerProvider(provider);
   });
 
   afterEach(() => {
@@ -386,6 +389,37 @@ describe('redis@2.x', () => {
               done();
             });
           });
+        });
+      });
+    });
+
+    describe('setTracerProvider', () => {
+      before(() => {
+        instrumentation.disable();
+        instrumentation.setConfig({});
+        instrumentation.enable();
+      });
+
+      it('should use new tracer provider after setTracerProvider is called', done => {
+        const testSpecificMemoryExporter = new InMemorySpanExporter();
+        const spanProcessor = new SimpleSpanProcessor(
+          testSpecificMemoryExporter
+        );
+        const tracerProvider = new NodeTracerProvider({
+          spanProcessors: [spanProcessor],
+        });
+
+        // key point of this test, setting new tracer provider and making sure
+        // new spans use it.
+        instrumentation.setTracerProvider(tracerProvider);
+
+        client.set('test', 'value-with-new-tracer-provider', err => {
+          assert.ifError(err);
+          // assert that the span was exported by the new tracer provider
+          // which is using the test specific span processor
+          const spans = testSpecificMemoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          done();
         });
       });
     });
