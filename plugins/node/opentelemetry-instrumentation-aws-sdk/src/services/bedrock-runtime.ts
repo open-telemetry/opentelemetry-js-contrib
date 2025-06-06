@@ -101,7 +101,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       case 'ConverseStream':
         return this.requestPreSpanHookConverse(request, config, diag, true);
       case 'InvokeModel':
-        return this.requestPreSpanHookInvokeModel(request, config, diag);
+        return this.requestPreSpanHookInvokeModel(request, config, diag, false);
+      case 'InvokeModelWithResponseStream':
+        return this.requestPreSpanHookInvokeModel(request, config, diag, true);
     }
 
     return {
@@ -157,7 +159,8 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   private requestPreSpanHookInvokeModel(
     request: NormalizedRequest,
     config: AwsSdkInstrumentationConfig,
-    diag: DiagLogger
+    diag: DiagLogger,
+    isStream: boolean
   ): RequestMetadata {
     let spanName: string | undefined;
     const spanAttributes: Attributes = {
@@ -312,6 +315,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     return {
       spanName,
       isIncoming: false,
+      isStream,
       spanAttributes,
     };
   }
@@ -346,6 +350,13 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         );
       case 'InvokeModel':
         return this.responseHookInvokeModel(response, span, tracer, config);
+      case 'InvokeModelWithResponseStream':
+        return this.responseHookInvokeModelWithResponseStream(
+          response,
+          span,
+          tracer,
+          config
+        );
     }
   }
 
@@ -576,6 +587,136 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
             responseBody.outputs[0].stop_reason,
           ]);
         }
+      }
+    }
+  }
+
+  private async responseHookInvokeModelWithResponseStream(
+    response: NormalizedResponse,
+    span: Span,
+    tracer: Tracer,
+    config: AwsSdkInstrumentationConfig
+  ): Promise<any> {
+    const stream = response.data?.body;
+    const modelId = response.request.commandInput?.modelId;
+    if (!stream || !span.isRecording()) return;
+
+    const wrappedStream = instrumentAsyncIterable(
+      stream,
+      async (chunk: { chunk?: { bytes?: Uint8Array } }) => {
+        const parsedChunk = parseChunk(chunk?.chunk?.bytes);
+
+        if (!parsedChunk) return;
+
+        if (modelId.includes('amazon.titan')) {
+          recordTitanAttributes(parsedChunk);
+        } else if (modelId.includes('anthropic.claude')) {
+          recordClaudeAttributes(parsedChunk);
+        } else if (modelId.includes('amazon.nova')) {
+          recordNovaAttributes(parsedChunk);
+        }
+      }
+    );
+    // Replace the original response body with our instrumented stream.
+    // - Defers span.end() until the entire stream is consumed
+    // This ensures downstream consumers still receive the full stream correctly,
+    // while OpenTelemetry can record span attributes from streamed data.
+    response.data.body = (async function* () {
+      try {
+        for await (const item of wrappedStream) {
+          yield item;
+        }
+      } finally {
+        span.end();
+      }
+    })();
+    return response.data;
+
+    // Tap into the stream at the chunk level without modifying the chunk itself.
+    function instrumentAsyncIterable<T>(
+      stream: AsyncIterable<T>,
+      onChunk: (chunk: T) => void
+    ): AsyncIterable<T> {
+      return {
+        [Symbol.asyncIterator]: async function* () {
+          for await (const chunk of stream) {
+            onChunk(chunk);
+            yield chunk;
+          }
+        },
+      };
+    }
+
+    function parseChunk(bytes?: Uint8Array): any {
+      if (!bytes || !(bytes instanceof Uint8Array)) return null;
+      try {
+        const str = Buffer.from(bytes).toString('utf-8');
+        return JSON.parse(str);
+      } catch (err) {
+        console.warn('Failed to parse streamed chunk', err);
+        return null;
+      }
+    }
+
+    function recordNovaAttributes(parsedChunk: any) {
+      if (parsedChunk.metadata?.usage !== undefined) {
+        if (parsedChunk.metadata?.usage.inputTokens !== undefined) {
+          span.setAttribute(
+            ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+            parsedChunk.metadata.usage.inputTokens
+          );
+        }
+        if (parsedChunk.metadata?.usage.outputTokens !== undefined) {
+          span.setAttribute(
+            ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+            parsedChunk.metadata.usage.outputTokens
+          );
+        }
+      }
+      if (parsedChunk.messageStop?.stopReason !== undefined) {
+        span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+          parsedChunk.messageStop.stopReason,
+        ]);
+      }
+    }
+
+    function recordClaudeAttributes(parsedChunk: any) {
+      if (parsedChunk.message?.usage?.input_tokens !== undefined) {
+        span.setAttribute(
+          ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+          parsedChunk.message.usage.input_tokens
+        );
+      }
+      if (parsedChunk.message?.usage?.output_tokens !== undefined) {
+        span.setAttribute(
+          ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+          parsedChunk.message.usage.output_tokens
+        );
+      }
+      if (parsedChunk.delta?.stop_reason !== undefined) {
+        span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+          parsedChunk.delta.stop_reason,
+        ]);
+      }
+    }
+
+    function recordTitanAttributes(parsedChunk: any) {
+      if (parsedChunk.inputTextTokenCount !== undefined) {
+        span.setAttribute(
+          ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+          parsedChunk.inputTextTokenCount
+        );
+      }
+      if (parsedChunk.totalOutputTextTokenCount !== undefined) {
+        span.setAttribute(
+          ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+          parsedChunk.totalOutputTextTokenCount
+        );
+      }
+      if (parsedChunk.completionReason !== undefined) {
+        span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+          parsedChunk.completionReason,
+        ]);
       }
     }
   }
