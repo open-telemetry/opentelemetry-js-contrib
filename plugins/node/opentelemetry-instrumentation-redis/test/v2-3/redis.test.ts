@@ -30,7 +30,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import { RedisInstrumentation } from '../src';
+import { RedisInstrumentation } from '../../src';
 import {
   DBSYSTEMVALUES_REDIS,
   SEMATTRS_DB_CONNECTION_STRING,
@@ -45,7 +45,7 @@ instrumentation.enable();
 instrumentation.disable();
 
 import * as redisTypes from 'redis';
-import { RedisResponseCustomAttributeFunction } from '../src/types';
+import { RedisResponseCustomAttributeFunction } from '../../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -263,7 +263,7 @@ describe('redis@2.x', () => {
     });
 
     describe('dbStatementSerializer config', () => {
-      const dbStatementSerializer = (cmdName: string, cmdArgs: string[]) => {
+      const dbStatementSerializer = (cmdName: string, cmdArgs: Array<string | Buffer>) => {
         return Array.isArray(cmdArgs) && cmdArgs.length
           ? `${cmdName} ${cmdArgs.join(' ')}`
           : cmdName;
@@ -306,7 +306,7 @@ describe('redis@2.x', () => {
         const responseHook: RedisResponseCustomAttributeFunction = (
           span: Span,
           _cmdName: string,
-          _cmdArgs: string[],
+          _cmdArgs: Array<string | Buffer>,
           response: unknown
         ) => {
           span.setAttribute(dataFieldName, new String(response).toString());
@@ -337,7 +337,7 @@ describe('redis@2.x', () => {
         const badResponseHook: RedisResponseCustomAttributeFunction = (
           _span: Span,
           _cmdName: string,
-          _cmdArgs: string[],
+          _cmdArgs: Array<string | Buffer>,
           _response: unknown
         ) => {
           throw 'Some kind of error';

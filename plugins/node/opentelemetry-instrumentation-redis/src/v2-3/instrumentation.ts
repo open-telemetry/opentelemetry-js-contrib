@@ -25,10 +25,10 @@ import {
   getTracedCreateClient,
   getTracedCreateStreamTrace,
 } from './utils';
-import { RedisCommand, RedisInstrumentationConfig } from '../types';
+import { RedisInstrumentationConfig } from '../types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
-import { RedisPluginClientTypes } from './internal-types';
+import { RedisCommand, RedisPluginClientTypes } from './internal-types';
 import { SpanKind, context, trace } from '@opentelemetry/api';
 import {
   DBSYSTEMVALUES_REDIS,
@@ -40,7 +40,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 
-export class RedisInstrumentationV1_2_3 extends InstrumentationBase<RedisInstrumentationConfig> {
+export class RedisInstrumentationV2_3 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
 
   constructor(config: RedisInstrumentationConfig = {}) {
@@ -128,7 +128,7 @@ export class RedisInstrumentationV1_2_3 extends InstrumentationBase<RedisInstrum
         const dbStatementSerializer =
           config?.dbStatementSerializer || defaultDbStatementSerializer;
         const span = instrumentation.tracer.startSpan(
-          `${RedisInstrumentationV1_2_3.COMPONENT}-${cmd.command}`,
+          `${RedisInstrumentationV2_3.COMPONENT}-${cmd.command}`,
           {
             kind: SpanKind.CLIENT,
             attributes: {

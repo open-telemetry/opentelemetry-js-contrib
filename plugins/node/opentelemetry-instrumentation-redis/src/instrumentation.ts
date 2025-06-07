@@ -1,8 +1,9 @@
 import { InstrumentationBase } from "@opentelemetry/instrumentation";
 import { RedisInstrumentationConfig } from "./types";
 import { PACKAGE_NAME, PACKAGE_VERSION } from "./version";
-import { RedisInstrumentationV1_2_3 } from "./v1-2-3/instrumentation";
+import { RedisInstrumentationV2_3 } from "./v2-3/instrumentation";
 import { TracerProvider } from "@opentelemetry/api";
+import { RedisInstrumentationV4 } from "./v4/instrumentation";
 
 const DEFAULT_CONFIG: RedisInstrumentationConfig = {
     requireParentSpan: false,
@@ -11,7 +12,8 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
 // Wrapper RedisInstrumentation that address all supported versions
 export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentationConfig> {
 
-    private instrumentationV1_2_3: RedisInstrumentationV1_2_3;
+    private instrumentationV2_3: RedisInstrumentationV2_3;
+    private instrumentationV4: RedisInstrumentationV4;
 
     // this is used to bypass a flaw in the base class constructor, which is calling 
     // member functions before the constructor has a chance to fully initialize the member variables.
@@ -21,18 +23,20 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
         const resolvedConfig = { ...DEFAULT_CONFIG, ...config };
         super(PACKAGE_NAME, PACKAGE_VERSION, resolvedConfig);
 
-        this.instrumentationV1_2_3 = new RedisInstrumentationV1_2_3(this.getConfig());
+        this.instrumentationV2_3 = new RedisInstrumentationV2_3(this.getConfig());
+        this.instrumentationV4 = new RedisInstrumentationV4(this.getConfig());
         this.initialized = true;
     }
 
     override setConfig(config: RedisInstrumentationConfig = {}) {
         const newConfig = { ...DEFAULT_CONFIG, ...config };
         super.setConfig(newConfig);
+        if (!this.initialized) {
+            return
+        }
 
-        // set the configs on all specific version instrumentations
-        // this function is also called in constructor, before the specific version instrumentations are initialized
-        // which we need to avoid.
-        this.instrumentationV1_2_3?.setConfig(newConfig);
+        this.instrumentationV2_3.setConfig(newConfig);
+        this.instrumentationV4.setConfig(newConfig);
     }
 
     override init() {
@@ -43,7 +47,8 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
         if (!this.initialized) {
             return
         }
-        this.instrumentationV1_2_3?.setTracerProvider(tracerProvider);
+        this.instrumentationV2_3.setTracerProvider(tracerProvider);
+        this.instrumentationV4.setTracerProvider(tracerProvider);
     }
 
     override enable() {
@@ -51,7 +56,8 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
         if (!this.initialized) {
             return
         }
-        this.instrumentationV1_2_3?.enable();
+        this.instrumentationV2_3.enable();
+        this.instrumentationV4.enable();
     }
 
     override disable() {
@@ -59,6 +65,7 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
         if (!this.initialized) {
             return
         }
-        this.instrumentationV1_2_3?.disable();
+        this.instrumentationV2_3.disable();
+        this.instrumentationV4.disable();
     }
 }
