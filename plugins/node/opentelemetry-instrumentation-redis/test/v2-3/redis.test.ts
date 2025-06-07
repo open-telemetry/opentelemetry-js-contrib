@@ -124,30 +124,30 @@ describe('redis@2.x', () => {
       expectedDbStatement: string;
       method: (cb: redisTypes.Callback<unknown>) => unknown;
     }> = [
-        {
-          description: 'insert',
-          command: 'hset',
-          args: ['hash', 'random', 'random'],
-          expectedDbStatement: 'hash random [1 other arguments]',
-          method: (cb: redisTypes.Callback<number>) =>
-            client.hset('hash', 'random', 'random', cb),
-        },
-        {
-          description: 'get',
-          command: 'get',
-          args: ['test'],
-          expectedDbStatement: 'test',
-          method: (cb: redisTypes.Callback<string | null>) =>
-            client.get('test', cb),
-        },
-        {
-          description: 'delete',
-          command: 'del',
-          args: ['test'],
-          expectedDbStatement: 'test',
-          method: (cb: redisTypes.Callback<number>) => client.del('test', cb),
-        },
-      ];
+      {
+        description: 'insert',
+        command: 'hset',
+        args: ['hash', 'random', 'random'],
+        expectedDbStatement: 'hash random [1 other arguments]',
+        method: (cb: redisTypes.Callback<number>) =>
+          client.hset('hash', 'random', 'random', cb),
+      },
+      {
+        description: 'get',
+        command: 'get',
+        args: ['test'],
+        expectedDbStatement: 'test',
+        method: (cb: redisTypes.Callback<string | null>) =>
+          client.get('test', cb),
+      },
+      {
+        description: 'delete',
+        command: 'del',
+        args: ['test'],
+        expectedDbStatement: 'test',
+        method: (cb: redisTypes.Callback<number>) => client.del('test', cb),
+      },
+    ];
 
     before(done => {
       client = redis.createClient(URL);
@@ -159,7 +159,7 @@ describe('redis@2.x', () => {
 
     beforeEach(done => {
       client.set('test', 'data', () => {
-        testUtils.resetMemoryExporter()
+        testUtils.resetMemoryExporter();
         done();
       });
     });
@@ -220,7 +220,10 @@ describe('redis@2.x', () => {
     });
 
     describe('dbStatementSerializer config', () => {
-      const dbStatementSerializer = (cmdName: string, cmdArgs: Array<string | Buffer>) => {
+      const dbStatementSerializer = (
+        cmdName: string,
+        cmdArgs: Array<string | Buffer>
+      ) => {
         return Array.isArray(cmdArgs) && cmdArgs.length
           ? `${cmdName} ${cmdArgs.join(' ')}`
           : cmdName;

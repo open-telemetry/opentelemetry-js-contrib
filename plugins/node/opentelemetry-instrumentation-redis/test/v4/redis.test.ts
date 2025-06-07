@@ -218,8 +218,9 @@ describe('redis@^4.0.0', () => {
     });
 
     it('sets error status on connection failure', async () => {
-      const redisURL = `redis://${redisTestConfig.host}:${redisTestConfig.port + 1
-        }`;
+      const redisURL = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }`;
       const newClient = createClient({
         url: redisURL,
       });
@@ -237,10 +238,12 @@ describe('redis@^4.0.0', () => {
     });
 
     it('omits basic auth from DB_CONNECTION_STRING span attribute', async () => {
-      const redisURL = `redis://myuser:mypassword@${redisTestConfig.host}:${redisTestConfig.port + 1
-        }`;
-      const expectAttributeConnString = `redis://${redisTestConfig.host}:${redisTestConfig.port + 1
-        }`;
+      const redisURL = `redis://myuser:mypassword@${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }`;
+      const expectAttributeConnString = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }`;
       const newClient = createClient({
         url: redisURL,
       });
@@ -262,10 +265,12 @@ describe('redis@^4.0.0', () => {
     });
 
     it('omits user_pwd query parameter from DB_CONNECTION_STRING span attribute', async () => {
-      const redisURL = `redis://${redisTestConfig.host}:${redisTestConfig.port + 1
-        }?db=mydb&user_pwd=mypassword`;
-      const expectAttributeConnString = `redis://${redisTestConfig.host}:${redisTestConfig.port + 1
-        }?db=mydb`;
+      const redisURL = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }?db=mydb&user_pwd=mypassword`;
+      const expectAttributeConnString = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }?db=mydb`;
       const newClient = createClient({
         url: redisURL,
       });
@@ -291,10 +296,10 @@ describe('redis@^4.0.0', () => {
       const diagErrors = [] as any;
       diag.setLogger(
         {
-          verbose() { },
-          debug() { },
-          info() { },
-          warn() { },
+          verbose() {},
+          debug() {},
+          info() {},
+          warn() {},
           error(...args) {
             diagErrors.push(args);
           },
