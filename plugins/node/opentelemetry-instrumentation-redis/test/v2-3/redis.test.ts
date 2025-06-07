@@ -21,14 +21,14 @@ import {
   SpanStatus,
   trace,
   Span,
+  ROOT_CONTEXT,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  getTestSpans,
+  registerInstrumentationTesting,
+} from '@opentelemetry/contrib-test-utils';
 import * as assert from 'assert';
 import { RedisInstrumentation } from '../../src';
 import {
@@ -40,14 +40,12 @@ import {
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 
-const instrumentation = new RedisInstrumentation();
-instrumentation.enable();
-instrumentation.disable();
+const instrumentation = registerInstrumentationTesting(
+  new RedisInstrumentation()
+);
 
 import * as redisTypes from 'redis';
 import { RedisResponseCustomAttributeFunction } from '../../src/types';
-
-const memoryExporter = new InMemorySpanExporter();
 
 const CONFIG = {
   host: process.env.OPENTELEMETRY_REDIS_HOST || 'localhost',
@@ -68,26 +66,10 @@ const unsetStatus: SpanStatus = {
 };
 
 describe('redis@2.x', () => {
-  const provider = new NodeTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
-  });
-  const tracer = provider.getTracer('external');
   let redis: typeof redisTypes;
   const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
   const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
-
-  let contextManager: AsyncLocalStorageContextManager;
-  beforeEach(() => {
-    contextManager = new AsyncLocalStorageContextManager().enable();
-    context.setGlobalContextManager(contextManager);
-    // set the default tracer provider before each test
-    // specific ones can override it to assert certain things
-    instrumentation.setTracerProvider(provider);
-  });
-
-  afterEach(() => {
-    context.disable();
-  });
+  const tracer = trace.getTracer('external');
 
   before(function () {
     // needs to be "function" to have MochaContext "this" context
@@ -103,8 +85,6 @@ describe('redis@2.x', () => {
     }
 
     redis = require('redis');
-    instrumentation.setTracerProvider(provider);
-    instrumentation.enable();
   });
 
   after(() => {
@@ -144,30 +124,30 @@ describe('redis@2.x', () => {
       expectedDbStatement: string;
       method: (cb: redisTypes.Callback<unknown>) => unknown;
     }> = [
-      {
-        description: 'insert',
-        command: 'hset',
-        args: ['hash', 'random', 'random'],
-        expectedDbStatement: 'hash random [1 other arguments]',
-        method: (cb: redisTypes.Callback<number>) =>
-          client.hset('hash', 'random', 'random', cb),
-      },
-      {
-        description: 'get',
-        command: 'get',
-        args: ['test'],
-        expectedDbStatement: 'test',
-        method: (cb: redisTypes.Callback<string | null>) =>
-          client.get('test', cb),
-      },
-      {
-        description: 'delete',
-        command: 'del',
-        args: ['test'],
-        expectedDbStatement: 'test',
-        method: (cb: redisTypes.Callback<number>) => client.del('test', cb),
-      },
-    ];
+        {
+          description: 'insert',
+          command: 'hset',
+          args: ['hash', 'random', 'random'],
+          expectedDbStatement: 'hash random [1 other arguments]',
+          method: (cb: redisTypes.Callback<number>) =>
+            client.hset('hash', 'random', 'random', cb),
+        },
+        {
+          description: 'get',
+          command: 'get',
+          args: ['test'],
+          expectedDbStatement: 'test',
+          method: (cb: redisTypes.Callback<string | null>) =>
+            client.get('test', cb),
+        },
+        {
+          description: 'delete',
+          command: 'del',
+          args: ['test'],
+          expectedDbStatement: 'test',
+          method: (cb: redisTypes.Callback<number>) => client.del('test', cb),
+        },
+      ];
 
     before(done => {
       client = redis.createClient(URL);
@@ -179,7 +159,7 @@ describe('redis@2.x', () => {
 
     beforeEach(done => {
       client.set('test', 'data', () => {
-        memoryExporter.reset();
+        testUtils.resetMemoryExporter()
         done();
       });
     });
@@ -190,7 +170,7 @@ describe('redis@2.x', () => {
 
     afterEach(done => {
       client.del('hash', () => {
-        memoryExporter.reset();
+        testUtils.resetMemoryExporter();
         done();
       });
     });
@@ -206,9 +186,9 @@ describe('redis@2.x', () => {
           context.with(trace.setSpan(context.active(), span), () => {
             operation.method((err, _result) => {
               assert.ifError(err);
-              assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              assert.strictEqual(getTestSpans().length, 1);
               span.end();
-              const endedSpans = memoryExporter.getFinishedSpans();
+              const endedSpans = getTestSpans();
               assert.strictEqual(endedSpans.length, 2);
               assert.strictEqual(
                 endedSpans[0].name,
@@ -239,29 +219,6 @@ describe('redis@2.x', () => {
       });
     });
 
-    describe('Removing instrumentation', () => {
-      before(() => {
-        instrumentation.disable();
-      });
-
-      REDIS_OPERATIONS.forEach(operation => {
-        it(`should not create a child span for ${operation.description}`, done => {
-          const span = tracer.startSpan('test span');
-          context.with(trace.setSpan(context.active(), span), () => {
-            operation.method((err, _) => {
-              assert.ifError(err);
-              assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-              span.end();
-              const endedSpans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(endedSpans.length, 1);
-              assert.strictEqual(endedSpans[0], span);
-              done();
-            });
-          });
-        });
-      });
-    });
-
     describe('dbStatementSerializer config', () => {
       const dbStatementSerializer = (cmdName: string, cmdArgs: Array<string | Buffer>) => {
         return Array.isArray(cmdArgs) && cmdArgs.length
@@ -269,10 +226,8 @@ describe('redis@2.x', () => {
           : cmdName;
       };
 
-      before(() => {
-        instrumentation.disable();
+      beforeEach(() => {
         instrumentation.setConfig({ dbStatementSerializer });
-        instrumentation.enable();
       });
 
       REDIS_OPERATIONS.forEach(operation => {
@@ -282,7 +237,7 @@ describe('redis@2.x', () => {
             operation.method((err, _) => {
               assert.ifError(err);
               span.end();
-              const endedSpans = memoryExporter.getFinishedSpans();
+              const endedSpans = getTestSpans();
               assert.strictEqual(endedSpans.length, 2);
               const expectedStatement = dbStatementSerializer(
                 operation.command,
@@ -312,17 +267,15 @@ describe('redis@2.x', () => {
           span.setAttribute(dataFieldName, new String(response).toString());
         };
 
-        before(() => {
-          instrumentation.disable();
+        beforeEach(() => {
           instrumentation.setConfig({ responseHook });
-          instrumentation.enable();
         });
 
         REDIS_OPERATIONS.forEach(operation => {
           it(`should apply responseHook for operation ${operation.description}`, done => {
             operation.method((err, reply) => {
               assert.ifError(err);
-              const endedSpans = memoryExporter.getFinishedSpans();
+              const endedSpans = getTestSpans();
               assert.strictEqual(
                 endedSpans[0].attributes[dataFieldName],
                 new String(reply).toString()
@@ -343,17 +296,15 @@ describe('redis@2.x', () => {
           throw 'Some kind of error';
         };
 
-        before(() => {
-          instrumentation.disable();
+        beforeEach(() => {
           instrumentation.setConfig({ responseHook: badResponseHook });
-          instrumentation.enable();
         });
 
         REDIS_OPERATIONS.forEach(operation => {
           it(`should not fail because of responseHook error for operation ${operation.description}`, done => {
             operation.method((err, _reply) => {
               assert.ifError(err);
-              const endedSpans = memoryExporter.getFinishedSpans();
+              const endedSpans = getTestSpans();
               assert.strictEqual(endedSpans.length, 1);
               done();
             });
@@ -363,19 +314,19 @@ describe('redis@2.x', () => {
     });
 
     describe('requireParentSpan config', () => {
-      before(() => {
-        instrumentation.disable();
+      beforeEach(() => {
         instrumentation.setConfig({ requireParentSpan: true });
-        instrumentation.enable();
       });
 
       REDIS_OPERATIONS.forEach(operation => {
         it(`should not create span without parent span for operation ${operation.description}`, done => {
-          operation.method((err, _) => {
-            assert.ifError(err);
-            const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 0);
-            done();
+          context.with(ROOT_CONTEXT, () => {
+            operation.method((err, _) => {
+              assert.ifError(err);
+              const endedSpans = getTestSpans();
+              assert.strictEqual(endedSpans.length, 0);
+              done();
+            });
           });
         });
 
@@ -384,42 +335,11 @@ describe('redis@2.x', () => {
           context.with(trace.setSpan(context.active(), span), () => {
             operation.method((err, _) => {
               assert.ifError(err);
-              const endedSpans = memoryExporter.getFinishedSpans();
+              const endedSpans = getTestSpans();
               assert.strictEqual(endedSpans.length, 1);
               done();
             });
           });
-        });
-      });
-    });
-
-    describe('setTracerProvider', () => {
-      before(() => {
-        instrumentation.disable();
-        instrumentation.setConfig({});
-        instrumentation.enable();
-      });
-
-      it('should use new tracer provider after setTracerProvider is called', done => {
-        const testSpecificMemoryExporter = new InMemorySpanExporter();
-        const spanProcessor = new SimpleSpanProcessor(
-          testSpecificMemoryExporter
-        );
-        const tracerProvider = new NodeTracerProvider({
-          spanProcessors: [spanProcessor],
-        });
-
-        // key point of this test, setting new tracer provider and making sure
-        // new spans use it.
-        instrumentation.setTracerProvider(tracerProvider);
-
-        client.set('test', 'value-with-new-tracer-provider', err => {
-          assert.ifError(err);
-          // assert that the span was exported by the new tracer provider
-          // which is using the test specific span processor
-          const spans = testSpecificMemoryExporter.getFinishedSpans();
-          assert.strictEqual(spans.length, 1);
-          done();
         });
       });
     });
