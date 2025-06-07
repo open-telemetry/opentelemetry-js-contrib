@@ -1,5 +1,7 @@
 redis:
   versions:
-    include: '>=2.6.0 <4'
+    include: '>=2.6.0 <5'
+    # "4.6.9" was a bad release that accidentally broke node v14 support.
+    exclude: "4.6.9"
     mode: latest-minors
   commands: npm run test

@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+export const redisTestConfig = {
+  host: process.env.OPENTELEMETRY_REDIS_HOST || 'localhost',
+  port: +(process.env.OPENTELEMETRY_REDIS_PORT || 63790),
+};
 
-export { RedisInstrumentation } from './instrumentation';
-export type {
-  DbStatementSerializer,
-  RedisInstrumentationConfig,
-  RedisResponseCustomAttributeFunction,
-} from './types';
+export const redisTestUrl = `redis://${redisTestConfig.host}:${redisTestConfig.port}`;
+
+export const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
+export const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
