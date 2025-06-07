@@ -68,7 +68,7 @@
     "karma-webpack": "5.0.1",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
-    "sinon": "15.1.2",
+    "sinon": "15.2.0",
     "ts-loader": "9.5.2",
     "typescript": "5.0.4",
     "webpack": "5.94.0",
