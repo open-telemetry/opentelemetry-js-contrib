@@ -23,7 +23,6 @@ import {
   Span,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   getTestSpans,
