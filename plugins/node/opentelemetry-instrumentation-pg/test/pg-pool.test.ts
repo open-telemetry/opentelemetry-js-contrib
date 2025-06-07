@@ -29,7 +29,7 @@ import {
   PgInstrumentationConfig,
   PgResponseHookInformation,
 } from '../src';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
@@ -121,7 +121,7 @@ describe('pg-pool', () => {
   }
 
   let pool: pgPool<pg.Client>;
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let instrumentation: PgInstrumentation;
   const provider = new BasicTracerProvider({
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
@@ -149,7 +149,7 @@ describe('pg-pool', () => {
 
     instrumentation = new PgInstrumentation();
 
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
 
@@ -168,7 +168,7 @@ describe('pg-pool', () => {
   });
 
   beforeEach(() => {
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
   });
 

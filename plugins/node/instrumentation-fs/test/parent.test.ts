@@ -23,7 +23,7 @@ import * as assert from 'assert';
 import type * as FSType from 'fs';
 import type { FsInstrumentationConfig } from '../src/types';
 import * as api from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new BasicTracerProvider({
@@ -49,7 +49,7 @@ describe('fs instrumentation: requireParentSpan', () => {
   };
 
   beforeEach(() => {
-    const contextManager = new AsyncHooksContextManager();
+    const contextManager = new AsyncLocalStorageContextManager();
     api.context.setGlobalContextManager(contextManager.enable());
   });
 

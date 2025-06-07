@@ -15,7 +15,7 @@
  */
 export enum AttributeNames {
   AWS_OPERATION = 'aws.operation',
-  AWS_REGION = 'aws.region',
+  CLOUD_REGION = 'cloud.region',
   AWS_SERVICE_API = 'aws.service.api',
   AWS_SERVICE_NAME = 'aws.service.name',
   AWS_SERVICE_IDENTIFIER = 'aws.service.identifier',
