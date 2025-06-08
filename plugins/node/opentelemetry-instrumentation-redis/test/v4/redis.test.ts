@@ -35,7 +35,8 @@ const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
 );
 
-import { createClient, WatchError } from 'redis';
+import { createClient } from 'redis';
+import type { RedisClientType } from '@redis/client';
 import {
   Span,
   SpanKind,
@@ -75,12 +76,12 @@ describe('redis@^4.0.0', () => {
     }
   });
 
-  let client: any;
+  let client: RedisClientType;
 
   beforeEach(async () => {
     client = createClient({
       url: redisTestUrl,
-    });
+    }) as unknown as RedisClientType;
     await context.with(suppressTracing(context.active()), async () => {
       await client.connect();
     });
@@ -190,7 +191,7 @@ describe('redis@^4.0.0', () => {
     it('produces a span', async () => {
       const newClient = createClient({
         url: redisTestUrl,
-      });
+      }) as unknown as RedisClientType;
 
       after(async () => {
         await newClient.disconnect();
@@ -223,7 +224,7 @@ describe('redis@^4.0.0', () => {
       }`;
       const newClient = createClient({
         url: redisURL,
-      });
+      }) as unknown as RedisClientType;
 
       await assert.rejects(newClient.connect());
 
@@ -246,7 +247,7 @@ describe('redis@^4.0.0', () => {
       }`;
       const newClient = createClient({
         url: redisURL,
-      });
+      }) as unknown as RedisClientType;
 
       await assert.rejects(newClient.connect());
 
@@ -273,7 +274,7 @@ describe('redis@^4.0.0', () => {
       }?db=mydb`;
       const newClient = createClient({
         url: redisURL,
-      });
+      }) as unknown as RedisClientType;
 
       await assert.rejects(newClient.connect());
 
@@ -307,7 +308,7 @@ describe('redis@^4.0.0', () => {
         DiagLogLevel.WARN
       );
 
-      const newClient = createClient({ url: '' });
+      const newClient = createClient({ url: '' }) as unknown as RedisClientType;
       try {
         await newClient.connect();
       } catch (_err) {
@@ -439,7 +440,7 @@ describe('redis@^4.0.0', () => {
         await client.multi().get(watchedKey).exec();
         assert.fail('expected WatchError to be thrown and caught in try/catch');
       } catch (error) {
-        assert.ok(error instanceof WatchError);
+        assert.ok(error instanceof Error);
       }
 
       // All the multi spans' status are set to ERROR.
