@@ -9,7 +9,7 @@
     "test": "npm run test-v2-v3 && npm run test-v4",
     "test-v2-v3": "tav redis 3.1.2 npm run test-v2-v3-run",
     "test-v4": "tav redis 4.7.1 npm run test-v4-run",
-    "test-v2-v3-run": "nyc mocha --no-clean --require '@opentelemetry/contrib-test-utils' 'test/v2-3/*.test.ts'",
+    "test-v2-v3-run": "nyc mocha --no-clean --require '@opentelemetry/contrib-test-utils' 'test/v2-v3/*.test.ts'",
     "test-v4-run": "nyc mocha --no-clean --require '@opentelemetry/contrib-test-utils' 'test/v4/*.test.ts'",
     "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",

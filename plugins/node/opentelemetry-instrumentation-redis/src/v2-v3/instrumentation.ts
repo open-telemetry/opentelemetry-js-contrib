@@ -40,7 +40,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 
-export class RedisInstrumentationV2_3 extends InstrumentationBase<RedisInstrumentationConfig> {
+export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
 
   constructor(config: RedisInstrumentationConfig = {}) {
@@ -128,7 +128,7 @@ export class RedisInstrumentationV2_3 extends InstrumentationBase<RedisInstrumen
         const dbStatementSerializer =
           config?.dbStatementSerializer || defaultDbStatementSerializer;
         const span = instrumentation.tracer.startSpan(
-          `${RedisInstrumentationV2_3.COMPONENT}-${cmd.command}`,
+          `${RedisInstrumentationV2_V3.COMPONENT}-${cmd.command}`,
           {
             kind: SpanKind.CLIENT,
             attributes: {

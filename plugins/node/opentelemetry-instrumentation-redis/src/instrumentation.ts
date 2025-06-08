@@ -17,7 +17,7 @@ import { InstrumentationBase } from '@opentelemetry/instrumentation';
 import { RedisInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { RedisInstrumentationV2_3 } from './v2-3/instrumentation';
+import { RedisInstrumentationV2_V3 } from './v2-v3/instrumentation';
 import { TracerProvider } from '@opentelemetry/api';
 import { RedisInstrumentationV4 } from './v4/instrumentation';
 
@@ -27,7 +27,7 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
 
 // Wrapper RedisInstrumentation that address all supported versions
 export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentationConfig> {
-  private instrumentationV2_3: RedisInstrumentationV2_3;
+  private instrumentationV2_V3: RedisInstrumentationV2_V3;
   private instrumentationV4: RedisInstrumentationV4;
 
   // this is used to bypass a flaw in the base class constructor, which is calling
@@ -38,7 +38,7 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
     const resolvedConfig = { ...DEFAULT_CONFIG, ...config };
     super(PACKAGE_NAME, PACKAGE_VERSION, resolvedConfig);
 
-    this.instrumentationV2_3 = new RedisInstrumentationV2_3(this.getConfig());
+    this.instrumentationV2_V3 = new RedisInstrumentationV2_V3(this.getConfig());
     this.instrumentationV4 = new RedisInstrumentationV4(this.getConfig());
     this.initialized = true;
   }
@@ -50,7 +50,7 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
       return;
     }
 
-    this.instrumentationV2_3.setConfig(newConfig);
+    this.instrumentationV2_V3.setConfig(newConfig);
     this.instrumentationV4.setConfig(newConfig);
   }
 
@@ -61,7 +61,7 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
     if (!this.initialized) {
       return;
     }
-    this.instrumentationV2_3.setTracerProvider(tracerProvider);
+    this.instrumentationV2_V3.setTracerProvider(tracerProvider);
     this.instrumentationV4.setTracerProvider(tracerProvider);
   }
 
@@ -70,7 +70,7 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
     if (!this.initialized) {
       return;
     }
-    this.instrumentationV2_3.enable();
+    this.instrumentationV2_V3.enable();
     this.instrumentationV4.enable();
   }
 
@@ -79,7 +79,7 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
     if (!this.initialized) {
       return;
     }
-    this.instrumentationV2_3.disable();
+    this.instrumentationV2_V3.disable();
     this.instrumentationV4.disable();
   }
 }
