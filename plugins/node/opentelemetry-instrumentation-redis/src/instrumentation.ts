@@ -13,211 +13,73 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import {
-  isWrapped,
-  InstrumentationBase,
-  InstrumentationNodeModuleDefinition,
-  safeExecuteInTheMiddle,
-} from '@opentelemetry/instrumentation';
-import {
-  endSpan,
-  getTracedCreateClient,
-  getTracedCreateStreamTrace,
-} from './utils';
-import { RedisCommand, RedisInstrumentationConfig } from './types';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
+import { RedisInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { RedisPluginClientTypes } from './internal-types';
-import { SpanKind, context, trace } from '@opentelemetry/api';
-import {
-  DBSYSTEMVALUES_REDIS,
-  SEMATTRS_DB_CONNECTION_STRING,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
-import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
+import { RedisInstrumentationV2_V3 } from './v2-v3/instrumentation';
+import { TracerProvider } from '@opentelemetry/api';
+import { RedisInstrumentationV4 } from './v4/instrumentation';
 
 const DEFAULT_CONFIG: RedisInstrumentationConfig = {
   requireParentSpan: false,
 };
 
+// Wrapper RedisInstrumentation that address all supported versions
 export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentationConfig> {
-  static readonly COMPONENT = 'redis';
+  private instrumentationV2_V3: RedisInstrumentationV2_V3;
+  private instrumentationV4: RedisInstrumentationV4;
+
+  // this is used to bypass a flaw in the base class constructor, which is calling
+  // member functions before the constructor has a chance to fully initialize the member variables.
+  private initialized = false;
 
   constructor(config: RedisInstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+    const resolvedConfig = { ...DEFAULT_CONFIG, ...config };
+    super(PACKAGE_NAME, PACKAGE_VERSION, resolvedConfig);
+
+    this.instrumentationV2_V3 = new RedisInstrumentationV2_V3(this.getConfig());
+    this.instrumentationV4 = new RedisInstrumentationV4(this.getConfig());
+    this.initialized = true;
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
-    super.setConfig({ ...DEFAULT_CONFIG, ...config });
+    const newConfig = { ...DEFAULT_CONFIG, ...config };
+    super.setConfig(newConfig);
+    if (!this.initialized) {
+      return;
+    }
+
+    this.instrumentationV2_V3.setConfig(newConfig);
+    this.instrumentationV4.setConfig(newConfig);
   }
 
-  protected init() {
-    return [
-      new InstrumentationNodeModuleDefinition(
-        'redis',
-        ['>=2.6.0 <4'],
-        moduleExports => {
-          if (
-            isWrapped(
-              moduleExports.RedisClient.prototype['internal_send_command']
-            )
-          ) {
-            this._unwrap(
-              moduleExports.RedisClient.prototype,
-              'internal_send_command'
-            );
-          }
-          this._wrap(
-            moduleExports.RedisClient.prototype,
-            'internal_send_command',
-            this._getPatchInternalSendCommand()
-          );
+  override init() {}
 
-          if (isWrapped(moduleExports.RedisClient.prototype['create_stream'])) {
-            this._unwrap(moduleExports.RedisClient.prototype, 'create_stream');
-          }
-          this._wrap(
-            moduleExports.RedisClient.prototype,
-            'create_stream',
-            this._getPatchCreateStream()
-          );
-
-          if (isWrapped(moduleExports.createClient)) {
-            this._unwrap(moduleExports, 'createClient');
-          }
-          this._wrap(
-            moduleExports,
-            'createClient',
-            this._getPatchCreateClient()
-          );
-          return moduleExports;
-        },
-        moduleExports => {
-          if (moduleExports === undefined) return;
-          this._unwrap(
-            moduleExports.RedisClient.prototype,
-            'internal_send_command'
-          );
-          this._unwrap(moduleExports.RedisClient.prototype, 'create_stream');
-          this._unwrap(moduleExports, 'createClient');
-        }
-      ),
-    ];
+  override setTracerProvider(tracerProvider: TracerProvider) {
+    super.setTracerProvider(tracerProvider);
+    if (!this.initialized) {
+      return;
+    }
+    this.instrumentationV2_V3.setTracerProvider(tracerProvider);
+    this.instrumentationV4.setTracerProvider(tracerProvider);
   }
 
-  /**
-   * Patch internal_send_command(...) to trace requests
-   */
-  private _getPatchInternalSendCommand() {
-    const instrumentation = this;
-    return function internal_send_command(original: Function) {
-      return function internal_send_command_trace(
-        this: RedisPluginClientTypes,
-        cmd?: RedisCommand
-      ) {
-        // Versions of redis (2.4+) use a single options object
-        // instead of named arguments
-        if (arguments.length !== 1 || typeof cmd !== 'object') {
-          // We don't know how to trace this call, so don't start/stop a span
-          return original.apply(this, arguments);
-        }
-
-        const config = instrumentation.getConfig();
-
-        const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
-        if (config.requireParentSpan === true && hasNoParentSpan) {
-          return original.apply(this, arguments);
-        }
-
-        const dbStatementSerializer =
-          config?.dbStatementSerializer || defaultDbStatementSerializer;
-        const span = instrumentation.tracer.startSpan(
-          `${RedisInstrumentation.COMPONENT}-${cmd.command}`,
-          {
-            kind: SpanKind.CLIENT,
-            attributes: {
-              [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
-              [SEMATTRS_DB_STATEMENT]: dbStatementSerializer(
-                cmd.command,
-                cmd.args
-              ),
-            },
-          }
-        );
-
-        // Set attributes for not explicitly typed RedisPluginClientTypes
-        if (this.connection_options) {
-          span.setAttributes({
-            [SEMATTRS_NET_PEER_NAME]: this.connection_options.host,
-            [SEMATTRS_NET_PEER_PORT]: this.connection_options.port,
-          });
-        }
-        if (this.address) {
-          span.setAttribute(
-            SEMATTRS_DB_CONNECTION_STRING,
-            `redis://${this.address}`
-          );
-        }
-
-        const originalCallback = arguments[0].callback;
-        if (originalCallback) {
-          const originalContext = context.active();
-          (arguments[0] as RedisCommand).callback = function callback<T>(
-            this: unknown,
-            err: Error | null,
-            reply: T
-          ) {
-            if (config?.responseHook) {
-              const responseHook = config.responseHook;
-              safeExecuteInTheMiddle(
-                () => {
-                  responseHook(span, cmd.command, cmd.args, reply);
-                },
-                err => {
-                  if (err) {
-                    instrumentation._diag.error(
-                      'Error executing responseHook',
-                      err
-                    );
-                  }
-                },
-                true
-              );
-            }
-
-            endSpan(span, err);
-            return context.with(
-              originalContext,
-              originalCallback,
-              this,
-              ...arguments
-            );
-          };
-        }
-        try {
-          // Span will be ended in callback
-          return original.apply(this, arguments);
-        } catch (rethrow: any) {
-          endSpan(span, rethrow);
-          throw rethrow; // rethrow after ending span
-        }
-      };
-    };
+  override enable() {
+    super.enable();
+    if (!this.initialized) {
+      return;
+    }
+    this.instrumentationV2_V3.enable();
+    this.instrumentationV4.enable();
   }
 
-  private _getPatchCreateClient() {
-    return function createClient(original: Function) {
-      return getTracedCreateClient(original);
-    };
-  }
-
-  private _getPatchCreateStream() {
-    return function createReadStream(original: Function) {
-      return getTracedCreateStreamTrace(original);
-    };
+  override disable() {
+    super.disable();
+    if (!this.initialized) {
+      return;
+    }
+    this.instrumentationV2_V3.disable();
+    this.instrumentationV4.disable();
   }
 }
