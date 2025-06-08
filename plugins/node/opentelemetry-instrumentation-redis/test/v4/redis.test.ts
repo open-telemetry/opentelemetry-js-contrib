@@ -35,7 +35,7 @@ const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
 );
 
-import { createClient, WatchError } from 'redis-v4';
+import { createClient, WatchError } from 'redis';
 import {
   Span,
   SpanKind,
