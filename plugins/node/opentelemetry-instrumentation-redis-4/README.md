@@ -1,5 +1,7 @@
 # OpenTelemetry redis Instrumentation for Node.js
 
+> ⚠️ **DEPRECATED**: The support for `redis@4` instrumentation is now part of `@opentelemetry/instrumentation-redis`. please use it instead.
+
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
