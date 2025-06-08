@@ -15,6 +15,7 @@
  */
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 import { RedisInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { RedisInstrumentationV2_3 } from './v2-3/instrumentation';
 import { TracerProvider } from '@opentelemetry/api';
