@@ -255,7 +255,10 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
         const span = plugin.tracer.startSpan(SpanNames.CONNECT, {
           kind: SpanKind.CLIENT,
-          attributes: utils.getSemanticAttributesFromConnection(this, plugin._semconvStability),
+          attributes: utils.getSemanticAttributesFromConnection(
+            this,
+            plugin._semconvStability
+          ),
         });
 
         if (callback) {
@@ -280,7 +283,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
   private recordOperationDuration(attributes: Attributes, startTime: HrTime) {
     const metricsAttributes: Attributes = {};
-    let keysToCopy = [
+    const keysToCopy = [
       ATTR_DB_NAMESPACE,
       ATTR_ERROR_TYPE,
       ATTR_SERVER_PORT,
@@ -562,7 +565,10 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         // setup span
         const span = plugin.tracer.startSpan(SpanNames.POOL_CONNECT, {
           kind: SpanKind.CLIENT,
-          attributes: utils.getSemanticAttributesFromPool(this.options, plugin._semconvStability),
+          attributes: utils.getSemanticAttributesFromPool(
+            this.options,
+            plugin._semconvStability
+          ),
         });
 
         plugin._setPoolConnectEventListeners(this);

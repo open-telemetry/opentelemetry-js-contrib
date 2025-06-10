@@ -58,7 +58,10 @@ import {
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
-import { safeExecuteInTheMiddle, SemconvStability, semconvStabilityFromStr } from '@opentelemetry/instrumentation';
+import {
+  safeExecuteInTheMiddle,
+  SemconvStability,
+} from '@opentelemetry/instrumentation';
 import { SpanNames } from './enums/SpanNames';
 
 /**
@@ -152,7 +155,7 @@ function getPort(port: number | undefined): number | undefined {
 
 export function getSemanticAttributesFromConnection(
   params: PgParsedConnectionParams,
-  semconvStability: SemconvStability,
+  semconvStability: SemconvStability
 ) {
   let attributes: Attributes = {};
 
@@ -165,7 +168,7 @@ export function getSemanticAttributesFromConnection(
       [SEMATTRS_DB_USER]: params.user,
       [SEMATTRS_NET_PEER_NAME]: params.host, // required
       [SEMATTRS_NET_PEER_PORT]: getPort(params.port),
-    }
+    };
   }
   if (semconvStability & SemconvStability.STABLE) {
     attributes = {
@@ -174,7 +177,7 @@ export function getSemanticAttributesFromConnection(
       [ATTR_DB_NAMESPACE]: params.namespace,
       [ATTR_NETWORK_PEER_ADDRESS]: params.host,
       [ATTR_NETWORK_PEER_PORT]: getPort(params.port),
-    }
+    };
   }
 
   return attributes;
@@ -182,7 +185,7 @@ export function getSemanticAttributesFromConnection(
 
 export function getSemanticAttributesFromPool(
   params: PgPoolOptionsParams,
-  semconvStability: SemconvStability,
+  semconvStability: SemconvStability
 ) {
   let url: URL | undefined;
   try {
@@ -206,7 +209,7 @@ export function getSemanticAttributesFromPool(
       [SEMATTRS_NET_PEER_NAME]: url?.hostname ?? params.host,
       [SEMATTRS_NET_PEER_PORT]: Number(url?.port) || getPort(params.port),
       [SEMATTRS_DB_USER]: url?.username ?? params.user,
-    }
+    };
   }
   if (semconvStability & SemconvStability.STABLE) {
     attributes = {
@@ -215,7 +218,7 @@ export function getSemanticAttributesFromPool(
       [ATTR_DB_NAMESPACE]: params.namespace,
       [ATTR_NETWORK_PEER_ADDRESS]: url?.hostname ?? params.host,
       [ATTR_NETWORK_PEER_PORT]: Number(url?.port) || getPort(params.port),
-    }
+    };
   }
 
   return attributes;
@@ -246,7 +249,10 @@ export function handleConfigQuery(
   const spanName = getQuerySpanName(dbName, queryConfig);
   const span = tracer.startSpan(spanName, {
     kind: SpanKind.CLIENT,
-    attributes: getSemanticAttributesFromConnection(connectionParameters, semconvStability),
+    attributes: getSemanticAttributesFromConnection(
+      connectionParameters,
+      semconvStability
+    ),
   });
 
   if (!queryConfig) {
