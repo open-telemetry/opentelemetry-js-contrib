@@ -96,7 +96,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   constructor(config: PgInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
     this._semconvStability = semconvStabilityFromStr(
-      'databases',
+      'database',
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN
     );
   }
