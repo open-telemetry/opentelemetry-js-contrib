@@ -28,6 +28,8 @@ import {
 import { AttributeNames } from './enums/AttributeNames';
 import {
   ATTR_ERROR_TYPE,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_DB_NAMESPACE,
   SEMATTRS_DB_SYSTEM,
   SEMATTRS_DB_NAME,
   SEMATTRS_DB_CONNECTION_STRING,
@@ -36,6 +38,9 @@ import {
   SEMATTRS_DB_USER,
   SEMATTRS_DB_STATEMENT,
   DBSYSTEMVALUES_POSTGRESQL,
+  ATTR_NETWORK_PEER_ADDRESS,
+  ATTR_NETWORK_PEER_PORT,
+  ATTR_DB_QUERY_TEXT,
 } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
@@ -53,7 +58,7 @@ import {
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
-import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
+import { safeExecuteInTheMiddle, SemconvStability, semconvStabilityFromStr } from '@opentelemetry/instrumentation';
 import { SpanNames } from './enums/SpanNames';
 
 /**
@@ -146,19 +151,39 @@ function getPort(port: number | undefined): number | undefined {
 }
 
 export function getSemanticAttributesFromConnection(
-  params: PgParsedConnectionParams
+  params: PgParsedConnectionParams,
+  semconvStability: SemconvStability,
 ) {
-  return {
-    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
-    [SEMATTRS_DB_NAME]: params.database, // required
-    [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params), // required
-    [SEMATTRS_NET_PEER_NAME]: params.host, // required
-    [SEMATTRS_NET_PEER_PORT]: getPort(params.port),
-    [SEMATTRS_DB_USER]: params.user,
-  };
+  let attributes: Attributes = {};
+
+  if (semconvStability & SemconvStability.OLD) {
+    attributes = {
+      ...attributes,
+      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+      [SEMATTRS_DB_NAME]: params.database,
+      [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params),
+      [SEMATTRS_DB_USER]: params.user,
+      [SEMATTRS_NET_PEER_NAME]: params.host, // required
+      [SEMATTRS_NET_PEER_PORT]: getPort(params.port),
+    }
+  }
+  if (semconvStability & SemconvStability.STABLE) {
+    attributes = {
+      ...attributes,
+      [ATTR_DB_SYSTEM_NAME]: DBSYSTEMVALUES_POSTGRESQL,
+      [ATTR_DB_NAMESPACE]: params.namespace,
+      [ATTR_NETWORK_PEER_ADDRESS]: params.host,
+      [ATTR_NETWORK_PEER_PORT]: getPort(params.port),
+    }
+  }
+
+  return attributes;
 }
 
-export function getSemanticAttributesFromPool(params: PgPoolOptionsParams) {
+export function getSemanticAttributesFromPool(
+  params: PgPoolOptionsParams,
+  semconvStability: SemconvStability,
+) {
   let url: URL | undefined;
   try {
     url = params.connectionString
@@ -167,17 +192,33 @@ export function getSemanticAttributesFromPool(params: PgPoolOptionsParams) {
   } catch (e) {
     url = undefined;
   }
-
-  return {
-    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
-    [SEMATTRS_DB_NAME]: url?.pathname.slice(1) ?? params.database, // required
-    [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params), // required
-    [SEMATTRS_NET_PEER_NAME]: url?.hostname ?? params.host, // required
-    [SEMATTRS_NET_PEER_PORT]: Number(url?.port) || getPort(params.port),
-    [SEMATTRS_DB_USER]: url?.username ?? params.user,
+  let attributes: Attributes = {
     [AttributeNames.IDLE_TIMEOUT_MILLIS]: params.idleTimeoutMillis,
     [AttributeNames.MAX_CLIENT]: params.maxClient,
   };
+
+  if (semconvStability & SemconvStability.OLD) {
+    attributes = {
+      ...attributes,
+      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+      [SEMATTRS_DB_NAME]: url?.pathname.slice(1) ?? params.database,
+      [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params),
+      [SEMATTRS_NET_PEER_NAME]: url?.hostname ?? params.host,
+      [SEMATTRS_NET_PEER_PORT]: Number(url?.port) || getPort(params.port),
+      [SEMATTRS_DB_USER]: url?.username ?? params.user,
+    }
+  }
+  if (semconvStability & SemconvStability.STABLE) {
+    attributes = {
+      ...attributes,
+      [ATTR_DB_SYSTEM_NAME]: DBSYSTEMVALUES_POSTGRESQL,
+      [ATTR_DB_NAMESPACE]: params.namespace,
+      [ATTR_NETWORK_PEER_ADDRESS]: url?.hostname ?? params.host,
+      [ATTR_NETWORK_PEER_PORT]: Number(url?.port) || getPort(params.port),
+    }
+  }
+
+  return attributes;
 }
 
 export function shouldSkipInstrumentation(
@@ -195,6 +236,7 @@ export function handleConfigQuery(
   this: PgClientExtended,
   tracer: Tracer,
   instrumentationConfig: PgInstrumentationConfig,
+  semconvStability: SemconvStability,
   queryConfig?: { text: string; values?: unknown; name?: unknown }
 ) {
   // Create child span.
@@ -204,7 +246,7 @@ export function handleConfigQuery(
   const spanName = getQuerySpanName(dbName, queryConfig);
   const span = tracer.startSpan(spanName, {
     kind: SpanKind.CLIENT,
-    attributes: getSemanticAttributesFromConnection(connectionParameters),
+    attributes: getSemanticAttributesFromConnection(connectionParameters, semconvStability),
   });
 
   if (!queryConfig) {
@@ -213,7 +255,12 @@ export function handleConfigQuery(
 
   // Set attributes
   if (queryConfig.text) {
-    span.setAttribute(SEMATTRS_DB_STATEMENT, queryConfig.text);
+    if (semconvStability & SemconvStability.OLD) {
+      span.setAttribute(SEMATTRS_DB_STATEMENT, queryConfig.text);
+    }
+    if (semconvStability & SemconvStability.STABLE) {
+      span.setAttribute(ATTR_DB_QUERY_TEXT, queryConfig.text);
+    }
   }
 
   if (

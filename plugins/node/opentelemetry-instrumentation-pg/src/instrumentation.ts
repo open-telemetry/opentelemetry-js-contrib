@@ -19,6 +19,8 @@ import {
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
   InstrumentationNodeModuleFile,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   context,
@@ -59,6 +61,7 @@ import {
   ATTR_ERROR_TYPE,
   ATTR_SERVER_PORT,
   ATTR_SERVER_ADDRESS,
+  ATTR_DB_SYSTEM_NAME,
 } from '@opentelemetry/semantic-conventions';
 import {
   METRIC_DB_CLIENT_CONNECTION_COUNT,
@@ -88,9 +91,14 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     idle: 0,
     pending: 0,
   };
+  private _semconvStability: SemconvStability = SemconvStability.OLD;
 
   constructor(config: PgInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._semconvStability = semconvStabilityFromStr(
+      'databases',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   override _updateMetricInstruments() {
@@ -247,7 +255,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
         const span = plugin.tracer.startSpan(SpanNames.CONNECT, {
           kind: SpanKind.CLIENT,
-          attributes: utils.getSemanticAttributesFromConnection(this),
+          attributes: utils.getSemanticAttributesFromConnection(this, plugin._semconvStability),
         });
 
         if (callback) {
@@ -272,14 +280,19 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
   private recordOperationDuration(attributes: Attributes, startTime: HrTime) {
     const metricsAttributes: Attributes = {};
-    const keysToCopy = [
-      SEMATTRS_DB_SYSTEM,
+    let keysToCopy = [
       ATTR_DB_NAMESPACE,
       ATTR_ERROR_TYPE,
       ATTR_SERVER_PORT,
       ATTR_SERVER_ADDRESS,
       ATTR_DB_OPERATION_NAME,
     ];
+    if (this._semconvStability & SemconvStability.OLD) {
+      keysToCopy.push(SEMATTRS_DB_SYSTEM);
+    }
+    if (this._semconvStability & SemconvStability.STABLE) {
+      keysToCopy.push(ATTR_DB_SYSTEM_NAME);
+    }
 
     keysToCopy.forEach(key => {
       if (key in attributes) {
@@ -348,6 +361,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           this,
           plugin.tracer,
           instrumentationConfig,
+          plugin._semconvStability,
           queryConfig
         );
 
@@ -548,7 +562,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         // setup span
         const span = plugin.tracer.startSpan(SpanNames.POOL_CONNECT, {
           kind: SpanKind.CLIENT,
-          attributes: utils.getSemanticAttributesFromPool(this.options),
+          attributes: utils.getSemanticAttributesFromPool(this.options, plugin._semconvStability),
         });
 
         plugin._setPoolConnectEventListeners(this);
