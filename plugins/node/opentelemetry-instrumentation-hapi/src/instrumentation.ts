@@ -21,6 +21,8 @@ import {
   InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   isWrapped,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 
 import type * as Hapi from '@hapi/hapi';
@@ -50,8 +52,14 @@ import {
 
 /** Hapi instrumentation for OpenTelemetry */
 export class HapiInstrumentation extends InstrumentationBase {
+  private _semconvStability: SemconvStability;
+
   constructor(config: InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._semconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   protected init() {
@@ -387,7 +395,11 @@ export class HapiInstrumentation extends InstrumentationBase {
         if (rpcMetadata?.type === RPCType.HTTP) {
           rpcMetadata.route = route.path;
         }
-        const metadata = getRouteMetadata(route, pluginName);
+        const metadata = getRouteMetadata(
+          route,
+          instrumentation._semconvStability,
+          pluginName
+        );
         const span = instrumentation.tracer.startSpan(metadata.name, {
           attributes: metadata.attributes,
         });
