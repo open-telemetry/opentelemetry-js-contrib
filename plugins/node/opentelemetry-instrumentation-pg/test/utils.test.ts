@@ -31,7 +31,7 @@ import { PgInstrumentationConfig } from '../src';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { PgClientExtended, PgPoolOptionsParams } from '../src/internal-types';
 import * as utils from '../src/utils';
-import { SEMATTRS_NET_PEER_PORT } from '@opentelemetry/semantic-conventions';
+import { ATTR_NETWORK_PEER_PORT } from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -206,7 +206,7 @@ describe('utils.ts', () => {
             port: Infinity,
           },
           SemconvStability.STABLE
-        )[SEMATTRS_NET_PEER_PORT],
+        )[ATTR_NETWORK_PEER_PORT],
         undefined
       );
       assert.strictEqual(
@@ -215,7 +215,7 @@ describe('utils.ts', () => {
             port: -Infinity,
           },
           SemconvStability.STABLE
-        )[SEMATTRS_NET_PEER_PORT],
+        )[ATTR_NETWORK_PEER_PORT],
         undefined
       );
       assert.strictEqual(
@@ -224,7 +224,7 @@ describe('utils.ts', () => {
             port: NaN,
           },
           SemconvStability.STABLE
-        )[SEMATTRS_NET_PEER_PORT],
+        )[ATTR_NETWORK_PEER_PORT],
         undefined
       );
       assert.strictEqual(
@@ -233,7 +233,7 @@ describe('utils.ts', () => {
             port: 1.234,
           },
           SemconvStability.STABLE
-        )[SEMATTRS_NET_PEER_PORT],
+        )[ATTR_NETWORK_PEER_PORT],
         undefined
       );
     });
@@ -245,7 +245,7 @@ describe('utils.ts', () => {
             port: 1234,
           },
           SemconvStability.STABLE
-        )[SEMATTRS_NET_PEER_PORT],
+        )[ATTR_NETWORK_PEER_PORT],
         1234
       );
       assert.strictEqual(
@@ -254,7 +254,7 @@ describe('utils.ts', () => {
             port: Number.MAX_VALUE,
           },
           SemconvStability.STABLE
-        )[SEMATTRS_NET_PEER_PORT],
+        )[ATTR_NETWORK_PEER_PORT],
         Number.MAX_VALUE
       );
     });
