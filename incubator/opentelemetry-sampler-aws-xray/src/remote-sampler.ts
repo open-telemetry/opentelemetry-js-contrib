@@ -125,6 +125,7 @@ export class _AWSXRayRemoteSampler implements Sampler {
       ? samplerConfig.endpoint
       : DEFAULT_AWS_PROXY_ENDPOINT;
     this.fallbackSampler = new FallbackSampler();
+    // TODO: Use clientId for retrieving Sampling Targets
     this.clientId = _AWSXRayRemoteSampler.generateClientId();
     this.ruleCache = new RuleCache(samplerConfig.resource);
 
@@ -161,16 +162,23 @@ export class _AWSXRayRemoteSampler implements Sampler {
       );
     }
 
-    const matchedRule: SamplingRuleApplier | undefined =
-      this.ruleCache.getMatchedRule(attributes);
-    if (matchedRule) {
-      return matchedRule.shouldSample(
-        context,
-        traceId,
-        spanName,
-        spanKind,
-        attributes,
-        links
+    try {
+      const matchedRule: SamplingRuleApplier | undefined =
+        this.ruleCache.getMatchedRule(attributes);
+      if (matchedRule) {
+        return matchedRule.shouldSample(
+          context,
+          traceId,
+          spanName,
+          spanKind,
+          attributes,
+          links
+        );
+      }
+    } catch (e: unknown) {
+      this.samplerDiag.debug(
+        'Unexpected error occurred when trying to match or applying a sampling rule',
+        e
       );
     }
 
