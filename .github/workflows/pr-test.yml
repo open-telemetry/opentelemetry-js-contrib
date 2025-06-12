@@ -234,12 +234,13 @@ jobs:
       - name: Check coverage
         run: find . | grep coverage-final
 
-      # - name: Report Coverage
-      #   uses: codecov/codecov-action@v5
-      #   env:
-      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      #   with:
-      #     verbose: true
+      - name: Report Coverage
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          verbose: true
+          dry_run: true
 
   # browser-test:
   #   needs: build-and-cache
