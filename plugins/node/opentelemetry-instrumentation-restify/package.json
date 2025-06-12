@@ -14,10 +14,11 @@
     "lint:readme": "node ../../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "yarn test -- --watch-extensions ts --watch",
-    "test": "nyc mocha 'test/**/*.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
   },
   "keywords": [
     "instrumentation",
