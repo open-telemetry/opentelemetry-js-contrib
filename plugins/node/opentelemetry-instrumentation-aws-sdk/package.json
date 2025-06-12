@@ -35,10 +35,11 @@
     "lint:readme": "node ../../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"

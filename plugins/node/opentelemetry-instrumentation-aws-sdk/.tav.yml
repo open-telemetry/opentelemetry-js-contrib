@@ -12,7 +12,7 @@
         exclude: ">=3.363.0 <=3.377.0"
         mode: "max-7"
       commands:
-        - mocha --require '@opentelemetry/contrib-test-utils' test/bedrock-runtime.test.ts
+        - nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' test/bedrock-runtime.test.ts
 
 "@aws-sdk/client-s3":
   env:
@@ -25,8 +25,8 @@
         exclude: "3.529.0 || >=3.363.0 <=3.377.0"
         mode: "max-7"
       commands:
-        - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-s3.test.ts
-        - mocha --require '@opentelemetry/contrib-test-utils' test/s3.test.ts
+        - nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-s3.test.ts
+        - nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' test/s3.test.ts
 
 "@aws-sdk/client-sqs":
   env:
@@ -38,4 +38,4 @@
         exclude: ">=3.363.0 <=3.377.0"
         mode: "max-7"
       commands:
-        - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-sqs.test.ts
+        - nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-sqs.test.ts
