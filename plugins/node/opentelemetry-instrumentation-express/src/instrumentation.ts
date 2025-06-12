@@ -41,7 +41,7 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import {
   ExpressLayer,
   ExpressRouter,
@@ -195,7 +195,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
           .replace(/\/{2,}/g, '/');
 
         const attributes: Attributes = {
-          [SEMATTRS_HTTP_ROUTE]: route.length > 0 ? route : '/',
+          [ATTR_HTTP_ROUTE]: route.length > 0 ? route : '/',
         };
         const metadata = getLayerMetadata(route, layer, layerPath);
         const type = metadata.attributes[

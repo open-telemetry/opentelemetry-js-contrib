@@ -16,7 +16,7 @@
 
 import { SpanStatusCode, context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -26,7 +26,7 @@ import * as semver from 'semver';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
 import { createServer, httpRequest, serverWithMiddleware } from './utils';
-import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = new ExpressInstrumentation();
@@ -47,7 +47,7 @@ describe('ExpressInstrumentation', () => {
     spanProcessors: [spanProcessor],
   });
   const tracer = provider.getTracer('default');
-  const contextManager = new AsyncHooksContextManager().enable();
+  const contextManager = new AsyncLocalStorageContextManager().enable();
 
   before(() => {
     instrumentation.setTracerProvider(provider);
@@ -119,7 +119,7 @@ describe('ExpressInstrumentation', () => {
             .find(span => span.name.includes('request handler'));
           assert.notStrictEqual(requestHandlerSpan, undefined);
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/toto/:id'
           );
           assert.strictEqual(
@@ -486,7 +486,7 @@ describe('ExpressInstrumentation', () => {
             .getFinishedSpans()
             .find(span => span.name.includes('request handler'));
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/double-slashes/:id'
           );
           assert.strictEqual(rpcMetadata?.route, '/double-slashes/:id');

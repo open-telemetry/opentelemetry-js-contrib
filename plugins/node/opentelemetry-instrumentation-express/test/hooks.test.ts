@@ -16,7 +16,7 @@
 
 import { context, trace, Span } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -27,7 +27,7 @@ import * as sinon from 'sinon';
 import { ExpressInstrumentation } from '../src';
 import { ExpressRequestInfo, SpanNameHook } from '../src/types';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
-import { SEMATTRS_HTTP_METHOD } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_REQUEST_METHOD } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
@@ -43,7 +43,7 @@ describe('ExpressInstrumentation hooks', () => {
     spanProcessors: [spanProcessor],
   });
   const tracer = provider.getTracer('default');
-  const contextManager = new AsyncHooksContextManager().enable();
+  const contextManager = new AsyncLocalStorageContextManager().enable();
 
   before(() => {
     instrumentation.setTracerProvider(provider);
@@ -179,7 +179,7 @@ describe('ExpressInstrumentation hooks', () => {
 
     it('should call requestHook when set in config', async () => {
       const requestHook = sinon.spy((span: Span, info: ExpressRequestInfo) => {
-        span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
+        span.setAttribute(ATTR_HTTP_REQUEST_METHOD, info.request.method);
 
         if (info.layerType) {
           span.setAttribute('express.layer_type', info.layerType);
@@ -204,7 +204,7 @@ describe('ExpressInstrumentation hooks', () => {
           assert.strictEqual(spans.length, 2);
           sinon.assert.calledOnce(requestHook);
           assert.strictEqual(
-            requestHandlerSpan?.attributes['http.method'],
+            requestHandlerSpan?.attributes['http.request.method'],
             'GET'
           );
           assert.strictEqual(

@@ -21,10 +21,7 @@ import {
   DetectedResource,
   DetectedResourceAttributes,
 } from '@opentelemetry/resources';
-import {
-  SEMRESATTRS_PROCESS_PID,
-  SEMRESATTRS_SERVICE_INSTANCE_ID,
-} from '@opentelemetry/semantic-conventions';
+import { ATTR_PROCESS_PID, ATTR_SERVICE_INSTANCE_ID } from '../semconv';
 import * as http from 'http';
 
 class InstanaAgentDetector implements ResourceDetector {
@@ -36,10 +33,7 @@ class InstanaAgentDetector implements ResourceDetector {
       this._gatherData()
     );
 
-    const attrNames = [
-      SEMRESATTRS_PROCESS_PID,
-      SEMRESATTRS_SERVICE_INSTANCE_ID,
-    ];
+    const attrNames = [ATTR_PROCESS_PID, ATTR_SERVICE_INSTANCE_ID];
 
     const attributes = {} as DetectedResourceAttributes;
     attrNames.forEach(name => {
@@ -61,8 +55,8 @@ class InstanaAgentDetector implements ResourceDetector {
       const data = await this._retryHandler(host, port, 0);
 
       return {
-        [SEMRESATTRS_PROCESS_PID]: data.pid,
-        [SEMRESATTRS_SERVICE_INSTANCE_ID]: data.agentUuid,
+        [ATTR_PROCESS_PID]: data.pid,
+        [ATTR_SERVICE_INSTANCE_ID]: data.agentUuid,
       };
     } catch {
       return {};
