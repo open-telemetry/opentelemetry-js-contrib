@@ -22,6 +22,7 @@
     "test:browser:ci:affected": "nx affected -t test:browser --base=origin/main --head=HEAD",
     "test-all-versions": "nx run-many -t test-all-versions",
     "test-all-versions:ci:affected": "nx affected -t test-all-versions --base=origin/main --head=HEAD",
+    "coverage:merge:ci:affected": "nx affected -t coverage:merge --base=origin/main --head=HEAD",
     "changelog": "lerna-changelog",
     "lint": "nx run-many -t lint && npm run lint:deps && npm run lint:readme && npm run lint:markdown && npm run lint:semconv-deps",
     "lint:fix": "nx run-many -t lint:fix && npm run lint:markdown:fix",

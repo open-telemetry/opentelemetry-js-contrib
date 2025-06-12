@@ -229,14 +229,12 @@ jobs:
         with:
           name: tests-coverage-cache-${{ github.run_number }}-22
           path: .
-      - name: List instr folders
-        run: ls -la plugins/node/instrumentation-undici
-      - name: Merge coverage
-        run: cd plugins/node/instrumentation-undici && npm run coverage:merge
+      - name: Merge coverage (Delta)
+        run: npm run coverage:merge:ci:affected
       - name: Check coverage
-        run: find plugins/node/instrumentation-undici/coverage
-      
-        # - name: Report Coverage
+        run: find . | grep coverage-final
+
+      # - name: Report Coverage
       #   uses: codecov/codecov-action@v5
       #   env:
       #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
