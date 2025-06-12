@@ -38,7 +38,8 @@
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w",
-    "test:docker:run": "docker run -d --hostname demo-amqplib-rabbit --name amqplib-unittests -p 22221:5672 --env RABBITMQ_DEFAULT_USER=username --env RABBITMQ_DEFAULT_PASS=password rabbitmq:3"
+    "test:docker:run": "docker run -d --hostname demo-amqplib-rabbit --name amqplib-unittests -p 22221:5672 --env RABBITMQ_DEFAULT_USER=username --env RABBITMQ_DEFAULT_PASS=password rabbitmq:3",
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"
