@@ -13,11 +13,12 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "version:update": "node ../../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
   },
   "keywords": [
     "graphql",

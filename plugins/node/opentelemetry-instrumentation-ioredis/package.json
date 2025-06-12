@@ -6,7 +6,7 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",
     "test-all-versions": "tav",
@@ -19,7 +19,8 @@
     "version:update": "node ../../../scripts/version-update.js",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-ioredis",
     "compile": "tsc -p .",
-    "prepublishOnly": "npm run compile"
+    "prepublishOnly": "npm run compile",
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
   },
   "keywords": [
     "instrumentation",
