@@ -25,7 +25,7 @@ jobs:
         run: npm ci
       # TODO: check if compiling only the affected modules is correct
       - name: Compile (Delta)
-        run: npm run compile:ci:changed
+        run: npm run compile:ci:affected
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -184,11 +184,11 @@ jobs:
           name: tests-build-cache-${{ github.run_number }}
           path: .nx
       - name: Compile (Delta)
-        run: npm run compile:ci:changed
+        run: npm run compile:ci:affected
       - name: Unit tests (Delta)
-        run: npm run test:ci:changed
+        run: npm run test:ci:affected
       - name: Test All Versions (Delta)
-        run: npm run test-all-versions:ci:changed
+        run: npm run test-all-versions:ci:affected
       - name: Upload Test Artifacts
         uses: actions/upload-artifact@v4
         with:
