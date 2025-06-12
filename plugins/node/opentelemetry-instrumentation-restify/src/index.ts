@@ -16,8 +16,8 @@
 
 export { RestifyInstrumentation } from './instrumentation';
 export { AttributeNames } from './enums/AttributeNames';
+export { LayerType } from './types';
 export type {
-  LayerType,
   RestifyCustomAttributeFunction,
   RestifyInstrumentationConfig,
   RestifyRequestInfo,
