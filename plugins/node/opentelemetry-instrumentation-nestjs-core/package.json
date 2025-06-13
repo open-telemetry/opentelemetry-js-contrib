@@ -14,10 +14,11 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "npm run test-required-node-version && nyc mocha --timeout 5000 'test/**/*.test.ts' || echo 'Node version is not supported for testing'",
+    "test": "npm run test-required-node-version && nyc --no-clean mocha --timeout 5000 'test/**/*.test.ts' || echo 'Node version is not supported for testing'",
     "test-required-node-version": "node -e \"process.exit(parseInt(process.versions.node.split('.')[0], 10) >= 15 ? 0 : 1)\"",
     "test-all-versions": "tav",
-    "version:update": "node ../../../scripts/version-update.js"
+    "version:update": "node ../../../scripts/version-update.js",
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
   },
   "keywords": [
     "instrumentation",

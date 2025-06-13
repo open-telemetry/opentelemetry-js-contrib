@@ -1,15 +1,278 @@
 codecov:
   notify:
-    require_ci_to_pass: no
+    after_n_builds: 1
+  require_ci_to_pass: no
 comment:
-  layout: "header, changes, diff, files"
+  layout: 'header, changes, diff, files'
   behavior: default
-coverage:
-  status:
-    patch:
-      default:
-        target: 80%
-    project:
-      default:
-        target: auto
-        threshold: 1%
+# We set the flags manually to have better control of it
+# ref: https://docs.codecov.com/docs/flags#advanced-bespoke-flag-management
+flags:
+  winston-transport:
+    paths:
+      - packages/winston-transport/
+    carryforward: true
+  contrib-test-utils:
+    paths:
+      - packages/opentelemetry-test-utils/
+    carryforward: true
+  sql-common:
+    paths:
+      - packages/opentelemetry-sql-common/
+    carryforward: true
+  redis-common:
+    paths:
+      - packages/opentelemetry-redis-common/
+    carryforward: true
+  propagation-utils:
+    paths:
+      - packages/opentelemetry-propagation-utils/
+    carryforward: true
+  id-generator-aws-xray:
+    paths:
+      - packages/opentelemetry-id-generator-aws-xray/
+    carryforward: true
+  host-metrics:
+    paths:
+      - packages/opentelemetry-host-metrics/
+    carryforward: true
+  baggage-span-processor:
+    paths:
+      - packages/baggage-span-processor/
+    carryforward: true
+  baggage-log-record-processor:
+    paths:
+      - packages/baggage-log-record-processor/
+    carryforward: true
+  instrumentation-winston:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-winston/
+    carryforward: true
+  instrumentation-router:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-router/
+    carryforward: true
+  instrumentation-restify:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-restify/
+    carryforward: true
+  instrumentation-redis-4:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-redis-4/
+    carryforward: true
+  instrumentation-redis:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-redis/
+    carryforward: true
+  instrumentation-pino:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-pino/
+    carryforward: true
+  instrumentation-pg:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-pg/
+    carryforward: true
+  instrumentation-oracledb:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-oracledb/
+    carryforward: true
+  instrumentation-net:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-net/
+    carryforward: true
+  instrumentation-nestjs-core:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-nestjs-core/
+    carryforward: true
+  instrumentation-mysql2:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-mysql2/
+    carryforward: true
+  instrumentation-mysql:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-mysql/
+    carryforward: true
+  instrumentation-mongodb:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-mongodb/
+    carryforward: true
+  instrumentation-memcached:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-memcached/
+    carryforward: true
+  instrumentation-koa:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-koa/
+    carryforward: true
+  instrumentation-knex:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-knex/
+    carryforward: true
+  instrumentation-ioredis:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-ioredis/
+    carryforward: true
+  instrumentation-hapi:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-hapi/
+    carryforward: true
+  instrumentation-graphql:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-graphql/
+    carryforward: true
+  instrumentation-generic-pool:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-generic-pool/
+    carryforward: true
+  instrumentation-fastify:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-fastify/
+    carryforward: true
+  instrumentation-express:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-express/
+    carryforward: true
+  instrumentation-dns:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-dns/
+    carryforward: true
+  instrumentation-connect:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-connect/
+    carryforward: true
+  instrumentation-cassandra-driver:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-cassandra/
+    carryforward: true
+  instrumentation-bunyan:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-bunyan/
+    carryforward: true
+  instrumentation-aws-sdk:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-aws-sdk/
+    carryforward: true
+  instrumentation-aws-lambda:
+    paths:
+      - plugins/node/opentelemetry-instrumentation-aws-lambda/
+    carryforward: true
+  instrumentation-undici:
+    paths:
+      - plugins/node/instrumentation-undici/
+    carryforward: true
+  instrumentation-typeorm:
+    paths:
+      - plugins/node/instrumentation-typeorm/
+    carryforward: true
+  instrumentation-tedious:
+    paths:
+      - plugins/node/instrumentation-tedious/
+    carryforward: true
+  instrumentation-socket.io:
+    paths:
+      - plugins/node/instrumentation-socket.io/
+    carryforward: true
+  instrumentation-runtime-node:
+    paths:
+      - plugins/node/instrumentation-runtime-node/
+    carryforward: true
+  instrumentation-mongoose:
+    paths:
+      - plugins/node/instrumentation-mongoose/
+    carryforward: true
+  instrumentation-lru-memoizer:
+    paths:
+      - plugins/node/instrumentation-lru-memoizer/
+    carryforward: true
+  instrumentation-kafkajs:
+    paths:
+      - plugins/node/instrumentation-kafkajs/
+    carryforward: true
+  instrumentation-fs:
+    paths:
+      - plugins/node/instrumentation-fs/
+    carryforward: true
+  instrumentation-dataloader:
+    paths:
+      - plugins/node/instrumentation-dataloader/
+    carryforward: true
+  instrumentation-cucumber:
+    paths:
+      - plugins/node/instrumentation-cucumber/
+    carryforward: true
+  instrumentation-amqplib:
+    paths:
+      - plugins/node/instrumentation-amqplib/
+    carryforward: true
+  plugin-react-load:
+    paths:
+      - plugins/web/opentelemetry-plugin-react-load/
+    carryforward: true
+  instrumentation-user-interaction:
+    paths:
+      - plugins/web/opentelemetry-instrumentation-user-interaction/
+    carryforward: true
+  instrumentation-long-task:
+    paths:
+      - plugins/web/opentelemetry-instrumentation-long-task/
+    carryforward: true
+  instrumentation-document-load:
+    paths:
+      - plugins/web/opentelemetry-instrumentation-document-load/
+    carryforward: true
+  propagator-aws-xray-lambda:
+    paths:
+      - propagators/propagator-aws-xray-lambda/
+    carryforward: true
+  propagator-aws-xray:
+    paths:
+      - propagators/propagator-aws-xray/
+    carryforward: true
+  propagator-ot-trace:
+    paths:
+      - propagators/opentelemetry-propagator-ot-trace/
+    carryforward: true
+  propagator-instana:
+    paths:
+      - propagators/opentelemetry-propagator-instana/
+    carryforward: true
+  resource-detector-instana:
+    paths:
+      - detectors/node/opentelemetry-resource-detector-instana/
+    carryforward: true
+  resource-detector-github:
+    paths:
+      - detectors/node/opentelemetry-resource-detector-github/
+    carryforward: true
+  resource-detector-gcp:
+    paths:
+      - detectors/node/opentelemetry-resource-detector-gcp/
+    carryforward: true
+  resource-detector-container:
+    paths:
+      - detectors/node/opentelemetry-resource-detector-container/
+    carryforward: true
+  resource-detector-azure:
+    paths:
+      - detectors/node/opentelemetry-resource-detector-azure/
+    carryforward: true
+  resource-detector-aws:
+    paths:
+      - detectors/node/opentelemetry-resource-detector-aws/
+    carryforward: true
+  resource-detector-alibaba-cloud:
+    paths:
+      - detectors/node/opentelemetry-resource-detector-alibaba-cloud/
+    carryforward: true
+  auto-instrumentations-web:
+    paths:
+      - metapackages/auto-instrumentations-web/
+    carryforward: true
+  auto-instrumentations-node:
+    paths:
+      - metapackages/auto-instrumentations-node/
+    carryforward: true
+  auto-configuration-propagators:
+    paths:
+      - metapackages/auto-configuration-propagators/
+    carryforward: true
