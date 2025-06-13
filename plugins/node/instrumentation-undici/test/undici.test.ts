@@ -797,43 +797,87 @@ describe('UndiciInstrumentation `undici` tests', function () {
       });
     });
 
-    it('should not report an user-agent if it was not defined', async function () {
-      let spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
+    const userAgentRequests: Array<{
+      name: string;
+      headers: Record<string, string | string[] | undefined>;
+      expectedUserAgent: string | undefined;
+    }> = [
+      {
+        name: 'no user-agent',
+        headers: { 'foo-client': 'bar' },
+        expectedUserAgent: undefined,
+      },
+      {
+        name: 'a user-agent',
+        headers: { 'foo-client': 'bar', 'user-agent': 'custom' },
+        expectedUserAgent: 'custom',
+      },
+      {
+        name: 'explicitly-undefined user-agent',
+        headers: { 'foo-client': 'bar', 'user-agent': undefined },
+        expectedUserAgent: undefined,
+      },
+      // contra the spec, but we shouldn't crash
+      {
+        name: 'multiple user-agents',
+        headers: {
+          'foo-client': 'bar',
+          'user-agent': ['agent', 'other-agent'],
+        },
+        expectedUserAgent: 'other-agent',
+      },
+      {
+        name: 'another header with value user-agent',
+        headers: { 'foo-client': 'user-agent', 'user-agent': 'custom' },
+        expectedUserAgent: 'custom',
+      },
+      {
+        name: 'another header with multiple values',
+        headers: { 'foo-client': ['one', 'two'], 'user-agent': 'custom' },
+        expectedUserAgent: 'custom',
+      },
+      {
+        name: 'another header with explicitly-undefined value',
+        headers: { 'foo-client': undefined, 'user-agent': 'custom' },
+        expectedUserAgent: 'custom',
+      },
+    ];
 
-      // Do some requests
-      const headers = {
-        'foo-client': 'bar',
-      };
+    for (const testCase of userAgentRequests) {
+      it(`should report the correct user-agent when the request has ${testCase.name}`, async function () {
+        let spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 0);
 
-      const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
-      const queryResponse = await undici.request(queryRequestUrl, { headers });
-      await consumeResponseBody(queryResponse.body);
+        const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+        const queryResponse = await undici.request(queryRequestUrl, {
+          headers: testCase.headers,
+        });
+        await consumeResponseBody(queryResponse.body);
 
-      assert.ok(
-        queryResponse.headers['propagation-error'] == null,
-        'propagation is set for instrumented requests'
-      );
+        assert.ok(
+          queryResponse.headers['propagation-error'] == null,
+          'propagation is set for instrumented requests'
+        );
 
-      spans = memoryExporter.getFinishedSpans();
-      const span = spans[0];
-      assert.ok(span, 'a span is present');
-      assert.strictEqual(spans.length, 1);
-      assertSpan(span, {
-        hostname: 'localhost',
-        httpStatusCode: queryResponse.statusCode,
-        httpMethod: 'GET',
-        path: '/',
-        query: '?query=test',
-        reqHeaders: headers,
-        resHeaders: queryResponse.headers,
+        spans = memoryExporter.getFinishedSpans();
+        const span = spans[0];
+        assert.ok(span, 'a span is present');
+        assert.strictEqual(spans.length, 1);
+        assertSpan(span, {
+          hostname: 'localhost',
+          httpStatusCode: queryResponse.statusCode,
+          httpMethod: 'GET',
+          path: '/',
+          query: '?query=test',
+          reqHeaders: testCase.headers,
+          resHeaders: queryResponse.headers,
+        });
+        assert.strictEqual(
+          span.attributes['user_agent.original'],
+          testCase.expectedUserAgent
+        );
       });
-      assert.strictEqual(
-        span.attributes['user_agent.original'],
-        undefined,
-        'user-agent is undefined'
-      );
-    });
+    }
 
     it('should create valid span if request.path is a full URL', async function () {
       let spans = memoryExporter.getFinishedSpans();
