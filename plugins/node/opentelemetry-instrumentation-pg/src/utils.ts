@@ -30,14 +30,6 @@ import {
   ATTR_ERROR_TYPE,
   ATTR_DB_SYSTEM_NAME,
   ATTR_DB_NAMESPACE,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_CONNECTION_STRING,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-  SEMATTRS_DB_USER,
-  SEMATTRS_DB_STATEMENT,
-  DBSYSTEMVALUES_POSTGRESQL,
   ATTR_NETWORK_PEER_ADDRESS,
   ATTR_NETWORK_PEER_PORT,
   ATTR_DB_QUERY_TEXT,
@@ -47,6 +39,14 @@ import {
   ATTR_DB_CLIENT_CONNECTION_STATE,
   DB_CLIENT_CONNECTION_STATE_VALUE_USED,
   DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_NAME,
+  ATTR_DB_USER,
+  DB_SYSTEM_VALUE_POSTGRESQL,
+  ATTR_DB_CONNECTION_STRING,
+  ATTR_NET_PEER_PORT,
+  ATTR_NET_PEER_NAME,
+  ATTR_DB_STATEMENT,
 } from './semconv';
 import {
   PgClientExtended,
@@ -162,18 +162,18 @@ export function getSemanticAttributesFromConnection(
   if (semconvStability & SemconvStability.OLD) {
     attributes = {
       ...attributes,
-      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
-      [SEMATTRS_DB_NAME]: params.database,
-      [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params),
-      [SEMATTRS_DB_USER]: params.user,
-      [SEMATTRS_NET_PEER_NAME]: params.host, // required
-      [SEMATTRS_NET_PEER_PORT]: getPort(params.port),
+      [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
+      [ATTR_DB_NAME]: params.database,
+      [ATTR_DB_CONNECTION_STRING]: getConnectionString(params),
+      [ATTR_DB_USER]: params.user,
+      [ATTR_NET_PEER_NAME]: params.host, // required
+      [ATTR_NET_PEER_PORT]: getPort(params.port),
     };
   }
   if (semconvStability & SemconvStability.STABLE) {
     attributes = {
       ...attributes,
-      [ATTR_DB_SYSTEM_NAME]: DBSYSTEMVALUES_POSTGRESQL,
+      [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_POSTGRESQL,
       [ATTR_DB_NAMESPACE]: params.namespace,
       [ATTR_NETWORK_PEER_ADDRESS]: params.host,
       [ATTR_NETWORK_PEER_PORT]: getPort(params.port),
@@ -203,18 +203,18 @@ export function getSemanticAttributesFromPool(
   if (semconvStability & SemconvStability.OLD) {
     attributes = {
       ...attributes,
-      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
-      [SEMATTRS_DB_NAME]: url?.pathname.slice(1) ?? params.database,
-      [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params),
-      [SEMATTRS_NET_PEER_NAME]: url?.hostname ?? params.host,
-      [SEMATTRS_NET_PEER_PORT]: Number(url?.port) || getPort(params.port),
-      [SEMATTRS_DB_USER]: url?.username ?? params.user,
+      [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
+      [ATTR_DB_NAME]: url?.pathname.slice(1) ?? params.database,
+      [ATTR_DB_CONNECTION_STRING]: getConnectionString(params),
+      [ATTR_NET_PEER_NAME]: url?.hostname ?? params.host,
+      [ATTR_NET_PEER_PORT]: Number(url?.port) || getPort(params.port),
+      [ATTR_DB_USER]: url?.username ?? params.user,
     };
   }
   if (semconvStability & SemconvStability.STABLE) {
     attributes = {
       ...attributes,
-      [ATTR_DB_SYSTEM_NAME]: DBSYSTEMVALUES_POSTGRESQL,
+      [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_POSTGRESQL,
       [ATTR_DB_NAMESPACE]: params.namespace,
       [ATTR_NETWORK_PEER_ADDRESS]: url?.hostname ?? params.host,
       [ATTR_NETWORK_PEER_PORT]: Number(url?.port) || getPort(params.port),
@@ -262,7 +262,7 @@ export function handleConfigQuery(
   // Set attributes
   if (queryConfig.text) {
     if (semconvStability & SemconvStability.OLD) {
-      span.setAttribute(SEMATTRS_DB_STATEMENT, queryConfig.text);
+      span.setAttribute(ATTR_DB_STATEMENT, queryConfig.text);
     }
     if (semconvStability & SemconvStability.STABLE) {
       span.setAttribute(ATTR_DB_QUERY_TEXT, queryConfig.text);

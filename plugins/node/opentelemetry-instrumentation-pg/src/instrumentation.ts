@@ -56,8 +56,6 @@ import {
   hrTimeToMilliseconds,
 } from '@opentelemetry/core';
 import {
-  DBSYSTEMVALUES_POSTGRESQL,
-  SEMATTRS_DB_SYSTEM,
   ATTR_ERROR_TYPE,
   ATTR_SERVER_PORT,
   ATTR_SERVER_ADDRESS,
@@ -69,6 +67,8 @@ import {
   METRIC_DB_CLIENT_OPERATION_DURATION,
   ATTR_DB_NAMESPACE,
   ATTR_DB_OPERATION_NAME,
+  ATTR_DB_SYSTEM,
+  DB_SYSTEM_VALUE_POSTGRESQL,
 } from './semconv';
 
 function extractModuleExports(module: any) {
@@ -91,7 +91,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     idle: 0,
     pending: 0,
   };
-  private _semconvStability: SemconvStability = SemconvStability.OLD;
+  private _semconvStability: SemconvStability;
 
   constructor(config: PgInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -291,7 +291,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       ATTR_DB_OPERATION_NAME,
     ];
     if (this._semconvStability & SemconvStability.OLD) {
-      keysToCopy.push(SEMATTRS_DB_SYSTEM);
+      keysToCopy.push(ATTR_DB_SYSTEM);
     }
     if (this._semconvStability & SemconvStability.STABLE) {
       keysToCopy.push(ATTR_DB_SYSTEM_NAME);
@@ -343,7 +343,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           : undefined;
 
         const attributes: Attributes = {
-          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+          [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
           [ATTR_DB_NAMESPACE]: this.database,
           [ATTR_SERVER_PORT]: this.connectionParameters.port,
           [ATTR_SERVER_ADDRESS]: this.connectionParameters.host,
