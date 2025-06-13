@@ -53,7 +53,7 @@
     "generic-pool": "3.8.2",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
-    "semver": "7.7.1",
+    "semver": "7.7.2",
     "typescript": "5.0.4"
   },
   "dependencies": {
