@@ -589,10 +589,7 @@ describe('DataloaderInstrumentation', () => {
     ]);
     assert.strictEqual(await dataloader.clear('test'), dataloader);
     assert.strictEqual(await dataloader.clearAll(), dataloader);
-    assert.strictEqual(
-      await dataloader.prime('test', '1'),
-      dataloader
-    );
+    assert.strictEqual(await dataloader.prime('test', '1'), dataloader);
 
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
