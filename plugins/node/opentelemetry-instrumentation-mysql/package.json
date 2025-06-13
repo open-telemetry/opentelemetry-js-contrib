@@ -58,7 +58,7 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.202.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
-    "@types/mysql": "2.15.26"
+    "@types/mysql": "2.15.27"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql#readme"
 }
