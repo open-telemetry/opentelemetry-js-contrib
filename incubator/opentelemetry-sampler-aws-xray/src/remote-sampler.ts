@@ -29,15 +29,17 @@ import {
 import {
   ParentBasedSampler,
   Sampler,
-  SamplingDecision,
   SamplingResult,
 } from '@opentelemetry/sdk-trace-base';
 import { AWSXRaySamplingClient } from './aws-xray-sampling-client';
+import { FallbackSampler } from './fallback-sampler';
 import {
   AWSXRayRemoteSamplerConfig,
   GetSamplingRulesResponse,
   SamplingRuleRecord,
 } from './types';
+import { RuleCache } from './rule-cache';
+
 import { SamplingRuleApplier } from './sampling-rule-applier';
 
 // 5 minute default sampling rules polling interval
@@ -50,12 +52,14 @@ const DEFAULT_AWS_PROXY_ENDPOINT = 'http://localhost:2000';
 export class AWSXRayRemoteSampler implements Sampler {
   private _root: ParentBasedSampler;
   private internalXraySampler: _AWSXRayRemoteSampler;
+
   constructor(samplerConfig: AWSXRayRemoteSamplerConfig) {
     this.internalXraySampler = new _AWSXRayRemoteSampler(samplerConfig);
     this._root = new ParentBasedSampler({
       root: this.internalXraySampler,
     });
   }
+
   public shouldSample(
     context: Context,
     traceId: string,
@@ -91,8 +95,11 @@ export class AWSXRayRemoteSampler implements Sampler {
 export class _AWSXRayRemoteSampler implements Sampler {
   private rulePollingIntervalMillis: number;
   private awsProxyEndpoint: string;
+  private ruleCache: RuleCache;
+  private fallbackSampler: FallbackSampler;
   private samplerDiag: DiagLogger;
   private rulePoller: NodeJS.Timeout | undefined;
+  private clientId: string;
   private rulePollingJitterMillis: number;
   private samplingClient: AWSXRaySamplingClient;
 
@@ -117,6 +124,10 @@ export class _AWSXRayRemoteSampler implements Sampler {
     this.awsProxyEndpoint = samplerConfig.endpoint
       ? samplerConfig.endpoint
       : DEFAULT_AWS_PROXY_ENDPOINT;
+    this.fallbackSampler = new FallbackSampler();
+    // TODO: Use clientId for retrieving Sampling Targets
+    this.clientId = _AWSXRayRemoteSampler.generateClientId();
+    this.ruleCache = new RuleCache(samplerConfig.resource);
 
     this.samplingClient = new AWSXRaySamplingClient(
       this.awsProxyEndpoint,
@@ -137,8 +148,51 @@ export class _AWSXRayRemoteSampler implements Sampler {
     attributes: Attributes,
     links: Link[]
   ): SamplingResult {
-    // Implementation to be added
-    return { decision: SamplingDecision.NOT_RECORD };
+    if (this.ruleCache.isExpired()) {
+      this.samplerDiag.debug(
+        'Rule cache is expired, so using fallback sampling strategy'
+      );
+      return this.fallbackSampler.shouldSample(
+        context,
+        traceId,
+        spanName,
+        spanKind,
+        attributes,
+        links
+      );
+    }
+
+    try {
+      const matchedRule: SamplingRuleApplier | undefined =
+        this.ruleCache.getMatchedRule(attributes);
+      if (matchedRule) {
+        return matchedRule.shouldSample(
+          context,
+          traceId,
+          spanName,
+          spanKind,
+          attributes,
+          links
+        );
+      }
+    } catch (e: unknown) {
+      this.samplerDiag.debug(
+        'Unexpected error occurred when trying to match or applying a sampling rule',
+        e
+      );
+    }
+
+    this.samplerDiag.debug(
+      'Using fallback sampler as no rule match was found. This is likely due to a bug, since default rule should always match'
+    );
+    return this.fallbackSampler.shouldSample(
+      context,
+      traceId,
+      spanName,
+      spanKind,
+      attributes,
+      links
+    );
   }
 
   public toString(): string {
@@ -180,13 +234,37 @@ export class _AWSXRayRemoteSampler implements Sampler {
           }
         }
       );
-
-      // TODO: pass samplingRules to rule cache, temporarily logging the samplingRules array
-      this.samplerDiag.debug('sampling rules: ', samplingRules);
+      this.ruleCache.updateRules(samplingRules);
     } else {
       this.samplerDiag.error(
         'SamplingRuleRecords from GetSamplingRules request is not defined'
       );
     }
+  }
+
+  private static generateClientId(): string {
+    const hexChars: string[] = [
+      '0',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      'a',
+      'b',
+      'c',
+      'd',
+      'e',
+      'f',
+    ];
+    const clientIdArray: string[] = [];
+    for (let _ = 0; _ < 24; _ += 1) {
+      clientIdArray.push(hexChars[Math.floor(Math.random() * hexChars.length)]);
+    }
+    return clientIdArray.join('');
   }
 }
