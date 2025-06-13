@@ -19,7 +19,7 @@ import type { RouterParamContext } from '@koa/router';
 import * as KoaRouter from '@koa/router';
 import { context, trace, Span } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
@@ -80,7 +80,7 @@ describe('Koa Instrumentation', function () {
   });
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let app: koa;
   let server: http.Server;
   let port: number;
@@ -94,7 +94,7 @@ describe('Koa Instrumentation', function () {
   });
 
   beforeEach(async () => {
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
 
     app = new koa();

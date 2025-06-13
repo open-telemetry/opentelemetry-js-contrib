@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.49.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.49.0...instrumentation-redis-v0.49.1) (2025-06-05)
+
+
+### Bug Fixes
+
+* **redis:** use new tracer after setTracerProvider ([#2865](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2865)) ([5861dfa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5861dfa3aa4ca59f7ec3fba051329f13895a6e46))
+
+## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.48.0...instrumentation-redis-v0.49.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.47.0 to ^0.48.0
+
+## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.47.0...instrumentation-redis-v0.48.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
 ## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.46.1...instrumentation-redis-v0.47.0) (2025-03-18)
 
 

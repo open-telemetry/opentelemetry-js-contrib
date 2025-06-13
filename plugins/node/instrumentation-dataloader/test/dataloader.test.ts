@@ -20,7 +20,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 
 import { DataloaderInstrumentation } from '../src';
 const instrumentation = new DataloaderInstrumentation();
@@ -38,8 +38,8 @@ function getMd5HashFromIdx(idx: number) {
 }
 
 describe('DataloaderInstrumentation', () => {
-  let dataloader: Dataloader<string, string>;
-  let contextManager: AsyncHooksContextManager;
+  let dataloader: Dataloader<string, number>;
+  let contextManager: AsyncLocalStorageContextManager;
 
   const memoryExporter = new InMemorySpanExporter();
   const provider = new NodeTracerProvider({
@@ -52,7 +52,7 @@ describe('DataloaderInstrumentation', () => {
 
   beforeEach(async () => {
     instrumentation.enable();
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
     dataloader = new Dataloader(
       async keys =>
