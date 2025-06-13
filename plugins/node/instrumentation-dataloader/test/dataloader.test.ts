@@ -38,7 +38,7 @@ function getMd5HashFromIdx(idx: number) {
 }
 
 describe('DataloaderInstrumentation', () => {
-  let dataloader: Dataloader<string, number>;
+  let dataloader: Dataloader<string, string, string>;
   let contextManager: AsyncLocalStorageContextManager;
 
   const memoryExporter = new InMemorySpanExporter();
@@ -341,7 +341,7 @@ describe('DataloaderInstrumentation', () => {
 
           const [clearSpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
-            clearSpan.parentSpanId,
+            clearSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
           );
         }
@@ -359,7 +359,7 @@ describe('DataloaderInstrumentation', () => {
 
           const [clearSpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
-            clearSpan.parentSpanId,
+            clearSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
           );
         }
@@ -422,7 +422,7 @@ describe('DataloaderInstrumentation', () => {
 
           const [clearSpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
-            clearSpan.parentSpanId,
+            clearSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
           );
         }
@@ -440,7 +440,7 @@ describe('DataloaderInstrumentation', () => {
 
           const [clearSpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
-            clearSpan.parentSpanId,
+            clearSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
           );
         }
@@ -482,7 +482,7 @@ describe('DataloaderInstrumentation', () => {
 
           const [primeSpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
-            primeSpan.parentSpanId,
+            primeSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
           );
         }
@@ -500,7 +500,7 @@ describe('DataloaderInstrumentation', () => {
 
           const [primeSpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
-            primeSpan.parentSpanId,
+            primeSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
           );
         }
