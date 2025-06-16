@@ -40,7 +40,6 @@ const database = process.env.MYSQL_DATABASE || 'test_db';
 const host = process.env.MYSQL_HOST || '127.0.0.1';
 const user = process.env.MYSQL_USER || 'otel';
 const password = process.env.MYSQL_PASSWORD || 'secret';
-const rootPassword = process.env.MYSQL_ROOT_PASSWORD || 'rootpw';
 
 const instrumentation = new MySQLInstrumentation();
 instrumentation.enable();
@@ -48,16 +47,6 @@ instrumentation.disable();
 
 import * as mysqlTypes from 'mysql';
 import { AttributeNames } from '../src/AttributeNames';
-
-// Helper function to setup the database
-const execPromise = (conn: mysqlTypes.Connection, command: string) => {
-  return new Promise<void>((res, rej) => {
-    conn.query(command, err => {
-      if (err) rej(err);
-      else res();
-    });
-  });
-};
 
 describe('mysql@2.x-Tracing', () => {
   let contextManager: AsyncLocalStorageContextManager;
@@ -81,23 +70,6 @@ describe('mysql@2.x-Tracing', () => {
     } else {
       done();
     }
-
-    // const connection = mysqlTypes.createConnection({
-    //   port,
-    //   user: 'root',
-    //   host,
-    //   password: rootPassword,
-    //   database,
-    // });
-    // try {
-    //   await execPromise(connection, `SET GLOBAL log_output='TABLE'`);
-    //   await execPromise(connection, `SET GLOBAL general_log = 1`);
-    // } catch (execErr) {
-    //   console.error('MySQL seup error: ', execErr);
-    //   this.skip();
-    // } finally {
-    //   connection.end();
-    // }
   });
 
   beforeEach(() => {
