@@ -67,11 +67,11 @@ interface Result extends RowDataPacket {
 // Helper function to setup the database
 const execPromise = (conn: Connection, command: string) => {
   return new Promise<void>((res, rej) => {
-    conn.execute(command, (err) => {
+    conn.execute(command, err => {
       if (err) rej(err);
       else res();
-    })
-  })
+    });
+  });
 };
 
 describe('mysql2', () => {
@@ -88,8 +88,8 @@ describe('mysql2', () => {
       database,
     });
     try {
-      await execPromise(connection, `SET GLOBAL log_output='TABLE'`);
-      await execPromise(connection, `SET GLOBAL general_log = 1`);
+      await execPromise(connection, "SET GLOBAL log_output='TABLE'");
+      await execPromise(connection, 'SET GLOBAL general_log = 1');
     } catch (execErr) {
       console.error('MySQL seup error: ', execErr);
       this.skip();
@@ -369,8 +369,8 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           connection.query('SELECT 1+1 as solution', (e, r) => {
-            console.log(e)
-            console.log(r)
+            console.log(e);
+            console.log(r);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
             getLastQueries(1).then(([query]) => {

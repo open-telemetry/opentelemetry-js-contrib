@@ -52,11 +52,11 @@ import { AttributeNames } from '../src/AttributeNames';
 // Helper function to setup the database
 const execPromise = (conn: mysqlTypes.Connection, command: string) => {
   return new Promise<void>((res, rej) => {
-    conn.query(command, (err) => {
+    conn.query(command, err => {
       if (err) rej(err);
       else res();
-    })
-  })
+    });
+  });
 };
 
 describe('mysql@2.x-Tracing', () => {
