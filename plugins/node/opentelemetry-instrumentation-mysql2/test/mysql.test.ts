@@ -64,28 +64,38 @@ interface Result extends RowDataPacket {
   solution: number;
 }
 
+// Helper function to setup the database
+const execPromise = (conn: Connection, command: string) => {
+  return new Promise<void>((res, rej) => {
+    conn.execute(command, (err) => {
+      if (err) rej(err);
+      else res();
+    })
+  })
+};
+
 describe('mysql2', () => {
-  const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
-  const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
-  const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
+  // assumes local mysql db is already available in CI or
+  // using `npm run test-services:start` script at the root folder
+  const shouldTest = process.env.RUN_MYSQL_TESTS;
 
-  before(function (done) {
-    if (testMysqlLocally) {
-      testUtils.startDocker('mysql');
-      // wait 15 seconds for docker container to start
-      this.timeout(20000);
-      setTimeout(done, 15000);
-    } else {
-      done();
+  before(async function () {
+    const connection = createConnection({
+      port,
+      user: 'root',
+      host,
+      password: rootPassword,
+      database,
+    });
+    try {
+      await execPromise(connection, `SET GLOBAL log_output='TABLE'`);
+      await execPromise(connection, `SET GLOBAL general_log = 1`);
+    } catch (execErr) {
+      console.error('MySQL seup error: ', execErr);
+      this.skip();
+    } finally {
+      connection.end();
     }
-  });
-
-  after(function (done) {
-    if (testMysqlLocally) {
-      this.timeout(5000);
-      testUtils.cleanUpDocker('mysql');
-    }
-    done();
   });
 
   describe('callback API', () => {
@@ -358,7 +368,9 @@ describe('mysql2', () => {
       it('should not add comment by default', done => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
-          connection.query('SELECT 1+1 as solution', () => {
+          connection.query('SELECT 1+1 as solution', (e, r) => {
+            console.log(e)
+            console.log(r)
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
             getLastQueries(1).then(([query]) => {
