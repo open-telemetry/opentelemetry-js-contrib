@@ -158,3 +158,6 @@ export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
  * Enum value "output" for attribute {@link ATTR_GEN_AI_TOKEN_TYPE}.
  */
 export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
+
+// Copied ATTR_AWS_SNS_TOPIC_ARN from '@opentelemetry/semantic-conventions/incubating'
+export const ATTR_AWS_SNS_TOPIC_ARN = 'aws.sns.topic.arn' as const;

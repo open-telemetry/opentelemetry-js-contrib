@@ -27,28 +27,30 @@ import {
   SEMATTRS_MESSAGING_SYSTEM,
   SEMATTRS_RPC_METHOD,
 } from '@opentelemetry/semantic-conventions';
+import { ATTR_AWS_SNS_TOPIC_ARN } from '@opentelemetry/semantic-conventions/incubating';
 import { SpanKind } from '@opentelemetry/api';
 
 describe('SNS - v3', () => {
   let sns: any;
-  beforeEach(() => {
-    sns = new SNSv3({
-      region: 'us-east-1',
-      credentials: {
-        accessKeyId: 'abcde',
-        secretAccessKey: 'abcde',
-      },
-    });
-
-    nock('https://sns.us-east-1.amazonaws.com/')
-      .post('/')
-      .reply(
-        200,
-        fs.readFileSync('./test/mock-responses/sns-publish.xml', 'utf8')
-      );
-  });
 
   describe('publish', () => {
+    beforeEach(() => {
+      sns = new SNSv3({
+        region: 'us-east-1',
+        credentials: {
+          accessKeyId: 'abcde',
+          secretAccessKey: 'abcde',
+        },
+      });
+
+      nock('https://sns.us-east-1.amazonaws.com/')
+        .post('/')
+        .reply(
+          200,
+          fs.readFileSync('./test/mock-responses/sns-publish.xml', 'utf8')
+        );
+    });
+
     it('topic arn', async () => {
       const topicV3Name = 'dummy-sns-v3-topic';
       const topicV3ARN = `arn:aws:sns:us-east-1:000000000:${topicV3Name}`;
@@ -73,6 +75,7 @@ describe('SNS - v3', () => {
       expect(publishSpan.attributes['messaging.destination.name']).toBe(
         topicV3ARN
       );
+      expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBe(topicV3ARN);
       expect(publishSpan.attributes[SEMATTRS_RPC_METHOD]).toBe('Publish');
       expect(publishSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toBe('aws.sns');
       expect(publishSpan.kind).toBe(SpanKind.PRODUCER);
@@ -93,6 +96,41 @@ describe('SNS - v3', () => {
       expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toBe(
         PhoneNumber
       );
+      expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBeUndefined();
+    });
+  });
+
+  describe('Create Topic', () => {
+    beforeEach(() => {
+      sns = new SNSv3({
+        region: 'us-east-1',
+        credentials: {
+          accessKeyId: 'abcde',
+          secretAccessKey: 'abcde',
+        },
+      });
+
+      nock('https://sns.us-east-1.amazonaws.com/')
+        .post('/')
+        .reply(
+          200,
+          fs.readFileSync('./test/mock-responses/sns-create-topic.xml', 'utf8')
+        );
+    });
+
+    it('topic arn', async () => {
+      const topicName = 'sns-topic-foo';
+      const topicArn = `arn:aws:sns:us-east-1:123456789012:${topicName}`;
+      await sns.createTopic({
+        Name: topicName,
+      });
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === 'SNS CreateTopic'
+      );
+      expect(publishSpans.length).toBe(1);
+      const publishSpan = publishSpans[0];
+      expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBe(topicArn);
+      expect(publishSpan.kind).toBe(SpanKind.CLIENT);
     });
   });
 });
