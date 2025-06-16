@@ -20,6 +20,7 @@ import {
   SEMATTRS_MESSAGING_DESTINATION_KIND,
   SEMATTRS_MESSAGING_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
+import { ATTR_AWS_SNS_TOPIC_ARN } from '../semconv';
 import {
   NormalizedRequest,
   NormalizedResponse,
@@ -58,6 +59,11 @@ export class SnsServiceExtension implements ServiceExtension {
       } send`;
     }
 
+    const topicArn = request.commandInput?.TopicArn;
+    if (topicArn) {
+      spanAttributes[ATTR_AWS_SNS_TOPIC_ARN] = topicArn;
+    }
+
     return {
       isIncoming: false,
       spanAttributes,
@@ -83,7 +89,12 @@ export class SnsServiceExtension implements ServiceExtension {
     span: Span,
     tracer: Tracer,
     config: AwsSdkInstrumentationConfig
-  ): void {}
+  ): void {
+    const topicArn = response.data?.TopicArn;
+    if (topicArn) {
+      span.setAttribute(ATTR_AWS_SNS_TOPIC_ARN, topicArn);
+    }
+  }
 
   extractDestinationName(
     topicArn: string,
