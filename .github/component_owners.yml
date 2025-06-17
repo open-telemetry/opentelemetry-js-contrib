@@ -155,6 +155,9 @@ components:
     - obecny
   plugins/web/opentelemetry-plugin-react-load:
     - martinkuba
+  plugins/web/opentelemetry-instrumentation-page-view:
+    - Abinet18
+    - martinkuba
   propagators/opentelemetry-propagator-instana:
     - kirrg001
   propagators/opentelemetry-propagator-ot-trace: []
@@ -163,6 +166,5 @@ components:
     - jj22ee
   propagators/propagator-aws-xray-lambda: [ ]
   # Unmaintained
-
 ignored-authors:
   - renovate-bot
