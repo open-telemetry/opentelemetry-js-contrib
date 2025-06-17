@@ -59,7 +59,7 @@ services:
     environment:
       MYSQL_USER: "otel"
       MYSQL_PASSWORD: "secret"
-      MYSQL_DATABASE: "test_db"
+      MYSQL_DATABASE: "otel_mysql_database"
       MYSQL_ROOT_PASSWORD: "rootpw"
     ports:
       - "33306:3306"
