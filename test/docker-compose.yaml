@@ -12,7 +12,7 @@ name: opentelemetry-nodejs-test-services
 
 services:
   cassandra:
-    image: bitnami/cassandra:3
+    image: cassandra:3
     environment:
       MAX_HEAP_SIZE: "1G"
       HEAP_NEWSIZE: 400m
@@ -56,6 +56,8 @@ services:
 
   mysql:
     image: mysql:5.7
+    # No ARM64 image layer. See https://stackoverflow.com/a/65592942
+    platform: linux/x86_64
     environment:
       MYSQL_USER: "otel"
       MYSQL_PASSWORD: "secret"
@@ -86,7 +88,7 @@ services:
     # https://github.com/docker-library/docs/blob/master/postgres/README.md#how-to-extend-this-image
     image: postgres:16-alpine
     ports:
-      - "5432:5432"
+      - "54320:5432"
     environment:
       POSTGRES_HOST_AUTH_METHOD: "trust"
       POSTGRES_USER: "postgres"
