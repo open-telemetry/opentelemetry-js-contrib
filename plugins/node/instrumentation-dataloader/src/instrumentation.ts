@@ -36,13 +36,13 @@ const MODULE_NAME = 'dataloader';
 type DataloaderInternal = typeof Dataloader.prototype & {
   _batchLoadFn: Dataloader.BatchLoadFn<unknown, unknown>;
   _batch: { spanLinks?: Link[] } | null;
-
-  // TODO: Remove this once types on Dataloader get fixed https://github.com/graphql/dataloader/pull/334
-  name?: string | null;
 };
 
 type LoadFn = (typeof Dataloader.prototype)['load'];
 type LoadManyFn = (typeof Dataloader.prototype)['loadMany'];
+type PrimeFn = (typeof Dataloader.prototype)['prime'];
+type ClearFn = (typeof Dataloader.prototype)['clear'];
+type ClearAllFn = (typeof Dataloader.prototype)['clearAll'];
 
 export class DataloaderInstrumentation extends InstrumentationBase<DataloaderInstrumentationConfig> {
   constructor(config: DataloaderInstrumentationConfig = {}) {
@@ -57,17 +57,18 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
         dataloader => {
           this._patchLoad(dataloader.prototype);
           this._patchLoadMany(dataloader.prototype);
+          this._patchPrime(dataloader.prototype);
+          this._patchClear(dataloader.prototype);
+          this._patchClearAll(dataloader.prototype);
 
           return this._getPatchedConstructor(dataloader);
         },
         dataloader => {
-          if (isWrapped(dataloader.prototype.load)) {
-            this._unwrap(dataloader.prototype, 'load');
-          }
-
-          if (isWrapped(dataloader.prototype.loadMany)) {
-            this._unwrap(dataloader.prototype, 'loadMany');
-          }
+          ['load', 'loadMany', 'prime', 'clear', 'clearAll'].forEach(method => {
+            if (isWrapped(dataloader.prototype[method])) {
+              this._unwrap(dataloader.prototype, method);
+            }
+          });
         }
       ) as InstrumentationNodeModuleDefinition,
     ];
@@ -81,7 +82,7 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
 
   private getSpanName(
     dataloader: DataloaderInternal,
-    operation: 'load' | 'loadMany' | 'batch'
+    operation: 'load' | 'loadMany' | 'batch' | 'prime' | 'clear' | 'clearAll'
   ): string {
     const dataloaderName = dataloader.name;
     if (dataloaderName === undefined || dataloaderName === null) {
@@ -247,6 +248,114 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
           return value;
         });
       });
+    };
+  }
+
+  private _patchPrime(proto: typeof Dataloader.prototype) {
+    if (isWrapped(proto.prime)) {
+      this._unwrap(proto, 'prime');
+    }
+
+    this._wrap(proto, 'prime', this._getPatchedPrime.bind(this));
+  }
+
+  private _getPatchedPrime(original: PrimeFn): PrimeFn {
+    const instrumentation = this;
+
+    return function patchedPrime(
+      this: DataloaderInternal,
+      ...args: Parameters<typeof original>
+    ) {
+      if (!instrumentation.shouldCreateSpans()) {
+        return original.call(this, ...args);
+      }
+
+      const parent = context.active();
+      const span = instrumentation.tracer.startSpan(
+        instrumentation.getSpanName(this, 'prime'),
+        { kind: SpanKind.CLIENT },
+        parent
+      );
+
+      const ret = context.with(trace.setSpan(parent, span), () => {
+        return original.call(this, ...args);
+      });
+
+      span.end();
+
+      return ret;
+    };
+  }
+
+  private _patchClear(proto: typeof Dataloader.prototype) {
+    if (isWrapped(proto.clear)) {
+      this._unwrap(proto, 'clear');
+    }
+
+    this._wrap(proto, 'clear', this._getPatchedClear.bind(this));
+  }
+
+  private _getPatchedClear(original: ClearFn): ClearFn {
+    const instrumentation = this;
+
+    return function patchedClear(
+      this: DataloaderInternal,
+      ...args: Parameters<typeof original>
+    ) {
+      if (!instrumentation.shouldCreateSpans()) {
+        return original.call(this, ...args);
+      }
+
+      const parent = context.active();
+      const span = instrumentation.tracer.startSpan(
+        instrumentation.getSpanName(this, 'clear'),
+        { kind: SpanKind.CLIENT },
+        parent
+      );
+
+      const ret = context.with(trace.setSpan(parent, span), () => {
+        return original.call(this, ...args);
+      });
+
+      span.end();
+
+      return ret;
+    };
+  }
+
+  private _patchClearAll(proto: typeof Dataloader.prototype) {
+    if (isWrapped(proto.clearAll)) {
+      this._unwrap(proto, 'clearAll');
+    }
+
+    this._wrap(proto, 'clearAll', this._getPatchedClearAll.bind(this));
+  }
+
+  private _getPatchedClearAll(original: ClearAllFn): ClearAllFn {
+    const instrumentation = this;
+
+    return function patchedClearAll(
+      this: DataloaderInternal,
+      ...args: Parameters<typeof original>
+    ) {
+      if (!instrumentation.shouldCreateSpans()) {
+        return original.call(this, ...args);
+      }
+
+      const parent = context.active();
+      const span = instrumentation.tracer.startSpan(
+        instrumentation.getSpanName(this, 'clearAll'),
+        { kind: SpanKind.CLIENT },
+        parent
+      );
+
+      const ret = context.with(trace.setSpan(parent, span), () => {
+        return original.call(this, ...args);
+      });
+
+      span.end();
+
+      return ret;
     };
   }
 }
