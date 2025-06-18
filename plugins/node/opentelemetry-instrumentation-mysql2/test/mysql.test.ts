@@ -369,8 +369,6 @@ describe('mysql2', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           connection.query('SELECT 1+1 as solution', (e, r) => {
-            console.log(e);
-            console.log(r);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
             getLastQueries(1).then(([query]) => {
