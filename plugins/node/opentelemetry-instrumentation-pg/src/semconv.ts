@@ -109,7 +109,7 @@ export const ATTR_DB_SYSTEM = 'db.system';
  * An identifier for the database management system (DBMS) product being used. See below for a list of well-known identifiers.
  *
  */
-export const DB_SYSTEM_VALUE_POSTGRESQL = "postgresql";
+export const DB_SYSTEM_VALUE_POSTGRESQL = 'postgresql';
 
 /**
  * If no [tech-specific attribute](#call-level-attributes-for-specific-technologies) is defined, this attribute is used to report the name of the database being accessed. For commands that switch the database, this should be set to the target database (even if the command fails).
@@ -117,30 +117,30 @@ export const DB_SYSTEM_VALUE_POSTGRESQL = "postgresql";
  * Note: In some SQL databases, the database name to be used is called &#34;schema name&#34;.
  *
  */
-export const ATTR_DB_NAME = "db.name";
+export const ATTR_DB_NAME = 'db.name';
 
 /**
  * The connection string used to connect to the database. It is recommended to remove embedded credentials.
  *
  */
-export const ATTR_DB_CONNECTION_STRING = "db.connection_string";
+export const ATTR_DB_CONNECTION_STRING = 'db.connection_string';
 
 /**
  * Username for accessing the database.
  *
  */
-export const ATTR_DB_USER = "db.user";
+export const ATTR_DB_USER = 'db.user';
 
 /**
  * Remote port number.
  *
  */
-export const ATTR_NET_PEER_PORT = "net.peer.port";
+export const ATTR_NET_PEER_PORT = 'net.peer.port';
 /**
  * Remote hostname or similar.
  *
  */
-export const ATTR_NET_PEER_NAME = "net.peer.name";
+export const ATTR_NET_PEER_NAME = 'net.peer.name';
 
 /**
  * The database statement being executed.
@@ -148,4 +148,4 @@ export const ATTR_NET_PEER_NAME = "net.peer.name";
  * Note: The value may be sanitized to exclude sensitive information.
  *
  */
-export const ATTR_DB_STATEMENT = "db.statement";
+export const ATTR_DB_STATEMENT = 'db.statement';
