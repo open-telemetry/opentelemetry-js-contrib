@@ -21,7 +21,7 @@
     "test-all-versions": "nx run-many -t test-all-versions",
     "test-services:start": "docker compose -f ./test/docker-compose.yaml up -d --wait",
     "test-services:stop": "docker compose -f ./test/docker-compose.yaml down",
-    "test:with-test-services": "NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env npm test",
+    "test:with-services-config": "NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env npm test",
     "changelog": "lerna-changelog",
     "lint": "nx run-many -t lint && npm run lint:deps && npm run lint:readme && npm run lint:markdown && npm run lint:semconv-deps",
     "lint:fix": "nx run-many -t lint:fix && npm run lint:markdown:fix",
