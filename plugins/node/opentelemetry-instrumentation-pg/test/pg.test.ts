@@ -42,9 +42,7 @@ import {
 } from '../src';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { TimedEvent } from './types';
-import {
-  ATTR_ERROR_TYPE,
-} from '@opentelemetry/semantic-conventions';
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import {
   METRIC_DB_CLIENT_OPERATION_DURATION,
   ATTR_DB_OPERATION_NAME,
