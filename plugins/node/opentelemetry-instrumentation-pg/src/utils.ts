@@ -30,8 +30,8 @@ import {
   ATTR_ERROR_TYPE,
   ATTR_DB_SYSTEM_NAME,
   ATTR_DB_NAMESPACE,
-  ATTR_NETWORK_PEER_ADDRESS,
-  ATTR_NETWORK_PEER_PORT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
   ATTR_DB_QUERY_TEXT,
 } from '@opentelemetry/semantic-conventions';
 import {
@@ -175,8 +175,8 @@ export function getSemanticAttributesFromConnection(
       ...attributes,
       [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_POSTGRESQL,
       [ATTR_DB_NAMESPACE]: params.namespace,
-      [ATTR_NETWORK_PEER_ADDRESS]: params.host,
-      [ATTR_NETWORK_PEER_PORT]: getPort(params.port),
+      [ATTR_SERVER_ADDRESS]: params.host,
+      [ATTR_SERVER_PORT]: getPort(params.port),
     };
   }
 
@@ -216,8 +216,8 @@ export function getSemanticAttributesFromPool(
       ...attributes,
       [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_POSTGRESQL,
       [ATTR_DB_NAMESPACE]: params.namespace,
-      [ATTR_NETWORK_PEER_ADDRESS]: url?.hostname ?? params.host,
-      [ATTR_NETWORK_PEER_PORT]: Number(url?.port) || getPort(params.port),
+      [ATTR_SERVER_ADDRESS]: url?.hostname ?? params.host,
+      [ATTR_SERVER_PORT]: Number(url?.port) || getPort(params.port),
     };
   }
 

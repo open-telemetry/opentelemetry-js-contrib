@@ -75,8 +75,8 @@ To select which semconv version(s) is emitted from this instrumentation, use the
 | (not included)          | `db.namespace`                                  | The name of the database, fully qualified within the server address and port.              |
 | `db.statement`          | `db.query.text`                                 | The database query being executed.                                                         |
 | `db.system`             | `db.system.name`                                | The database management system (DBMS) product as identified by the client instrumentation. |
-| `net.peer.port`         | `network.peer.port`                             | Peer port number of the network connection.                                                |
-| `net.peer.name`         | `network.peer.address`                          | Peer address of the database node where the operation was performed.                       |
+| `net.peer.port`         | `server.port`                                   | Remote port number.                                                                        |
+| `net.peer.name`         | `server.address`                                | Remote hostname or similar.                                                                |
 
 Metrics Exported:
 
