@@ -57,7 +57,7 @@ Prior to version `0.55.0`, this instrumentation created spans and metrics target
 
 Database semantic conventions (semconv) were stabilized in v1.34.0, and a [migration process](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/db-migration.md) was defined.
 `opentelemetry-instrumentation-pg` versions 0.55.0 and later include support for migrating to stable Database semantic conventions, as described below.
-The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new Database semconv, after which a new minor version will use the *new* semconv by default and drop support for the old semconv.
+The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new Database semconv, after which a new minor version will use the new semconv by default and drop support for the old semconv.
 
 To select which semconv version(s) is emitted from this instrumentation, use the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable.
 
@@ -72,8 +72,8 @@ To select which semconv version(s) is emitted from this instrumentation, use the
 | `db.connection_string`  | Removed                                         | String used to connect to the database                                                     |
 | `db.user`               | Removed                                         | User used to connect to the database                                                       |
 | `db.name`               | Removed, integrated into the new `db.namespace` | The name of the database.                                                                  |
-| (not included)          | `db.namespace`                                 | The name of the database, fully qualified within the server address and port.              |
-| `db.statement`          | `db.query.text`                                 | The database query being executed.                                                         | 
+| (not included)          | `db.namespace`                                  | The name of the database, fully qualified within the server address and port.              |
+| `db.statement`          | `db.query.text`                                 | The database query being executed.                                                         |
 | `db.system`             | `db.system.name`                                | The database management system (DBMS) product as identified by the client instrumentation. |
 | `net.peer.port`         | `network.peer.port`                             | Peer port number of the network connection.                                                |
 | `net.peer.name`         | `network.peer.address`                          | Peer address of the database node where the operation was performed.                       |
