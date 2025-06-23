@@ -1,6 +1,5 @@
 import { context, trace } from '@opentelemetry/api';
-import { events } from '@opentelemetry/api-events';
-import { EventLoggerProvider } from '@opentelemetry/sdk-events';
+import { logs } from '@opentelemetry/api-logs';
 import { LoggerProvider,SimpleLogRecordProcessor,ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
@@ -12,8 +11,7 @@ const loggerProvider = new LoggerProvider({resource: new Resource({[SEMRESATTRS_
 
 loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()));
 loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(new OTLPLogExporter()));
-const eventLoggerProvider = new EventLoggerProvider(loggerProvider);
-events.setGlobalEventLoggerProvider(eventLoggerProvider);
+logs.setGlobalLoggerProvider(loggerProvider);
 
 registerInstrumentations({
   instrumentations: [

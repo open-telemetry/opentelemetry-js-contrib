@@ -20,11 +20,10 @@ import {
   SimpleLogRecordProcessor,
   ReadableLogRecord,
 } from '@opentelemetry/sdk-logs';
-import { EventLoggerProvider } from '@opentelemetry/sdk-events';
+
 import * as sinon from 'sinon';
 import { PageViewInstrumentation } from '../src';
 import { logs } from '@opentelemetry/api-logs';
-import { events } from '@opentelemetry/api-events';
 import { PageTypes } from '../src/enums/PageTypes';
 import * as assert from 'assert';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
@@ -38,7 +37,7 @@ describe('PageView Instrumentation', () => {
   const logRecordProcessor = new SimpleLogRecordProcessor(exporter);
   provider.addLogRecordProcessor(logRecordProcessor);
   logs.setGlobalLoggerProvider(provider);
-  events.setGlobalEventLoggerProvider(new EventLoggerProvider(provider));
+
 
   afterEach(() => {
     exporter.reset();
@@ -95,9 +94,9 @@ describe('PageView Instrumentation', () => {
 
       plugin = new PageViewInstrumentation({
         enabled: true,
-        applyCustomEventData: event => {
-          if (event.data) {
-            (event.data as any)['vp.startTime'] = vpStartTime;
+        applyCustomLogRecordData: logRecord => {
+          if (logRecord.body) {
+            (logRecord.body as any)['vp.startTime'] = vpStartTime;
           }
         },
       });
@@ -129,9 +128,9 @@ describe('PageView Instrumentation', () => {
 
       plugin = new PageViewInstrumentation({
         enabled: true,
-        applyCustomEventData: event => {
-          if (event.data) {
-            (event.data as any)['vp.startTime'] = vpStartTime;
+        applyCustomLogRecordData: logRecord => {
+          if (logRecord.body) {
+            (logRecord.body as any)['vp.startTime'] = vpStartTime;
           }
         },
       });
@@ -163,9 +162,9 @@ describe('PageView Instrumentation', () => {
 
       plugin = new PageViewInstrumentation({
         enabled: true,
-        applyCustomEventData: event => {
-          if (event.data) {
-            (event.data as any)['vp.startTime'] = vpStartTime;
+        applyCustomLogRecordData: logRecord => {
+          if (logRecord.body) {
+            (logRecord.body as any)['vp.startTime'] = vpStartTime;
           }
         },
       });

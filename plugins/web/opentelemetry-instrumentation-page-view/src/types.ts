@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import { Event } from '@opentelemetry/api-events';
+import {LogRecord} from "@opentelemetry/api-logs";
 
 /**
  * PageViewInstrumentationConfig
  */
 export interface PageViewInstrumentationConfig extends InstrumentationConfig {
-  applyCustomEventData?: ApplyCustomEventDataFunction;
+  applyCustomLogRecordData?: ApplyCustomLogRecordDataFunction;
 }
 
-export interface ApplyCustomEventDataFunction {
-  (event: Event): void;
+export interface ApplyCustomLogRecordDataFunction {
+  (logRecord:LogRecord): void;
 }

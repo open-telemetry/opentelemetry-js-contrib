@@ -15,10 +15,10 @@
  */
 
 import { InstrumentationBase, isWrapped } from '@opentelemetry/instrumentation';
-import { Event, events, EventLogger } from '@opentelemetry/api-events';
+import { LogRecord, logs, Logger } from '@opentelemetry/api-logs';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
-  ApplyCustomEventDataFunction,
+  ApplyCustomLogRecordDataFunction,
   PageViewInstrumentationConfig,
 } from './types';
 import { PageTypes } from './enums/PageTypes';
@@ -27,9 +27,9 @@ import { PageTypes } from './enums/PageTypes';
  */
 const EVENT_NAME = 'browser.page_view';
 export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrumentationConfig> {
-  eventLogger: EventLogger | null = null;
+  eventLogger: Logger | null = null;
   oldUrl = location.href;
-  applyCustomEventData: ApplyCustomEventDataFunction | undefined = undefined;
+  applyCustomLogRecordData: ApplyCustomLogRecordDataFunction | undefined = undefined;
 
   /**
    *
@@ -37,8 +37,8 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
    */
   constructor(config: PageViewInstrumentationConfig) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this.eventLogger = events.getEventLogger(PACKAGE_NAME, PACKAGE_VERSION);
-    this.applyCustomEventData = config?.applyCustomEventData;
+    this.eventLogger = logs.getLogger(PACKAGE_NAME, PACKAGE_VERSION);
+    this.applyCustomLogRecordData = config?.applyCustomLogRecordData;
   }
 
   init() {}
@@ -47,17 +47,19 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
    * callback to be executed when using hard navigation
    */
   private _onPageView() {
-    const pageViewEvent: Event = {
-      name: EVENT_NAME,
-      data: {
+    const pageViewLogRecord: LogRecord = {
+      attributes: {
+        'event.name': EVENT_NAME,
+      },
+      body: {
         url: document.documentURI as string,
         referrer: document.referrer,
         title: document.title,
         type: PageTypes.BASE_PAGE,
       },
     };
-    this._applyCustomEventData(pageViewEvent, this.applyCustomEventData);
-    this.eventLogger?.emit(pageViewEvent);
+    this._applyCustomLogRecordData(pageViewLogRecord, this.applyCustomLogRecordData);
+    this.eventLogger?.emit(pageViewLogRecord);
   }
 
   /**
@@ -70,9 +72,11 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
     if (referrer === location.href) {
       return;
     }
-    const vPageViewEvent: Event = {
-      name: EVENT_NAME,
-      data: {
+    const vPageViewLogRecord: LogRecord = {
+      attributes: {
+        'event.name': EVENT_NAME,
+      },
+      body: {
         url: window.location.href,
         title,
         changeState: changeState || '',
@@ -80,11 +84,11 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
         type: PageTypes.VIRTUAL_PAGE,
       },
     };
-    this._applyCustomEventData(vPageViewEvent, this.applyCustomEventData);
-    this.eventLogger?.emit(vPageViewEvent);
+    this._applyCustomLogRecordData(vPageViewLogRecord, this.applyCustomLogRecordData);
+    this.eventLogger?.emit(vPageViewLogRecord);
   }
 
-  public _seteventLogger(eventLogger: EventLogger) {
+  public _setLogger(eventLogger: Logger) {
     this.eventLogger = eventLogger;
   }
 
@@ -160,15 +164,15 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
   /**
    *
    * @param logRecord
-   * @param applyCustomEventData
+   * @param applyCustomLogRecordData
    * Add custom data to the event
    */
-  _applyCustomEventData(
-    event: Event,
-    applyCustomEventData: ApplyCustomEventDataFunction | undefined
+  _applyCustomLogRecordData(
+    logRecord: LogRecord,
+    applyCustomLogRecordData: ApplyCustomLogRecordDataFunction | undefined
   ) {
-    if (applyCustomEventData) {
-      applyCustomEventData(event);
+    if (applyCustomLogRecordData) {
+      applyCustomLogRecordData(logRecord);
     }
   }
 }
