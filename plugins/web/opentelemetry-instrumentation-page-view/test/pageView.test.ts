@@ -38,7 +38,6 @@ describe('PageView Instrumentation', () => {
   provider.addLogRecordProcessor(logRecordProcessor);
   logs.setGlobalLoggerProvider(provider);
 
-
   afterEach(() => {
     exporter.reset();
     plugin.disable();

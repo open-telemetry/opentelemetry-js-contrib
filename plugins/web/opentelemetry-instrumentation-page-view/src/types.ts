@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import {LogRecord} from "@opentelemetry/api-logs";
+import { LogRecord } from '@opentelemetry/api-logs';
 
 /**
  * PageViewInstrumentationConfig
@@ -24,5 +24,5 @@ export interface PageViewInstrumentationConfig extends InstrumentationConfig {
 }
 
 export interface ApplyCustomLogRecordDataFunction {
-  (logRecord:LogRecord): void;
+  (logRecord: LogRecord): void;
 }

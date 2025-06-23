@@ -29,7 +29,8 @@ const EVENT_NAME = 'browser.page_view';
 export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrumentationConfig> {
   eventLogger: Logger | null = null;
   oldUrl = location.href;
-  applyCustomLogRecordData: ApplyCustomLogRecordDataFunction | undefined = undefined;
+  applyCustomLogRecordData: ApplyCustomLogRecordDataFunction | undefined =
+    undefined;
 
   /**
    *
@@ -58,7 +59,10 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
         type: PageTypes.BASE_PAGE,
       },
     };
-    this._applyCustomLogRecordData(pageViewLogRecord, this.applyCustomLogRecordData);
+    this._applyCustomLogRecordData(
+      pageViewLogRecord,
+      this.applyCustomLogRecordData
+    );
     this.eventLogger?.emit(pageViewLogRecord);
   }
 
@@ -84,7 +88,10 @@ export class PageViewInstrumentation extends InstrumentationBase<PageViewInstrum
         type: PageTypes.VIRTUAL_PAGE,
       },
     };
-    this._applyCustomLogRecordData(vPageViewLogRecord, this.applyCustomLogRecordData);
+    this._applyCustomLogRecordData(
+      vPageViewLogRecord,
+      this.applyCustomLogRecordData
+    );
     this.eventLogger?.emit(vPageViewLogRecord);
   }
 
