@@ -118,7 +118,7 @@ describe('SNS - v3', () => {
         );
     });
 
-    it('topic arn', async () => {
+    it('should create topic ARN and capture expected trace attributes', async () => {
       const topicName = 'sns-topic-foo';
       const topicArn = `arn:aws:sns:us-east-1:123456789012:${topicName}`;
       await sns.createTopic({
