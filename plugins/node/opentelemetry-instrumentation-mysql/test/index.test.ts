@@ -55,7 +55,7 @@ describe('mysql@2.x-Tracing', () => {
   let poolCluster: mysqlTypes.PoolCluster;
   // assumes local mysql db is already available in CI or
   // using `npm run test-services:start` script at the root folder
-  const shouldTest = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
+  const shouldTest = process.env.RUN_MYSQL_TESTS;
   const memoryExporter = new InMemorySpanExporter();
   const provider = new BasicTracerProvider({
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
