@@ -40,11 +40,11 @@ import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { TimedEvent } from './types';
+import { METRIC_DB_CLIENT_OPERATION_DURATION } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_CLIENT_CONNECTION_STATE,
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
-  METRIC_DB_CLIENT_OPERATION_DURATION,
   ATTR_DB_SYSTEM,
   ATTR_DB_NAME,
   ATTR_DB_USER,
