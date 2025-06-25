@@ -16,7 +16,7 @@
 
 import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -29,12 +29,13 @@ import { HapiLayerType } from '../src/internal-types';
 import { AttributeNames } from '../src/enums/AttributeNames';
 
 describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   const tracer = provider.getTracer('default');
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let server: hapi.Server;
 
   before(() => {
@@ -43,7 +44,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
   });
 
   beforeEach(async () => {
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
     server = hapi.server({
       port: 3000,
@@ -81,12 +82,13 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
     name: 'simplePlugin',
     version: '1.0.0',
     multiple: true,
+    value: 42,
     register: async function (server: hapi.Server, options: any) {
       server.route({
         method: 'GET',
         path: '/hello',
-        handler: function (request, h) {
-          return `hello, world, ${options.name}`;
+        handler: (request, h) => {
+          return `hello, world, ${this.value} ${options.name}`;
         },
       });
     },

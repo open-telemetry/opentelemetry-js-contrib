@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-import {
-  DBSYSTEMVALUES_SQLITE,
-  DBSYSTEMVALUES_POSTGRESQL,
-} from '@opentelemetry/semantic-conventions';
+import { Exception } from '@opentelemetry/api';
+import { DB_SYSTEM_NAME_VALUE_POSTGRESQL } from '@opentelemetry/semantic-conventions';
+import { DB_SYSTEM_NAME_VALUE_SQLITE } from './semconv';
 
-type Exception = {
-  new (message: string): Exception;
-  constructor: Exception;
-  errno?: number;
+type KnexError = Error & {
   code?: string;
-  stack?: string;
 };
 
 export const getFormatter = (runner: any) => {
@@ -43,21 +38,27 @@ export const getFormatter = (runner: any) => {
   return () => '<noop formatter>';
 };
 
-export const cloneErrorWithNewMessage = (err: Exception, message: string) => {
-  if (err && err instanceof Error) {
-    const clonedError = new (err.constructor as Exception)(message);
-    clonedError.code = err.code;
-    clonedError.stack = err.stack;
-    clonedError.errno = err.errno;
-    return clonedError;
+export function otelExceptionFromKnexError(
+  err: KnexError,
+  message: string
+): Exception {
+  if (!(err && err instanceof Error)) {
+    return err;
   }
-  return err;
-};
+
+  return {
+    message,
+    code: err.code,
+    stack: err.stack,
+    name: err.name,
+  };
+}
 
 const systemMap = new Map([
-  ['sqlite3', DBSYSTEMVALUES_SQLITE],
-  ['pg', DBSYSTEMVALUES_POSTGRESQL],
+  ['sqlite3', DB_SYSTEM_NAME_VALUE_SQLITE],
+  ['pg', DB_SYSTEM_NAME_VALUE_POSTGRESQL],
 ]);
+
 export const mapSystem = (knexSystem: string) => {
   return systemMap.get(knexSystem) || knexSystem;
 };

@@ -10,24 +10,26 @@ import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { Resource } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
 
 const EXPORTER = process.env.EXPORTER || '';
 
 export const setupTracing = (serviceName: string) => {
-  const provider = new NodeTracerProvider({
-    resource: new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: serviceName
-    })
-  });
-
   let exporter;
   if (EXPORTER === 'jaeger') {
     exporter = new JaegerExporter();
   } else {
     exporter = new ZipkinExporter();
   }
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+
+  const provider = new NodeTracerProvider({
+    resource: new Resource({
+      [ATTR_SERVICE_NAME]: serviceName
+    }),
+    spanProcessors: [
+      new SimpleSpanProcessor(exporter),
+    ],
+  });
 
   registerInstrumentations({
     instrumentations: [

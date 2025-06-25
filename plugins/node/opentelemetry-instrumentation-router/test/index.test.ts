@@ -16,7 +16,7 @@
 
 import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -152,13 +152,14 @@ const spans = {
 };
 
 describe('Router instrumentation', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let server: http.Server;
 
   const request = (path: string, serverOverwrite?: http.Server) => {
@@ -184,7 +185,7 @@ describe('Router instrumentation', () => {
     // To force `require-in-the-middle` to definitely reload and patch the layer
     require('router/lib/layer.js');
     server = await createServer();
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
@@ -248,7 +249,7 @@ describe('Router instrumentation', () => {
 
         memoryExporter.getFinishedSpans().forEach((span, idx) => {
           assert.strictEqual(
-            span.parentSpanId,
+            span.parentSpanContext?.spanId,
             parentSpan.spanContext().spanId,
             `span[${idx}] has invalid parent`
           );

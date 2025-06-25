@@ -16,7 +16,7 @@
 import * as assert from 'assert';
 
 import { context, propagation } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
   AggregationTemporality,
@@ -37,12 +37,13 @@ describe('UndiciInstrumentation metrics tests', function () {
   const hostname = 'localhost';
   const mockServer = new MockServer();
   const provider = new NodeTracerProvider();
-  const meterProvider = new MeterProvider();
   const metricsMemoryExporter = new InMemoryMetricExporter(
     AggregationTemporality.DELTA
   );
   const metricReader = new MockMetricsReader(metricsMemoryExporter);
-  meterProvider.addMetricReader(metricReader);
+  const meterProvider = new MeterProvider({
+    readers: [metricReader],
+  });
 
   before(function (done) {
     // Do not test if the `fetch` global API is not available
@@ -57,7 +58,9 @@ describe('UndiciInstrumentation metrics tests', function () {
     instrumentation.setTracerProvider(provider);
     instrumentation.setMeterProvider(meterProvider);
 
-    context.setGlobalContextManager(new AsyncHooksContextManager().enable());
+    context.setGlobalContextManager(
+      new AsyncLocalStorageContextManager().enable()
+    );
     mockServer.start(done);
     mockServer.mockListener((req, res) => {
       // Return a valid response always

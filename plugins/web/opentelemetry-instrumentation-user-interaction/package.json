@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-user-interaction",
-  "version": "0.42.0",
+  "version": "0.47.0",
   "description": "OpenTelemetry instrumentation for user interactions as click events in a web application",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -12,8 +12,8 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../../scripts/lint-readme.js",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-user-interaction",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "prepublishOnly": "npm run compile",
     "tdd": "karma start",
@@ -31,7 +31,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=14"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "build/esm/**/*.js",
@@ -51,13 +51,13 @@
     "@babel/core": "7.24.6",
     "@babel/preset-env": "7.24.6",
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/context-zone-peer-dep": "^1.8.0",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.55.0",
-    "@opentelemetry/sdk-trace-base": "^1.8.0",
-    "@types/jquery": "3.5.30",
-    "@types/mocha": "10.0.6",
+    "@opentelemetry/context-zone-peer-dep": "^2.0.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.202.0",
+    "@opentelemetry/sdk-trace-base": "^2.0.0",
+    "@types/jquery": "3.5.32",
+    "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
-    "@types/sinon": "10.0.20",
+    "@types/sinon": "17.0.4",
     "@types/webpack-env": "1.16.3",
     "assert": "2.0.0",
     "babel-loader": "8.3.0",
@@ -69,23 +69,23 @@
     "karma-mocha": "2.0.1",
     "karma-spec-reporter": "0.0.36",
     "karma-webpack": "5.0.1",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "sinon": "15.1.2",
-    "ts-loader": "9.5.1",
-    "typescript": "4.4.4",
+    "ts-loader": "9.5.2",
+    "typescript": "5.0.4",
     "webpack": "5.94.0",
     "webpack-cli": "5.1.4",
     "webpack-merge": "5.10.0",
-    "zone.js": "^0.11.4 || ^0.13.0 || ^0.14.0"
+    "zone.js": "^0.11.4 || ^0.13.0 || ^0.14.0 || ^0.15.0"
   },
   "dependencies": {
-    "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.55.0",
-    "@opentelemetry/sdk-trace-web": "^1.8.0"
+    "@opentelemetry/core": "^2.0.0",
+    "@opentelemetry/instrumentation": "^0.202.0",
+    "@opentelemetry/sdk-trace-web": "^2.0.0"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "zone.js": "^0.11.4 || ^0.13.0 || ^0.14.0"
+    "zone.js": "^0.11.4 || ^0.13.0 || ^0.14.0 || ^0.15.0"
   },
   "sideEffects": false,
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-user-interaction#readme"

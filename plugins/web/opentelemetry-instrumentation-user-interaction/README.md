@@ -32,10 +32,12 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 // import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 
 const provider = new WebTracerProvider({
-  contextManager: new ZoneContextManager()
+  contextManager: new ZoneContextManager(),
+  spanProcessors: [
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+  ],
 });
 
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({
@@ -106,7 +108,7 @@ registerInstrumentations({
 ### Prevent spans from recording
 
 ```js
-import { UserInteractionInstrumentation } from '@opentelemetryinstrumentation-user-interaction';
+import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
 
@@ -128,7 +130,7 @@ registerInstrumentations({
 To attach extra attributes to user interaction spans, provide a callback function to the `shouldPreventSpanCreation` option:
 
 ```js
-import { UserInteractionInstrumentation } from '@opentelemetryinstrumentation-user-interaction';
+import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
 // ...general opentelemetry configuration

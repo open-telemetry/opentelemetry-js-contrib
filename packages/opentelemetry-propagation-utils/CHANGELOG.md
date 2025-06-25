@@ -1,5 +1,71 @@
 # Changelog
 
+## [0.31.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.31.1...propagation-utils-v0.31.2) (2025-06-02)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.47.0 to ^0.48.0
+
+## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.31.0...propagation-utils-v0.31.1) (2025-05-15)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.16...propagation-utils-v0.31.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* chore!: Update to 2.x and 0.200.x @opentelemetry/* packages from opentelemetry-js.git per [2.x upgrade guide](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/upgrade-to-2.x.md)
+  * The minimum supported Node.js has been raised to ^18.19.0 || >=20.6.0. This means that support for Node.js 14 and 16 has been dropped.
+  * The minimum supported TypeScript version has been raised to 5.0.4.
+  * The compilation target for transpiled TypeScript has been raised to ES2022 (from ES2017).
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.1 to ^0.46.0
+
+## [0.30.16](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.15...propagation-utils-v0.30.16) (2025-02-19)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.0 to ^0.45.1
+
+## [0.30.15](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.14...propagation-utils-v0.30.15) (2024-12-18)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.44.0 to ^0.45.0
+
+## [0.30.14](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.13...propagation-utils-v0.30.14) (2024-12-04)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.43.0 to ^0.44.0
+
 ## [0.30.13](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.12...propagation-utils-v0.30.13) (2024-11-18)
 
 

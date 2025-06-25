@@ -63,10 +63,11 @@ interface InstrumentationRecord {
 export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumentationConfig> {
   // Keep ref to avoid https://github.com/nodejs/node/issues/42170 bug and for
   // unsubscribing.
-  private _channelSubs!: Array<ListenerRecord>;
+  private declare _channelSubs: Array<ListenerRecord>;
   private _recordFromReq = new WeakMap<UndiciRequest, InstrumentationRecord>();
 
-  private _httpClientDurationHistogram!: Histogram;
+  private declare _httpClientDurationHistogram: Histogram;
+
   constructor(config: UndiciInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -164,6 +165,50 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     });
   }
 
+  private parseRequestHeaders(request: UndiciRequest) {
+    const result = new Map<string, string | string[]>();
+
+    if (Array.isArray(request.headers)) {
+      // headers are an array [k1, v2, k2, v2] (undici v6+)
+      // values could be string or a string[] for multiple values
+      for (let i = 0; i < request.headers.length; i += 2) {
+        const key = request.headers[i];
+        const value = request.headers[i + 1];
+
+        // Key should always be a string, but the types don't know that, and let's be safe
+        if (typeof key === 'string') {
+          result.set(key.toLowerCase(), value);
+        }
+      }
+    } else if (typeof request.headers === 'string') {
+      // headers are a raw string (undici v5)
+      // headers could be repeated in several lines for multiple values
+      const headers = request.headers.split('\r\n');
+      for (const line of headers) {
+        if (!line) {
+          continue;
+        }
+        const colonIndex = line.indexOf(':');
+        if (colonIndex === -1) {
+          // Invalid header? Probably this can't happen, but again let's be safe.
+          continue;
+        }
+        const key = line.substring(0, colonIndex).toLowerCase();
+        const value = line.substring(colonIndex + 1).trim();
+        const allValues = result.get(key);
+
+        if (allValues && Array.isArray(allValues)) {
+          allValues.push(value);
+        } else if (allValues) {
+          result.set(key, [allValues, value]);
+        } else {
+          result.set(key, value);
+        }
+      }
+    }
+    return result;
+  }
+
   // This is the 1st message we receive for each request (fired after request creation). Here we will
   // create the span and populate some atttributes, then link the span to the request for further
   // span processing
@@ -217,24 +262,16 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     // Get user agent from headers
-    let userAgent;
-    if (Array.isArray(request.headers)) {
-      const idx = request.headers.findIndex(
-        h => h.toLowerCase() === 'user-agent'
-      );
-      if (idx >= 0) {
-        userAgent = request.headers[idx + 1];
-      }
-    } else if (typeof request.headers === 'string') {
-      const headers = request.headers.split('\r\n');
-      const uaHeader = headers.find(h =>
-        h.toLowerCase().startsWith('user-agent')
-      );
-      userAgent =
-        uaHeader && uaHeader.substring(uaHeader.indexOf(':') + 1).trim();
-    }
+    const headersMap = this.parseRequestHeaders(request);
+    const userAgentValues = headersMap.get('user-agent');
 
-    if (userAgent) {
+    if (userAgentValues) {
+      // NOTE: having multiple user agents is not expected so
+      // we're going to take last one like `curl` does
+      // ref: https://curl.se/docs/manpage.html#-A
+      const userAgent = Array.isArray(userAgentValues)
+        ? userAgentValues[userAgentValues.length - 1]
+        : userAgentValues;
       attributes[SemanticAttributes.USER_AGENT_ORIGINAL] = userAgent;
     }
 
@@ -328,27 +365,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       const headersToAttribs = new Set(
         config.headersToSpanAttributes.requestHeaders.map(n => n.toLowerCase())
       );
+      const headersMap = this.parseRequestHeaders(request);
 
-      // headers could be in form
-      // ['name: value', ...] for v5
-      // ['name', 'value', ...] for v6
-      const rawHeaders = Array.isArray(request.headers)
-        ? request.headers
-        : request.headers.split('\r\n');
-      rawHeaders.forEach((h, idx) => {
-        const sepIndex = h.indexOf(':');
-        const hasSeparator = sepIndex !== -1;
-        const name = (
-          hasSeparator ? h.substring(0, sepIndex) : h
-        ).toLowerCase();
-        const value = hasSeparator
-          ? h.substring(sepIndex + 1)
-          : rawHeaders[idx + 1];
-
+      for (const [name, value] of headersMap.entries()) {
         if (headersToAttribs.has(name)) {
-          spanAttributes[`http.request.header.${name}`] = value.trim();
+          const attrValue = Array.isArray(value) ? value.join(', ') : value;
+          spanAttributes[`http.request.header.${name}`] = attrValue;
         }
-      });
+      }
     }
 
     span.setAttributes(spanAttributes);

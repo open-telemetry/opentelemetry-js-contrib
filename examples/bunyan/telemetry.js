@@ -24,9 +24,9 @@
 
 const { NodeSDK, tracing, logs } = require('@opentelemetry/sdk-node');
 const {
-  envDetectorSync,
-  hostDetectorSync,
-  processDetectorSync,
+  envDetector,
+  hostDetector,
+  processDetector,
 } = require('@opentelemetry/resources');
 // api.diag.setLogger(new api.DiagConsoleLogger(), api.DiagLogLevel.DEBUG);
 
@@ -37,14 +37,14 @@ const {
 const sdk = new NodeSDK({
   serviceName: 'bunyan-example',
   resourceDetectors: [
-    envDetectorSync,
+    envDetector,
     // ProcessDetector adds `process.pid` (among other resource attributes),
     // which replaces the usual Bunyan `pid` field.
-    processDetectorSync,
+    processDetector,
     // The HostDetector adds `host.name` and `host.arch` fields. `host.name`
     // replaces the usual Bunyan `hostname` field. HostDetector is *not* a
     // default detector of the `NodeSDK`.
-    hostDetectorSync,
+    hostDetector,
   ],
   spanProcessor: new tracing.SimpleSpanProcessor(
     new tracing.ConsoleSpanExporter()

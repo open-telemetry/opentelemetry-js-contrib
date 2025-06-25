@@ -54,7 +54,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
   readonly version = PACKAGE_VERSION;
   readonly moduleName: string = 'user-interaction';
   private _spansData = new WeakMap<api.Span, SpanData>();
-  private _zonePatched?: boolean;
+  private declare _zonePatched?: boolean;
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
     Function | EventListenerObject,
@@ -575,7 +575,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * implements enable function
    */
   override enable() {
-    const ZoneWithPrototype = this.getZoneWithPrototype();
+    const ZoneWithPrototype = this._getZoneWithPrototype();
     this._diag.debug(
       'applying patch to',
       this.moduleName,
@@ -645,7 +645,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * implements unpatch function
    */
   override disable() {
-    const ZoneWithPrototype = this.getZoneWithPrototype();
+    const ZoneWithPrototype = this._getZoneWithPrototype();
     this._diag.debug(
       'removing patch from',
       this.moduleName,
@@ -680,7 +680,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
   /**
    * returns Zone
    */
-  getZoneWithPrototype(): ZoneTypeWithPrototype | undefined {
+  private _getZoneWithPrototype(): ZoneTypeWithPrototype | undefined {
     const _window: WindowWithZone = window as unknown as WindowWithZone;
     return _window.Zone;
   }

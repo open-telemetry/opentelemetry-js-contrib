@@ -131,6 +131,11 @@ pkg:instrumentation-ioredis:
           - plugins/node/opentelemetry-instrumentation-ioredis/**
           - packages/opentelemetry-test-utils/**
           - packages/opentelemetry-redis-common/**
+pkg:instrumentation-kafkajs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-kafkajs/**
+          - packages/opentelemetry-test-utils/**
 pkg:instrumentation-knex:
   - changed-files:
       - any-glob-to-any-file:
@@ -183,6 +188,11 @@ pkg:instrumentation-net:
   - changed-files:
       - any-glob-to-any-file:
           - plugins/node/opentelemetry-instrumentation-net/**
+pkg:instrumentation-oracledb:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-oracledb/**
+          - packages/opentelemetry-test-utils/**
 pkg:instrumentation-pg:
   - changed-files:
       - any-glob-to-any-file:
@@ -297,12 +307,9 @@ pkg-status:unmaintained:
           - plugins/node/opentelemetry-instrumentation-knex/**
           - plugins/node/opentelemetry-instrumentation-koa/**
           - plugins/node/opentelemetry-instrumentation-memcached/**
-          - plugins/node/opentelemetry-instrumentation-mongodb/**
           - plugins/node/opentelemetry-instrumentation-mysql/**
-          - plugins/node/opentelemetry-instrumentation-mysql2/**
           - plugins/node/opentelemetry-instrumentation-nestjs-core/**
           - plugins/node/opentelemetry-instrumentation-restify/**
           - plugins/node/opentelemetry-instrumentation-router/**
           - propagators/opentelemetry-propagator-ot-trace/**
-          - propagators/propagator-aws-xray/**
           - propagators/propagator-aws-xray-lambda/**

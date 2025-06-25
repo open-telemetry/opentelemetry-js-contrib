@@ -21,7 +21,7 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -36,13 +36,14 @@ const plugin = new KnexInstrumentation({
 import knex from 'knex';
 
 describe('Knex instrumentation', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let client: any;
 
   before(() => {
@@ -54,7 +55,7 @@ describe('Knex instrumentation', () => {
   });
 
   beforeEach(async () => {
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
 
     client = knex({
@@ -192,6 +193,61 @@ describe('Knex instrumentation', () => {
             },
             null,
           ]);
+        }
+      );
+    });
+
+    it('should catch better-sqlite3 errors', async () => {
+      client = knex({
+        client: 'better-sqlite3',
+        connection: {
+          filename: ':memory:',
+        },
+        useNullAsDefault: true,
+      });
+
+      const parentSpan = tracer.startSpan('parentSpan');
+      const MESSAGE = 'no such table: testTable1';
+      const CODE = 'SQLITE_ERROR';
+
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          try {
+            await client
+              .insert({ title: 'test1' })
+              .into('testTable1')
+              .catch((err: any) => {
+                assertMatch(err.message, /SQLITE_ERROR/, err);
+              });
+          } catch (e) {
+            // skip
+          }
+          parentSpan.end();
+
+          const events = memoryExporter.getFinishedSpans()[0].events!;
+
+          assert.strictEqual(events.length, 1);
+          assert.strictEqual(events[0].name, 'exception');
+          assert.strictEqual(
+            events[0].attributes?.['exception.message'],
+            MESSAGE
+          );
+          assert.strictEqual(events[0].attributes?.['exception.type'], CODE);
+
+          assertSpans(
+            memoryExporter.getFinishedSpans(),
+            [
+              {
+                op: 'insert',
+                table: 'testTable1',
+                statement: 'insert into `testTable1` (`title`) values (?)',
+                parentSpan,
+              },
+              null,
+            ],
+            { dbSystem: 'better-sqlite3' }
+          );
         }
       );
     });
@@ -526,7 +582,15 @@ describe('Knex instrumentation', () => {
   });
 });
 
-const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
+const assertSpans = (
+  actualSpans: any[],
+  expectedSpans: any[],
+  options?: { dbSystem?: string }
+) => {
+  const customAssertOptions = {
+    dbSystem: 'sqlite',
+    ...options,
+  };
   assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
   assert(
     Array.isArray(expectedSpans),
@@ -546,7 +610,10 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       assert.strictEqual(span.kind, SpanKind.CLIENT);
       assertMatch(span.name, new RegExp(expected.op));
       assertMatch(span.name, new RegExp(':memory:'));
-      assert.strictEqual(span.attributes['db.system'], 'sqlite');
+      assert.strictEqual(
+        span.attributes['db.system'],
+        customAssertOptions.dbSystem
+      );
       assert.strictEqual(span.attributes['db.name'], ':memory:');
       assert.strictEqual(span.attributes['db.sql.table'], expected.table);
       assert.strictEqual(span.attributes['db.statement'], expected.statement);
@@ -557,7 +624,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       );
       assert.strictEqual(span.attributes['db.operation'], expected.op);
       assert.strictEqual(
-        span.parentSpanId,
+        span.parentSpanContext?.spanId,
         expected.parentSpan?.spanContext().spanId
       );
     } catch (e: any) {

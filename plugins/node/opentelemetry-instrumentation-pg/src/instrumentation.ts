@@ -18,6 +18,7 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
+  InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
 import {
   context,
@@ -65,12 +66,18 @@ import {
   METRIC_DB_CLIENT_OPERATION_DURATION,
   ATTR_DB_NAMESPACE,
   ATTR_DB_OPERATION_NAME,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from './semconv';
+
+function extractModuleExports(module: any) {
+  return module[Symbol.toStringTag] === 'Module'
+    ? module.default // ESM
+    : module; // CommonJS
+}
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
-  private _operationDuration!: Histogram;
-  private _connectionsCount!: UpDownCounter;
-  private _connectionPendingRequests!: UpDownCounter;
+  private declare _operationDuration: Histogram;
+  private declare _connectionsCount: UpDownCounter;
+  private declare _connectionPendingRequests: UpDownCounter;
   // Pool events connect, acquire, release and remove can be called
   // multiple times without changing the values of total, idle and waiting
   // connections. The _connectionsCounter is used to keep track of latest
@@ -125,51 +132,46 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   protected init() {
+    const SUPPORTED_PG_VERSIONS = ['>=8.0.3 <9'];
+    const SUPPORTED_PG_POOL_VERSIONS = ['>=2.0.0 <4'];
+
+    const modulePgNativeClient = new InstrumentationNodeModuleFile(
+      'pg/lib/native/client.js',
+      SUPPORTED_PG_VERSIONS,
+      this._patchPgClient.bind(this),
+      this._unpatchPgClient.bind(this)
+    );
+
+    const modulePgClient = new InstrumentationNodeModuleFile(
+      'pg/lib/client.js',
+      SUPPORTED_PG_VERSIONS,
+      this._patchPgClient.bind(this),
+      this._unpatchPgClient.bind(this)
+    );
+
     const modulePG = new InstrumentationNodeModuleDefinition(
       'pg',
-      ['>=8.0.3 <9'],
+      SUPPORTED_PG_VERSIONS,
       (module: any) => {
-        const moduleExports: typeof pgTypes =
-          module[Symbol.toStringTag] === 'Module'
-            ? module.default // ESM
-            : module; // CommonJS
-        if (isWrapped(moduleExports.Client.prototype.query)) {
-          this._unwrap(moduleExports.Client.prototype, 'query');
-        }
+        const moduleExports = extractModuleExports(module);
 
-        if (isWrapped(moduleExports.Client.prototype.connect)) {
-          this._unwrap(moduleExports.Client.prototype, 'connect');
-        }
-
-        this._wrap(
-          moduleExports.Client.prototype,
-          'query',
-          this._getClientQueryPatch() as any
-        );
-
-        this._wrap(
-          moduleExports.Client.prototype,
-          'connect',
-          this._getClientConnectPatch() as any
-        );
-
+        this._patchPgClient(moduleExports.Client);
         return module;
       },
       (module: any) => {
-        const moduleExports: typeof pgTypes =
-          module[Symbol.toStringTag] === 'Module'
-            ? module.default // ESM
-            : module; // CommonJS
-        if (isWrapped(moduleExports.Client.prototype.query)) {
-          this._unwrap(moduleExports.Client.prototype, 'query');
-        }
-      }
+        const moduleExports = extractModuleExports(module);
+
+        this._unpatchPgClient(moduleExports.Client);
+        return module;
+      },
+      [modulePgClient, modulePgNativeClient]
     );
 
     const modulePGPool = new InstrumentationNodeModuleDefinition(
       'pg-pool',
-      ['>=2.0.0 <4'],
-      (moduleExports: typeof pgPoolTypes) => {
+      SUPPORTED_PG_POOL_VERSIONS,
+      (module: any) => {
+        const moduleExports = extractModuleExports(module);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -180,7 +182,8 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         );
         return moduleExports;
       },
-      (moduleExports: typeof pgPoolTypes) => {
+      (module: any) => {
+        const moduleExports = extractModuleExports(module);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -188,6 +191,50 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     );
 
     return [modulePG, modulePGPool];
+  }
+
+  private _patchPgClient(module: any) {
+    if (!module) {
+      return;
+    }
+
+    const moduleExports = extractModuleExports(module);
+
+    if (isWrapped(moduleExports.prototype.query)) {
+      this._unwrap(moduleExports.prototype, 'query');
+    }
+
+    if (isWrapped(moduleExports.prototype.connect)) {
+      this._unwrap(moduleExports.prototype, 'connect');
+    }
+
+    this._wrap(
+      moduleExports.prototype,
+      'query',
+      this._getClientQueryPatch() as any
+    );
+
+    this._wrap(
+      moduleExports.prototype,
+      'connect',
+      this._getClientConnectPatch() as any
+    );
+
+    return module;
+  }
+
+  private _unpatchPgClient(module: any) {
+    const moduleExports = extractModuleExports(module);
+
+    if (isWrapped(moduleExports.prototype.query)) {
+      this._unwrap(moduleExports.prototype, 'query');
+    }
+
+    if (isWrapped(moduleExports.prototype.connect)) {
+      this._unwrap(moduleExports.prototype, 'connect');
+    }
+
+    return module;
   }
 
   private _getClientConnectPatch() {

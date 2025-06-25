@@ -29,7 +29,7 @@ import {
   PgInstrumentationConfig,
   PgResponseHookInformation,
 } from '../src';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
@@ -55,7 +55,7 @@ import {
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
   METRIC_DB_CLIENT_OPERATION_DURATION,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../src/semconv';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -114,12 +114,18 @@ describe('pg-pool', () => {
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
     instrumentation.enable();
+
+    // Disable and enable the instrumentation to visit unwrap calls
+    instrumentation.disable();
+    instrumentation.enable();
   }
 
   let pool: pgPool<pg.Client>;
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let instrumentation: PgInstrumentation;
-  const provider = new BasicTracerProvider();
+  const provider = new BasicTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
 
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
@@ -137,14 +143,13 @@ describe('pg-pool', () => {
       skip();
     }
 
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     if (testPostgresLocally) {
       testUtils.startDocker('postgres');
     }
 
     instrumentation = new PgInstrumentation();
 
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
 
@@ -163,7 +168,7 @@ describe('pg-pool', () => {
   });
 
   beforeEach(() => {
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
   });
 
@@ -202,7 +207,7 @@ describe('pg-pool', () => {
         const [connectSpan, poolConnectSpan] =
           memoryExporter.getFinishedSpans();
         assert.strictEqual(
-          connectSpan.parentSpanId,
+          connectSpan.parentSpanContext?.spanId,
           poolConnectSpan.spanContext().spanId
         );
 
@@ -214,6 +219,36 @@ describe('pg-pool', () => {
           client.release();
         }
       });
+    });
+
+    // Test connection string support
+    it('should handle connection string in pool options', async () => {
+      const connectionString = `postgresql://${CONFIG.user}:${CONFIG.password}@${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`;
+      const poolWithConnString = new pgPool({
+        connectionString,
+        idleTimeoutMillis: CONFIG.idleTimeoutMillis,
+      });
+
+      const expectedAttributes = {
+        [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+        [SEMATTRS_DB_NAME]: CONFIG.database,
+        [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
+        [SEMATTRS_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+        [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
+        [SEMATTRS_DB_USER]: CONFIG.user,
+        [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
+      };
+
+      const events: TimedEvent[] = [];
+      const span = provider.getTracer('test-pg-pool').startSpan('test span');
+
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const client = await poolWithConnString.connect();
+        runCallbackTest(span, expectedAttributes, events, unsetStatus, 2, 1);
+        client.release();
+      });
+
+      await poolWithConnString.end();
     });
 
     // callback - checkout a client
@@ -615,6 +650,12 @@ describe('pg-pool', () => {
 
     it('should not add duplicate event listeners to PgPool events', done => {
       const poolAux: pgPool<pg.Client> = new pgPool(CONFIG);
+
+      const finish = () => {
+        poolAux.end();
+        done();
+      };
+
       let completed = 0;
       poolAux.connect((err, client, release) => {
         if (err) {
@@ -652,7 +693,7 @@ describe('pg-pool', () => {
 
         completed++;
         if (completed >= 2) {
-          done();
+          finish();
         }
       });
 
@@ -692,7 +733,7 @@ describe('pg-pool', () => {
 
         completed++;
         if (completed >= 2) {
-          done();
+          finish();
         }
       });
     });
@@ -773,6 +814,8 @@ describe('pg-pool', () => {
             1,
             'expected to have 1 used connection'
           );
+
+          poolAux.end();
           done();
         });
       });
@@ -781,6 +824,12 @@ describe('pg-pool', () => {
     it('when creating multiple pools, all of them should be instrumented', done => {
       const pool1: pgPool<pg.Client> = new pgPool(CONFIG);
       const pool2: pgPool<pg.Client> = new pgPool(CONFIG);
+
+      const finish = () => {
+        pool1.end();
+        pool2.end();
+        done();
+      };
 
       let completed = 0;
       pool1.connect((err, client, release) => {
@@ -827,7 +876,7 @@ describe('pg-pool', () => {
 
         completed++;
         if (completed >= 2) {
-          done();
+          finish();
         }
       });
 
@@ -875,9 +924,48 @@ describe('pg-pool', () => {
 
         completed++;
         if (completed >= 2) {
-          done();
+          finish();
         }
       });
+    });
+  });
+});
+
+describe('pg-pool (ESM)', () => {
+  it('should work with ESM usage', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-pg-pool.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        const spans = collector.sortedSpans;
+
+        assert.strictEqual(spans.length, 6);
+
+        let span = spans.shift()!;
+        assert.strictEqual(span.name, 'test-span');
+        assert.strictEqual(span.kind, 1 /* OtlpSpanKind.INTERNAL */);
+        const expectedRemainingSpanNames = [
+          // I believe two sets of `*.connect` spans because pg-pool opens
+          // two connections to start.
+          'pg-pool.connect',
+          'pg.connect',
+          'pg-pool.connect',
+          'pg.connect',
+          'pg.query:SELECT otel_pg_database',
+        ];
+        for (const expectedName of expectedRemainingSpanNames) {
+          span = spans.shift()!;
+          assert.strictEqual(span.name, expectedName);
+        }
+      },
     });
   });
 });

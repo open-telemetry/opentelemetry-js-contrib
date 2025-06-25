@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-import {
-  getTestSpans,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-import { AwsInstrumentation } from '../src';
+import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 import { AttributeNames } from '../src/enums';
-registerInstrumentationTesting(new AwsInstrumentation());
+import './load-instrumentation';
 
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as fs from 'fs';
@@ -29,6 +25,10 @@ import * as nock from 'nock';
 import { SpanKind } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'expect';
+
+// set aws environment variables, so tests in non aws environment are able to run
+process.env.AWS_ACCESS_KEY_ID = 'testing';
+process.env.AWS_SECRET_ACCESS_KEY = 'testing';
 
 const region = 'us-east-1';
 

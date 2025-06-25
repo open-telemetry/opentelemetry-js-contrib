@@ -23,7 +23,7 @@ import {
   Span,
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
@@ -68,16 +68,21 @@ const unsetStatus: SpanStatus = {
 };
 
 describe('redis@2.x', () => {
-  const provider = new NodeTracerProvider();
+  const provider = new NodeTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   const tracer = provider.getTracer('external');
   let redis: typeof redisTypes;
   const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
   const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
 
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   beforeEach(() => {
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
+    // set the default tracer provider before each test
+    // specific ones can override it to assert certain things
+    instrumentation.setTracerProvider(provider);
   });
 
   afterEach(() => {
@@ -98,7 +103,6 @@ describe('redis@2.x', () => {
     }
 
     redis = require('redis');
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
   });
@@ -385,6 +389,37 @@ describe('redis@2.x', () => {
               done();
             });
           });
+        });
+      });
+    });
+
+    describe('setTracerProvider', () => {
+      before(() => {
+        instrumentation.disable();
+        instrumentation.setConfig({});
+        instrumentation.enable();
+      });
+
+      it('should use new tracer provider after setTracerProvider is called', done => {
+        const testSpecificMemoryExporter = new InMemorySpanExporter();
+        const spanProcessor = new SimpleSpanProcessor(
+          testSpecificMemoryExporter
+        );
+        const tracerProvider = new NodeTracerProvider({
+          spanProcessors: [spanProcessor],
+        });
+
+        // key point of this test, setting new tracer provider and making sure
+        // new spans use it.
+        instrumentation.setTracerProvider(tracerProvider);
+
+        client.set('test', 'value-with-new-tracer-provider', err => {
+          assert.ifError(err);
+          // assert that the span was exported by the new tracer provider
+          // which is using the test specific span processor
+          const spans = testSpecificMemoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          done();
         });
       });
     });

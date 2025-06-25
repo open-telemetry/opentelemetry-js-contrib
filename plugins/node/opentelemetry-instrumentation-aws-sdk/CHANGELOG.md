@@ -1,5 +1,144 @@
 # Changelog
 
+## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.53.0...instrumentation-aws-sdk-v0.54.0) (2025-06-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **opentelemetry-instrumentation-aws-sdk:** rename aws.region to `cloud.region` ([#2842](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2842))
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+* **instrumentation-aws-sdk:** add gen ai conventions for converse stream span ([#2769](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2769)) ([ab438a0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab438a04f5d7605f2336a549d63ae48085c50857))
+
+
+### Bug Fixes
+
+* **aws-sdk:** use `custom` client_context prop ([#2718](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2718)) ([e0858f9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e0858f95f18eef71b6c3d9c292c5b7231bc88eba))
+* **opentelemetry-instrumentation-aws-sdk:** rename aws.region to `cloud.region` ([#2842](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2842)) ([6f65523](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6f655230c6f2a7b47f41ff796e625f569d6430bd))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.31.1 to ^0.31.2
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.47.0 to ^0.48.0
+
+## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.52.0...instrumentation-aws-sdk-v0.53.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+* **instrumentation-aws-sdk:** add gen ai metrics for bedrock ([#2771](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2771)) ([64fcbf3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/64fcbf3b70e7293e143266838ff94b94cf2c30da))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.31.0 to ^0.31.1
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.51.0...instrumentation-aws-sdk-v0.52.0) (2025-05-02)
+
+
+### Features
+
+* **instrumentation-aws-sdk:** add gen ai instrumentation for InvokeModel API ([#2777](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2777)) ([41d0d4b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/41d0d4b8c404f4e11f17b79f53d949208751f616))
+
+## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.50.0...instrumentation-aws-sdk-v0.51.0) (2025-04-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **aws-sdk:** drop support for AWS SDK for JavaScript v2 ([#2623](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2623))
+
+### Features
+
+* **aws-sdk:** drop support for AWS SDK for JavaScript v2 ([#2623](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2623)) ([37d8ce1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/37d8ce16faf4d3d3b45eaa0f7bdeddcfa47f139d))
+* **instrumentation-aws-sdk:** add bedrock-runtime extension to apply gen ai conventions ([#2700](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2700)) ([2b7feac](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2b7feac92489d35d69824a51a1c3b462c7c2912b))
+
+## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.49.1...instrumentation-aws-sdk-v0.50.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* chore!: Update to 2.x and 0.200.x @opentelemetry/* packages from opentelemetry-js.git per [2.x upgrade guide](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/upgrade-to-2.x.md)
+  * The minimum supported Node.js has been raised to ^18.19.0 || >=20.6.0. This means that support for Node.js 14 and 16 has been dropped.
+  * The minimum supported TypeScript version has been raised to 5.0.4.
+  * The compilation target for transpiled TypeScript has been raised to ES2022 (from ES2017).
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.2 ([#2716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2716)) ([d2a9a20](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2a9a20f1cd8c46c842e18490a4eba36fd71c2da))
+
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.30.16 to ^0.31.0
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.1 to ^0.46.0
+
+## [0.49.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.49.0...instrumentation-aws-sdk-v0.49.1) (2025-02-19)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.1 ([#2687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2687)) ([5e20fe2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5e20fe2f450a1be4ea100e8a6d196e33ccff0cda))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.30.15 to ^0.30.16
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.0 to ^0.45.1
+
+## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.48.0...instrumentation-aws-sdk-v0.49.0) (2024-12-18)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2608](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2608)) ([aa46705](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/aa46705d2fd1bd5ee6d763ac8cd73a7630889d34))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.30.14 to ^0.30.15
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.44.0 to ^0.45.0
+
+## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.47.0...instrumentation-aws-sdk-v0.48.0) (2024-12-04)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2582](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2582)) ([5df02cb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5df02cbb35681d2b5cce359dda7b023d7bf339f2))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.30.13 to ^0.30.14
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.43.0 to ^0.44.0
+
 ## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.46.0...instrumentation-aws-sdk-v0.47.0) (2024-11-18)
 
 

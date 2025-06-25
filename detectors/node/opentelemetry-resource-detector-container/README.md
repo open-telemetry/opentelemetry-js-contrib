@@ -30,7 +30,7 @@ const tracerProvider = new NodeTracerProvider({ resource });
 
 This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
-### ContainerDetector
+### Container Detector
 
 Populates `container.id` for processes running on containers supporting : docker( cgroup v1 or v2 ) or with containerd
 

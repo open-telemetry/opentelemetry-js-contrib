@@ -30,16 +30,18 @@ function runWithRegister(path: string): PromiseWithChild<{
     ['--require', '../build/src/register.js', path],
     {
       cwd: __dirname,
-      timeout: 1500,
+      timeout: 5000,
       killSignal: 'SIGKILL', // SIGTERM is not sufficient to terminate some hangs
       env: Object.assign({}, process.env, {
-        OTEL_NODE_RESOURCE_DETECTORS: 'none',
         OTEL_TRACES_EXPORTER: 'console',
         OTEL_LOG_LEVEL: 'debug',
         // nx (used by lerna run) defaults `FORCE_COLOR=true`, which in
         // node v18.17.0, v20.3.0 and later results in ANSI color escapes
         // in the ConsoleSpanExporter output that is checked below.
         FORCE_COLOR: '0',
+        // Cloud resource detectors can take a few seconds, resulting in hitting
+        // a test timeout.
+        OTEL_NODE_RESOURCE_DETECTORS: 'none',
       }),
     }
   );
@@ -61,6 +63,8 @@ function waitForString(stream: Readable, str: string): Promise<void> {
 }
 
 describe('Register', function () {
+  this.timeout(5000); // Same timeout as in the execFile() above.
+
   it('can load auto instrumentation from command line', async () => {
     const runPromise = runWithRegister('./test-app/app.js');
     const { child } = runPromise;
@@ -90,7 +94,7 @@ describe('Register', function () {
   it('shuts down the NodeSDK when SIGTERM is received', async () => {
     const runPromise = runWithRegister('./test-app/app-server.js');
     const { child } = runPromise;
-    await waitForString(child.stdout!, 'Finshed request');
+    await waitForString(child.stdout!, 'Finished request');
     child.kill('SIGTERM');
     const { stdout } = await runPromise;
 

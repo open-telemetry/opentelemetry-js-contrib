@@ -27,8 +27,8 @@ import {
 } from '@opentelemetry/sdk-logs';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { isWrapped } from '@opentelemetry/instrumentation';
-import { Resource } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
@@ -40,15 +40,14 @@ import type * as BunyanLogger from 'bunyan';
 // import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
-const tracerProvider = new NodeTracerProvider();
+const tracerProvider = new NodeTracerProvider({
+  spanProcessors: [new SimpleSpanProcessor(new InMemorySpanExporter())],
+});
 tracerProvider.register();
-tracerProvider.addSpanProcessor(
-  new SimpleSpanProcessor(new InMemorySpanExporter())
-);
 const tracer = tracerProvider.getTracer('default');
 
-const resource = new Resource({
-  [SEMRESATTRS_SERVICE_NAME]: 'test-instrumentation-bunyan',
+const resource = resourceFromAttributes({
+  [ATTR_SERVICE_NAME]: 'test-instrumentation-bunyan',
 });
 const loggerProvider = new LoggerProvider({ resource });
 const memExporter = new InMemoryLogRecordExporter();

@@ -26,7 +26,7 @@ import {
   SEMRESATTRS_SERVICE_NAME,
 } from '@opentelemetry/semantic-conventions';
 import { azureFunctionsDetector } from '../../src';
-import { detectResourcesSync } from '@opentelemetry/resources';
+import { detectResources } from '@opentelemetry/resources';
 
 describe('AzureAppServiceDetector', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -48,7 +48,7 @@ describe('AzureAppServiceDetector', () => {
     process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
     process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
 
-    const resource = detectResourcesSync({
+    const resource = detectResources({
       detectors: [azureFunctionsDetector, azureAppServiceDetector],
     });
     assert.ok(resource);
@@ -88,7 +88,7 @@ describe('AzureAppServiceDetector', () => {
     process.env.WEBSITE_HOME_STAMPNAME = 'test-home-stamp';
     process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
 
-    const resource = detectResourcesSync({
+    const resource = detectResources({
       detectors: [azureFunctionsDetector, azureAppServiceDetector],
     });
     assert.ok(resource);
@@ -119,7 +119,7 @@ describe('AzureAppServiceDetector', () => {
     process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
     delete process.env.WEBSITE_OWNER_NAME;
 
-    const resource = detectResourcesSync({
+    const resource = detectResources({
       detectors: [azureFunctionsDetector, azureAppServiceDetector],
     });
     assert.ok(resource);

@@ -15,15 +15,18 @@
  */
 import * as opentelemetry from '@opentelemetry/sdk-node';
 import { diag, DiagConsoleLogger } from '@opentelemetry/api';
+import { getStringFromEnv, diagLogLevelFromString } from '@opentelemetry/core';
 import {
   getNodeAutoInstrumentations,
   getResourceDetectorsFromEnv,
 } from './utils';
 
-diag.setLogger(
-  new DiagConsoleLogger(),
-  opentelemetry.core.getEnv().OTEL_LOG_LEVEL
-);
+const logLevel = getStringFromEnv('OTEL_LOG_LEVEL');
+if (logLevel != null) {
+  diag.setLogger(new DiagConsoleLogger(), {
+    logLevel: diagLogLevelFromString(logLevel),
+  });
+}
 
 const sdk = new opentelemetry.NodeSDK({
   instrumentations: getNodeAutoInstrumentations(),

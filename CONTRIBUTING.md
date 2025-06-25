@@ -88,7 +88,7 @@ git merge upstream/main
 
 Remember to always work in a branch of your local copy, as you might otherwise have to contend with conflicts in main.
 
-Please also see [GitHub workflow](https://github.com/open-telemetry/community/blob/main/CONTRIBUTING.md#github-workflow) section of general project contributing guide.
+Please also see [GitHub workflow](https://github.com/open-telemetry/community/blob/main/guides/contributor/processes.md#github-workflow) section of general project contributing guide.
 
 ## Development
 
@@ -108,16 +108,22 @@ Refer to the root-level [package.json](https://github.com/open-telemetry/opentel
 
 The `opentelemetry-js-contrib` project is written in TypeScript.
 
-As a general rule, installing and then compiling from the root directory should always be done first before anything else.
-After making changes to a specific package, compile again from the specific package directory you are working in.
-Some tests depend on other packages to be installed, so these steps are also required for running tests.
+As a general rule, installing from the root directory should always be done first before anything else.
+Packages within this repository might have dependencies between them. This means the dependencies should
+be built before if you want to `compile` or `test` the changes you've made in a package. Each package
+has a script to ensure these dependecies are ready.
 
-- `npm ci` installs dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
+The required steps to start development on a pacakge are:
+
+- `npm ci` from root folder to install dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
+- `cd` into the pacakge you want to apply changes.
+- `npm run setup:dev` compiles the TypeScript files for this package and its dependencies within the repository.
+
+Then you can proceed to do apply the changes and use the scripts below for development workflow
+
 - `npm run compile` compiles the code, checking for type errors.
 - `npm test` runs most unit tests, though some packages require other dependencies so are only run in CI or with a separate command in the package's `package.json` file.
 - `npm run lint:fix` lint any changes and fix if needed.
-
-Each of these commands can also be run in individual packages, as long as the initial install and compile are done first in the root directory.
 
 ### CHANGELOG
 
@@ -140,14 +146,19 @@ When two or more approaches must be compared, please write a benchmark in the be
 This repository contains many components which are maintained by more than the typical set of JS maintainers and approvers.
 Each component in this repository SHOULD have a component owner who is responsible for maintaining it.
 The README.md for each component SHOULD contain its owner, but the source of truth for component ownership is in [.github/component_owners.yml](.github/component_owners.yml).
+
 Component owners are generally given authority to make decisions relating to implementation and feature requests for their components,
 provided they follow the best practices set out by the maintainers and the [mission, vision and values](https://github.com/open-telemetry/community/blob/main/mission-vision-values.md)
-of the OpenTelemetry Project.
+of the OpenTelemetry Project. To facilitate independent triage of issues pertaining to the owned component, component owners are assigned
+[the Triager role](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#triager).
 
 Component owners MUST do their best to maintain a high level of quality, security, performance, and specification compliance within their components.
 Maintainers may override the decisions of component owners, but should only do so when they feel one or more of these traits is compromised.
 
 ### Becoming a Component Owner
+
+To become a component owner, contributors MUST be a [member](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#member) of the OpenTelemetry GitHub organization.
+To become a member, follow the steps in the [community guidelines for membership requirements](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#requirements).
 
 To become a component owner, contributors SHOULD demonstrate prior knowledge of the instrumented package or the concepts therein.
 
@@ -177,6 +188,7 @@ If all these conditions are met, aspiring component owners are encouraged to sel
 information provided on the issue - either approve or deny the ownership request. If the ownership request has been
 approved, the new component owner opens a PR to add themselves to the list of owners ([.github/component_owners.yml](.github/component_owners.yml))
 for that package.
+@open-telemetry/javascript-maintainers will add the component owner to @open-telemetry/javascript-contrib-triagers.
 
 ## Component Lifecycle
 
@@ -232,7 +244,7 @@ features for unmaintained components. At least one sponsor is needed to lift the
 adding the requested feature. Sponsors are expected to provide reviews for that feature and be responsive on the issue.
 
 Components marked as unmaintained still receive semantic conventions updates and bugfixes where possible.
-[@open-telemetry/javascript-triagers](https://github.com/orgs/open-telemetry/teams/javascript-triagers) may add the
+[@open-telemetry/javascript-contrib-triagers](https://github.com/orgs/open-telemetry/teams/javascript-contrib-triagers) may add the
 `type:semconv-update` or `bug` label to mark them as exempt from being auto-closed within two weeks.
 
 A component which is unmaintained may be deprecated if there is a problem that is not fixed in a timely manner.
@@ -266,6 +278,7 @@ please ping ([@open-telemetry/javascript-approvers](https://github.com/orgs/open
 
 - Approved by
   - at least one component owner if one is defined in [.github/component_owners.yml](.github/component_owners.yml)
+    - upon approval, the component owner SHOULD apply the `has:owner-approval` label to signal to maintainers that the PR is ready to merge.
   - OR one maintainer
   - OR at least one approver who is not the approver merging the pull request
     - A pull request for small (simple typo, URL, update docs, or grammatical fix) changes may be approved and merged by the same approver
@@ -291,8 +304,11 @@ The size of the OpenTelemetry JavaScript developer community is not large enough
 Therefore, to reach our goal, we have the following recommendations for where instrumentation packages should live.
 
 1. Native to the instrumented package
-2. A dedicated public repository
-3. Here in the opentelemetry-js-contrib repository
+2. Close to where maintenance of the instrumented library takes place. For example:
+   1. in a repository that is part of the organization that maintains the instrumented library
+   2. in the same repository as the instrumented library
+3. A dedicated public repository
+4. Here in the opentelemetry-js-contrib repository
 
 If possible, OpenTelemetry instrumentation should be included in the instrumented package.
 This will ensure the instrumentation reaches all package users, and is continuously maintained by developers that understand the package.
@@ -306,6 +322,7 @@ When instrumentation cannot be included in a target package and there is good re
 Note that new instrumentation needs at least two contributors assigned to it as code-owners.  It is the responsibility
 of the requesting party to reach out and find code-owners for the proposed instrumentation. The instrumentation request
 needs to be accepted before any pull requests for the instrumentation can be considered for merging.
+Review the guidelines for [Becoming a Component Owner](#becoming-a-component-owner).
 
 Regardless of where instrumentation is hosted, it needs to be discoverable.
 The [OpenTelemetry registry](https://opentelemetry.io/registry/) exists to ensure that instrumentation is discoverable.

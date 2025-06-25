@@ -23,7 +23,7 @@ import {
   Span,
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
@@ -86,15 +86,17 @@ const sanitizeEventForAssertion = (span: ReadableSpan) => {
 };
 
 describe('ioredis', () => {
-  const provider = new NodeTracerProvider();
+  const provider = new NodeTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   let ioredis: typeof ioredisTypes.default;
   let instrumentation: IORedisInstrumentation;
   const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
   const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
 
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   beforeEach(() => {
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
   });
 
@@ -115,7 +117,6 @@ describe('ioredis', () => {
       testUtils.startDocker('redis');
     }
 
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     instrumentation = new IORedisInstrumentation();
     instrumentation.setTracerProvider(provider);
     ioredis = require('ioredis');

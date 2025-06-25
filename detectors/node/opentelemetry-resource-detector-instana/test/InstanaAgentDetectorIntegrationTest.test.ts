@@ -16,19 +16,9 @@
 
 import * as nock from 'nock';
 import * as assert from 'assert';
-import {
-  Resource,
-  processDetector,
-  envDetector,
-} from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { processDetector, envDetector } from '@opentelemetry/resources';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { instanaAgentDetector } from '../src';
-
-const delay = (ms: number) =>
-  new Promise<void>(resolve => {
-    setTimeout(resolve, ms);
-  });
 
 describe('[Integration] instanaAgentDetector', () => {
   beforeEach(() => {
@@ -53,13 +43,9 @@ describe('[Integration] instanaAgentDetector', () => {
       .reply(200, () => mockedReply);
 
     const serviceName = 'TestService';
-    const globalResource = new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: serviceName,
-    });
-
     const sdk = new NodeSDK({
+      serviceName,
       resourceDetectors: [envDetector, processDetector, instanaAgentDetector],
-      resource: globalResource,
     });
 
     sdk.start();
@@ -92,19 +78,14 @@ describe('[Integration] instanaAgentDetector', () => {
       .reply(200, () => mockedReply);
 
     const serviceName = 'TestService';
-    const globalResource = new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: serviceName,
-    });
-
     const sdk = new NodeSDK({
+      serviceName,
       resourceDetectors: [envDetector, processDetector, instanaAgentDetector],
-      resource: globalResource,
     });
 
     sdk.start();
     const resource = sdk['_resource'];
-
-    await delay(500);
+    await resource.waitForAsyncAttributes?.();
 
     assert.equal(resource.attributes['process.pid'], 123);
     assert.equal(resource.attributes['process.runtime.name'], 'nodejs');

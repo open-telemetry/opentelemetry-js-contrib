@@ -46,12 +46,14 @@ import { MySQL2Instrumentation } from '@opentelemetry/instrumentation-mysql2';
 import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 import { NetInstrumentation } from '@opentelemetry/instrumentation-net';
+import { OracleInstrumentation } from '@opentelemetry/instrumentation-oracledb';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
 import { RedisInstrumentation as RedisInstrumentationV2 } from '@opentelemetry/instrumentation-redis';
 import { RedisInstrumentation as RedisInstrumentationV4 } from '@opentelemetry/instrumentation-redis-4';
 import { RestifyInstrumentation } from '@opentelemetry/instrumentation-restify';
 import { RouterInstrumentation } from '@opentelemetry/instrumentation-router';
+import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
 import { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.io';
 import { TediousInstrumentation } from '@opentelemetry/instrumentation-tedious';
 import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
@@ -68,13 +70,12 @@ import {
 import { containerDetector } from '@opentelemetry/resource-detector-container';
 import { gcpDetector } from '@opentelemetry/resource-detector-gcp';
 import {
-  Detector,
-  DetectorSync,
-  envDetectorSync,
-  hostDetectorSync,
-  osDetectorSync,
-  processDetectorSync,
-  serviceInstanceIdDetectorSync,
+  ResourceDetector,
+  envDetector,
+  hostDetector,
+  osDetector,
+  processDetector,
+  serviceInstanceIdDetector,
 } from '@opentelemetry/resources';
 import {
   azureAppServiceDetector,
@@ -124,19 +125,24 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
   '@opentelemetry/instrumentation-nestjs-core': NestInstrumentation,
   '@opentelemetry/instrumentation-net': NetInstrumentation,
+  '@opentelemetry/instrumentation-oracledb': OracleInstrumentation,
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
   '@opentelemetry/instrumentation-pino': PinoInstrumentation,
   '@opentelemetry/instrumentation-redis': RedisInstrumentationV2,
   '@opentelemetry/instrumentation-redis-4': RedisInstrumentationV4,
   '@opentelemetry/instrumentation-restify': RestifyInstrumentation,
   '@opentelemetry/instrumentation-router': RouterInstrumentation,
+  '@opentelemetry/instrumentation-runtime-node': RuntimeNodeInstrumentation,
   '@opentelemetry/instrumentation-socket.io': SocketIoInstrumentation,
   '@opentelemetry/instrumentation-tedious': TediousInstrumentation,
   '@opentelemetry/instrumentation-undici': UndiciInstrumentation,
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
 };
 
-const defaultExcludedInstrumentations = ['@opentelemetry/instrumentation-fs'];
+const defaultExcludedInstrumentations = [
+  '@opentelemetry/instrumentation-fs',
+  '@opentelemetry/instrumentation-fastify',
+];
 
 // Config types inferred automatically from the first argument of the constructor
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;
@@ -240,17 +246,17 @@ function getDisabledInstrumentationsFromEnv() {
   return instrumentationsFromEnv;
 }
 
-export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
+export function getResourceDetectorsFromEnv(): Array<ResourceDetector> {
   const resourceDetectors = new Map<
     string,
-    Detector | DetectorSync | Detector[] | DetectorSync[]
+    ResourceDetector | ResourceDetector[]
   >([
     [RESOURCE_DETECTOR_CONTAINER, containerDetector],
-    [RESOURCE_DETECTOR_ENVIRONMENT, envDetectorSync],
-    [RESOURCE_DETECTOR_HOST, hostDetectorSync],
-    [RESOURCE_DETECTOR_OS, osDetectorSync],
-    [RESOURCE_DETECTOR_SERVICE_INSTANCE_ID, serviceInstanceIdDetectorSync],
-    [RESOURCE_DETECTOR_PROCESS, processDetectorSync],
+    [RESOURCE_DETECTOR_ENVIRONMENT, envDetector],
+    [RESOURCE_DETECTOR_HOST, hostDetector],
+    [RESOURCE_DETECTOR_OS, osDetector],
+    [RESOURCE_DETECTOR_SERVICE_INSTANCE_ID, serviceInstanceIdDetector],
+    [RESOURCE_DETECTOR_PROCESS, processDetector],
     [RESOURCE_DETECTOR_ALIBABA, alibabaCloudEcsDetector],
     [RESOURCE_DETECTOR_GCP, gcpDetector],
     [

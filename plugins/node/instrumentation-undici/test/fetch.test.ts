@@ -22,7 +22,7 @@ import {
   propagation,
   trace,
 } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -42,8 +42,9 @@ describe('UndiciInstrumentation `fetch` tests', function () {
   const hostname = 'localhost';
   const mockServer = new MockServer();
   const memoryExporter = new InMemorySpanExporter();
-  const provider = new NodeTracerProvider();
-  provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+  const provider = new NodeTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
 
   before(function (done) {
     // Do not test if the `fetch` global API is not available
@@ -58,7 +59,9 @@ describe('UndiciInstrumentation `fetch` tests', function () {
     instrumentation.setTracerProvider(provider);
 
     propagation.setGlobalPropagator(new MockPropagation());
-    context.setGlobalContextManager(new AsyncHooksContextManager().enable());
+    context.setGlobalContextManager(
+      new AsyncLocalStorageContextManager().enable()
+    );
     mockServer.start(done);
     mockServer.mockListener((req, res) => {
       // There are some situations where there is no way to access headers

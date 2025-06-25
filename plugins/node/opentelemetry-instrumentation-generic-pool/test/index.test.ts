@@ -16,7 +16,7 @@
 
 import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -67,19 +67,20 @@ const createPool = {
 }[isOldVersion ? 'v2' : 'v3'];
 
 describe('GenericPool instrumentation', () => {
-  const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
+  const provider = new NodeTracerProvider({
+    spanProcessors: [spanProcessor],
+  });
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let acquire: Function;
 
   beforeEach(async () => {
     plugin.enable();
     acquire = createPool();
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
@@ -108,7 +109,10 @@ describe('GenericPool instrumentation', () => {
 
       const [span] = memoryExporter.getFinishedSpans();
       assert.strictEqual(span.name, 'generic-pool.acquire');
-      assert.strictEqual(span.parentSpanId, rootSpan.spanContext().spanId);
+      assert.strictEqual(
+        span.parentSpanContext?.spanId,
+        rootSpan.spanContext().spanId
+      );
     });
   });
 

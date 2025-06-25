@@ -15,7 +15,7 @@
  */
 
 import { context, trace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   DBSYSTEMVALUES_MSSQL,
   SEMATTRS_DB_NAME,
@@ -87,12 +87,14 @@ const incompatVersions =
 
 describe('tedious', () => {
   let tedious: any;
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let connection: Connection;
-  const provider = new BasicTracerProvider();
+  const memoryExporter = new InMemorySpanExporter();
+  const provider = new BasicTracerProvider({
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  });
   const shouldTest = process.env.RUN_MSSQL_TESTS; // For CI: assumes local db is already available
   const shouldTestLocally = process.env.RUN_MSSQL_TESTS_LOCAL; // For local: spins up local db via docker
-  const memoryExporter = new InMemorySpanExporter();
 
   before(function (done) {
     if (!(shouldTest || shouldTestLocally) || incompatVersions) {
@@ -101,7 +103,6 @@ describe('tedious', () => {
       this.test!.parent!.pending = true;
       this.skip();
     }
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     if (shouldTestLocally) {
       testUtils.startDocker('mssql');
       // wait 15 seconds for docker container to start
@@ -123,7 +124,7 @@ describe('tedious', () => {
     // connecting often takes more time even if the DB is running locally
     this.timeout(10000);
     instrumentation.disable();
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
@@ -375,7 +376,7 @@ function assertSpan(span: ReadableSpan, expected: any) {
   );
   if (expected.parentSpan) {
     assert.strictEqual(
-      span.parentSpanId,
+      span.parentSpanContext?.spanId,
       expected.parentSpan.spanContext().spanId
     );
   }

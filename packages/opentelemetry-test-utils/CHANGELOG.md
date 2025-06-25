@@ -1,5 +1,71 @@
 # Changelog
 
+## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.47.0...contrib-test-utils-v0.48.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
+## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.46.0...contrib-test-utils-v0.47.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+* **oracledb:** Add support for Oracle DB instrumentation ([#2612](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2612)) ([e8e3cbd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e8e3cbdadf439c5bd16dfe5d6fc0714fe0e8235a))
+
+
+### Bug Fixes
+
+* **pg:** fix instrumentation of ESM-imported pg-pool ([#2807](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2807)) ([f6bc4cc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f6bc4ccca0bf3469aa55f225192fedcae432d41f)), closes [#2759](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2759)
+
+## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.45.1...contrib-test-utils-v0.46.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* chore!: Update to 2.x and 0.200.x @opentelemetry/* packages from opentelemetry-js.git per [2.x upgrade guide](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/upgrade-to-2.x.md)
+  * The minimum supported Node.js has been raised to ^18.19.0 || >=20.6.0. This means that support for Node.js 14 and 16 has been dropped.
+  * The minimum supported TypeScript version has been raised to 5.0.4.
+  * The compilation target for transpiled TypeScript has been raised to ES2022 (from ES2017).
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.2 ([#2716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2716)) ([d2a9a20](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2a9a20f1cd8c46c842e18490a4eba36fd71c2da))
+
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
+## [0.45.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.45.0...contrib-test-utils-v0.45.1) (2025-02-19)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.1 ([#2687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2687)) ([5e20fe2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5e20fe2f450a1be4ea100e8a6d196e33ccff0cda))
+
+## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.44.0...contrib-test-utils-v0.45.0) (2024-12-18)
+
+
+### Features
+
+* **contrib-test-utils:** copy soon-to-be-removed types from @opentelemetry/otlp-transformer ([#2573](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2573)) ([23a345d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/23a345dbfbf99569250a5194e403b98c9385fca9))
+* **deps:** update deps matching '@opentelemetry/*' ([#2608](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2608)) ([aa46705](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/aa46705d2fd1bd5ee6d763ac8cd73a7630889d34))
+
+
+### Bug Fixes
+
+* **test-utils:** Don't swallow assertion errors from `checkResult` and `checkCollector` ([#2588](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2588)) ([de679ad](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/de679ad46d16019abdea79c48c7fb1f9635a8ad5))
+
+## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.43.0...contrib-test-utils-v0.44.0) (2024-12-04)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2582](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2582)) ([5df02cb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5df02cbb35681d2b5cce359dda7b023d7bf339f2))
+
 ## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.42.0...contrib-test-utils-v0.43.0) (2024-11-18)
 
 

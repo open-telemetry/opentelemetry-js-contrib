@@ -1,5 +1,86 @@
 # Changelog
 
+## [0.7.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.7.1...resource-detector-container-v0.7.2) (2025-06-02)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.47.0 to ^0.48.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.21.0 to ^0.22.0
+
+## [0.7.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.7.0...resource-detector-container-v0.7.1) (2025-05-15)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.20.0 to ^0.21.0
+
+## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.6.1...resource-detector-container-v0.7.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* chore!: Update to 2.x and 0.200.x @opentelemetry/* packages from opentelemetry-js.git per [2.x upgrade guide](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/upgrade-to-2.x.md)
+  * The minimum supported Node.js has been raised to ^18.19.0 || >=20.6.0. This means that support for Node.js 14 and 16 has been dropped.
+  * The minimum supported TypeScript version has been raised to 5.0.4.
+  * The compilation target for transpiled TypeScript has been raised to ES2022 (from ES2017).
+* chore(resource-detector-container)!: ContainerDetector class is no longer exported
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.1 to ^0.46.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.19.1 to ^0.20.0
+
+## [0.6.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.6.0...resource-detector-container-v0.6.1) (2025-02-19)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.0 to ^0.45.1
+    * @opentelemetry/instrumentation-fs bumped from ^0.19.0 to ^0.19.1
+
+## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.5.3...resource-detector-container-v0.6.0) (2025-01-20)
+
+
+### Features
+
+* **detectors:** generate esm build files too ([#2636](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2636)) ([c2ad0af](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c2ad0af34e1570f3609beefc4a8d41ddfb7f8f77))
+* **detectors:** mark as side effect free ([#2663](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2663)) ([e9263a3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9263a36255c0016cca78bf16c4598f23519d5f1))
+
+## [0.5.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.5.2...resource-detector-container-v0.5.3) (2024-12-18)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.44.0 to ^0.45.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.18.0 to ^0.19.0
+
+## [0.5.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.5.1...resource-detector-container-v0.5.2) (2024-12-04)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.43.0 to ^0.44.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.17.0 to ^0.18.0
+
 ## [0.5.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.5.0...resource-detector-container-v0.5.1) (2024-11-18)
 
 

@@ -19,6 +19,7 @@ import {
   HrTime,
   propagation,
   SpanAttributes,
+  trace,
 } from '@opentelemetry/api';
 import {
   W3CTraceContextPropagator,
@@ -48,11 +49,11 @@ import { EventNames } from '../src/enums/EventNames';
 const assert = chai.assert;
 
 const exporter = new InMemorySpanExporter();
-const provider = new BasicTracerProvider();
 const spanProcessor = new SimpleSpanProcessor(exporter);
-
-provider.addSpanProcessor(spanProcessor);
-provider.register();
+const provider = new BasicTracerProvider({
+  spanProcessors: [spanProcessor],
+});
+trace.setGlobalTracerProvider(provider);
 
 const resources = [
   {
@@ -211,15 +212,24 @@ performance.getEntriesByType;
 const userAgent =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36';
 
-function ensureNetworkEventsExists(events: TimedEvent[]) {
-  assert.strictEqual(events[0].name, PTN.FETCH_START);
-  assert.strictEqual(events[1].name, PTN.DOMAIN_LOOKUP_START);
-  assert.strictEqual(events[2].name, PTN.DOMAIN_LOOKUP_END);
-  assert.strictEqual(events[3].name, PTN.CONNECT_START);
-  assert.strictEqual(events[4].name, PTN.CONNECT_END);
-  assert.strictEqual(events[5].name, PTN.REQUEST_START);
-  assert.strictEqual(events[6].name, PTN.RESPONSE_START);
-  assert.strictEqual(events[7].name, PTN.RESPONSE_END);
+function ensureNetworkEventsExists(
+  events: TimedEvent[],
+  expectSecureConnectionStart = true
+) {
+  const expectedEventNames = [
+    PTN.FETCH_START,
+    PTN.DOMAIN_LOOKUP_START,
+    PTN.DOMAIN_LOOKUP_END,
+    PTN.CONNECT_START,
+    expectSecureConnectionStart ? PTN.SECURE_CONNECTION_START : undefined,
+    PTN.CONNECT_END,
+    PTN.REQUEST_START,
+    PTN.RESPONSE_START,
+    PTN.RESPONSE_END,
+  ].filter(n => n);
+  for (let i = 0; i < events.length; i++) {
+    assert.strictEqual(events[i].name, expectedEventNames[i]);
+  }
 }
 
 describe('DocumentLoad Instrumentation', () => {
@@ -375,7 +385,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(fsEvents[7].name, PTN.LOAD_EVENT_START);
         assert.strictEqual(fsEvents[8].name, PTN.LOAD_EVENT_END);
 
-        assert.strictEqual(rsEvents.length, 8);
+        assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(fsEvents.length, 11);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
@@ -491,7 +501,7 @@ describe('DocumentLoad Instrumentation', () => {
           'http://localhost:8090/bundle.js'
         );
 
-        ensureNetworkEventsExists(srEvents1);
+        ensureNetworkEventsExists(srEvents1, false);
 
         assert.strictEqual(exporter.getFinishedSpans().length, 3);
         done();
@@ -555,7 +565,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
 
         ensureNetworkEventsExists(fsEvents);
-        assert.strictEqual(fsEvents.length, 8);
+        assert.strictEqual(fsEvents.length, 9);
 
         const rsEventNames = rsEvents.map(e => e.name);
         // Allow the unloadEvent{Start,End} events to be missing. Tests that
@@ -821,6 +831,27 @@ describe('DocumentLoad Instrumentation', () => {
           ['firstPaint', 'firstContentfulPaint']
         );
 
+        done();
+      });
+    });
+
+    it('should have http.response_content_length attribute even if ignoreNetworkEvents is true', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        ignoreNetworkEvents: true,
+      });
+      plugin.enable();
+
+      setTimeout(() => {
+        const spans = exporter.getFinishedSpans();
+        const resourceSpan = spans.find(
+          s => s.name === 'resourceFetch'
+        ) as ReadableSpan;
+        assert.isOk(resourceSpan, 'resourceFetch span should exist');
+        assert.exists(
+          resourceSpan.attributes[SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH],
+          'http.response_content_length attribute should exist'
+        );
         done();
       });
     });

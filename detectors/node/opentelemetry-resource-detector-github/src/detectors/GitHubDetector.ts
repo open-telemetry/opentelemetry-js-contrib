@@ -14,60 +14,29 @@
  * limitations under the License.
  */
 
-import {
-  DetectorSync,
-  IResource,
-  Resource,
-  ResourceAttributes,
-} from '@opentelemetry/resources';
+import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
 
 /**
- * The GitHubDetector can be used to detect GitHub Actions environment variables and returns
- *  a {@link Resource} populated with GitHub-specific metadata that exists
+ * The GitHubDetector can be used to detect GitHub Actions environment variables
+ * and returns resource attributes with GitHub-specific metadata that exists
  * in GitHub Actions environments.
  *
  * More information about GitHub Action environment variables is available here:
  * https://docs.github.com/en/free-pro-team@latest/actions/reference/environment-variables
- *
- * Returns an empty Resource if detection fails.
  */
-class GitHubDetector implements DetectorSync {
-  private _attributes: ResourceAttributes = {};
-
-  /**
-   * Adds an environment variable attribute if a non-empty string.
-   * @param key
-   * @param value
-   */
-  private addAttributeIfExists(key: string, value: string | undefined) {
-    if (typeof value === 'string' && value.length > 0) {
-      this._attributes[key] = value;
-    }
-  }
-
-  /**
-   * Attempts to obtain GitHub repository information from GitHub Actions
-   * environment variables:
-   * https://docs.github.com/en/free-pro-team@latest/actions/reference/environment-variables
-   *
-   * If successful it returns a {@link Resource} populated with GitHub metadata.
-   * Returns an empty {@link Resource} if the env vars are not present.
-   */
-  detect(): IResource {
-    this._attributes = {};
-    this.addAttributeIfExists('github.workflow', process.env.GITHUB_WORKFLOW);
-    this.addAttributeIfExists('github.run_id', process.env.GITHUB_RUN_ID);
-    this.addAttributeIfExists(
-      'github.run_number',
-      process.env.GITHUB_RUN_NUMBER
-    );
-    this.addAttributeIfExists('github.actor', process.env.GITHUB_ACTOR);
-    this.addAttributeIfExists('github.sha', process.env.GITHUB_SHA);
-    this.addAttributeIfExists('github.ref', process.env.GITHUB_REF);
-    this.addAttributeIfExists('github.head_ref', process.env.GITHUB_HEAD_REF);
-    this.addAttributeIfExists('github.base_ref', process.env.GITHUB_BASE_REF);
-
-    return new Resource(this._attributes);
+class GitHubDetector implements ResourceDetector {
+  detect(): DetectedResource {
+    const attributes = {
+      'github.workflow': process.env.GITHUB_WORKFLOW || undefined,
+      'github.run_id': process.env.GITHUB_RUN_ID || undefined,
+      'github.run_number': process.env.GITHUB_RUN_NUMBER || undefined,
+      'github.actor': process.env.GITHUB_ACTOR || undefined,
+      'github.sha': process.env.GITHUB_SHA || undefined,
+      'github.ref': process.env.GITHUB_REF || undefined,
+      'github.head_ref': process.env.GITHUB_HEAD_REF || undefined,
+      'github.base_ref': process.env.GITHUB_BASE_REF || undefined,
+    };
+    return { attributes };
   }
 }
 
