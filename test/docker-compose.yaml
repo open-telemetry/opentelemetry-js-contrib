@@ -8,7 +8,7 @@
 #   npm run test-services:start [services...]
 #   npm run test-services:stop [services...]
 
-name: opentelemetry-nodejs-test-services
+name: opentelemetry-js-contrib-test-services
 
 services:
   cassandra:
