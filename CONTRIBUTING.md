@@ -151,7 +151,7 @@ npm run test:with-services-config # runs 'npm test' with envvars from test/test-
 npm run test-services:stop        # stops services in Docker
 ```
 
-If you only want to test a sigle package (e.g. the `instrumentation-mongodb`) you can `cd` into it and run the tests after you started the services.
+If you only want to test a single package (e.g. the `instrumentation-mongodb`) you can `cd` into it and run the tests after you started the services.
 
 ```sh
 npm run test-services:start                           # starts services in Docker
