@@ -84,6 +84,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
+
   postgres:
     # https://github.com/docker-library/docs/blob/master/postgres/README.md#how-to-extend-this-image
     image: postgres:16-alpine
