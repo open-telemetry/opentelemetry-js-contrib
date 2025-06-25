@@ -28,6 +28,7 @@ services:
     image: memcached:1.6.37-alpine
     ports:
     - 11211:11211
+
   mongodb:
     image: mongo:7
     ports:
