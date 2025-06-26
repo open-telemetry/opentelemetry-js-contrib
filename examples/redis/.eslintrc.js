@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-import { createClient } from 'redis';
+'use strict';
 
-const client = createClient('redis://localhost:6379');
-// eslint-disable-next-line import/prefer-default-export
-export const redisPromise = new Promise((resolve, reject) => {
-  client.once('ready', () => {
-    resolve(client);
-  });
-  client.once('error', error => {
-    reject(error);
-  });
-});
+const baseConfig = require('../../eslint.config');
+
+module.exports = {
+  ...baseConfig,
+  env: {
+    node: true,
+  },
+};
