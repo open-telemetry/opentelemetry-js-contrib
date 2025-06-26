@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.48.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.48.0...instrumentation-restify-v0.48.1) (2025-06-05)
+
+
+### Bug Fixes
+
+* incorrect export of enums ([#2876](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2876)) ([a81ef5f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a81ef5fc4dfe3231c225b3969e3644dedeb4ca91))
+
+## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.47.0...instrumentation-restify-v0.48.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
+## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.46.0...instrumentation-restify-v0.47.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
 ## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.45.1...instrumentation-restify-v0.46.0) (2025-03-18)
 
 

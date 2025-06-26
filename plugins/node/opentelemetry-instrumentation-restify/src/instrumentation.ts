@@ -31,7 +31,7 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import { isPromise, isAsyncFunction } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { RestifyInstrumentationConfig } from './types';
@@ -103,7 +103,7 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
     return module;
   }
 
-  private _middlewarePatcher(original: Function, methodName?: string) {
+  private _middlewarePatcher(original: Function, methodName?: any) {
     const instrumentation = this;
     return function (this: Server, ...handler: types.NestedRequestHandlers) {
       return original.call(
@@ -116,7 +116,7 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
     };
   }
 
-  private _methodPatcher(original: Function, methodName?: string) {
+  private _methodPatcher(original: Function, methodName?: any) {
     const instrumentation = this;
     return function (
       this: Server,
@@ -172,7 +172,7 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
           [AttributeNames.VERSION]: this._moduleVersion || 'n/a',
           [AttributeNames.TYPE]: metadata.type,
           [AttributeNames.METHOD]: metadata.methodName,
-          [SEMATTRS_HTTP_ROUTE]: route,
+          [ATTR_HTTP_ROUTE]: route,
         };
         const span = this.tracer.startSpan(
           spanName,

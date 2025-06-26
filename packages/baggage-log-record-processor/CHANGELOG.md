@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/baggage-log-record-processor-v0.2.0...baggage-log-record-processor-v0.3.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
+## [0.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/baggage-log-record-processor-v0.1.0...baggage-log-record-processor-v0.2.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
 ## [0.1.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/baggage-log-record-processor-v0.0.1...baggage-log-record-processor-v0.1.0) (2025-04-08)
 
 

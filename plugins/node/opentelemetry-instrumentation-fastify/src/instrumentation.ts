@@ -21,7 +21,7 @@ import {
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import type {
   HookHandlerDoneFunction,
   FastifyInstance,
@@ -269,7 +269,7 @@ export class FastifyInstrumentation extends InstrumentationBase<FastifyInstrumen
       const spanAttributes: Attributes = {
         [AttributeNames.PLUGIN_NAME]: this.pluginName,
         [AttributeNames.FASTIFY_TYPE]: FastifyTypes.REQUEST_HANDLER,
-        [SEMATTRS_HTTP_ROUTE]: anyRequest.routeOptions
+        [ATTR_HTTP_ROUTE]: anyRequest.routeOptions
           ? anyRequest.routeOptions.url // since fastify@4.10.0
           : request.routerPath,
       };

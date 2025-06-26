@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.11.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.10.0...instrumentation-kafkajs-v0.11.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.47.0 to ^0.48.0
+
+## [0.10.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.9.2...instrumentation-kafkajs-v0.10.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
+## [0.9.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.9.1...instrumentation-kafkajs-v0.9.2) (2025-05-02)
+
+
+### Bug Fixes
+
+* **instrumentation-kafkajs:** add missing delcare keyword for metric instruments ([#2805](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2805)) ([32f41ee](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/32f41ee3feab7b58b48330469037fa4ca308055c))
+
+## [0.9.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.9.0...instrumentation-kafkajs-v0.9.1) (2025-04-16)
+
+
+### Bug Fixes
+
+* **instrumentation-kafkajs:** fix instr to work with kafkajs@1.7.0 and earlier ([#2787](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2787)) ([e88ca9d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e88ca9d614159e682997bef671e12d20ca5f8c34)), closes [#2784](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2784)
+
 ## [0.9.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.8.0...instrumentation-kafkajs-v0.9.0) (2025-04-08)
 
 

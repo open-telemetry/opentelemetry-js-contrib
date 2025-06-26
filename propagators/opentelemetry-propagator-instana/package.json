@@ -7,7 +7,7 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "prewatch": "npm run precompile",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/propagator-instana",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "test": "nyc mocha test/**/*.test.ts",
@@ -62,7 +62,7 @@
     "karma-mocha": "2.0.1",
     "karma-spec-reporter": "0.0.36",
     "karma-webpack": "5.0.1",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "process": "0.11.10",
     "ts-loader": "9.5.2",
     "typescript": "5.0.4",
