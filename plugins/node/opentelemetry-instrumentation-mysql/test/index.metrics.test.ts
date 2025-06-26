@@ -24,7 +24,6 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import { MySQLInstrumentation } from '../src';
-import * as testUtils from '@opentelemetry/contrib-test-utils';
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = registerInstrumentationTesting(
@@ -62,9 +61,9 @@ import * as mysqlTypes from 'mysql';
 describe('mysql@2.x-Metrics', () => {
   let otelTestingMeterProvider;
   let inMemoryMetricsExporter: InMemoryMetricExporter;
-  const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
-  const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
-  const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
+  // assumes local mysql db is already available in CI or
+  // using `npm run test-services:start` script at the root folder
+  const shouldTest = process.env.RUN_MYSQL_TESTS;
 
   function initMeterProvider() {
     inMemoryMetricsExporter = new InMemoryMetricExporter(
@@ -90,22 +89,7 @@ describe('mysql@2.x-Metrics', () => {
       console.log('Skipping test-mysql for metrics.');
       this.skip();
     }
-
-    if (testMysqlLocally) {
-      testUtils.startDocker('mysql');
-      // wait 15 seconds for docker container to start
-      this.timeout(20000);
-      setTimeout(done, 15000);
-    } else {
-      done();
-    }
-  });
-
-  after(function () {
-    if (testMysqlLocally) {
-      this.timeout(5000);
-      testUtils.cleanUpDocker('mysql');
-    }
+    done();
   });
 
   describe('#Pool - metrics', () => {
