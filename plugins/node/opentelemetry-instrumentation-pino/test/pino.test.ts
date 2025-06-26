@@ -56,7 +56,7 @@ const resource = resourceFromAttributes({
   [ATTR_SERVICE_NAME]: 'test-instrumentation-pino',
 });
 const memExporter = new InMemoryLogRecordExporter();
-const loggerProvider = new LoggerProvider({ 
+const loggerProvider = new LoggerProvider({
   resource,
   processors: [new SimpleLogRecordProcessor(memExporter)],
 });
