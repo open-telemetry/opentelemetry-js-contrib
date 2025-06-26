@@ -64,7 +64,7 @@ const unsetStatus: SpanStatus = {
   code: SpanStatusCode.UNSET,
 };
 
-describe('redis@2.x', () => {
+describe('redis v2-v3', () => {
   let redis: typeof redisTypes;
   const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
   const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;

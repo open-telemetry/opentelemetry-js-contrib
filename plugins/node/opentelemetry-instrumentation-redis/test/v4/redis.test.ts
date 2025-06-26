@@ -55,7 +55,7 @@ import {
 import { RedisResponseCustomAttributeFunction } from '../../src/types';
 import { hrTimeToMilliseconds, suppressTracing } from '@opentelemetry/core';
 
-describe('redis@^4.0.0', () => {
+describe('redis v4', () => {
   before(function () {
     // needs to be "function" to have MochaContext "this" context
     if (!shouldTest) {
@@ -315,7 +315,13 @@ describe('redis@^4.0.0', () => {
         // Ignore. If the test Redis is not at the default port we expect this
         // to error.
       }
-      await newClient.disconnect();
+      // See https://github.com/open-telemetry/opentelemetry-js-contrib/pull/2914
+      try {
+        await newClient.disconnect();
+      } catch (_disconnectErr) {
+        // Ignore. In redis@4.4.0 and earlier this disconnect throws
+        // "The client is closed" if the connect failed.
+      }
 
       const [span] = getTestSpans();
       assert.strictEqual(span.name, 'redis-connect');
