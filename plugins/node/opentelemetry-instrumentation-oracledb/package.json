@@ -15,13 +15,14 @@
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "test-all-versions:local": "cross-env RUN_ORACLEDB_TESTS_LOCAL=true npm run test-all-versions",
     "test:debug": "mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_ORACLEDB_TESTS_LOCAL=true npm run test",
     "version:update": "node ../../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
   },
   "keywords": [
     "instrumentation",

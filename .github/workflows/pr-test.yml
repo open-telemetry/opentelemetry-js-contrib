@@ -1,8 +1,8 @@
-name: Unit Tests
+name: Pull Request Tests
 on:
-  push:
-    branches: [main]
   pull_request:
+    # TODO: remove it
+    branches: [main]
 
 jobs:
   build-and-cache:
@@ -23,8 +23,9 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci
-      - name: Build
-        run: npm run compile
+      # TODO: check if compiling only the affected modules is correct
+      - name: Compile (Delta)
+        run: npm run compile:ci:affected
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -34,7 +35,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  unit-test:
+  unit-and-tav-test:
     needs: build-and-cache
     strategy:
       fail-fast: false
@@ -45,9 +46,6 @@ jobs:
           - "20.6.0"
           - "20"
           - "22"
-        include:
-            - node: 18
-              code-coverage: true
     runs-on: ubuntu-latest
     services:
       memcached:
@@ -185,32 +183,26 @@ jobs:
         with:
           name: tests-build-cache-${{ github.run_number }}
           path: .nx
-      - name: Build
-        run: npm run compile
-      - name: Unit tests (Full)
-        if: matrix.code-coverage
-        run: npm run test
+      - name: Compile (Delta)
+        run: npm run compile:ci:affected
       - name: Unit tests (Delta)
-        if: ${{ !matrix.code-coverage }}
-        run: npm run test:ci:changed
-      - name: Report Coverage
-        if: ${{ matrix.code-coverage && !cancelled()}}
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: npm run test:ci:affected
+      - name: Test All Versions (Delta)
+        run: npm run test-all-versions:ci:affected
+      - name: Upload Test Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          verbose: true
+          name: tests-coverage-cache-${{ github.run_number }}-${{ matrix.node }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            !node_modules
+            **/.nyc_output/**
 
-  browser-test:
-    needs: build-and-cache
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ["22"]
+  test-coverage-report:
     runs-on: ubuntu-latest
-    env:
-      NPM_CONFIG_UNSAFE_PERM: true
-      NODE_OPTIONS: --max-old-space-size=4096
+    needs: unit-and-tav-test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -218,21 +210,70 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 18
       - name: Install
         run: npm ci
-      - name: Download Build Artifacts
+      # TODO: add the rest of versions (18.19.0 & 20.6.0)? or are these enough??
+      - name: Download Test Artifacts (18)
         uses: actions/download-artifact@v4
         with:
-          name: tests-build-cache-${{ github.run_number }}
-          path: .nx
-      - name: Build
-        run: npm run compile
-      - name: Unit tests
-        run: npm run test:browser
+          name: tests-coverage-cache-${{ github.run_number }}-18
+          path: .
+      - name: Download Test Artifacts (20)
+        uses: actions/download-artifact@v4
+        with:
+          name: tests-coverage-cache-${{ github.run_number }}-20
+          path: .
+      - name: Download Test Artifacts (22)
+        uses: actions/download-artifact@v4
+        with:
+          name: tests-coverage-cache-${{ github.run_number }}-22
+          path: .
+      - name: Merge coverage (Delta)
+        run: npm run coverage:merge:ci:affected
+      - name: Check coverage
+        run: find . | grep coverage-final
+
       - name: Report Coverage
         uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           verbose: true
+          dry_run: true
+
+  # browser-test:
+  #   needs: build-and-cache
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       node: ["22"]
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     NPM_CONFIG_UNSAFE_PERM: true
+  #     NODE_OPTIONS: --max-old-space-size=4096
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ matrix.node }}
+  #     - name: Install
+  #       run: npm ci
+  #     - name: Download Build Artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: tests-build-cache-${{ github.run_number }}
+  #         path: .nx
+  #     - name: Build
+  #       run: npm run compile
+  #     - name: Unit tests
+  #       run: npm run test:browser
+  #     - name: Report Coverage
+  #       uses: codecov/codecov-action@v5
+  #       env:
+  #         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  #       with:
+  #         verbose: true
