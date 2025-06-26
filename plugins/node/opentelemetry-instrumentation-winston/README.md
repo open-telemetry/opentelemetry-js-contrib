@@ -40,7 +40,7 @@ tracerProvider.register();
 // To start a logger, you first need to initialize the Logger provider.
 // Add a processor to export log record.
 const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())]
+  processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())],
 });
 logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
 
@@ -123,7 +123,7 @@ const winston = require('winston');
 // To start a logger, you first need to initialize the Logger provider.
 // Add a processor to export log record
 const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())]
+  processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())],
 });
 logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
 
