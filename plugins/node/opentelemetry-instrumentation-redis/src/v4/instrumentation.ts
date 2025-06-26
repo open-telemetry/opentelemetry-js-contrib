@@ -48,19 +48,11 @@ interface MutliCommandInfo {
   commandArgs: Array<string | Buffer>;
 }
 
-const DEFAULT_CONFIG: RedisInstrumentationConfig = {
-  requireParentSpan: false,
-};
-
 export class RedisInstrumentationV4 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
 
   constructor(config: RedisInstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
-  }
-
-  override setConfig(config: RedisInstrumentationConfig = {}) {
-    super.setConfig({ ...DEFAULT_CONFIG, ...config });
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
