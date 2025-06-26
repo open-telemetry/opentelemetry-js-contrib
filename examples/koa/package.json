@@ -4,6 +4,8 @@
   "version": "0.1.0",
   "description": "Example of Koa and @koa/router integration with OpenTelemetry",
   "scripts": {
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "zipkin:server": "cross-env EXPORTER=zipkin ts-node src/server.ts",
     "zipkin:client": "cross-env EXPORTER=zipkin ts-node src/client.ts",
     "jaeger:server": "cross-env EXPORTER=jaeger ts-node src/server.ts",
@@ -37,6 +39,7 @@
     "@opentelemetry/instrumentation": "^0.48.0",
     "@opentelemetry/instrumentation-http": "^0.48.0",
     "@opentelemetry/instrumentation-koa": "^0.31.0",
+    "@opentelemetry/resources": "^1.0.0",
     "@opentelemetry/sdk-trace-node": "^1.0.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
