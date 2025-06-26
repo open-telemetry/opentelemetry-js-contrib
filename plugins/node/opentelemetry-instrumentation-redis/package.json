@@ -56,7 +56,6 @@
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
-    "@types/redis": "2.8.32",
     "cross-env": "7.0.3",
     "nyc": "17.1.0",
     "redis": "^4.7.1",
