@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.50.0...instrumentation-koa-v0.50.1) (2025-06-05)
+
+
+### Bug Fixes
+
+* **instr-koa:** export KoaLayerType enum correctly ([#2873](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2873)) ([11a94b0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/11a94b09111787489643365690591d1e607dd119))
+
 ## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.49.0...instrumentation-koa-v0.50.0) (2025-06-02)
 
 
