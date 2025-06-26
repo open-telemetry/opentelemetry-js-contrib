@@ -43,7 +43,7 @@ const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
 );
 
-import * as redisTypes from 'redis';
+import type { Callback } from '../../src/v2-v3/internal-types';
 import { RedisResponseCustomAttributeFunction } from '../../src/types';
 
 const CONFIG = {
@@ -65,7 +65,7 @@ const unsetStatus: SpanStatus = {
 };
 
 describe('redis v2-v3', () => {
-  let redis: typeof redisTypes;
+  let redis: any;
   const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
   const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
   const tracer = trace.getTracer('external');
@@ -95,7 +95,7 @@ describe('redis v2-v3', () => {
   describe('#createClient()', () => {
     it('should propagate the current span to event handlers', done => {
       const span = tracer.startSpan('test span');
-      let client: redisTypes.RedisClient;
+      let client: any;
       const readyHandler = () => {
         assert.strictEqual(trace.getSpan(context.active()), span);
         client.quit(done);
@@ -114,21 +114,21 @@ describe('redis v2-v3', () => {
   });
 
   describe('#send_internal_message()', () => {
-    let client: redisTypes.RedisClient;
+    let client: any;
 
     const REDIS_OPERATIONS: Array<{
       description: string;
       command: string;
       args: string[];
       expectedDbStatement: string;
-      method: (cb: redisTypes.Callback<unknown>) => unknown;
+      method: (cb: Callback<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         command: 'hset',
         args: ['hash', 'random', 'random'],
         expectedDbStatement: 'hash random [1 other arguments]',
-        method: (cb: redisTypes.Callback<number>) =>
+        method: (cb: Callback<number>) =>
           client.hset('hash', 'random', 'random', cb),
       },
       {
@@ -136,21 +136,20 @@ describe('redis v2-v3', () => {
         command: 'get',
         args: ['test'],
         expectedDbStatement: 'test',
-        method: (cb: redisTypes.Callback<string | null>) =>
-          client.get('test', cb),
+        method: (cb: Callback<string | null>) => client.get('test', cb),
       },
       {
         description: 'delete',
         command: 'del',
         args: ['test'],
         expectedDbStatement: 'test',
-        method: (cb: redisTypes.Callback<number>) => client.del('test', cb),
+        method: (cb: Callback<number>) => client.del('test', cb),
       },
     ];
 
     before(done => {
       client = redis.createClient(URL);
-      client.on('error', err => {
+      client.on('error', (err: any) => {
         done(err);
       });
       client.on('ready', done);

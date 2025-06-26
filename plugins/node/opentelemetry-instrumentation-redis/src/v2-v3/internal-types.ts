@@ -31,3 +31,6 @@ export interface RedisCommand {
   callback: (err: Error | null, reply: unknown) => void;
   call_on_write: boolean;
 }
+
+// Exported from "@types/redis@2.8.32".
+export type Callback<T> = (err: Error | null, reply: T) => void;

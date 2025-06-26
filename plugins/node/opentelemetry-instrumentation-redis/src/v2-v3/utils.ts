@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import type * as redisTypes from 'redis';
 import { context, Span, SpanStatusCode } from '@opentelemetry/api';
 import { EventEmitter } from 'events';
 
@@ -29,14 +28,14 @@ export const endSpan = (span: Span, err?: Error | null) => {
 };
 
 export const getTracedCreateClient = (original: Function) => {
-  return function createClientTrace(this: redisTypes.RedisClient) {
-    const client: redisTypes.RedisClient = original.apply(this, arguments);
+  return function createClientTrace(this: any) {
+    const client = original.apply(this, arguments);
     return context.bind(context.active(), client);
   };
 };
 
 export const getTracedCreateStreamTrace = (original: Function) => {
-  return function create_stream_trace(this: redisTypes.RedisClient) {
+  return function create_stream_trace(this: any) {
     if (!Object.prototype.hasOwnProperty.call(this, 'stream')) {
       Object.defineProperty(this, 'stream', {
         get() {
