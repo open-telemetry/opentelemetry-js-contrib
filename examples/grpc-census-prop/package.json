@@ -4,6 +4,8 @@
   "description": "Example of using propagator-grpc-census-binary",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "server:otel:defprop": "cross-env node ./capitalize_server.js",
     "server:otel:binprop": "cross-env BINARY_PROPAGATOR=true node ./capitalize_server.js",
     "server:census": "cross-env CENSUS_TRACER=true node ./capitalize_server.js",
