@@ -315,7 +315,6 @@ describe('redis v4', () => {
         // Ignore. If the test Redis is not at the default port we expect this
         // to error.
       }
-      // See https://github.com/open-telemetry/opentelemetry-js-contrib/pull/2914
       try {
         await newClient.disconnect();
       } catch (_disconnectErr) {
