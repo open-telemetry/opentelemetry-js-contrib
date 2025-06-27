@@ -5,6 +5,8 @@
   "description": "Example of using @opentelemetry/plugin-react-load in browser with React",
   "main": "index.jsx",
   "scripts": {
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "build": "react-scripts build",
     "dev": "react-scripts start",
     "docker:start": "cd ./docker && docker-compose down && docker-compose up",
@@ -41,6 +43,7 @@
     "@opentelemetry/core": "^0.25.0",
     "@opentelemetry/exporter-collector": "^0.25.0",
     "@opentelemetry/plugin-react-load": "^0.23.0",
+    "@opentelemetry/resources": "^0.25.0",
     "@opentelemetry/sdk-trace-base": "^0.25.0",
     "@opentelemetry/sdk-trace-web": "^0.25.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",

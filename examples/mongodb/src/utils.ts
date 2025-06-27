@@ -22,6 +22,7 @@ import * as mongodb from 'mongodb';
  * @param dbName The mongodb database name.
  * @param options The mongodb client config options.
  */
+// eslint-disable-next-line import/prefer-default-export
 export function accessDB(
   url: string,
   dbName: string,
@@ -29,7 +30,7 @@ export function accessDB(
 ): Promise<mongodb.Db> {
   return new Promise((resolve, reject) => {
     mongodb.MongoClient.connect(url, {
-      serverSelectionTimeoutMS: 1000
+      serverSelectionTimeoutMS: 1000,
     })
       .then(client => {
         resolve(client.db(dbName));
