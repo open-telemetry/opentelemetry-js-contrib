@@ -292,6 +292,10 @@ pkg:propagator-aws-xray-lambda:
   - changed-files:
       - any-glob-to-any-file:
           - propagators/propagator-aws-xray-lambda/**
+pkg:instrumentation-page-view:
+    - changed-files:
+        - any-glob-to-any-file:
+            - plugins/web/opentelemetry-instrumentation-page-view/**
 pkg-status:unmaintained:
   - changed-files:
       - any-glob-to-any-file:
