@@ -619,4 +619,25 @@ describe('DataloaderInstrumentation', () => {
     assert.deepStrictEqual(await alternativeDataloader.loadMany(['test']), [1]);
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 5);
   });
+
+  it('should not prune custom methods', async () => {
+    class CustomDataLoader extends Dataloader<string, string> {
+      constructor() {
+        super(async keys => keys.map((_, idx) => getMd5HashFromIdx(idx)));
+      }
+
+      public async customLoad() {
+        return this.load('test');
+      }
+    }
+
+    const customDataloader = new CustomDataLoader();
+    await customDataloader.customLoad();
+
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+    const [batchSpan, loadSpan] = memoryExporter.getFinishedSpans();
+
+    assert.strictEqual(loadSpan.name, 'dataloader.load');
+    assert.strictEqual(batchSpan.name, 'dataloader.batch');
+  });
 });
