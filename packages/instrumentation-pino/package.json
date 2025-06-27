@@ -16,9 +16,9 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../../scripts/lint-readme.js",
+    "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../../scripts/version-update.js",
+    "version:update": "node ../../scripts/version-update.js",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-pino",
     "compile": "tsc -p ."
   },

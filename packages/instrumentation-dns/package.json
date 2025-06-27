@@ -16,8 +16,8 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../../scripts/version-update.js",
-    "lint:readme": "node ../../../scripts/lint-readme",
+    "version:update": "node ../../scripts/version-update.js",
+    "lint:readme": "node ../../scripts/lint-readme",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-dns",
     "compile": "tsc -p ."
   },

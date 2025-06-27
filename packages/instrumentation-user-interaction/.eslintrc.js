@@ -8,5 +8,5 @@ module.exports = {
     "globals": {
         "Zone": "readonly"
     },
-    ...require('../../../eslint.config.js')
+    ...require('../../eslint.config.js')
 }

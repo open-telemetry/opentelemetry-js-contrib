@@ -15,7 +15,7 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../../scripts/lint-readme.js",
+    "lint:readme": "node ../../scripts/lint-readme.js",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -24,7 +24,7 @@
     "test-all-versions:local": "cross-env RUN_ORACLEDB_TESTS_LOCAL=true npm run test-all-versions",
     "test:debug": "mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_ORACLEDB_TESTS_LOCAL=true npm run test",
-    "version:update": "node ../../../scripts/version-update.js",
+    "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
   "keywords": [

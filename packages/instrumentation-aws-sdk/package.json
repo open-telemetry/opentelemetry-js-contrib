@@ -36,12 +36,12 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../../scripts/lint-readme.js",
+    "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
-    "version:update": "node ../../../scripts/version-update.js",
+    "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
   "peerDependencies": {

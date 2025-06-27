@@ -16,9 +16,9 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../../scripts/lint-readme",
+    "lint:readme": "node ../../scripts/lint-readme",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../../scripts/version-update.js",
+    "version:update": "node ../../scripts/version-update.js",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-kafkajs",
     "compile": "tsc -p ."
   },

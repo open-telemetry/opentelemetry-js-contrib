@@ -21,8 +21,8 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../../scripts/lint-readme.js",
-    "version:update": "node ../../../scripts/version-update.js",
+    "lint:readme": "node ../../scripts/lint-readme.js",
+    "version:update": "node ../../scripts/version-update.js",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-redis",
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile"

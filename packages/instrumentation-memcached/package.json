@@ -20,7 +20,7 @@
     "test": "nyc mocha 'test/**/*.test.ts'",
     "test:debug": "cross-env RUN_MEMCACHED_TESTS_LOCAL=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_MEMCACHED_TESTS_LOCAL=true npm run test",
-    "version:update": "node ../../../scripts/version-update.js"
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "instrumentation",

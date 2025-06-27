@@ -18,7 +18,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
-    "version:update": "node ../../../scripts/version-update.js"
+    "version:update": "node ../../scripts/version-update.js"
   },
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

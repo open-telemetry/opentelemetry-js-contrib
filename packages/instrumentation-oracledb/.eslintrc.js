@@ -1,7 +1,7 @@
-const parentConfig = require('../../../eslint.config.js');
+const parentConfig = require('../../eslint.config.js');
 
 module.exports = {
-    extends: '../../../eslint.config.js', // Extends the top-level config
+    extends: '../../eslint.config.js', // Extends the top-level config
     ignorePatterns: [
         ...(parentConfig.ignorePatterns || []), // Retain parent's ignorePatterns array
         'src/version.ts', // ignore this file

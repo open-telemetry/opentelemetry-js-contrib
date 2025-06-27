@@ -18,7 +18,7 @@
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.test.ts'",
-    "version:update": "node ../../../scripts/version-update.js"
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "instrumentation",
