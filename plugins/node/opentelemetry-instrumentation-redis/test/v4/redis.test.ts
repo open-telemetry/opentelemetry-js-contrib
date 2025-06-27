@@ -36,7 +36,7 @@ const instrumentation = registerInstrumentationTesting(
 );
 
 import { createClient } from 'redis';
-import type { RedisClientType } from '@redis/client';
+import type { RedisClientType } from 'redis';
 import {
   Span,
   SpanKind,
