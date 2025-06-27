@@ -1,3 +1,19 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 // eslint-disable-next-line
@@ -8,9 +24,7 @@ const axios = require('axios');
 
 const PORT = 8080;
 const app = Fastify({ logger: true });
-app
-  .register(require('@fastify/express'))
-  .register(subsystem);
+app.register(require('@fastify/express')).register(subsystem);
 
 async function subsystem(fastify) {
   fastify.addHook('onRequest', async () => {
@@ -38,8 +52,12 @@ async function subsystem(fastify) {
     const span = api.trace.getSpan(api.context.active());
     span.setAttribute('order', 4);
 
-    const result = await axios.get('https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json');
-    const result2 = await axios.get('https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json');
+    const result = await axios.get(
+      'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
+    );
+    const result2 = await axios.get(
+      'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
+    );
 
     console.log('sending response');
     // throw Error('boom  lala');
@@ -65,7 +83,9 @@ async function subsystem(fastify) {
 }
 
 app.post('/run_test/:id', async (req, res) => {
-  const result = await axios.get('https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json');
+  const result = await axios.get(
+    'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
+  );
   console.log('sending response');
   res.send(`OK ${result.data.version}`);
 });
