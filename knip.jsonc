@@ -2,7 +2,7 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema-jsonc.json",
   "workspaces": {
-    "metapackages/auto-instrumentations-node": {
+    "packages/auto-instrumentations-node": {
       // Ensure register.ts is considered an entry-point (the `!` is to be
       // included with the `--production` flag).
       "entry": "src/register.ts!"

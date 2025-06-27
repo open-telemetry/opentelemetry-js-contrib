@@ -154,11 +154,11 @@ npm run test-services:stop        # stops services in Docker
 If you only want to test a single package (e.g. the `instrumentation-mongodb`) you can `cd` into it and run the tests after you started the services.
 
 ```sh
-npm run test-services:start                           # starts services in Docker
-cd plugins/node/opentelemetry-instrumentation-mongodb # get into the instrumenation folder
-RUN_MONGODB_TESTS=1 npm test                          # run the test with the proper config (check each package)
-cd ../../..                                           # go back to root folder
-npm run test-services:stop                            # stops services in Docker
+npm run test-services:start           # starts services in Docker
+cd packages/instrumentation-mongodb   # get into the instrumenation folder
+RUN_MONGODB_TESTS=1 npm test          # run the test with the proper config (check each package)
+cd ../../..                           # go back to root folder
+npm run test-services:stop            # stops services in Docker
 ```
 
 NOTE: scripts for each package will be added to avoid extra consumption of resources and improve the development experience.

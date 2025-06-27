@@ -1,0 +1,82 @@
+{
+  "name": "@opentelemetry/propagator-aws-xray",
+  "version": "2.1.0",
+  "description": "OpenTelemetry AWS Xray propagator provides context propagation for systems that are using AWS X-Ray format.",
+  "main": "build/src/index.js",
+  "module": "build/esm/index.js",
+  "types": "build/src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "packages/propagator-aws-xray"
+  },
+  "scripts": {
+    "prepublishOnly": "npm run compile",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/propagator-aws-xray",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "test": "nyc mocha test/**/*.test.ts",
+    "test:browser": "nyc karma start --single-run",
+    "tdd": "npm run tdd:node",
+    "tdd:node": "npm run test -- --watch-extensions ts --watch",
+    "tdd:browser": "karma start",
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "version": "node ../../scripts/version-update.js",
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
+  },
+  "keywords": [
+    "opentelemetry",
+    "nodejs",
+    "tracing",
+    "profiling",
+    "awsxray"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": "^18.19.0 || >=20.6.0"
+  },
+  "files": [
+    "build/esm/**/*.js",
+    "build/esm/**/*.js.map",
+    "build/esm/**/*.d.ts",
+    "build/esnext/**/*.js",
+    "build/esnext/**/*.js.map",
+    "build/esnext/**/*.d.ts",
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": ">=1.0.0 <1.10.0"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": ">=1.0.0 <1.10.0",
+    "@opentelemetry/core": "^2.0.0",
+    "@types/mocha": "10.0.10",
+    "@types/node": "18.18.14",
+    "@types/sinon": "17.0.4",
+    "@types/webpack-env": "1.16.3",
+    "babel-loader": "8.3.0",
+    "babel-plugin-istanbul": "7.0.0",
+    "karma": "6.4.4",
+    "karma-chrome-launcher": "3.1.0",
+    "karma-coverage": "2.2.1",
+    "karma-mocha": "2.0.1",
+    "karma-spec-reporter": "0.0.36",
+    "karma-webpack": "5.0.1",
+    "nyc": "17.1.0",
+    "ts-loader": "9.5.2",
+    "typescript": "5.0.4",
+    "webpack": "5.95.0",
+    "webpack-cli": "5.1.4",
+    "webpack-merge": "5.10.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/propagator-aws-xray#readme"
+}

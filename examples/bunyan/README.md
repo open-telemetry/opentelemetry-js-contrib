@@ -100,12 +100,12 @@ as the following:
     '/Users/trentm/.nvm/versions/node/v18.18.2/bin/node',
     '-r',
     './telemetry.js',
-    '/Users/trentm/src/opentelemetry-js-contrib/plugins/node/opentelemetry-instrumentation-bunyan/examples/app.js'
+    '/Users/trentm/src/opentelemetry-js-contrib/packages/instrumentation-bunyan/examples/app.js'
   ],
   'process.runtime.version': '18.18.2',
   'process.runtime.name': 'nodejs',
   'process.runtime.description': 'Node.js',
-  'process.command': '/Users/trentm/src/opentelemetry-js-contrib/plugins/node/opentelemetry-instrumentation-bunyan/examples/app.js',
+  'process.command': '/Users/trentm/src/opentelemetry-js-contrib/packages/instrumentation-bunyan/examples/app.js',
   'process.owner': 'trentm'
   'host.name': 'amachine.local',
   'host.arch': 'amd64',
