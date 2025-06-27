@@ -19,9 +19,7 @@ import * as http from 'http';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as mongodb from 'mongodb';
 import { Collection } from 'mongodb';
-// eslint-disable-next-line import/extensions
 import { setupTracing } from './tracer';
-// eslint-disable-next-line import/extensions
 import { accessDB } from './utils';
 
 setupTracing('example-mongodb-server');

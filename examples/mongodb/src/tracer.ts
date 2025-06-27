@@ -25,7 +25,6 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
-// eslint-disable-next-line import/prefer-default-export
 export const setupTracing = (serviceName: string): api.Tracer => {
   const provider = new NodeTracerProvider({
     resource: new Resource({

@@ -16,7 +16,6 @@
 
 'use strict';
 
-// eslint-disable-next-line import/order
 const tracer = require('./tracer')('example-hapi-client');
 
 const api = require('@opentelemetry/api');

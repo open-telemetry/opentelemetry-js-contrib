@@ -18,13 +18,10 @@
 import * as express from 'express';
 import * as axios from 'axios';
 import { randomBytes } from 'crypto';
-// eslint-disable-next-line import/extensions
 import { setupTracing } from './tracer';
-// eslint-disable-next-line import/extensions
 import * as tracerHandlers from './express-tracer-handlers';
 
 const tracer = setupTracing('example-redis-server');
-// eslint-disable-next-line import/extensions
 const { redisPromise } = require('./setup-redis');
 
 // Setup express

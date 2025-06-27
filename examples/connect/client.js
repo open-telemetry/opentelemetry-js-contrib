@@ -16,7 +16,6 @@
 
 'use strict';
 
-// eslint-disable-next-line import/order
 const tracing = require('./tracing')('example-connect-client');
 
 const { tracer } = tracing;

@@ -73,7 +73,6 @@ function btnAddClick() {
 }
 
 function prepareClickEvents() {
-  // eslint-disable-next-line no-plusplus
   for (let i = 0; i < 5; i++) {
     btnAddClick();
   }
@@ -106,7 +105,7 @@ function onClick(navigate) {
 }
 
 function getData(url) {
-  return new Promise((resolve, _reject) => {
+  return new Promise(resolve => {
     const req = new XMLHttpRequest();
     req.open('GET', url, true);
     req.setRequestHeader('Content-Type', 'application/json');
