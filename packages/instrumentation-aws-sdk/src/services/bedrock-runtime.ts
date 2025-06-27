@@ -599,24 +599,36 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   ): Promise<any> {
     const stream = response.data?.body;
     const modelId = response.request.commandInput?.modelId;
-    if (!stream || !span.isRecording()) return;
+    if (!stream) return;
 
-    const wrappedStream = instrumentAsyncIterable(
-      stream,
-      async (chunk: { chunk?: { bytes?: Uint8Array } }) => {
-        const parsedChunk = parseChunk(chunk?.chunk?.bytes);
+    const wrappedStream =
+      BedrockRuntimeServiceExtension.instrumentAsyncIterable(
+        stream,
+        async (chunk: { chunk?: { bytes?: Uint8Array } }) => {
+          const parsedChunk = BedrockRuntimeServiceExtension.parseChunk(
+            chunk?.chunk?.bytes
+          );
 
-        if (!parsedChunk) return;
+          if (!parsedChunk) return;
 
-        if (modelId.includes('amazon.titan')) {
-          recordTitanAttributes(parsedChunk);
-        } else if (modelId.includes('anthropic.claude')) {
-          recordClaudeAttributes(parsedChunk);
-        } else if (modelId.includes('amazon.nova')) {
-          recordNovaAttributes(parsedChunk);
+          if (modelId.includes('amazon.titan')) {
+            BedrockRuntimeServiceExtension.recordTitanAttributes(
+              parsedChunk,
+              span
+            );
+          } else if (modelId.includes('anthropic.claude')) {
+            BedrockRuntimeServiceExtension.recordClaudeAttributes(
+              parsedChunk,
+              span
+            );
+          } else if (modelId.includes('amazon.nova')) {
+            BedrockRuntimeServiceExtension.recordNovaAttributes(
+              parsedChunk,
+              span
+            );
+          }
         }
-      }
-    );
+      );
     // Replace the original response body with our instrumented stream.
     // - Defers span.end() until the entire stream is consumed
     // This ensures downstream consumers still receive the full stream correctly,
@@ -631,93 +643,92 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       }
     })();
     return response.data;
-
-    // Tap into the stream at the chunk level without modifying the chunk itself.
-    function instrumentAsyncIterable<T>(
-      stream: AsyncIterable<T>,
-      onChunk: (chunk: T) => void
-    ): AsyncIterable<T> {
-      return {
-        [Symbol.asyncIterator]: async function* () {
-          for await (const chunk of stream) {
-            onChunk(chunk);
-            yield chunk;
-          }
-        },
-      };
-    }
-
-    function parseChunk(bytes?: Uint8Array): any {
-      if (!bytes || !(bytes instanceof Uint8Array)) return null;
-      try {
-        const str = Buffer.from(bytes).toString('utf-8');
-        return JSON.parse(str);
-      } catch (err) {
-        console.warn('Failed to parse streamed chunk', err);
-        return null;
-      }
-    }
-
-    function recordNovaAttributes(parsedChunk: any) {
-      if (parsedChunk.metadata?.usage !== undefined) {
-        if (parsedChunk.metadata?.usage.inputTokens !== undefined) {
-          span.setAttribute(
-            ATTR_GEN_AI_USAGE_INPUT_TOKENS,
-            parsedChunk.metadata.usage.inputTokens
-          );
+  }
+  // Tap into the stream at the chunk level without modifying the chunk itself.
+  private static instrumentAsyncIterable<T>(
+    stream: AsyncIterable<T>,
+    onChunk: (chunk: T) => void
+  ): AsyncIterable<T> {
+    return {
+      [Symbol.asyncIterator]: async function* () {
+        for await (const chunk of stream) {
+          onChunk(chunk);
+          yield chunk;
         }
-        if (parsedChunk.metadata?.usage.outputTokens !== undefined) {
-          span.setAttribute(
-            ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-            parsedChunk.metadata.usage.outputTokens
-          );
-        }
-      }
-      if (parsedChunk.messageStop?.stopReason !== undefined) {
-        span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
-          parsedChunk.messageStop.stopReason,
-        ]);
-      }
-    }
+      },
+    };
+  }
 
-    function recordClaudeAttributes(parsedChunk: any) {
-      if (parsedChunk.message?.usage?.input_tokens !== undefined) {
+  private static parseChunk(bytes?: Uint8Array): any {
+    if (!bytes || !(bytes instanceof Uint8Array)) return null;
+    try {
+      const str = Buffer.from(bytes).toString('utf-8');
+      return JSON.parse(str);
+    } catch (err) {
+      console.warn('Failed to parse streamed chunk', err);
+      return null;
+    }
+  }
+
+  private static recordNovaAttributes(parsedChunk: any, span: Span) {
+    if (parsedChunk.metadata?.usage !== undefined) {
+      if (parsedChunk.metadata?.usage.inputTokens !== undefined) {
         span.setAttribute(
           ATTR_GEN_AI_USAGE_INPUT_TOKENS,
-          parsedChunk.message.usage.input_tokens
+          parsedChunk.metadata.usage.inputTokens
         );
       }
-      if (parsedChunk.message?.usage?.output_tokens !== undefined) {
+      if (parsedChunk.metadata?.usage.outputTokens !== undefined) {
         span.setAttribute(
           ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-          parsedChunk.message.usage.output_tokens
+          parsedChunk.metadata.usage.outputTokens
         );
-      }
-      if (parsedChunk.delta?.stop_reason !== undefined) {
-        span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
-          parsedChunk.delta.stop_reason,
-        ]);
       }
     }
+    if (parsedChunk.messageStop?.stopReason !== undefined) {
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+        parsedChunk.messageStop.stopReason,
+      ]);
+    }
+  }
 
-    function recordTitanAttributes(parsedChunk: any) {
-      if (parsedChunk.inputTextTokenCount !== undefined) {
-        span.setAttribute(
-          ATTR_GEN_AI_USAGE_INPUT_TOKENS,
-          parsedChunk.inputTextTokenCount
-        );
-      }
-      if (parsedChunk.totalOutputTextTokenCount !== undefined) {
-        span.setAttribute(
-          ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-          parsedChunk.totalOutputTextTokenCount
-        );
-      }
-      if (parsedChunk.completionReason !== undefined) {
-        span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
-          parsedChunk.completionReason,
-        ]);
-      }
+  private static recordClaudeAttributes(parsedChunk: any, span: Span) {
+    if (parsedChunk.message?.usage?.input_tokens !== undefined) {
+      span.setAttribute(
+        ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+        parsedChunk.message.usage.input_tokens
+      );
+    }
+    if (parsedChunk.message?.usage?.output_tokens !== undefined) {
+      span.setAttribute(
+        ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+        parsedChunk.message.usage.output_tokens
+      );
+    }
+    if (parsedChunk.delta?.stop_reason !== undefined) {
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+        parsedChunk.delta.stop_reason,
+      ]);
+    }
+  }
+
+  private static recordTitanAttributes(parsedChunk: any, span: Span) {
+    if (parsedChunk.inputTextTokenCount !== undefined) {
+      span.setAttribute(
+        ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+        parsedChunk.inputTextTokenCount
+      );
+    }
+    if (parsedChunk.totalOutputTextTokenCount !== undefined) {
+      span.setAttribute(
+        ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+        parsedChunk.totalOutputTextTokenCount
+      );
+    }
+    if (parsedChunk.completionReason !== undefined) {
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+        parsedChunk.completionReason,
+      ]);
     }
   }
 }
