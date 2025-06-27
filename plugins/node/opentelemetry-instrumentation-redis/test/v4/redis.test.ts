@@ -81,7 +81,7 @@ describe('redis v4', () => {
   beforeEach(async () => {
     client = createClient({
       url: redisTestUrl,
-    }) as unknown as RedisClientType;
+    });
     await context.with(suppressTracing(context.active()), async () => {
       await client.connect();
     });
@@ -191,7 +191,7 @@ describe('redis v4', () => {
     it('produces a span', async () => {
       const newClient = createClient({
         url: redisTestUrl,
-      }) as unknown as RedisClientType;
+      });
 
       after(async () => {
         await newClient.disconnect();
@@ -224,7 +224,7 @@ describe('redis v4', () => {
       }`;
       const newClient = createClient({
         url: redisURL,
-      }) as unknown as RedisClientType;
+      });
 
       await assert.rejects(newClient.connect());
 
@@ -247,7 +247,7 @@ describe('redis v4', () => {
       }`;
       const newClient = createClient({
         url: redisURL,
-      }) as unknown as RedisClientType;
+      });
 
       await assert.rejects(newClient.connect());
 
@@ -274,7 +274,7 @@ describe('redis v4', () => {
       }?db=mydb`;
       const newClient = createClient({
         url: redisURL,
-      }) as unknown as RedisClientType;
+      });
 
       await assert.rejects(newClient.connect());
 
@@ -308,7 +308,7 @@ describe('redis v4', () => {
         DiagLogLevel.WARN
       );
 
-      const newClient = createClient({ url: '' }) as unknown as RedisClientType;
+      const newClient = createClient({ url: '' });
       try {
         await newClient.connect();
       } catch (_err) {
