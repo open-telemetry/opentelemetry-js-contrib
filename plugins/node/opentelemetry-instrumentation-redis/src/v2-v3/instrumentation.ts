@@ -28,7 +28,7 @@ import {
 import { RedisInstrumentationConfig } from '../types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
-import { RedisCommand, RedisPluginClientTypes } from './internal-types';
+import type { RedisCommand, RedisPluginClientTypes } from './internal-types';
 import { SpanKind, context, trace } from '@opentelemetry/api';
 import {
   DBSYSTEMVALUES_REDIS,
