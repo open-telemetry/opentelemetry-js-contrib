@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/*
+ * This file contains a copy of unstable semantic convention definitions
+ * used by this package.
+ * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
+ */
+
 /**
  * The name of the connection pool; unique within the instrumented application. In case the connection pool implementation doesn't provide a name, instrumentation **SHOULD** use a combination of parameters that would make the name unique, for example, combining attributes `server.address`, `server.port`, and `db.namespace`, formatted as `server.address:server.port/db.namespace`. Instrumentations that generate connection pool name following different patterns **SHOULD** document it.
  *
@@ -22,7 +28,7 @@
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_DB_CLIENT_CONNECTION_POOL_NAME =
-  'db.client.connection.pool.name';
+  'db.client.connection.pool.name' as const;
 
 /**
  * The state of a connection in the pool
@@ -31,55 +37,109 @@ export const ATTR_DB_CLIENT_CONNECTION_POOL_NAME =
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_DB_CLIENT_CONNECTION_STATE = 'db.client.connection.state';
+export const ATTR_DB_CLIENT_CONNECTION_STATE =
+  'db.client.connection.state' as const;
 
 /**
- * The name of the database, fully qualified within the server address and port.
+ * Deprecated, use `server.address`, `server.port` attributes instead.
+ *
+ * @example "Server=(localdb)\\v11.0;Integrated Security=true;"
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `server.address` and `server.port`.
+ */
+export const ATTR_DB_CONNECTION_STRING = 'db.connection_string' as const;
+
+/**
+ * Deprecated, use `db.namespace` instead.
  *
  * @example customers
- * @example test.users
- *
- * @note If a database system has multiple namespace components, they **SHOULD** be concatenated (potentially using database system specific conventions) from most general to most specific namespace component, and more specific namespaces **SHOULD NOT** be captured without the more general namespaces, to ensure that "startswith" queries for the more general namespaces will be valid.
- * Semantic conventions for individual database systems **SHOULD** document what `db.namespace` means in the context of that system.
- * It is **RECOMMENDED** to capture the value as provided by the application without attempting to do any case normalization.
- * This attribute has stability level RELEASE CANDIDATE.
+ * @example main
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `db.namespace`.
  */
-export const ATTR_DB_NAMESPACE = 'db.namespace';
+export const ATTR_DB_NAME = 'db.name' as const;
 
 /**
- * The name of the operation or command being executed.
+ * The database statement being executed.
  *
- * @example findAndModify
- * @example HMSET
- * @example SELECT
- *
- * @note It is **RECOMMENDED** to capture the value as provided by the application without attempting to do any case normalization.
- * If the operation name is parsed from the query text, it **SHOULD** be the first operation name found in the query.
- * For batch operations, if the individual operations are known to have the same operation name then that operation name **SHOULD** be used prepended by `BATCH `, otherwise `db.operation.name` **SHOULD** be `BATCH` or some other database system specific term if more applicable.
- * This attribute has stability level RELEASE CANDIDATE.
+ * @example SELECT * FROM wuser_table
+ * @example SET mykey "WuValue"
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `db.query.text`.
  */
-export const ATTR_DB_OPERATION_NAME = 'db.operation.name';
+export const ATTR_DB_STATEMENT = 'db.statement' as const;
 
 /**
- * Enum value "used" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
+ * Deprecated, use `db.system.name` instead.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `db.system.name`.
  */
-export const DB_CLIENT_CONNECTION_STATE_VALUE_USED = 'used';
+export const ATTR_DB_SYSTEM = 'db.system' as const;
+
+/**
+ * Deprecated, no replacement at this time.
+ *
+ * @example readonly_user
+ * @example reporting_user
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Removed, no replacement at this time.
+ */
+export const ATTR_DB_USER = 'db.user' as const;
+
+/**
+ * Deprecated, use `server.address` on client spans and `client.address` on server spans.
+ *
+ * @example example.com
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `server.address` on client spans and `client.address` on server spans.
+ */
+export const ATTR_NET_PEER_NAME = 'net.peer.name' as const;
+
+/**
+ * Deprecated, use `server.port` on client spans and `client.port` on server spans.
+ *
+ * @example 8080
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `server.port` on client spans and `client.port` on server spans.
+ */
+export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
 
 /**
  * Enum value "idle" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
  */
-export const DB_CLIENT_CONNECTION_STATE_VALUE_IDLE = 'idle';
+export const DB_CLIENT_CONNECTION_STATE_VALUE_IDLE = 'idle' as const;
+
+/**
+ * Enum value "used" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
+ */
+export const DB_CLIENT_CONNECTION_STATE_VALUE_USED = 'used' as const;
+
+/**
+ * Enum value "postgresql" for attribute {@link ATTR_DB_SYSTEM}.
+ */
+export const DB_SYSTEM_VALUE_POSTGRESQL = 'postgresql' as const;
 
 /**
  * The number of connections that are currently in state described by the `state` attribute
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_DB_CLIENT_CONNECTION_COUNT = 'db.client.connection.count';
+export const METRIC_DB_CLIENT_CONNECTION_COUNT =
+  'db.client.connection.count' as const;
 
 /**
  * The number of current pending requests for an open connection
@@ -87,14 +147,4 @@ export const METRIC_DB_CLIENT_CONNECTION_COUNT = 'db.client.connection.count';
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS =
-  'db.client.connection.pending_requests';
-
-/**
- * Duration of database client operations.
- *
- * @note Batch operations **SHOULD** be recorded as a single operation.
- *
- * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const METRIC_DB_CLIENT_OPERATION_DURATION =
-  'db.client.operation.duration';
+  'db.client.connection.pending_requests' as const;
