@@ -24,10 +24,6 @@ import {
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
-import {
-  getTestSpans,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
 import * as assert from 'assert';
 import { RedisInstrumentation } from '../../src';
 import {
@@ -39,7 +35,7 @@ import {
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 
-const instrumentation = registerInstrumentationTesting(
+const instrumentation = testUtils.registerInstrumentationTesting(
   new RedisInstrumentation()
 );
 
@@ -184,9 +180,9 @@ describe('redis v2-v3', () => {
           context.with(trace.setSpan(context.active(), span), () => {
             operation.method((err, _result) => {
               assert.ifError(err);
-              assert.strictEqual(getTestSpans().length, 1);
+              assert.strictEqual(testUtils.getTestSpans().length, 1);
               span.end();
-              const endedSpans = getTestSpans();
+              const endedSpans = testUtils.getTestSpans();
               assert.strictEqual(endedSpans.length, 2);
               assert.strictEqual(
                 endedSpans[0].name,
@@ -238,7 +234,7 @@ describe('redis v2-v3', () => {
             operation.method((err, _) => {
               assert.ifError(err);
               span.end();
-              const endedSpans = getTestSpans();
+              const endedSpans = testUtils.getTestSpans();
               assert.strictEqual(endedSpans.length, 2);
               const expectedStatement = dbStatementSerializer(
                 operation.command,
@@ -276,7 +272,7 @@ describe('redis v2-v3', () => {
           it(`should apply responseHook for operation ${operation.description}`, done => {
             operation.method((err, reply) => {
               assert.ifError(err);
-              const endedSpans = getTestSpans();
+              const endedSpans = testUtils.getTestSpans();
               assert.strictEqual(
                 endedSpans[0].attributes[dataFieldName],
                 new String(reply).toString()
@@ -305,7 +301,7 @@ describe('redis v2-v3', () => {
           it(`should not fail because of responseHook error for operation ${operation.description}`, done => {
             operation.method((err, _reply) => {
               assert.ifError(err);
-              const endedSpans = getTestSpans();
+              const endedSpans = testUtils.getTestSpans();
               assert.strictEqual(endedSpans.length, 1);
               done();
             });
@@ -324,7 +320,7 @@ describe('redis v2-v3', () => {
           context.with(ROOT_CONTEXT, () => {
             operation.method((err, _) => {
               assert.ifError(err);
-              const endedSpans = getTestSpans();
+              const endedSpans = testUtils.getTestSpans();
               assert.strictEqual(endedSpans.length, 0);
               done();
             });
@@ -336,7 +332,7 @@ describe('redis v2-v3', () => {
           context.with(trace.setSpan(context.active(), span), () => {
             operation.method((err, _) => {
               assert.ifError(err);
-              const endedSpans = getTestSpans();
+              const endedSpans = testUtils.getTestSpans();
               assert.strictEqual(endedSpans.length, 1);
               done();
             });
