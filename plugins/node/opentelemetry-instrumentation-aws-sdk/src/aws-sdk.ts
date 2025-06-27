@@ -18,12 +18,10 @@ import {
   SpanKind,
   context,
   trace,
-  Context,
   diag,
   SpanStatusCode,
 } from '@opentelemetry/api';
-import { suppressTracing } from '@opentelemetry/core';
-import type * as AWS from 'aws-sdk';
+import { hrTime, suppressTracing } from '@opentelemetry/core';
 import { AttributeNames } from './enums';
 import { ServicesExtensions } from './services';
 import {
@@ -53,7 +51,6 @@ import type {
 import {
   bindPromise,
   extractAttributesFromNormalizedRequest,
-  normalizeV2Request,
   normalizeV3Request,
   removeSuffixFromStringIfExists,
 } from './utils';
@@ -68,14 +65,10 @@ type V3PluginCommand = AwsV3Command<any, any, any, any, any> & {
   [V3_CLIENT_CONFIG_KEY]?: any;
 };
 
-const REQUEST_SPAN_KEY = Symbol('opentelemetry.instrumentation.aws-sdk.span');
-type V2PluginRequest = AWS.Request<any, any> & {
-  [REQUEST_SPAN_KEY]?: Span;
-};
-
 export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentationConfig> {
   static readonly component = 'aws-sdk';
-  private servicesExtensions: ServicesExtensions = new ServicesExtensions();
+  // need declare since initialized in callbacks from super constructor
+  private declare servicesExtensions: ServicesExtensions;
 
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -141,23 +134,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
       this.unpatchV3SmithyClient.bind(this)
     );
 
-    const v2Request = new InstrumentationNodeModuleFile(
-      'aws-sdk/lib/core.js',
-      ['^2.308.0'],
-      this.patchV2.bind(this),
-      this.unpatchV2.bind(this)
-    );
-
-    const v2Module = new InstrumentationNodeModuleDefinition(
-      'aws-sdk',
-      ['^2.308.0'],
-      undefined,
-      undefined,
-      [v2Request]
-    );
-
     return [
-      v2Module,
       v3MiddlewareStack,
       v3SmithyMiddlewareStack,
       v3SmithyClient,
@@ -193,31 +170,6 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     return moduleExports;
   }
 
-  protected patchV2(moduleExports: any, moduleVersion?: string) {
-    this.unpatchV2(moduleExports);
-    this._wrap(
-      moduleExports?.Request.prototype,
-      'send',
-      this._getRequestSendPatch.bind(this, moduleVersion)
-    );
-    this._wrap(
-      moduleExports?.Request.prototype,
-      'promise',
-      this._getRequestPromisePatch.bind(this, moduleVersion)
-    );
-
-    return moduleExports;
-  }
-
-  protected unpatchV2(moduleExports?: any) {
-    if (isWrapped(moduleExports?.Request.prototype.send)) {
-      this._unwrap(moduleExports!.Request.prototype, 'send');
-    }
-    if (isWrapped(moduleExports?.Request.prototype.promise)) {
-      this._unwrap(moduleExports!.Request.prototype, 'promise');
-    }
-  }
-
   private _startAwsV3Span(
     normalizedRequest: NormalizedRequest,
     metadata: RequestMetadata
@@ -228,35 +180,6 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     const newSpan = this.tracer.startSpan(name, {
       kind: metadata.spanKind ?? SpanKind.CLIENT,
       attributes: {
-        ...extractAttributesFromNormalizedRequest(normalizedRequest),
-        ...metadata.spanAttributes,
-      },
-    });
-
-    return newSpan;
-  }
-
-  private _startAwsV2Span(
-    request: AWS.Request<any, any>,
-    metadata: RequestMetadata,
-    normalizedRequest: NormalizedRequest
-  ): Span {
-    const operation = (request as any).operation;
-    const service = (request as any).service;
-    const serviceIdentifier = service?.serviceIdentifier;
-    const name =
-      metadata.spanName ??
-      `${normalizedRequest.serviceName}.${normalizedRequest.commandName}`;
-
-    const newSpan = this.tracer.startSpan(name, {
-      kind: metadata.spanKind ?? SpanKind.CLIENT,
-      attributes: {
-        [AttributeNames.AWS_OPERATION]: operation,
-        [AttributeNames.AWS_SIGNATURE_VERSION]:
-          service?.config?.signatureVersion,
-        [AttributeNames.AWS_SERVICE_API]: service?.api?.className,
-        [AttributeNames.AWS_SERVICE_IDENTIFIER]: serviceIdentifier,
-        [AttributeNames.AWS_SERVICE_NAME]: service?.api?.abbreviation,
         ...extractAttributesFromNormalizedRequest(normalizedRequest),
         ...metadata.spanAttributes,
       },
@@ -308,51 +231,6 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
       },
       true
     );
-  }
-
-  private _registerV2CompletedEvent(
-    span: Span,
-    v2Request: V2PluginRequest,
-    normalizedRequest: NormalizedRequest,
-    completedEventContext: Context
-  ) {
-    const self = this;
-    v2Request.on('complete', response => {
-      // read issue https://github.com/aspecto-io/opentelemetry-ext-js/issues/60
-      context.with(completedEventContext, () => {
-        if (!v2Request[REQUEST_SPAN_KEY]) {
-          return;
-        }
-        delete v2Request[REQUEST_SPAN_KEY];
-
-        const requestId = response.requestId;
-        const normalizedResponse: NormalizedResponse = {
-          data: response.data,
-          request: normalizedRequest,
-          requestId: requestId,
-        };
-
-        self._callUserResponseHook(span, normalizedResponse);
-        if (response.error) {
-          span.recordException(response.error);
-        } else {
-          this.servicesExtensions.responseHook(
-            normalizedResponse,
-            span,
-            self.tracer,
-            self.getConfig()
-          );
-        }
-
-        span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
-
-        const httpStatusCode = response.httpResponse?.statusCode;
-        if (httpStatusCode) {
-          span.setAttribute(SEMATTRS_HTTP_STATUS_CODE, httpStatusCode);
-        }
-        span.end();
-      });
-    });
   }
 
   private _getV3ConstructStackPatch(
@@ -446,7 +324,9 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
         const serviceName =
           clientConfig?.serviceId ??
           removeSuffixFromStringIfExists(
-            awsExecutionContext.clientName,
+            // Use 'AWS' as a fallback serviceName to match type definition.
+            // In practice, `clientName` should always be set.
+            awsExecutionContext.clientName || 'AWS',
             'Client'
           );
         const commandName =
@@ -462,6 +342,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
           self.getConfig(),
           self._diag
         );
+        const startTime = hrTime();
         const span = self._startAwsV3Span(normalizedRequest, requestMetadata);
         const activeContextWithSpan = trace.setSpan(context.active(), span);
 
@@ -469,7 +350,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
           Promise.resolve(regionPromise)
             .then(resolvedRegion => {
               normalizedRequest.region = resolvedRegion;
-              span.setAttribute(AttributeNames.AWS_REGION, resolvedRegion);
+              span.setAttribute(AttributeNames.CLOUD_REGION, resolvedRegion);
             })
             .catch(e => {
               // there is nothing much we can do in this case.
@@ -521,12 +402,17 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                     request: normalizedRequest,
                     requestId: requestId,
                   };
-                  self.servicesExtensions.responseHook(
+                  const override = self.servicesExtensions.responseHook(
                     normalizedResponse,
                     span,
                     self.tracer,
-                    self.getConfig()
+                    self.getConfig(),
+                    startTime
                   );
+                  if (override) {
+                    response.output = override;
+                    normalizedResponse.data = override;
+                  }
                   self._callUserResponseHook(span, normalizedResponse);
                   return response;
                 })
@@ -560,7 +446,9 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                   throw err;
                 })
                 .finally(() => {
-                  span.end();
+                  if (!requestMetadata.isStream) {
+                    span.end();
+                  }
                 });
               promiseWithResponseLogic
                 .then(res => {
@@ -578,109 +466,18 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     };
   }
 
-  private _getRequestSendPatch(
-    moduleVersion: string | undefined,
-    original: (callback?: (err: any, data: any) => void) => void
-  ) {
-    const self = this;
-    return function (
-      this: V2PluginRequest,
-      callback?: (err: any, data: any) => void
-    ) {
-      /*
-        if the span was already started, we don't want to start a new one
-        when Request.promise() is called
-      */
-      if (this[REQUEST_SPAN_KEY]) {
-        return original.call(this, callback);
-      }
-
-      const normalizedRequest = normalizeV2Request(this);
-      const requestMetadata = self.servicesExtensions.requestPreSpanHook(
-        normalizedRequest,
-        self.getConfig(),
-        self._diag
-      );
-      const span = self._startAwsV2Span(
-        this,
-        requestMetadata,
-        normalizedRequest
-      );
-      this[REQUEST_SPAN_KEY] = span;
-      const activeContextWithSpan = trace.setSpan(context.active(), span);
-      const callbackWithContext = context.bind(activeContextWithSpan, callback);
-
-      self._callUserPreRequestHook(span, normalizedRequest, moduleVersion);
-      self._registerV2CompletedEvent(
-        span,
-        this,
-        normalizedRequest,
-        activeContextWithSpan
-      );
-
-      return context.with(activeContextWithSpan, () => {
-        self.servicesExtensions.requestPostSpanHook(normalizedRequest);
-        return self._callOriginalFunction(() =>
-          original.call(this, callbackWithContext)
-        );
-      });
-    };
-  }
-
-  private _getRequestPromisePatch(
-    moduleVersion: string | undefined,
-    original: (...args: unknown[]) => Promise<any>
-  ) {
-    const self = this;
-    return function (this: V2PluginRequest, ...args: unknown[]): Promise<any> {
-      // if the span was already started, we don't want to start a new one when Request.promise() is called
-      if (this[REQUEST_SPAN_KEY]) {
-        return original.apply(this, args);
-      }
-
-      const normalizedRequest = normalizeV2Request(this);
-      const requestMetadata = self.servicesExtensions.requestPreSpanHook(
-        normalizedRequest,
-        self.getConfig(),
-        self._diag
-      );
-      const span = self._startAwsV2Span(
-        this,
-        requestMetadata,
-        normalizedRequest
-      );
-      this[REQUEST_SPAN_KEY] = span;
-
-      const activeContextWithSpan = trace.setSpan(context.active(), span);
-      self._callUserPreRequestHook(span, normalizedRequest, moduleVersion);
-      self._registerV2CompletedEvent(
-        span,
-        this,
-        normalizedRequest,
-        activeContextWithSpan
-      );
-
-      const origPromise: Promise<any> = context.with(
-        activeContextWithSpan,
-        () => {
-          self.servicesExtensions.requestPostSpanHook(normalizedRequest);
-          return self._callOriginalFunction(() =>
-            original.call(this, arguments)
-          );
-        }
-      );
-
-      return requestMetadata.isIncoming
-        ? bindPromise(origPromise, activeContextWithSpan)
-        : origPromise;
-    };
-  }
-
   private _callOriginalFunction<T>(originalFunction: (...args: any[]) => T): T {
     if (this.getConfig().suppressInternalInstrumentation) {
       return context.with(suppressTracing(context.active()), originalFunction);
     } else {
       return originalFunction();
     }
+  }
+
+  override _updateMetricInstruments() {
+    if (!this.servicesExtensions) {
+      this.servicesExtensions = new ServicesExtensions();
+    }
+    this.servicesExtensions.updateMetricInstruments(this.meter);
   }
 }

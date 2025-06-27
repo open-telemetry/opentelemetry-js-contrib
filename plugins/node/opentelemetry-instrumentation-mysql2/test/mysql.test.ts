@@ -16,7 +16,7 @@
 
 import * as semver from 'semver';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   DBSYSTEMVALUES_MYSQL,
   SEMATTRS_DB_NAME,
@@ -64,32 +64,42 @@ interface Result extends RowDataPacket {
   solution: number;
 }
 
-describe('mysql2', () => {
-  const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
-  const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
-  const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
-
-  before(function (done) {
-    if (testMysqlLocally) {
-      testUtils.startDocker('mysql');
-      // wait 15 seconds for docker container to start
-      this.timeout(20000);
-      setTimeout(done, 15000);
-    } else {
-      done();
-    }
+// Helper function to setup the database
+const execPromise = (conn: Connection, command: string) => {
+  return new Promise<void>((res, rej) => {
+    conn.execute(command, err => {
+      if (err) rej(err);
+      else res();
+    });
   });
+};
 
-  after(function (done) {
-    if (testMysqlLocally) {
-      this.timeout(5000);
-      testUtils.cleanUpDocker('mysql');
+describe('mysql2', () => {
+  // assumes local mysql db is already available in CI or
+  // using `npm run test-services:start` script at the root folder
+  const shouldTest = process.env.RUN_MYSQL_TESTS;
+
+  before(async function () {
+    const connection = createConnection({
+      port,
+      user: 'root',
+      host,
+      password: rootPassword,
+      database,
+    });
+    try {
+      await execPromise(connection, "SET GLOBAL log_output='TABLE'");
+      await execPromise(connection, 'SET GLOBAL general_log = 1');
+    } catch (execErr) {
+      console.error('MySQL seup error: ', execErr);
+      this.skip();
+    } finally {
+      connection.end();
     }
-    done();
   });
 
   describe('callback API', () => {
-    let contextManager: AsyncHooksContextManager;
+    let contextManager: AsyncLocalStorageContextManager;
     const memoryExporter = new InMemorySpanExporter();
     const provider = new BasicTracerProvider({
       spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
@@ -143,7 +153,7 @@ describe('mysql2', () => {
 
     beforeEach(() => {
       instrumentation.disable();
-      contextManager = new AsyncHooksContextManager().enable();
+      contextManager = new AsyncLocalStorageContextManager().enable();
       context.setGlobalContextManager(contextManager);
       instrumentation.setTracerProvider(provider);
       instrumentation.enable();
@@ -358,7 +368,7 @@ describe('mysql2', () => {
       it('should not add comment by default', done => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
-          connection.query('SELECT 1+1 as solution', () => {
+          connection.query('SELECT 1+1 as solution', (e, r) => {
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
             getLastQueries(1).then(([query]) => {
@@ -1219,7 +1229,7 @@ describe('mysql2', () => {
   describe('promise API', () => {
     let instrumentation: MySQL2Instrumentation;
 
-    let contextManager: AsyncHooksContextManager;
+    let contextManager: AsyncLocalStorageContextManager;
     const memoryExporter = new InMemorySpanExporter();
     const provider = new BasicTracerProvider({
       spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
@@ -1240,12 +1250,28 @@ describe('mysql2', () => {
         }
       });
 
-      const { MySQL2Instrumentation } = await import('../src');
+      // Here we want to dynamically load the instrumentation.
+      // - `await import('../src')` does not work with tsconfig `moduleResolution: "node16"`
+      //   because relative imports must use a suffix
+      // - `await import('../src/index.js')` does not work because when running
+      //   the test files from "./test/", instead of from "./build/test/", there
+      //   *isn't* a "index.js" file at that relative path.
+      // - `await import('../build/src/index.js')` does not work because that
+      //   is a different module, hence mismatched `MySQL2Instrumentation` types.
+      // We fallback to using `require`. This is what the emitted JS used when
+      // tsconfig was target=ES2017,module=commonjs. It also matches the
+      // `require.cache` deletions above.
+      //
+      // (IMO, a better solution for a clean test of `mysql2/promise` would
+      // be to use out-of-process testing as provided by `runTestFixture` in
+      // contrib-test-utils.)
+      const { MySQL2Instrumentation } = require('../src');
       instrumentation = new MySQL2Instrumentation();
       instrumentation.enable();
       instrumentation.disable();
 
-      createConnection = (await import('mysql2/promise')).createConnection;
+      // createConnection = (await import('mysql2/promise')).createConnection;
+      createConnection = require('mysql2/promise').createConnection;
 
       if (!shouldTest) {
         // this.skip() workaround
@@ -1268,7 +1294,7 @@ describe('mysql2', () => {
 
     beforeEach(async () => {
       instrumentation.disable();
-      contextManager = new AsyncHooksContextManager().enable();
+      contextManager = new AsyncLocalStorageContextManager().enable();
       context.setGlobalContextManager(contextManager);
       instrumentation.setTracerProvider(provider);
       instrumentation.enable();

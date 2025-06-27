@@ -1,5 +1,57 @@
 # Changelog
 
+## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.52.0...instrumentation-aws-lambda-v0.53.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.51.1...instrumentation-aws-lambda-v0.52.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
+## [0.51.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.51.0...instrumentation-aws-lambda-v0.51.1) (2025-05-02)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.0.0 to ^2.1.0
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.54.0 to ^0.55.0
+
+## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.50.3...instrumentation-aws-lambda-v0.51.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* chore!: Update to 2.x and 0.200.x @opentelemetry/* packages from opentelemetry-js.git per [2.x upgrade guide](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/upgrade-to-2.x.md)
+  * The minimum supported Node.js has been raised to ^18.19.0 || >=20.6.0. This means that support for Node.js 14 and 16 has been dropped.
+  * The minimum supported TypeScript version has been raised to 5.0.4.
+  * The compilation target for transpiled TypeScript has been raised to ES2022 (from ES2017).
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.2 ([#2716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2716)) ([d2a9a20](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2a9a20f1cd8c46c842e18490a4eba36fd71c2da))
+* **instrumentation-aws-lambda:** Change endSpan error-logs for forceflush into debug-logs ([#2753](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2753)) ([4b51e60](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4b51e606d47af1904b5de0ab649296bfdd115c9d))
+
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^1.26.2 to ^2.0.0
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.53.2 to ^0.54.0
+
 ## [0.50.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.50.2...instrumentation-aws-lambda-v0.50.3) (2025-02-19)
 
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Tracer, Span, DiagLogger } from '@opentelemetry/api';
+import { Tracer, Span, DiagLogger, Meter, HrTime } from '@opentelemetry/api';
 import { ServiceExtension, RequestMetadata } from './ServiceExtension';
 import { SqsServiceExtension } from './sqs';
 import {
@@ -21,6 +21,7 @@ import {
   NormalizedRequest,
   NormalizedResponse,
 } from '../types';
+import { BedrockRuntimeServiceExtension } from './bedrock-runtime';
 import { DynamodbServiceExtension } from './dynamodb';
 import { SnsServiceExtension } from './sns';
 import { LambdaServiceExtension } from './lambda';
@@ -37,6 +38,7 @@ export class ServicesExtensions implements ServiceExtension {
     this.services.set('Lambda', new LambdaServiceExtension());
     this.services.set('S3', new S3ServiceExtension());
     this.services.set('Kinesis', new KinesisServiceExtension());
+    this.services.set('BedrockRuntime', new BedrockRuntimeServiceExtension());
   }
 
   requestPreSpanHook(
@@ -62,9 +64,23 @@ export class ServicesExtensions implements ServiceExtension {
     response: NormalizedResponse,
     span: Span,
     tracer: Tracer,
-    config: AwsSdkInstrumentationConfig
+    config: AwsSdkInstrumentationConfig,
+    startTime: HrTime
   ) {
     const serviceExtension = this.services.get(response.request.serviceName);
-    serviceExtension?.responseHook?.(response, span, tracer, config);
+
+    return serviceExtension?.responseHook?.(
+      response,
+      span,
+      tracer,
+      config,
+      startTime
+    );
+  }
+
+  updateMetricInstruments(meter: Meter) {
+    for (const serviceExtension of this.services.values()) {
+      serviceExtension.updateMetricInstruments?.(meter);
+    }
   }
 }

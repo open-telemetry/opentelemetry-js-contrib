@@ -22,7 +22,7 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
@@ -80,10 +80,10 @@ describe('memcached@2.x', () => {
   });
   const tracer = provider.getTracer('default');
   instrumentation.setTracerProvider(provider);
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
 
   beforeEach(() => {
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
     instrumentation.setConfig({});
     instrumentation.enable();
@@ -310,7 +310,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       );
       assert.strictEqual(span.attributes['db.operation'], expected.op);
       assert.strictEqual(
-        span.parentSpanId,
+        span.parentSpanContext?.spanId,
         expected.parentSpan?.spanContext().spanId
       );
     } catch (e: any) {

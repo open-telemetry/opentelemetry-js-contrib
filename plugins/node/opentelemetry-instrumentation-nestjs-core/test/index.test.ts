@@ -18,7 +18,7 @@ import * as semver from 'semver';
 
 import { context, SpanStatusCode } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -42,14 +42,14 @@ describe('nestjs-core', () => {
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
   instrumentation.setTracerProvider(provider);
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let app: App;
   let request = async (path: string): Promise<unknown> => {
     throw new Error('Not yet initialized.');
   };
 
   beforeEach(async () => {
-    contextManager = new AsyncHooksContextManager();
+    contextManager = new AsyncLocalStorageContextManager();
     context.setGlobalContextManager(contextManager.enable());
     instrumentation.setConfig({});
     instrumentation.enable();
@@ -240,7 +240,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       );
       if (typeof expected.parentSpanIdx === 'number') {
         assert.strictEqual(
-          span.parentSpanId,
+          span.parentSpanContext?.spanId,
           actualSpans[expected.parentSpanIdx].spanContext().spanId
         );
       } else if (typeof expected.parentSpanName === 'string') {
@@ -253,18 +253,19 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
           `Cannot find span named ${expected.parentSpanName} expected to be the parent of ${span.name}`
         );
         assert.strictEqual(
-          span.parentSpanId,
+          span.parentSpanContext?.spanId,
           parentSpan.spanContext().spanId,
           `Expected "${expected.parentSpanName}" to be the parent of "${
             span.name
           }", but found "${
-            actualSpans.find(s => s.spanContext().spanId === span.parentSpanId)
-              .name
+            actualSpans.find(
+              s => s.spanContext().spanId === span.parentSpanContext?.spanId
+            ).name
           }"`
         );
       } else if (expected.parentSpan !== null) {
         assert.strictEqual(
-          span.parentSpanId,
+          span.parentSpanContext?.spanId,
           expected.parentSpan?.spanContext().spanId
         );
       }

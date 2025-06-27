@@ -17,6 +17,7 @@
 import * as nock from 'nock';
 import * as assert from 'assert';
 import { instanaAgentDetector } from '../src';
+import { detectResources } from '@opentelemetry/resources';
 
 describe('[UNIT] instanaAgentDetector', () => {
   describe('when agent is running', () => {
@@ -53,7 +54,7 @@ describe('[UNIT] instanaAgentDetector', () => {
         .put('/com.instana.plugin.nodejs.discovery')
         .reply(200, () => mockedReply);
 
-      const resource = instanaAgentDetector.detect();
+      const resource = detectResources({ detectors: [instanaAgentDetector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -80,7 +81,7 @@ describe('[UNIT] instanaAgentDetector', () => {
         .put('/com.instana.plugin.nodejs.discovery')
         .reply(200, () => mockedReply);
 
-      const resource = instanaAgentDetector.detect();
+      const resource = detectResources({ detectors: [instanaAgentDetector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -97,7 +98,7 @@ describe('[UNIT] instanaAgentDetector', () => {
         .put('/com.instana.plugin.nodejs.discovery')
         .reply(500, () => new Error());
 
-      const resource = instanaAgentDetector.detect();
+      const resource = detectResources({ detectors: [instanaAgentDetector] });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -118,7 +119,7 @@ describe('[UNIT] instanaAgentDetector', () => {
         .delay(500)
         .reply(200, {});
 
-      const resource = instanaAgentDetector.detect();
+      const resource = detectResources({ detectors: [instanaAgentDetector] });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});
@@ -131,7 +132,7 @@ describe('[UNIT] instanaAgentDetector', () => {
       process.env.INSTANA_AGENT_TIMEOUT_MS = '100';
       process.env.INSTANA_RETRY_TIMEOUT_MS = '100';
 
-      const resource = instanaAgentDetector.detect();
+      const resource = detectResources({ detectors: [instanaAgentDetector] });
       await resource.waitForAsyncAttributes?.();
 
       assert.deepStrictEqual(resource.attributes, {});

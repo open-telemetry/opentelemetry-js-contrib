@@ -1,5 +1,68 @@
 # Changelog
 
+## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.53.0...instrumentation-pg-v0.54.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+* **opentelemetry-instrumentation-pg:** update types/pg version ([#2823](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2823)) ([6844e16](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6844e16e99b3fcef6f7606873d473d0c862efe5a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.47.0 to ^0.48.0
+
+## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.52.0...instrumentation-pg-v0.53.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
+
+### Bug Fixes
+
+* **pg:** fix instrumentation of ESM-imported pg-pool ([#2807](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2807)) ([f6bc4cc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f6bc4ccca0bf3469aa55f225192fedcae432d41f)), closes [#2759](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2759)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.46.0 to ^0.47.0
+
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.51.1...instrumentation-pg-v0.52.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* chore!: Update to 2.x and 0.200.x @opentelemetry/* packages from opentelemetry-js.git per [2.x upgrade guide](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/upgrade-to-2.x.md)
+  * The minimum supported Node.js has been raised to ^18.19.0 || >=20.6.0. This means that support for Node.js 14 and 16 has been dropped.
+  * The minimum supported TypeScript version has been raised to 5.0.4.
+  * The compilation target for transpiled TypeScript has been raised to ES2022 (from ES2017).
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.2 ([#2716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2716)) ([d2a9a20](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2a9a20f1cd8c46c842e18490a4eba36fd71c2da))
+* **instrumentation-pg:** connection string parsing ([#2715](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2715)) ([b520d04](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b520d048465d9b3dfdf275976010c989d2a78a2c))
+
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/sql-common bumped from ^0.40.1 to ^0.41.0
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.45.1 to ^0.46.0
+
 ## [0.51.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.51.0...instrumentation-pg-v0.51.1) (2025-02-19)
 
 

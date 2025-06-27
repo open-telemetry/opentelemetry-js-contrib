@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-dns",
-  "version": "0.43.1",
+  "version": "0.46.0",
   "description": "OpenTelemetry instrumentation for `node:dns` name resolution module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,10 +11,10 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
     "lint:readme": "node ../../../scripts/lint-readme",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-dns",
     "compile": "tsc -p ."
   },
   "keywords": [
@@ -28,7 +28,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=14"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "build/src/**/*.js",
@@ -43,21 +43,21 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/sdk-trace-base": "^1.8.0",
-    "@opentelemetry/sdk-trace-node": "^1.8.0",
+    "@opentelemetry/core": "^2.0.0",
+    "@opentelemetry/sdk-trace-base": "^2.0.0",
+    "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/semver": "7.5.8",
     "@types/shimmer": "1.0.3",
     "@types/sinon": "17.0.4",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
-    "typescript": "4.4.4"
+    "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.57.2"
+    "@opentelemetry/instrumentation": "^0.202.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-dns#readme"
 }

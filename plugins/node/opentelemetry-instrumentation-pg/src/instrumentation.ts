@@ -75,9 +75,9 @@ function extractModuleExports(module: any) {
 }
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
-  private _operationDuration!: Histogram;
-  private _connectionsCount!: UpDownCounter;
-  private _connectionPendingRequests!: UpDownCounter;
+  private declare _operationDuration: Histogram;
+  private declare _connectionsCount: UpDownCounter;
+  private declare _connectionPendingRequests: UpDownCounter;
   // Pool events connect, acquire, release and remove can be called
   // multiple times without changing the values of total, idle and waiting
   // connections. The _connectionsCounter is used to keep track of latest
@@ -133,6 +133,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
   protected init() {
     const SUPPORTED_PG_VERSIONS = ['>=8.0.3 <9'];
+    const SUPPORTED_PG_POOL_VERSIONS = ['>=2.0.0 <4'];
 
     const modulePgNativeClient = new InstrumentationNodeModuleFile(
       'pg/lib/native/client.js',
@@ -168,8 +169,9 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
     const modulePGPool = new InstrumentationNodeModuleDefinition(
       'pg-pool',
-      ['>=2.0.0 <4'],
-      (moduleExports: typeof pgPoolTypes) => {
+      SUPPORTED_PG_POOL_VERSIONS,
+      (module: any) => {
+        const moduleExports = extractModuleExports(module);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -180,7 +182,8 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         );
         return moduleExports;
       },
-      (moduleExports: typeof pgPoolTypes) => {
+      (module: any) => {
+        const moduleExports = extractModuleExports(module);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }

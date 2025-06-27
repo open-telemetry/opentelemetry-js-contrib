@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Resource } from '@opentelemetry/resources';
+
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { getInstrumentation } from './instrumentation-singleton';
 import { registerInstrumentationTestingProvider } from './otel-default-provider';
 import { resetMemoryExporter } from './otel-provider-api';
 
-export * from './instrumentation-singleton';
-export * from './otel-provider-api';
-export * from './otel-default-provider';
+export {
+  getInstrumentation,
+  registerInstrumentationTesting,
+} from './instrumentation-singleton';
+export {
+  getTestMemoryExporter,
+  getTestSpans,
+  resetMemoryExporter,
+  setTestMemoryExporter,
+} from './otel-provider-api';
+export { registerInstrumentationTestingProvider } from './otel-default-provider';
 
 export const mochaHooks = {
   beforeAll(done: Function) {
@@ -39,7 +48,7 @@ export const mochaHooks = {
       }
     }
     const provider = registerInstrumentationTestingProvider({
-      resource: new Resource({
+      resource: resourceFromAttributes({
         [SEMRESATTRS_SERVICE_NAME]: serviceName,
       }),
     });

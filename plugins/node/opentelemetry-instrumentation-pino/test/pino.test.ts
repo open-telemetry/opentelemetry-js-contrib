@@ -22,8 +22,8 @@ import * as sinon from 'sinon';
 import { INVALID_SPAN_CONTEXT, context, trace, Span } from '@opentelemetry/api';
 import { diag, DiagLogLevel } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
-import { Resource } from '@opentelemetry/resources';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -52,8 +52,8 @@ tracerProvider.register();
 const tracer = tracerProvider.getTracer('default');
 
 // Setup LoggerProvider for "log sending" tests.
-const resource = new Resource({
-  [SEMRESATTRS_SERVICE_NAME]: 'test-instrumentation-pino',
+const resource = resourceFromAttributes({
+  [ATTR_SERVICE_NAME]: 'test-instrumentation-pino',
 });
 const loggerProvider = new LoggerProvider({ resource });
 const memExporter = new InMemoryLogRecordExporter();

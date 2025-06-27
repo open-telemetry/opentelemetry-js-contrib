@@ -50,7 +50,7 @@ type QueryFunction = typeof sequelize.Sequelize.prototype.query;
 describe('instrumentation-sequelize', () => {
   const getSequelizeSpans = (): ReadableSpan[] => {
     return getTestSpans().filter(s =>
-      s.instrumentationLibrary.name.includes('sequelize')
+      s.instrumentationScope.name.includes('sequelize')
     ) as ReadableSpan[];
   };
 

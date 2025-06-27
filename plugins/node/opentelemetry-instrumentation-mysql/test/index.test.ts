@@ -15,7 +15,7 @@
  */
 
 import { context, Context, trace, SpanStatusCode } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   DBSYSTEMVALUES_MYSQL,
   SEMATTRS_DB_NAME,
@@ -25,7 +25,6 @@ import {
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,
@@ -50,13 +49,13 @@ import * as mysqlTypes from 'mysql';
 import { AttributeNames } from '../src/AttributeNames';
 
 describe('mysql@2.x-Tracing', () => {
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   let connection: mysqlTypes.Connection;
   let pool: mysqlTypes.Pool;
   let poolCluster: mysqlTypes.PoolCluster;
-  const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
-  const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
-  const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
+  // assumes local mysql db is already available in CI or
+  // using `npm run test-services:start` script at the root folder
+  const shouldTest = process.env.RUN_MYSQL_TESTS;
   const memoryExporter = new InMemorySpanExporter();
   const provider = new BasicTracerProvider({
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
@@ -68,28 +67,14 @@ describe('mysql@2.x-Tracing', () => {
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
       this.skip();
-    }
-
-    if (testMysqlLocally) {
-      testUtils.startDocker('mysql');
-      // wait 15 seconds for docker container to start
-      this.timeout(20000);
-      setTimeout(done, 15000);
     } else {
       done();
     }
   });
 
-  after(function () {
-    if (testMysqlLocally) {
-      this.timeout(5000);
-      testUtils.cleanUpDocker('mysql');
-    }
-  });
-
   beforeEach(() => {
     instrumentation.disable();
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
@@ -402,7 +387,7 @@ describe('mysql@2.x-Tracing', () => {
             parentSpanContext?.traceId
           );
           assert.strictEqual(
-            activeSpan.parentSpanId,
+            activeSpan.parentSpanContext?.spanId,
             parentSpanContext?.spanId
           );
           assert.notStrictEqual(
