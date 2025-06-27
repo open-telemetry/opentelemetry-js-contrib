@@ -49,8 +49,7 @@ import { NetInstrumentation } from '@opentelemetry/instrumentation-net';
 import { OracleInstrumentation } from '@opentelemetry/instrumentation-oracledb';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
-import { RedisInstrumentation as RedisInstrumentationV2 } from '@opentelemetry/instrumentation-redis';
-import { RedisInstrumentation as RedisInstrumentationV4 } from '@opentelemetry/instrumentation-redis-4';
+import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
 import { RestifyInstrumentation } from '@opentelemetry/instrumentation-restify';
 import { RouterInstrumentation } from '@opentelemetry/instrumentation-router';
 import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
@@ -128,8 +127,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-oracledb': OracleInstrumentation,
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
   '@opentelemetry/instrumentation-pino': PinoInstrumentation,
-  '@opentelemetry/instrumentation-redis': RedisInstrumentationV2,
-  '@opentelemetry/instrumentation-redis-4': RedisInstrumentationV4,
+  '@opentelemetry/instrumentation-redis': RedisInstrumentation,
   '@opentelemetry/instrumentation-restify': RestifyInstrumentation,
   '@opentelemetry/instrumentation-router': RouterInstrumentation,
   '@opentelemetry/instrumentation-runtime-node': RuntimeNodeInstrumentation,

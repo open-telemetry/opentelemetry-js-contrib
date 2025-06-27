@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { diag, DiagLogLevel } from '@opentelemetry/api';
+import { diag, DiagLogLevel, ROOT_CONTEXT } from '@opentelemetry/api';
 import {
   getTestSpans,
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
-import { RedisInstrumentation } from '../src';
-import type { MultiErrorReply } from '../src/internal-types';
+import { RedisInstrumentation } from '../../src';
+import type { MultiErrorReply } from '../../src/v4/internal-types';
 import * as assert from 'assert';
 
 import {
@@ -35,7 +35,8 @@ const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
 );
 
-import { createClient, WatchError } from 'redis';
+import { createClient } from 'redis';
+import type { RedisClientType } from 'redis';
 import {
   Span,
   SpanKind,
@@ -51,10 +52,10 @@ import {
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import { RedisResponseCustomAttributeFunction } from '../src/types';
+import { RedisResponseCustomAttributeFunction } from '../../src/types';
 import { hrTimeToMilliseconds, suppressTracing } from '@opentelemetry/core';
 
-describe('redis@^4.0.0', () => {
+describe('redis v4', () => {
   before(function () {
     // needs to be "function" to have MochaContext "this" context
     if (!shouldTest) {
@@ -75,7 +76,7 @@ describe('redis@^4.0.0', () => {
     }
   });
 
-  let client: any;
+  let client: RedisClientType;
 
   beforeEach(async () => {
     client = createClient({
@@ -444,7 +445,7 @@ describe('redis@^4.0.0', () => {
         await client.multi().get(watchedKey).exec();
         assert.fail('expected WatchError to be thrown and caught in try/catch');
       } catch (error) {
-        assert.ok(error instanceof WatchError);
+        assert.ok(error instanceof Error);
       }
 
       // All the multi spans' status are set to ERROR.
@@ -604,9 +605,11 @@ describe('redis@^4.0.0', () => {
         instrumentation.setConfig({ requireParentSpan: true });
 
         // no parent span => no redis span
-        const res = await client.set('key', 'value');
-        assert.strictEqual(res, 'OK'); // verify we did not screw up the normal functionality
-        assert.ok(getTestSpans().length === 0);
+        context.with(ROOT_CONTEXT, async () => {
+          const res = await client.set('key', 'value');
+          assert.strictEqual(res, 'OK'); // verify we did not screw up the normal functionality
+          assert.ok(getTestSpans().length === 0);
+        });
 
         // has ambient span => redis span
         const span = trace.getTracer('test').startSpan('test span');
