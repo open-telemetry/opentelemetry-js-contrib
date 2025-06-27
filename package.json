@@ -52,7 +52,7 @@
     "eslint-config-prettier": "8.8.0",
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-import": "2.27.5",
-    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-n": "14.0.0",
     "eslint-plugin-prettier": "4.2.1",
     "glob": "^10.4.5",
     "lerna": "8.2.2",
