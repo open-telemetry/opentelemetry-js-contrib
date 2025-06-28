@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.60.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.60.1...auto-instrumentations-node-v0.60.2) (2025-06-27)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-dataloader bumped from ^0.19.0 to ^0.20.0
+    * @opentelemetry/instrumentation-express bumped from ^0.51.0 to ^0.51.1
+
 ## [0.60.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.60.0...auto-instrumentations-node-v0.60.1) (2025-06-05)
 
 
