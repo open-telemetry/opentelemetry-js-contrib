@@ -5,10 +5,10 @@ module.exports = {
     "node",
     "prettier"
   ],
-  extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended"],
+  extends: ["eslint:recommended", "plugin:prettier/recommended"],
   parser: "@typescript-eslint/parser",
   parserOptions: {
-    "project": "./tsconfig.json"
+    "project": null
   },
   rules: {
     "quotes": ["error", "single", { "avoidEscape": true }],
@@ -28,6 +28,11 @@ module.exports = {
   overrides: [
     {
       files: ['*.ts'],
+      // Enable typescript-eslint for ts files.
+      extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended"],
+      parserOptions: {
+        "project": "./tsconfig.json"
+      },
       rules: {
         "@typescript-eslint/no-floating-promises": "error",
         "@typescript-eslint/no-this-alias": "off",
@@ -49,13 +54,24 @@ module.exports = {
           }
         }],
         "@typescript-eslint/no-shadow": ["warn"],
+        "prefer-rest-params": "off",
       }
     },
     {
       files: ["test/**/*.ts"],
+      // Enable typescript-eslint for ts files.
+      extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended"],
+      parserOptions: {
+        "project": "./tsconfig.json"
+      },
       rules: {
         "no-empty": "off",
         "@typescript-eslint/ban-ts-ignore": "off",
+        "@typescript-eslint/ban-types": ["warn", {
+          "types": {
+            "Function": null,
+          }
+        }],
         "@typescript-eslint/no-empty-function": "off",
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-unused-vars": "off",
@@ -63,7 +79,14 @@ module.exports = {
         "@typescript-eslint/no-shadow": ["off"],
         "@typescript-eslint/no-floating-promises": ["off"],
         "@typescript-eslint/no-non-null-assertion": ["off"],
-        "@typescript-eslint/explicit-module-boundary-types": ["off"]
+        "@typescript-eslint/explicit-module-boundary-types": ["off"],
+        "prefer-rest-params": "off",
+      }
+    },
+    {
+      files: ["*.mjs"],
+      parserOptions: {
+        sourceType: 'module',
       }
     }
   ]
