@@ -25,14 +25,13 @@ import {
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import {
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SQL_TABLE,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-  SEMATTRS_DB_OPERATION,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
   getTestSpans,
@@ -65,12 +64,12 @@ describe('instrumentation-sequelize', () => {
   describe('postgres', () => {
     const DB_SYSTEM = 'postgres';
     const DB_USER = 'some-user';
-    const NET_PEER_NAME = 'localhost';
-    const NET_PEER_PORT = 12345;
+    const SERVER_ADDRESS = 'localhost';
+    const SERVER_PORT = 12345;
     const DB_NAME = 'my-db';
 
     const instance = new sequelize.Sequelize(
-      `${DB_SYSTEM}://${DB_USER}@${NET_PEER_NAME}:${NET_PEER_PORT}/${DB_NAME}`,
+      `${DB_SYSTEM}://${DB_USER}@${SERVER_ADDRESS}:${SERVER_PORT}/${DB_NAME}`,
       { logging: false }
     );
     class User extends sequelize.Model {
@@ -93,15 +92,14 @@ describe('instrumentation-sequelize', () => {
       assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
       const attributes = spans[0].attributes;
 
-      assert.strictEqual(attributes[SEMATTRS_DB_SYSTEM], DB_SYSTEM);
-      assert.strictEqual(attributes[SEMATTRS_DB_USER], DB_USER);
-      assert.strictEqual(attributes[SEMATTRS_NET_PEER_NAME], NET_PEER_NAME);
-      assert.strictEqual(attributes[SEMATTRS_NET_PEER_PORT], NET_PEER_PORT);
-      assert.strictEqual(attributes[SEMATTRS_DB_NAME], DB_NAME);
-      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'INSERT');
-      assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'Users');
+      assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], DB_SYSTEM);
+      assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], SERVER_ADDRESS);
+      assert.strictEqual(attributes[ATTR_SERVER_PORT], SERVER_PORT);
+      assert.strictEqual(attributes[ATTR_DB_NAMESPACE], DB_NAME);
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'INSERT');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'Users');
       assert.match(
-        attributes[SEMATTRS_DB_STATEMENT] as string,
+        attributes[ATTR_DB_QUERY_TEXT] as string,
         /INSERT INTO "Users" \("id","firstName","createdAt","updatedAt"\) VALUES \(DEFAULT,\$1,\$2,\$3\) RETURNING (\*|"id","firstName","createdAt","updatedAt");/
       );
     });
@@ -112,10 +110,10 @@ describe('instrumentation-sequelize', () => {
       assert.strictEqual(spans.length, 1);
       const attributes = spans[0].attributes;
 
-      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'SELECT');
-      assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'Users');
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'SELECT');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'Users');
       assert.strictEqual(
-        attributes[SEMATTRS_DB_STATEMENT],
+        attributes[ATTR_DB_QUERY_TEXT],
         'SELECT "id", "firstName", "createdAt", "updatedAt" FROM "Users" AS "User";'
       );
     });
@@ -126,9 +124,9 @@ describe('instrumentation-sequelize', () => {
       assert.strictEqual(spans.length, 1);
       const attributes = spans[0].attributes;
 
-      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'BULKDELETE');
-      assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'Users');
-      assert.strictEqual(attributes[SEMATTRS_DB_STATEMENT], 'TRUNCATE "Users"');
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'BULKDELETE');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'Users');
+      assert.strictEqual(attributes[ATTR_DB_QUERY_TEXT], 'TRUNCATE "Users"');
     });
 
     it('count is instrumented', async () => {
@@ -137,10 +135,10 @@ describe('instrumentation-sequelize', () => {
       assert.strictEqual(spans.length, 1);
       const attributes = spans[0].attributes;
 
-      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'SELECT');
-      assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'Users');
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'SELECT');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'Users');
       assert.strictEqual(
-        attributes[SEMATTRS_DB_STATEMENT],
+        attributes[ATTR_DB_QUERY_TEXT],
         'SELECT count(*) AS "count" FROM "Users" AS "User";'
       );
     });
@@ -167,10 +165,10 @@ describe('instrumentation-sequelize', () => {
       assert.strictEqual(spans.length, 1);
       const attributes = spans[0].attributes;
 
-      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'SELECT');
-      assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'Users');
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'SELECT');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'Users');
       assert.strictEqual(
-        attributes[SEMATTRS_DB_STATEMENT],
+        attributes[ATTR_DB_QUERY_TEXT],
         'SELECT "id", "username" FROM "Users" AS "User" WHERE "User"."username" = \'Shlomi\' AND ("User"."rank" < 1000 OR "User"."rank" IS NULL) ORDER BY "User"."username" DESC LIMIT 10 OFFSET 5;'
       );
     });
@@ -184,7 +182,10 @@ describe('instrumentation-sequelize', () => {
       const spans = getSequelizeSpans();
       assert.strictEqual(spans.length, 1);
       const attributes = spans[0].attributes;
-      assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], expectedTableName);
+      assert.strictEqual(
+        attributes[ATTR_DB_COLLECTION_NAME],
+        expectedTableName
+      );
     });
 
     it('handles JOIN queries', async () => {
@@ -217,10 +218,10 @@ describe('instrumentation-sequelize', () => {
       assert.strictEqual(spans.length, 1);
       const attributes = spans[0].attributes;
 
-      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'SELECT');
-      assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'Dogs,Users');
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'SELECT');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'Dogs,Users');
       assert.strictEqual(
-        attributes[SEMATTRS_DB_STATEMENT],
+        attributes[ATTR_DB_QUERY_TEXT],
         'SELECT "Dog"."id", "Dog"."firstName", "Dog"."owner", "User"."id" AS "User.id", "User"."firstName" AS "User.firstName" FROM "Dogs" AS "Dog" INNER JOIN "Users" AS "User" ON "Dog"."firstName" = "User"."id" LIMIT 1;'
       );
     });
@@ -229,13 +230,13 @@ describe('instrumentation-sequelize', () => {
   describe('mysql', () => {
     const DB_SYSTEM = 'mysql';
     const DB_USER = 'RickSanchez';
-    const NET_PEER_NAME = 'localhost';
-    const NET_PEER_PORT = 34567;
+    const SERVER_NAME = 'localhost';
+    const SERVER_PORT = 34567;
     const DB_NAME = 'mysql-db';
 
     const instance = new sequelize.Sequelize(DB_NAME, DB_USER, 'password', {
-      host: NET_PEER_NAME,
-      port: NET_PEER_PORT,
+      host: SERVER_NAME,
+      port: SERVER_PORT,
       dialect: DB_SYSTEM,
     });
 
@@ -252,15 +253,14 @@ describe('instrumentation-sequelize', () => {
       assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
       const attributes = spans[0].attributes;
 
-      assert.strictEqual(attributes[SEMATTRS_DB_SYSTEM], DB_SYSTEM);
-      assert.strictEqual(attributes[SEMATTRS_DB_USER], DB_USER);
-      assert.strictEqual(attributes[SEMATTRS_NET_PEER_NAME], NET_PEER_NAME);
-      assert.strictEqual(attributes[SEMATTRS_NET_PEER_PORT], NET_PEER_PORT);
-      assert.strictEqual(attributes[SEMATTRS_DB_NAME], DB_NAME);
-      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'INSERT');
-      assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'Users');
+      assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], DB_SYSTEM);
+      assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], SERVER_NAME);
+      assert.strictEqual(attributes[ATTR_SERVER_PORT], SERVER_PORT);
+      assert.strictEqual(attributes[ATTR_DB_NAMESPACE], DB_NAME);
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'INSERT');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'Users');
       assert.strictEqual(
-        attributes[SEMATTRS_DB_STATEMENT],
+        attributes[ATTR_DB_QUERY_TEXT],
         'INSERT INTO `Users` (`id`,`firstName`,`createdAt`,`updatedAt`) VALUES (DEFAULT,$1,$2,$3);'
       );
     });
@@ -271,10 +271,10 @@ describe('instrumentation-sequelize', () => {
       assert.strictEqual(spans.length, 1);
       const attributes = spans[0].attributes;
 
-      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'SELECT');
-      assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'Users');
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'SELECT');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'Users');
       assert.strictEqual(
-        attributes[SEMATTRS_DB_STATEMENT],
+        attributes[ATTR_DB_QUERY_TEXT],
         'SELECT `id`, `firstName`, `createdAt`, `updatedAt` FROM `Users` AS `User`;'
       );
     });
@@ -290,8 +290,8 @@ describe('instrumentation-sequelize', () => {
         assert.strictEqual(spans.length, 1);
         const attributes = spans[0].attributes;
 
-        assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'SELECT');
-        assert.strictEqual(attributes[SEMATTRS_DB_STATEMENT], 'SELECT 1 + 1');
+        assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'SELECT');
+        assert.strictEqual(attributes[ATTR_DB_QUERY_TEXT], 'SELECT 1 + 1');
       });
       it('with type not specified in options', async () => {
         try {
@@ -303,8 +303,8 @@ describe('instrumentation-sequelize', () => {
         assert.strictEqual(spans.length, 1);
         const attributes = spans[0].attributes;
 
-        assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'SELECT');
-        assert.strictEqual(attributes[SEMATTRS_DB_STATEMENT], 'SELECT 1 + 1');
+        assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'SELECT');
+        assert.strictEqual(attributes[ATTR_DB_QUERY_TEXT], 'SELECT 1 + 1');
       });
 
       it('with type specified in options', async () => {
@@ -319,8 +319,8 @@ describe('instrumentation-sequelize', () => {
         assert.strictEqual(spans.length, 1);
         const attributes = spans[0].attributes;
 
-        assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'RAW');
-        assert.strictEqual(attributes[SEMATTRS_DB_STATEMENT], 'SELECT 1 + 1');
+        assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'RAW');
+        assert.strictEqual(attributes[ATTR_DB_QUERY_TEXT], 'SELECT 1 + 1');
       });
     });
   });
@@ -340,12 +340,12 @@ describe('instrumentation-sequelize', () => {
       const spans = getSequelizeSpans();
       assert.strictEqual(spans.length, 1);
       const attributes = spans[0].attributes;
-      assert.strictEqual(attributes[SEMATTRS_DB_SYSTEM], 'sqlite');
-      assert.strictEqual(attributes[SEMATTRS_NET_PEER_NAME], 'memory');
-      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'INSERT');
-      assert.strictEqual(attributes[SEMATTRS_DB_SQL_TABLE], 'Users');
+      assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], 'sqlite');
+      assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], 'memory');
+      assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'INSERT');
+      assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'Users');
       assert.strictEqual(
-        attributes[SEMATTRS_DB_STATEMENT],
+        attributes[ATTR_DB_QUERY_TEXT],
         'INSERT INTO `Users` (`id`,`firstName`,`createdAt`,`updatedAt`) VALUES (NULL,$1,$2,$3);'
       );
     });

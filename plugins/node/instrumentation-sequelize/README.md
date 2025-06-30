@@ -65,21 +65,19 @@ You can set the following:
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.25+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+| Attribute            | Short Description                                                           |
+| ---------------------| --------------------------------------------------------------------------- |
+| `db.namespace`       | The name of the database being accessed.                                    |
+| `db.operation.name`  | The name of the operation being executed (e.g. the SQL keyword).            |
+| `db.collection.name` | The name of the table being accessed.                                       |
+| `db.query.text`      | The database statement being executed.                                      |
+| `db.system.name`     | An identifier for the database management system (DBMS) product being used. |
+| `server.address`     | Remote address of the database.                                             |
+| `server.port`        | Peer port number of the network connection.                                 |
+| `network transport`  | OSI transport layer or inter-process communication method.                  |
 
 Attributes collected:
 
-| Attribute       | Short Description                                                           |
-| ----------------| --------------------------------------------------------------------------- |
-| `db.name`       | The name of the database being accessed.                                    |
-| `db.operation`  | The name of the operation being executed.                                   |
-| `db.statement`  | The database statement being executed.                                      |
-| `db.sql.table`  | The name of the table being used.                                           |
-| `db.system`     | An identifier for the database management system (DBMS) product being used. |
-| `db.user`       | Username for accessing the database.                                        |
-| `net.peer.name` | Remote hostname of the database.                                            |
-| `net.peer.port` | Port of the database.                                                       |
-| `net.transport` | The transport protocol being used.                                          |
 
 ## Useful links
 

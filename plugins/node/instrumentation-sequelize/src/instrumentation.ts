@@ -24,19 +24,19 @@ import {
 } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import {
-  NETTRANSPORTVALUES_IP_TCP,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_OPERATION,
-  SEMATTRS_DB_SQL_TABLE,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-  SEMATTRS_NET_TRANSPORT,
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  ATTR_NETWORK_TRANSPORT,
+  NETWORK_TRANSPORT_VALUE_TCP,
 } from '@opentelemetry/semantic-conventions';
 import type * as sequelize from 'sequelize';
 import { SequelizeInstrumentationConfig } from './types';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { extractTableFromQuery } from './utils';
 import {
@@ -164,17 +164,14 @@ export class SequelizeInstrumentation extends InstrumentationBase<SequelizeInstr
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const attributes: Record<string, any> = {
-          [SEMATTRS_DB_SYSTEM]: sequelizeInstance.getDialect(),
-          [SEMATTRS_DB_USER]: config?.username,
-          [SEMATTRS_NET_PEER_NAME]: config?.host,
-          [SEMATTRS_NET_PEER_PORT]: config?.port
-            ? Number(config?.port)
-            : undefined,
-          [SEMATTRS_NET_TRANSPORT]: self._getNetTransport(config?.protocol),
-          [SEMATTRS_DB_NAME]: config?.database,
-          [SEMATTRS_DB_OPERATION]: operation,
-          [SEMATTRS_DB_STATEMENT]: statement,
-          [SEMATTRS_DB_SQL_TABLE]: tableName,
+          [ATTR_DB_SYSTEM_NAME]: sequelizeInstance.getDialect(),
+          [ATTR_DB_NAMESPACE]: config?.database,
+          [ATTR_DB_OPERATION_NAME]: operation,
+          [ATTR_DB_QUERY_TEXT]: statement,
+          [ATTR_DB_COLLECTION_NAME]: tableName,
+          [ATTR_SERVER_ADDRESS]: config?.host,
+          [ATTR_SERVER_PORT]: config?.port ? Number(config?.port) : undefined,
+          [ATTR_NETWORK_TRANSPORT]: self._getNetTransport(config?.protocol),
         };
 
         Object.entries(attributes).forEach(([key, value]) => {
@@ -244,7 +241,7 @@ export class SequelizeInstrumentation extends InstrumentationBase<SequelizeInstr
   private _getNetTransport(protocol: string) {
     switch (protocol) {
       case 'tcp':
-        return NETTRANSPORTVALUES_IP_TCP;
+        return NETWORK_TRANSPORT_VALUE_TCP;
       default:
         return undefined;
     }
