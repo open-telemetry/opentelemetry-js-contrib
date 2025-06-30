@@ -16,21 +16,11 @@
 
 'use strict';
 
-import { Link } from 'preact-router/match';
-import { BaseOpenTelemetryComponent } from '@opentelemetry/plugin-react-load';
+const baseConfig = require('../../eslint.config');
 
-class Home extends BaseOpenTelemetryComponent {
-  // eslint-disable-next-line class-methods-use-this
-  render() {
-    return (
-      <div>
-        <h1>React Plugin Demo App: Preact</h1>
-        <Link href="/test">
-          <button>Enter</button>
-        </Link>
-      </div>
-    );
-  }
-}
-
-export default Home;
+module.exports = {
+  ...baseConfig,
+  env: {
+    node: true,
+  },
+};

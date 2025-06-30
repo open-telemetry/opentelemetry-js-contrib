@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-'use strict';
+// Includes work from:
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
-import { Link } from 'preact-router/match';
-import { BaseOpenTelemetryComponent } from '@opentelemetry/plugin-react-load';
+import { expect } from 'expect';
+import { FallbackSampler } from '../src/fallback-sampler';
 
-class Home extends BaseOpenTelemetryComponent {
-  // eslint-disable-next-line class-methods-use-this
-  render() {
-    return (
-      <div>
-        <h1>React Plugin Demo App: Preact</h1>
-        <Link href="/test">
-          <button>Enter</button>
-        </Link>
-      </div>
+describe('FallBackSampler', () => {
+  // TODO: Add tests for Fallback sampler when Rate Limiter is implemented
+
+  it('toString()', () => {
+    expect(new FallbackSampler().toString()).toEqual(
+      'FallbackSampler{fallback sampling with sampling config of 1 req/sec and 5% of additional requests}'
     );
-  }
-}
-
-export default Home;
+  });
+});
