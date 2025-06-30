@@ -18,6 +18,7 @@ components:
     - kirrg001
   incubator/opentelemetry-sampler-aws-xray:
     - jj22ee
+    - yiyuan-he
   metapackages/auto-configuration-propagators:
     - pichlermarc
   metapackages/auto-instrumentations-node:
@@ -30,6 +31,8 @@ components:
     - pichlermarc
     - legendecas
     - blumamir
+  packages/baggage-log-record-processor:
+    - maryliag
   packages/baggage-span-processor:
     - mikegoldsmith
     - jamiedanielson
@@ -69,6 +72,11 @@ components:
     - mottibec
   plugins/node/instrumentation-tedious: []
     # Unmaintained
+  plugins/node/instrumentation-typeorm:
+    - seemk
+    - weyert
+    - t2t2
+    - mhennoch
   plugins/node/opentelemetry-instrumentation-aws-lambda:
     - jj22ee
   plugins/node/opentelemetry-instrumentation-aws-sdk:
@@ -115,6 +123,9 @@ components:
     # Unmaintained
   plugins/node/opentelemetry-instrumentation-net:
     - seemk
+  plugins/node/opentelemetry-instrumentation-oracledb:
+    - sudarshan12s
+    - sharadraju
   plugins/node/instrumentation-runtime-node:
     - d4nyll
   plugins/node/opentelemetry-instrumentation-pg:

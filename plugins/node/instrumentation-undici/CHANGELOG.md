@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.13.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.13.0...instrumentation-undici-v0.13.1) (2025-06-05)
+
+
+### Bug Fixes
+
+* **instr-undici:** fix user agent extraction and handle of multiple values on headers ([#2875](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2875)) ([8820f65](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8820f6569ac95d351b63d9e08375824775e9e561))
+
+## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.12.0...instrumentation-undici-v0.13.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
+## [0.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.11.0...instrumentation-undici-v0.12.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
+
+## [0.11.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.10.1...instrumentation-undici-v0.11.0) (2025-03-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* chore!: Update to 2.x and 0.200.x @opentelemetry/* packages from opentelemetry-js.git per [2.x upgrade guide](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/upgrade-to-2.x.md)
+  * The minimum supported Node.js has been raised to ^18.19.0 || >=20.6.0. This means that support for Node.js 14 and 16 has been dropped.
+  * The minimum supported TypeScript version has been raised to 5.0.4.
+  * The compilation target for transpiled TypeScript has been raised to ES2022 (from ES2017).
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.57.2 ([#2716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2716)) ([d2a9a20](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2a9a20f1cd8c46c842e18490a4eba36fd71c2da))
+
+
+### Miscellaneous Chores
+
+* update to JS SDK 2.x ([#2738](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2738)) ([7fb4ba3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7fb4ba3bc36dc616bd86375cfd225722b850d0d5))
+
 ## [0.10.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.10.0...instrumentation-undici-v0.10.1) (2025-02-19)
 
 

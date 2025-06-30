@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-dns",
-  "version": "0.43.1",
+  "version": "0.46.0",
   "description": "OpenTelemetry instrumentation for `node:dns` name resolution module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,10 +11,10 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
     "lint:readme": "node ../../../scripts/lint-readme",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-dns",
     "compile": "tsc -p ."
   },
   "keywords": [
@@ -51,13 +51,13 @@
     "@types/semver": "7.5.8",
     "@types/shimmer": "1.0.3",
     "@types/sinon": "17.0.4",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.200.0"
+    "@opentelemetry/instrumentation": "^0.202.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-dns#readme"
 }

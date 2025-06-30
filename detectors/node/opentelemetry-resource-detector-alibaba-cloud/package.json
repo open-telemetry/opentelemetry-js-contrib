@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-alibaba-cloud",
-  "version": "0.30.1",
+  "version": "0.31.2",
   "description": "OpenTelemetry resource detector for Alibaba Cloud",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -8,10 +8,10 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/resource-detector-alibaba-cloud",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -43,13 +43,13 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.45.1",
+    "@opentelemetry/contrib-test-utils": "^0.48.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
     "nock": "13.3.3",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
     "typescript": "5.0.4"
