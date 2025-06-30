@@ -160,7 +160,9 @@ export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
 export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
 
 export const ATTR_MESSAGING_BATCH_MESSAGE_COUNT =
-  'messaging.batch.message_count';
-export const ATTR_MESSAGING_DESTINATION_NAME = 'messaging.destination.name';
-export const ATTR_MESSAGING_MESSAGE_ID = 'messaging.message.id';
-export const ATTR_MESSAGING_OPERATION_TYPE = 'messaging.operation.type';
+  'messaging.batch.message_count' as const;
+export const ATTR_MESSAGING_DESTINATION_NAME =
+  'messaging.destination.name' as const;
+export const ATTR_MESSAGING_MESSAGE_ID = 'messaging.message.id' as const;
+export const ATTR_MESSAGING_OPERATION_TYPE =
+  'messaging.operation.type' as const;
