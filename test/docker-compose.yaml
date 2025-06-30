@@ -12,7 +12,7 @@ name: opentelemetry-js-contrib-test-services
 
 services:
   cassandra:
-    image: cassandra:3
+    image: cassandra:5
     environment:
       MAX_HEAP_SIZE: "1G"
       HEAP_NEWSIZE: 400m
