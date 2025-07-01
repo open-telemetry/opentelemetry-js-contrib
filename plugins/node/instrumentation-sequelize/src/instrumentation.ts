@@ -21,6 +21,7 @@ import {
   SpanStatusCode,
   trace,
   diag,
+  Attributes,
 } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import {
@@ -162,8 +163,7 @@ export class SequelizeInstrumentation extends InstrumentationBase<SequelizeInstr
           else tableName = extractTableFromQuery(statement);
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const attributes: Record<string, any> = {
+        const attributes: Attributes = {
           [ATTR_DB_SYSTEM_NAME]: sequelizeInstance.getDialect(),
           [ATTR_DB_NAMESPACE]: config?.database,
           [ATTR_DB_OPERATION_NAME]: operation,
@@ -173,10 +173,6 @@ export class SequelizeInstrumentation extends InstrumentationBase<SequelizeInstr
           [ATTR_SERVER_PORT]: config?.port ? Number(config?.port) : undefined,
           [ATTR_NETWORK_TRANSPORT]: self._getNetTransport(config?.protocol),
         };
-
-        Object.entries(attributes).forEach(([key, value]) => {
-          if (value === undefined) delete attributes[key];
-        });
 
         const newSpan: Span = self.tracer.startSpan(`Sequelize ${operation}`, {
           kind: SpanKind.CLIENT,
