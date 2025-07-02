@@ -29,9 +29,9 @@ import {
 } from '@opentelemetry/instrumentation';
 import { getClientAttributes } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
-import { RedisInstrumentationConfig } from './types';
+import { RedisInstrumentationConfig } from '../types';
 /** @knipignore */
-import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
 import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
 import type { MultiErrorReply } from './internal-types';
 
@@ -48,19 +48,11 @@ interface MutliCommandInfo {
   commandArgs: Array<string | Buffer>;
 }
 
-const DEFAULT_CONFIG: RedisInstrumentationConfig = {
-  requireParentSpan: false,
-};
-
-export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentationConfig> {
+export class RedisInstrumentationV4 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
 
   constructor(config: RedisInstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
-  }
-
-  override setConfig(config: RedisInstrumentationConfig = {}) {
-    super.setConfig({ ...DEFAULT_CONFIG, ...config });
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
@@ -339,7 +331,7 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
         const attributes = getClientAttributes(plugin._diag, options);
 
         const span = plugin.tracer.startSpan(
-          `${RedisInstrumentation.COMPONENT}-connect`,
+          `${RedisInstrumentationV4.COMPONENT}-connect`,
           {
             kind: SpanKind.CLIENT,
             attributes,
@@ -401,7 +393,7 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
     }
 
     const span = this.tracer.startSpan(
-      `${RedisInstrumentation.COMPONENT}-${commandName}`,
+      `${RedisInstrumentationV4.COMPONENT}-${commandName}`,
       {
         kind: SpanKind.CLIENT,
         attributes,

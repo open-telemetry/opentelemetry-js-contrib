@@ -25,10 +25,10 @@ import {
   getTracedCreateClient,
   getTracedCreateStreamTrace,
 } from './utils';
-import { RedisCommand, RedisInstrumentationConfig } from './types';
+import { RedisInstrumentationConfig } from '../types';
 /** @knipignore */
-import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { RedisPluginClientTypes } from './internal-types';
+import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
+import type { RedisCommand, RedisPluginClientTypes } from './internal-types';
 import { SpanKind, context, trace } from '@opentelemetry/api';
 import {
   DBSYSTEMVALUES_REDIS,
@@ -40,19 +40,11 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 
-const DEFAULT_CONFIG: RedisInstrumentationConfig = {
-  requireParentSpan: false,
-};
-
-export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentationConfig> {
+export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
 
   constructor(config: RedisInstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
-  }
-
-  override setConfig(config: RedisInstrumentationConfig = {}) {
-    super.setConfig({ ...DEFAULT_CONFIG, ...config });
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
@@ -136,7 +128,7 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
         const dbStatementSerializer =
           config?.dbStatementSerializer || defaultDbStatementSerializer;
         const span = instrumentation.tracer.startSpan(
-          `${RedisInstrumentation.COMPONENT}-${cmd.command}`,
+          `${RedisInstrumentationV2_V3.COMPONENT}-${cmd.command}`,
           {
             kind: SpanKind.CLIENT,
             attributes: {
