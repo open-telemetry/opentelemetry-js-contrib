@@ -41,11 +41,10 @@ const provider = new NodeTracerProvider({
 const tracer = provider.getTracer('default');
 context.setGlobalContextManager(new AsyncLocalStorageContextManager());
 
-const loggerProvider = new LoggerProvider();
 const memoryLogExporter = new InMemoryLogRecordExporter();
-loggerProvider.addLogRecordProcessor(
-  new SimpleLogRecordProcessor(memoryLogExporter)
-);
+const loggerProvider = new LoggerProvider({
+  processors: [new SimpleLogRecordProcessor(memoryLogExporter)],
+});
 logs.setGlobalLoggerProvider(loggerProvider);
 
 const kMessage = 'log-message';

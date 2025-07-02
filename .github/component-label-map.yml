@@ -210,12 +210,6 @@ pkg:instrumentation-redis:
           - plugins/node/opentelemetry-instrumentation-redis/**
           - packages/opentelemetry-test-utils/**
           - packages/opentelemetry-redis-common/**
-pkg:instrumentation-redis-4:
-  - changed-files:
-      - any-glob-to-any-file:
-          - plugins/node/opentelemetry-instrumentation-redis-4/**
-          - packages/opentelemetry-test-utils/**
-          - packages/opentelemetry-redis-common/**
 pkg:instrumentation-restify:
   - changed-files:
       - any-glob-to-any-file:

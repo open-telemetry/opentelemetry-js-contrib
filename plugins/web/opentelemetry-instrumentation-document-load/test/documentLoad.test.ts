@@ -834,6 +834,27 @@ describe('DocumentLoad Instrumentation', () => {
         done();
       });
     });
+
+    it('should have http.response_content_length attribute even if ignoreNetworkEvents is true', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        ignoreNetworkEvents: true,
+      });
+      plugin.enable();
+
+      setTimeout(() => {
+        const spans = exporter.getFinishedSpans();
+        const resourceSpan = spans.find(
+          s => s.name === 'resourceFetch'
+        ) as ReadableSpan;
+        assert.isOk(resourceSpan, 'resourceFetch span should exist');
+        assert.exists(
+          resourceSpan.attributes[SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH],
+          'http.response_content_length attribute should exist'
+        );
+        done();
+      });
+    });
   });
 });
 

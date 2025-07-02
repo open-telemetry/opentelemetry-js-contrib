@@ -4,4 +4,3 @@ This is an internal utils package used for the different redis instrumentations:
 
 1. ioredis
 2. redis
-3. redis-4

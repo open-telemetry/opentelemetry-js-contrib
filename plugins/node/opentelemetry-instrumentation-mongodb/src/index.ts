@@ -15,11 +15,11 @@
  */
 
 export { MongoDBInstrumentation } from './instrumentation';
+export { MongodbCommandType } from './types';
 export type {
   CommandResult,
   DbStatementSerializer,
   MongoDBInstrumentationConfig,
   MongoDBInstrumentationExecutionResponseHook,
   MongoResponseHookInformation,
-  MongodbCommandType,
 } from './types';

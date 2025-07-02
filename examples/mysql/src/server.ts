@@ -1,13 +1,27 @@
-'use strict';
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-// eslint-disable-next-line import/order
-import { setupTracing } from "./tracer";
-setupTracing('example-mysql-server');
 import * as api from '@opentelemetry/api';
-import * as mysql from 'mysql'
+import * as mysql from 'mysql';
 import * as http from 'http';
-import { MysqlError } from "mysql";
-import { PoolConnection } from "mysql";
+import { MysqlError, PoolConnection } from 'mysql';
+// eslint-disable-next-line import/extensions
+import { setupTracing } from './tracer';
+
+setupTracing('example-mysql-server');
 
 const pool = mysql.createPool({
   host: 'localhost',
@@ -19,7 +33,7 @@ const pool2 = mysql.createPool({
   host: 'localhost',
   user: 'root',
   password: 'secret',
-  database: 'db_test' //this db is created by init.sql
+  database: 'db_test', // this db is created by init.sql
 });
 
 const connection = mysql.createConnection({
@@ -48,27 +62,23 @@ function startServer(port: number | undefined) {
 
 /** A function which handles requests and send response. */
 function handleRequest(request: any, response: any) {
-  const currentSpan = api.trace.getSpan(api.context.active())
+  const currentSpan = api.trace.getSpan(api.context.active());
   // display traceid in the terminal
   const traceId = currentSpan?.spanContext().traceId;
   console.log(`traceid: ${traceId}`);
   console.log(`Zipkin URL: http://localhost:9411/zipkin/traces/${traceId}`);
   try {
     const body = [];
-    request.on('error',
-      (err: any) => console.log(err)
-    );
-    request.on('data',
-      (chunk: any) => body.push(chunk)
-    );
+    request.on('error', (err: any) => console.log(err));
+    request.on('data', (chunk: any) => body.push(chunk));
     request.on('end', () => {
       if (request.url === '/connection/query') {
         handleConnectionQuery(response);
       } else if (request.url === '/pool/query') {
         handlePoolQuery(response);
-      } else if(request.url === '/pool/query-with-2-connections') {
+      } else if (request.url === '/pool/query-with-2-connections') {
         handlePoolwith2ConnectionsQuery(response);
-      } else if(request.url === '/pool/query-2-pools') {
+      } else if (request.url === '/pool/query-2-pools') {
         handle2PoolsQuery(response);
       } else if (request.url === '/cluster/query') {
         handleClusterQuery(response);
@@ -143,7 +153,7 @@ function handle2PoolsQuery(response: any) {
   });
 }
 
-function handlePoolwith2ConnectionsQuery(response: any){
+function handlePoolwith2ConnectionsQuery(response: any) {
   const query = 'SELECT 1 + 1 as pool_2_connections_solution';
   pool.getConnection((connErr: MysqlError, conn: PoolConnection) => {
     if (connErr) {
@@ -159,7 +169,7 @@ function handlePoolwith2ConnectionsQuery(response: any){
           const res = results[0].pool_2_connections_solution;
           response.write(`${query} 1: ${res}`);
 
-          //finish with the 1st connection. create another one, then end() both.
+          // finish with the 1st connection. create another one, then end() both.
           const query2 = `SELECT ${res} + ${res} as pool_2_connections_solution`;
           pool.getConnection((connErr: MysqlError, conn2: PoolConnection) => {
             if (connErr) {
@@ -172,7 +182,9 @@ function handlePoolwith2ConnectionsQuery(response: any){
                   console.log('Error code 2:', err.code);
                   response.end(err.message);
                 } else {
-                  response.end(`${query2} 2: ${results[0].pool_2_connections_solution}`);
+                  response.end(
+                    `${query2} 2: ${results[0].pool_2_connections_solution}`
+                  );
                   pool.end();
                 }
               });

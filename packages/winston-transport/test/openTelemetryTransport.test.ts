@@ -24,11 +24,10 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { OpenTelemetryTransportV3 } from '../src';
 
-const loggerProvider = new LoggerProvider();
 const memoryLogExporter = new InMemoryLogRecordExporter();
-loggerProvider.addLogRecordProcessor(
-  new SimpleLogRecordProcessor(memoryLogExporter)
-);
+const loggerProvider = new LoggerProvider({
+  processors: [new SimpleLogRecordProcessor(memoryLogExporter)],
+});
 logs.setGlobalLoggerProvider(loggerProvider);
 
 const kMessage = 'log-message';

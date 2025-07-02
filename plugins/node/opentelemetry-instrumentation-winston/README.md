@@ -38,11 +38,10 @@ const tracerProvider = new NodeTracerProvider();
 tracerProvider.register();
 
 // To start a logger, you first need to initialize the Logger provider.
-const loggerProvider = new LoggerProvider();
-// Add a processor to export log record
-loggerProvider.addLogRecordProcessor(
-    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())
-);
+// Add a processor to export log record.
+const loggerProvider = new LoggerProvider({
+  processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())],
+});
 logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
 
 registerInstrumentations({
@@ -122,11 +121,10 @@ const winston = require('winston');
 
 
 // To start a logger, you first need to initialize the Logger provider.
-const loggerProvider = new LoggerProvider();
 // Add a processor to export log record
-loggerProvider.addLogRecordProcessor(
-    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())
-);
+const loggerProvider = new LoggerProvider({
+  processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())],
+});
 logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
 
 const logger = winston.createLogger({

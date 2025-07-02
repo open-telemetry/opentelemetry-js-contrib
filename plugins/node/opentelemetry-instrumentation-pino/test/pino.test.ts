@@ -55,9 +55,11 @@ const tracer = tracerProvider.getTracer('default');
 const resource = resourceFromAttributes({
   [ATTR_SERVICE_NAME]: 'test-instrumentation-pino',
 });
-const loggerProvider = new LoggerProvider({ resource });
 const memExporter = new InMemoryLogRecordExporter();
-loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(memExporter));
+const loggerProvider = new LoggerProvider({
+  resource,
+  processors: [new SimpleLogRecordProcessor(memExporter)],
+});
 logs.setGlobalLoggerProvider(loggerProvider);
 
 const instrumentation = new PinoInstrumentation();

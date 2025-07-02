@@ -60,7 +60,7 @@ hapiInstrumentation.setTracerProvider(provider);
 
 See [examples/hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/hapi) for a short example using Hapi
 
-<!-- 
+<!--
 The dev dependency of `@hapi/podium@4.1.1` is required to force the compatible type declarations. See: https://github.com/hapijs/hapi/issues/4240
 -->
 
@@ -70,14 +70,24 @@ This package provides automatic tracing for hapi server routes and [request life
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+Prior to version `0.48.0`, this instrumentation created spans targeting an experimental semantic convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md).
 
-Attributes collected:
+HTTP semantic conventions (semconv) were stabilized in v1.23.0, and a [migration process](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/http-migration.md#http-semantic-convention-stability-migration) was defined. `instrumentation-hapi` versions 0.48.0 and later include support for migrating to stable HTTP semantic conventions, as described below. The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new HTTP semconv, after which a new minor version will use the *new* semconv by default and drop support for the old semconv. See the [HTTP semconv migration plan for OpenTelemetry JS instrumentations](https://github.com/open-telemetry/opentelemetry-js/issues/5646).
 
-| Attribute           | Short Description                                  |
-|---------------------|----------------------------------------------------|
-| `http.method`       | HTTP method                                        |
-| `http.route`        | Route assigned to handler. Ex: `/users/:id`        |
+To select which semconv version(s) is emitted from this instrumentation, use the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable.
+
+- `http`: emit the new (stable) v1.23.0+ semantics
+- `http/dup`: emit **both** the old v1.7.0 and the new (stable) v1.23.0+ semantics
+- By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` includes neither of the above tokens, the old v1.7.0 semconv is used.
+
+### Attributes collected
+
+The following semconv attributes are collected on hapi route spans:
+
+| v1.7.0 semconv | v1.23.0 semconv       | Notes |
+| -------------- | --------------------- | ----- |
+| `http.method`  | `http.request.method` | HTTP request method |
+| `http.route`   | `http.route` (same)   | Route assigned to handler. Ex: `/users/:id` |
 
 ## Useful links
 

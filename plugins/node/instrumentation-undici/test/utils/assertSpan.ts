@@ -171,7 +171,7 @@ export const assertSpan = (
     if (userAgent) {
       assert.strictEqual(
         span.attributes[SemanticAttributes.USER_AGENT_ORIGINAL],
-        userAgent
+        Array.isArray(userAgent) ? userAgent[userAgent.length - 1] : userAgent
       );
     }
   }

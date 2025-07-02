@@ -132,8 +132,6 @@ components:
     - maryliag
   plugins/node/opentelemetry-instrumentation-pino:
     - seemk
-  plugins/node/opentelemetry-instrumentation-redis-4:
-    - blumamir
   plugins/node/opentelemetry-instrumentation-redis:
     - blumamir
   plugins/node/opentelemetry-instrumentation-restify: []

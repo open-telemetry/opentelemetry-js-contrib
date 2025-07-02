@@ -1,3 +1,19 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 const api = require('@opentelemetry/api');
@@ -8,7 +24,10 @@ let tracer;
 if (censusTracer) {
   tracer = require('./tracer_census')();
 } else {
-  tracer = require('./tracer')('example-grpc-capitalize-client', binaryPropagator);
+  tracer = require('./tracer')(
+    'example-grpc-capitalize-client',
+    binaryPropagator
+  );
 }
 
 const path = require('path');
@@ -27,7 +46,7 @@ const { Fetch } = grpc.load(PROTO_PATH).rpc;
 function main() {
   const client = new Fetch(
     'localhost:50051',
-    grpc.credentials.createInsecure(),
+    grpc.credentials.createInsecure()
   );
   const data = process.argv[2] || 'opentelemetry';
   console.log('> ', data);
@@ -41,15 +60,19 @@ function main() {
   // The process must live for at least the interval past any traces that
   // must be exported, or some risk being lost if they are recorded after the
   // last export.
-  console.log('Sleeping 5 seconds before shutdown to ensure all records are flushed.');
-  setTimeout(() => { console.log('Completed.'); }, 5000);
+  console.log(
+    'Sleeping 5 seconds before shutdown to ensure all records are flushed.'
+  );
+  setTimeout(() => {
+    console.log('Completed.');
+  }, 5000);
 }
 
 /**
  * Makes the gRPC call wrapped in an OpenCensus-style span
  */
 function capitalizeWithCensusTracing(client, data) {
-  tracer.startRootSpan({ name: 'tutorialsClient.capitalize' }, (rootSpan) => {
+  tracer.startRootSpan({ name: 'tutorialsClient.capitalize' }, rootSpan => {
     client.capitalize({ data: Buffer.from(data) }, (err, response) => {
       if (err) {
         console.log('could not get grpc response');
