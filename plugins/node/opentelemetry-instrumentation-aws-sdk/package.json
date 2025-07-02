@@ -46,7 +46,6 @@
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/instrumentation": "^0.202.0",
-    "@opentelemetry/propagation-utils": "^0.31.2",
     "@opentelemetry/semantic-conventions": "^1.31.0"
   },
   "devDependencies": {
