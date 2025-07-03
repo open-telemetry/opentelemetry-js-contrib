@@ -128,9 +128,9 @@ describe('SNS - v3', () => {
         (s: ReadableSpan) => s.name === 'SNS CreateTopic'
       );
       expect(createTopicSpans.length).toBe(1);
-      const publishSpan = createTopicSpans[0];
-      expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBe(topicArn);
-      expect(publishSpan.kind).toBe(SpanKind.CLIENT);
+      const span = createTopicSpans[0];
+      expect(span.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBe(topicArn);
+      expect(span.kind).toBe(SpanKind.CLIENT);
     });
   });
 });
