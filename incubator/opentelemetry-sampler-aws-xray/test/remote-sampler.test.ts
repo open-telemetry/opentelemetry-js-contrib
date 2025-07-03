@@ -44,7 +44,7 @@ const DATA_DIR_SAMPLING_TARGETS =
   __dirname + '/data/test-remote-sampler_sampling-targets-response-sample.json';
 const TEST_URL = 'http://localhost:2000';
 
-describe('AwsXrayRemoteSampler', () => {
+describe('AWSXRayRemoteSampler', () => {
   let sampler: AWSXRayRemoteSampler;
 
   afterEach(() => {
@@ -112,7 +112,7 @@ describe('AwsXrayRemoteSampler', () => {
     expect(sampler['internalXraySampler']['clientId']).toMatch(/[a-f0-9]{24}/);
   });
 
-  it('testUpdateSamplingRulesAndTargetsWithPollersAndShouldSampled', done => {
+  it('testUpdateSamplingRulesAndTargetsWithPollersAndShouldSample', done => {
     nock(TEST_URL)
       .post('/GetSamplingRules')
       .reply(200, require(DATA_DIR_SAMPLING_RULES));
