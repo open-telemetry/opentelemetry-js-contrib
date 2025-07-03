@@ -124,11 +124,11 @@ describe('SNS - v3', () => {
       await sns.createTopic({
         Name: topicName,
       });
-      const publishSpans = getTestSpans().filter(
+      const createTopicSpans = getTestSpans().filter(
         (s: ReadableSpan) => s.name === 'SNS CreateTopic'
       );
-      expect(publishSpans.length).toBe(1);
-      const publishSpan = publishSpans[0];
+      expect(createTopicSpans.length).toBe(1);
+      const publishSpan = createTopicSpans[0];
       expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBe(topicArn);
       expect(publishSpan.kind).toBe(SpanKind.CLIENT);
     });

@@ -159,5 +159,12 @@ export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
  */
 export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
 
-// Copied ATTR_AWS_SNS_TOPIC_ARN from '@opentelemetry/semantic-conventions/incubating'
+/**
+ * Originally from '@opentelemetry/semantic-conventions/incubating'
+ * https://github.com/open-telemetry/semantic-conventions/blob/main/docs/registry/attributes/aws.md#amazon-sns-attributes
+ * The ARN of the AWS SNS Topic. An Amazon SNS [topic](https://docs.aws.amazon.com/sns/latest/dg/sns-create-topic.html)
+ *  is a logical access point that acts as a communication channel.
+ * @example arn:aws:sns:us-east-1:123456789012:mystack-mytopic-NZJ5JSMVGFIE
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
 export const ATTR_AWS_SNS_TOPIC_ARN = 'aws.sns.topic.arn' as const;
