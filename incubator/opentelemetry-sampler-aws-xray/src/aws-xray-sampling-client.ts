@@ -18,7 +18,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { DiagLogFunction, DiagLogger, context } from '@opentelemetry/api';
+import { DiagLogFunction, context, diag } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import * as http from 'http';
 import {
@@ -30,12 +30,10 @@ import {
 export class AWSXRaySamplingClient {
   private getSamplingRulesEndpoint: string;
   private samplingTargetsEndpoint: string;
-  private samplerDiag: DiagLogger;
 
-  constructor(endpoint: string, samplerDiag: DiagLogger) {
+  constructor(endpoint: string) {
     this.getSamplingRulesEndpoint = endpoint + '/GetSamplingRules';
     this.samplingTargetsEndpoint = endpoint + '/SamplingTargets';
-    this.samplerDiag = samplerDiag;
   }
 
   public fetchSamplingTargets(
@@ -45,7 +43,7 @@ export class AWSXRaySamplingClient {
     this.makeSamplingRequest<GetSamplingTargetsResponse>(
       this.samplingTargetsEndpoint,
       callback,
-      this.samplerDiag.debug,
+      diag.debug,
       JSON.stringify(requestBody)
     );
   }
@@ -56,7 +54,7 @@ export class AWSXRaySamplingClient {
     this.makeSamplingRequest<GetSamplingRulesResponse>(
       this.getSamplingRulesEndpoint,
       callback,
-      this.samplerDiag.error
+      diag.error
     );
   }
 
@@ -98,10 +96,8 @@ export class AWSXRaySamplingClient {
                 callback(responseObject);
               }
             } else {
-              this.samplerDiag.debug(
-                `${url} Response Code is: ${response.statusCode}`
-              );
-              this.samplerDiag.debug(`${url} responseData is: ${responseData}`);
+              diag.debug(`${url} Response Code is: ${response.statusCode}`);
+              diag.debug(`${url} responseData is: ${responseData}`);
             }
           });
         })
