@@ -20,6 +20,7 @@
 
 import { expect } from 'expect';
 import * as nock from 'nock';
+import { DiagConsoleLogger } from '@opentelemetry/api';
 import { AWSXRaySamplingClient } from '../src/aws-xray-sampling-client';
 import {
   GetSamplingRulesResponse,
@@ -35,7 +36,7 @@ describe('AWSXRaySamplingClient', () => {
     nock(TEST_URL)
       .post('/GetSamplingRules')
       .reply(200, { SamplingRuleRecords: [] });
-    const client = new AWSXRaySamplingClient(TEST_URL);
+    const client = new AWSXRaySamplingClient(TEST_URL, new DiagConsoleLogger());
 
     client.fetchSamplingRules((response: GetSamplingRulesResponse) => {
       expect(response.SamplingRuleRecords?.length).toEqual(0);
@@ -45,7 +46,7 @@ describe('AWSXRaySamplingClient', () => {
 
   it('testGetInvalidResponse', done => {
     nock(TEST_URL).post('/GetSamplingRules').reply(200, {});
-    const client = new AWSXRaySamplingClient(TEST_URL);
+    const client = new AWSXRaySamplingClient(TEST_URL, new DiagConsoleLogger());
 
     client.fetchSamplingRules((response: GetSamplingRulesResponse) => {
       expect(response.SamplingRuleRecords?.length).toEqual(undefined);
@@ -57,7 +58,7 @@ describe('AWSXRaySamplingClient', () => {
     nock(TEST_URL)
       .post('/GetSamplingRules')
       .reply(200, { SamplingRuleRecords: [{}] });
-    const client = new AWSXRaySamplingClient(TEST_URL);
+    const client = new AWSXRaySamplingClient(TEST_URL, new DiagConsoleLogger());
     client.fetchSamplingRules((response: GetSamplingRulesResponse) => {
       expect(response.SamplingRuleRecords?.length).toEqual(1);
       done();
@@ -68,7 +69,7 @@ describe('AWSXRaySamplingClient', () => {
     nock(TEST_URL)
       .post('/GetSamplingRules')
       .reply(200, { SamplingRuleRecords: [{ SamplingRule: {} }] });
-    const client = new AWSXRaySamplingClient(TEST_URL);
+    const client = new AWSXRaySamplingClient(TEST_URL, new DiagConsoleLogger());
     client.fetchSamplingRules((response: GetSamplingRulesResponse) => {
       expect(response.SamplingRuleRecords?.length).toEqual(1);
       expect(
@@ -122,7 +123,7 @@ describe('AWSXRaySamplingClient', () => {
     const records = data['SamplingRuleRecords'];
     nock(TEST_URL).post('/GetSamplingRules').reply(200, data);
 
-    const client = new AWSXRaySamplingClient(TEST_URL);
+    const client = new AWSXRaySamplingClient(TEST_URL, new DiagConsoleLogger());
 
     client.fetchSamplingRules((response: GetSamplingRulesResponse) => {
       expect(response.SamplingRuleRecords?.length).toEqual(records.length);
@@ -176,7 +177,7 @@ describe('AWSXRaySamplingClient', () => {
       '/get-sampling-targets-response-sample.json');
     nock(TEST_URL).post('/SamplingTargets').reply(200, data);
 
-    const client = new AWSXRaySamplingClient(TEST_URL);
+    const client = new AWSXRaySamplingClient(TEST_URL, new DiagConsoleLogger());
 
     client.fetchSamplingTargets(
       data,
@@ -197,7 +198,7 @@ describe('AWSXRaySamplingClient', () => {
     };
     nock(TEST_URL).post('/SamplingTargets').reply(200, data);
 
-    const client = new AWSXRaySamplingClient(TEST_URL);
+    const client = new AWSXRaySamplingClient(TEST_URL, new DiagConsoleLogger());
 
     client.fetchSamplingTargets(
       data as unknown as GetSamplingTargetsBody,

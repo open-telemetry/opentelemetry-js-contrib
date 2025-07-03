@@ -18,7 +18,14 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { Attributes, Context, Link, SpanKind, diag } from '@opentelemetry/api';
+import {
+  Attributes,
+  Context,
+  DiagLogger,
+  Link,
+  SpanKind,
+  diag,
+} from '@opentelemetry/api';
 import {
   ParentBasedSampler,
   Sampler,
@@ -39,7 +46,9 @@ import {
   DEFAULT_TARGET_POLLING_INTERVAL_SECONDS,
   RuleCache,
 } from './rule-cache';
+
 import { SamplingRuleApplier } from './sampling-rule-applier';
+import { PACKAGE_NAME } from './version';
 
 // 5 minute default sampling rules polling interval
 const DEFAULT_RULES_POLLING_INTERVAL_SECONDS: number = 5 * 60;
@@ -97,6 +106,7 @@ export class _AWSXRayRemoteSampler implements Sampler {
   private awsProxyEndpoint: string;
   private ruleCache: RuleCache;
   private fallbackSampler: FallbackSampler;
+  private samplerDiag: DiagLogger;
   private rulePoller: NodeJS.Timeout | undefined;
   private targetPoller: NodeJS.Timeout | undefined;
   private clientId: string;
@@ -105,11 +115,15 @@ export class _AWSXRayRemoteSampler implements Sampler {
   private samplingClient: AWSXRaySamplingClient;
 
   constructor(samplerConfig: AWSXRayRemoteSamplerConfig) {
+    this.samplerDiag = diag.createComponentLogger({
+      namespace: PACKAGE_NAME,
+    });
+
     if (
       samplerConfig.pollingInterval == null ||
       samplerConfig.pollingInterval < 10
     ) {
-      diag.warn(
+      this.samplerDiag.warn(
         `'pollingInterval' is undefined or too small. Defaulting to ${DEFAULT_RULES_POLLING_INTERVAL_SECONDS} seconds`
       );
       this.rulePollingIntervalMillis =
@@ -130,7 +144,10 @@ export class _AWSXRayRemoteSampler implements Sampler {
     this.clientId = _AWSXRayRemoteSampler.generateClientId();
     this.ruleCache = new RuleCache(samplerConfig.resource);
 
-    this.samplingClient = new AWSXRaySamplingClient(this.awsProxyEndpoint);
+    this.samplingClient = new AWSXRaySamplingClient(
+      this.awsProxyEndpoint,
+      this.samplerDiag
+    );
 
     // Start the Sampling Rules poller
     this.startSamplingRulesPoller();
@@ -152,7 +169,9 @@ export class _AWSXRayRemoteSampler implements Sampler {
     links: Link[]
   ): SamplingResult {
     if (this.ruleCache.isExpired()) {
-      diag.debug('Rule cache is expired, so using fallback sampling strategy');
+      this.samplerDiag.debug(
+        'Rule cache is expired, so using fallback sampling strategy'
+      );
       return this.fallbackSampler.shouldSample(
         context,
         traceId,
@@ -177,13 +196,13 @@ export class _AWSXRayRemoteSampler implements Sampler {
         );
       }
     } catch (e: unknown) {
-      diag.debug(
+      this.samplerDiag.debug(
         'Unexpected error occurred when trying to match or applying a sampling rule',
         e
       );
     }
 
-    diag.debug(
+    this.samplerDiag.debug(
       'Using fallback sampler as no rule match was found. This is likely due to a bug, since default rule should always match'
     );
     return this.fallbackSampler.shouldSample(
@@ -259,7 +278,7 @@ export class _AWSXRayRemoteSampler implements Sampler {
       );
       this.ruleCache.updateRules(samplingRules);
     } else {
-      diag.error(
+      this.samplerDiag.error(
         'SamplingRuleRecords from GetSamplingRules request is not defined'
       );
     }
@@ -289,14 +308,14 @@ export class _AWSXRayRemoteSampler implements Sampler {
       this.startSamplingTargetsPoller();
 
       if (refreshSamplingRules) {
-        diag.debug(
+        this.samplerDiag.debug(
           'Performing out-of-band sampling rule polling to fetch updated rules.'
         );
         clearInterval(this.rulePoller);
         this.startSamplingRulesPoller();
       }
     } catch (error: unknown) {
-      diag.debug('Error occurred when updating Sampling Targets');
+      this.samplerDiag.debug('Error occurred when updating Sampling Targets');
     }
   }
 
