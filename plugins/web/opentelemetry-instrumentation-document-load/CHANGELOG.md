@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.47.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.47.0...instrumentation-document-load-v0.47.1) (2025-07-04)
+
+
+### Bug Fixes
+
+* http.response_content_length does not get populated when ignoreNetworkEvents is set to true ([#2880](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2880)) ([d6e7fe7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d6e7fe7e95e28174e99e530116742db76a6f2851))
+
 ## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.46.0...instrumentation-document-load-v0.47.0) (2025-06-02)
 
 
