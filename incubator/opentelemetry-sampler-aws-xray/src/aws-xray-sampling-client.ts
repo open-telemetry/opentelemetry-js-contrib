@@ -45,7 +45,7 @@ export class AWSXRaySamplingClient {
     this.makeSamplingRequest<GetSamplingTargetsResponse>(
       this.samplingTargetsEndpoint,
       callback,
-      this.samplerDiag.debug,
+      this.samplerDiag.debug.bind(this.samplerDiag),
       JSON.stringify(requestBody)
     );
   }
@@ -56,7 +56,7 @@ export class AWSXRaySamplingClient {
     this.makeSamplingRequest<GetSamplingRulesResponse>(
       this.getSamplingRulesEndpoint,
       callback,
-      this.samplerDiag.error
+      this.samplerDiag.error.bind(this.samplerDiag)
     );
   }
 
