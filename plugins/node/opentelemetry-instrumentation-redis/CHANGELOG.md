@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.49.1...instrumentation-redis-v0.50.0) (2025-07-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-redis:** consolidate redis v2,3 and redis v4 instrumentation to one package ([#2915](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2915))
+
+### Features
+
+* **instrumentation-redis:** consolidate redis v2,3 and redis v4 instrumentation to one package ([#2915](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2915)) ([5988c79](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5988c791983027c28f970b2d15047fd48c3f651f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/redis-common bumped from ^0.37.0 to ^0.38.0
+
 ## [0.49.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.49.0...instrumentation-redis-v0.49.1) (2025-06-05)
 
 

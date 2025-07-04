@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-restify",
-  "version": "0.48.1",
+  "version": "0.48.2",
   "description": "OpenTelemetry instrumentation for `restify` http web application framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

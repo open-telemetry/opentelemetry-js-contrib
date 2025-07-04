@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.54.0...instrumentation-aws-sdk-v0.55.0) (2025-07-04)
+
+
+### Features
+
+* **instr-aws-sdk:** add AWS_SNS_TOPIC_ARN semantic convention support for AWS SNS SDK ([#2885](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2885)) ([cb900ea](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cb900ea474d0650dac4e454815907f5f04fd7a27))
+
 ## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.53.0...instrumentation-aws-sdk-v0.54.0) (2025-06-02)
 
 

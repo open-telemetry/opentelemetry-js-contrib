@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.48.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.48.1...instrumentation-restify-v0.48.2) (2025-07-04)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2832](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2832)) ([e45605d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e45605d0e70158b0ea868bc3c8acb65095d6d4d1))
+
 ## [0.48.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.48.0...instrumentation-restify-v0.48.1) (2025-06-05)
 
 

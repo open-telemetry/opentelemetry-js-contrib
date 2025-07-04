@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.60.1...auto-instrumentations-node-v0.61.0) (2025-07-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-redis:** consolidate redis v2,3 and redis v4 instrumentation to one package ([#2915](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2915))
+
+### Features
+
+* **instrumentation-redis:** consolidate redis v2,3 and redis v4 instrumentation to one package ([#2915](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2915)) ([5988c79](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5988c791983027c28f970b2d15047fd48c3f651f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.53.0 to ^0.53.1
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.54.0 to ^0.55.0
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.17.0 to ^0.17.1
+    * @opentelemetry/instrumentation-dataloader bumped from ^0.19.0 to ^0.20.0
+    * @opentelemetry/instrumentation-express bumped from ^0.51.0 to ^0.51.1
+    * @opentelemetry/instrumentation-fastify bumped from ^0.47.0 to ^0.47.1
+    * @opentelemetry/instrumentation-generic-pool bumped from ^0.46.0 to ^0.46.1
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.50.0 to ^0.50.1
+    * @opentelemetry/instrumentation-koa bumped from ^0.50.1 to ^0.50.2
+    * @opentelemetry/instrumentation-mysql bumped from ^0.48.0 to ^0.48.1
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.48.0 to ^0.48.1
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.48.0 to ^0.48.1
+    * @opentelemetry/instrumentation-pg bumped from ^0.54.0 to ^0.54.1
+    * @opentelemetry/instrumentation-pino bumped from ^0.49.0 to ^0.49.1
+    * @opentelemetry/instrumentation-redis bumped from ^0.49.1 to ^0.50.0
+    * @opentelemetry/instrumentation-restify bumped from ^0.48.1 to ^0.48.2
+    * @opentelemetry/instrumentation-tedious bumped from ^0.21.0 to ^0.21.1
+    * @opentelemetry/instrumentation-undici bumped from ^0.13.1 to ^0.13.2
+
 ## [0.60.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.60.0...auto-instrumentations-node-v0.60.1) (2025-06-05)
 
 

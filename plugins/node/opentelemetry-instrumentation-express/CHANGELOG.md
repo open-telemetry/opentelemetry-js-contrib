@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.51.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.51.0...instrumentation-express-v0.51.1) (2025-07-04)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2832](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2832)) ([e45605d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e45605d0e70158b0ea868bc3c8acb65095d6d4d1))
+* **express:** Ensure 404 routes don't attach route attribute ([#2843](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2843)) ([85f6398](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/85f6398a77426e09eeda73b75a4c2f84d9881ef1))
+
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.50.0...instrumentation-express-v0.51.0) (2025-06-02)
 
 
