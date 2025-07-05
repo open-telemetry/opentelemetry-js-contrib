@@ -19,7 +19,6 @@ import * as api from '@opentelemetry/api';
 // Adding Koa router (if desired)
 import * as Router from '@koa/router';
 import * as Koa from 'koa';
-// eslint-disable-next-line import/extensions
 import { setupTracing } from './tracer';
 
 setupTracing('example-koa-server');

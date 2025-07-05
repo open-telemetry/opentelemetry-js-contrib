@@ -16,7 +16,6 @@
 
 'use strict';
 
-// eslint-disable-next-line
 const api = require('@opentelemetry/api');
 const tracer = api.trace.getTracer('fastify-server');
 const Fastify = require('fastify');
@@ -32,7 +31,6 @@ async function subsystem(fastify) {
     span.setAttribute('order', 2);
   });
 
-  // eslint-disable-next-line prefer-arrow-callback
   fastify.addHook('onRequest', async function onRequestHook() {
     const span = api.trace.getSpan(api.context.active());
     span.setAttribute('order', 3);

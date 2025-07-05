@@ -17,7 +17,6 @@
 import { createClient } from 'redis';
 
 const client = createClient('redis://localhost:6379');
-// eslint-disable-next-line import/prefer-default-export
 export const redisPromise = new Promise((resolve, reject) => {
   client.once('ready', () => {
     resolve(client);

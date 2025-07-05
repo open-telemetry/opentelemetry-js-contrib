@@ -18,7 +18,6 @@
 
 const api = require('@opentelemetry/api');
 const tracer = require('./tracer')('example-dns');
-// eslint-disable-next-line import/order
 const dns = require('dns').promises;
 
 /** A function which makes a dns lookup and handles response. */

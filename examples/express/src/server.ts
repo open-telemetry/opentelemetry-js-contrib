@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// eslint-disable-next-line import/order, import/extensions
 import { setupTracing } from './tracer';
 
 // Require in rest of modules

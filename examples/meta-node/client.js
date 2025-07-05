@@ -16,7 +16,6 @@
 
 'use strict';
 
-// eslint-disable-next-line import/order
 const tracer = require('./tracer')('example-express-client');
 const api = require('@opentelemetry/api');
 const axios = require('axios').default;
