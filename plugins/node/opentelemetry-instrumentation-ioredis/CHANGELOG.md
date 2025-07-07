@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.50.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.50.0...instrumentation-ioredis-v0.50.1) (2025-07-04)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/redis-common bumped from ^0.37.0 to ^0.38.0
+
 ## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.49.0...instrumentation-ioredis-v0.50.0) (2025-06-02)
 
 
