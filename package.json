@@ -81,11 +81,6 @@
     ]
   },
   "workspaces": [
-    "packages/*",
-    "plugins/node/*",
-    "plugins/web/*",
-    "propagators/*",
-    "detectors/node/*",
-    "metapackages/*"
+    "packages/*"
   ]
 }
