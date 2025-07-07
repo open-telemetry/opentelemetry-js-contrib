@@ -70,6 +70,10 @@ components:
     - blumamir
   plugins/node/instrumentation-socket.io:
     - mottibec
+  plugins/node/instrumentation-sequelize:
+    - seemk
+    - t2t2
+    - mhennoch
   plugins/node/instrumentation-tedious: []
     # Unmaintained
   plugins/node/instrumentation-typeorm:
