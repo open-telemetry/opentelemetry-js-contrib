@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-lambda",
-  "version": "0.52.0",
+  "version": "0.53.1",
   "description": "OpenTelemetry instrumentation for AWS Lambda function invocations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -12,9 +12,9 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../../scripts/lint-readme.js",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-aws-lambda",
     "compile": "tsc -p ."
   },
   "keywords": [
@@ -56,9 +56,9 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.201.0",
+    "@opentelemetry/instrumentation": "^0.202.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
-    "@types/aws-lambda": "8.10.147"
+    "@types/aws-lambda": "8.10.150"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-aws-lambda#readme"
 }

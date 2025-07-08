@@ -1,18 +1,18 @@
 {
   "name": "@opentelemetry/instrumentation-restify",
-  "version": "0.47.0",
+  "version": "0.48.2",
   "description": "OpenTelemetry instrumentation for `restify` http web application framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "rimraf build/*",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-restify",
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "prewatch": "npm run precompile",
     "tdd": "yarn test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.ts'",
     "test-all-versions": "tav",
@@ -54,13 +54,13 @@
     "nyc": "17.1.0",
     "restify": "11.1.0",
     "rimraf": "5.0.10",
-    "semver": "7.7.1",
+    "semver": "7.7.2",
     "test-all-versions": "^6.0.0",
     "typescript": "5.0.4"
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.201.0",
+    "@opentelemetry/instrumentation": "^0.202.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-restify#readme"

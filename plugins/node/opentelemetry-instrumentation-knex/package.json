@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-knex",
-  "version": "0.46.0",
+  "version": "0.47.0",
   "description": "OpenTelemetry instrumentation for `knex` database SQL query builder",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,9 +11,9 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "lint:readme": "node ../../../scripts/lint-readme",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-knex",
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
@@ -56,8 +56,8 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.201.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/instrumentation": "^0.202.0",
+    "@opentelemetry/semantic-conventions": "^1.33.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-knex#readme"
 }

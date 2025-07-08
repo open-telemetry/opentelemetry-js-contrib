@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.49.1...instrumentation-redis-v0.50.0) (2025-07-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-redis:** consolidate redis v2,3 and redis v4 instrumentation to one package ([#2915](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2915))
+
+### Features
+
+* **instrumentation-redis:** consolidate redis v2,3 and redis v4 instrumentation to one package ([#2915](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2915)) ([5988c79](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5988c791983027c28f970b2d15047fd48c3f651f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/redis-common bumped from ^0.37.0 to ^0.38.0
+
+## [0.49.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.49.0...instrumentation-redis-v0.49.1) (2025-06-05)
+
+
+### Bug Fixes
+
+* **redis:** use new tracer after setTracerProvider ([#2865](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2865)) ([5861dfa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5861dfa3aa4ca59f7ec3fba051329f13895a6e46))
+
+## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.48.0...instrumentation-redis-v0.49.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.47.0 to ^0.48.0
+
 ## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.47.0...instrumentation-redis-v0.48.0) (2025-05-15)
 
 

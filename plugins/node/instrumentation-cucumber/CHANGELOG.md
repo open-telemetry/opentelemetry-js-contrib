@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.17.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.17.0...instrumentation-cucumber-v0.17.1) (2025-07-04)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2832](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2832)) ([e45605d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e45605d0e70158b0ea868bc3c8acb65095d6d4d1))
+
+## [0.17.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.16.0...instrumentation-cucumber-v0.17.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
 ## [0.16.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.15.0...instrumentation-cucumber-v0.16.0) (2025-05-15)
 
 

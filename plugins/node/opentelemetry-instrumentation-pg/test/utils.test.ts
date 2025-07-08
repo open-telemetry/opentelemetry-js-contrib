@@ -15,7 +15,7 @@
  */
 
 import { context, trace } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import {
   BasicTracerProvider,
@@ -48,7 +48,7 @@ const getLatestSpan = () => {
 
 describe('utils.ts', () => {
   const client = new pg.Client(CONFIG) as PgClientExtended;
-  let contextManager: AsyncHooksContextManager;
+  let contextManager: AsyncLocalStorageContextManager;
   const provider = new BasicTracerProvider({
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
@@ -58,7 +58,7 @@ describe('utils.ts', () => {
     {};
 
   beforeEach(() => {
-    contextManager = new AsyncHooksContextManager().enable();
+    contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
   });
 
@@ -246,6 +246,10 @@ describe('utils.ts', () => {
         database: 'database_name',
         idleTimeoutMillis: 10,
         maxClient: 5,
+        max: 5,
+        maxUses: 5,
+        allowExitOnIdle: true,
+        maxLifetimeSeconds: 10,
       };
 
       assert.strictEqual(

@@ -17,16 +17,6 @@
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-// exported from
-// https://github.com/redis/node-redis/blob/v3.1.2/lib/command.js
-export interface RedisCommand {
-  command: string;
-  args: string[];
-  buffer_args: boolean;
-  callback: (err: Error | null, reply: unknown) => void;
-  call_on_write: boolean;
-}
-
 /**
  * Function that can be used to serialize db.statement tag
  * @param cmdName - The name of the command (eg. set, get, mset)
@@ -35,8 +25,8 @@ export interface RedisCommand {
  * @returns serialized string that will be used as the db.statement attribute.
  */
 export type DbStatementSerializer = (
-  cmdName: RedisCommand['command'],
-  cmdArgs: RedisCommand['args']
+  cmdName: string,
+  cmdArgs: Array<string | Buffer>
 ) => string;
 
 /**
@@ -51,8 +41,8 @@ export type DbStatementSerializer = (
 export interface RedisResponseCustomAttributeFunction {
   (
     span: Span,
-    cmdName: RedisCommand['command'],
-    cmdArgs: RedisCommand['args'],
+    cmdName: string,
+    cmdArgs: Array<string | Buffer>,
     response: unknown
   ): void;
 }

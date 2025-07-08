@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.46.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-generic-pool-v0.46.0...instrumentation-generic-pool-v0.46.1) (2025-07-04)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2832](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2832)) ([e45605d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e45605d0e70158b0ea868bc3c8acb65095d6d4d1))
+
+## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-generic-pool-v0.45.0...instrumentation-generic-pool-v0.46.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
 ## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-generic-pool-v0.44.0...instrumentation-generic-pool-v0.45.0) (2025-05-15)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/contrib-test-utils",
-  "version": "0.47.0",
+  "version": "0.48.0",
   "description": "Test utilities for opentelemetry components",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -10,8 +10,8 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/contrib-test-utils",
     "compile": "tsc -p .",
-    "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
   },
@@ -45,10 +45,10 @@
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/exporter-jaeger": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.201.0",
+    "@opentelemetry/instrumentation": "^0.202.0",
     "@opentelemetry/resources": "^2.0.0",
     "@opentelemetry/sdk-metrics": "^2.0.0",
-    "@opentelemetry/sdk-node": "^0.201.0",
+    "@opentelemetry/sdk-node": "^0.202.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"

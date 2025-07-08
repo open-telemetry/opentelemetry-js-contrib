@@ -8,6 +8,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "prepublishOnly": "npm run compile",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/propagator-aws-xray",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "test": "nyc mocha test/**/*.test.ts",
     "test:browser": "nyc karma start --single-run",
@@ -18,9 +19,7 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "version": "node ../../scripts/version-update.js",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "precompile": "lerna run version --scope @opentelemetry/propagator-aws-xray --include-dependencies",
-    "prewatch": "npm run precompile"
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
   },
   "keywords": [
     "opentelemetry",
@@ -68,7 +67,6 @@
     "karma-mocha": "2.0.1",
     "karma-spec-reporter": "0.0.36",
     "karma-webpack": "5.0.1",
-    "lerna": "6.6.2",
     "nyc": "17.1.0",
     "ts-loader": "9.5.2",
     "typescript": "5.0.4",

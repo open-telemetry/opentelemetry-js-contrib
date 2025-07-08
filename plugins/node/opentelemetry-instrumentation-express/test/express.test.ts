@@ -16,7 +16,7 @@
 
 import { SpanStatusCode, context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -26,7 +26,7 @@ import * as semver from 'semver';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
 import { createServer, httpRequest, serverWithMiddleware } from './utils';
-import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = new ExpressInstrumentation();
@@ -47,7 +47,7 @@ describe('ExpressInstrumentation', () => {
     spanProcessors: [spanProcessor],
   });
   const tracer = provider.getTracer('default');
-  const contextManager = new AsyncHooksContextManager().enable();
+  const contextManager = new AsyncLocalStorageContextManager().enable();
 
   before(() => {
     instrumentation.setTracerProvider(provider);
@@ -67,6 +67,50 @@ describe('ExpressInstrumentation', () => {
       server?.close();
     });
 
+    it('does not attach semantic route attribute for 404 page', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          try {
+            await httpRequest.get(
+              `http://localhost:${port}/non-existing-route`
+            );
+          } catch (error) {}
+          rootSpan.end();
+
+          const spans = memoryExporter.getFinishedSpans();
+
+          // Should have middleware spans but no request handler span
+          const middlewareSpans = spans.filter(
+            span =>
+              span.name.includes('middleware') ||
+              span.name.includes('expressInit') ||
+              span.name.includes('jsonParser')
+          );
+
+          assert.ok(
+            middlewareSpans.length > 0,
+            'Middleware spans should be created'
+          );
+
+          for (const span of spans) {
+            assert.strictEqual(
+              span.attributes[ATTR_HTTP_ROUTE],
+              undefined, // none of the spans have the HTTP route attribute
+              `Span "${span.name}" should not have HTTP route attribute for non-existing route`
+            );
+          }
+        }
+      );
+    });
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const customMiddleware: express.RequestHandler = (req, res, next) => {
@@ -119,7 +163,7 @@ describe('ExpressInstrumentation', () => {
             .find(span => span.name.includes('request handler'));
           assert.notStrictEqual(requestHandlerSpan, undefined);
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/toto/:id'
           );
           assert.strictEqual(
@@ -486,7 +530,7 @@ describe('ExpressInstrumentation', () => {
             .getFinishedSpans()
             .find(span => span.name.includes('request handler'));
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/double-slashes/:id'
           );
           assert.strictEqual(rpcMetadata?.route, '/double-slashes/:id');

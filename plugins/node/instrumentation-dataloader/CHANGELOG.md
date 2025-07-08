@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.20.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.19.0...instrumentation-dataloader-v0.20.0) (2025-07-04)
+
+
+### Features
+
+* **instrumentation-dataloader:** Enhance `dataloader` instrumentation. ([#2449](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2449)) ([5909ad4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5909ad49d6ad5b1364b3b62e1593b918931b7ba6))
+
+
+### Bug Fixes
+
+* **instrumentation-dataloader:** Patch `batchLoadFn` without creating an instance ([#2498](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2498)) ([b6d293a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b6d293ae3854b23017adaab0a936409e4951f9a7))
+
+## [0.19.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.18.0...instrumentation-dataloader-v0.19.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
 ## [0.18.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.17.0...instrumentation-dataloader-v0.18.0) (2025-05-15)
 
 
