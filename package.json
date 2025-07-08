@@ -19,6 +19,9 @@
     "test:browser": "nx run-many -t test:browser",
     "test:ci:changed": "nx affected -t test --base=origin/main --head=HEAD",
     "test-all-versions": "nx run-many -t test-all-versions",
+    "test-services:start": "docker compose -f ./test/docker-compose.yaml up -d --wait",
+    "test-services:stop": "docker compose -f ./test/docker-compose.yaml down",
+    "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env npm test",
     "changelog": "lerna-changelog",
     "lint": "nx run-many -t lint && npm run lint:deps && npm run lint:readme && npm run lint:markdown && npm run lint:semconv-deps",
     "lint:fix": "nx run-many -t lint:fix && npm run lint:markdown:fix",
@@ -41,8 +44,9 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "5.8.1",
-    "@typescript-eslint/parser": "5.8.1",
+    "@typescript-eslint/eslint-plugin": "5.62.0",
+    "@typescript-eslint/parser": "5.62.0",
+    "cross-env": "^7.0.3",
     "eslint": "8.7.0",
     "eslint-config-airbnb-base": "15.0.0",
     "eslint-config-prettier": "8.8.0",
@@ -51,7 +55,7 @@
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.1",
     "glob": "^10.4.5",
-    "lerna": "8.2.2",
+    "lerna": "8.2.3",
     "lerna-changelog": "2.2.0",
     "markdownlint-cli2": "0.13.0",
     "minimatch": "^9.0.3",
@@ -77,11 +81,6 @@
     ]
   },
   "workspaces": [
-    "packages/*",
-    "plugins/node/*",
-    "plugins/web/*",
-    "propagators/*",
-    "detectors/node/*",
-    "metapackages/*"
+    "packages/*"
   ]
 }
