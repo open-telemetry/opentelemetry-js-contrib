@@ -59,14 +59,14 @@ import {
   ATTR_ERROR_TYPE,
   ATTR_SERVER_PORT,
   ATTR_SERVER_ADDRESS,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
   ATTR_DB_SYSTEM_NAME,
+  METRIC_DB_CLIENT_OPERATION_DURATION,
 } from '@opentelemetry/semantic-conventions';
 import {
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
-  METRIC_DB_CLIENT_OPERATION_DURATION,
-  ATTR_DB_NAMESPACE,
-  ATTR_DB_OPERATION_NAME,
   ATTR_DB_SYSTEM,
   DB_SYSTEM_VALUE_POSTGRESQL,
 } from './semconv';
@@ -283,7 +283,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
   private recordOperationDuration(attributes: Attributes, startTime: HrTime) {
     const metricsAttributes: Attributes = {};
-    const keysToCopy = [
+    const keysToCopy: string[] = [
       ATTR_DB_NAMESPACE,
       ATTR_ERROR_TYPE,
       ATTR_SERVER_PORT,
