@@ -1,4 +1,25 @@
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+'use strict';
+
+import {
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace-base';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
@@ -25,9 +46,7 @@ providerWithZone.register({
 const instrumentations = getWebAutoInstrumentations({
   '@opentelemetry/instrumentation-xml-http-request': {
     ignoreUrls: [/localhost/],
-    propagateTraceHeaderCorsUrls: [
-      'http://localhost:8090',
-    ],
+    propagateTraceHeaderCorsUrls: ['http://localhost:8090'],
   },
 });
 
@@ -39,7 +58,7 @@ registerInstrumentations({
 let lastButtonId = 0;
 
 function btnAddClick() {
-  lastButtonId++;
+  lastButtonId += 1;
   const btn = document.createElement('button');
   // for easier testing of element xpath
   let navigate = false;
@@ -54,6 +73,7 @@ function btnAddClick() {
 }
 
 function prepareClickEvents() {
+  // eslint-disable-next-line no-plusplus
   for (let i = 0; i < 5; i++) {
     btnAddClick();
   }
@@ -63,8 +83,16 @@ function prepareClickEvents() {
 
 function onClick(navigate) {
   if (navigate) {
-    history.pushState({ test: 'testing' }, '', `${location.pathname}`);
-    history.pushState({ test: 'testing' }, '', `${location.pathname}#foo=bar1`);
+    window.history.pushState(
+      { test: 'testing' },
+      '',
+      `${window.location.pathname}`
+    );
+    window.history.pushState(
+      { test: 'testing' },
+      '',
+      `${window.location.pathname}#foo=bar1`
+    );
   }
   getData('https://httpbin.org/get?a=1').then(() => {
     getData('https://httpbin.org/get?a=1').then(() => {
@@ -77,14 +105,14 @@ function onClick(navigate) {
   });
 }
 
-function getData(url, resolve) {
-  return new Promise(async (resolve, reject) => {
+function getData(url) {
+  return new Promise((resolve, _reject) => {
     const req = new XMLHttpRequest();
     req.open('GET', url, true);
     req.setRequestHeader('Content-Type', 'application/json');
     req.setRequestHeader('Accept', 'application/json');
     req.send();
-    req.onload = function () {
+    req.onload = function onLoad() {
       resolve();
     };
   });

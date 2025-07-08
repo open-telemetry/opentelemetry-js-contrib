@@ -4,6 +4,8 @@
   "version": "0.1.0",
   "description": "Example of Bunyan integration with OpenTelemetry",
   "scripts": {
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "start": "node -r ./telemetry.js app.js"
   },
   "repository": {
