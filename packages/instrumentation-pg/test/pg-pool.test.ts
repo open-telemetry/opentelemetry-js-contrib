@@ -54,12 +54,12 @@ import {
   ATTR_NET_PEER_NAME,
   ATTR_DB_STATEMENT,
 } from '../src/semconv';
-import { 
+import {
   ATTR_DB_NAMESPACE,
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_SYSTEM_NAME,
   ATTR_SERVER_ADDRESS,
-  ATTR_SERVER_PORT
+  ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -1026,7 +1026,7 @@ describe('pg semantic conventions', () => {
     context.disable();
   });
 
-  it('send only default semantic conventions', async() => {
+  it('send only default semantic conventions', async () => {
     process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
     instrumentation = new PgInstrumentation();
 
@@ -1044,7 +1044,9 @@ describe('pg semantic conventions', () => {
       [ATTR_DB_STATEMENT]: 'SELECT NOW()',
     };
     const events: TimedEvent[] = [];
-    const span = provider.getTracer('test-pg-pool-semantic').startSpan('test span');
+    const span = provider
+      .getTracer('test-pg-pool-semantic')
+      .startSpan('test span');
     await context.with(trace.setSpan(context.active(), span), async () => {
       const result = await pool.query('SELECT NOW()');
       runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 1);
@@ -1052,7 +1054,7 @@ describe('pg semantic conventions', () => {
     });
   });
 
-  it('send both default and stable semantic conventions', async() => {
+  it('send both default and stable semantic conventions', async () => {
     process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
     instrumentation = new PgInstrumentation();
 
@@ -1072,7 +1074,9 @@ describe('pg semantic conventions', () => {
       [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
     };
     const events: TimedEvent[] = [];
-    const span = provider.getTracer('test-pg-pool-semantic').startSpan('test span');
+    const span = provider
+      .getTracer('test-pg-pool-semantic')
+      .startSpan('test span');
     await context.with(trace.setSpan(context.active(), span), async () => {
       const result = await pool.query('SELECT NOW()');
       runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 1);
@@ -1080,7 +1084,7 @@ describe('pg semantic conventions', () => {
     });
   });
 
-  it('send only stable semantic conventions', async() => {
+  it('send only stable semantic conventions', async () => {
     process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database';
     instrumentation = new PgInstrumentation();
 
@@ -1098,7 +1102,9 @@ describe('pg semantic conventions', () => {
       [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
     };
     const events: TimedEvent[] = [];
-    const span = provider.getTracer('test-pg-pool-semantic').startSpan('test span');
+    const span = provider
+      .getTracer('test-pg-pool-semantic')
+      .startSpan('test span');
     await context.with(trace.setSpan(context.active(), span), async () => {
       const result = await pool.query('SELECT NOW()');
       runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 1);
