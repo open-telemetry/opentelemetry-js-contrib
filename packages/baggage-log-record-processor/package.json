@@ -1,10 +1,14 @@
 {
   "name": "@opentelemetry/baggage-log-record-processor",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "OpenTelemetry Baggage Log Record Processor",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "packages/baggage-log-record-processor"
+  },
   "scripts": {
     "clean": "rimraf build/*",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/baggage-log-record-processor",
@@ -42,7 +46,7 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "dependencies": {
-    "@opentelemetry/sdk-logs": "^0.202.0"
+    "@opentelemetry/sdk-logs": "^0.203.0"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
