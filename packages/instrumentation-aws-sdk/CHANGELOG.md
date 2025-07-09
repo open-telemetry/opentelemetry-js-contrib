@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.55.0...instrumentation-aws-sdk-v0.56.0) (2025-07-09)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2930](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2930)) ([e4ab2a9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e4ab2a932084016f9750bd09d3f9a469c44628ea))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.31.2 to ^0.31.3
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.48.0 to ^0.49.0
+
 ## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.54.0...instrumentation-aws-sdk-v0.55.0) (2025-07-04)
 
 
