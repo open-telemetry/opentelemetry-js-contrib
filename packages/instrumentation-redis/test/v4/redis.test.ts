@@ -23,11 +23,7 @@ import { RedisInstrumentation } from '../../src';
 import type { MultiErrorReply } from '../../src/v4/internal-types';
 import * as assert from 'assert';
 
-import {
-  redisTestConfig,
-  redisTestUrl,
-  shouldTest,
-} from './utils';
+import { redisTestConfig, redisTestUrl, shouldTest } from './utils';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = registerInstrumentationTesting(

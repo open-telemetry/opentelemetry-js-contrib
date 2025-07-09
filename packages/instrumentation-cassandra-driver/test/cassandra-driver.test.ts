@@ -58,10 +58,9 @@ context.setGlobalContextManager(new AsyncLocalStorageContextManager());
 const testCassandra = process.env.RUN_CASSANDRA_TESTS;
 const shouldTest = testCassandra;
 const cassandraTimeoutMs = 60000;
-const cassandraContactPoint =
-  process.env.CASSANDRA_HOST
-    ? '127.0.0.1'
-    : 'cassandra';
+const cassandraContactPoint = process.env.CASSANDRA_HOST
+  ? '127.0.0.1'
+  : 'cassandra';
 
 function assertSpan(
   span: ReadableSpan,
