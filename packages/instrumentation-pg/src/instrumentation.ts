@@ -565,7 +565,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         // setup span
         const span = plugin.tracer.startSpan(SpanNames.POOL_CONNECT, {
           kind: SpanKind.CLIENT,
-          attributes: utils.getSemanticAttributesFromPool(
+          attributes: utils.getSemanticAttributesFromPoolConnection(
             this.options,
             plugin._semconvStability
           ),

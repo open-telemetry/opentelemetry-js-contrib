@@ -55,7 +55,6 @@ import {
   ATTR_DB_STATEMENT,
 } from '../src/semconv';
 import {
-  ATTR_DB_NAMESPACE,
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_SYSTEM_NAME,
   ATTR_SERVER_ADDRESS,
@@ -97,9 +96,8 @@ const DEFAULT_PG_ATTRIBUTES = {
   [ATTR_DB_USER]: CONFIG.user,
 };
 
-const STABLE_PG_ATTRIBUTES = {
+const STABLE_PG_QUERY_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_POSTGRESQL,
-  [ATTR_DB_NAMESPACE]: CONFIG.namespace,
   [ATTR_SERVER_ADDRESS]: CONFIG.host,
   [ATTR_SERVER_PORT]: CONFIG.port,
 };
@@ -983,7 +981,7 @@ describe('pg-pool (ESM)', () => {
   });
 });
 
-describe('pg semantic conventions', () => {
+describe('pg semantic conventions env variable', () => {
   let pool: pgPool<pg.Client>;
   let contextManager: AsyncLocalStorageContextManager;
   let instrumentation: PgInstrumentation;
@@ -993,6 +991,8 @@ describe('pg semantic conventions', () => {
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
+  const pgPool = require('pg-pool');
+  pool = new pgPool(CONFIG);
 
   before(function () {
     const skip = () => {
@@ -1011,17 +1011,19 @@ describe('pg semantic conventions', () => {
     }
   });
 
-  after(done => {
+  beforeEach(() => {
+    contextManager = new AsyncLocalStorageContextManager().enable();
+    context.setGlobalContextManager(contextManager);
+  });
+
+  after(() => {
     if (testPostgresLocally) {
       testUtils.cleanUpDocker('postgres');
     }
-
-    pool.end(() => {
-      done();
-    });
   });
 
   afterEach(() => {
+    delete process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
     memoryExporter.reset();
     context.disable();
   });
@@ -1029,18 +1031,11 @@ describe('pg semantic conventions', () => {
   it('send only default semantic conventions', async () => {
     process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
     instrumentation = new PgInstrumentation();
-
-    contextManager = new AsyncLocalStorageContextManager().enable();
-    context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
-
-    const pgPool = require('pg-pool');
     pool = new pgPool(CONFIG);
 
     const pgAttributes = {
       ...DEFAULT_PG_ATTRIBUTES,
-      [AttributeNames.MAX_CLIENT]: CONFIG.maxClient,
-      [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
       [ATTR_DB_STATEMENT]: 'SELECT NOW()',
     };
     const events: TimedEvent[] = [];
@@ -1049,27 +1044,23 @@ describe('pg semantic conventions', () => {
       .startSpan('test span');
     await context.with(trace.setSpan(context.active(), span), async () => {
       const result = await pool.query('SELECT NOW()');
-      runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 1);
+      runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
       assert.ok(result, 'pool.query() returns a promise');
     });
+
+    span.end();
+    await pool.end();
   });
 
   it('send both default and stable semantic conventions', async () => {
     process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
     instrumentation = new PgInstrumentation();
-
-    contextManager = new AsyncLocalStorageContextManager().enable();
-    context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
-
-    const pgPool = require('pg-pool');
     pool = new pgPool(CONFIG);
 
     const pgAttributes = {
       ...DEFAULT_PG_ATTRIBUTES,
-      ...STABLE_PG_ATTRIBUTES,
-      [AttributeNames.MAX_CLIENT]: CONFIG.maxClient,
-      [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
+      ...STABLE_PG_QUERY_ATTRIBUTES,
       [ATTR_DB_STATEMENT]: 'SELECT NOW()',
       [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
     };
@@ -1079,26 +1070,22 @@ describe('pg semantic conventions', () => {
       .startSpan('test span');
     await context.with(trace.setSpan(context.active(), span), async () => {
       const result = await pool.query('SELECT NOW()');
-      runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 1);
+      runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
       assert.ok(result, 'pool.query() returns a promise');
     });
+
+    span.end();
+    await pool.end();
   });
 
   it('send only stable semantic conventions', async () => {
     process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database';
     instrumentation = new PgInstrumentation();
-
-    contextManager = new AsyncLocalStorageContextManager().enable();
-    context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
-
-    const pgPool = require('pg-pool');
     pool = new pgPool(CONFIG);
 
     const pgAttributes = {
-      ...STABLE_PG_ATTRIBUTES,
-      [AttributeNames.MAX_CLIENT]: CONFIG.maxClient,
-      [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
+      ...STABLE_PG_QUERY_ATTRIBUTES,
       [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
     };
     const events: TimedEvent[] = [];
@@ -1107,8 +1094,11 @@ describe('pg semantic conventions', () => {
       .startSpan('test span');
     await context.with(trace.setSpan(context.active(), span), async () => {
       const result = await pool.query('SELECT NOW()');
-      runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 1);
+      runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
       assert.ok(result, 'pool.query() returns a promise');
     });
+
+    span.end();
+    await pool.end();
   });
 });

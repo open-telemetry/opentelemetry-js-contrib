@@ -183,7 +183,7 @@ export function getSemanticAttributesFromConnection(
   return attributes;
 }
 
-export function getSemanticAttributesFromPool(
+export function getSemanticAttributesFromPoolConnection(
   params: PgPoolOptionsParams,
   semconvStability: SemconvStability
 ) {
