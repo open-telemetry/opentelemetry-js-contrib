@@ -395,8 +395,7 @@ describe('oracledb', () => {
   let connection: oracledb.Connection;
 
   const testOracleDB = process.env.RUN_ORACLEDB_TESTS; // For CI: assumes local oracledb is already available
-  const testOracleDBLocally = process.env.RUN_ORACLEDB_TESTS_LOCAL; // For local: spins up local oracledb via docker
-  const shouldTest = testOracleDB || testOracleDBLocally; // Skips these tests if false (default)
+  const shouldTest = testOracleDB; // Skips these tests if false (default)
   const sql = 'select 1 from dual';
   const sqlWithBinds = 'select :1 from dual';
   const sqlWithBindsByName = 'select :name from dual';
@@ -483,29 +482,7 @@ describe('oracledb', () => {
       skip();
     }
 
-    if (testOracleDBLocally) {
-      testUtils.startDocker('oracledb');
-
-      // increase test time
-      this.timeout(50000);
-
-      // check if docker container is up
-      let retries = 6;
-      while (retries-- > 0) {
-        try {
-          connection = await oracledb.getConnection(CONFIG);
-          break;
-        } catch (err) {
-          console.log('retry count %d failed waiting for DB', retries);
-          await new Promise(r => setTimeout(r, 10000));
-        }
-      }
-      if (retries < 0) {
-        throw new Error('docker setup Failed');
-      }
-    } else {
-      connection = await oracledb.getConnection(CONFIG);
-    }
+    connection = await oracledb.getConnection(CONFIG);
     await doSetup();
     updateAttrSpanList(connection);
     contextManager = new AsyncLocalStorageContextManager().enable();
@@ -520,10 +497,6 @@ describe('oracledb', () => {
       await connection.close();
     }
     instrumentation.disable();
-    if (testOracleDBLocally) {
-      this.timeout(5000);
-      testUtils.cleanUpDocker('oracledb');
-    }
   });
 
   beforeEach(() => {
