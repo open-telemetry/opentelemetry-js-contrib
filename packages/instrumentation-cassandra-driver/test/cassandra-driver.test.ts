@@ -56,11 +56,10 @@ const provider = new NodeTracerProvider({
 context.setGlobalContextManager(new AsyncLocalStorageContextManager());
 
 const testCassandra = process.env.RUN_CASSANDRA_TESTS;
-const testCassandraLocally = process.env.RUN_CASSANDRA_TESTS_LOCAL;
-const shouldTest = testCassandra || testCassandraLocally;
+const shouldTest = testCassandra;
 const cassandraTimeoutMs = 60000;
 const cassandraContactPoint =
-  process.env.CASSANDRA_HOST ?? testCassandraLocally
+  process.env.CASSANDRA_HOST
     ? '127.0.0.1'
     : 'cassandra';
 
@@ -155,15 +154,7 @@ describe('CassandraDriverInstrumentation', () => {
       this.skip();
     }
 
-    // Cassandra takes a long time to boot up - 20 seconds easily.
-    this.timeout(cassandraTimeoutMs);
-
-    if (testCassandraLocally) {
-      testUtils.startDocker('cassandra');
-    }
-
     instrumentation = new CassandraDriverInstrumentation();
-
     instrumentation.setTracerProvider(provider);
 
     const cassandra = require('cassandra-driver');
@@ -193,11 +184,7 @@ describe('CassandraDriverInstrumentation', () => {
   });
 
   after(async function () {
-    this.timeout(60000);
     await client?.shutdown?.();
-    if (testCassandraLocally) {
-      testUtils.cleanUpDocker('cassandra');
-    }
   });
 
   describe('execute', () => {

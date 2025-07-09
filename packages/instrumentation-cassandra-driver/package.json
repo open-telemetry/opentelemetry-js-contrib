@@ -10,16 +10,22 @@
     "directory": "packages/instrumentation-cassandra-driver"
   },
   "scripts": {
-    "test": "nyc mocha 'test/**/*.test.ts'",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-cassandra-driver",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../scripts/version-update.js",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-cassandra-driver",
-    "compile": "tsc -p ."
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
+    "//todo": "echo test all versions should be configured",
+    "test-all-versions": "tav",
+    "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "test-services:start": "cd ../.. && npm run test-services:start cassandra",
+    "test-services:stop": "cd ../.. && npm run test-services:stop cassandra",
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "cassandra-driver",
