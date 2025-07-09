@@ -20,9 +20,7 @@
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
-    "//todo": "echo test all versions should be configured",
-    "test-all-versions": "tav",
-    "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "//todo": "echo \"add test-all-versions\"",
     "test-services:start": "cd ../.. && npm run test-services:start cassandra",
     "test-services:stop": "cd ../.. && npm run test-services:stop cassandra",
     "version:update": "node ../../scripts/version-update.js"
