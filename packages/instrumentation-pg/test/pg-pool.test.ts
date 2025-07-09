@@ -1044,7 +1044,7 @@ describe('pg semantic conventions env variable', () => {
       .startSpan('test span');
     await context.with(trace.setSpan(context.active(), span), async () => {
       const result = await pool.query('SELECT NOW()');
-      runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
+      runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 2);
       assert.ok(result, 'pool.query() returns a promise');
     });
 
@@ -1070,7 +1070,7 @@ describe('pg semantic conventions env variable', () => {
       .startSpan('test span');
     await context.with(trace.setSpan(context.active(), span), async () => {
       const result = await pool.query('SELECT NOW()');
-      runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
+      runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 2);
       assert.ok(result, 'pool.query() returns a promise');
     });
 
@@ -1094,7 +1094,7 @@ describe('pg semantic conventions env variable', () => {
       .startSpan('test span');
     await context.with(trace.setSpan(context.active(), span), async () => {
       const result = await pool.query('SELECT NOW()');
-      runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
+      runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 2);
       assert.ok(result, 'pool.query() returns a promise');
     });
 
