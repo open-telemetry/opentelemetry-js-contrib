@@ -991,6 +991,10 @@ describe('pg semantic conventions env variable', () => {
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
+  // Here we are `require`ing *before* the instrumentation is created below.
+  // In *general* this is a potential instrumentation issue, but this works for
+  // `pg-pool` instrumentation because it patches the `pgPool.prototype`
+  // (i.e. not a top-level export).
   const pgPool = require('pg-pool');
   pool = new pgPool(CONFIG);
 
