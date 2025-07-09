@@ -135,6 +135,34 @@ The conventional commit type (in PR title) is very important to automatically bu
 
 There is no need to update the CHANGELOG in a PR because it will be updated as part of the release process (see [RELEASING.md](RELEASING.md) for more details).
 
+### Testing
+
+Most unit tests case be run via:
+
+```sh
+npm test
+```
+
+However, some instrumentations require test-services to be running (e.g. the `instrumentation-mongodb` package requires a MongoDB server). Use the `test-services`-related npm scripts to start all required services in Docker and then run the tests with the appropriate configuration to use those services:
+
+```sh
+npm run test-services:start       # starts services in Docker
+npm run test:with-services-config # runs 'npm test' with envvars from test/test-services.env
+npm run test-services:stop        # stops services in Docker
+```
+
+If you only want to test a single package (e.g. the `instrumentation-mongodb`) you can `cd` into it and run the tests after you started the services.
+
+```sh
+npm run test-services:start             # starts services in Docker
+cd packages/instrumentation-mongodb     # get into the instrumenation folder
+RUN_MONGODB_TESTS=1 npm test            # run the test with the proper config (check each package)
+cd ../../..                             # go back to root folder
+npm run test-services:stop              # stops services in Docker
+```
+
+NOTE: scripts for each package will be added to avoid extra consumption of resources and improve the development experience.
+
 ### Benchmarks
 
 When two or more approaches must be compared, please write a benchmark in the benchmark/index.js module so that we can keep track of the most efficient algorithm.
