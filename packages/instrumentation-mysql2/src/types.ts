@@ -33,7 +33,7 @@ export interface MySQL2InstrumentationConfig extends InstrumentationConfig {
   /**
    * If true, the query will be masked before setting it as a span attribute, using the {@link maskStatementHook}.
    *
-   * @default true
+   * @default false
    * @see maskStatementHook
    */
   maskStatement?: boolean;

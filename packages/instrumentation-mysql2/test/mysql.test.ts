@@ -156,9 +156,6 @@ describe('mysql2', () => {
       contextManager = new AsyncLocalStorageContextManager().enable();
       context.setGlobalContextManager(contextManager);
       instrumentation.setTracerProvider(provider);
-      instrumentation.setConfig({
-        maskStatement: false,
-      });
       instrumentation.enable();
       connection = createConnection({
         port,
@@ -1131,7 +1128,6 @@ describe('mysql2', () => {
             responseHook: (span, responseHookInfo) => {
               throw new Error('random failure!');
             },
-            maskStatement: false,
           };
           instrumentation.setConfig(config);
         });
@@ -1159,7 +1155,6 @@ describe('mysql2', () => {
                 JSON.stringify(responseHookInfo.queryResults)
               );
             },
-            maskStatement: false,
           };
           instrumentation.setConfig(config);
         });
@@ -1389,10 +1384,7 @@ describe('mysql2', () => {
           });
         });
       });
-      it('should not mask query if maskStatement is false', done => {
-        instrumentation.setConfig({
-          maskStatement: false,
-        });
+      it('should not mask query if maskStatement is false (default)', done => {
         const query = 'SELECT 1+1 as solution';
         const span = provider.getTracer('default').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
@@ -1499,9 +1491,6 @@ describe('mysql2', () => {
       contextManager = new AsyncLocalStorageContextManager().enable();
       context.setGlobalContextManager(contextManager);
       instrumentation.setTracerProvider(provider);
-      instrumentation.setConfig({
-        maskStatement: false,
-      });
       instrumentation.enable();
       connection = await createConnection({
         port,

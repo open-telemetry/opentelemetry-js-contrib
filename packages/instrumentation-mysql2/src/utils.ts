@@ -109,7 +109,7 @@ export function getDbStatement(
   query: string | Query | QueryOptions,
   format?: formatType,
   values?: any[],
-  maskStatement = true,
+  maskStatement = false,
   maskStatementHook: MySQL2InstrumentationQueryMaskingHook = defaultMaskingHook
 ): string {
   const [querySql, queryValues] =
