@@ -69,7 +69,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.202.0",
+    "@opentelemetry/instrumentation": "^0.203.0",
     "@opentelemetry/redis-common": "^0.38.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
