@@ -53,7 +53,7 @@
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
     "@opentelemetry/contrib-test-utils": "^0.48.0",
-    "@opentelemetry/instrumentation-http": "^0.202.0",
+    "@opentelemetry/instrumentation-http": "^0.203.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/koa": "2.15.0",
@@ -71,7 +71,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.202.0",
+    "@opentelemetry/instrumentation": "^0.203.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-koa#readme"
