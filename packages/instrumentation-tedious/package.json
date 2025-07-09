@@ -11,7 +11,7 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-tedious",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-tedious",
     "compile": "tsc -p .",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint": "eslint . --ext .ts",

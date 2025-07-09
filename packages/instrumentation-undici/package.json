@@ -11,7 +11,7 @@
   },
   "scripts": {
     "prepublishOnly": "npm run compile",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
     "compile": "tsc -p .",
     "test": "nyc mocha test/**/*.test.ts",
     "test-all-versions": "tav",

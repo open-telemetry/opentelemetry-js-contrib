@@ -28,7 +28,7 @@
   ],
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/sampler-aws-xray",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/sampler-aws-xray",
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",

@@ -11,7 +11,7 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-memcached",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-memcached",
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",

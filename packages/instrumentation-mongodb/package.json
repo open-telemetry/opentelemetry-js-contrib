@@ -25,7 +25,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-mongodb",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-mongodb",
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"

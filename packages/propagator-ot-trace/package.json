@@ -11,7 +11,7 @@
     "directory": "packages/propagator-ot-trace"
   },
   "scripts": {
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/propagator-ot-trace",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/propagator-ot-trace",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "test": "nyc mocha test/**/*.test.ts",
