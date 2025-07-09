@@ -11,15 +11,15 @@
     "directory": "packages/propagator-ot-trace"
   },
   "scripts": {
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/propagator-ot-trace",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "test": "nyc mocha test/**/*.test.ts",
-    "test:browser": "nyc karma start --single-run",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/propagator-ot-trace",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json",
-    "prepublishOnly": "npm run compile"
+    "prepublishOnly": "npm run compile",
+    "test": "nyc mocha test/**/*.test.ts",
+    "test:browser": "nyc karma start --single-run",
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },
   "keywords": [
     "opentelemetry",

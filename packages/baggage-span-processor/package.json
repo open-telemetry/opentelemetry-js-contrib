@@ -11,8 +11,8 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/baggage-span-processor",
     "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/baggage-span-processor",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "prepublishOnly": "npm run compile",

@@ -13,15 +13,15 @@
   },
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/plugin-react-load",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
-    "version:update": "node ../../scripts/version-update.js",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/plugin-react-load",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "prepublishOnly": "npm run compile",
     "tdd": "karma start",
     "test:browser": "nyc karma start --single-run",
+    "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
   },
   "keywords": [

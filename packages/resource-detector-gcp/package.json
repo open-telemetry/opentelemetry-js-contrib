@@ -12,8 +12,8 @@
   },
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/resource-detector-gcp",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/resource-detector-gcp",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "prepublishOnly": "npm run compile",

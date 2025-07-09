@@ -27,7 +27,6 @@ import {
   redisTestConfig,
   redisTestUrl,
   shouldTest,
-  shouldTestLocal,
 } from './utils';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 
@@ -63,16 +62,6 @@ describe('redis v4', () => {
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
       this.skip();
-    }
-
-    if (shouldTestLocal) {
-      testUtils.startDocker('redis');
-    }
-  });
-
-  after(() => {
-    if (shouldTestLocal) {
-      testUtils.cleanUpDocker('redis');
     }
   });
 

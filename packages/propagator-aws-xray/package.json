@@ -11,17 +11,17 @@
     "directory": "packages/propagator-aws-xray"
   },
   "scripts": {
-    "prepublishOnly": "npm run compile",
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/propagator-aws-xray",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "prepublishOnly": "npm run compile",
     "test": "nyc mocha test/**/*.test.ts",
     "test:browser": "nyc karma start --single-run",
     "tdd": "npm run tdd:node",
     "tdd:node": "npm run test -- --watch-extensions ts --watch",
     "tdd:browser": "karma start",
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
     "version": "node ../../scripts/version-update.js",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
   },
