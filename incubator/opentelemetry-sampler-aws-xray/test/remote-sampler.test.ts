@@ -14,160 +14,192 @@
  * limitations under the License.
  */
 
-import * as sinon from 'sinon';
-import axios from 'axios';
+// Includes work from:
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+import {
+  resourceFromAttributes,
+  emptyResource,
+} from '@opentelemetry/resources';
+import { context, Span, SpanKind, Tracer, trace } from '@opentelemetry/api';
+import { SamplingDecision } from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import {
+  SEMRESATTRS_CLOUD_PLATFORM,
+  ATTR_SERVICE_NAME,
+} from '@opentelemetry/semantic-conventions';
+import { expect } from 'expect';
 import * as nock from 'nock';
-import * as assert from 'assert';
+import * as sinon from 'sinon';
+import {
+  _AWSXRayRemoteSampler,
+  AWSXRayRemoteSampler,
+} from '../src/remote-sampler';
+import { AWSXRaySamplingClient } from '../src/aws-xray-sampling-client';
 
-import { AWSXRayRemoteSampler } from '../src';
+const DATA_DIR_SAMPLING_RULES =
+  __dirname + '/data/test-remote-sampler_sampling-rules-response-sample.json';
+const TEST_URL = 'http://localhost:2000';
 
-describe('GetSamplingRules', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getSamplingRulesResponseStub: any = {
-    NextToken: null,
-    SamplingRuleRecords: [
-      {
-        CreatedAt: 1.67799933e9,
-        ModifiedAt: 1.67799933e9,
-        SamplingRule: {
-          Attributes: {
-            foo: 'bar',
-            doo: 'baz',
-          },
-          FixedRate: 0.05,
-          HTTPMethod: '*',
-          Host: '*',
-          Priority: 1000,
-          ReservoirSize: 10,
-          ResourceARN: '*',
-          RuleARN: 'arn:aws:xray:us-west-2:123456789000:sampling-rule/Rule1',
-          RuleName: 'Rule1',
-          ServiceName: '*',
-          ServiceType: 'AWS::Foo::Bar',
-          URLPath: '*',
-          Version: 1,
-        },
-      },
-      {
-        CreatedAt: 0.0,
-        ModifiedAt: 1.611564245e9,
-        SamplingRule: {
-          Attributes: {},
-          FixedRate: 0.05,
-          HTTPMethod: '*',
-          Host: '*',
-          Priority: 10000,
-          ReservoirSize: 1,
-          ResourceARN: '*',
-          RuleARN: 'arn:aws:xray:us-west-2:123456789000:sampling-rule/Default',
-          RuleName: 'Default',
-          ServiceName: '*',
-          ServiceType: '*',
-          URLPath: '*',
-          Version: 1,
-        },
-      },
-      {
-        CreatedAt: 1.676038494e9,
-        ModifiedAt: 1.676038494e9,
-        SamplingRule: {
-          Attributes: {},
-          FixedRate: 0.2,
-          HTTPMethod: 'GET',
-          Host: '*',
-          Priority: 1,
-          ReservoirSize: 10,
-          ResourceARN: '*',
-          RuleARN: 'arn:aws:xray:us-west-2:123456789000:sampling-rule/Rule2',
-          RuleName: 'Rule2',
-          ServiceName: 'FooBar',
-          ServiceType: '*',
-          URLPath: '/foo/bar',
-          Version: 1,
-        },
-      },
-    ],
-  };
-
-  let clock: sinon.SinonFakeTimers;
+describe('AWSXRayRemoteSampler', () => {
   let sampler: AWSXRayRemoteSampler;
-  let axiosPostSpy: sinon.SinonSpy;
 
-  const defaultEndpoint = 'http://localhost:1234';
-  const pollingInterval = 60 * 1000;
-  const config = {
-    endpoint: defaultEndpoint,
-    pollingIntervalMs: pollingInterval,
-  };
-
-  before(() => {
-    nock('http://localhost:2000')
-      .persist()
-      .post('/GetSamplingRules')
-      .reply(200, getSamplingRulesResponseStub);
+  afterEach(() => {
+    if (sampler != null) {
+      sampler.stopPollers();
+    }
   });
 
+  it('testCreateRemoteSamplerWithEmptyResource', () => {
+    const sampler: AWSXRayRemoteSampler = new AWSXRayRemoteSampler({
+      resource: emptyResource(),
+    });
+
+    expect(sampler['internalXraySampler']['rulePoller']).not.toBeFalsy();
+    expect(sampler['internalXraySampler']['rulePollingIntervalMillis']).toEqual(
+      300 * 1000
+    );
+    expect(sampler['internalXraySampler']['samplingClient']).not.toBeFalsy();
+    expect(sampler['internalXraySampler']['ruleCache']).not.toBeFalsy();
+    expect(sampler['internalXraySampler']['clientId']).toMatch(/[a-f0-9]{24}/);
+  });
+
+  it('testCreateRemoteSamplerWithPopulatedResource', () => {
+    const resource = resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: 'test-service-name',
+      [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
+    });
+    sampler = new AWSXRayRemoteSampler({ resource: resource });
+
+    expect(sampler['internalXraySampler']['rulePoller']).not.toBeFalsy();
+    expect(sampler['internalXraySampler']['rulePollingIntervalMillis']).toEqual(
+      300 * 1000
+    );
+    expect(sampler['internalXraySampler']['samplingClient']).not.toBeFalsy();
+    expect(sampler['internalXraySampler']['ruleCache']).not.toBeFalsy();
+    expect(
+      sampler['internalXraySampler']['ruleCache']['samplerResource'].attributes
+    ).toEqual(resource.attributes);
+    expect(sampler['internalXraySampler']['clientId']).toMatch(/[a-f0-9]{24}/);
+  });
+
+  it('testCreateRemoteSamplerWithAllFieldsPopulated', () => {
+    const resource = resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: 'test-service-name',
+      [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
+    });
+    sampler = new AWSXRayRemoteSampler({
+      resource: resource,
+      endpoint: 'http://abc.com',
+      pollingInterval: 120, // seconds
+    });
+
+    expect(sampler['internalXraySampler']['rulePoller']).not.toBeFalsy();
+    expect(sampler['internalXraySampler']['rulePollingIntervalMillis']).toEqual(
+      120 * 1000
+    );
+    expect(sampler['internalXraySampler']['samplingClient']).not.toBeFalsy();
+    expect(sampler['internalXraySampler']['ruleCache']).not.toBeFalsy();
+    expect(
+      sampler['internalXraySampler']['ruleCache']['samplerResource'].attributes
+    ).toEqual(resource.attributes);
+    expect(sampler['internalXraySampler']['awsProxyEndpoint']).toEqual(
+      'http://abc.com'
+    );
+    expect(sampler['internalXraySampler']['clientId']).toMatch(/[a-f0-9]{24}/);
+  });
+
+  it('testUpdateSamplingRulesAndTargetsWithPollersAndShouldSample', done => {
+    nock(TEST_URL)
+      .post('/GetSamplingRules')
+      .reply(200, require(DATA_DIR_SAMPLING_RULES));
+
+    const resource = resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: 'test-service-name',
+      [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
+    });
+
+    sampler = new AWSXRayRemoteSampler({
+      resource: resource,
+    });
+
+    setTimeout(() => {
+      expect(
+        sampler['internalXraySampler']['ruleCache']['ruleAppliers'][0]
+          .samplingRule.RuleName
+      ).toEqual('test');
+      expect(
+        sampler.shouldSample(
+          context.active(),
+          '1234',
+          'name',
+          SpanKind.CLIENT,
+          { abc: '1234' },
+          []
+        ).decision
+      ).toEqual(SamplingDecision.NOT_RECORD);
+
+      // TODO: Run more tests after updating Sampling Targets
+      done();
+    }, 50);
+  });
+
+  it('generates valid ClientId', () => {
+    const clientId: string = _AWSXRayRemoteSampler['generateClientId']();
+    const match: RegExpMatchArray | null = clientId.match(/[0-9a-z]{24}/g);
+    expect(match).not.toBeNull();
+  });
+
+  it('toString()', () => {
+    expect(
+      new AWSXRayRemoteSampler({ resource: emptyResource() }).toString()
+    ).toEqual(
+      'AWSXRayRemoteSampler{root=ParentBased{root=_AWSXRayRemoteSampler{awsProxyEndpoint=http://localhost:2000, rulePollingIntervalMillis=300000}, remoteParentSampled=AlwaysOnSampler, remoteParentNotSampled=AlwaysOffSampler, localParentSampled=AlwaysOnSampler, localParentNotSampled=AlwaysOffSampler}'
+    );
+  });
+
+  // TODO: Run tests for Reservoir Sampling and Sampling Statistics
+});
+
+describe('_AWSXRayRemoteSampler', () => {
+  const pollingInterval = 60;
+  let clock: sinon.SinonFakeTimers;
+  let fetchSamplingRulesSpy: sinon.SinonSpy;
+  let sampler: _AWSXRayRemoteSampler | undefined;
+
   beforeEach(() => {
+    fetchSamplingRulesSpy = sinon.spy(
+      AWSXRaySamplingClient.prototype,
+      'fetchSamplingRules'
+    );
     clock = sinon.useFakeTimers();
-    axiosPostSpy = sinon.spy(axios, 'post');
-    sampler = new AWSXRayRemoteSampler(config);
   });
 
   afterEach(() => {
+    if (sampler != null) {
+      sampler.stopPollers();
+    }
+    fetchSamplingRulesSpy.restore();
     clock.restore();
-    axiosPostSpy.restore();
   });
 
-  it('should throw TypeError when an invalid polling interval is passed in', async () => {
-    const configWithZeroPollingInterval = {
-      pollingIntervalMs: 0,
-    };
-    const configWithNegativeInterval = {
-      pollingIntervalMs: -5,
-    };
-
-    assert.throws(
-      () => new AWSXRayRemoteSampler(configWithZeroPollingInterval),
-      TypeError
-    );
-    assert.throws(
-      () => new AWSXRayRemoteSampler(configWithNegativeInterval),
-      TypeError
-    );
+  it('should invoke fetchSamplingRules() after initialization', async () => {
+    sampler = new _AWSXRayRemoteSampler({
+      resource: emptyResource(),
+      pollingInterval: pollingInterval,
+    });
+    sinon.assert.calledOnce(fetchSamplingRulesSpy);
   });
 
-  it('should make a POST request to the /GetSamplingRules endpoint upon initialization', async () => {
-    sinon.assert.calledOnce(axiosPostSpy);
-  });
+  it('should invoke fetchSamplingRules() 3 times after initialization and 2 intervals have passed', async () => {
+    sampler = new _AWSXRayRemoteSampler({
+      resource: emptyResource(),
+      pollingInterval: pollingInterval,
+    });
+    clock.tick(pollingInterval * 1000 + 5000);
+    clock.tick(pollingInterval * 1000 + 5000);
 
-  it('should make a POST request to the /GetSamplingRules endpoint', async () => {
-    clock.tick(pollingInterval);
-    sinon.assert.calledTwice(axiosPostSpy);
-  });
-
-  it('should make 3 POST requests to the /GetSamplingRules endpoint after 3 intervals have passed', async () => {
-    clock.tick(pollingInterval);
-    clock.tick(pollingInterval);
-
-    sinon.assert.calledThrice(axiosPostSpy);
-  });
-
-  it('should initialize endpoint and polling interval from config correctly', async () => {
-    assert.strictEqual(
-      sampler.toString(),
-      `AWSXRayRemoteSampler{endpoint=${defaultEndpoint}, pollingInterval=${pollingInterval}}`
-    );
-  });
-
-  it('should fall back to default polling interval and endpoint if not specified in config', async () => {
-    const sampler = new AWSXRayRemoteSampler({});
-
-    // default polling interval (5 minutes) = 5 * 60 * 1000
-    assert.strictEqual(
-      sampler.toString(),
-      `AWSXRayRemoteSampler{endpoint=http://localhost:2000, pollingInterval=${
-        5 * 60 * 1000
-      }}`
-    );
+    sinon.assert.calledThrice(fetchSamplingRulesSpy);
   });
 });

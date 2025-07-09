@@ -1,0 +1,83 @@
+[
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/amazon.titan-text-express-v1/invoke",
+        "body": {
+            "inputText": "Say this is a test",
+            "textGenerationConfig": {
+                "maxTokenCount": 10,
+                "temperature": 0.8,
+                "topP": 1,
+                "stopSequences": [
+                    "|"
+                ]
+            }
+        },
+        "status": 403,
+        "response": {
+            "message": "Signature expired: 20250130T064508Z is now earlier than 20250210T013411Z (20250210T013911Z - 5 min.)"
+        },
+        "rawHeaders": [
+            "Date",
+            "Mon, 10 Feb 2025 01:39:11 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "114",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "2737d2f5-442b-41b5-85bb-b7394008fbb7",
+            "x-amzn-ErrorType",
+            "InvalidSignatureException:http://internal.amazon.com/coral/com.amazon.coral.service/"
+        ],
+        "responseIsBinary": false
+    },
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/amazon.titan-text-express-v1/invoke",
+        "body": {
+            "inputText": "Say this is a test",
+            "textGenerationConfig": {
+                "maxTokenCount": 10,
+                "temperature": 0.8,
+                "topP": 1,
+                "stopSequences": [
+                    "|"
+                ]
+            }
+        },
+        "status": 200,
+        "response": {
+            "inputTextTokenCount": 5,
+            "results": [
+                {
+                    "tokenCount": 10,
+                    "outputText": "\nHello! I am a computer program designed to",
+                    "completionReason": "LENGTH"
+                }
+            ]
+        },
+        "rawHeaders": [
+            "Date",
+            "Mon, 10 Feb 2025 01:39:12 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "143",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "81039412-bc01-4c17-a89f-12534a3aca0a",
+            "X-Amzn-Bedrock-Invocation-Latency",
+            "767",
+            "X-Amzn-Bedrock-Output-Token-Count",
+            "10",
+            "X-Amzn-Bedrock-Input-Token-Count",
+            "5"
+        ],
+        "responseIsBinary": false
+    }
+]
