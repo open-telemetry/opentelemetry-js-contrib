@@ -10,16 +10,17 @@
     "directory": "packages/instrumentation-knex"
   },
   "scripts": {
-    "test": "nyc mocha 'test/**/*.ts'",
-    "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-knex",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "version:update": "node ../../scripts/version-update.js",
     "lint:readme": "node ../../scripts/lint-readme",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-knex",
-    "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc mocha 'test/**/*.ts'",
+    "//todo": "echo \"add test-all-versions\"",
+    "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
   "keywords": [

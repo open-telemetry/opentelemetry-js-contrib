@@ -10,20 +10,23 @@
     "directory": "packages/instrumentation-mongoose"
   },
   "scripts": {
-    "docker:start": "docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=127.0.0.1 -p 27017:27017 --rm mongo",
-    "test": "npm run test-v5-v6",
-    "test-v5-v6": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/mongoose-common.test.ts' 'test/**/mongoose-v5-v6.test.ts'",
-    "test-v7-v8": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/mongoose-common.test.ts' 'test/**/mongoose-v7-v8.test.ts'",
-    "test-all-versions": "tav",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-mongoose",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../scripts/version-update.js",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-mongoose",
-    "compile": "tsc -p ."
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "npm run test-v5-v6",
+    "test-v5-v6": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/mongoose-common.test.ts' 'test/**/mongoose-v5-v6.test.ts'",
+    "test-v7-v8": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/mongoose-common.test.ts' 'test/**/mongoose-v7-v8.test.ts'",
+    "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
+    "test-all-versions": "tav",
+    "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "test-services:start": "cd ../.. && npm run test-services:start mongodb",
+    "test-services:stop": "cd ../.. && npm run test-services:stop mongodb",
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "mongodb",
