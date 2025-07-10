@@ -23,6 +23,7 @@ import {
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql2';
+import { MySQL2InstrumentationQueryMaskingHook } from './types';
 
 type formatType = typeof mysqlTypes.format;
 
@@ -107,20 +108,48 @@ function getJDBCString(
 export function getDbStatement(
   query: string | Query | QueryOptions,
   format?: formatType,
-  values?: any[]
+  values?: any[],
+  maskStatement = false,
+  maskStatementHook: MySQL2InstrumentationQueryMaskingHook = defaultMaskingHook
 ): string {
-  if (!format) {
-    return typeof query === 'string' ? query : query.sql;
+  const [querySql, queryValues] =
+    typeof query === 'string'
+      ? [query, values]
+      : [query.sql, hasValues(query) ? values || query.values : values];
+  try {
+    if (maskStatement) {
+      return maskStatementHook(querySql);
+    } else if (format && queryValues) {
+      return format(querySql, queryValues);
+    } else {
+      return querySql;
+    }
+  } catch (e) {
+    return 'Could not determine the query due to an error in masking or formatting';
   }
-  if (typeof query === 'string') {
-    return values ? format(query, values) : query;
-  } else {
-    // According to https://github.com/mysqljs/mysql#performing-queries
-    // The values argument will override the values in the option object.
-    return values || (query as QueryOptions).values
-      ? format(query.sql, values || (query as QueryOptions).values)
-      : query.sql;
-  }
+}
+
+/**
+ * Replaces numeric values and quoted strings in the query with placeholders ('?').
+ *
+ * - `\b\d+\b`: Matches whole numbers (integers) and replaces them with '?'.
+ * - `(["'])(?:(?=(\\?))\2.)*?\1`:
+ *   - Matches quoted strings (both single `'` and double `"` quotes).
+ *   - Uses a lookahead `(?=(\\?))` to detect an optional backslash without consuming it immediately.
+ *   - Captures the optional backslash `\2` and ensures escaped quotes inside the string are handled correctly.
+ *   - Ensures that only complete quoted strings are replaced with '?'.
+ *
+ * This prevents accidental replacement of escaped quotes within strings and ensures that the
+ * query structure remains intact while masking sensitive data.
+ */
+function defaultMaskingHook(query: string): string {
+  return query
+    .replace(/\b\d+\b/g, '?')
+    .replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, '?');
+}
+
+function hasValues(obj: Query | QueryOptions): obj is QueryOptions {
+  return 'values' in obj;
 }
 
 /**
