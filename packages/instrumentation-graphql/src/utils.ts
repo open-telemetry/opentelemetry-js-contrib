@@ -326,7 +326,7 @@ export function wrapFields(
     if (field.type) {
       const unwrappedTypes = unwrapType(field.type);
       for (const unwrappedType of unwrappedTypes) {
-      wrapFields(unwrappedType, tracer, getConfig);
+        wrapFields(unwrappedType, tracer, getConfig);
       }
     }
   });
