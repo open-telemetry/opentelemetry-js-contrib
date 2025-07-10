@@ -56,7 +56,7 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 Prior to version `0.55.0`, this instrumentation created spans and metrics targeting an experimental semantic convention Version 1.27.0.
 
 Database semantic conventions (semconv) were stabilized in v1.34.0, and a [migration process](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/db-migration.md) was defined.
-`opentelemetry-instrumentation-pg` versions 0.55.0 and later include support for migrating to stable Database semantic conventions, as described below.
+`@opentelemetry/instrumentation-pg` versions 0.55.0 and later include support for migrating to stable Database semantic conventions, as described below.
 The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new Database semconv, after which a new minor version will use the new semconv by default and drop support for the old semconv.
 
 To select which semconv version(s) is emitted from this instrumentation, use the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable.
