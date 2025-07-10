@@ -25,7 +25,26 @@ export interface MySQL2InstrumentationExecutionResponseHook {
   (span: Span, responseHookInfo: MySQL2ResponseHookInformation): void;
 }
 
+export interface MySQL2InstrumentationQueryMaskingHook {
+  (query: string): string;
+}
+
 export interface MySQL2InstrumentationConfig extends InstrumentationConfig {
+  /**
+   * If true, the query will be masked before setting it as a span attribute, using the {@link maskStatementHook}.
+   *
+   * @default false
+   * @see maskStatementHook
+   */
+  maskStatement?: boolean;
+
+  /**
+   * Hook that allows masking the query string before setting it as span attribute.
+   *
+   * @default (query: string) => query.replace(/\b\d+\b/g, '?').replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, '?')
+   */
+  maskStatementHook?: MySQL2InstrumentationQueryMaskingHook;
+
   /**
    * Hook that allows adding custom span attributes based on the data
    * returned MySQL2 queries.
