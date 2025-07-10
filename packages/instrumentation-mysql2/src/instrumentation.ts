@@ -137,13 +137,20 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         } else if (arguments[2]) {
           values = [_valuesOrCallback];
         }
-
+        const { maskStatement, maskStatementHook, responseHook } =
+          thisPlugin.getConfig();
         const span = thisPlugin.tracer.startSpan(getSpanName(query), {
           kind: api.SpanKind.CLIENT,
           attributes: {
             ...MySQL2Instrumentation.COMMON_ATTRIBUTES,
             ...getConnectionAttributes(this.config),
-            [SEMATTRS_DB_STATEMENT]: getDbStatement(query, format, values),
+            [SEMATTRS_DB_STATEMENT]: getDbStatement(
+              query,
+              format,
+              values,
+              maskStatement,
+              maskStatementHook
+            ),
           },
         });
 
@@ -166,7 +173,6 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
               message: err.message,
             });
           } else {
-            const { responseHook } = thisPlugin.getConfig();
             if (typeof responseHook === 'function') {
               safeExecuteInTheMiddle(
                 () => {
