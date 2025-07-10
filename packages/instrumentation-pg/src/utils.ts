@@ -33,6 +33,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   ATTR_DB_QUERY_TEXT,
+  DB_SYSTEM_NAME_VALUE_POSTGRESQL,
 } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
@@ -173,7 +174,7 @@ export function getSemanticAttributesFromConnection(
   if (semconvStability & SemconvStability.STABLE) {
     attributes = {
       ...attributes,
-      [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_POSTGRESQL,
+      [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
       [ATTR_DB_NAMESPACE]: params.namespace,
       [ATTR_SERVER_ADDRESS]: params.host,
       [ATTR_SERVER_PORT]: getPort(params.port),
@@ -214,7 +215,7 @@ export function getSemanticAttributesFromPoolConnection(
   if (semconvStability & SemconvStability.STABLE) {
     attributes = {
       ...attributes,
-      [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_POSTGRESQL,
+      [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
       [ATTR_DB_NAMESPACE]: params.namespace,
       [ATTR_SERVER_ADDRESS]: url?.hostname ?? params.host,
       [ATTR_SERVER_PORT]: Number(url?.port) || getPort(params.port),

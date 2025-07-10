@@ -40,7 +40,10 @@ import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { TimedEvent } from './types';
-import { METRIC_DB_CLIENT_OPERATION_DURATION } from '@opentelemetry/semantic-conventions';
+import {
+  METRIC_DB_CLIENT_OPERATION_DURATION,
+  DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+} from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_CLIENT_CONNECTION_STATE,
   METRIC_DB_CLIENT_CONNECTION_COUNT,
@@ -97,7 +100,7 @@ const DEFAULT_PG_ATTRIBUTES = {
 };
 
 const STABLE_PG_QUERY_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_POSTGRESQL,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
   [ATTR_SERVER_ADDRESS]: CONFIG.host,
   [ATTR_SERVER_PORT]: CONFIG.port,
 };
