@@ -18,7 +18,7 @@
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-aws-lambda",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-aws-lambda",
     "compile": "tsc -p ."
   },
   "keywords": [

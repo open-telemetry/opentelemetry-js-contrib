@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import * as childProcess from 'child_process';
 import {
   HrTime,
   Span,
@@ -32,62 +31,6 @@ import {
 import * as path from 'path';
 import * as fs from 'fs';
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
-
-const dockerRunCmds = {
-  cassandra:
-    'docker run --rm -d --name otel-cassandra -p 9042:9042 bitnami/cassandra:3',
-  memcached:
-    'docker run --rm -d --name otel-memcached -p 11211:11211 memcached:1.6.9-alpine',
-  mssql:
-    'docker run --rm -d --name otel-mssql -p 1433:1433 -e MSSQL_SA_PASSWORD=mssql_passw0rd -e ACCEPT_EULA=Y mcr.microsoft.com/mssql/server:2022-latest',
-  mysql:
-    'docker run --rm -d --name otel-mysql -p 33306:3306 -e MYSQL_ROOT_PASSWORD=rootpw -e MYSQL_DATABASE=test_db -e MYSQL_USER=otel -e MYSQL_PASSWORD=secret mysql:5.7 --log_output=TABLE --general_log=ON',
-  oracledb:
-    'docker run --rm -d --name otel-oracledb -p 1521:1521 -e ORACLE_PASSWORD=oracle -e APP_USER=otel -e APP_USER_PASSWORD=secret gvenzl/oracle-free:slim',
-  postgres:
-    'docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=otel_pg_database postgres:16-alpine',
-  redis: 'docker run --rm -d --name otel-redis -p 63790:6379 redis:alpine',
-};
-
-export function startDocker(db: keyof typeof dockerRunCmds) {
-  const tasks = [run(dockerRunCmds[db])];
-
-  for (let i = 0; i < tasks.length; i++) {
-    const task = tasks[i];
-    if (task && task.code !== 0) {
-      console.error('Failed to start container!');
-      console.error(task.output);
-      return false;
-    }
-  }
-  return true;
-}
-
-export function cleanUpDocker(db: keyof typeof dockerRunCmds) {
-  run(`docker stop otel-${db}`);
-}
-
-function run(cmd: string) {
-  try {
-    const proc = childProcess.spawnSync(cmd, {
-      shell: true,
-    });
-    const output = Buffer.concat(
-      proc.output.filter(c => c) as Buffer[]
-    ).toString('utf8');
-    if (proc.status !== 0) {
-      console.error('Failed run command:', cmd);
-      console.error(output);
-    }
-    return {
-      code: proc.status,
-      output,
-    };
-  } catch (e) {
-    console.log(e);
-    return;
-  }
-}
 
 export const assertSpan = (
   span: ReadableSpan,
