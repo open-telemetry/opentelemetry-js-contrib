@@ -13,13 +13,14 @@
     "prepublishOnly": "npm run compile",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
     "compile": "tsc -p .",
-    "test": "nyc mocha test/**/*.test.ts",
+    "test": "nyc --no-clean mocha test/**/*.test.ts",
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "watch": "tsc -w",
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [

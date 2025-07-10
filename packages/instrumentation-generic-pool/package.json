@@ -10,7 +10,7 @@
     "directory": "packages/instrumentation-generic-pool"
   },
   "scripts": {
-    "test": "nyc mocha 'test/**/*.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.ts'",
     "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
@@ -20,7 +20,8 @@
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-generic-pool",
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
   },
   "keywords": [
     "generic-pool",
