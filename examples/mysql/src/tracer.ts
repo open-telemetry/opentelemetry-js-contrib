@@ -37,7 +37,6 @@ const {
 
 const EXPORTER = process.env.EXPORTER || '';
 
-// eslint-disable-next-line import/prefer-default-export
 export const setupTracing = (serviceName: string) => {
   // metrics:
   const metricExporter = new OTLPMetricExporter();
