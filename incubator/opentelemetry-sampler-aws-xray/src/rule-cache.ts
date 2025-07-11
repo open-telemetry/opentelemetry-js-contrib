@@ -18,12 +18,21 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { Attributes } from '@opentelemetry/api';
+import { Attributes, diag } from '@opentelemetry/api';
 import { Resource } from '@opentelemetry/resources';
+import {
+  ISamplingStatistics,
+  SamplingStatisticsDocument,
+  SamplingTargetDocument,
+  TargetMap,
+} from './types';
 import { SamplingRuleApplier } from './sampling-rule-applier';
 
 // The cache expires 1 hour after the last refresh time.
 const RULE_CACHE_TTL_MILLIS: number = 60 * 60 * 1000;
+
+// 10 second default sampling targets polling interval
+export const DEFAULT_TARGET_POLLING_INTERVAL_SECONDS = 10;
 
 export class RuleCache {
   private ruleAppliers: SamplingRuleApplier[];
@@ -88,5 +97,62 @@ export class RuleCache {
     // sort ruleAppliers by priority and update lastUpdatedEpochMillis
     this.sortRulesByPriority();
     this.lastUpdatedEpochMillis = Date.now();
+  }
+
+  public createSamplingStatisticsDocuments(
+    clientId: string
+  ): SamplingStatisticsDocument[] {
+    const statisticsDocuments: SamplingStatisticsDocument[] = [];
+
+    this.ruleAppliers.forEach((rule: SamplingRuleApplier) => {
+      const statistics: ISamplingStatistics = rule.snapshotStatistics();
+      const nowInSeconds: number = Math.floor(Date.now() / 1000);
+
+      const samplingStatisticsDoc: SamplingStatisticsDocument = {
+        ClientID: clientId,
+        RuleName: rule.samplingRule.RuleName,
+        Timestamp: nowInSeconds,
+        RequestCount: statistics.RequestCount,
+        BorrowCount: statistics.BorrowCount,
+        SampledCount: statistics.SampleCount,
+      };
+
+      statisticsDocuments.push(samplingStatisticsDoc);
+    });
+    return statisticsDocuments;
+  }
+
+  // Update ruleAppliers based on the targets fetched from X-Ray service
+  public updateTargets(
+    targetDocuments: TargetMap,
+    lastRuleModification: number
+  ): [boolean, number] {
+    let minPollingInteral: number | undefined = undefined;
+    let nextPollingInterval: number = DEFAULT_TARGET_POLLING_INTERVAL_SECONDS;
+    this.ruleAppliers.forEach((rule: SamplingRuleApplier, index: number) => {
+      const target: SamplingTargetDocument =
+        targetDocuments[rule.samplingRule.RuleName];
+      if (target) {
+        this.ruleAppliers[index] = rule.withTarget(target);
+        if (target.Interval) {
+          if (
+            minPollingInteral === undefined ||
+            minPollingInteral > target.Interval
+          ) {
+            minPollingInteral = target.Interval;
+          }
+        }
+      } else {
+        diag.debug('Invalid sampling target: missing rule name');
+      }
+    });
+
+    if (minPollingInteral) {
+      nextPollingInterval = minPollingInteral;
+    }
+
+    const refreshSamplingRules: boolean =
+      lastRuleModification * 1000 > this.lastUpdatedEpochMillis;
+    return [refreshSamplingRules, nextPollingInterval];
   }
 }
