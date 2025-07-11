@@ -6,6 +6,9 @@ on:
       - "release/**"
       - "release-please/**"
 
+permissions:
+  contents: read
+
 jobs:
   tav:
     uses: ./.github/workflows/test-all-versions.yml

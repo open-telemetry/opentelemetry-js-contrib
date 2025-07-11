@@ -3,6 +3,9 @@ name: Create or Update OpenTelemetry Update PR
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   create-or-update-deps-pr:
     runs-on: ubuntu-latest
