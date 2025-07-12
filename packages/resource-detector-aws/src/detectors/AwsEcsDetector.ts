@@ -163,10 +163,8 @@ export class AwsEcsDetector implements ResourceDetector {
       );
       const splitData = rawData.trim().split('\n');
       for (const str of splitData) {
-        if (str.length > AwsEcsDetector.CONTAINER_ID_LENGTH) {
-          containerId = str.substring(
-            str.length - AwsEcsDetector.CONTAINER_ID_LENGTH
-          );
+        containerId = this._extractContainerIdFromLine(str);
+        if (containerId) {
           break;
         }
       }
@@ -174,6 +172,74 @@ export class AwsEcsDetector implements ResourceDetector {
       diag.debug('AwsEcsDetector failed to read container ID', e);
     }
     return containerId;
+  }
+
+  /**
+   * Extract container ID from a cgroup line.
+   * Handles the new AWS ECS Fargate format: /ecs/<taskId>/<taskId>-<containerId>
+   * Returns the last segment after the final '/' which should be the complete container ID.
+   */
+  private _extractContainerIdFromLine(line: string): string | undefined {
+    if (!line) {
+      return undefined;
+    }
+
+    // Split by '/' and get the last segment
+    const segments = line.split('/');
+    if (segments.length <= 1) {
+      // Fallback to original logic if no '/' found
+      if (line.length > AwsEcsDetector.CONTAINER_ID_LENGTH) {
+        return line.substring(line.length - AwsEcsDetector.CONTAINER_ID_LENGTH);
+      }
+      return undefined;
+    }
+
+    let lastSegment = segments[segments.length - 1];
+    
+    // Handle containerd v1.5.0+ format with systemd cgroup driver (e.g., ending with :cri-containerd:containerid)
+    const colonIndex = lastSegment.lastIndexOf(':');
+    if (colonIndex !== -1) {
+      lastSegment = lastSegment.substring(colonIndex + 1);
+    }
+
+    // Remove known prefixes if they exist
+    const prefixes = ['docker-', 'crio-', 'cri-containerd-'];
+    for (const prefix of prefixes) {
+      if (lastSegment.startsWith(prefix)) {
+        lastSegment = lastSegment.substring(prefix.length);
+        break;
+      }
+    }
+
+    // Remove anything after the first period (like .scope)
+    if (lastSegment.includes('.')) {
+      lastSegment = lastSegment.split('.')[0];
+    }
+
+    // Basic validation: should not be empty and should have reasonable length
+    if (!lastSegment || lastSegment.length < 8) {
+      return undefined;
+    }
+
+    // AWS ECS container IDs can be in various formats:
+    // 1. Pure hex strings: 'abcdef123456'
+    // 2. ECS format: 'taskId-containerId' 
+    // 3. Mixed alphanumeric with hyphens
+    // We'll be more permissive and allow alphanumeric characters and hyphens
+    const containerIdPattern = /^[a-zA-Z0-9\-_]+$/;
+    
+    if (containerIdPattern.test(lastSegment)) {
+      return lastSegment;
+    }
+
+    // If the pattern doesn't match but the segment looks reasonable,
+    // still try to return it (last resort for edge cases)
+    if (lastSegment.length >= 12 && lastSegment.length <= 128) {
+      diag.debug(`AwsEcsDetector: Using container ID with non-standard format: ${lastSegment}`);
+      return lastSegment;
+    }
+
+    return undefined;
   }
 
   /**
