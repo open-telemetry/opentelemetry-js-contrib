@@ -655,14 +655,14 @@ describe('instrumentation-kafkajs', () => {
           const spans = getTestSpans();
           const transactionSpan = spans.find(s => s.name === 'transaction');
           const sendSpans = spans.filter(s => s.name === 'send topic-name-1');
-          assert.ok(transactionSpan)
+          assert.ok(transactionSpan);
           assert.strictEqual(spans.length, 3);
           assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
           assert.strictEqual(transactionSpan.status.code, SpanStatusCode.UNSET);
 
           assert.strictEqual(sendSpans.length, 2);
-          assert.strictEqual(sendSpans[0].name, 'send topic-name-1')
-          assert.strictEqual(sendSpans[1].name, 'send topic-name-1')
+          assert.strictEqual(sendSpans[0].name, 'send topic-name-1');
+          assert.strictEqual(sendSpans[1].name, 'send topic-name-1');
           await assertSuccessfulSendSpans({
             spans: sendSpans,
             metricReader,
@@ -700,8 +700,8 @@ describe('instrumentation-kafkajs', () => {
           const spans = getTestSpans();
           const transactionSpan = spans.find(s => s.name === 'transaction');
           const sendSpan = spans.find(s => s.name.startsWith('send'));
-          assert.ok(transactionSpan)
-          assert.ok(sendSpan)
+          assert.ok(transactionSpan);
+          assert.ok(sendSpan);
           assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
           assertSpanHasParent(transactionSpan, sendSpan);
           assert.strictEqual(transactionSpan.status.code, SpanStatusCode.ERROR);
@@ -710,7 +710,7 @@ describe('instrumentation-kafkajs', () => {
             'error thrown from kafka client transaction commit'
           );
           assert.strictEqual(sendSpan.status.code, SpanStatusCode.UNSET);
-          assert.strictEqual(sendSpan.name, 'send topic-name-1')
+          assert.strictEqual(sendSpan.name, 'send topic-name-1');
           expectKafkaHeadersToMatchSpanContext(
             messagesSent[0],
             sendSpan as ReadableSpan
@@ -732,8 +732,8 @@ describe('instrumentation-kafkajs', () => {
             spans.find(s => s.name === 'transaction'),
             spans.find(s => s.name === 'send topic-name-1'),
           ];
-          assert.ok(transactionSpan)
-          assert.ok(sendSpan)
+          assert.ok(transactionSpan);
+          assert.ok(sendSpan);
           assertSpanHasParent(transactionSpan, sendSpan);
           expectKafkaHeadersToMatchSpanContext(
             messagesSent[0],
@@ -764,8 +764,8 @@ describe('instrumentation-kafkajs', () => {
             spans.find(s => s.name === 'transaction'),
             spans.find(s => s.name.startsWith('send')),
           ];
-          assert.ok(transactionSpan)
-          assert.ok(sendSpan)
+          assert.ok(transactionSpan);
+          assert.ok(sendSpan);
           assertSpanHasParent(transactionSpan, sendSpan);
           assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
           assert.strictEqual(transactionSpan.status.code, SpanStatusCode.ERROR);
@@ -798,8 +798,8 @@ describe('instrumentation-kafkajs', () => {
           const spans = getTestSpans();
           const transactionSpan = spans.find(s => s.name === 'transaction');
           const sendSpans = spans.filter(s => s.name.startsWith('send'));
-          assert.ok(transactionSpan)
-          assert.ok(sendSpans)
+          assert.ok(transactionSpan);
+          assert.ok(sendSpans);
           sendSpans.forEach(s => assertSpanHasParent(transactionSpan, s));
           assert.ok(haveSameTraceId(spans));
         });
@@ -819,8 +819,8 @@ describe('instrumentation-kafkajs', () => {
           const spans = getTestSpans();
           const transactionSpan = spans.find(s => s.name === 'transaction');
           const sendSpans = spans.filter(s => s.name.startsWith('send'));
-          assert.ok(transactionSpan)
-          assert.strictEqual(sendSpans.length, 3)
+          assert.ok(transactionSpan);
+          assert.strictEqual(sendSpans.length, 3);
           assert.strictEqual(spans[0].name, 'send topic-name-1');
           assert.strictEqual(spans[1].name, 'send topic-name-1');
           assert.strictEqual(spans[2].name, 'send topic-name-2');
@@ -860,8 +860,8 @@ describe('instrumentation-kafkajs', () => {
             spans.find(s => s.name === 'transaction'),
             spans.find(s => s.name === 'send topic-name-1'),
           ];
-          assert.ok(transactionSpan)
-          assert.ok(sendSpan)
+          assert.ok(transactionSpan);
+          assert.ok(sendSpan);
           const errorMessage =
             'error thrown from kafka client transaction send';
           assertSpanHasParent(transactionSpan, sendSpan);
@@ -895,8 +895,8 @@ describe('instrumentation-kafkajs', () => {
           const spans = getTestSpans();
           const transactionSpan = spans.find(s => s.name === 'transaction');
           const sendSpans = spans.filter(s => s.name === 'send topic-name-1');
-          assert.ok(transactionSpan)
-          assert.ok(sendSpans)
+          assert.ok(transactionSpan);
+          assert.ok(sendSpans);
           await assertFailedSendSpans({
             spans: sendSpans,
             metricReader,
