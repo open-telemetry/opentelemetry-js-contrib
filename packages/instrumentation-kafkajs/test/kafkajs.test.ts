@@ -23,7 +23,6 @@ import {
   SpanKind,
   SpanStatusCode,
   Baggage,
-  Attributes,
 } from '@opentelemetry/api';
 import {
   ATTR_MESSAGING_SYSTEM,
@@ -51,7 +50,6 @@ import { W3CBaggagePropagator, CompositePropagator } from '@opentelemetry/core';
 const instrumentation = registerInstrumentationTesting(
   new KafkaJsInstrumentation()
 );
-import { CollectionResult, DataPointType } from '@opentelemetry/sdk-metrics';
 
 import * as kafkajs from 'kafkajs';
 import {
@@ -74,61 +72,12 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-
-function assertMetricCollection(
-  { errors, resourceMetrics }: CollectionResult,
-  expected: Record<
-    string,
-    {
-      count?: number;
-      value?: number;
-      buckets?: Record<number, number>;
-      attributes: Attributes;
-    }[]
-  >
-) {
-  assert.strictEqual(errors.length, 0);
-  const { metrics } = resourceMetrics.scopeMetrics[0];
-  assert.strictEqual(
-    Object.keys(expected).length,
-    metrics.length,
-    'A different number of metrics were found than expected'
-  );
-  Object.entries(expected).forEach(([name, values]) => {
-    const match = metrics.find(metric => metric.descriptor.name === name);
-    assert.ok(match, `metric ${name} not found`);
-
-    if (match.dataPointType === DataPointType.HISTOGRAM) {
-      assert.deepStrictEqual(
-        match.dataPoints.map(d => d.value.count),
-        values.map(v => v.count),
-        `${name} datapoints do not have the same count`
-      );
-      values.forEach(({ buckets }, i) => {
-        if (buckets) {
-          const { boundaries, counts } = match.dataPoints[i].value.buckets;
-          const actualBuckets = counts.reduce((acc, n, j) => {
-            if (n > 0) {
-              acc[boundaries[j]] = n;
-            }
-            return acc;
-          }, {} as Record<number, number>);
-          assert.deepStrictEqual(actualBuckets, buckets);
-        }
-      });
-    } else {
-      assert.deepStrictEqual(
-        match.dataPoints.map(d => d.value),
-        values.map(v => v.value),
-        `${name} datapoint values do not match`
-      );
-    }
-    assert.deepStrictEqual(
-      match.dataPoints.map(d => d.attributes),
-      values.map(v => v.attributes)
-    );
-  });
-}
+import {
+  assertFailedSendSpansGroupedByTopic,
+  assertMetricCollection,
+  assertSuccessfulSendSpansGroupedByTopic,
+  haveSameTraceId,
+} from './utils';
 
 describe('instrumentation-kafkajs', () => {
   propagation.setGlobalPropagator(
@@ -144,8 +93,17 @@ describe('instrumentation-kafkajs', () => {
 
   let producer: Producer;
   let messagesSent: Message[] = [];
+  let transaction: kafkajs.Transaction;
 
-  const patchProducerSend = (cb: () => Promise<RecordMetadata[]>) => {
+  const patchProducerSend = (
+    cb: () => Promise<RecordMetadata[]>,
+    transactionOpts?: {
+      rejectTransaction?: boolean;
+      rejectCommit?: boolean;
+      rejectAbort?: boolean;
+      rejectSend?: boolean;
+    }
+  ) => {
     const origProducerFactory = kafkajs.Kafka.prototype.producer;
     kafkajs.Kafka.prototype.producer = function (...args): Producer {
       const producer = origProducerFactory.apply(this, args);
@@ -160,6 +118,58 @@ describe('instrumentation-kafkajs', () => {
           messagesSent.push(...topicMessages.messages)
         );
         return cb();
+      };
+
+      producer.transaction = async function () {
+        if (transactionOpts?.rejectTransaction) {
+          return Promise.reject(
+            new Error('error thrown from kafka client transaction')
+          );
+        }
+        transaction = {
+          send: async (_record: ProducerRecord) => {
+            if (transactionOpts?.rejectSend) {
+              return Promise.reject(
+                new Error('error thrown from kafka client transaction send')
+              );
+            }
+            messagesSent.push(..._record.messages);
+            return cb();
+          },
+
+          sendBatch: async (_batch: ProducerBatch) => {
+            if (transactionOpts?.rejectSend) {
+              return Promise.reject(
+                new Error(
+                  'error thrown from kafka client transaction sendBatch'
+                )
+              );
+            }
+            _batch.topicMessages?.forEach(t =>
+              messagesSent.push(...t.messages)
+            );
+            return cb();
+          },
+
+          commit: async () => {
+            if (transactionOpts?.rejectCommit) {
+              return Promise.reject(
+                new Error('error thrown from kafka client transaction commit')
+              );
+            }
+            return cb();
+          },
+
+          abort: async () => {
+            if (transactionOpts?.rejectAbort) {
+              return Promise.reject(
+                new Error('error thrown from kafka client transaction abort')
+              );
+            }
+            return cb();
+          },
+        } as unknown as kafkajs.Transaction;
+        return transaction;
       };
 
       return producer;
@@ -244,46 +254,28 @@ describe('instrumentation-kafkajs', () => {
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(span.kind, SpanKind.PRODUCER);
         assert.strictEqual(span.name, 'send topic-name-1');
-        assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
-        assert.strictEqual(span.attributes[ATTR_MESSAGING_SYSTEM], 'kafka');
-        assert.strictEqual(
-          span.attributes[ATTR_MESSAGING_DESTINATION_NAME],
-          'topic-name-1'
-        );
-        assert.strictEqual(
-          span.attributes[ATTR_MESSAGING_DESTINATION_PARTITION_ID],
-          '42'
-        );
-        assert.strictEqual(
-          span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE],
-          undefined
-        );
-        assert.strictEqual(
-          span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_KEY],
-          'message-key-0'
-        );
+        await assertSuccessfulSendSpansGroupedByTopic({
+          spans: [span],
+          metricReader,
+          expectedMetrics: [
+            { topic: 'topic-name-1', value: 1, partitionId: '42' },
+          ],
+          perSpan: {
+            0: {
+              [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+              [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '42',
+              [ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE]: undefined,
+              [ATTR_MESSAGING_KAFKA_MESSAGE_KEY]: 'message-key-0',
+            },
+          },
+        });
 
         assert.strictEqual(messagesSent.length, 1);
         expectKafkaHeadersToMatchSpanContext(
           messagesSent[0],
           span as ReadableSpan
         );
-
-        assertMetricCollection(await metricReader.collect(), {
-          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
-            {
-              value: 1,
-              attributes: {
-                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
-                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '42',
-                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
-              },
-            },
-          ],
-        });
       });
 
       it('simple send create span with tombstone attribute', async () => {
@@ -301,24 +293,19 @@ describe('instrumentation-kafkajs', () => {
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(span.kind, SpanKind.PRODUCER);
         assert.strictEqual(span.name, 'send topic-name-1');
-        assert.strictEqual(
-          span.attributes[ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE],
-          true
-        );
-        assertMetricCollection(await metricReader.collect(), {
-          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
-            {
-              value: 1,
-              attributes: {
-                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
-                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
-                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '42',
-              },
-            },
+
+        await assertSuccessfulSendSpansGroupedByTopic({
+          spans: [span],
+          metricReader,
+          expectedMetrics: [
+            { topic: 'topic-name-1', value: 1, partitionId: '42' },
           ],
+          perSpan: {
+            0: {
+              [ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE]: true,
+            },
+          },
         });
       });
 
@@ -495,23 +482,13 @@ describe('instrumentation-kafkajs', () => {
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 1);
         const span = spans[0];
-        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-        assert.strictEqual(
-          span.status.message,
-          'error thrown from kafka client send'
-        );
-        assertMetricCollection(await metricReader.collect(), {
-          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
-            {
-              value: 1,
-              attributes: {
-                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
-                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
-                [ATTR_ERROR_TYPE]: 'Error',
-              },
-            },
-          ],
+        await assertFailedSendSpansGroupedByTopic({
+          spans: [span],
+          metricReader,
+          errorMessage: 'error thrown from kafka client send',
+          expectedTopicCounts: {
+            'topic-name-1': 1,
+          },
         });
       });
 
@@ -532,25 +509,13 @@ describe('instrumentation-kafkajs', () => {
 
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 2);
-        spans.forEach(span => {
-          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-          assert.strictEqual(
-            span.status.message,
-            'error thrown from kafka client send'
-          );
-        });
-        assertMetricCollection(await metricReader.collect(), {
-          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
-            {
-              value: 2,
-              attributes: {
-                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
-                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
-                [ATTR_ERROR_TYPE]: 'Error',
-              },
-            },
-          ],
+        await assertFailedSendSpansGroupedByTopic({
+          spans: spans,
+          metricReader,
+          errorMessage: 'error thrown from kafka client send',
+          expectedTopicCounts: {
+            'topic-name-1': 2,
+          },
         });
       });
 
@@ -583,34 +548,14 @@ describe('instrumentation-kafkajs', () => {
 
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 3);
-        spans.forEach(span => {
-          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-          assert.strictEqual(
-            span.status.message,
-            'error thrown from kafka client send'
-          );
-        });
-        assertMetricCollection(await metricReader.collect(), {
-          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
-            {
-              value: 2,
-              attributes: {
-                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
-                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
-                [ATTR_ERROR_TYPE]: 'Error',
-              },
-            },
-            {
-              value: 1,
-              attributes: {
-                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-2',
-                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
-                [ATTR_ERROR_TYPE]: 'Error',
-              },
-            },
-          ],
+        await assertFailedSendSpansGroupedByTopic({
+          spans,
+          metricReader,
+          errorMessage: 'error thrown from kafka client send',
+          expectedTopicCounts: {
+            'topic-name-1': 2,
+            'topic-name-2': 1,
+          },
         });
       });
     });
@@ -682,6 +627,316 @@ describe('instrumentation-kafkajs', () => {
         assert.strictEqual(spans.length, 1);
         const span = spans[0];
         assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
+      });
+    });
+
+    describe('transaction instrumentation', () => {
+      function assertSpanHasParent(
+        parent: ReadableSpan,
+        child: ReadableSpan,
+        msg = 'child should reference parent spanId'
+      ) {
+        assert.strictEqual(
+          child.parentSpanContext?.spanId,
+          parent.spanContext().spanId,
+          msg
+        );
+      }
+      const defaultFallback = async () => [
+        { topicName: 'topic-name-1' } as RecordMetadata,
+      ];
+
+      const prepareTestProducer = (
+        fallback: Parameters<typeof patchProducerSend>[0] = defaultFallback,
+        opts: Parameters<typeof patchProducerSend>[1] = {}
+      ) => {
+        patchProducerSend(fallback, opts);
+        instrumentation.disable();
+        instrumentation.enable();
+        return kafka.producer();
+      };
+
+      describe('transaction commit', () => {
+        it('commits after two sends with unset span statuses', async () => {
+          const producer = prepareTestProducer();
+          const tx = await producer.transaction();
+
+          await tx.send({ topic: 'topic-name-1', messages: [{ value: 'a' }] });
+          await tx.send({ topic: 'topic-name-1', messages: [{ value: 'b' }] });
+          await tx.commit();
+
+          const spans = getTestSpans();
+          const transactionSpan = spans.find(s => s.name === 'transaction')!;
+          const sendSpans = spans.filter(s => s.name === 'send topic-name-1');
+
+          assert.strictEqual(spans.length, 3);
+          assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
+          assert.strictEqual(transactionSpan.status.code, SpanStatusCode.UNSET);
+          await assertSuccessfulSendSpansGroupedByTopic({
+            spans: sendSpans,
+            metricReader,
+            expectedMetrics: [{ topic: 'topic-name-1', value: 2 }],
+            perSpan: Object.fromEntries(
+              Array.from({ length: 2 }, (_, i) => [
+                i,
+                {
+                  [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
+                  [ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE]: undefined,
+                },
+              ])
+            ),
+          });
+
+          sendSpans.forEach((s, i) => {
+            assertSpanHasParent(transactionSpan, s);
+            expectKafkaHeadersToMatchSpanContext(
+              messagesSent[i],
+              s as ReadableSpan
+            );
+          });
+          assert.ok(haveSameTraceId(spans));
+        });
+
+        it('sets transaction span to error on commit rejection, send remains unset', async () => {
+          const producer = prepareTestProducer(defaultFallback, {
+            rejectCommit: true,
+          });
+          const tx = await producer.transaction();
+          await tx.send({ topic: 'topic-name-1', messages: [{ value: 'x' }] });
+
+          await assert.rejects(tx.commit());
+
+          const spans = getTestSpans();
+          const transactionSpan = spans.find(s => s.name === 'transaction')!;
+          const sendSpan = spans.find(s => s.name.startsWith('send'))!;
+          assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
+          assertSpanHasParent(transactionSpan, sendSpan);
+          assert.strictEqual(transactionSpan.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(
+            transactionSpan.status.message,
+            'error thrown from kafka client transaction commit'
+          );
+          assert.strictEqual(sendSpan.status.code, SpanStatusCode.UNSET);
+
+          expectKafkaHeadersToMatchSpanContext(
+            messagesSent[0],
+            sendSpan as ReadableSpan
+          );
+          assert.ok(haveSameTraceId(spans));
+        });
+      });
+
+      describe('transaction abort', () => {
+        it('sets both spans to unset when abort succeeds', async () => {
+          const producer = prepareTestProducer();
+          const tx = await producer.transaction();
+          await tx.send({ topic: 'topic-name-1', messages: [{ value: 'a' }] });
+
+          await tx.abort();
+
+          const spans = getTestSpans();
+          const [transactionSpan, send] = [
+            spans.find(s => s.name === 'transaction')!,
+            spans.find(s => s.name === 'send topic-name-1')!,
+          ];
+          assertSpanHasParent(transactionSpan, send);
+          expectKafkaHeadersToMatchSpanContext(
+            messagesSent[0],
+            send as ReadableSpan
+          );
+          assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
+          assert.strictEqual(transactionSpan.status.code, SpanStatusCode.UNSET);
+          assert.strictEqual(send.status.code, SpanStatusCode.UNSET);
+          assert.ok(haveSameTraceId(spans));
+        });
+
+        it('sets transaction span to error on abort rejection', async () => {
+          const producer = prepareTestProducer(defaultFallback, {
+            rejectAbort: true,
+          });
+          const tx = await producer.transaction();
+          await tx.send({
+            topic: 'topic-name-1',
+            messages: [{ value: 'fail' }],
+          });
+
+          await assert.rejects(tx.abort());
+
+          const spans = getTestSpans();
+          const [transactionSpan, send] = [
+            spans.find(s => s.name === 'transaction')!,
+            spans.find(s => s.name.startsWith('send'))!,
+          ];
+          assertSpanHasParent(transactionSpan, send);
+          assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
+          assert.strictEqual(transactionSpan.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(
+            transactionSpan.status.message,
+            'error thrown from kafka client transaction abort'
+          );
+          assert.strictEqual(send.status.code, SpanStatusCode.UNSET);
+          assert.ok(haveSameTraceId(spans));
+        });
+      });
+
+      describe('span relations inside transaction', () => {
+        beforeEach(() => {
+          patchProducerSend(async () => [
+            { topicName: 'topic-name-1' } as RecordMetadata,
+            { topicName: 'topic-name-2' } as RecordMetadata,
+          ]);
+          instrumentation.disable();
+          instrumentation.enable();
+          producer = kafka.producer();
+        });
+
+        it('associates multiple sends with the same transaction and traceId', async () => {
+          const tx = await producer.transaction();
+          await tx.send({ topic: 'topic-name-1', messages: [{ value: '1' }] });
+          await tx.send({ topic: 'topic-name-1', messages: [{ value: '2' }] });
+          await tx.commit();
+
+          const spans = getTestSpans();
+          const parent = spans.find(s => s.name === 'transaction')!;
+          const sends = spans.filter(s => s.name.startsWith('send'));
+
+          sends.forEach(s => assertSpanHasParent(parent, s));
+          assert.ok(haveSameTraceId(spans));
+        });
+
+        it('associates sendBatch messages with parent transaction and same traceId', async () => {
+          const tx = await producer.transaction();
+          await tx.sendBatch({
+            topicMessages: [
+              {
+                topic: 'topic-name-1',
+                messages: [{ value: 'a' }, { value: 'b' }],
+              },
+              { topic: 'topic-name-2', messages: [{ value: 'c' }] },
+            ],
+          });
+          await tx.commit();
+
+          const spans = getTestSpans();
+          const parent = spans.find(s => s.name === 'transaction')!;
+          const sends = spans.filter(s => s.name.startsWith('send'));
+          assertSuccessfulSendSpansGroupedByTopic({
+            spans: sends,
+            metricReader,
+            expectedMetrics: [
+              { topic: 'topic-name-1', value: 2 },
+              { topic: 'topic-name-2', value: 1 },
+            ],
+          });
+          sends.forEach(s => assertSpanHasParent(parent, s));
+          assert.ok(haveSameTraceId(spans));
+        });
+      });
+
+      describe('send failure inside transaction', () => {
+        beforeEach(() => {
+          patchProducerSend(
+            async () => [{ topicName: 'topic-name-1' } as RecordMetadata],
+            { rejectSend: true }
+          );
+          instrumentation.disable();
+          instrumentation.enable();
+          producer = kafka.producer();
+        });
+
+        it('sets send span to error when send fails', async () => {
+          const tx = await producer.transaction();
+          await assert.rejects(
+            tx.send({ topic: 'topic-name-1', messages: [{ value: 'oops' }] })
+          );
+          await tx.abort();
+
+          const spans = getTestSpans();
+          const [transactionSpan, send] = [
+            spans.find(s => s.name === 'transaction')!,
+            spans.find(s => s.name.startsWith('send'))!,
+          ];
+          assertSpanHasParent(transactionSpan, send);
+          await assertFailedSendSpansGroupedByTopic({
+            spans: [send],
+            metricReader,
+            errorMessage: 'error thrown from kafka client transaction send',
+            expectedTopicCounts: {
+              'topic-name-1': 1,
+            },
+          });
+          assert.strictEqual(transactionSpan.status.code, SpanStatusCode.UNSET);
+          assert.ok(haveSameTraceId(spans));
+        });
+
+        it('sets all sendBatch spans to error when sendBatch fails', async () => {
+          const tx = await producer.transaction();
+          await assert.rejects(
+            tx.sendBatch({
+              topicMessages: [
+                {
+                  topic: 'topic-name-1',
+                  messages: [{ value: 'x' }, { value: 'y' }],
+                },
+              ],
+            })
+          );
+          await tx.abort();
+
+          const spans = getTestSpans();
+          const parent = spans.find(s => s.name === 'transaction')!;
+          const sends = spans.filter(s => s.name === 'send topic-name-1');
+          await assertFailedSendSpansGroupedByTopic({
+            spans: sends,
+            metricReader,
+            errorMessage:
+              'error thrown from kafka client transaction sendBatch',
+            expectedTopicCounts: {
+              'topic-name-1': 2,
+            },
+          });
+          sends.forEach(s => {
+            assertSpanHasParent(parent, s);
+          });
+          assert.ok(haveSameTraceId(spans));
+        });
+      });
+      describe('transaction setup errors', () => {
+        beforeEach(() => {
+          patchProducerSend(
+            async () => [{ topicName: 'topic-name-1' } as RecordMetadata],
+            { rejectTransaction: true }
+          );
+          instrumentation.disable();
+          instrumentation.enable();
+          producer = kafka.producer();
+        });
+
+        it('calls catch block when transaction creation fails and transaction span sets error attribute', async () => {
+          await assert.rejects(
+            () => producer.transaction(),
+            /error thrown from kafka client transaction/
+          );
+
+          const spans = getTestSpans();
+          assert.equal(spans.length, 1);
+
+          const transactionSpan = spans.find(s => s.name === 'transaction')!;
+          assert.ok(transactionSpan);
+          assert.equal(transactionSpan.kind, SpanKind.INTERNAL);
+          assert.equal(transactionSpan.status.code, SpanStatusCode.ERROR);
+
+          assert.strictEqual(
+            transactionSpan.status.code,
+            SpanStatusCode.ERROR,
+            `Expected transactionSpan status.code to be ERROR`
+          );
+
+          const exceptionEvent = transactionSpan.events.find(
+            e => e.name === 'exception'
+          );
+          assert.ok(exceptionEvent, 'recordException was not called');
+        });
       });
     });
   });
