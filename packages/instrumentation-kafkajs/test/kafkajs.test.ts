@@ -73,9 +73,9 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
-  assertFailedSendSpansGroupedByTopic,
+  assertFailedSendSpans,
   assertMetricCollection,
-  assertSuccessfulSendSpansGroupedByTopic,
+  assertSuccessfulSendSpans,
   haveSameTraceId,
 } from './utils';
 
@@ -255,7 +255,7 @@ describe('instrumentation-kafkajs', () => {
         assert.strictEqual(spans.length, 1);
         const span = spans[0];
         assert.strictEqual(span.name, 'send topic-name-1');
-        await assertSuccessfulSendSpansGroupedByTopic({
+        await assertSuccessfulSendSpans({
           spans: [span],
           metricReader,
           expectedMetrics: [
@@ -295,7 +295,7 @@ describe('instrumentation-kafkajs', () => {
         const span = spans[0];
         assert.strictEqual(span.name, 'send topic-name-1');
 
-        await assertSuccessfulSendSpansGroupedByTopic({
+        await assertSuccessfulSendSpans({
           spans: [span],
           metricReader,
           expectedMetrics: [
@@ -431,25 +431,12 @@ describe('instrumentation-kafkajs', () => {
             spans[i] as ReadableSpan
           );
         }
-        assertMetricCollection(await metricReader.collect(), {
-          [METRIC_MESSAGING_CLIENT_SENT_MESSAGES]: [
-            {
-              value: 2,
-              attributes: {
-                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-1',
-                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
-              },
-            },
-            {
-              value: 1,
-              attributes: {
-                [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_KAFKA,
-                [ATTR_MESSAGING_DESTINATION_NAME]: 'topic-name-2',
-                [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: '1',
-                [ATTR_MESSAGING_OPERATION_NAME]: 'send',
-              },
-            },
+        assertSuccessfulSendSpans({
+          spans,
+          metricReader,
+          expectedMetrics: [
+            { topic: 'topic-name-1', value: 2 },
+            { topic: 'topic-name-2', value: 1, partitionId: '1' },
           ],
         });
       });
@@ -482,7 +469,7 @@ describe('instrumentation-kafkajs', () => {
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 1);
         const span = spans[0];
-        await assertFailedSendSpansGroupedByTopic({
+        await assertFailedSendSpans({
           spans: [span],
           metricReader,
           errorMessage: 'error thrown from kafka client send',
@@ -509,7 +496,7 @@ describe('instrumentation-kafkajs', () => {
 
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 2);
-        await assertFailedSendSpansGroupedByTopic({
+        await assertFailedSendSpans({
           spans: spans,
           metricReader,
           errorMessage: 'error thrown from kafka client send',
@@ -548,7 +535,7 @@ describe('instrumentation-kafkajs', () => {
 
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 3);
-        await assertFailedSendSpansGroupedByTopic({
+        await assertFailedSendSpans({
           spans,
           metricReader,
           errorMessage: 'error thrown from kafka client send',
@@ -666,13 +653,17 @@ describe('instrumentation-kafkajs', () => {
           await tx.commit();
 
           const spans = getTestSpans();
-          const transactionSpan = spans.find(s => s.name === 'transaction')!;
+          const transactionSpan = spans.find(s => s.name === 'transaction');
           const sendSpans = spans.filter(s => s.name === 'send topic-name-1');
-
+          assert.ok(transactionSpan)
           assert.strictEqual(spans.length, 3);
           assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
           assert.strictEqual(transactionSpan.status.code, SpanStatusCode.UNSET);
-          await assertSuccessfulSendSpansGroupedByTopic({
+
+          assert.strictEqual(sendSpans.length, 2);
+          assert.strictEqual(sendSpans[0].name, 'send topic-name-1')
+          assert.strictEqual(sendSpans[1].name, 'send topic-name-1')
+          await assertSuccessfulSendSpans({
             spans: sendSpans,
             metricReader,
             expectedMetrics: [{ topic: 'topic-name-1', value: 2 }],
@@ -707,8 +698,10 @@ describe('instrumentation-kafkajs', () => {
           await assert.rejects(tx.commit());
 
           const spans = getTestSpans();
-          const transactionSpan = spans.find(s => s.name === 'transaction')!;
-          const sendSpan = spans.find(s => s.name.startsWith('send'))!;
+          const transactionSpan = spans.find(s => s.name === 'transaction');
+          const sendSpan = spans.find(s => s.name.startsWith('send'));
+          assert.ok(transactionSpan)
+          assert.ok(sendSpan)
           assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
           assertSpanHasParent(transactionSpan, sendSpan);
           assert.strictEqual(transactionSpan.status.code, SpanStatusCode.ERROR);
@@ -717,7 +710,7 @@ describe('instrumentation-kafkajs', () => {
             'error thrown from kafka client transaction commit'
           );
           assert.strictEqual(sendSpan.status.code, SpanStatusCode.UNSET);
-
+          assert.strictEqual(sendSpan.name, 'send topic-name-1')
           expectKafkaHeadersToMatchSpanContext(
             messagesSent[0],
             sendSpan as ReadableSpan
@@ -727,7 +720,7 @@ describe('instrumentation-kafkajs', () => {
       });
 
       describe('transaction abort', () => {
-        it('sets both spans to unset when abort succeeds', async () => {
+        it('spans remain unset when abort succeeds', async () => {
           const producer = prepareTestProducer();
           const tx = await producer.transaction();
           await tx.send({ topic: 'topic-name-1', messages: [{ value: 'a' }] });
@@ -735,18 +728,22 @@ describe('instrumentation-kafkajs', () => {
           await tx.abort();
 
           const spans = getTestSpans();
-          const [transactionSpan, send] = [
-            spans.find(s => s.name === 'transaction')!,
-            spans.find(s => s.name === 'send topic-name-1')!,
+          const [transactionSpan, sendSpan] = [
+            spans.find(s => s.name === 'transaction'),
+            spans.find(s => s.name === 'send topic-name-1'),
           ];
-          assertSpanHasParent(transactionSpan, send);
+          assert.ok(transactionSpan)
+          assert.ok(sendSpan)
+          assertSpanHasParent(transactionSpan, sendSpan);
           expectKafkaHeadersToMatchSpanContext(
             messagesSent[0],
-            send as ReadableSpan
+            sendSpan as ReadableSpan
           );
           assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
           assert.strictEqual(transactionSpan.status.code, SpanStatusCode.UNSET);
-          assert.strictEqual(send.status.code, SpanStatusCode.UNSET);
+          assert.strictEqual(sendSpan.status.code, SpanStatusCode.UNSET);
+          assert.strictEqual(sendSpan.name, 'send topic-name-1');
+
           assert.ok(haveSameTraceId(spans));
         });
 
@@ -763,18 +760,20 @@ describe('instrumentation-kafkajs', () => {
           await assert.rejects(tx.abort());
 
           const spans = getTestSpans();
-          const [transactionSpan, send] = [
-            spans.find(s => s.name === 'transaction')!,
-            spans.find(s => s.name.startsWith('send'))!,
+          const [transactionSpan, sendSpan] = [
+            spans.find(s => s.name === 'transaction'),
+            spans.find(s => s.name.startsWith('send')),
           ];
-          assertSpanHasParent(transactionSpan, send);
+          assert.ok(transactionSpan)
+          assert.ok(sendSpan)
+          assertSpanHasParent(transactionSpan, sendSpan);
           assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
           assert.strictEqual(transactionSpan.status.code, SpanStatusCode.ERROR);
           assert.strictEqual(
             transactionSpan.status.message,
             'error thrown from kafka client transaction abort'
           );
-          assert.strictEqual(send.status.code, SpanStatusCode.UNSET);
+          assert.strictEqual(sendSpan.status.code, SpanStatusCode.UNSET);
           assert.ok(haveSameTraceId(spans));
         });
       });
@@ -797,10 +796,11 @@ describe('instrumentation-kafkajs', () => {
           await tx.commit();
 
           const spans = getTestSpans();
-          const parent = spans.find(s => s.name === 'transaction')!;
-          const sends = spans.filter(s => s.name.startsWith('send'));
-
-          sends.forEach(s => assertSpanHasParent(parent, s));
+          const transactionSpan = spans.find(s => s.name === 'transaction');
+          const sendSpans = spans.filter(s => s.name.startsWith('send'));
+          assert.ok(transactionSpan)
+          assert.ok(sendSpans)
+          sendSpans.forEach(s => assertSpanHasParent(transactionSpan, s));
           assert.ok(haveSameTraceId(spans));
         });
 
@@ -816,19 +816,23 @@ describe('instrumentation-kafkajs', () => {
             ],
           });
           await tx.commit();
-
           const spans = getTestSpans();
-          const parent = spans.find(s => s.name === 'transaction')!;
-          const sends = spans.filter(s => s.name.startsWith('send'));
-          assertSuccessfulSendSpansGroupedByTopic({
-            spans: sends,
+          const transactionSpan = spans.find(s => s.name === 'transaction');
+          const sendSpans = spans.filter(s => s.name.startsWith('send'));
+          assert.ok(transactionSpan)
+          assert.strictEqual(sendSpans.length, 3)
+          assert.strictEqual(spans[0].name, 'send topic-name-1');
+          assert.strictEqual(spans[1].name, 'send topic-name-1');
+          assert.strictEqual(spans[2].name, 'send topic-name-2');
+          assertSuccessfulSendSpans({
+            spans: sendSpans,
             metricReader,
             expectedMetrics: [
               { topic: 'topic-name-1', value: 2 },
               { topic: 'topic-name-2', value: 1 },
             ],
           });
-          sends.forEach(s => assertSpanHasParent(parent, s));
+          sendSpans.forEach(s => assertSpanHasParent(transactionSpan, s));
           assert.ok(haveSameTraceId(spans));
         });
       });
@@ -844,7 +848,7 @@ describe('instrumentation-kafkajs', () => {
           producer = kafka.producer();
         });
 
-        it('sets send span to error when send fails', async () => {
+        it('sets send span and transaction span to error when send fails', async () => {
           const tx = await producer.transaction();
           await assert.rejects(
             tx.send({ topic: 'topic-name-1', messages: [{ value: 'oops' }] })
@@ -852,24 +856,29 @@ describe('instrumentation-kafkajs', () => {
           await tx.abort();
 
           const spans = getTestSpans();
-          const [transactionSpan, send] = [
-            spans.find(s => s.name === 'transaction')!,
-            spans.find(s => s.name.startsWith('send'))!,
+          const [transactionSpan, sendSpan] = [
+            spans.find(s => s.name === 'transaction'),
+            spans.find(s => s.name === 'send topic-name-1'),
           ];
-          assertSpanHasParent(transactionSpan, send);
-          await assertFailedSendSpansGroupedByTopic({
-            spans: [send],
+          assert.ok(transactionSpan)
+          assert.ok(sendSpan)
+          const errorMessage =
+            'error thrown from kafka client transaction send';
+          assertSpanHasParent(transactionSpan, sendSpan);
+          await assertFailedSendSpans({
+            spans: [sendSpan],
             metricReader,
-            errorMessage: 'error thrown from kafka client transaction send',
+            errorMessage,
             expectedTopicCounts: {
               'topic-name-1': 1,
             },
           });
-          assert.strictEqual(transactionSpan.status.code, SpanStatusCode.UNSET);
+          assert.strictEqual(transactionSpan.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(transactionSpan.status.message, errorMessage);
           assert.ok(haveSameTraceId(spans));
         });
 
-        it('sets all sendBatch spans to error when sendBatch fails', async () => {
+        it('sets all sendBatch spans and transaction span to error when sendBatch fails', async () => {
           const tx = await producer.transaction();
           await assert.rejects(
             tx.sendBatch({
@@ -884,10 +893,12 @@ describe('instrumentation-kafkajs', () => {
           await tx.abort();
 
           const spans = getTestSpans();
-          const parent = spans.find(s => s.name === 'transaction')!;
-          const sends = spans.filter(s => s.name === 'send topic-name-1');
-          await assertFailedSendSpansGroupedByTopic({
-            spans: sends,
+          const transactionSpan = spans.find(s => s.name === 'transaction');
+          const sendSpans = spans.filter(s => s.name === 'send topic-name-1');
+          assert.ok(transactionSpan)
+          assert.ok(sendSpans)
+          await assertFailedSendSpans({
+            spans: sendSpans,
             metricReader,
             errorMessage:
               'error thrown from kafka client transaction sendBatch',
@@ -895,9 +906,13 @@ describe('instrumentation-kafkajs', () => {
               'topic-name-1': 2,
             },
           });
-          sends.forEach(s => {
-            assertSpanHasParent(parent, s);
+          const errorMessage =
+            'error thrown from kafka client transaction sendBatch';
+          sendSpans.forEach(s => {
+            assertSpanHasParent(transactionSpan, s);
           });
+          assert.strictEqual(transactionSpan.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(transactionSpan.status.message, errorMessage);
           assert.ok(haveSameTraceId(spans));
         });
       });
@@ -919,19 +934,22 @@ describe('instrumentation-kafkajs', () => {
           );
 
           const spans = getTestSpans();
-          assert.equal(spans.length, 1);
+          assert.strictEqual(spans.length, 1);
 
-          const transactionSpan = spans.find(s => s.name === 'transaction')!;
+          const transactionSpan = spans.find(s => s.name === 'transaction');
           assert.ok(transactionSpan);
-          assert.equal(transactionSpan.kind, SpanKind.INTERNAL);
-          assert.equal(transactionSpan.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
+          assert.strictEqual(transactionSpan.status.code, SpanStatusCode.ERROR);
 
           assert.strictEqual(
             transactionSpan.status.code,
             SpanStatusCode.ERROR,
             `Expected transactionSpan status.code to be ERROR`
           );
-
+          assert.strictEqual(
+            transactionSpan.status.message,
+            'error thrown from kafka client transaction'
+          );
           const exceptionEvent = transactionSpan.events.find(
             e => e.name === 'exception'
           );

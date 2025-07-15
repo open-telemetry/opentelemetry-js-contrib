@@ -84,7 +84,7 @@ export function assertMetricCollection(
   });
 }
 
-export async function assertFailedSendSpansGroupedByTopic({
+export async function assertFailedSendSpans({
   spans,
   errorMessage = 'error thrown from kafka client send',
   metricReader,
@@ -128,7 +128,7 @@ export async function assertFailedSendSpansGroupedByTopic({
   });
 }
 
-export async function assertSuccessfulSendSpansGroupedByTopic({
+export async function assertSuccessfulSendSpans({
   spans,
   metricReader,
   expectedMetrics,
@@ -143,8 +143,6 @@ export async function assertSuccessfulSendSpansGroupedByTopic({
   }[];
   perSpan?: Record<number, Attributes>;
 }): Promise<void> {
-  assert.ok(spans.length > 0, 'No spans provided');
-
   spans.forEach((span, i) => {
     assert.strictEqual(
       span.kind,

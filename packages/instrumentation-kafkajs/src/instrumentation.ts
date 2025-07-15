@@ -540,7 +540,14 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
                 () => {
                   const patched =
                     instrumentation._getProducerSendPatch()(originalSend);
-                  return patched.apply(this, args);
+                  return patched.apply(this, args).catch(err => {
+                    transactionSpan.setStatus({
+                      code: SpanStatusCode.ERROR,
+                      message: err?.message,
+                    });
+                    transactionSpan.recordException(err);
+                    throw err;
+                  });
                 }
               );
             };
@@ -557,7 +564,14 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
                     instrumentation._getProducerSendBatchPatch()(
                       originalSendBatch
                     );
-                  return patched.apply(this, args);
+                  return patched.apply(this, args).catch(err => {
+                    transactionSpan.setStatus({
+                      code: SpanStatusCode.ERROR,
+                      message: err?.message,
+                    });
+                    transactionSpan.recordException(err);
+                    throw err;
+                  });
                 }
               );
             };
@@ -591,6 +605,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           .catch(err => {
             transactionSpan.setStatus({
               code: SpanStatusCode.ERROR,
+              message: err?.message,
             });
             transactionSpan.recordException(err);
             transactionSpan.end();
