@@ -1,0 +1,98 @@
+{
+  "name": "@opentelemetry/plugin-react-load",
+  "version": "0.35.0",
+  "description": "OpenTelemetry instrumentation for React class component lifecycle methods",
+  "main": "build/src/index.js",
+  "module": "build/esm/index.js",
+  "esnext": "build/esnext/index.js",
+  "types": "build/src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "packages/plugin-react-load"
+  },
+  "scripts": {
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../scripts/lint-readme.js",
+    "version:update": "node ../../scripts/version-update.js",
+    "setup:dev": "nx run-many -t compile -p @opentelemetry/plugin-react-load",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "prepublishOnly": "npm run compile",
+    "tdd": "karma start",
+    "test:browser": "nyc karma start --single-run",
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
+  },
+  "keywords": [
+    "opentelemetry",
+    "react",
+    "web",
+    "tracing",
+    "profiling",
+    "plugin"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": "^18.19.0 || >=20.6.0"
+  },
+  "files": [
+    "build/esm/**/*.js",
+    "build/esm/**/*.map",
+    "build/esm/**/*.d.ts",
+    "build/esnext/**/*.js",
+    "build/esnext/**/*.map",
+    "build/esnext/**/*.d.ts",
+    "build/src/**/*.js",
+    "build/src/**/*.map",
+    "build/src/**/*.d.ts"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@babel/core": "7.24.6",
+    "@babel/preset-env": "7.24.6",
+    "@opentelemetry/api": "^1.0.0",
+    "@opentelemetry/propagator-b3": "^2.0.0",
+    "@opentelemetry/sdk-trace-base": "^2.0.0",
+    "@opentelemetry/sdk-trace-web": "^2.0.0",
+    "@types/mocha": "10.0.10",
+    "@types/node": "18.18.14",
+    "@types/react": "17.0.87",
+    "@types/react-addons-test-utils": "0.14.26",
+    "@types/react-dom": "17.0.26",
+    "@types/shimmer": "1.0.3",
+    "@types/sinon": "17.0.4",
+    "@types/webpack-env": "1.16.3",
+    "assert": "2.0.0",
+    "babel-loader": "8.3.0",
+    "babel-plugin-istanbul": "7.0.0",
+    "karma": "6.4.4",
+    "karma-chrome-launcher": "3.1.0",
+    "karma-coverage": "2.2.1",
+    "karma-mocha": "2.0.1",
+    "karma-spec-reporter": "0.0.36",
+    "karma-webpack": "5.0.1",
+    "nyc": "17.1.0",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
+    "rimraf": "5.0.10",
+    "sinon": "15.1.2",
+    "ts-loader": "9.5.2",
+    "typescript": "5.0.4",
+    "webpack": "5.94.0",
+    "webpack-cli": "5.1.4",
+    "webpack-merge": "5.10.0"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.0.0",
+    "react": "^16.13.1 || ^17.0.0"
+  },
+  "dependencies": {
+    "@opentelemetry/instrumentation": "^0.203.0",
+    "shimmer": "^1.2.1"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/plugin-react-load#readme"
+}

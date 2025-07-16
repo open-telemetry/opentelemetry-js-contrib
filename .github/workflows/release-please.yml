@@ -3,6 +3,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 name: Run Release Please
 jobs:
   release-please:

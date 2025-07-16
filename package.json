@@ -55,7 +55,7 @@
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.1",
     "glob": "^10.4.5",
-    "lerna": "8.2.2",
+    "lerna": "8.2.3",
     "lerna-changelog": "2.2.0",
     "markdownlint-cli2": "0.13.0",
     "minimatch": "^9.0.3",
@@ -81,11 +81,6 @@
     ]
   },
   "workspaces": [
-    "packages/*",
-    "plugins/node/*",
-    "plugins/web/*",
-    "propagators/*",
-    "detectors/node/*",
-    "metapackages/*"
+    "packages/*"
   ]
 }
