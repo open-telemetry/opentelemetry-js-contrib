@@ -8,8 +8,8 @@
     "access": "public"
   },
   "scripts": {
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/sql-common",
     "compile": "tsc --build tsconfig.json",
     "prepublishOnly": "npm run compile",
