@@ -289,7 +289,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         instrumentation._wrap(
           newProducer,
           'sendBatch',
-          instrumentation._getProducerSendBatchPatch()
+          instrumentation._getSendBatchPatch()
         );
 
         if (isWrapped(newProducer.send)) {
@@ -298,7 +298,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         instrumentation._wrap(
           newProducer,
           'send',
-          instrumentation._getProducerSendPatch()
+          instrumentation._getSendPatch()
         );
 
         if (isWrapped(newProducer.transaction)) {
@@ -530,7 +530,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
 
         transactionPromise
           .then((transaction: kafkaJs.Transaction) => {
-            const originalSend = transaction.send.bind(transaction);
+            const originalSend = transaction.send;
             transaction.send = function send(
               this: kafkaJs.Transaction,
               ...args
@@ -538,8 +538,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
               return context.with(
                 trace.setSpan(context.active(), transactionSpan),
                 () => {
-                  const patched =
-                    instrumentation._getProducerSendPatch()(originalSend);
+                  const patched = instrumentation._getSendPatch()(originalSend);
                   return patched.apply(this, args).catch(err => {
                     transactionSpan.setStatus({
                       code: SpanStatusCode.ERROR,
@@ -552,7 +551,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
               );
             };
 
-            const originalSendBatch = transaction.sendBatch.bind(transaction);
+            const originalSendBatch = transaction.sendBatch;
             transaction.sendBatch = function sendBatch(
               this: kafkaJs.Transaction,
               ...args
@@ -561,9 +560,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
                 trace.setSpan(context.active(), transactionSpan),
                 () => {
                   const patched =
-                    instrumentation._getProducerSendBatchPatch()(
-                      originalSendBatch
-                    );
+                    instrumentation._getSendBatchPatch()(originalSendBatch);
                   return patched.apply(this, args).catch(err => {
                     transactionSpan.setStatus({
                       code: SpanStatusCode.ERROR,
@@ -576,7 +573,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
               );
             };
 
-            const originalCommit = transaction.commit.bind(transaction);
+            const originalCommit = transaction.commit;
             transaction.commit = function commit(
               this: kafkaJs.Transaction,
               ...args
@@ -589,7 +586,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
               );
             };
 
-            const originalAbort = transaction.abort.bind(transaction);
+            const originalAbort = transaction.abort;
             transaction.abort = function abort(
               this: kafkaJs.Transaction,
               ...args
@@ -616,7 +613,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     };
   }
 
-  private _getProducerSendBatchPatch() {
+  private _getSendBatchPatch() {
     const instrumentation = this;
     return (
       original: Producer['sendBatch'] | kafkaJs.Transaction['sendBatch']
@@ -665,7 +662,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     };
   }
 
-  private _getProducerSendPatch() {
+  private _getSendPatch() {
     const instrumentation = this;
     return (original: Producer['send'] | kafkaJs.Transaction['send']) => {
       return function send(
