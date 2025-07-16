@@ -27,7 +27,6 @@ class Content extends BaseOpenTelemetryComponent {
     };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   componentDidMount() {
     // Example, do something here
   }
