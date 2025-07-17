@@ -91,8 +91,7 @@ describe('ioredis', () => {
   });
   let ioredis: typeof ioredisTypes.default;
   let instrumentation: IORedisInstrumentation;
-  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
-  const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
+  const shouldTest = process.env.RUN_REDIS_TESTS;
 
   let contextManager: AsyncLocalStorageContextManager;
   beforeEach(() => {
@@ -113,19 +112,9 @@ describe('ioredis', () => {
       this.skip();
     }
 
-    if (shouldTestLocal) {
-      testUtils.startDocker('redis');
-    }
-
     instrumentation = new IORedisInstrumentation();
     instrumentation.setTracerProvider(provider);
     ioredis = require('ioredis');
-  });
-
-  after(() => {
-    if (shouldTestLocal) {
-      testUtils.cleanUpDocker('redis');
-    }
   });
 
   it('should have correct module name', () => {

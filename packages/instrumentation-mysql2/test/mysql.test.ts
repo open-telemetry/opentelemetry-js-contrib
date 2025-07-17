@@ -76,7 +76,7 @@ const execPromise = (conn: Connection, command: string) => {
 
 describe('mysql2', () => {
   // assumes local mysql db is already available in CI or
-  // using `npm run test-services:start` script at the root folder
+  // using `npm run test-services:start` script
   const shouldTest = process.env.RUN_MYSQL_TESTS;
 
   before(async function () {

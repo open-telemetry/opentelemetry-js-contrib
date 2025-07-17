@@ -93,31 +93,16 @@ describe('tedious', () => {
   const provider = new BasicTracerProvider({
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
-  const shouldTest = process.env.RUN_MSSQL_TESTS; // For CI: assumes local db is already available
-  const shouldTestLocally = process.env.RUN_MSSQL_TESTS_LOCAL; // For local: spins up local db via docker
+  const shouldTest = process.env.RUN_MSSQL_TESTS;
 
   before(function (done) {
-    if (!(shouldTest || shouldTestLocally) || incompatVersions) {
+    if (!shouldTest || incompatVersions) {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
       this.skip();
     }
-    if (shouldTestLocally) {
-      testUtils.startDocker('mssql');
-      // wait 15 seconds for docker container to start
-      this.timeout(20000);
-      setTimeout(done, 15000);
-    } else {
-      done();
-    }
-  });
-
-  after(function () {
-    if (shouldTestLocally) {
-      this.timeout(15000);
-      testUtils.cleanUpDocker('mssql');
-    }
+    done();
   });
 
   beforeEach(async function () {
