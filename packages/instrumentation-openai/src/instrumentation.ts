@@ -193,7 +193,6 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         }
 
         debug('OpenAI.Chat.Completions.create args: %O', args);
-        /** type ChatCompletionCreateParamsStreaming */
         const params = args[0];
         const config = self.getConfig();
         const startNow = performance.now();
@@ -215,7 +214,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
 
         // Streaming.
         if (isStreamPromise(params, apiPromise)) {
-          // When streaming, `apiPromise` resolves to `import('openai/streaming').Stream`,
+          // When streaming, `apiPromise` resolves to `Stream`,
           // an async iterable (i.e. has a `Symbol.asyncIterator` method). We
           // want to wrap that iteration to gather telemetry. Instead of wrapping
           // `Symbol.asyncIterator`, which would be nice, we wrap the `iterator`

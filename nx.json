@@ -31,6 +31,9 @@
       ]
     },
     "lint": {
+      "dependsOn": [
+        "version:update",
+      ],
       "inputs": [
         "{projectRoot}/src/**/*.ts",
         "{projectRoot}/test/**/*.ts"
