@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 export { OpenAIInstrumentation } from './instrumentation';
-export { OpenAIInstrumentationConfig } from './types';
+export type { OpenAIInstrumentationConfig } from './types';

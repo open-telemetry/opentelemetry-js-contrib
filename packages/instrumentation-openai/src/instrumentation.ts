@@ -22,7 +22,24 @@ import {
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 import { SeverityNumber } from '@opentelemetry/api-logs';
-import type { OpenAI } from 'openai';
+import type {
+  ChatCompletion,
+  ChatCompletionMessageToolCall,
+  ChatCompletionContentPart,
+  ChatCompletionContentPartRefusal,
+  ChatCompletionContentPartText,
+  ChatCompletionCreateParams,
+  ChatCompletionMessageParam,
+  ChatCompletionChunk,
+  Completions as ChatCompletions,
+} from 'openai/resources/chat/completions';
+import type { APIPromise } from 'openai/core';
+import type {
+  CreateEmbeddingResponse,
+  Embeddings,
+  EmbeddingCreateParams,
+} from 'openai/resources/embeddings';
+import type { Stream } from 'openai/streaming';
 
 import {
   ATTR_EVENT_NAME,
@@ -165,11 +182,11 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
 
   _getPatchedChatCompletionsCreate() {
     const self = this;
-    return (original: OpenAI.Chat.Completions['create']) => {
+    return (original: ChatCompletions['create']) => {
       // https://platform.openai.com/docs/api-reference/chat/create
       return function patchedCreate(
-        this: OpenAI.Chat.Completions,
-        ...args: Parameters<OpenAI.Chat.Completions['create']>
+        this: ChatCompletions,
+        ...args: Parameters<ChatCompletions['create']>
       ) {
         if (!self.isEnabled) {
           return original.apply(this, args);
@@ -197,7 +214,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         const apiPromise = context.with(ctx, () => original.apply(this, args));
 
         // Streaming.
-        if (params && params.stream) {
+        if (isStreamPromise(params, apiPromise)) {
           // When streaming, `apiPromise` resolves to `import('openai/streaming').Stream`,
           // an async iterable (i.e. has a `Symbol.asyncIterator` method). We
           // want to wrap that iteration to gather telemetry. Instead of wrapping
@@ -228,7 +245,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
               span,
               startNow,
               commonAttrs,
-              result as OpenAI.ChatCompletion,
+              result as ChatCompletion,
               config,
               ctx
             );
@@ -247,7 +264,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * as appropriate for the request params.
    */
   _startChatCompletionsSpan(
-    params: OpenAI.ChatCompletionCreateParams,
+    params: ChatCompletionCreateParams,
     config: OpenAIInstrumentationConfig,
     baseURL: string | undefined
   ) {
@@ -303,7 +320,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
 
     // Capture prompts as log events.
     const timestamp = Date.now();
-    params.messages.forEach((msg: OpenAI.ChatCompletionMessageParam) => {
+    params.messages.forEach((msg: ChatCompletionMessageParam) => {
       switch (msg.role) {
         case 'system': {
           const body: GenAISystemMessageEventBody = {};
@@ -331,7 +348,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           if (config.captureMessageContent) {
             if (Array.isArray(msg.content)) {
               body.content = msg.content
-                .filter(p => p.type === 'text')
+                .filter(isTextContent)
                 .map(p => p.text)
                 .join('');
             } else {
@@ -356,7 +373,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             if (msg.content) {
               if (Array.isArray(msg.content)) {
                 body.content = msg.content
-                  .filter(p => p.type === 'text')
+                  .filter(isTextContent)
                   .map(p => p.text)
                   .join('');
               } else {
@@ -433,7 +450,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * data from those chunks, then end the span.
    */
   async *_onChatCompletionsStreamIterator(
-    streamIter: AsyncIterator<OpenAI.ChatCompletionChunk>,
+    streamIter: AsyncIterator<ChatCompletionChunk>,
     span: Span,
     startNow: number,
     config: OpenAIInstrumentationConfig,
@@ -454,7 +471,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       if (!choices[idx]) {
         choices[idx] = {} as {
           content: string;
-          toolCalls: OpenAI.ChatCompletionMessageToolCall[];
+          toolCalls: ChatCompletionMessageToolCall[];
         };
       }
       if (config.captureMessageContent) {
@@ -582,7 +599,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     span: Span,
     startNow: number,
     commonAttrs: Attributes,
-    result: OpenAI.ChatCompletion,
+    result: ChatCompletion,
     config: OpenAIInstrumentationConfig,
     ctx: Context
   ) {
@@ -707,11 +724,11 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
 
   _getPatchedEmbeddingsCreate() {
     const self = this;
-    return (original: OpenAI.Embeddings['create']) => {
+    return (original: Embeddings['create']) => {
       // https://platform.openai.com/docs/api-reference/embeddings/create
       return function patchedCreate(
-        this: OpenAI.Embeddings,
-        ...args: Parameters<OpenAI.Embeddings['create']>
+        this: Embeddings,
+        ...args: Parameters<Embeddings['create']>
       ) {
         if (!self.isEnabled) {
           return original.apply(this, args);
@@ -750,7 +767,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * as appropriate for the request params.
    */
   _startEmbeddingsSpan(
-    params: OpenAI.EmbeddingCreateParams,
+    params: EmbeddingCreateParams,
     baseURL: string | undefined
   ) {
     // Attributes common to span, metrics, log events.
@@ -785,7 +802,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     span: Span,
     startNow: number,
     commonAttrs: Attributes,
-    result: OpenAI.CreateEmbeddingResponse
+    result: CreateEmbeddingResponse
   ) {
     debug('OpenAI.Embeddings.create result: %O', result);
     try {
@@ -816,4 +833,20 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     }
     span.end();
   }
+}
+
+function isTextContent(
+  value: ChatCompletionContentPart | ChatCompletionContentPartRefusal
+): value is ChatCompletionContentPartText {
+  return value.type === 'text';
+}
+
+function isStreamPromise(
+  params: ChatCompletionCreateParams | undefined,
+  value: APIPromise<Stream<ChatCompletionChunk> | ChatCompletion>
+): value is APIPromise<Stream<ChatCompletionChunk>> {
+  if (params && params.stream) {
+    return true;
+  }
+  return false;
 }
