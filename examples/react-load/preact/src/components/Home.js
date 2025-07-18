@@ -20,7 +20,6 @@ import { Link } from 'preact-router/match';
 import { BaseOpenTelemetryComponent } from '@opentelemetry/plugin-react-load';
 
 class Home extends BaseOpenTelemetryComponent {
-  // eslint-disable-next-line class-methods-use-this
   render() {
     return (
       <div>
