@@ -73,6 +73,7 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
   }
 
   override enable() {
+    super.enable();
     if (!this._collectors) return;
 
     for (const collector of this._collectors) {
@@ -81,6 +82,7 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
   }
 
   override disable() {
+    super.disable();
     for (const collector of this._collectors) {
       collector.disable();
     }
