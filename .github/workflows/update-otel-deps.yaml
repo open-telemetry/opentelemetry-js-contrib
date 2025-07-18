@@ -9,6 +9,8 @@ permissions:
 jobs:
   create-or-update-deps-pr:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # required for pushing changes
     steps:
       - name: Fork
         run: gh repo fork open-telemetry/opentelemetry-js-contrib
