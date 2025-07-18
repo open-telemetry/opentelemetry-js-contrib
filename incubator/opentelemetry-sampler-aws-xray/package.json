@@ -30,8 +30,8 @@
   "scripts": {
     "setup:dev": "nx run-many -t compile -p @opentelemetry/sampler-aws-xray",
     "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
