@@ -67,6 +67,7 @@ import {
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
 } from './semconv';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getEnvBool, getAttrsFromBaseURL } from './utils';
 import { OpenAIInstrumentationConfig } from './types';
