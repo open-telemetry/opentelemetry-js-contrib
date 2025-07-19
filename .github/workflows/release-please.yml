@@ -11,6 +11,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     permissions:
+      contents: write # required for pushing changes
       id-token: write
     steps:
       # The logic below handles the npm publication:
