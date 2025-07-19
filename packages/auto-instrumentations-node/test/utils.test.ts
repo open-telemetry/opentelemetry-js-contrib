@@ -172,6 +172,76 @@ describe('utils', () => {
 
       spy.restore();
     });
+
+    it('should enable fs instrumentation when explicitly enabled and OTEL_NODE_ENABLED_INSTRUMENTATIONS is not set', () => {
+      const instrumentations = getNodeAutoInstrumentations({
+        '@opentelemetry/instrumentation-fs': {
+          enabled: true,
+        },
+      });
+      const fsInstrumentation = instrumentations.find(
+        instr =>
+          instr.instrumentationName === '@opentelemetry/instrumentation-fs'
+      );
+      assert.notStrictEqual(
+        fsInstrumentation,
+        undefined,
+        'fs instrumentation should be included when explicitly enabled in config and env var is not set'
+      );
+    });
+
+    it('should respect OTEL_NODE_ENABLED_INSTRUMENTATIONS - env var overrides user config', () => {
+      process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS = 'fs,http';
+      try {
+        const instrumentations = getNodeAutoInstrumentations({
+          '@opentelemetry/instrumentation-fs': {
+            enabled: false, // User tries to disable but env var overrides
+          },
+          '@opentelemetry/instrumentation-express': {
+            enabled: true, // User tries to enable but not in env var list
+          },
+        });
+        
+        const fsInstrumentation = instrumentations.find(
+          instr => instr.instrumentationName === '@opentelemetry/instrumentation-fs'
+        );
+        const httpInstrumentation = instrumentations.find(
+          instr => instr.instrumentationName === '@opentelemetry/instrumentation-http'
+        );
+        const expressInstrumentation = instrumentations.find(
+          instr => instr.instrumentationName === '@opentelemetry/instrumentation-express'
+        );
+        
+        assert.notStrictEqual(fsInstrumentation, undefined, 'fs should be enabled by env var despite user config');
+        assert.notStrictEqual(httpInstrumentation, undefined, 'http should be enabled by env var');
+        assert.strictEqual(expressInstrumentation, undefined, 'express should be disabled - not in env var list');
+      } finally {
+        delete process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
+      }
+    });
+
+    it('should respect OTEL_NODE_DISABLED_INSTRUMENTATIONS with absolute priority', () => {
+      process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS = 'http';
+      try {
+        const instrumentations = getNodeAutoInstrumentations({
+          '@opentelemetry/instrumentation-http': {
+            enabled: true, // User tries to enable but env var disables
+          },
+        });
+        const httpInstrumentation = instrumentations.find(
+          instr =>
+            instr.instrumentationName === '@opentelemetry/instrumentation-http'
+        );
+        
+        assert.strictEqual(
+          httpInstrumentation,
+          undefined,
+          'http instrumentation should be disabled by OTEL_NODE_DISABLED_INSTRUMENTATIONS even when user enables it'
+        );
+      } finally {
+        delete process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS;
+      }
+    });
   });
 
   describe('getResourceDetectorsFromEnv', () => {
