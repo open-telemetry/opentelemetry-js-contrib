@@ -454,290 +454,283 @@ describe('AwsEcsResourceDetector', () => {
   });
 });
 
-describe('AwsEcsDetector - Container ID extraction improvements', () => {
-  let readStub: sinon.SinonStub;
+  describe('Container ID extraction', () => {
+    const testMetadataUri = 'http://169.254.170.2/v4/test';
+    const testHostname = 'test-hostname';
+    let readStub: sinon.SinonStub;
 
-  beforeEach(() => {
-    process.env.ECS_CONTAINER_METADATA_URI_V4 = 'http://169.254.170.2/v4/test';
-  });
+    beforeEach(() => {
+      process.env.ECS_CONTAINER_METADATA_URI_V4 = testMetadataUri;
+    });
 
-  afterEach(() => {
-    sinon.restore();
-  });
+    afterEach(() => {
+      sinon.restore();
+    });
 
-  describe('New AWS ECS Fargate cgroup format support', () => {
-    it('should extract full container ID from new AWS ECS Fargate format', async () => {
-      const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
-      const containerId = '1234567890abcdef';
-      const cgroupData = `/ecs/${taskId}/${taskId}-${containerId}`;
-      
-      sinon.stub(os, 'hostname').returns('test-hostname');
+    function setupMocks(cgroupData: string) {
+      sinon.stub(os, 'hostname').returns(testHostname);
       readStub = sinon
         .stub(AwsEcsDetector, 'readFileAsync' as any)
         .resolves(cgroupData);
-      
-      // Mock the metadata requests
-      const nockScope = nock('http://169.254.170.2:80')
+    }
+
+    function setupMetadataNock() {
+      return nock('http://169.254.170.2:80')
         .persist(false)
         .get('/v4/test')
-        .reply(200, { ContainerARN: 'arn:aws:ecs:us-west-2:111122223333:container/test' })
+        .reply(200, {
+          ContainerARN: 'arn:aws:ecs:us-west-2:111122223333:container/test',
+        })
         .get('/v4/test/task')
-        .reply(200, { 
+        .reply(200, {
           TaskARN: 'arn:aws:ecs:us-west-2:111122223333:task/default/test',
           Family: 'test-family',
           Revision: '1',
           Cluster: 'test-cluster',
-          LaunchType: 'FARGATE'
+          LaunchType: 'FARGATE',
+        });
+    }
+
+    describe('new AWS ECS Fargate cgroup format', () => {
+      it('should extract full container ID from new Fargate format', async () => {
+        const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
+        const containerId = '1234567890abcdef';
+        const cgroupData = `/ecs/${taskId}/${taskId}-${containerId}`;
+
+        setupMocks(cgroupData);
+        const nockScope = setupMetadataNock();
+
+        const resource = detectResources({ detectors: [awsEcsDetector] });
+        await resource.waitForAsyncAttributes?.();
+
+        sinon.assert.calledOnce(readStub);
+        assert.ok(resource);
+        assertEcsResource(resource, {});
+        assertContainerResource(resource, {
+          name: testHostname,
+          id: `${taskId}-${containerId}`,
         });
 
-      const resource = detectResources({ detectors: [awsEcsDetector] });
-      await resource.waitForAsyncAttributes?.();
-
-      sinon.assert.calledOnce(readStub);
-      assert.ok(resource);
-      assertEcsResource(resource, {});
-      assertContainerResource(resource, {
-        name: 'test-hostname',
-        id: `${taskId}-${containerId}`, // Expected: full taskId-containerId, not truncated
+        nockScope.done();
       });
-      
-      nockScope.done();
+
+      it('should extract container ID from long cgroup path without truncation', async () => {
+        const longTaskId = 'abcdefgh12345678abcdefgh12345678abcdefgh12345678';
+        const containerId = '1234567890abcdef';
+        const cgroupData = `/ecs/${longTaskId}/${longTaskId}-${containerId}`;
+
+        setupMocks(cgroupData);
+        const nockScope = setupMetadataNock();
+
+        const resource = detectResources({ detectors: [awsEcsDetector] });
+        await resource.waitForAsyncAttributes?.();
+
+        sinon.assert.calledOnce(readStub);
+        assert.ok(resource);
+        assertEcsResource(resource, {});
+        assertContainerResource(resource, {
+          name: testHostname,
+          id: `${longTaskId}-${containerId}`,
+        });
+
+        nockScope.done();
+      });
+
+      it('should handle multiple cgroup lines and pick the valid one', async () => {
+        const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
+        const containerId = '1234567890abcdef';
+        const cgroupData = [
+          '12:memory:/ecs',
+          '11:cpu:/ecs/task-id',
+          `10:devices:/ecs/${taskId}/${taskId}-${containerId}`,
+          '9:freezer:/ecs',
+        ].join('\n');
+
+        setupMocks(cgroupData);
+        const nockScope = setupMetadataNock();
+
+        const resource = detectResources({ detectors: [awsEcsDetector] });
+        await resource.waitForAsyncAttributes?.();
+
+        sinon.assert.calledOnce(readStub);
+        assert.ok(resource);
+        assertEcsResource(resource, {});
+        assertContainerResource(resource, {
+          name: testHostname,
+          id: `${taskId}-${containerId}`,
+        });
+
+        nockScope.done();
+      });
     });
 
-    it('should extract container ID from long cgroup path without truncation', async () => {
-      // Simulate the actual issue where the path is longer than 64 chars
-      const longTaskId = 'abcdefgh12345678abcdefgh12345678abcdefgh12345678';
-      const containerId = '1234567890abcdef';
-      const cgroupData = `/ecs/${longTaskId}/${longTaskId}-${containerId}`;
-      
-      sinon.stub(os, 'hostname').returns('test-hostname');
-      readStub = sinon
-        .stub(AwsEcsDetector, 'readFileAsync' as any)
-        .resolves(cgroupData);
-      
-      // Mock the metadata requests  
-      const nockScope = nock('http://169.254.170.2:80')
-        .persist(false)
-        .get('/v4/test')
-        .reply(200, { ContainerARN: 'arn:aws:ecs:us-west-2:111122223333:container/test' })
-        .get('/v4/test/task')
-        .reply(200, { 
-          TaskARN: 'arn:aws:ecs:us-west-2:111122223333:task/default/test',
-          Family: 'test-family',
-          Revision: '1',
-          Cluster: 'test-cluster',
-          LaunchType: 'FARGATE'
+    describe('alternative container runtime formats', () => {
+      it('should handle containerd format with colon separators', async () => {
+        const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
+        const containerId = '1234567890abcdef';
+        const cgroupData = `0::/system.slice/containerd.service/kubepods-burstable-pod.slice:cri-containerd:${taskId}-${containerId}`;
+
+        setupMocks(cgroupData);
+        const nockScope = setupMetadataNock();
+
+        const resource = detectResources({ detectors: [awsEcsDetector] });
+        await resource.waitForAsyncAttributes?.();
+
+        sinon.assert.calledOnce(readStub);
+        assert.ok(resource);
+        assertEcsResource(resource, {});
+        assertContainerResource(resource, {
+          name: testHostname,
+          id: `${taskId}-${containerId}`,
         });
 
-      const resource = detectResources({ detectors: [awsEcsDetector] });
-      await resource.waitForAsyncAttributes?.();
-
-      sinon.assert.calledOnce(readStub);
-      assert.ok(resource);
-      assertEcsResource(resource, {});
-      assertContainerResource(resource, {
-        name: 'test-hostname',
-        id: `${longTaskId}-${containerId}`, // Should get full ID, not truncated
+        nockScope.done();
       });
-      
-      nockScope.done();
+
+      it('should handle docker prefix and scope suffix', async () => {
+        const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
+        const containerId = '1234567890abcdef';
+        const cgroupData = `/docker/docker-${taskId}-${containerId}.scope`;
+
+        setupMocks(cgroupData);
+        const nockScope = setupMetadataNock();
+
+        const resource = detectResources({ detectors: [awsEcsDetector] });
+        await resource.waitForAsyncAttributes?.();
+
+        sinon.assert.calledOnce(readStub);
+        assert.ok(resource);
+        assertEcsResource(resource, {});
+        assertContainerResource(resource, {
+          name: testHostname,
+          id: `${taskId}-${containerId}`,
+        });
+
+        nockScope.done();
+      });
     });
 
-    it('should handle multiple cgroup lines and pick the valid one', async () => {
-      const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
-      const containerId = '1234567890abcdef';
-      const cgroupData = [
-        '12:memory:/ecs',
-        '11:cpu:/ecs/task-id',
-        `10:devices:/ecs/${taskId}/${taskId}-${containerId}`,
-        '9:freezer:/ecs'
-      ].join('\n');
-      
-      sinon.stub(os, 'hostname').returns('test-hostname');
-      readStub = sinon
-        .stub(AwsEcsDetector, 'readFileAsync' as any)
-        .resolves(cgroupData);
-      
-      // Mock the metadata requests
-      const nockScope = nock('http://169.254.170.2:80')
-        .persist(false)
-        .get('/v4/test')
-        .reply(200, { ContainerARN: 'arn:aws:ecs:us-west-2:111122223333:container/test' })
-        .get('/v4/test/task')
-        .reply(200, { 
-          TaskARN: 'arn:aws:ecs:us-west-2:111122223333:task/default/test',
-          Family: 'test-family',
-          Revision: '1',
-          Cluster: 'test-cluster',
-          LaunchType: 'FARGATE'
+    describe('invalid container ID scenarios', () => {
+      it('should return resource without container ID for invalid format', async () => {
+        const invalidCgroupData = '/invalid/path/with/non-hex-characters!!!';
+
+        setupMocks(invalidCgroupData);
+        const nockScope = setupMetadataNock();
+
+        const resource = detectResources({ detectors: [awsEcsDetector] });
+        await resource.waitForAsyncAttributes?.();
+
+        sinon.assert.calledOnce(readStub);
+        assert.ok(resource);
+        assertEcsResource(resource, {});
+        assertContainerResource(resource, {
+          name: testHostname,
         });
 
-      const resource = detectResources({ detectors: [awsEcsDetector] });
-      await resource.waitForAsyncAttributes?.();
-
-      sinon.assert.calledOnce(readStub);
-      assert.ok(resource);
-      assertEcsResource(resource, {});
-      assertContainerResource(resource, {
-        name: 'test-hostname',
-        id: `${taskId}-${containerId}`,
+        nockScope.done();
       });
-      
-      nockScope.done();
-    });
-  });
 
-  describe('Edge cases and format variations', () => {
-    it('should handle containerd format with colon separators', async () => {
-      const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
-      const containerId = '1234567890abcdef';
-      const cgroupData = `0::/system.slice/containerd.service/kubepods-burstable-pod.slice:cri-containerd:${taskId}-${containerId}`;
-      
-      sinon.stub(os, 'hostname').returns('test-hostname');
-      readStub = sinon
-        .stub(AwsEcsDetector, 'readFileAsync' as any)
-        .resolves(cgroupData);
-      
-      // Mock the metadata requests
-      const nockScope = nock('http://169.254.170.2:80')
-        .persist(false)
-        .get('/v4/test')
-        .reply(200, { ContainerARN: 'arn:aws:ecs:us-west-2:111122223333:container/test' })
-        .get('/v4/test/task')
-        .reply(200, { 
-          TaskARN: 'arn:aws:ecs:us-west-2:111122223333:task/default/test',
-          Family: 'test-family',
-          Revision: '1',
-          Cluster: 'test-cluster',
-          LaunchType: 'FARGATE'
+      it('should return resource without container ID when too short', async () => {
+        const shortContainerId = 'short';
+        const cgroupData = `/ecs/task/${shortContainerId}`;
+
+        setupMocks(cgroupData);
+        const nockScope = setupMetadataNock();
+
+        const resource = detectResources({ detectors: [awsEcsDetector] });
+        await resource.waitForAsyncAttributes?.();
+
+        sinon.assert.calledOnce(readStub);
+        assert.ok(resource);
+        assertEcsResource(resource, {});
+        assertContainerResource(resource, {
+          name: testHostname,
         });
 
-      const resource = detectResources({ detectors: [awsEcsDetector] });
-      await resource.waitForAsyncAttributes?.();
-
-      sinon.assert.calledOnce(readStub);
-      assert.ok(resource);
-      assertEcsResource(resource, {});
-      assertContainerResource(resource, {
-        name: 'test-hostname',
-        id: `${taskId}-${containerId}`,
+        nockScope.done();
       });
-      
-      nockScope.done();
-    });
 
-    it('should handle docker prefix and scope suffix', async () => {
-      const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
-      const containerId = '1234567890abcdef';
-      const cgroupData = `/docker/docker-${taskId}-${containerId}.scope`;
-      
-      sinon.stub(os, 'hostname').returns('test-hostname');
-      readStub = sinon
-        .stub(AwsEcsDetector, 'readFileAsync' as any)
-        .resolves(cgroupData);
-      
-      // Mock the metadata requests
-      const nockScope = nock('http://169.254.170.2:80')
-        .persist(false)
-        .get('/v4/test')
-        .reply(200, { ContainerARN: 'arn:aws:ecs:us-west-2:111122223333:container/test' })
-        .get('/v4/test/task')
-        .reply(200, { 
-          TaskARN: 'arn:aws:ecs:us-west-2:111122223333:task/default/test',
-          Family: 'test-family',
-          Revision: '1',
-          Cluster: 'test-cluster',
-          LaunchType: 'FARGATE'
+      it('should return resource without container ID when too long', async () => {
+        const tooLongContainerId = 'a'.repeat(129);
+        const cgroupData = `/ecs/task/${tooLongContainerId}`;
+
+        setupMocks(cgroupData);
+        const nockScope = setupMetadataNock();
+
+        const resource = detectResources({ detectors: [awsEcsDetector] });
+        await resource.waitForAsyncAttributes?.();
+
+        sinon.assert.calledOnce(readStub);
+        assert.ok(resource);
+        assertEcsResource(resource, {});
+        assertContainerResource(resource, {
+          name: testHostname,
         });
 
-      const resource = detectResources({ detectors: [awsEcsDetector] });
-      await resource.waitForAsyncAttributes?.();
-
-      sinon.assert.calledOnce(readStub);
-      assert.ok(resource);
-      assertEcsResource(resource, {});
-      assertContainerResource(resource, {
-        name: 'test-hostname',
-        id: `${taskId}-${containerId}`,
+        nockScope.done();
       });
-      
-      nockScope.done();
+
+      it('should return resource without container ID with invalid characters', async () => {
+        const invalidContainerId = 'invalid@#$%container';
+        const cgroupData = `/ecs/task/${invalidContainerId}`;
+
+        setupMocks(cgroupData);
+        const nockScope = setupMetadataNock();
+
+        const resource = detectResources({ detectors: [awsEcsDetector] });
+        await resource.waitForAsyncAttributes?.();
+
+        sinon.assert.calledOnce(readStub);
+        assert.ok(resource);
+        assertEcsResource(resource, {});
+        assertContainerResource(resource, {
+          name: testHostname,
+        });
+
+        nockScope.done();
+      });
+
+      it('should return resource without container ID for empty processed segment', async () => {
+        const cgroupData = '/ecs/task/docker-.scope';
+
+        setupMocks(cgroupData);
+        const nockScope = setupMetadataNock();
+
+        const resource = detectResources({ detectors: [awsEcsDetector] });
+        await resource.waitForAsyncAttributes?.();
+
+        sinon.assert.calledOnce(readStub);
+        assert.ok(resource);
+        assertEcsResource(resource, {});
+        assertContainerResource(resource, {
+          name: testHostname,
+        });
+
+        nockScope.done();
+      });
     });
 
-    it('should return undefined for invalid container ID formats', async () => {
-      const invalidCgroupData = '/invalid/path/with/non-hex-characters!!!';
-      
-      sinon.stub(os, 'hostname').returns('test-hostname');
-      readStub = sinon
-        .stub(AwsEcsDetector, 'readFileAsync' as any)
-        .resolves(invalidCgroupData);
-      
-      // Mock the metadata requests
-      const nockScope = nock('http://169.254.170.2:80')
-        .persist(false)
-        .get('/v4/test')
-        .reply(200, { ContainerARN: 'arn:aws:ecs:us-west-2:111122223333:container/test' })
-        .get('/v4/test/task')
-        .reply(200, { 
-          TaskARN: 'arn:aws:ecs:us-west-2:111122223333:task/default/test',
-          Family: 'test-family',
-          Revision: '1',
-          Cluster: 'test-cluster',
-          LaunchType: 'FARGATE'
+    describe('backward compatibility', () => {
+      it('should handle legacy 64-character container ID format', async () => {
+        const legacyContainerId =
+          'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
+
+        setupMocks(legacyContainerId);
+        const nockScope = setupMetadataNock();
+
+        const resource = detectResources({ detectors: [awsEcsDetector] });
+        await resource.waitForAsyncAttributes?.();
+
+        sinon.assert.calledOnce(readStub);
+        assert.ok(resource);
+        assertEcsResource(resource, {});
+        assertContainerResource(resource, {
+          name: testHostname,
+          id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
         });
 
-      const resource = detectResources({ detectors: [awsEcsDetector] });
-      await resource.waitForAsyncAttributes?.();
-
-      sinon.assert.calledOnce(readStub);
-      assert.ok(resource);
-      assertEcsResource(resource, {});
-      assertContainerResource(resource, {
-        name: 'test-hostname',
-        // id should be undefined due to invalid format
+        nockScope.done();
       });
-      
-      nockScope.done();
-    });
-  });
-
-  describe('Backward compatibility', () => {
-    it('should fallback to original logic for legacy format', async () => {
-      // Test backward compatibility with existing 64-char format
-      const legacyContainerId = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
-      
-      sinon.stub(os, 'hostname').returns('test-hostname');
-      readStub = sinon
-        .stub(AwsEcsDetector, 'readFileAsync' as any)
-        .resolves(legacyContainerId);
-      
-      // Mock the metadata requests
-      const nockScope = nock('http://169.254.170.2:80')
-        .persist(false)
-        .get('/v4/test')
-        .reply(200, { ContainerARN: 'arn:aws:ecs:us-west-2:111122223333:container/test' })
-        .get('/v4/test/task')
-        .reply(200, { 
-          TaskARN: 'arn:aws:ecs:us-west-2:111122223333:task/default/test',
-          Family: 'test-family',
-          Revision: '1',
-          Cluster: 'test-cluster',
-          LaunchType: 'FARGATE'
-        });
-
-      const resource = detectResources({ detectors: [awsEcsDetector] });
-      await resource.waitForAsyncAttributes?.();
-
-      sinon.assert.calledOnce(readStub);
-      assert.ok(resource);
-      assertEcsResource(resource, {});
-      assertContainerResource(resource, {
-        name: 'test-hostname',
-        id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm', // Last 64 chars
-      });
-      
-      nockScope.done();
     });
   });
-});
 
