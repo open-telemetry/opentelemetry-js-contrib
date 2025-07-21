@@ -17,7 +17,6 @@
 'use strict';
 
 const api = require('@opentelemetry/api');
-/* eslint-disable global-require */
 const binaryPropagator = process.env.BINARY_PROPAGATOR === 'true';
 const censusTracer = process.env.CENSUS_TRACER === 'true';
 let tracer;
