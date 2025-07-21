@@ -42,10 +42,8 @@ export class RateLimiter {
       return false;
     }
 
-    const quotaPerMillis: number = this.quota / 1000.0;
-
     // assume divide by zero not possible
-    const costInMillis: number = cost / quotaPerMillis;
+    const costInMillis: number = (cost * 1000.0) / this.quota;
 
     const walletCeilingMillis: number = Date.now();
     let currentBalanceMillis: number =

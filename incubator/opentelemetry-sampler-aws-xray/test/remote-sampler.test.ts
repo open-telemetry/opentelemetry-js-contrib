@@ -22,7 +22,16 @@ import {
   resourceFromAttributes,
   emptyResource,
 } from '@opentelemetry/resources';
-import { context, Span, SpanKind, Tracer, trace } from '@opentelemetry/api';
+import {
+  context,
+  Span,
+  SpanKind,
+  Tracer,
+  trace,
+  Attributes,
+  Link,
+  Context,
+} from '@opentelemetry/api';
 import { SamplingDecision } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
@@ -43,11 +52,13 @@ const DATA_DIR_SAMPLING_RULES =
 const DATA_DIR_SAMPLING_TARGETS =
   __dirname + '/data/test-remote-sampler_sampling-targets-response-sample.json';
 const TEST_URL = 'http://localhost:2000';
+export const testTraceId = '0af7651916cd43dd8448eb211c80319c';
 
 describe('AWSXRayRemoteSampler', () => {
   let sampler: AWSXRayRemoteSampler;
 
   afterEach(() => {
+    sinon.restore();
     if (sampler != null) {
       sampler.stopPollers();
     }
@@ -136,7 +147,7 @@ describe('AWSXRayRemoteSampler', () => {
       expect(
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           { abc: '1234' },
@@ -150,7 +161,7 @@ describe('AWSXRayRemoteSampler', () => {
         expect(
           sampler.shouldSample(
             context.active(),
-            '1234',
+            testTraceId,
             'name',
             SpanKind.CLIENT,
             { abc: '1234' },
@@ -160,7 +171,7 @@ describe('AWSXRayRemoteSampler', () => {
         expect(
           sampler.shouldSample(
             context.active(),
-            '1234',
+            testTraceId,
             'name',
             SpanKind.CLIENT,
             { abc: '1234' },
@@ -170,7 +181,7 @@ describe('AWSXRayRemoteSampler', () => {
         expect(
           sampler.shouldSample(
             context.active(),
-            '1234',
+            testTraceId,
             'name',
             SpanKind.CLIENT,
             { abc: '1234' },
@@ -209,7 +220,7 @@ describe('AWSXRayRemoteSampler', () => {
       expect(
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           attributes,
@@ -226,7 +237,7 @@ describe('AWSXRayRemoteSampler', () => {
           if (
             sampler.shouldSample(
               context.active(),
-              '1234',
+              testTraceId,
               'name',
               SpanKind.CLIENT,
               attributes,
@@ -267,6 +278,23 @@ describe('AWSXRayRemoteSampler', () => {
     sampler = new AWSXRayRemoteSampler({
       resource: resource,
     });
+    sinon
+      .stub(sampler['internalXraySampler']['fallbackSampler'], 'shouldSample')
+      .callsFake(
+        (
+          context: Context,
+          traceId: string,
+          spanName: string,
+          spanKind: SpanKind,
+          attributes: Attributes,
+          links: Link[]
+        ) => {
+          return {
+            decision: SamplingDecision.NOT_RECORD,
+            attributes: attributes,
+          };
+        }
+      );
     sampler['internalXraySampler']['getAndUpdateSamplingRules']();
 
     setTimeout(() => {
@@ -277,13 +305,13 @@ describe('AWSXRayRemoteSampler', () => {
       expect(
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           attributes,
           []
         ).decision
-      ).toEqual(SamplingDecision.NOT_RECORD);
+      ).toEqual(SamplingDecision.RECORD_AND_SAMPLED);
       sampler['internalXraySampler']['getAndUpdateSamplingTargets']();
 
       setTimeout(() => {
@@ -294,7 +322,7 @@ describe('AWSXRayRemoteSampler', () => {
           if (
             sampler.shouldSample(
               context.active(),
-              '1234',
+              testTraceId,
               'name',
               SpanKind.CLIENT,
               attributes,

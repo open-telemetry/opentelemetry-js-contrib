@@ -23,8 +23,10 @@ import { SamplingDecision } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'expect';
 import * as sinon from 'sinon';
 import { FallbackSampler } from '../src/fallback-sampler';
+import { testTraceId } from './remote-sampler.test';
 
 let clock: sinon.SinonFakeTimers;
+
 describe('FallBackSampler', () => {
   beforeEach(() => {
     clock = sinon.useFakeTimers(Date.now());
@@ -36,12 +38,13 @@ describe('FallBackSampler', () => {
       // do nothing
     }
   });
-  it('testShouldSample', () => {
-    const sampler = new FallbackSampler();
+  it('testShouldSampleWithQuotaOnly', () => {
+    // Ensure FallbackSampler's internal TraceIdRatioBasedSampler will always return SamplingDecision.NOT_RECORD
+    const sampler = new FallbackSampler(0);
 
     sampler.shouldSample(
       context.active(),
-      '1234',
+      testTraceId,
       'name',
       SpanKind.CLIENT,
       {},
@@ -54,7 +57,7 @@ describe('FallBackSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -73,7 +76,7 @@ describe('FallBackSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -92,7 +95,7 @@ describe('FallBackSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -111,7 +114,7 @@ describe('FallBackSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -130,7 +133,7 @@ describe('FallBackSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -149,7 +152,7 @@ describe('FallBackSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -168,7 +171,7 @@ describe('FallBackSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -187,7 +190,7 @@ describe('FallBackSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},

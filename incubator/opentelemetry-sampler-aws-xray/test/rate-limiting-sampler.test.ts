@@ -23,6 +23,7 @@ import { SamplingDecision } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'expect';
 import * as sinon from 'sinon';
 import { RateLimitingSampler } from '../src/rate-limiting-sampler';
+import { testTraceId } from './remote-sampler.test';
 
 let clock: sinon.SinonFakeTimers;
 
@@ -41,7 +42,7 @@ describe('RateLimitingSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -60,7 +61,7 @@ describe('RateLimitingSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -79,7 +80,7 @@ describe('RateLimitingSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -98,7 +99,7 @@ describe('RateLimitingSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -117,7 +118,7 @@ describe('RateLimitingSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -138,7 +139,7 @@ describe('RateLimitingSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -157,7 +158,7 @@ describe('RateLimitingSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -176,7 +177,7 @@ describe('RateLimitingSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},
@@ -195,7 +196,7 @@ describe('RateLimitingSampler', () => {
       if (
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           {},

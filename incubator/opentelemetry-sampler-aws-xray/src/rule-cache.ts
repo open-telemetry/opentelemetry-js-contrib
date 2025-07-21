@@ -127,28 +127,29 @@ export class RuleCache {
     targetDocuments: TargetMap,
     lastRuleModification: number
   ): [boolean, number] {
-    let minPollingInteral: number | undefined = undefined;
+    let minPollingInterval: number | undefined = undefined;
     let nextPollingInterval: number = DEFAULT_TARGET_POLLING_INTERVAL_SECONDS;
-    this.ruleAppliers.forEach((rule: SamplingRuleApplier, index: number) => {
+
+    for (const [index, rule] of this.ruleAppliers.entries()) {
       const target: SamplingTargetDocument =
         targetDocuments[rule.samplingRule.RuleName];
       if (target) {
         this.ruleAppliers[index] = rule.withTarget(target);
-        if (target.Interval) {
+        if (typeof target.Interval === 'number') {
           if (
-            minPollingInteral === undefined ||
-            minPollingInteral > target.Interval
+            minPollingInterval === undefined ||
+            minPollingInterval > target.Interval
           ) {
-            minPollingInteral = target.Interval;
+            minPollingInterval = target.Interval;
           }
         }
       } else {
         diag.debug('Invalid sampling target: missing rule name');
       }
-    });
+    }
 
-    if (minPollingInteral) {
-      nextPollingInterval = minPollingInteral;
+    if (typeof minPollingInterval === 'number') {
+      nextPollingInterval = minPollingInterval;
     }
 
     const refreshSamplingRules: boolean =
