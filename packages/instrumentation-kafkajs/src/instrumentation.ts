@@ -519,12 +519,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         this: Producer,
         ...args: Parameters<Producer['transaction']>
       ): ReturnType<Producer['transaction']> {
-        const transactionSpan = instrumentation.tracer.startSpan(
-          'transaction',
-          {
-            kind: SpanKind.INTERNAL,
-          }
-        );
+        const transactionSpan = instrumentation.tracer.startSpan('transaction');
 
         const transactionPromise = original.apply(this, args);
 
@@ -578,7 +573,11 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
               this: kafkaJs.Transaction,
               ...args
             ) {
-              const originCommitPromise = originalCommit.apply(this, args);
+              const originCommitPromise = originalCommit
+                .apply(this, args)
+                .then(() => {
+                  transactionSpan.setStatus({ code: SpanStatusCode.OK });
+                });
               return instrumentation._endSpansOnPromise(
                 [transactionSpan],
                 [],

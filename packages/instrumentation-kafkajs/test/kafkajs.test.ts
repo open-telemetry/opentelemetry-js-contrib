@@ -658,7 +658,7 @@ describe('instrumentation-kafkajs', () => {
           assert.ok(transactionSpan);
           assert.strictEqual(spans.length, 3);
           assert.strictEqual(transactionSpan.kind, SpanKind.INTERNAL);
-          assert.strictEqual(transactionSpan.status.code, SpanStatusCode.UNSET);
+          assert.strictEqual(transactionSpan.status.code, SpanStatusCode.OK);
 
           assert.strictEqual(sendSpans.length, 2);
           assert.strictEqual(sendSpans[0].name, 'send topic-name-1');
