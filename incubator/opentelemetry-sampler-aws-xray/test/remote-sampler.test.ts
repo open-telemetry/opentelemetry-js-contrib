@@ -65,7 +65,7 @@ describe('AWSXRayRemoteSampler', () => {
   });
 
   it('testCreateRemoteSamplerWithEmptyResource', () => {
-    const sampler: AWSXRayRemoteSampler = new AWSXRayRemoteSampler({
+    sampler = new AWSXRayRemoteSampler({
       resource: emptyResource(),
     });
 
@@ -361,7 +361,7 @@ describe('AWSXRayRemoteSampler', () => {
       .post('/GetSamplingRules')
       .reply(200, require(defaultRuleDir));
 
-    const sampler: AWSXRayRemoteSampler = new AWSXRayRemoteSampler({
+    sampler = new AWSXRayRemoteSampler({
       resource: emptyResource(),
     });
     const tracerProvider: NodeTracerProvider = new NodeTracerProvider({
@@ -401,11 +401,13 @@ describe('AWSXRayRemoteSampler', () => {
       .post('/GetSamplingRules')
       .reply(200, require(defaultRuleDir));
 
-    const sampler: _AWSXRayRemoteSampler = new _AWSXRayRemoteSampler({
+    sampler = new AWSXRayRemoteSampler({
       resource: emptyResource(),
     });
+    const internalSampler: _AWSXRayRemoteSampler =
+      sampler['internalXraySampler'];
     const tracerProvider: NodeTracerProvider = new NodeTracerProvider({
-      sampler: sampler,
+      sampler: internalSampler,
     });
     const tracer: Tracer = tracerProvider.getTracer('test');
 
@@ -421,10 +423,12 @@ describe('AWSXRayRemoteSampler', () => {
       // span1 and span2 are child spans of root span0
       // For _AWSXRayRemoteSampler (Non-ParentBased), expect all 3 spans to update statistics
       expect(
-        sampler['ruleCache']['ruleAppliers'][0]['statistics'].RequestCount
+        internalSampler['ruleCache']['ruleAppliers'][0]['statistics']
+          .RequestCount
       ).toBe(3);
       expect(
-        sampler['ruleCache']['ruleAppliers'][0]['statistics'].SampleCount
+        internalSampler['ruleCache']['ruleAppliers'][0]['statistics']
+          .SampleCount
       ).toBe(3);
       done();
     }, 50);
