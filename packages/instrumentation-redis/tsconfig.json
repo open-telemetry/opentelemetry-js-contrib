@@ -2,7 +2,10 @@
   "extends": "../../tsconfig.base",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "build"
+    "outDir": "build",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true  // point to the issue
   },
   "include": [
     "src/**/*.ts",

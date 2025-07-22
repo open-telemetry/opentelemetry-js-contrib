@@ -19,7 +19,7 @@
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test-v2-v3": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/v2-v3/*.test.ts'",
-    "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/v4/*.test.ts'",
+    "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/v4-v5/*.test.ts'",
     "test:debug": "cross-env RUN_REDIS_TESTS=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "test-all-versions": "tav",

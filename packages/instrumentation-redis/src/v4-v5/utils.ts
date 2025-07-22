@@ -13,11 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export const redisTestConfig = {
-  host: process.env.OPENTELEMETRY_REDIS_HOST || 'localhost',
-  port: +(process.env.OPENTELEMETRY_REDIS_PORT || 63790),
-};
+import { Attributes } from '@opentelemetry/api';
+import {
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
-export const redisTestUrl = `redis://${redisTestConfig.host}:${redisTestConfig.port}`;
+export function getClientAttributes(options: any): Attributes {
+  const attrs: Attributes = {
+    [ATTR_DB_SYSTEM_NAME]: 'redis',
+    [ATTR_SERVER_ADDRESS]: options?.socket?.host,
+    [ATTR_SERVER_PORT]: options?.socket?.port,
+  };
 
-export const shouldTest = process.env.RUN_REDIS_TESTS;
+  return attrs;
+}
