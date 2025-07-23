@@ -47,7 +47,7 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
-    "@cucumber/cucumber": "^11.0.0",
+    "@cucumber/cucumber": "^12.0.0",
     "@cucumber/messages": "^22.0.0",
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/core": "^2.0.0",
