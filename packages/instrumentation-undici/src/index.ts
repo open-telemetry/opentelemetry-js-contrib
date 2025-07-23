@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-export { UndiciInstrumentation } from './undici';
+export { UndiciInstrumentation } from './undici.js';
 export type {
   IgnoreRequestFunction,
   RequestHookFunction,
@@ -23,4 +23,4 @@ export type {
   UndiciInstrumentationConfig,
   UndiciRequest,
   UndiciResponse,
-} from './types';
+} from './types.js';

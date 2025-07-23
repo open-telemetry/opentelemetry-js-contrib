@@ -22,7 +22,7 @@ import {
 import { hrTimeToNanoseconds } from '@opentelemetry/core';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import { SemanticAttributes } from '../../src/enums/SemanticAttributes';
+import { SemanticAttributes } from '../../src/enums/SemanticAttributes.js';
 
 type IncomingHttpHeaders = Record<string, string | string[] | undefined>;
 

@@ -31,11 +31,11 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 
-import { UndiciInstrumentation } from '../src/undici';
+import { UndiciInstrumentation } from '../src/undici.js';
 
-import { MockPropagation } from './utils/mock-propagation';
-import { MockServer } from './utils/mock-server';
-import { assertSpan } from './utils/assertSpan';
+import { MockPropagation } from './utils/mock-propagation.js';
+import { MockServer } from './utils/mock-server.js';
+import { assertSpan } from './utils/assertSpan.js';
 
 import type { fetch, stream, request, Client, Dispatcher } from 'undici';
 

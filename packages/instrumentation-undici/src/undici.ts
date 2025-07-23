@@ -35,7 +35,7 @@ import {
 } from '@opentelemetry/api';
 
 /** @knipignore */
-import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version.js';
 
 import {
   ListenerRecord,
@@ -43,9 +43,9 @@ import {
   RequestMessage,
   RequestTrailersMessage,
   ResponseHeadersMessage,
-} from './internal-types';
-import { UndiciInstrumentationConfig, UndiciRequest } from './types';
-import { SemanticAttributes } from './enums/SemanticAttributes';
+} from './internal-types.js';
+import { UndiciInstrumentationConfig, UndiciRequest } from './types.js';
+import { SemanticAttributes } from './enums/SemanticAttributes.js';
 import {
   hrTime,
   hrTimeDuration,

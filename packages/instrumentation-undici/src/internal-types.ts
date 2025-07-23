@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { UndiciRequest, UndiciResponse } from './types';
+import { UndiciRequest, UndiciResponse } from './types.js';
 
 export interface ListenerRecord {
   name: string;
