@@ -67,7 +67,9 @@ describe('instrumentation', function () {
     const scopeMetrics = firstCollections.resourceMetrics.scopeMetrics;
     assert.strictEqual(scopeMetrics.length, 0);
 
+    assert.equal(instrumentation.isEnabled(), false);
     instrumentation.enable();
+    assert.equal(instrumentation.isEnabled(), true);
     await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
 
     const secondCollection = await metricReader.collect();
