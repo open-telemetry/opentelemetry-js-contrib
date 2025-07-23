@@ -148,13 +148,6 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
             [ATTR_SERVER_PORT]: this.connection_options.port,
           });
         }
-        if (this.address) {
-          // DB_CONNECTION_STRING is deprecated; Replaced by server.address and server.port.
-          // span.setAttribute(
-          //   SEMATTRS_DB_CONNECTION_STRING,
-          //   `redis://${this.address}`
-          // );
-        }
 
         const originalCallback = arguments[0].callback;
         if (originalCallback) {
