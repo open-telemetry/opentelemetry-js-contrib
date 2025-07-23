@@ -16,7 +16,6 @@
 
 'use strict';
 
-// eslint-disable-next-line
 const tracing = require('./tracing')('example-connect-server');
 
 // Require in rest of modules
@@ -27,7 +26,6 @@ const axios = require('axios');
 const app = connect();
 const PORT = 8080;
 
-// eslint-disable-next-line prefer-arrow-callback
 app.use(function middleware1(req, res, next) {
   next();
 });
