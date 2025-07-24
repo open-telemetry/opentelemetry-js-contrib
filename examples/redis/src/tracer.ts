@@ -27,7 +27,6 @@ import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
 const EXPORTER = process.env.EXPORTER || '';
 
-// eslint-disable-next-line import/prefer-default-export
 export const setupTracing = (serviceName: string) => {
   let exporter;
   if (EXPORTER.toLowerCase().startsWith('z')) {

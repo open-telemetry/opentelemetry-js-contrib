@@ -16,7 +16,7 @@
 
 import { BaggageKeyPredicate } from './types';
 import { Context, propagation } from '@opentelemetry/api';
-import { LogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import { SdkLogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 
 /**
  * BaggageLogRecordProcessor is a {@link LogRecordProcessor} that reads entries stored in {@link Baggage}
@@ -50,11 +50,11 @@ export class BaggageLogRecordProcessor implements LogRecordProcessor {
   }
 
   /**
-   * Called when a {@link LogRecord} is emit
+   * Called when a {@link SdkLogRecord} is emit
    * @param logRecord the ReadWriteLogRecord that just emitted.
    * @param context the current Context, or an empty Context if the Logger was obtained with include_trace_context=false
    */
-  onEmit(logRecord: LogRecord, context?: Context): void {
+  onEmit(logRecord: SdkLogRecord, context?: Context): void {
     if (context) {
       (propagation.getBaggage(context)?.getAllEntries() ?? [])
         .filter(entry => this._keyPredicate(entry[0]))
