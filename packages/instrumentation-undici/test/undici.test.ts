@@ -15,6 +15,7 @@
  */
 import * as assert from 'assert';
 import { Writable } from 'stream';
+import { createRequire } from 'module';
 
 import {
   INVALID_SPAN_CONTEXT,
@@ -38,6 +39,12 @@ import { MockServer } from './utils/mock-server.js';
 import { assertSpan } from './utils/assertSpan.js';
 
 import type { fetch, stream, request, Client, Dispatcher } from 'undici';
+
+// NOTE: now this test is compiled to ESM and `require` is not available.
+// So we do this to not make a refactor on code that is not publishwd to the user.
+// This could be handled once https://github.com/open-telemetry/opentelemetry-js/issues/4898
+// is closed.
+const require = createRequire(import.meta.url);
 
 // Undici docs (https://github.com/nodejs/undici#garbage-collection) suggest
 // that an undici response body should always be consumed.

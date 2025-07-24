@@ -14,11 +14,9 @@
   "scripts": {
     "prepublishOnly": "npm run compile",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
-    "compile": "npm run compile:cjs && npm run compile:esm",
-    "compile:cjs": "tsc --build tsconfig.json && echo '{ \"type\": \"commonjs\" }' > build/src/package.json",
-    "compile:esm": "tsc --build tsconfig.esm.json",
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "test": "nyc mocha test/**/*.test.ts",
+    "compile": "tsc --build tsconfig.json tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > build/cjs/package.json",
+    "clean": "tsc --build --clean tsconfig.json tsconfig.cjs.json",
+    "test": "nyc mocha --loader=ts-node/esm test/**/*.test.ts",
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "lint": "eslint . --ext .ts",
@@ -41,24 +39,21 @@
   },
   "exports": {
     "import": {
-      "types": "./build/esm/index.d.ts",
-      "default": "./build/esm/index.js"
-    },
-    "require": {
       "types": "./build/src/index.d.ts",
       "default": "./build/src/index.js"
+    },
+    "require": {
+      "types": "./build/cjs/index.d.ts",
+      "default": "./build/cjs/index.js"
     }
   },
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
     "build/src/**/*.d.ts",
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
-    "build/esm/**/*.js",
-    "build/esm/**/*.js.map",
-    "build/esm/**/*.d.ts"
+    "build/cjs/**/*.js",
+    "build/cjs/**/*.js.map",
+    "build/cjs/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
