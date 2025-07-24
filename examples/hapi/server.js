@@ -19,7 +19,6 @@
 const api = require('@opentelemetry/api');
 require('./tracer')('example-hapi-server');
 
-// eslint-disable-next-line
 const Hapi = require('@hapi/hapi');
 
 const PORT = 8081;

@@ -4,7 +4,11 @@
   "description": "OpenTelemetry Baggage Span Processor for Node.js",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "packages/baggage-span-processor"
+  },
   "scripts": {
     "clean": "rimraf build/*",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/baggage-span-processor",

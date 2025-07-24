@@ -18,7 +18,6 @@
 
 // required to initialize the service name for the auto-instrumentation
 require('./tracer')('example-client');
-// eslint-disable-next-line import/order
 const http = require('http');
 
 /** A function which makes requests and handles response. */
