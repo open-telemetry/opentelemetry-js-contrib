@@ -11,14 +11,13 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../../scripts/lint-readme.js",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "test:debug": "mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
-    "version:update": "node ../../../scripts/version-update.js",
+    "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
   "keywords": [
@@ -47,7 +46,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/contrib-test-utils": "^0.48.0",
+    "@opentelemetry/contrib-test-utils": "^0.49.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@types/node": "18.18.14",
     "nyc": "15.1.0",
@@ -56,9 +55,9 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.202.0",
+    "@opentelemetry/instrumentation": "^0.203.0",
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-sequelize#readme"
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-sequelize#readme"
 }

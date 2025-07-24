@@ -70,7 +70,7 @@ components:
     - blumamir
   packages/instrumentation-socket.io:
     - mottibec
-  plugins/node/instrumentation-sequelize:
+  packages/instrumentation-sequelize:
     - seemk
     - t2t2
     - mhennoch

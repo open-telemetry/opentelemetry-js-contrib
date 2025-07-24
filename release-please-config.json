@@ -33,7 +33,7 @@
     "packages/instrumentation-lru-memoizer": {},
     "packages/instrumentation-mongoose": {},
     "packages/instrumentation-runtime-node": {},
-    "plugins/node/instrumentation-sequelize": {},
+    "packages/instrumentation-sequelize": {},
     "packages/instrumentation-socket.io": {},
     "packages/instrumentation-tedious": {},
     "packages/instrumentation-typeorm": {},
