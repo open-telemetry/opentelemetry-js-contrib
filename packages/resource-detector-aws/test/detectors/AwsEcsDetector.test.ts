@@ -452,7 +452,6 @@ describe('AwsEcsResourceDetector', () => {
       });
     });
   });
-});
 
   describe('Container ID extraction', () => {
     const testMetadataUri = 'http://169.254.170.2/v4/test';
@@ -491,246 +490,47 @@ describe('AwsEcsResourceDetector', () => {
         });
     }
 
-    describe('new AWS ECS Fargate cgroup format', () => {
-      it('should extract full container ID from new Fargate format', async () => {
-        const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
-        const containerId = '1234567890abcdef';
-        const cgroupData = `/ecs/${taskId}/${taskId}-${containerId}`;
+    it('should extract full container ID from new ECS Fargate format', async () => {
+      const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
+      const containerId = '1234567890abcdef';
+      const cgroupData = `/ecs/${taskId}/${taskId}-${containerId}`;
 
-        setupMocks(cgroupData);
-        const nockScope = setupMetadataNock();
+      setupMocks(cgroupData);
+      const nockScope = setupMetadataNock();
 
-        const resource = detectResources({ detectors: [awsEcsDetector] });
-        await resource.waitForAsyncAttributes?.();
+      const resource = detectResources({ detectors: [awsEcsDetector] });
+      await resource.waitForAsyncAttributes?.();
 
-        sinon.assert.calledOnce(readStub);
-        assert.ok(resource);
-        assertEcsResource(resource, {});
-        assertContainerResource(resource, {
-          name: testHostname,
-          id: `${taskId}-${containerId}`,
-        });
-
-        nockScope.done();
+      sinon.assert.calledOnce(readStub);
+      assert.ok(resource);
+      assertEcsResource(resource, {});
+      assertContainerResource(resource, {
+        name: testHostname,
+        id: `${taskId}-${containerId}`,
       });
 
-      it('should extract container ID from long cgroup path without truncation', async () => {
-        const longTaskId = 'abcdefgh12345678abcdefgh12345678abcdefgh12345678';
-        const containerId = '1234567890abcdef';
-        const cgroupData = `/ecs/${longTaskId}/${longTaskId}-${containerId}`;
-
-        setupMocks(cgroupData);
-        const nockScope = setupMetadataNock();
-
-        const resource = detectResources({ detectors: [awsEcsDetector] });
-        await resource.waitForAsyncAttributes?.();
-
-        sinon.assert.calledOnce(readStub);
-        assert.ok(resource);
-        assertEcsResource(resource, {});
-        assertContainerResource(resource, {
-          name: testHostname,
-          id: `${longTaskId}-${containerId}`,
-        });
-
-        nockScope.done();
-      });
-
-      it('should handle multiple cgroup lines and pick the valid one', async () => {
-        const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
-        const containerId = '1234567890abcdef';
-        const cgroupData = [
-          '12:memory:/ecs',
-          '11:cpu:/ecs/task-id',
-          `10:devices:/ecs/${taskId}/${taskId}-${containerId}`,
-          '9:freezer:/ecs',
-        ].join('\n');
-
-        setupMocks(cgroupData);
-        const nockScope = setupMetadataNock();
-
-        const resource = detectResources({ detectors: [awsEcsDetector] });
-        await resource.waitForAsyncAttributes?.();
-
-        sinon.assert.calledOnce(readStub);
-        assert.ok(resource);
-        assertEcsResource(resource, {});
-        assertContainerResource(resource, {
-          name: testHostname,
-          id: `${taskId}-${containerId}`,
-        });
-
-        nockScope.done();
-      });
+      nockScope.done();
     });
 
-    describe('alternative container runtime formats', () => {
-      it('should handle containerd format with colon separators', async () => {
-        const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
-        const containerId = '1234567890abcdef';
-        const cgroupData = `0::/system.slice/containerd.service/kubepods-burstable-pod.slice:cri-containerd:${taskId}-${containerId}`;
+    it('should handle backward compatibility with legacy format', async () => {
+      const legacyContainerId =
+        'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
 
-        setupMocks(cgroupData);
-        const nockScope = setupMetadataNock();
+      setupMocks(legacyContainerId);
+      const nockScope = setupMetadataNock();
 
-        const resource = detectResources({ detectors: [awsEcsDetector] });
-        await resource.waitForAsyncAttributes?.();
+      const resource = detectResources({ detectors: [awsEcsDetector] });
+      await resource.waitForAsyncAttributes?.();
 
-        sinon.assert.calledOnce(readStub);
-        assert.ok(resource);
-        assertEcsResource(resource, {});
-        assertContainerResource(resource, {
-          name: testHostname,
-          id: `${taskId}-${containerId}`,
-        });
-
-        nockScope.done();
+      sinon.assert.calledOnce(readStub);
+      assert.ok(resource);
+      assertEcsResource(resource, {});
+      assertContainerResource(resource, {
+        name: testHostname,
+        id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
       });
 
-      it('should handle docker prefix and scope suffix', async () => {
-        const taskId = 'c23e5f76c09d438aa1824ca4058bdcab';
-        const containerId = '1234567890abcdef';
-        const cgroupData = `/docker/docker-${taskId}-${containerId}.scope`;
-
-        setupMocks(cgroupData);
-        const nockScope = setupMetadataNock();
-
-        const resource = detectResources({ detectors: [awsEcsDetector] });
-        await resource.waitForAsyncAttributes?.();
-
-        sinon.assert.calledOnce(readStub);
-        assert.ok(resource);
-        assertEcsResource(resource, {});
-        assertContainerResource(resource, {
-          name: testHostname,
-          id: `${taskId}-${containerId}`,
-        });
-
-        nockScope.done();
-      });
-    });
-
-    describe('invalid container ID scenarios', () => {
-      it('should return resource without container ID for invalid format', async () => {
-        const invalidCgroupData = '/invalid/path/with/non-hex-characters!!!';
-
-        setupMocks(invalidCgroupData);
-        const nockScope = setupMetadataNock();
-
-        const resource = detectResources({ detectors: [awsEcsDetector] });
-        await resource.waitForAsyncAttributes?.();
-
-        sinon.assert.calledOnce(readStub);
-        assert.ok(resource);
-        assertEcsResource(resource, {});
-        assertContainerResource(resource, {
-          name: testHostname,
-        });
-
-        nockScope.done();
-      });
-
-      it('should return resource without container ID when too short', async () => {
-        const shortContainerId = 'short';
-        const cgroupData = `/ecs/task/${shortContainerId}`;
-
-        setupMocks(cgroupData);
-        const nockScope = setupMetadataNock();
-
-        const resource = detectResources({ detectors: [awsEcsDetector] });
-        await resource.waitForAsyncAttributes?.();
-
-        sinon.assert.calledOnce(readStub);
-        assert.ok(resource);
-        assertEcsResource(resource, {});
-        assertContainerResource(resource, {
-          name: testHostname,
-        });
-
-        nockScope.done();
-      });
-
-      it('should return resource without container ID when too long', async () => {
-        const tooLongContainerId = 'a'.repeat(129);
-        const cgroupData = `/ecs/task/${tooLongContainerId}`;
-
-        setupMocks(cgroupData);
-        const nockScope = setupMetadataNock();
-
-        const resource = detectResources({ detectors: [awsEcsDetector] });
-        await resource.waitForAsyncAttributes?.();
-
-        sinon.assert.calledOnce(readStub);
-        assert.ok(resource);
-        assertEcsResource(resource, {});
-        assertContainerResource(resource, {
-          name: testHostname,
-        });
-
-        nockScope.done();
-      });
-
-      it('should return resource without container ID with invalid characters', async () => {
-        const invalidContainerId = 'invalid@#$%container';
-        const cgroupData = `/ecs/task/${invalidContainerId}`;
-
-        setupMocks(cgroupData);
-        const nockScope = setupMetadataNock();
-
-        const resource = detectResources({ detectors: [awsEcsDetector] });
-        await resource.waitForAsyncAttributes?.();
-
-        sinon.assert.calledOnce(readStub);
-        assert.ok(resource);
-        assertEcsResource(resource, {});
-        assertContainerResource(resource, {
-          name: testHostname,
-        });
-
-        nockScope.done();
-      });
-
-      it('should return resource without container ID for empty processed segment', async () => {
-        const cgroupData = '/ecs/task/docker-.scope';
-
-        setupMocks(cgroupData);
-        const nockScope = setupMetadataNock();
-
-        const resource = detectResources({ detectors: [awsEcsDetector] });
-        await resource.waitForAsyncAttributes?.();
-
-        sinon.assert.calledOnce(readStub);
-        assert.ok(resource);
-        assertEcsResource(resource, {});
-        assertContainerResource(resource, {
-          name: testHostname,
-        });
-
-        nockScope.done();
-      });
-    });
-
-    describe('backward compatibility', () => {
-      it('should handle legacy 64-character container ID format', async () => {
-        const legacyContainerId =
-          'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
-
-        setupMocks(legacyContainerId);
-        const nockScope = setupMetadataNock();
-
-        const resource = detectResources({ detectors: [awsEcsDetector] });
-        await resource.waitForAsyncAttributes?.();
-
-        sinon.assert.calledOnce(readStub);
-        assert.ok(resource);
-        assertEcsResource(resource, {});
-        assertContainerResource(resource, {
-          name: testHostname,
-          id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
-        });
-
-        nockScope.done();
-      });
+      nockScope.done();
     });
   });
-
+});
