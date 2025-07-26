@@ -178,9 +178,6 @@ export class AwsEcsDetector implements ResourceDetector {
    * Extract container ID from a cgroup line using regex pattern matching.
    * Handles the new AWS ECS Fargate format: /ecs/<taskId>/<taskId>-<containerId>
    * Returns the last segment after the final '/' which should be the complete container ID.
-   *
-   * Note: This implementation uses regex patterns instead of manual string parsing
-   * as suggested in PR review to handle the new ECS Fargate cgroup format more reliably.
    */
   private _extractContainerIdFromLine(line: string): string | undefined {
     if (!line) {
