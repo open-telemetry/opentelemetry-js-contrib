@@ -20,16 +20,22 @@ import {
   HrTime,
   Span,
   Attributes,
-  AttributeValue,
 } from '@opentelemetry/api';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 import {
+  ATTR_NETWORK_PEER_ADDRESS,
+  ATTR_NETWORK_PEER_PORT,
+  ATTR_NETWORK_PROTOCOL_NAME,
+  ATTR_NETWORK_PROTOCOL_VERSION,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
   SEMATTRS_MESSAGING_PROTOCOL,
   SEMATTRS_MESSAGING_PROTOCOL_VERSION,
-  SEMATTRS_MESSAGING_SYSTEM,
   SEMATTRS_MESSAGING_URL,
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import { ATTR_MESSAGING_SYSTEM } from '@opentelemetry/semantic-conventions/incubating';
 import type * as amqp from 'amqplib';
 
 export const MESSAGE_STORED_SPAN: unique symbol = Symbol(
@@ -97,32 +103,13 @@ const getHostname = (hostnameFromUrl: string | undefined): string => {
   return hostnameFromUrl || 'localhost';
 };
 
-const extractConnectionAttributeOrLog = (
-  url: string | amqp.Options.Connect,
-  attributeKey: string,
-  attributeValue: AttributeValue,
-  nameForLog: string
-): Attributes => {
-  if (attributeValue) {
-    return { [attributeKey]: attributeValue };
-  } else {
-    diag.error(
-      `amqplib instrumentation: could not extract connection attribute ${nameForLog} from user supplied url`,
-      {
-        url,
-      }
-    );
-    return {};
-  }
-};
-
 export const getConnectionAttributesFromServer = (
   conn: amqp.Connection['connection']
 ): Attributes => {
   const product = conn.serverProperties.product?.toLowerCase?.();
   if (product) {
     return {
-      [SEMATTRS_MESSAGING_SYSTEM]: product,
+      [ATTR_MESSAGING_SYSTEM]: product,
     };
   } else {
     return {};
@@ -130,83 +117,53 @@ export const getConnectionAttributesFromServer = (
 };
 
 export const getConnectionAttributesFromUrl = (
-  url: string | amqp.Options.Connect
+  url: string | amqp.Options.Connect,
+  semconvStability: SemconvStability
 ): Attributes => {
-  const attributes: Attributes = {
+  const oldAttributes: Attributes = {
     [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1', // this is the only protocol supported by the instrumented library
+  };
+  const stableAttributes: Attributes = {
+    [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1', // this is the only protocol supported by the instrumented library
   };
 
   url = url || 'amqp://localhost';
   if (typeof url === 'object') {
-    const connectOptions = url as amqp.Options.Connect;
+    const protocol = getProtocol(url.protocol);
+    const hostname = getHostname(url.hostname);
+    const port = getPort(url.port, protocol);
 
-    const protocol = getProtocol(connectOptions?.protocol);
-    Object.assign(attributes, {
-      ...extractConnectionAttributeOrLog(
-        url,
-        SEMATTRS_MESSAGING_PROTOCOL,
-        protocol,
-        'protocol'
-      ),
-    });
+    oldAttributes[SEMATTRS_MESSAGING_PROTOCOL] = protocol;
+    oldAttributes[SEMATTRS_NET_PEER_NAME] = hostname;
+    oldAttributes[SEMATTRS_NET_PEER_PORT] = port;
 
-    const hostname = getHostname(connectOptions?.hostname);
-    Object.assign(attributes, {
-      ...extractConnectionAttributeOrLog(
-        url,
-        SEMATTRS_NET_PEER_NAME,
-        hostname,
-        'hostname'
-      ),
-    });
-
-    const port = getPort(connectOptions.port, protocol);
-    Object.assign(attributes, {
-      ...extractConnectionAttributeOrLog(
-        url,
-        SEMATTRS_NET_PEER_PORT,
-        port,
-        'port'
-      ),
-    });
+    stableAttributes[ATTR_NETWORK_PROTOCOL_NAME] = protocol;
+    stableAttributes[ATTR_NETWORK_PEER_ADDRESS] = hostname;
+    stableAttributes[ATTR_NETWORK_PEER_PORT] = port;
+    stableAttributes[ATTR_SERVER_ADDRESS] = hostname;
+    stableAttributes[ATTR_SERVER_PORT] = port;
   } else {
     const censoredUrl = censorPassword(url);
-    attributes[SEMATTRS_MESSAGING_URL] = censoredUrl;
+    oldAttributes[SEMATTRS_MESSAGING_URL] = censoredUrl;
+
     try {
       const urlParts = new URL(censoredUrl);
-
       const protocol = getProtocol(urlParts.protocol);
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          censoredUrl,
-          SEMATTRS_MESSAGING_PROTOCOL,
-          protocol,
-          'protocol'
-        ),
-      });
-
       const hostname = getHostname(urlParts.hostname);
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          censoredUrl,
-          SEMATTRS_NET_PEER_NAME,
-          hostname,
-          'hostname'
-        ),
-      });
-
       const port = getPort(
         urlParts.port ? parseInt(urlParts.port) : undefined,
         protocol
       );
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          censoredUrl,
-          SEMATTRS_NET_PEER_PORT,
-          port,
-          'port'
-        ),
-      });
+
+      oldAttributes[SEMATTRS_MESSAGING_PROTOCOL] = protocol;
+      oldAttributes[SEMATTRS_NET_PEER_NAME] = hostname;
+      oldAttributes[SEMATTRS_NET_PEER_PORT] = port;
+
+      stableAttributes[ATTR_NETWORK_PROTOCOL_NAME] = protocol;
+      stableAttributes[ATTR_NETWORK_PEER_ADDRESS] = hostname;
+      stableAttributes[ATTR_NETWORK_PEER_PORT] = port;
+      stableAttributes[ATTR_SERVER_ADDRESS] = hostname;
+      stableAttributes[ATTR_SERVER_PORT] = port;
     } catch (err) {
       diag.error(
         'amqplib instrumentation: error while extracting connection details from connection url',
@@ -216,6 +173,14 @@ export const getConnectionAttributesFromUrl = (
         }
       );
     }
+  }
+
+  let attributes: Attributes = {};
+  if (semconvStability & SemconvStability.OLD) {
+    attributes = oldAttributes;
+  }
+  if (semconvStability & SemconvStability.STABLE) {
+    attributes = { ...attributes, ...stableAttributes };
   }
   return attributes;
 };

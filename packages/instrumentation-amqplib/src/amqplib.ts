@@ -36,6 +36,8 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   SEMATTRS_MESSAGING_DESTINATION,
@@ -80,8 +82,14 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 const supportedVersions = ['>=0.5.5 <1'];
 
 export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumentationConfig> {
+  private _semconvStability: SemconvStability = SemconvStability.OLD;
+
   constructor(config: AmqplibInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+    this._semconvStability = semconvStabilityFromStr(
+      'messaging',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   override setConfig(config: AmqplibInstrumentationConfig = {}) {
@@ -243,6 +251,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
       openCallback: (err: any, connection: Connection) => void
     ) => Connection
   ) {
+    const self = this;
     return function patchedConnect(
       this: unknown,
       url: string | Options.Connect,
@@ -255,7 +264,10 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
         socketOptions,
         function (this: unknown, err, conn: Connection) {
           if (err == null) {
-            const urlAttributes = getConnectionAttributesFromUrl(url);
+            const urlAttributes = getConnectionAttributesFromUrl(
+              url,
+              self._semconvStability
+            );
             // the type of conn in @types/amqplib is amqp.Connection, but in practice the library send the
             // `serverProperties` on the `conn` and not in a property `connection`.
             // I don't have capacity to debug it currently but it should probably be fixed in @types or
