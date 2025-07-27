@@ -65,6 +65,7 @@ import {
   CONNECTION_ATTRIBUTES,
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
+  InstrumentationConnection,
   InstrumentationConsumeChannel,
   InstrumentationConsumeMessage,
   InstrumentationMessage,
@@ -254,11 +255,11 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
         this,
         url,
         socketOptions,
-        function (this: unknown, err, conn: Connection) {
+        function (this: unknown, err, conn: InstrumentationConnection) {
           if (err == null) {
             const urlAttributes = getConnectionAttributesFromUrl(url);
             const serverAttributes = getConnectionAttributesFromServer(conn);
-            (conn as any)[CONNECTION_ATTRIBUTES] = {
+            conn[CONNECTION_ATTRIBUTES] = {
               ...urlAttributes,
               ...serverAttributes,
             };
