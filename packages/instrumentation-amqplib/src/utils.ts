@@ -60,6 +60,9 @@ export type InstrumentationConsumeChannel = amqp.Channel & {
 export type InstrumentationMessage = amqp.Message & {
   [MESSAGE_STORED_SPAN]?: Span;
 };
+export type InstrumentationConsumeMessage = amqp.ConsumeMessage & {
+  [MESSAGE_STORED_SPAN]?: Span;
+};
 
 const IS_CONFIRM_CHANNEL_CONTEXT_KEY: symbol = createContextKey(
   'opentelemetry.amqplib.channel.is-confirm-channel'
@@ -117,7 +120,7 @@ const extractConnectionAttributeOrLog = (
 };
 
 export const getConnectionAttributesFromServer = (
-  conn: amqp.Connection['connection']
+  conn: amqp.Connection
 ): Attributes => {
   const product = conn.serverProperties.product?.toLowerCase?.();
   if (product) {
