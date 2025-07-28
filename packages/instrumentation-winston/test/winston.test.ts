@@ -281,13 +281,6 @@ describe('WinstonInstrumentation', () => {
       }
     });
 
-        // XXX
-        // format: winston.format.combine(
-        //   winston.format.timestamp(),
-        //   winston.format.colorize(),
-        //   winston.format.simple()
-        // ),
-
     it('do not emit log record if @opentelemetry/winston-transport load fails', () => {
       const module = require('module');
       const originalRequire = module.prototype.require;
