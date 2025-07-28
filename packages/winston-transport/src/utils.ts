@@ -65,6 +65,8 @@ export function emitLogRecord(
 ): void {
   const { message, level, ...splat } = record;
   const attributes: LogAttributes = {};
+  // Ensures the log level is read from a symbol property, avoiding any accidental inclusion 
+  // of ANSI color codes that may be present in the string property
   const levelSym = record[Symbol.for('level')];
   for (const key in splat) {
     if (Object.prototype.hasOwnProperty.call(splat, key)) {
