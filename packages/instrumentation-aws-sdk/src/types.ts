@@ -15,7 +15,6 @@
  */
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import { SQS } from './aws-sdk.types';
 
 export type CommandInput = Record<string, any>;
 
@@ -57,13 +56,6 @@ export interface AwsSdkResponseCustomAttributeFunction {
   (span: Span, responseInfo: AwsSdkResponseHookInformation): void;
 }
 
-export interface AwsSdkSqsProcessHookInformation {
-  message: SQS.Message;
-}
-export interface AwsSdkSqsProcessCustomAttributeFunction {
-  (span: Span, sqsProcessInfo: AwsSdkSqsProcessHookInformation): void;
-}
-
 export type AwsSdkDynamoDBStatementSerializer = (
   operation: string,
   commandInput: CommandInput
@@ -75,9 +67,6 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
 
   /** hook for adding custom attributes when response is received from aws */
   responseHook?: AwsSdkResponseCustomAttributeFunction;
-
-  /** hook for adding custom attribute when an sqs process span is started */
-  sqsProcessHook?: AwsSdkSqsProcessCustomAttributeFunction;
 
   /** custom serializer function for the db.statement attribute in DynamoDB spans */
   dynamoDBStatementSerializer?: AwsSdkDynamoDBStatementSerializer;
