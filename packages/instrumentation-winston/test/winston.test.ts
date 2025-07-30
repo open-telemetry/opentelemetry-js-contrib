@@ -61,7 +61,11 @@ describe('WinstonInstrumentation', () => {
     cli,
   }
 
-  function initLogger(levelsType?: LevelsType) {
+  /**
+   * Set `logger` to a new Winston logger instance with the given
+   * configuration, and setup with `writeSpy` to spy on emitted logs.
+   */
+  function initLogger(levelsType?: LevelsType, formatType?: string) {
     const winston = require('winston');
 
     let levels = winston.config.npm.levels;
@@ -69,6 +73,19 @@ describe('WinstonInstrumentation', () => {
       levels = winston.config.syslog.levels;
     } else if (levelsType === LevelsType.cli) {
       levels = winston.config.cli.levels;
+    }
+
+    let format;
+    switch (formatType) {
+      case 'colorize':
+        format = winston.format.colorize();
+        break;
+      case 'none':
+      case undefined:
+        format = undefined;
+        break;
+      default:
+        throw new Error(`unknown formatType: "${formatType}"`);
     }
 
     const stream = new Writable();
@@ -80,6 +97,7 @@ describe('WinstonInstrumentation', () => {
       logger = winston.createLogger({
         level: 'debug',
         levels: levels,
+        format,
         transports: [
           new winston.transports.Stream({
             stream,
@@ -91,6 +109,7 @@ describe('WinstonInstrumentation', () => {
       isWinston2 = true;
       logger = new winston.Logger({
         levels: levels,
+        format,
         transports: [
           new winston.transports.File({
             stream,
@@ -233,6 +252,32 @@ describe('WinstonInstrumentation', () => {
           logRecords[0].attributes['extraAttribute2'],
           'attributeValue2'
         );
+      }
+    });
+
+    it('emit LogRecord with correct severity* when colorize() formatter is used', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+        });
+        initLogger(LevelsType.npm, 'colorize');
+
+        logger.log('debug', kMessage);
+        logger.log('info', kMessage);
+        logger.log('warn', kMessage);
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 3);
+        assert.strictEqual(logRecords[0].severityText, 'debug');
+        assert.strictEqual(logRecords[0].severityNumber, 5);
+        assert.strictEqual(logRecords[0].body, kMessage);
+        assert.strictEqual(logRecords[1].severityText, 'info');
+        assert.strictEqual(logRecords[1].severityNumber, 9);
+        assert.strictEqual(logRecords[1].body, kMessage);
+        assert.strictEqual(logRecords[2].severityText, 'warn');
+        assert.strictEqual(logRecords[2].severityNumber, 13);
+        assert.strictEqual(logRecords[2].body, kMessage);
+
+        initLogger();
       }
     });
 
