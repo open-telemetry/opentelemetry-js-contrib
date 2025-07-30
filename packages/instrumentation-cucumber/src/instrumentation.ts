@@ -47,7 +47,7 @@ type Cucumber = typeof cucumber;
 type Hook = (typeof hooks)[number];
 type Step = (typeof steps)[number];
 
-const supportedVersions = ['>=8.0.0 <12'];
+const supportedVersions = ['>=8.0.0 <13'];
 
 export class CucumberInstrumentation extends InstrumentationBase<CucumberInstrumentationConfig> {
   private module: Cucumber | undefined;
@@ -222,7 +222,7 @@ export class CucumberInstrumentation extends InstrumentationBase<CucumberInstrum
       return async function (
         this: TestCaseRunner,
         ...args
-      ): Promise<messages.TestStepResult> {
+      ): ReturnType<TestCaseRunner['runStep']> {
         const [pickleStep] = args;
         return instrumentation.tracer.startActiveSpan(
           pickleStep.text,
@@ -234,13 +234,25 @@ export class CucumberInstrumentation extends InstrumentationBase<CucumberInstrum
           },
           async span => {
             try {
-              const result = await original.apply(this, args);
+              const runStepResult = await original.apply(this, args);
+              const { result, error } = (() => {
+                if ('result' in runStepResult) {
+                  return runStepResult;
+                }
+                return {
+                  result: runStepResult,
+                  error: undefined,
+                };
+              })();
               instrumentation.setSpanToStepStatus(
                 span,
                 result.status,
                 result.message
               );
-              return result;
+              if (error) {
+                CucumberInstrumentation.setSpanToError(span, error);
+              }
+              return runStepResult;
             } catch (error) {
               CucumberInstrumentation.setSpanToError(span, error);
               throw error;
