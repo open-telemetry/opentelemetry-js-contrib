@@ -22,7 +22,8 @@
         "{projectRoot}/test/**/*.ts"
       ],
       "outputs": [
-        "{projectRoot}/build"
+        "{projectRoot}/build",
+        "{projectRoot}/dist"
       ]
     },
     "watch": {
