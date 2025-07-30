@@ -163,10 +163,8 @@ export class AwsEcsDetector implements ResourceDetector {
       );
       const splitData = rawData.trim().split('\n');
       for (const str of splitData) {
-        if (str.length > AwsEcsDetector.CONTAINER_ID_LENGTH) {
-          containerId = str.substring(
-            str.length - AwsEcsDetector.CONTAINER_ID_LENGTH
-          );
+        containerId = this._extractContainerIdFromLine(str);
+        if (containerId) {
           break;
         }
       }
@@ -174,6 +172,53 @@ export class AwsEcsDetector implements ResourceDetector {
       diag.debug('AwsEcsDetector failed to read container ID', e);
     }
     return containerId;
+  }
+
+  /**
+   * Extract container ID from a cgroup line using regex pattern matching.
+   * Handles the new AWS ECS Fargate format: /ecs/<taskId>/<taskId>-<containerId>
+   * Returns the last segment after the final '/' which should be the complete container ID.
+   */
+  private _extractContainerIdFromLine(line: string): string | undefined {
+    if (!line) {
+      return undefined;
+    }
+
+    // Primary pattern: Match /ecs/taskId/taskId-containerId format (new ECS Fargate)
+    // This captures the full taskId-containerId part after the last slash
+    const ecsPattern = /\/ecs\/[a-zA-Z0-9-]+\/([a-zA-Z0-9-]+)$/;
+    const ecsMatch = line.match(ecsPattern);
+    if (
+      ecsMatch &&
+      ecsMatch[1] &&
+      ecsMatch[1].length >= 12 &&
+      ecsMatch[1].length <= 128
+    ) {
+      return ecsMatch[1];
+    }
+
+    // Fallback: Extract last segment after slash for any path-like format
+    const segments = line.split('/');
+    if (segments.length > 1) {
+      const lastSegment = segments[segments.length - 1];
+      if (
+        lastSegment &&
+        lastSegment.length >= 12 &&
+        lastSegment.length <= 128
+      ) {
+        return lastSegment;
+      }
+    }
+
+    // Legacy fallback: original logic for lines that are just the container ID (64 chars)
+    if (
+      line.length > AwsEcsDetector.CONTAINER_ID_LENGTH &&
+      !line.includes('/')
+    ) {
+      return line.substring(line.length - AwsEcsDetector.CONTAINER_ID_LENGTH);
+    }
+
+    return undefined;
   }
 
   /**
