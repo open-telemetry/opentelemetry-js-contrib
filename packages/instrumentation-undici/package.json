@@ -3,7 +3,9 @@
   "version": "0.14.0",
   "description": "OpenTelemetry instrumentation for `undici` http client and Node.js fetch()",
   "main": "build/src/index.js",
+  "module": "build/esm/index.js",
   "types": "build/src/index.d.ts",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
@@ -12,11 +14,11 @@
   "scripts": {
     "prepublishOnly": "npm run compile",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
-    "compile": "tsc -p .",
-    "test": "nyc mocha test/**/*.test.ts",
+    "compile": "tsc --build tsconfig.json tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > build/cjs/package.json",
+    "clean": "tsc --build --clean tsconfig.json tsconfig.cjs.json",
+    "test": "nyc mocha --loader=ts-node/esm test/**/*.test.ts",
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "watch": "tsc -w",
@@ -35,10 +37,23 @@
   "engines": {
     "node": "^18.19.0 || >=20.6.0"
   },
+  "exports": {
+    "import": {
+      "types": "./build/src/index.d.ts",
+      "default": "./build/src/index.js"
+    },
+    "require": {
+      "types": "./build/cjs/index.d.ts",
+      "default": "./build/cjs/index.js"
+    }
+  },
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
-    "build/src/**/*.d.ts"
+    "build/src/**/*.d.ts",
+    "build/cjs/**/*.js",
+    "build/cjs/**/*.js.map",
+    "build/cjs/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
