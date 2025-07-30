@@ -22,11 +22,10 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import {
-  SEMATTRS_CODE_FILEPATH,
-  SEMATTRS_CODE_FUNCTION,
-  SEMATTRS_CODE_LINENO,
-  SEMATTRS_CODE_NAMESPACE,
-  SEMRESATTRS_SERVICE_NAME,
+  ATTR_CODE_FILE_PATH,
+  ATTR_CODE_FUNCTION_NAME,
+  ATTR_CODE_LINE_NUMBER,
+  ATTR_SERVICE_NAME,
 } from '@opentelemetry/semantic-conventions';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 
@@ -57,7 +56,7 @@ describe('CucumberInstrumentation', () => {
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
   const provider = new NodeTracerProvider({
     resource: resourceFromAttributes({
-      [SEMRESATTRS_SERVICE_NAME]: 'CucumberInstrumentation',
+      [ATTR_SERVICE_NAME]: 'CucumberInstrumentation',
     }),
     spanProcessors: [spanProcessor],
   });
@@ -169,10 +168,9 @@ describe('CucumberInstrumentation', () => {
         assert(parent, 'Expected a parent span');
 
         assert.deepEqual(parent.attributes, {
-          [SEMATTRS_CODE_FILEPATH]: path.join('test', 'current.feature'),
-          [SEMATTRS_CODE_LINENO]: 7,
-          [SEMATTRS_CODE_FUNCTION]: 'Button pushing',
-          [SEMATTRS_CODE_NAMESPACE]: 'Basic',
+          [ATTR_CODE_FILE_PATH]: path.join('test', 'current.feature'),
+          [ATTR_CODE_LINE_NUMBER]: 7,
+          [ATTR_CODE_FUNCTION_NAME]: 'Basic Button pushing',
           [AttributeNames.FEATURE_DESCRIPTION]:
             '          A very basic feature file with a single scenario',
           [AttributeNames.FEATURE_LANGUAGE]: 'en',

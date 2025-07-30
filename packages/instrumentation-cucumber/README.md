@@ -53,12 +53,11 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 
 Attributes collected:
 
-| Attribute        | Short Description                                                                |
-| ---------------- | -------------------------------------------------------------------------------- |
-| `code.filepath`  | The source code file name that identifies the code unit as uniquely as possible. |
-| `code.function`  | The method or function name, or equivalent.                                      |
-| `code.lineno`    | The line number in `code.filepath` best representing the operation.              |
-| `code.namespace` | The "namespace" within which `code.function` is defined.                         |
+| Attribute            | Short Description                                                                |
+| -------------------- | -------------------------------------------------------------------------------- |
+| `code.file.path`     | The source code file name that identifies the code unit as uniquely as possible. |
+| `code.function.name` | The method or function fully-qualified name without arguments.                   |
+| `code.line.number`   | The line number in `code.file.path` best representing the operation.             |
 
 ## Useful links
 
