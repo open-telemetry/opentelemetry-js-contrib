@@ -10,17 +10,16 @@
     "directory": "packages/instrumentation-winston"
   },
   "scripts": {
-    "test": "nyc mocha 'test/**/*.test.ts'",
-    "test-all-versions": "tav",
-    "tdd": "npm run test-run -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-winston",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-winston",
-    "compile": "tsc -p ."
+    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "instrumentation",
