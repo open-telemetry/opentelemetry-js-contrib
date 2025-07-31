@@ -15,7 +15,10 @@
  */
 import { diag } from '@opentelemetry/api';
 import type { Attributes, DiagLogger } from '@opentelemetry/api';
-import { ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT } from './semconv';
+import {
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
 /**
  * Read a boolean from an environment variable.
