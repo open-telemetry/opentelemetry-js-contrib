@@ -61,11 +61,6 @@ import {
   ATTR_GEN_AI_TOKEN_TYPE,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-  EVENT_GEN_AI_ASSISTANT_MESSAGE,
-  EVENT_GEN_AI_CHOICE,
-  EVENT_GEN_AI_SYSTEM_MESSAGE,
-  EVENT_GEN_AI_TOOL_MESSAGE,
-  EVENT_GEN_AI_USER_MESSAGE,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
 } from './semconv';
@@ -81,6 +76,16 @@ import {
   GenAIAssistantMessageEventBody,
   GenAIToolMessageEventBody,
 } from './internal-types';
+
+
+
+// The JS semconv package doesn't yet emit constants for event names.
+// TODO: otel-js issue for semconv pkg not including event names
+export const EVENT_GEN_AI_SYSTEM_MESSAGE = 'gen_ai.system.message';
+export const EVENT_GEN_AI_USER_MESSAGE = 'gen_ai.user.message';
+export const EVENT_GEN_AI_ASSISTANT_MESSAGE = 'gen_ai.assistant.message';
+export const EVENT_GEN_AI_TOOL_MESSAGE = 'gen_ai.tool.message';
+export const EVENT_GEN_AI_CHOICE = 'gen_ai.choice';
 
 export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumentationConfig> {
   private _genaiClientOperationDuration!: Histogram;
