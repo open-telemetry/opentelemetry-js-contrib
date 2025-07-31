@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+// avoids a dependency on @opentelemetry/core for hrTime utilities
 import { performance } from 'perf_hooks';
 
 import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
