@@ -17,11 +17,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm run test-run -- --watch-extensions ts --watch",
-    "test": "npm run test-v1-v2 && npm run test-v3 && nyc merge .nyc_output ./coverage/coverage-final.json",
-    "test-v1-v2": "tav winston 2.4.7 npm run test-run",
-    "test-v3": "npm run test-run",
-    "test-run": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test": "nyc mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../scripts/version-update.js"
   },
