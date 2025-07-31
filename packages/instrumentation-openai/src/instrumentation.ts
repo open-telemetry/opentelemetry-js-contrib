@@ -77,8 +77,6 @@ import {
   GenAIToolMessageEventBody,
 } from './internal-types';
 
-
-
 // The JS semconv package doesn't yet emit constants for event names.
 // TODO: otel-js issue for semconv pkg not including event names
 export const EVENT_GEN_AI_SYSTEM_MESSAGE = 'gen_ai.system.message';
