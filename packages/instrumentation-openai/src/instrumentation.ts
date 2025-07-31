@@ -80,12 +80,6 @@ import {
   GenAIToolMessageEventBody,
 } from './internal-types';
 
-// Use `DEBUG=opentelemetry-instrumentation-openai ...` for debug output.
-import Debug from 'debug';
-const debug = Debug('opentelemetry-instrumentation-openai');
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(debug as any).inspectOpts = { depth: 50, colors: true };
-
 export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumentationConfig> {
   private _genaiClientOperationDuration!: Histogram;
   private _genaiClientTokenUsage!: Histogram;
@@ -117,13 +111,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       new InstrumentationNodeModuleDefinition(
         'openai',
         ['>=4.19.0 <5'],
-        (modExports, modVer) => {
-          debug(
-            'instrument openai@%s (isESM=%s), config=%o',
-            modVer,
-            modExports[Symbol.toStringTag] === 'Module',
-            this.getConfig()
-          );
+        modExports => {
           this._wrap(
             modExports.OpenAI.Chat.Completions.prototype,
             'create',
@@ -137,13 +125,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
 
           return modExports;
         },
-        (modExports, modVer) => {
-          debug(
-            'uninstrument openai@%s (isESM=%s), config=%o',
-            modVer,
-            modExports[Symbol.toStringTag] === 'Module',
-            this.getConfig()
-          );
+        modExports => {
           this._unwrap(modExports.OpenAI.Chat.Completions.prototype, 'create');
           this._unwrap(modExports.OpenAI.Embeddings.prototype, 'create');
         }
@@ -193,7 +175,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           return original.apply(this, args);
         }
 
-        debug('OpenAI.Chat.Completions.create args: %O', args);
+        self._diag.debug('OpenAI.Chat.Completions.create args: %O', args);
         const params = args[0];
         const config = self.getConfig();
         const startNow = performance.now();
@@ -435,7 +417,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           break;
         }
         default:
-          debug(
+          this._diag.debug(
             `unknown message role in OpenAI.Chat.Completions.create: ${msg.role}`
           );
       }
@@ -466,7 +448,10 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       yield chunk;
 
       // Gather telemetry from this chunk.
-      debug('OpenAI.Chat.Completions.create stream chunk: %O', chunk);
+      this._diag.debug(
+        'OpenAI.Chat.Completions.create stream chunk: %O',
+        chunk
+      );
       const idx = chunk.choices[0]?.index ?? 0;
       if (!choices[idx]) {
         choices[idx] = {} as {
@@ -603,7 +588,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     config: OpenAIInstrumentationConfig,
     ctx: Context
   ) {
-    debug('OpenAI.Chat.Completions.create result: %O', result);
+    this._diag.debug('OpenAI.Chat.Completions.create result: %O', result);
     try {
       span.setAttribute(
         ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
@@ -696,7 +681,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     commonAttrs: Attributes
   ) {
     return (err: Error) => {
-      debug('OpenAI APIPromise rejection: %O', err);
+      this._diag.debug('OpenAI APIPromise rejection: %O', err);
 
       // https://github.com/openai/openai-node/blob/master/src/error.ts
       // The most reliable low cardinality string for errors seems to be
@@ -734,7 +719,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           return original.apply(this, args);
         }
 
-        debug('OpenAI.Chat.Embeddings.create args: %O', args);
+        self._diag.debug('OpenAI.Chat.Embeddings.create args: %O', args);
         const params = args[0];
         const startNow = performance.now();
 
@@ -804,7 +789,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     commonAttrs: Attributes,
     result: CreateEmbeddingResponse
   ) {
-    debug('OpenAI.Embeddings.create result: %O', result);
+    this._diag.debug('OpenAI.Embeddings.create result: %O', result);
     try {
       span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, result.model);
 
