@@ -20,7 +20,7 @@ import { ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT } from './semconv';
 /**
  * Read a boolean from an environment variable.
  *
- * https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#batch-span-processor
+ * https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#boolean
  *
  * @param {string} name
  * @returns {boolean | undefined}
