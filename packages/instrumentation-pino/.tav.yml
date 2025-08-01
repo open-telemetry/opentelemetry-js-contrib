@@ -5,7 +5,14 @@ pino:
     node: ">=18"
     commands: npm run test
   - versions:
-      include: '>=5.14.0 <9'
+      include: '>=7.0.0 <9'
       mode: max-7
     node: ">=14"
+    commands: npm run test
+  - versions:
+      include: '>=5.14.0 <7'
+      mode: max-7
+    node: ">=14"
+    peerDependencies:
+      - "fast-safe-stringify@2.1.1"
     commands: npm run test
