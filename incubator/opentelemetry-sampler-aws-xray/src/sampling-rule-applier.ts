@@ -54,15 +54,26 @@ import {
   ATTR_AWS_LAMBDA_INVOKED_ARN,
   ATTR_CLOUD_RESOURCE_ID,
 } from './semconv';
-import { ISamplingRule, SamplingTargetDocument } from './types';
+import { RateLimitingSampler } from './rate-limiting-sampler';
+import {
+  ISamplingRule,
+  ISamplingStatistics,
+  SamplingTargetDocument,
+} from './types';
 import { SamplingRule } from './sampling-rule';
 import { Statistics } from './statistics';
 import { CLOUD_PLATFORM_MAPPING, attributeMatch, wildcardMatch } from './utils';
 
+// Max date time in JavaScript
+const MAX_DATE_TIME_MILLIS: number = new Date(8_640_000_000_000_000).getTime();
+
 export class SamplingRuleApplier {
   public samplingRule: SamplingRule;
+  private reservoirSampler: RateLimitingSampler;
   private fixedRateSampler: TraceIdRatioBasedSampler;
   private statistics: Statistics;
+  private borrowingEnabled: boolean;
+  private reservoirExpiryTimeInMillis: number;
 
   constructor(
     samplingRule: ISamplingRule,
@@ -74,12 +85,44 @@ export class SamplingRuleApplier {
     this.fixedRateSampler = new TraceIdRatioBasedSampler(
       this.samplingRule.FixedRate
     );
-    // TODO: Add Reservoir Sampler (Rate Limiting Sampler)
+    if (samplingRule.ReservoirSize > 0) {
+      this.reservoirSampler = new RateLimitingSampler(1);
+    } else {
+      this.reservoirSampler = new RateLimitingSampler(0);
+    }
 
+    this.reservoirExpiryTimeInMillis = MAX_DATE_TIME_MILLIS;
     this.statistics = statistics;
     this.statistics.resetStatistics();
+    this.borrowingEnabled = true;
 
-    // TODO: Update Sampling Targets using provided `target` parameter
+    if (target) {
+      this.borrowingEnabled = false;
+      if (typeof target.ReservoirQuota === 'number') {
+        this.reservoirSampler = new RateLimitingSampler(target.ReservoirQuota);
+      }
+
+      if (typeof target.ReservoirQuotaTTL === 'number') {
+        this.reservoirExpiryTimeInMillis = new Date(
+          target.ReservoirQuotaTTL * 1000
+        ).getTime();
+      } else {
+        this.reservoirExpiryTimeInMillis = Date.now();
+      }
+
+      if (typeof target.FixedRate === 'number') {
+        this.fixedRateSampler = new TraceIdRatioBasedSampler(target.FixedRate);
+      }
+    }
+  }
+
+  public withTarget(target: SamplingTargetDocument): SamplingRuleApplier {
+    const newApplier: SamplingRuleApplier = new SamplingRuleApplier(
+      this.samplingRule,
+      this.statistics,
+      target
+    );
+    return newApplier;
   }
 
   public matches(attributes: Attributes, resource: Resource): boolean {
@@ -153,17 +196,43 @@ export class SamplingRuleApplier {
     attributes: Attributes,
     links: Link[]
   ): SamplingResult {
-    // TODO: Record Sampling Statistics
-
+    let hasBorrowed = false;
     let result: SamplingResult = { decision: SamplingDecision.NOT_RECORD };
 
-    // TODO: Apply Reservoir Sampling
+    const nowInMillis: number = Date.now();
+    const reservoirExpired: boolean =
+      nowInMillis >= this.reservoirExpiryTimeInMillis;
+
+    if (!reservoirExpired) {
+      result = this.reservoirSampler.shouldSample(
+        context,
+        traceId,
+        spanName,
+        spanKind,
+        attributes,
+        links
+      );
+      hasBorrowed =
+        this.borrowingEnabled &&
+        result.decision !== SamplingDecision.NOT_RECORD;
+    }
 
     if (result.decision === SamplingDecision.NOT_RECORD) {
       result = this.fixedRateSampler.shouldSample(context, traceId);
     }
 
+    this.statistics.SampleCount +=
+      result.decision !== SamplingDecision.NOT_RECORD ? 1 : 0;
+    this.statistics.BorrowCount += hasBorrowed ? 1 : 0;
+    this.statistics.RequestCount += 1;
+
     return result;
+  }
+
+  public snapshotStatistics(): ISamplingStatistics {
+    const statisticsCopy: ISamplingStatistics = { ...this.statistics };
+    this.statistics.resetStatistics();
+    return statisticsCopy;
   }
 
   private getArn(

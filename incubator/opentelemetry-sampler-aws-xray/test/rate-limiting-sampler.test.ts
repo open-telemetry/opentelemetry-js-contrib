@@ -22,38 +22,23 @@ import { SpanKind, context } from '@opentelemetry/api';
 import { SamplingDecision } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'expect';
 import * as sinon from 'sinon';
-import { FallbackSampler } from '../src/fallback-sampler';
+import { RateLimitingSampler } from '../src/rate-limiting-sampler';
 import { testTraceId } from './remote-sampler.test';
 
 let clock: sinon.SinonFakeTimers;
 
-describe('FallBackSampler', () => {
+describe('RateLimitingSampler', () => {
   beforeEach(() => {
     clock = sinon.useFakeTimers(Date.now());
   });
   afterEach(() => {
-    try {
-      clock.restore();
-    } catch {
-      // do nothing
-    }
+    clock.restore();
   });
-  it('testShouldSampleWithQuotaOnly', () => {
-    // Ensure FallbackSampler's internal TraceIdRatioBasedSampler will always return SamplingDecision.NOT_RECORD
-    const sampler = new FallbackSampler(0);
+  it('testShouldSample', () => {
+    const sampler = new RateLimitingSampler(30);
 
-    sampler.shouldSample(
-      context.active(),
-      testTraceId,
-      'name',
-      SpanKind.CLIENT,
-      {},
-      []
-    );
-
-    // 0 seconds passed, 0 quota available
     let sampled = 0;
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 100; i++) {
       if (
         sampler.shouldSample(
           context.active(),
@@ -69,10 +54,88 @@ describe('FallBackSampler', () => {
     }
     expect(sampled).toEqual(0);
 
-    // 0.4 seconds passed, 0.4 quota available
+    clock.tick(0.5 * 1000); // Move forward half a second
+
     sampled = 0;
-    clock.tick(0.4 * 1000);
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 100; i++) {
+      if (
+        sampler.shouldSample(
+          context.active(),
+          testTraceId,
+          'name',
+          SpanKind.CLIENT,
+          {},
+          []
+        ).decision !== SamplingDecision.NOT_RECORD
+      ) {
+        sampled += 1;
+      }
+    }
+    expect(sampled).toEqual(15);
+
+    clock.tick(1 * 1000); // Move forward 1 second
+
+    sampled = 0;
+    for (let i = 0; i < 100; i++) {
+      if (
+        sampler.shouldSample(
+          context.active(),
+          testTraceId,
+          'name',
+          SpanKind.CLIENT,
+          {},
+          []
+        ).decision !== SamplingDecision.NOT_RECORD
+      ) {
+        sampled += 1;
+      }
+    }
+    expect(sampled).toEqual(30);
+
+    clock.tick(2.5 * 1000); // Move forward 2.5 seconds
+
+    sampled = 0;
+    for (let i = 0; i < 100; i++) {
+      if (
+        sampler.shouldSample(
+          context.active(),
+          testTraceId,
+          'name',
+          SpanKind.CLIENT,
+          {},
+          []
+        ).decision !== SamplingDecision.NOT_RECORD
+      ) {
+        sampled += 1;
+      }
+    }
+    expect(sampled).toEqual(30);
+
+    clock.tick(1000 * 1000); // Move forward 1000 seconds
+
+    sampled = 0;
+    for (let i = 0; i < 100; i++) {
+      if (
+        sampler.shouldSample(
+          context.active(),
+          testTraceId,
+          'name',
+          SpanKind.CLIENT,
+          {},
+          []
+        ).decision !== SamplingDecision.NOT_RECORD
+      ) {
+        sampled += 1;
+      }
+    }
+    expect(sampled).toEqual(30);
+  });
+
+  it('testShouldSampleWithQuotaOfOne', () => {
+    const sampler = new RateLimitingSampler(1);
+
+    let sampled = 0;
+    for (let i = 0; i < 50; i++) {
       if (
         sampler.shouldSample(
           context.active(),
@@ -88,10 +151,10 @@ describe('FallBackSampler', () => {
     }
     expect(sampled).toEqual(0);
 
-    // 0.8 seconds passed, 0.8 quota available
+    clock.tick(0.5 * 1000); // Move forward half a second
+
     sampled = 0;
-    clock.tick(0.4 * 1000);
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 50; i++) {
       if (
         sampler.shouldSample(
           context.active(),
@@ -107,10 +170,10 @@ describe('FallBackSampler', () => {
     }
     expect(sampled).toEqual(0);
 
-    // 1.2 seconds passed, 1 quota consumed, 0 quota available
+    clock.tick(0.5 * 1000);
+
     sampled = 0;
-    clock.tick(0.4 * 1000);
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 50; i++) {
       if (
         sampler.shouldSample(
           context.active(),
@@ -126,67 +189,10 @@ describe('FallBackSampler', () => {
     }
     expect(sampled).toEqual(1);
 
-    // 1.6 seconds passed, 0.4 quota available
-    sampled = 0;
-    clock.tick(0.4 * 1000);
-    for (let i = 0; i < 30; i++) {
-      if (
-        sampler.shouldSample(
-          context.active(),
-          testTraceId,
-          'name',
-          SpanKind.CLIENT,
-          {},
-          []
-        ).decision !== SamplingDecision.NOT_RECORD
-      ) {
-        sampled += 1;
-      }
-    }
-    expect(sampled).toEqual(0);
+    clock.tick(1000 * 1000); // Move forward 1000 seconds
 
-    // 2.0 seconds passed, 0.8 quota available
     sampled = 0;
-    clock.tick(0.4 * 1000);
-    for (let i = 0; i < 30; i++) {
-      if (
-        sampler.shouldSample(
-          context.active(),
-          testTraceId,
-          'name',
-          SpanKind.CLIENT,
-          {},
-          []
-        ).decision !== SamplingDecision.NOT_RECORD
-      ) {
-        sampled += 1;
-      }
-    }
-    expect(sampled).toEqual(0);
-
-    // 2.4 seconds passed, one more quota consumed, 0 quota available
-    sampled = 0;
-    clock.tick(0.4 * 1000);
-    for (let i = 0; i < 30; i++) {
-      if (
-        sampler.shouldSample(
-          context.active(),
-          testTraceId,
-          'name',
-          SpanKind.CLIENT,
-          {},
-          []
-        ).decision !== SamplingDecision.NOT_RECORD
-      ) {
-        sampled += 1;
-      }
-    }
-    expect(sampled).toEqual(1);
-
-    // 100 seconds passed, only one quota can be consumed
-    sampled = 0;
-    clock.tick(100 * 1000);
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 50; i++) {
       if (
         sampler.shouldSample(
           context.active(),
@@ -204,8 +210,8 @@ describe('FallBackSampler', () => {
   });
 
   it('toString()', () => {
-    expect(new FallbackSampler().toString()).toEqual(
-      'FallbackSampler{fallback sampling with sampling config of 1 req/sec and 5% of additional requests}'
+    expect(new RateLimitingSampler(123).toString()).toEqual(
+      'RateLimitingSampler{rate limiting sampling with sampling config of 123 req/sec and 0% of additional requests}'
     );
   });
 });

@@ -23,18 +23,16 @@ import {
   Sampler,
   SamplingDecision,
   SamplingResult,
-  TraceIdRatioBasedSampler,
 } from '@opentelemetry/sdk-trace-base';
-import { RateLimitingSampler } from './rate-limiting-sampler';
+import { RateLimiter } from './rate-limiter';
 
-// FallbackSampler samples 1 req/sec and additional 5% of requests using TraceIdRatioBasedSampler.
-export class FallbackSampler implements Sampler {
-  private fixedRateSampler: TraceIdRatioBasedSampler;
-  private rateLimitingSampler: RateLimitingSampler;
+export class RateLimitingSampler implements Sampler {
+  private quota: number;
+  private reservoir: RateLimiter;
 
-  constructor(ratio = 0.05, quota = 1) {
-    this.fixedRateSampler = new TraceIdRatioBasedSampler(ratio);
-    this.rateLimitingSampler = new RateLimitingSampler(quota);
+  constructor(quota: number) {
+    this.quota = quota;
+    this.reservoir = new RateLimiter(quota);
   }
 
   shouldSample(
@@ -45,24 +43,16 @@ export class FallbackSampler implements Sampler {
     attributes: Attributes,
     links: Link[]
   ): SamplingResult {
-    const samplingResult: SamplingResult =
-      this.rateLimitingSampler.shouldSample(
-        context,
-        traceId,
-        spanName,
-        spanKind,
-        attributes,
-        links
-      );
-
-    if (samplingResult.decision !== SamplingDecision.NOT_RECORD) {
-      return samplingResult;
+    if (this.reservoir.take(1)) {
+      return {
+        decision: SamplingDecision.RECORD_AND_SAMPLED,
+        attributes: attributes,
+      };
     }
-
-    return this.fixedRateSampler.shouldSample(context, traceId);
+    return { decision: SamplingDecision.NOT_RECORD, attributes: attributes };
   }
 
   public toString(): string {
-    return 'FallbackSampler{fallback sampling with sampling config of 1 req/sec and 5% of additional requests}';
+    return `RateLimitingSampler{rate limiting sampling with sampling config of ${this.quota} req/sec and 0% of additional requests}`;
   }
 }
