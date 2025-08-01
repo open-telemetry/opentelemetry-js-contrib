@@ -32,7 +32,11 @@ import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { RedisInstrumentationConfig } from '../types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
-import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_OPERATION_BATCH_SIZE,
+} from '@opentelemetry/semantic-conventions';
 import type { MultiErrorReply } from './internal-types';
 
 const OTEL_OPEN_SPANS = Symbol(
@@ -48,7 +52,7 @@ interface MutliCommandInfo {
   commandArgs: Array<string | Buffer>;
 }
 
-export class RedisInstrumentationV4 extends InstrumentationBase<RedisInstrumentationConfig> {
+export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
 
   constructor(config: RedisInstrumentationConfig = {}) {
@@ -111,7 +115,7 @@ export class RedisInstrumentationV4 extends InstrumentationBase<RedisInstrumenta
 
     const multiCommanderModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/client/multi-command.js`,
-      ['^1.0.0'],
+      ['^1.0.0', '^5.0.0'],
       (moduleExports: any) => {
         const redisClientMultiCommandPrototype =
           moduleExports?.default?.prototype;
@@ -150,7 +154,7 @@ export class RedisInstrumentationV4 extends InstrumentationBase<RedisInstrumenta
 
     const clientIndexModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/client/index.js`,
-      ['^1.0.0'],
+      ['^1.0.0', '^5.0.0'],
       (moduleExports: any) => {
         const redisClientPrototype = moduleExports?.default?.prototype;
 
@@ -213,7 +217,7 @@ export class RedisInstrumentationV4 extends InstrumentationBase<RedisInstrumenta
 
     return new InstrumentationNodeModuleDefinition(
       basePackageName,
-      ['^1.0.0'],
+      ['^1.0.0', '^5.0.0'],
       (moduleExports: any) => {
         return moduleExports;
       },
@@ -327,11 +331,10 @@ export class RedisInstrumentationV4 extends InstrumentationBase<RedisInstrumenta
     return function connectWrapper(original: Function) {
       return function patchedConnect(this: any): Promise<void> {
         const options = this.options;
-
-        const attributes = getClientAttributes(plugin._diag, options);
+        const attributes = getClientAttributes(options);
 
         const span = plugin.tracer.startSpan(
-          `${RedisInstrumentationV4.COMPONENT}-connect`,
+          `${RedisInstrumentationV4_V5.COMPONENT}-connect`,
           {
             kind: SpanKind.CLIENT,
             attributes,
@@ -379,12 +382,13 @@ export class RedisInstrumentationV4 extends InstrumentationBase<RedisInstrumenta
     const dbStatementSerializer =
       this.getConfig().dbStatementSerializer || defaultDbStatementSerializer;
 
-    const attributes = getClientAttributes(this._diag, clientOptions);
+    const attributes = getClientAttributes(clientOptions);
 
     try {
+      attributes[ATTR_DB_OPERATION_NAME] = commandName;
       const dbStatement = dbStatementSerializer(commandName, commandArgs);
       if (dbStatement != null) {
-        attributes[SEMATTRS_DB_STATEMENT] = dbStatement;
+        attributes[ATTR_DB_QUERY_TEXT] = dbStatement;
       }
     } catch (e) {
       this._diag.error('dbStatementSerializer throw an exception', e, {
@@ -393,7 +397,7 @@ export class RedisInstrumentationV4 extends InstrumentationBase<RedisInstrumenta
     }
 
     const span = this.tracer.startSpan(
-      `${RedisInstrumentationV4.COMPONENT}-${commandName}`,
+      `${RedisInstrumentationV4_V5.COMPONENT}-${commandName}`,
       {
         kind: SpanKind.CLIENT,
         attributes,
@@ -447,8 +451,12 @@ export class RedisInstrumentationV4 extends InstrumentationBase<RedisInstrumenta
         'number of multi command spans does not match response from redis'
       );
     }
+
     for (let i = 0; i < openSpans.length; i++) {
       const { span, commandName, commandArgs } = openSpans[i];
+      if (openSpans.length >= 2) {
+        span.setAttribute(ATTR_DB_OPERATION_BATCH_SIZE, openSpans.length);
+      }
       const currCommandRes = replies[i];
       const [res, err] =
         currCommandRes instanceof Error
