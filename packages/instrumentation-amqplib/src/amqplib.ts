@@ -65,7 +65,9 @@ import {
   CONNECTION_ATTRIBUTES,
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
+  InstrumentationConnection,
   InstrumentationConsumeChannel,
+  InstrumentationConsumeMessage,
   InstrumentationMessage,
   InstrumentationPublishChannel,
   isConfirmChannelTracing,
@@ -253,18 +255,11 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
         this,
         url,
         socketOptions,
-        function (this: unknown, err, conn: Connection) {
+        function (this: unknown, err, conn: InstrumentationConnection) {
           if (err == null) {
             const urlAttributes = getConnectionAttributesFromUrl(url);
-            // the type of conn in @types/amqplib is amqp.Connection, but in practice the library send the
-            // `serverProperties` on the `conn` and not in a property `connection`.
-            // I don't have capacity to debug it currently but it should probably be fixed in @types or
-            // in the package itself
-            // currently setting as any to calm typescript
-            const serverAttributes = getConnectionAttributesFromServer(
-              conn as any
-            );
-            (conn as any)[CONNECTION_ATTRIBUTES] = {
+            const serverAttributes = getConnectionAttributesFromServer(conn);
+            conn[CONNECTION_ATTRIBUTES] = {
               ...urlAttributes,
               ...serverAttributes,
             };
@@ -402,7 +397,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
 
       const patchedOnMessage = function (
         this: unknown,
-        msg: InstrumentationMessage | null
+        msg: InstrumentationConsumeMessage | null
       ) {
         // msg is expected to be null for signaling consumer cancel notification
         // https://www.rabbitmq.com/consumer-cancel.html
@@ -724,7 +719,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
 
   private callConsumeEndHook(
     span: Span,
-    msg: ConsumeMessage,
+    msg: InstrumentationMessage,
     rejected: boolean | null,
     endOperation: EndOperation
   ) {
