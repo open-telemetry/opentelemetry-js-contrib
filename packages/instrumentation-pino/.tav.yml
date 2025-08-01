@@ -15,4 +15,6 @@ pino:
     node: ">=14"
     peerDependencies:
       - "fast-safe-stringify@2.1.1"
-    commands: npm run test
+    commands:
+      - npm ls -la
+      - npm run test
