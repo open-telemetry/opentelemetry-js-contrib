@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-knex",
-  "version": "0.47.0",
+  "version": "0.48.0",
   "description": "OpenTelemetry instrumentation for `knex` database SQL query builder",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -10,18 +10,19 @@
     "directory": "packages/instrumentation-knex"
   },
   "scripts": {
-    "test": "nyc --no-clean mocha 'test/**/*.ts'",
-    "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-knex",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "version:update": "node ../../scripts/version-update.js",
     "lint:readme": "node ../../scripts/lint-readme",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-knex",
-    "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
-    "watch": "tsc -w",
-    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc mocha 'test/**/*.ts'",
+    "//todo": "echo \"add test-all-versions\"",
+    "version:update": "node ../../scripts/version-update.js",
+    "watch": "tsc -w"
   },
   "keywords": [
     "instrumentation",
@@ -61,7 +62,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.202.0",
+    "@opentelemetry/instrumentation": "^0.203.0",
     "@opentelemetry/semantic-conventions": "^1.33.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-knex#readme"

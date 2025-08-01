@@ -76,7 +76,7 @@ const execPromise = (conn: Connection, command: string) => {
 
 describe('mysql2', () => {
   // assumes local mysql db is already available in CI or
-  // using `npm run test-services:start` script at the root folder
+  // using `npm run test-services:start` script
   const shouldTest = process.env.RUN_MYSQL_TESTS;
 
   before(async function () {
@@ -1221,6 +1221,200 @@ describe('mysql2', () => {
                 done();
               });
             });
+          });
+        });
+      });
+    });
+    describe('#maskStatementHook', () => {
+      beforeEach(done => {
+        //create table user and insert data
+        rootConnection.query(
+          'CREATE TABLE user (id INT, name VARCHAR(255), age INT)',
+          () => {
+            rootConnection.query(
+              'INSERT INTO user (id, name, age) VALUES (1, "test", 35)',
+              done
+            );
+          }
+        );
+      });
+
+      afterEach(done => {
+        rootConnection.query('DROP TABLE user', done);
+      });
+      describe('default maskStatementHook', () => {
+        beforeEach(done => {
+          instrumentation.setConfig({
+            maskStatement: true,
+          });
+          memoryExporter.reset();
+          done();
+        });
+
+        it('should mask string and numbers in statements', done => {
+          const query =
+            "SELECT * FROM user WHERE name = 'test' AND age = 35 AND id = 1";
+          const maskedQuery =
+            'SELECT * FROM user WHERE name = ? AND age = ? AND id = ?';
+          const span = provider.getTracer('default').startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            connection.query(query, (err, res: RowDataPacket[]) => {
+              assert.ifError(err);
+              assert.ok(res);
+              assert.strictEqual(res[0].name, 'test');
+              assert.strictEqual(res[0].age, 35);
+              assert.strictEqual(res[0].id, 1);
+              const spans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(spans.length, 1);
+              assertSpan(spans[0], maskedQuery);
+              done();
+            });
+          });
+        });
+      });
+      describe('custom maskStatementHook', () => {
+        beforeEach(done => {
+          instrumentation.setConfig({
+            maskStatement: true,
+            maskStatementHook: query => {
+              return query
+                .replace(/\b\d+\b/g, '*')
+                .replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, '*');
+            },
+          });
+          memoryExporter.reset();
+          done();
+        });
+
+        it('should mask string and numbers in statements', done => {
+          const query =
+            "SELECT * FROM user WHERE name = 'test' AND age = 35 AND id = 1";
+          const maskedQuery =
+            'SELECT * FROM user WHERE name = * AND age = * AND id = *';
+          const span = provider.getTracer('default').startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            connection.query(query, (err, res: RowDataPacket[]) => {
+              assert.ifError(err);
+              assert.ok(res);
+              assert.strictEqual(res[0].name, 'test');
+              assert.strictEqual(res[0].age, 35);
+              assert.strictEqual(res[0].id, 1);
+              const spans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(spans.length, 1);
+              assertSpan(spans[0], maskedQuery);
+              done();
+            });
+          });
+        });
+      });
+      describe('maskStatementHook with error', () => {
+        beforeEach(done => {
+          instrumentation.setConfig({
+            maskStatement: true,
+            maskStatementHook: () => {
+              throw new Error('random failure!');
+            },
+          });
+          memoryExporter.reset();
+          done();
+        });
+        it('should not affect the behavior of the query', done => {
+          const query =
+            "SELECT * FROM user WHERE name = 'test' AND age = 35 AND id = 1";
+          const errorQuery =
+            'Could not determine the query due to an error in masking or formatting';
+          const span = provider.getTracer('default').startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            connection.query(query, (err, res: RowDataPacket[]) => {
+              assert.ifError(err);
+              assert.ok(res);
+              assert.strictEqual(res[0].name, 'test');
+              assert.strictEqual(res[0].age, 35);
+              assert.strictEqual(res[0].id, 1);
+              const spans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(spans.length, 1);
+              assertSpan(spans[0], errorQuery);
+              done();
+            });
+          });
+        });
+      });
+    });
+    describe('#maskStatement', () => {
+      beforeEach(done => {
+        memoryExporter.reset();
+        done();
+      });
+
+      it('should mask query if maskStatement is true', done => {
+        instrumentation.setConfig({
+          maskStatement: true,
+        });
+        const query = 'SELECT 1+1 as solution';
+        const maskedQuery = 'SELECT ?+? as solution';
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          connection.query(query, (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], maskedQuery);
+            done();
+          });
+        });
+      });
+      it('should return masked query, if values are present', done => {
+        instrumentation.setConfig({
+          maskStatement: true,
+        });
+        const query = 'SELECT ?+? as solution';
+        const maskedQuery = 'SELECT ?+? as solution';
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          connection.query(query, [1, 1], (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], maskedQuery);
+            done();
+          });
+        });
+      });
+      it('should not mask query if maskStatement is false (default)', done => {
+        const query = 'SELECT 1+1 as solution';
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          connection.query(query, (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], query);
+            done();
+          });
+        });
+      });
+      it('should return query with values, if values are present and maskStatement is false', done => {
+        instrumentation.setConfig({
+          maskStatement: false,
+        });
+        const query = 'SELECT ?+? as solution';
+        const queryWithValues = 'SELECT 1+1 as solution';
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          connection.query(query, [1, 1], (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], queryWithValues);
+            done();
           });
         });
       });

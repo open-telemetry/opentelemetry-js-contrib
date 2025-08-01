@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-generic-pool",
-  "version": "0.46.1",
+  "version": "0.47.0",
   "description": "OpenTelemetry instrumentation for `generic-pool` resource pool for managing expensive resources",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -17,7 +17,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-generic-pool",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-generic-pool",
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w",
@@ -62,7 +62,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.202.0"
+    "@opentelemetry/instrumentation": "^0.203.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-generic-pool#readme"
 }

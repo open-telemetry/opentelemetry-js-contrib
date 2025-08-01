@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cassandra-driver",
-  "version": "0.48.0",
+  "version": "0.49.0",
   "description": "OpenTelemetry instrumentation for `cassandra-driver` database client library for Apache Cassandra",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -10,17 +10,22 @@
     "directory": "packages/instrumentation-cassandra-driver"
   },
   "scripts": {
-    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-cassandra-driver",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../scripts/version-update.js",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-cassandra-driver",
-    "compile": "tsc -p .",
-    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
+    "//todo": "echo \"add test-all-versions\"",
+    "test-services:start": "cd ../.. && npm run test-services:start cassandra",
+    "test-services:stop": "cd ../.. && npm run test-services:stop cassandra",
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json",
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "cassandra-driver",
@@ -50,7 +55,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.48.0",
+    "@opentelemetry/contrib-test-utils": "^0.49.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/mocha": "10.0.10",
@@ -58,13 +63,14 @@
     "@types/semver": "7.5.8",
     "@types/sinon": "17.0.4",
     "cassandra-driver": "4.6.4",
+    "cross-env": "7.0.3",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.202.0",
+    "@opentelemetry/instrumentation": "^0.203.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-cassandra-driver#readme"

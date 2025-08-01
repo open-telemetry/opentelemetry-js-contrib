@@ -66,7 +66,6 @@ const tracer = provider.getTracer('example-document-load');
 
 const getData = url =>
   new Promise((resolve, reject) => {
-    // eslint-disable-next-line no-undef
     const req = new XMLHttpRequest();
     req.open('GET', url, true);
     req.send();

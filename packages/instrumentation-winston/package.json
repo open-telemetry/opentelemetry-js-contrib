@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-winston",
-  "version": "0.47.0",
+  "version": "0.48.0",
   "description": "OpenTelemetry instrumentation for `winston` logger",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -10,21 +10,17 @@
     "directory": "packages/instrumentation-winston"
   },
   "scripts": {
-    "test": "npm run test-v1-v2 && npm run test-v3 && nyc merge .nyc_output ./coverage/coverage-final.json",
-    "test-v1-v2": "tav winston 2.4.7 npm run test-run",
-    "test-v3": "npm run test-run",
-    "test-run": "nyc --no-clean mocha 'test/**/*.test.ts'",
-    "test-all-versions": "tav",
-    "tdd": "npm run test-run -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-winston",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-winston",
-    "compile": "tsc -p .",
-    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
+    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
+    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json",
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "instrumentation",
@@ -56,7 +52,7 @@
     "@opentelemetry/context-async-hooks": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@opentelemetry/winston-transport": "^0.13.0",
+    "@opentelemetry/winston-transport": "^0.14.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
@@ -70,8 +66,8 @@
     "winston2": "npm:winston@2.4.7"
   },
   "dependencies": {
-    "@opentelemetry/api-logs": "^0.202.0",
-    "@opentelemetry/instrumentation": "^0.202.0"
+    "@opentelemetry/api-logs": "^0.203.0",
+    "@opentelemetry/instrumentation": "^0.203.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-winston#readme"
 }

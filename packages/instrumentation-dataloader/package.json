@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-dataloader",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "OpenTelemetry instrumentation for `dataloader` data fetching layer",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,7 +11,7 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-dataloader",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-dataloader",
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
@@ -60,7 +60,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.202.0"
+    "@opentelemetry/instrumentation": "^0.203.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-dataloader#readme"
 }

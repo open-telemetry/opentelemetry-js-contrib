@@ -44,7 +44,7 @@ import {
 } from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { UpDownCounter, MeterProvider } from '@opentelemetry/api';
+import { UpDownCounter } from '@opentelemetry/api';
 
 type getConnectionCallbackType = (
   err: mysqlTypes.MysqlError,
@@ -59,15 +59,9 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
 
   constructor(config: MySQLInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._setMetricInstruments();
   }
 
-  override setMeterProvider(meterProvider: MeterProvider) {
-    super.setMeterProvider(meterProvider);
-    this._setMetricInstruments();
-  }
-
-  private _setMetricInstruments() {
+  protected override _updateMetricInstruments() {
     this._connectionsUsage = this.meter.createUpDownCounter(
       'db.client.connections.usage', //TODO:: use semantic convention
       {

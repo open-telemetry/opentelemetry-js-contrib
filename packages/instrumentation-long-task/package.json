@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-long-task",
-  "version": "0.47.0",
+  "version": "0.48.0",
   "description": "OpenTelemetry instrumentation for long task Web API",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -12,16 +12,16 @@
     "directory": "packages/instrumentation-long-task"
   },
   "scripts": {
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-long-task",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-long-task",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "prepublishOnly": "npm run compile",
     "tdd": "karma start",
     "test:browser": "nyc karma start --single-run",
+    "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
   },
   "keywords": [
@@ -82,7 +82,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.202.0"
+    "@opentelemetry/instrumentation": "^0.203.0"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/plugin-react-load",
-  "version": "0.34.1",
+  "version": "0.35.0",
   "description": "OpenTelemetry instrumentation for React class component lifecycle methods",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -13,15 +13,15 @@
   },
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/plugin-react-load",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
-    "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/plugin-react-load",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "prepublishOnly": "npm run compile",
     "tdd": "karma start",
     "test:browser": "nyc karma start --single-run",
+    "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
   },
   "keywords": [
@@ -91,7 +91,7 @@
     "react": "^16.13.1 || ^17.0.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.202.0",
+    "@opentelemetry/instrumentation": "^0.203.0",
     "shimmer": "^1.2.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/plugin-react-load#readme"

@@ -4,6 +4,9 @@ on:
     # TODO: remove it
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   compile:
     strategy:

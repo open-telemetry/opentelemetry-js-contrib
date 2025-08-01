@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-lambda",
-  "version": "0.53.1",
+  "version": "0.54.0",
   "description": "OpenTelemetry instrumentation for AWS Lambda function invocations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -20,6 +20,7 @@
     "version:update": "node ../../scripts/version-update.js",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-aws-lambda",
     "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-aws-lambda",
     "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
   },
   "keywords": [
@@ -61,7 +62,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.202.0",
+    "@opentelemetry/instrumentation": "^0.203.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/aws-lambda": "8.10.150"
   },

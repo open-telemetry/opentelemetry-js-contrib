@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-nestjs-core",
-  "version": "0.48.1",
+  "version": "0.49.0",
   "description": "OpenTelemetry instrumentation for NestJS server side applications framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,7 +11,7 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-nestjs-core",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-nestjs-core",
     "compile": "tsc -p .",
     "compile:watch": "tsc -w",
     "lint": "eslint . --ext .ts",
@@ -71,7 +71,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.202.0",
+    "@opentelemetry/instrumentation": "^0.203.0",
     "@opentelemetry/semantic-conventions": "^1.30.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs-core#readme"
