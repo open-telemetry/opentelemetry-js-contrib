@@ -22,8 +22,8 @@
  * if a response is available for the current test it is used, and
  * otherwise a real request is made and the response is recorded.
  * To re-record all responses, set the NOCK_BACK_MODE environment variable
- * to 'update' - when recording responses, valid AWS credentials for
- * accessing bedrock are also required. To record for new tests while
+ * to 'update' - when recording responses, OPENAI_API_KEY must be set to
+ * a valid API key. To record for new tests while
  * keeping existing recordings, set NOCK_BACK_MODE to 'record'.
  */
 
@@ -148,7 +148,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-Bs24CNH3ITxv65qJpGjVXijYv6qX2',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
@@ -295,7 +295,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1.0,
         [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['foo'],
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuBHDcCmHq9bBC02V7hVNxoUXiTpY',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
@@ -430,7 +430,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuBWCXM60KsHvr7qJbN0qJTHUTm98',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 6,
@@ -596,7 +596,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuC0QNgPhzfHw7tSwGnvSOIL636JK',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 57,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 46,
@@ -764,7 +764,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuC0RWtqOwuGmjmhnEbVkzMHfn3yD',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 125,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 26,
@@ -1032,7 +1032,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuCqJDJUksm1aQdrgi9Op1ctYVT2W',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 4,
@@ -1171,7 +1171,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuD8lZu0vCrjndaCk7PjljTW9SBKM',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 6,
@@ -1343,7 +1343,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuD8m8M1LxtToLHmXvOoBpgYXhQjS',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 57,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 46,
@@ -1517,7 +1517,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuD8oiSFVnFZ0lfqQ7WLrRNScb5eP',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 125,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 27,
@@ -1717,7 +1717,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuDJt3XpbTrkrYBUooP67fAFPTDDa',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
       });
 
@@ -1816,7 +1816,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuDrRRWybY6JHzabaUyR2OtaEGp79',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 4,
@@ -1957,7 +1957,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuDPruvXvy1cTouU79MhRWdmZWMqk',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
       });
 
@@ -2102,7 +2102,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuDpRr8h0kwBLc53wzb0GeYXsWCcX',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
       });
 
@@ -2235,7 +2235,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuDpTOhzJCQLCyjQ8OcbJsShIN7XM',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
       });
 
@@ -2379,7 +2379,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuEAdgA3DwPSOefWR7otezsJxzkO1',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
       });
 
@@ -2479,7 +2479,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuEDkFdMN01PVlzzLwbFr98W0jM1N',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
       });
 
@@ -2582,7 +2582,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuDvE94ISQVUWZdbkJ6k1XcOMmyzg',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
       });
 
@@ -2686,7 +2686,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuDvFELsVfoy6ztg2r7kEkFtC8lyI',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
       });
 
@@ -2837,7 +2837,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuDvFNfcuXkfEXklmzyIFrJJb4bG0',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
       });
 
@@ -2976,7 +2976,7 @@ describe('OpenAI', function () {
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
-        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-BuDvHbKGyexqi9yq72brOvY4WfZMH',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
       });
 

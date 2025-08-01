@@ -79,11 +79,11 @@ import {
 
 // The JS semconv package doesn't yet emit constants for event names.
 // TODO: otel-js issue for semconv pkg not including event names
-export const EVENT_GEN_AI_SYSTEM_MESSAGE = 'gen_ai.system.message';
-export const EVENT_GEN_AI_USER_MESSAGE = 'gen_ai.user.message';
-export const EVENT_GEN_AI_ASSISTANT_MESSAGE = 'gen_ai.assistant.message';
-export const EVENT_GEN_AI_TOOL_MESSAGE = 'gen_ai.tool.message';
-export const EVENT_GEN_AI_CHOICE = 'gen_ai.choice';
+const EVENT_GEN_AI_SYSTEM_MESSAGE = 'gen_ai.system.message';
+const EVENT_GEN_AI_USER_MESSAGE = 'gen_ai.user.message';
+const EVENT_GEN_AI_ASSISTANT_MESSAGE = 'gen_ai.assistant.message';
+const EVENT_GEN_AI_TOOL_MESSAGE = 'gen_ai.tool.message';
+const EVENT_GEN_AI_CHOICE = 'gen_ai.choice';
 
 export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumentationConfig> {
   private _genaiClientOperationDuration!: Histogram;
@@ -115,7 +115,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     return [
       new InstrumentationNodeModuleDefinition(
         'openai',
-        ['>=4.19.0 <5'],
+        ['>=4.19.0 <6'],
         modExports => {
           this._wrap(
             modExports.OpenAI.Chat.Completions.prototype,
