@@ -20,5 +20,4 @@ export const redisTestConfig = {
 
 export const redisTestUrl = `redis://${redisTestConfig.host}:${redisTestConfig.port}`;
 
-
 export const shouldTest = process.env.RUN_REDIS_TESTS;
