@@ -42,12 +42,11 @@
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "test-all-versions": "tav",
     "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "test-services:start": "cd ../.. && npm run test-services:start rabbitmq",
     "test-services:stop": "cd ../.. && npm run test-services:stop rabbitmq",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc -w",
-    "test:docker:run": "docker run -d --hostname demo-amqplib-rabbit --name amqplib-unittests -p 22221:5672 --env RABBITMQ_DEFAULT_USER=username --env RABBITMQ_DEFAULT_PASS=password rabbitmq:3",
-    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
+    "watch": "tsc -w"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"

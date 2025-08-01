@@ -10,17 +10,17 @@
     "directory": "packages/instrumentation-dns"
   },
   "scripts": {
-    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "prepublishOnly": "npm run compile",
-    "version:update": "node ../../scripts/version-update.js",
-    "lint:readme": "node ../../scripts/lint-readme",
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-dns",
-    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "lint:readme": "node ../../scripts/lint-readme",
+    "prepublishOnly": "npm run compile",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "dns",

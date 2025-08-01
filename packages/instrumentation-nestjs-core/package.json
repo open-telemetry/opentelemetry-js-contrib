@@ -11,8 +11,8 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-nestjs-core",
     "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-nestjs-core",
     "compile:watch": "tsc -w",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
@@ -21,7 +21,7 @@
     "test": "npm run test-required-node-version && nyc --no-clean mocha --timeout 5000 'test/**/*.test.ts' || echo 'Node version is not supported for testing'",
     "test-required-node-version": "node -e \"process.exit(parseInt(process.versions.node.split('.')[0], 10) >= 15 ? 0 : 1)\"",
     "test-all-versions": "tav",
-    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [

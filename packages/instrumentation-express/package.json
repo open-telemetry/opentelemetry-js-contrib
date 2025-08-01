@@ -10,19 +10,19 @@
     "directory": "packages/instrumentation-express"
   },
   "scripts": {
-    "test-all-versions": "tav",
-    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
-    "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-express",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
-    "version:update": "node ../../scripts/version-update.js",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-express",
-    "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
-    "watch": "tsc -w",
-    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
+    "tdd": "yarn test -- --watch-extensions ts --watch",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
+    "version:update": "node ../../scripts/version-update.js",
+    "watch": "tsc -w"
   },
   "keywords": [
     "express",

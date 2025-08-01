@@ -10,18 +10,18 @@
     "directory": "packages/instrumentation-router"
   },
   "scripts": {
-    "test": "nyc --no-clean mocha 'test/**/*.ts'",
-    "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-router",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
-    "version:update": "node ../../scripts/version-update.js",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-router",
-    "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
-    "watch": "tsc -w",
-    "coverage:merge": "nyc merge .nyc_output coverage/coverage-final.json"
+    "tdd": "npm test -- --watch-extensions ts --watch",
+    "test": "nyc --no-clean mocha 'test/**/*.ts'",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
+    "version:update": "node ../../scripts/version-update.js",
+    "watch": "tsc -w"
   },
   "keywords": [
     "instrumentation",
