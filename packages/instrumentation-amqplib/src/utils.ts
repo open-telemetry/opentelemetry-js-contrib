@@ -198,6 +198,17 @@ export const getConnectionAttributesFromUrl = (
   return attributes;
 };
 
+export const getPublishSpanName = (
+  exchange: string,
+  routingKey: string,
+  semconvStability: SemconvStability
+): string => {
+  if (semconvStability & SemconvStability.STABLE) {
+    return `publish ${getPublishDestinationName(exchange, routingKey)}`;
+  }
+  return `publish ${normalizeExchange(exchange)}`;
+};
+
 export const getPublishAttributes = (
   exchange: string,
   routingKey: string,
