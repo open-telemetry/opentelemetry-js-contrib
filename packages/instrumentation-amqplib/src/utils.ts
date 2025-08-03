@@ -263,6 +263,21 @@ const getPublishDestinationName = (
 const normalizeExchange = (exchangeName: string) =>
   exchangeName !== '' ? exchangeName : '<default>';
 
+export const getConsumeSpanName = (
+  queue: string,
+  msg: amqp.ConsumeMessage,
+  semconvStability: SemconvStability
+): string => {
+  if (semconvStability & SemconvStability.STABLE) {
+    return `consume ${getConsumeDestinationName(
+      msg.fields?.exchange,
+      msg.fields?.routingKey,
+      queue
+    )}`;
+  }
+  return `${queue} process`;
+};
+
 export const getConsumeAttributes = (
   queue: string,
   msg: amqp.ConsumeMessage,
@@ -306,18 +321,12 @@ const getConsumeDestinationName = (
   routingKey: string,
   queue: string
 ): string => {
-  if (exchange && routingKey && queue) {
-    return routingKey === queue
-      ? `${exchange}:${routingKey}`
-      : `${exchange}:${routingKey}:${queue}`;
-  }
-  if (exchange && routingKey) return `${exchange}:${routingKey}`;
-  if (exchange && queue) return `${exchange}:${queue}`;
-  if (routingKey && queue) return `${routingKey}:${queue}`;
-  if (exchange) return exchange;
-  if (routingKey) return routingKey;
-  if (queue) return queue;
-  return 'amq.default';
+  const parts: string[] = [];
+  if (exchange && !parts.includes(exchange)) parts.push(exchange);
+  if (routingKey && !parts.includes(routingKey)) parts.push(routingKey);
+  if (queue && !parts.includes(queue)) parts.push(queue);
+
+  return parts.length ? parts.join(':') : 'amq.default';
 };
 
 export const markConfirmChannelTracing = (context: Context) => {

@@ -58,6 +58,7 @@ import {
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
   getConsumeAttributes,
+  getConsumeSpanName,
   getPublishAttributes,
   getPublishSpanName,
   InstrumentationConsumeChannel,
@@ -436,7 +437,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
           }
         }
         const span = self.tracer.startSpan(
-          `${queue} process`,
+          getConsumeSpanName(queue, msg, self._semconvStability),
           {
             kind: SpanKind.CONSUMER,
             attributes: {
