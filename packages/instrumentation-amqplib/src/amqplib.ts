@@ -39,16 +39,6 @@ import {
   SemconvStability,
   semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
-import {
-  SEMATTRS_MESSAGING_DESTINATION,
-  SEMATTRS_MESSAGING_DESTINATION_KIND,
-  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
-  SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY,
-  SEMATTRS_MESSAGING_OPERATION,
-  MESSAGINGOPERATIONVALUES_PROCESS,
-  SEMATTRS_MESSAGING_MESSAGE_ID,
-  SEMATTRS_MESSAGING_CONVERSATION_ID,
-} from '@opentelemetry/semantic-conventions';
 import type {
   Connection,
   ConsumeMessage,
@@ -67,6 +57,7 @@ import {
   CONNECTION_ATTRIBUTES,
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
+  getConsumeAttributes,
   getPublishAttributes,
   getPublishSpanName,
   InstrumentationConsumeChannel,
@@ -429,7 +420,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
           ROOT_CONTEXT,
           headers
         );
-        const exchange = msg.fields?.exchange;
+
         let links: Link[] | undefined;
         if (self._config.useLinksForConsume) {
           const parentSpanContext = parentContext
@@ -450,14 +441,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
             kind: SpanKind.CONSUMER,
             attributes: {
               ...channel?.connection?.[CONNECTION_ATTRIBUTES],
-              [SEMATTRS_MESSAGING_DESTINATION]: exchange,
-              [SEMATTRS_MESSAGING_DESTINATION_KIND]:
-                MESSAGINGDESTINATIONKINDVALUES_TOPIC,
-              [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: msg.fields?.routingKey,
-              [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
-              [SEMATTRS_MESSAGING_MESSAGE_ID]: msg?.properties.messageId,
-              [SEMATTRS_MESSAGING_CONVERSATION_ID]:
-                msg?.properties.correlationId,
+              ...getConsumeAttributes(queue, msg, self._semconvStability),
             },
             links,
           },

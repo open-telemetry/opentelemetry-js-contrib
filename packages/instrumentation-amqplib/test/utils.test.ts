@@ -18,6 +18,7 @@ import { expect } from 'expect';
 import {
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
+  getConsumeAttributes,
   getPublishAttributes,
   getPublishSpanName,
 } from '../src/utils';
@@ -29,12 +30,14 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+  MESSAGINGOPERATIONVALUES_PROCESS,
   SEMATTRS_MESSAGING_CONVERSATION_ID,
-  SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
+  SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_MESSAGE_ID,
-  SEMATTRS_MESSAGING_PROTOCOL,
+  SEMATTRS_MESSAGING_OPERATION,
   SEMATTRS_MESSAGING_PROTOCOL_VERSION,
+  SEMATTRS_MESSAGING_PROTOCOL,
   SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY,
   SEMATTRS_MESSAGING_SYSTEM,
   SEMATTRS_MESSAGING_URL,
@@ -53,7 +56,9 @@ import {
   ATTR_MESSAGING_OPERATION_NAME,
   ATTR_MESSAGING_OPERATION_TYPE,
   ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY,
+  ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG,
   ATTR_MESSAGING_SYSTEM,
+  MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
 } from '@opentelemetry/semantic-conventions/incubating';
 
 describe('utils', () => {
@@ -793,6 +798,301 @@ describe('utils', () => {
           [ATTR_MESSAGING_MESSAGE_ID]: 'msg-123',
           [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: 'corr-456',
           [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 1024,
+        });
+      });
+    });
+  });
+
+  describe('getConsumeAttributes', () => {
+    describe('Old attributes', () => {
+      it('should return minimal attributes', () => {
+        const msg = {} as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes('queue-name', msg, SemconvStability.OLD)
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: undefined,
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: undefined,
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+        });
+      });
+
+      it('should return all consume attributes from fields/properties', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'routing.key',
+            deliveryTag: 2,
+          },
+          properties: {
+            messageId: 'msg-123',
+            correlationId: 'corr-456',
+          },
+          content: Buffer.from('test message with properties'),
+        } as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes('queue-name', msg, SemconvStability.OLD)
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: 'corr-456',
+        });
+      });
+    });
+
+    describe('Stable attributes', () => {
+      it('should return minimal stable attributes', () => {
+        const msg = {} as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes('', msg, SemconvStability.STABLE)
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]:
+            MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+          [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'amq.default',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: undefined,
+          [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: undefined,
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: undefined,
+        });
+      });
+
+      it('should return all consume attributes from fields/properties', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'routing.key',
+            deliveryTag: 2,
+          },
+          properties: {
+            messageId: 'msg-123',
+            correlationId: 'corr-456',
+          },
+          content: Buffer.from('test message with properties'),
+        } as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes('queue-name', msg, SemconvStability.STABLE)
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]:
+            MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+          [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+          [ATTR_MESSAGING_DESTINATION_NAME]:
+            'test-exchange:routing.key:queue-name',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: 2,
+          [ATTR_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 28,
+        });
+      });
+
+      it('should use exchange:routingKey when queue == routingKey', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'queue-name',
+            deliveryTag: 1,
+          },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes(
+          'queue-name',
+          msg,
+          SemconvStability.STABLE
+        );
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+          'test-exchange:queue-name'
+        );
+      });
+
+      it('should use exchange:routingKey:queue when all different', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'routing.key',
+            deliveryTag: 1,
+          },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes(
+          'different-queue',
+          msg,
+          SemconvStability.STABLE
+        );
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+          'test-exchange:routing.key:different-queue'
+        );
+      });
+
+      it('should use exchange:routingKey when queue is missing', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'routing.key',
+            deliveryTag: 1,
+          },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes('', msg, SemconvStability.STABLE);
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+          'test-exchange:routing.key'
+        );
+      });
+
+      it('should use exchange:queue when routingKey is missing', () => {
+        const msg = {
+          fields: { exchange: 'test-exchange', routingKey: '', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes(
+          'test-queue',
+          msg,
+          SemconvStability.STABLE
+        );
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+          'test-exchange:test-queue'
+        );
+      });
+
+      it('should use routingKey:queue when exchange is empty', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: 'routing.key', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes(
+          'test-queue',
+          msg,
+          SemconvStability.STABLE
+        );
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+          'routing.key:test-queue'
+        );
+      });
+
+      it('should use only exchange if only exchange is present', () => {
+        const msg = {
+          fields: { exchange: 'test-exchange', routingKey: '', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes('', msg, SemconvStability.STABLE);
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe('test-exchange');
+      });
+
+      it('should use only routingKey if only routingKey is present', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: 'routing.key', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes('', msg, SemconvStability.STABLE);
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe('routing.key');
+      });
+
+      it('should use only queue if only queue is present', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: '', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes(
+          'test-queue',
+          msg,
+          SemconvStability.STABLE
+        );
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe('test-queue');
+      });
+
+      it('should use amq.default if all are empty', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: '', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes('', msg, SemconvStability.STABLE);
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe('amq.default');
+      });
+    });
+
+    describe('Both old and stable attributes', () => {
+      it('should combine minimal attributes', () => {
+        const msg = {} as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes(
+            '',
+            msg,
+            SemconvStability.OLD | SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: undefined,
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: undefined,
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_OPERATION_TYPE]:
+            MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+          [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'amq.default',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: undefined,
+          [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: undefined,
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: undefined,
+        });
+      });
+
+      it('should combine all options', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'routing.key',
+            deliveryTag: 1,
+          },
+          properties: {
+            messageId: 'msg-123',
+            correlationId: 'corr-456',
+          },
+          content: Buffer.from('complete test message'),
+        } as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes(
+            'queue-name',
+            msg,
+            SemconvStability.OLD | SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_OPERATION_TYPE]:
+            MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+          [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+          [ATTR_MESSAGING_DESTINATION_NAME]:
+            'test-exchange:routing.key:queue-name',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: 1,
+          [ATTR_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 21,
         });
       });
     });

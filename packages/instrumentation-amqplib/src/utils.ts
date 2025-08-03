@@ -30,10 +30,12 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+  MESSAGINGOPERATIONVALUES_PROCESS,
   SEMATTRS_MESSAGING_CONVERSATION_ID,
   SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_DESTINATION_KIND,
   SEMATTRS_MESSAGING_MESSAGE_ID,
+  SEMATTRS_MESSAGING_OPERATION,
   SEMATTRS_MESSAGING_PROTOCOL,
   SEMATTRS_MESSAGING_PROTOCOL_VERSION,
   SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY,
@@ -49,7 +51,9 @@ import {
   ATTR_MESSAGING_OPERATION_NAME,
   ATTR_MESSAGING_OPERATION_TYPE,
   ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY,
+  ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG,
   ATTR_MESSAGING_SYSTEM,
+  MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
   MESSAGING_OPERATION_TYPE_VALUE_SEND,
 } from '@opentelemetry/semantic-conventions/incubating';
 import type * as amqp from 'amqplib';
@@ -258,6 +262,63 @@ const getPublishDestinationName = (
 
 const normalizeExchange = (exchangeName: string) =>
   exchangeName !== '' ? exchangeName : '<default>';
+
+export const getConsumeAttributes = (
+  queue: string,
+  msg: amqp.ConsumeMessage,
+  semconvStability: SemconvStability
+): Attributes => {
+  const oldAttributes: Attributes = {
+    [SEMATTRS_MESSAGING_DESTINATION]: msg.fields?.exchange,
+    [SEMATTRS_MESSAGING_DESTINATION_KIND]: MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+    [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
+    [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: msg.fields?.routingKey,
+    [SEMATTRS_MESSAGING_MESSAGE_ID]: msg.properties?.messageId,
+    [SEMATTRS_MESSAGING_CONVERSATION_ID]: msg.properties?.correlationId,
+  };
+  const stableAttributes: Attributes = {
+    [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+    [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+    [ATTR_MESSAGING_DESTINATION_NAME]: getConsumeDestinationName(
+      msg.fields?.exchange,
+      msg.fields?.routingKey,
+      queue
+    ),
+    [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: msg.fields?.routingKey,
+    [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: msg.fields?.deliveryTag,
+    [ATTR_MESSAGING_MESSAGE_ID]: msg.properties?.messageId,
+    [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: msg.properties?.correlationId,
+    [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: msg.content?.length,
+  };
+
+  let attributes: Attributes = {};
+  if (semconvStability & SemconvStability.OLD) {
+    attributes = oldAttributes;
+  }
+  if (semconvStability & SemconvStability.STABLE) {
+    attributes = { ...attributes, ...stableAttributes };
+  }
+  return attributes;
+};
+
+const getConsumeDestinationName = (
+  exchange: string,
+  routingKey: string,
+  queue: string
+): string => {
+  if (exchange && routingKey && queue) {
+    return routingKey === queue
+      ? `${exchange}:${routingKey}`
+      : `${exchange}:${routingKey}:${queue}`;
+  }
+  if (exchange && routingKey) return `${exchange}:${routingKey}`;
+  if (exchange && queue) return `${exchange}:${queue}`;
+  if (routingKey && queue) return `${routingKey}:${queue}`;
+  if (exchange) return exchange;
+  if (routingKey) return routingKey;
+  if (queue) return queue;
+  return 'amq.default';
+};
 
 export const markConfirmChannelTracing = (context: Context) => {
   return context.setValue(IS_CONFIRM_CHANNEL_CONTEXT_KEY, true);
