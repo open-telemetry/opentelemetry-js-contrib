@@ -67,6 +67,7 @@ import {
   CONNECTION_ATTRIBUTES,
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
+  getPublishAttributes,
   InstrumentationConsumeChannel,
   InstrumentationMessage,
   InstrumentationPublishChannel,
@@ -521,6 +522,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
         self,
         exchange,
         routingKey,
+        content.length,
         channel,
         options
       );
@@ -623,6 +625,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
           self,
           exchange,
           routingKey,
+          content.length,
           channel,
           options
         );
@@ -663,6 +666,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
     self: this,
     exchange: string,
     routingKey: string,
+    contentLength: number,
     channel: InstrumentationPublishChannel,
     options?: Options.Publish
   ) {
@@ -672,12 +676,13 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
       kind: SpanKind.PRODUCER,
       attributes: {
         ...channel.connection[CONNECTION_ATTRIBUTES],
-        [SEMATTRS_MESSAGING_DESTINATION]: exchange,
-        [SEMATTRS_MESSAGING_DESTINATION_KIND]:
-          MESSAGINGDESTINATIONKINDVALUES_TOPIC,
-        [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
-        [SEMATTRS_MESSAGING_MESSAGE_ID]: options?.messageId,
-        [SEMATTRS_MESSAGING_CONVERSATION_ID]: options?.correlationId,
+        ...getPublishAttributes(
+          exchange,
+          routingKey,
+          contentLength,
+          options,
+          self._semconvStability
+        ),
       },
     });
     const modifiedOptions = options ?? {};

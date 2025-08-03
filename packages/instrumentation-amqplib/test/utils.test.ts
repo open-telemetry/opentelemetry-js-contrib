@@ -18,6 +18,7 @@ import { expect } from 'expect';
 import {
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
+  getPublishAttributes,
 } from '../src/utils';
 import {
   ATTR_NETWORK_PEER_ADDRESS,
@@ -26,8 +27,14 @@ import {
   ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
+  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+  SEMATTRS_MESSAGING_CONVERSATION_ID,
+  SEMATTRS_MESSAGING_DESTINATION,
+  SEMATTRS_MESSAGING_DESTINATION_KIND,
+  SEMATTRS_MESSAGING_MESSAGE_ID,
   SEMATTRS_MESSAGING_PROTOCOL,
   SEMATTRS_MESSAGING_PROTOCOL_VERSION,
+  SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY,
   SEMATTRS_MESSAGING_SYSTEM,
   SEMATTRS_MESSAGING_URL,
   SEMATTRS_NET_PEER_NAME,
@@ -37,7 +44,16 @@ import * as amqp from 'amqplib';
 import { shouldTest } from './utils';
 import { rabbitMqUrl } from './config';
 import { SemconvStability } from '@opentelemetry/instrumentation';
-import { ATTR_MESSAGING_SYSTEM } from '@opentelemetry/semantic-conventions/incubating';
+import {
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_BODY_SIZE,
+  ATTR_MESSAGING_MESSAGE_CONVERSATION_ID,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION_NAME,
+  ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY,
+  ATTR_MESSAGING_SYSTEM,
+} from '@opentelemetry/semantic-conventions/incubating';
 
 describe('utils', () => {
   describe('getConnectionAttributesFromServer', () => {
@@ -392,6 +408,256 @@ describe('utils', () => {
           [ATTR_NETWORK_PEER_PORT]: 10000,
           [ATTR_SERVER_ADDRESS]: 'host',
           [ATTR_SERVER_PORT]: 10000,
+        });
+      });
+    });
+  });
+
+  describe('getPublishAttributes', () => {
+    describe('Old attributes', () => {
+      it('should return minimal attributes', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            1024,
+            {},
+            SemconvStability.OLD
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+        });
+      });
+
+      it('should support messageId and correlationId', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            2048,
+            { messageId: 'msg-123', correlationId: 'corr-456' },
+            SemconvStability.OLD
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: 'corr-456',
+        });
+      });
+
+      it('should handle empty exchange', () => {
+        expect(
+          getPublishAttributes('', 'routing.key', 512, {}, SemconvStability.OLD)
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: '',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+        });
+      });
+
+      it('should handle empty routing key', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            '',
+            256,
+            {},
+            SemconvStability.OLD
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: '',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+        });
+      });
+
+      it('should handle special characters', () => {
+        expect(
+          getPublishAttributes(
+            'test.exchange-with_special.chars',
+            'routing.key.with-special_chars',
+            100,
+            { messageId: 'special-chars-msg' },
+            SemconvStability.OLD
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test.exchange-with_special.chars',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]:
+            'routing.key.with-special_chars',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: 'special-chars-msg',
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+        });
+      });
+    });
+
+    describe('Stable attributes', () => {
+      it('should return minimal attributes', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            1024,
+            {},
+            SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'test-exchange:routing.key',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 1024,
+        });
+      });
+
+      it('should support messageId and correlationId', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            2048,
+            { messageId: 'msg-123', correlationId: 'corr-456' },
+            SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'test-exchange:routing.key',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 2048,
+        });
+      });
+
+      it('should handle empty exchange', () => {
+        expect(
+          getPublishAttributes(
+            '',
+            'routing.key',
+            512,
+            {},
+            SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'routing.key',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 512,
+        });
+      });
+
+      it('should handle empty routing key', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            '',
+            256,
+            {},
+            SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'test-exchange',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: '',
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 256,
+        });
+      });
+
+      it('should handle zero content length', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            0,
+            {},
+            SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'test-exchange:routing.key',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 0,
+        });
+      });
+    });
+
+    describe('Both old and stable attributes', () => {
+      it('should combine minimal attributes', () => {
+        expect(
+          getPublishAttributes(
+            'exchange',
+            '',
+            256,
+            {},
+            SemconvStability.OLD | SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: '',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'exchange',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: '',
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 256,
+        });
+      });
+
+      it('should combine with all options', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            1024,
+            { messageId: 'msg-123', correlationId: 'corr-456' },
+            SemconvStability.OLD | SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'test-exchange:routing.key',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 1024,
         });
       });
     });

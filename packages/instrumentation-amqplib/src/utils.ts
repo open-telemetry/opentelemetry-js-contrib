@@ -29,13 +29,29 @@ import {
   ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
+  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+  SEMATTRS_MESSAGING_CONVERSATION_ID,
+  SEMATTRS_MESSAGING_DESTINATION,
+  SEMATTRS_MESSAGING_DESTINATION_KIND,
+  SEMATTRS_MESSAGING_MESSAGE_ID,
   SEMATTRS_MESSAGING_PROTOCOL,
   SEMATTRS_MESSAGING_PROTOCOL_VERSION,
+  SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY,
   SEMATTRS_MESSAGING_URL,
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_MESSAGING_SYSTEM } from '@opentelemetry/semantic-conventions/incubating';
+import {
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_BODY_SIZE,
+  ATTR_MESSAGING_MESSAGE_CONVERSATION_ID,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION_NAME,
+  ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY,
+  ATTR_MESSAGING_SYSTEM,
+  MESSAGING_OPERATION_TYPE_VALUE_SEND,
+} from '@opentelemetry/semantic-conventions/incubating';
 import type * as amqp from 'amqplib';
 
 export const MESSAGE_STORED_SPAN: unique symbol = Symbol(
@@ -70,9 +86,6 @@ export type InstrumentationMessage = amqp.Message & {
 const IS_CONFIRM_CHANNEL_CONTEXT_KEY: symbol = createContextKey(
   'opentelemetry.amqplib.channel.is-confirm-channel'
 );
-
-export const normalizeExchange = (exchangeName: string) =>
-  exchangeName !== '' ? exchangeName : '<default>';
 
 const censorPassword = (url: string): string => {
   return url.replace(/:[^:@/]*@/, ':***@');
@@ -184,6 +197,56 @@ export const getConnectionAttributesFromUrl = (
   }
   return attributes;
 };
+
+export const getPublishAttributes = (
+  exchange: string,
+  routingKey: string,
+  contentLength: number,
+  options: amqp.Options.Publish = {},
+  semconvStability: SemconvStability
+): Attributes => {
+  const oldAttributes: Attributes = {
+    [SEMATTRS_MESSAGING_DESTINATION]: exchange,
+    [SEMATTRS_MESSAGING_DESTINATION_KIND]: MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+    [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
+    [SEMATTRS_MESSAGING_MESSAGE_ID]: options?.messageId,
+    [SEMATTRS_MESSAGING_CONVERSATION_ID]: options?.correlationId,
+  };
+  const stableAttributes: Attributes = {
+    [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_SEND,
+    [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+    [ATTR_MESSAGING_DESTINATION_NAME]: getPublishDestinationName(
+      exchange,
+      routingKey
+    ),
+    [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: routingKey,
+    [ATTR_MESSAGING_MESSAGE_ID]: options?.messageId,
+    [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: options?.correlationId,
+    [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: contentLength,
+  };
+
+  let attributes: Attributes = {};
+  if (semconvStability & SemconvStability.OLD) {
+    attributes = oldAttributes;
+  }
+  if (semconvStability & SemconvStability.STABLE) {
+    attributes = { ...attributes, ...stableAttributes };
+  }
+  return attributes;
+};
+
+const getPublishDestinationName = (
+  exchange: string,
+  routingKey: string
+): string => {
+  if (exchange && routingKey) return `${exchange}:${routingKey}`;
+  if (exchange) return exchange;
+  if (routingKey) return routingKey;
+  return 'amq.default';
+};
+
+const normalizeExchange = (exchangeName: string) =>
+  exchangeName !== '' ? exchangeName : '<default>';
 
 export const markConfirmChannelTracing = (context: Context) => {
   return context.setValue(IS_CONFIRM_CHANNEL_CONTEXT_KEY, true);
