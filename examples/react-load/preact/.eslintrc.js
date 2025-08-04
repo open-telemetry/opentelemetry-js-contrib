@@ -22,5 +22,6 @@ module.exports = {
   ...baseConfig,
   env: {
     browser: true,
+    node: true,
   },
 };

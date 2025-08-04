@@ -117,7 +117,7 @@ The required steps to start development on a pacakge are:
 
 - `npm ci` from root folder to install dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
 - `cd` into the pacakge you want to apply changes.
-- `npm run setup:dev` compiles the TypeScript files for this package and its dependencies within the repository.
+- `npm run compile:with-dependencies` compiles the TypeScript files for this package and its dependencies within the repository.
 
 Then you can proceed to do apply the changes and use the scripts below for development workflow
 
@@ -146,22 +146,20 @@ npm test
 However, some instrumentations require test-services to be running (e.g. the `instrumentation-mongodb` package requires a MongoDB server). Use the `test-services`-related npm scripts to start all required services in Docker and then run the tests with the appropriate configuration to use those services:
 
 ```sh
-npm run test-services:start       # starts services in Docker
-npm run test:with-services-config # runs 'npm test' with envvars from test/test-services.env
-npm run test-services:stop        # stops services in Docker
+npm run test-services:start    # starts services in Docker
+npm run test:with-services-env # runs 'npm test' with envvars from test/test-services.env
+npm run test-services:stop     # stops services in Docker
 ```
 
-If you only want to test a single package (e.g. the `instrumentation-mongodb`) you can `cd` into it and run the tests after you started the services.
+If you only want to test a single package that dfepends on a service (e.g. the `instrumentation-mongodb`) you can `cd` into it and
+use the same scripts for testing. In this case the script will only start the services needed to test the package.
 
 ```sh
-npm run test-services:start             # starts services in Docker
-cd packages/instrumentation-mongodb     # get into the instrumenation folder
-RUN_MONGODB_TESTS=1 npm test            # run the test with the proper config (check each package)
-cd ../../..                             # go back to root folder
-npm run test-services:stop              # stops services in Docker
+cd packages/instrumentation-mongodb # get into the instrumenation folder
+npm run test-services:start         # start the MongoDB service in Docker
+npm run test:with-services-env      # runs 'npm test' with envvars from test/test-services.env
+npm run test-services:stop          # stop MongoDB service in Docker
 ```
-
-NOTE: scripts for each package will be added to avoid extra consumption of resources and improve the development experience.
 
 ### Benchmarks
 

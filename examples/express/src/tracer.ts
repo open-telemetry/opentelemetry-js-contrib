@@ -36,7 +36,6 @@ import {
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 
-// eslint-disable-next-line import/prefer-default-export
 export const setupTracing = (serviceName: string) => {
   const exporter = new OTLPTraceExporter({});
   const provider = new NodeTracerProvider({

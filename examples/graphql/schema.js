@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
 'use strict';
 
 const https = require('https');

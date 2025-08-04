@@ -19,9 +19,9 @@
     "directory": "packages/id-generator-aws-xray"
   },
   "scripts": {
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/id-generator-aws-xray",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/id-generator-aws-xray",
     "test": "nyc mocha test/**/*.test.ts",
     "test:browser": "nyc karma start --single-run",
     "lint": "eslint . --ext .ts",

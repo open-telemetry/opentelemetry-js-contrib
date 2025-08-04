@@ -34,10 +34,8 @@ export type { TestSpan, RunTestFixtureOptions } from './test-fixtures';
 export {
   assertPropagation,
   assertSpan,
-  cleanUpDocker,
   getPackageVersion,
   initMeterProvider,
-  startDocker,
   TestMetricReader,
 } from './test-utils';
 export type { TimedEvent } from './test-utils';
