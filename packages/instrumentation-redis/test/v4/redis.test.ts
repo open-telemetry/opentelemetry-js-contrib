@@ -23,13 +23,7 @@ import { RedisInstrumentation } from '../../src';
 import type { MultiErrorReply } from '../../src/v4/internal-types';
 import * as assert from 'assert';
 
-import {
-  redisTestConfig,
-  redisTestUrl,
-  shouldTest,
-  shouldTestLocal,
-} from './utils';
-import * as testUtils from '@opentelemetry/contrib-test-utils';
+import { redisTestConfig, redisTestUrl, shouldTest } from './utils';
 
 const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
@@ -63,16 +57,6 @@ describe('redis v4', () => {
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
       this.skip();
-    }
-
-    if (shouldTestLocal) {
-      testUtils.startDocker('redis');
-    }
-  });
-
-  after(() => {
-    if (shouldTestLocal) {
-      testUtils.cleanUpDocker('redis');
     }
   });
 

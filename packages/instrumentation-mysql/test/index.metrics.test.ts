@@ -62,7 +62,7 @@ describe('mysql@2.x-Metrics', () => {
   let otelTestingMeterProvider;
   let inMemoryMetricsExporter: InMemoryMetricExporter;
   // assumes local mysql db is already available in CI or
-  // using `npm run test-services:start` script at the root folder
+  // using `npm run test-services:start` script
   const shouldTest = process.env.RUN_MYSQL_TESTS;
 
   function initMeterProvider() {

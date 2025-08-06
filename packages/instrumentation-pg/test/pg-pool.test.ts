@@ -141,9 +141,8 @@ describe('pg-pool', () => {
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
 
-  const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
-  const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
-  const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
+  const testPostgres = process.env.RUN_POSTGRES_TESTS;
+  const shouldTest = testPostgres; // Skips these tests if false (default)
 
   before(function () {
     const skip = () => {
@@ -157,10 +156,6 @@ describe('pg-pool', () => {
       skip();
     }
 
-    if (testPostgresLocally) {
-      testUtils.startDocker('postgres');
-    }
-
     instrumentation = new PgInstrumentation();
 
     contextManager = new AsyncLocalStorageContextManager().enable();
@@ -172,10 +167,6 @@ describe('pg-pool', () => {
   });
 
   after(done => {
-    if (testPostgresLocally) {
-      testUtils.cleanUpDocker('postgres');
-    }
-
     pool.end(() => {
       done();
     });
@@ -991,9 +982,8 @@ describe('pg semantic conventions env variable', () => {
   const provider = new BasicTracerProvider({
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
-  const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
-  const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
-  const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
+  const testPostgres = process.env.RUN_POSTGRES_TESTS;
+  const shouldTest = testPostgres;
   // Here we are `require`ing *before* the instrumentation is created below.
   // In *general* this is a potential instrumentation issue, but this works for
   // `pg-pool` instrumentation because it patches the `pgPool.prototype`
@@ -1012,21 +1002,11 @@ describe('pg semantic conventions env variable', () => {
     if (!shouldTest) {
       skip();
     }
-
-    if (testPostgresLocally) {
-      testUtils.startDocker('postgres');
-    }
   });
 
   beforeEach(() => {
     contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
-  });
-
-  after(() => {
-    if (testPostgresLocally) {
-      testUtils.cleanUpDocker('postgres');
-    }
   });
 
   afterEach(() => {
