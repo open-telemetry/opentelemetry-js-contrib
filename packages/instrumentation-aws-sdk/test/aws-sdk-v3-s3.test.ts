@@ -270,5 +270,48 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
         );
       });
     });
+
+    it('handle aws sdk exception', async () => {
+      instrumentation.disable();
+      instrumentation.setConfig({
+        exceptionHook: (
+          span: Span,
+          requestInfo: AwsSdkRequestHookInformation,
+          err: any
+        ) => {
+          span.setAttribute(
+            'attribute.from.exception.hook',
+            requestInfo.request.commandInput.Bucket
+          );
+          span.setAttribute('error.from.exception.hook', err.name);
+        },
+        suppressInternalInstrumentation: true,
+      });
+      instrumentation.enable();
+
+      nock(`https://ot-demo-test.s3.${region}.amazonaws.com/`)
+        .put('/aws-ot-s3-test-object.txt?x-id=PutObject')
+        .reply(
+          404,
+          fs.readFileSync('./test/mock-responses/s3-put-object.xml', 'utf8')
+        );
+
+      const params = {
+        Bucket: 'ot-demo-test',
+        Key: 'aws-ot-s3-test-object.txt',
+      };
+      try {
+        await s3Client.putObject(params);
+      } catch {
+        expect(getTestSpans().length).toBe(1);
+        const [span] = getTestSpans();
+        expect(span.attributes['attribute.from.exception.hook']).toEqual(
+          params.Bucket
+        );
+        expect(span.attributes['error.from.exception.hook']).toEqual(
+          'NotFound'
+        );
+      }
+    });
   });
 });
