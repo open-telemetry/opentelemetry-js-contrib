@@ -22,7 +22,16 @@ import {
   resourceFromAttributes,
   emptyResource,
 } from '@opentelemetry/resources';
-import { context, Span, SpanKind, Tracer, trace } from '@opentelemetry/api';
+import {
+  context,
+  Span,
+  SpanKind,
+  Tracer,
+  trace,
+  Attributes,
+  Link,
+  Context,
+} from '@opentelemetry/api';
 import { SamplingDecision } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
@@ -40,19 +49,23 @@ import { AWSXRaySamplingClient } from '../src/aws-xray-sampling-client';
 
 const DATA_DIR_SAMPLING_RULES =
   __dirname + '/data/test-remote-sampler_sampling-rules-response-sample.json';
+const DATA_DIR_SAMPLING_TARGETS =
+  __dirname + '/data/test-remote-sampler_sampling-targets-response-sample.json';
 const TEST_URL = 'http://localhost:2000';
+export const testTraceId = '0af7651916cd43dd8448eb211c80319c';
 
 describe('AWSXRayRemoteSampler', () => {
   let sampler: AWSXRayRemoteSampler;
 
   afterEach(() => {
+    sinon.restore();
     if (sampler != null) {
       sampler.stopPollers();
     }
   });
 
   it('testCreateRemoteSamplerWithEmptyResource', () => {
-    const sampler: AWSXRayRemoteSampler = new AWSXRayRemoteSampler({
+    sampler = new AWSXRayRemoteSampler({
       resource: emptyResource(),
     });
 
@@ -114,7 +127,9 @@ describe('AWSXRayRemoteSampler', () => {
     nock(TEST_URL)
       .post('/GetSamplingRules')
       .reply(200, require(DATA_DIR_SAMPLING_RULES));
-
+    nock(TEST_URL)
+      .post('/SamplingTargets')
+      .reply(200, require(DATA_DIR_SAMPLING_TARGETS));
     const resource = resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'test-service-name',
       [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
@@ -132,7 +147,7 @@ describe('AWSXRayRemoteSampler', () => {
       expect(
         sampler.shouldSample(
           context.active(),
-          '1234',
+          testTraceId,
           'name',
           SpanKind.CLIENT,
           { abc: '1234' },
@@ -140,8 +155,188 @@ describe('AWSXRayRemoteSampler', () => {
         ).decision
       ).toEqual(SamplingDecision.NOT_RECORD);
 
-      // TODO: Run more tests after updating Sampling Targets
-      done();
+      sampler['internalXraySampler']['getAndUpdateSamplingTargets']();
+
+      setTimeout(() => {
+        expect(
+          sampler.shouldSample(
+            context.active(),
+            testTraceId,
+            'name',
+            SpanKind.CLIENT,
+            { abc: '1234' },
+            []
+          ).decision
+        ).toEqual(SamplingDecision.RECORD_AND_SAMPLED);
+        expect(
+          sampler.shouldSample(
+            context.active(),
+            testTraceId,
+            'name',
+            SpanKind.CLIENT,
+            { abc: '1234' },
+            []
+          ).decision
+        ).toEqual(SamplingDecision.RECORD_AND_SAMPLED);
+        expect(
+          sampler.shouldSample(
+            context.active(),
+            testTraceId,
+            'name',
+            SpanKind.CLIENT,
+            { abc: '1234' },
+            []
+          ).decision
+        ).toEqual(SamplingDecision.RECORD_AND_SAMPLED);
+
+        done();
+      }, 50);
+    }, 50);
+  });
+
+  it('testLargeReservoir', done => {
+    nock(TEST_URL)
+      .post('/GetSamplingRules')
+      .reply(200, require(DATA_DIR_SAMPLING_RULES));
+    nock(TEST_URL)
+      .post('/SamplingTargets')
+      .reply(200, require(DATA_DIR_SAMPLING_TARGETS));
+    const resource = resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: 'test-service-name',
+      [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
+    });
+    const attributes = { abc: '1234' };
+
+    sampler = new AWSXRayRemoteSampler({
+      resource: resource,
+    });
+    sampler['internalXraySampler']['getAndUpdateSamplingRules']();
+
+    setTimeout(() => {
+      expect(
+        sampler['internalXraySampler']['ruleCache']['ruleAppliers'][0]
+          .samplingRule.RuleName
+      ).toEqual('test');
+      expect(
+        sampler.shouldSample(
+          context.active(),
+          testTraceId,
+          'name',
+          SpanKind.CLIENT,
+          attributes,
+          []
+        ).decision
+      ).toEqual(SamplingDecision.NOT_RECORD);
+      sampler['internalXraySampler']['getAndUpdateSamplingTargets']();
+
+      setTimeout(() => {
+        const clock = sinon.useFakeTimers(Date.now());
+        clock.tick(1500);
+        let sampled = 0;
+        for (let i = 0; i < 1005; i++) {
+          if (
+            sampler.shouldSample(
+              context.active(),
+              testTraceId,
+              'name',
+              SpanKind.CLIENT,
+              attributes,
+              []
+            ).decision !== SamplingDecision.NOT_RECORD
+          ) {
+            sampled++;
+          }
+        }
+        clock.restore();
+
+        expect(
+          sampler['internalXraySampler']['ruleCache']['ruleAppliers'][0][
+            'reservoirSampler'
+          ]['quota']
+        ).toEqual(1000);
+        expect(sampled).toEqual(1000);
+        done();
+      }, 50);
+    }, 50);
+  });
+
+  it('testSomeReservoir', done => {
+    nock(TEST_URL)
+      .post('/GetSamplingRules')
+      .reply(200, require(DATA_DIR_SAMPLING_RULES));
+    nock(TEST_URL)
+      .post('/SamplingTargets')
+      .reply(200, require(DATA_DIR_SAMPLING_TARGETS));
+    const resource = resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: 'test-service-name',
+      [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
+    });
+    const attributes = {
+      abc: 'non-matching attribute value, use default rule',
+    };
+
+    sampler = new AWSXRayRemoteSampler({
+      resource: resource,
+    });
+    sinon
+      .stub(sampler['internalXraySampler']['fallbackSampler'], 'shouldSample')
+      .callsFake(
+        (
+          context: Context,
+          traceId: string,
+          spanName: string,
+          spanKind: SpanKind,
+          attributes: Attributes,
+          links: Link[]
+        ) => {
+          return {
+            decision: SamplingDecision.NOT_RECORD,
+            attributes: attributes,
+          };
+        }
+      );
+    sampler['internalXraySampler']['getAndUpdateSamplingRules']();
+
+    setTimeout(() => {
+      expect(
+        sampler['internalXraySampler']['ruleCache']['ruleAppliers'][0]
+          .samplingRule.RuleName
+      ).toEqual('test');
+      expect(
+        sampler.shouldSample(
+          context.active(),
+          testTraceId,
+          'name',
+          SpanKind.CLIENT,
+          attributes,
+          []
+        ).decision
+      ).toEqual(SamplingDecision.RECORD_AND_SAMPLED);
+      sampler['internalXraySampler']['getAndUpdateSamplingTargets']();
+
+      setTimeout(() => {
+        const clock = sinon.useFakeTimers(Date.now());
+        clock.tick(1000);
+        let sampled = 0;
+        for (let i = 0; i < 1000; i++) {
+          if (
+            sampler.shouldSample(
+              context.active(),
+              testTraceId,
+              'name',
+              SpanKind.CLIENT,
+              attributes,
+              []
+            ).decision !== SamplingDecision.NOT_RECORD
+          ) {
+            sampled++;
+          }
+        }
+        clock.restore();
+
+        expect(sampled).toEqual(100);
+        done();
+      }, 50);
     }, 50);
   });
 
@@ -159,7 +354,85 @@ describe('AWSXRayRemoteSampler', () => {
     );
   });
 
-  // TODO: Run tests for Reservoir Sampling and Sampling Statistics
+  it('ParentBased AWSXRayRemoteSampler creates expected Statistics from the 1 Span with no Parent, disregarding 2 Child Spans', done => {
+    const defaultRuleDir =
+      __dirname + '/data/get-sampling-rules-response-sample-sample-all.json';
+    nock(TEST_URL)
+      .post('/GetSamplingRules')
+      .reply(200, require(defaultRuleDir));
+
+    sampler = new AWSXRayRemoteSampler({
+      resource: emptyResource(),
+    });
+    const tracerProvider: NodeTracerProvider = new NodeTracerProvider({
+      sampler: sampler,
+    });
+    const tracer: Tracer = tracerProvider.getTracer('test');
+
+    setTimeout(() => {
+      const span0 = tracer.startSpan('test0');
+      const ctx = trace.setSpan(context.active(), span0);
+      const span1: Span = tracer.startSpan('test1', {}, ctx);
+      const span2: Span = tracer.startSpan('test2', {}, ctx);
+      span2.end();
+      span1.end();
+      span0.end();
+
+      // span1 and span2 are child spans of root span0
+      // For AWSXRayRemoteSampler (ParentBased), expect only span0 to update statistics
+      expect(
+        sampler['internalXraySampler']['ruleCache']['ruleAppliers'][0][
+          'statistics'
+        ].RequestCount
+      ).toBe(1);
+      expect(
+        sampler['internalXraySampler']['ruleCache']['ruleAppliers'][0][
+          'statistics'
+        ].SampleCount
+      ).toBe(1);
+      done();
+    }, 50);
+  });
+
+  it('Non-ParentBased _AWSXRayRemoteSampler creates expected Statistics based on all 3 Spans, disregarding Parent Span Sampling Decision', done => {
+    const defaultRuleDir =
+      __dirname + '/data/get-sampling-rules-response-sample-sample-all.json';
+    nock(TEST_URL)
+      .post('/GetSamplingRules')
+      .reply(200, require(defaultRuleDir));
+
+    sampler = new AWSXRayRemoteSampler({
+      resource: emptyResource(),
+    });
+    const internalSampler: _AWSXRayRemoteSampler =
+      sampler['internalXraySampler'];
+    const tracerProvider: NodeTracerProvider = new NodeTracerProvider({
+      sampler: internalSampler,
+    });
+    const tracer: Tracer = tracerProvider.getTracer('test');
+
+    setTimeout(() => {
+      const span0 = tracer.startSpan('test0');
+      const ctx = trace.setSpan(context.active(), span0);
+      const span1: Span = tracer.startSpan('test1', {}, ctx);
+      const span2: Span = tracer.startSpan('test2', {}, ctx);
+      span2.end();
+      span1.end();
+      span0.end();
+
+      // span1 and span2 are child spans of root span0
+      // For _AWSXRayRemoteSampler (Non-ParentBased), expect all 3 spans to update statistics
+      expect(
+        internalSampler['ruleCache']['ruleAppliers'][0]['statistics']
+          .RequestCount
+      ).toBe(3);
+      expect(
+        internalSampler['ruleCache']['ruleAppliers'][0]['statistics']
+          .SampleCount
+      ).toBe(3);
+      done();
+    }, 50);
+  });
 });
 
 describe('_AWSXRayRemoteSampler', () => {
