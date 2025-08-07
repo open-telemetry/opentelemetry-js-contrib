@@ -73,29 +73,12 @@ const redisInstrumentation = new RedisInstrumentation({
 });
 ```
 
-See [examples/redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/redis) for a short example.
-
-## Semantic Conventions Stability
-
-To select which semconv version(s) is emitted from this instrumentation, use the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable.
-
-- `database` - Emit only the stable database conventions.
-- `database/dup` - Emit both the old and stable database conventions.
-- By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` includes neither of the above tokens, the old v1.27.0 semconv is used.
-
-The migration guide for the database conventions can be found [here](https://opentelemetry.io/docs/specs/semconv/non-normative/database-migration/).
-
-### Migrating to stable database semantic conventions
-
-1. Update your telemetry infrastructure to support the new stable database attributes  
-2. Set `OTEL_SEMCONV_STABILITY_OPT_IN=database/dup` to emit both old and new semantic conventions
-3. Update your applications and infrastructure to use the new attributes
-4. Set `OTEL_SEMCONV_STABILITY_OPT_IN=database` to emit only the new semantic conventions
-```
-
 ## Semantic Conventions
 
-This package supports both old semantic conventions (v1.27.0 and prior) and the stable v1.33.0 semantic conventions.
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md) ("old" conventions).
+
+It also supports the new stable semantic conventions introduced in [Version 1.33.0]
 By default, old semantic conventions are used. Use the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable to control which version to emit.
 
 Attributes collected:
