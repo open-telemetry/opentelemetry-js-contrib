@@ -13,19 +13,70 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Attributes } from '@opentelemetry/api';
+import { Attributes, DiagLogger } from '@opentelemetry/api';
 import {
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+  DBSYSTEMVALUES_REDIS,
   ATTR_DB_SYSTEM_NAME,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 
-export function getClientAttributes(options: any): Attributes {
-  const attrs: Attributes = {
-    [ATTR_DB_SYSTEM_NAME]: 'redis',
-    [ATTR_SERVER_ADDRESS]: options?.socket?.host,
-    [ATTR_SERVER_PORT]: options?.socket?.port,
-  };
+export function getClientAttributes(
+  diag: DiagLogger,
+  options: any,
+  semconvStability: SemconvStability
+): Attributes {
+  const attributes: Attributes = {};
 
-  return attrs;
+  if (semconvStability & SemconvStability.OLD) {
+    Object.assign(attributes, {
+      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+      [SEMATTRS_NET_PEER_NAME]: options?.socket?.host,
+      [SEMATTRS_NET_PEER_PORT]: options?.socket?.port,
+      [SEMATTRS_DB_CONNECTION_STRING]:
+        removeCredentialsFromDBConnectionStringAttribute(diag, options?.url),
+    });
+  }
+
+  if (semconvStability & SemconvStability.STABLE) {
+    Object.assign(attributes, {
+      [ATTR_DB_SYSTEM_NAME]: 'redis',
+      [ATTR_SERVER_ADDRESS]: options?.socket?.host,
+      [ATTR_SERVER_PORT]: options?.socket?.port,
+    });
+  }
+
+  return attributes;
+}
+
+/**
+ * removeCredentialsFromDBConnectionStringAttribute removes basic auth from url and user_pwd from query string
+ *
+ * Examples:
+ *   redis://user:pass@localhost:6379/mydb => redis://localhost:6379/mydb
+ *   redis://localhost:6379?db=mydb&user_pwd=pass => redis://localhost:6379?db=mydb
+ */
+function removeCredentialsFromDBConnectionStringAttribute(
+  diag: DiagLogger,
+  url?: unknown
+): string | undefined {
+  if (typeof url !== 'string' || !url) {
+    return;
+  }
+
+  try {
+    const u = new URL(url);
+    u.searchParams.delete('user_pwd');
+    u.username = '';
+    u.password = '';
+    return u.href;
+  } catch (err) {
+    diag.error('failed to sanitize redis connection url', err);
+  }
+  return;
 }

@@ -19,6 +19,8 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   endSpan,
@@ -31,6 +33,12 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
 import type { RedisCommand, RedisPluginClientTypes } from './internal-types';
 import { SpanKind, context, trace } from '@opentelemetry/api';
 import {
+  DBSYSTEMVALUES_REDIS,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
   ATTR_DB_SYSTEM_NAME,
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_OPERATION_NAME,
@@ -41,9 +49,14 @@ import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 
 export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
+  private _semconvStability: SemconvStability;
 
   constructor(config: RedisInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._semconvStability = semconvStabilityFromStr(
+      'database',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   protected init() {
@@ -126,27 +139,64 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
 
         const dbStatementSerializer =
           config?.dbStatementSerializer || defaultDbStatementSerializer;
+
+        const attributes: { [key: string]: any } = {};
+
+        if (instrumentation._semconvStability & SemconvStability.OLD) {
+          Object.assign(attributes, {
+            [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+            [SEMATTRS_DB_STATEMENT]: dbStatementSerializer(
+              cmd.command,
+              cmd.args
+            ),
+          });
+        }
+
+        if (instrumentation._semconvStability & SemconvStability.STABLE) {
+          Object.assign(attributes, {
+            [ATTR_DB_SYSTEM_NAME]: 'redis',
+            [ATTR_DB_OPERATION_NAME]: cmd.command,
+            [ATTR_DB_QUERY_TEXT]: dbStatementSerializer(cmd.command, cmd.args),
+          });
+        }
+
         const span = instrumentation.tracer.startSpan(
           `${RedisInstrumentationV2_V3.COMPONENT}-${cmd.command}`,
           {
             kind: SpanKind.CLIENT,
-            attributes: {
-              [ATTR_DB_SYSTEM_NAME]: 'redis',
-              [ATTR_DB_OPERATION_NAME]: cmd.command,
-              [ATTR_DB_QUERY_TEXT]: dbStatementSerializer(
-                cmd.command,
-                cmd.args
-              ),
-            },
+            attributes,
           }
         );
 
         // Set attributes for not explicitly typed RedisPluginClientTypes
         if (this.connection_options) {
-          span.setAttributes({
-            [ATTR_SERVER_ADDRESS]: this.connection_options.host,
-            [ATTR_SERVER_PORT]: this.connection_options.port,
-          });
+          const connectionAttributes: { [key: string]: any } = {};
+
+          if (instrumentation._semconvStability & SemconvStability.OLD) {
+            Object.assign(connectionAttributes, {
+              [SEMATTRS_NET_PEER_NAME]: this.connection_options.host,
+              [SEMATTRS_NET_PEER_PORT]: this.connection_options.port,
+            });
+          }
+
+          if (instrumentation._semconvStability & SemconvStability.STABLE) {
+            Object.assign(connectionAttributes, {
+              [ATTR_SERVER_ADDRESS]: this.connection_options.host,
+              [ATTR_SERVER_PORT]: this.connection_options.port,
+            });
+          }
+
+          span.setAttributes(connectionAttributes);
+        }
+
+        if (
+          this.address &&
+          instrumentation._semconvStability & SemconvStability.OLD
+        ) {
+          span.setAttribute(
+            SEMATTRS_DB_CONNECTION_STRING,
+            `redis://${this.address}`
+          );
         }
 
         const originalCallback = arguments[0].callback;
