@@ -16,6 +16,7 @@
 import {
   Attributes,
   DiagLogger,
+  diag,
   Histogram,
   HrTime,
   Meter,
@@ -59,6 +60,7 @@ import {
 export class BedrockRuntimeServiceExtension implements ServiceExtension {
   private tokenUsage!: Histogram;
   private operationDuration!: Histogram;
+  private _diag: DiagLogger = diag;
 
   updateMetricInstruments(meter: Meter) {
     // https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/#metric-gen_aiclienttokenusage
@@ -599,18 +601,20 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   ): Promise<any> {
     const stream = response.data?.body;
     const modelId = response.request.commandInput?.modelId;
-    if (!stream) return;
+    if (!stream || !modelId) return;
 
-    const wrappedStream =
-      BedrockRuntimeServiceExtension.instrumentAsyncIterable(
-        stream,
-        async (chunk: { chunk?: { bytes?: Uint8Array } }) => {
-          const parsedChunk = BedrockRuntimeServiceExtension.parseChunk(
-            chunk?.chunk?.bytes
-          );
+    // Replace the original response body with our instrumented stream.
+    // - Defers span.end() until the entire stream is consumed
+    // This ensures downstream consumers still receive the full stream correctly,
+    // while OpenTelemetry can record span attributes from streamed data.
+    response.data.body = async function* (
+      this: BedrockRuntimeServiceExtension
+    ) {
+      try {
+        for await (const chunk of stream) {
+          const parsedChunk = this.parseChunk(chunk?.chunk?.bytes);
 
           if (!parsedChunk) return;
-
           if (modelId.includes('amazon.titan')) {
             BedrockRuntimeServiceExtension.recordTitanAttributes(
               parsedChunk,
@@ -626,46 +630,43 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
               parsedChunk,
               span
             );
+          } else if (modelId.includes('meta.llama')) {
+            BedrockRuntimeServiceExtension.recordLlamaAttributes(
+              parsedChunk,
+              span
+            );
+          } else if (modelId.includes('cohere.command-r')) {
+            BedrockRuntimeServiceExtension.recordCohereRAttributes(
+              parsedChunk,
+              span
+            );
+          } else if (modelId.includes('cohere.command')) {
+            BedrockRuntimeServiceExtension.recordCohereAttributes(
+              parsedChunk,
+              span
+            );
+          } else if (modelId.includes('mistral')) {
+            BedrockRuntimeServiceExtension.recordMistralAttributes(
+              parsedChunk,
+              span
+            );
           }
-        }
-      );
-    // Replace the original response body with our instrumented stream.
-    // - Defers span.end() until the entire stream is consumed
-    // This ensures downstream consumers still receive the full stream correctly,
-    // while OpenTelemetry can record span attributes from streamed data.
-    response.data.body = (async function* () {
-      try {
-        for await (const item of wrappedStream) {
-          yield item;
+          yield chunk;
         }
       } finally {
         span.end();
       }
-    })();
+    }.bind(this)();
     return response.data;
   }
-  // Tap into the stream at the chunk level without modifying the chunk itself.
-  private static instrumentAsyncIterable<T>(
-    stream: AsyncIterable<T>,
-    onChunk: (chunk: T) => void
-  ): AsyncIterable<T> {
-    return {
-      [Symbol.asyncIterator]: async function* () {
-        for await (const chunk of stream) {
-          onChunk(chunk);
-          yield chunk;
-        }
-      },
-    };
-  }
 
-  private static parseChunk(bytes?: Uint8Array): any {
+  private parseChunk(bytes?: Uint8Array): any {
     if (!bytes || !(bytes instanceof Uint8Array)) return null;
     try {
       const str = Buffer.from(bytes).toString('utf-8');
       return JSON.parse(str);
     } catch (err) {
-      console.warn('Failed to parse streamed chunk', err);
+      this._diag.warn('Failed to parse streamed chunk', err);
       return null;
     }
   }
@@ -728,6 +729,76 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     if (parsedChunk.completionReason !== undefined) {
       span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
         parsedChunk.completionReason,
+      ]);
+    }
+  }
+  private static recordLlamaAttributes(parsedChunk: any, span: Span) {
+    if (parsedChunk.prompt_token_count !== undefined) {
+      span.setAttribute(
+        ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+        parsedChunk.prompt_token_count
+      );
+    }
+    if (parsedChunk.generation_token_count !== undefined) {
+      span.setAttribute(
+        ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+        parsedChunk.generation_token_count
+      );
+    }
+    if (parsedChunk.stop_reason !== undefined) {
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+        parsedChunk.stop_reason,
+      ]);
+    }
+  }
+
+  private static recordMistralAttributes(parsedChunk: any, span: Span) {
+    if (parsedChunk.outputs?.[0]?.text !== undefined) {
+      span.setAttribute(
+        ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+        // NOTE: We approximate the token count since this value is not directly available in the body
+        // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
+        // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
+        Math.ceil(parsedChunk.outputs[0].text.length / 6)
+      );
+    }
+    if (parsedChunk.outputs?.[0]?.stop_reason !== undefined) {
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+        parsedChunk.outputs[0].stop_reason,
+      ]);
+    }
+  }
+
+  private static recordCohereAttributes(parsedChunk: any, span: Span) {
+    if (parsedChunk.generations?.[0]?.text !== undefined) {
+      span.setAttribute(
+        ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+        // NOTE: We approximate the token count since this value is not directly available in the body
+        // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
+        // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
+        Math.ceil(parsedChunk.generations[0].text.length / 6)
+      );
+    }
+    if (parsedChunk.generations?.[0]?.finish_reason !== undefined) {
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+        parsedChunk.generations[0].finish_reason,
+      ]);
+    }
+  }
+
+  private static recordCohereRAttributes(parsedChunk: any, span: Span) {
+    if (parsedChunk.text !== undefined) {
+      // NOTE: We approximate the token count since this value is not directly available in the body
+      // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
+      // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
+      span.setAttribute(
+        ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+        Math.ceil(parsedChunk.text.length / 6)
+      );
+    }
+    if (parsedChunk.finish_reason !== undefined) {
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+        parsedChunk.finish_reason,
       ]);
     }
   }
