@@ -21,6 +21,10 @@ import {
 import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  runTestFixture,
+  TestCollector,
+} from '@opentelemetry/contrib-test-utils';
 
 import { DataloaderInstrumentation } from '../src';
 const instrumentation = new DataloaderInstrumentation();
@@ -639,5 +643,27 @@ describe('DataloaderInstrumentation', () => {
 
     assert.strictEqual(loadSpan.name, 'dataloader.load');
     assert.strictEqual(batchSpan.name, 'dataloader.batch');
+  });
+});
+
+describe('ESM usage', () => {
+  it('should work with ESM default import', async function () {
+    await runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-dataloader-default-import.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkCollector: (collector: TestCollector) => {
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans[0].name, 'manual');
+        assert.strictEqual(spans[1].name, 'dataloader.load');
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'dataloader.batch');
+        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
+      },
+    });
   });
 });
