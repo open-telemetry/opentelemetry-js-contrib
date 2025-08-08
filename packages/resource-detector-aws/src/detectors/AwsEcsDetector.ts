@@ -186,7 +186,7 @@ export class AwsEcsDetector implements ResourceDetector {
 
     // Primary pattern: Match /ecs/taskId/taskId-containerId format (new ECS Fargate)
     // This captures the full taskId-containerId part after the last slash
-    const ecsPattern = /\/ecs\/[a-zA-Z0-9-]+\/([a-zA-Z0-9-]+)$/;
+    const ecsPattern = /\/ecs\/[a-fA-F0-9-]+\/([a-fA-F0-9-]+)$/;
     const ecsMatch = line.match(ecsPattern);
     if (
       ecsMatch &&
@@ -212,8 +212,7 @@ export class AwsEcsDetector implements ResourceDetector {
 
     // Legacy fallback: original logic for lines that are just the container ID (64 chars)
     if (
-      line.length > AwsEcsDetector.CONTAINER_ID_LENGTH &&
-      !line.includes('/')
+      line.length > AwsEcsDetector.CONTAINER_ID_LENGTH
     ) {
       return line.substring(line.length - AwsEcsDetector.CONTAINER_ID_LENGTH);
     }
