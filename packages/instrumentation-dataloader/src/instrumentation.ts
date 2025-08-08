@@ -61,8 +61,8 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
         ['>=2.0.0 <3'],
-        dataloaderPkg => {
-          const dataloader = extractModuleExports(dataloaderPkg);
+        module => {
+          const dataloader = extractModuleExports(module);
           this._patchLoad(dataloader.prototype);
           this._patchLoadMany(dataloader.prototype);
           this._patchPrime(dataloader.prototype);
@@ -71,8 +71,8 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
 
           return this._getPatchedConstructor(dataloader);
         },
-        dataloaderPkg => {
-          const dataloader = extractModuleExports(dataloaderPkg);
+        module => {
+          const dataloader = extractModuleExports(module);
           ['load', 'loadMany', 'prime', 'clear', 'clearAll'].forEach(method => {
             if (isWrapped(dataloader.prototype[method])) {
               this._unwrap(dataloader.prototype, method);
