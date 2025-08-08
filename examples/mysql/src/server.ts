@@ -18,7 +18,6 @@ import * as api from '@opentelemetry/api';
 import * as mysql from 'mysql';
 import * as http from 'http';
 import { MysqlError, PoolConnection } from 'mysql';
-// eslint-disable-next-line import/extensions
 import { setupTracing } from './tracer';
 
 setupTracing('example-mysql-server');

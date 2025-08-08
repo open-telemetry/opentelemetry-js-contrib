@@ -16,7 +16,6 @@
 
 'use strict';
 
-// eslint-disable-next-line
 require('./tracer')('example-meta-node');
 
 // Require in rest of modules

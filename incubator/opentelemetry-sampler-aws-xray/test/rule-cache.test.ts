@@ -143,5 +143,116 @@ describe('RuleCache', () => {
     );
   });
 
-  // TODO: Add tests for updating Sampling Targets and getting statistics
+  it('testUpdateSamplingTargets', () => {
+    const rule1 = createRule('default', 10000, 1, 0.05);
+    const rule2 = createRule('test', 20, 10, 0.2);
+    const cache = new RuleCache(emptyResource());
+    cache.updateRules([rule1, rule2]);
+
+    expect(cache['ruleAppliers'][0]['reservoirSampler']['quota']).toEqual(1);
+    expect(cache['ruleAppliers'][0]['fixedRateSampler']['_ratio']).toEqual(
+      rule2.samplingRule.FixedRate
+    );
+
+    expect(cache['ruleAppliers'][1]['reservoirSampler']['quota']).toEqual(1);
+    expect(cache['ruleAppliers'][1]['fixedRateSampler']['_ratio']).toEqual(
+      rule1.samplingRule.FixedRate
+    );
+
+    const time = Date.now() / 1000;
+    const target1 = {
+      FixedRate: 0.05,
+      Interval: 15,
+      ReservoirQuota: 1,
+      ReservoirQuotaTTL: time + 10,
+      RuleName: 'default',
+    };
+    const target2 = {
+      FixedRate: 0.15,
+      Interval: 12,
+      ReservoirQuota: 5,
+      ReservoirQuotaTTL: time + 10,
+      RuleName: 'test',
+    };
+    const target3 = {
+      FixedRate: 0.15,
+      Interval: 3,
+      ReservoirQuota: 5,
+      ReservoirQuotaTTL: time + 10,
+      RuleName: 'associated rule does not exist',
+    };
+
+    const targetMap = {
+      default: target1,
+      test: target2,
+      'associated rule does not exist': target3,
+    };
+    const [refreshSamplingRules, nextPollingInterval] = cache.updateTargets(
+      targetMap,
+      time - 10
+    );
+    expect(refreshSamplingRules).toEqual(false);
+    expect(nextPollingInterval).toEqual(target2.Interval);
+
+    // Ensure cache is still of length 2
+    expect(cache['ruleAppliers'].length).toEqual(2);
+
+    expect(cache['ruleAppliers'][0]['reservoirSampler']['quota']).toEqual(
+      target2.ReservoirQuota
+    );
+    expect(cache['ruleAppliers'][0]['fixedRateSampler']['_ratio']).toEqual(
+      target2.FixedRate
+    );
+    expect(cache['ruleAppliers'][1]['reservoirSampler']['quota']).toEqual(
+      target1.ReservoirQuota
+    );
+    expect(cache['ruleAppliers'][1]['fixedRateSampler']['_ratio']).toEqual(
+      target1.FixedRate
+    );
+
+    const [refreshSamplingRulesAfter, _] = cache.updateTargets(
+      targetMap,
+      time + 1
+    );
+    expect(refreshSamplingRulesAfter).toBe(true);
+  });
+
+  it('testGetAllStatistics', () => {
+    const time = Date.now();
+    const clock = sinon.useFakeTimers(time);
+
+    const rule1 = createRule('test', 4, 2, 2.0);
+    const rule2 = createRule('default', 5, 5, 5.0);
+
+    const cache = new RuleCache(emptyResource());
+    cache.updateRules([rule1, rule2]);
+
+    clock.tick(1); // ms
+
+    const clientId = '12345678901234567890abcd';
+    const statistics = cache.createSamplingStatisticsDocuments(
+      '12345678901234567890abcd'
+    );
+
+    // 1 ms should not be big enough to expect a timestamp difference
+    expect(statistics).toEqual([
+      {
+        ClientID: clientId,
+        RuleName: 'test',
+        Timestamp: Math.floor(time / 1000),
+        RequestCount: 0,
+        BorrowCount: 0,
+        SampledCount: 0,
+      },
+      {
+        ClientID: clientId,
+        RuleName: 'default',
+        Timestamp: Math.floor(time / 1000),
+        RequestCount: 0,
+        BorrowCount: 0,
+        SampledCount: 0,
+      },
+    ]);
+    clock.restore();
+  });
 });

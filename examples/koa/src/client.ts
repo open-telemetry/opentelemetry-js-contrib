@@ -16,7 +16,6 @@
 
 import * as api from '@opentelemetry/api';
 import * as axios from 'axios';
-// eslint-disable-next-line import/extensions
 import { setupTracing } from './tracer';
 
 const tracer = setupTracing('example-koa-client');
