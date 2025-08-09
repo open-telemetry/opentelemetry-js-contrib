@@ -192,7 +192,7 @@ export class AwsEcsDetector implements ResourceDetector {
       ecsMatch &&
       ecsMatch[1] &&
       ecsMatch[1].length >= 12 &&
-      ecsMatch[1].length <= 128
+      ecsMatch[1].length <= AwsEcsDetector.CONTAINER_ID_LENGTH
     ) {
       return ecsMatch[1];
     }
@@ -204,7 +204,7 @@ export class AwsEcsDetector implements ResourceDetector {
       if (
         lastSegment &&
         lastSegment.length >= 12 &&
-        lastSegment.length <= 128
+        lastSegment.length <= AwsEcsDetector.CONTAINER_ID_LENGTH
       ) {
         return lastSegment;
       }

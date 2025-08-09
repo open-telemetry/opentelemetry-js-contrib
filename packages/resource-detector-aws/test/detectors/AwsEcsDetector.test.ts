@@ -532,5 +532,60 @@ describe('AwsEcsResourceDetector', () => {
 
       nockScope.done();
     });
+
+    it('should extract container ID from Docker format cgroup', async () => {
+      const dockerContainerId = 'a4d00c9dd675d67f866c786181419e1b44832d4696780152e61afd44a3e02856';
+      const cgroupData = `1:blkio:/docker/${dockerContainerId}
+2:cpu:/docker/${dockerContainerId}
+3:cpuacct:/docker/${dockerContainerId}`;
+
+      setupMocks(cgroupData);
+      const nockScope = setupMetadataNock();
+
+      const resource = detectResources({ detectors: [awsEcsDetector] });
+      await resource.waitForAsyncAttributes?.();
+
+      sinon.assert.calledOnce(readStub);
+      assert.ok(resource);
+      assertEcsResource(resource, {});
+      assertContainerResource(resource, {
+        name: testHostname,
+        id: dockerContainerId,
+      });
+
+      nockScope.done();
+    });
+
+    it('should extract container ID from mixed ECS and Docker format cgroup', async () => {
+      const taskId = '447438d8540d49dca93b4f0a488ebe90';
+      const containerId = `${taskId}-1364044452`;
+      const cgroupData = `11:memory:/ecs/${taskId}/${containerId}
+10:devices:/ecs/${taskId}/${containerId}
+9:freezer:/ecs/${taskId}/${containerId}
+8:blkio:/ecs/${taskId}/${containerId}
+7:perf_event:/ecs/${taskId}/${containerId}
+6:net_cls,net_prio:/ecs/${taskId}/${containerId}
+5:cpuset:/ecs/${taskId}/${containerId}
+4:pids:/ecs/${taskId}/${containerId}
+3:hugetlb:/ecs/${taskId}/${containerId}
+2:cpu,cpuacct:/ecs/${taskId}/${containerId}
+1:name=systemd:/ecs/${taskId}/${containerId}`;
+
+      setupMocks(cgroupData);
+      const nockScope = setupMetadataNock();
+
+      const resource = detectResources({ detectors: [awsEcsDetector] });
+      await resource.waitForAsyncAttributes?.();
+
+      sinon.assert.calledOnce(readStub);
+      assert.ok(resource);
+      assertEcsResource(resource, {});
+      assertContainerResource(resource, {
+        name: testHostname,
+        id: containerId,
+      });
+
+      nockScope.done();
+    });
   });
 });
