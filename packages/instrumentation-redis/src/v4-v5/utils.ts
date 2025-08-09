@@ -20,19 +20,38 @@ import {
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
   DBSYSTEMVALUES_REDIS,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 
 export function getClientAttributes(
   diag: DiagLogger,
-  options: any
+  options: any,
+  semconvStability: SemconvStability
 ): Attributes {
-  return {
-    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
-    [SEMATTRS_NET_PEER_NAME]: options?.socket?.host,
-    [SEMATTRS_NET_PEER_PORT]: options?.socket?.port,
-    [SEMATTRS_DB_CONNECTION_STRING]:
-      removeCredentialsFromDBConnectionStringAttribute(diag, options?.url),
-  };
+  const attributes: Attributes = {};
+
+  if (semconvStability & SemconvStability.OLD) {
+    Object.assign(attributes, {
+      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+      [SEMATTRS_NET_PEER_NAME]: options?.socket?.host,
+      [SEMATTRS_NET_PEER_PORT]: options?.socket?.port,
+      [SEMATTRS_DB_CONNECTION_STRING]:
+        removeCredentialsFromDBConnectionStringAttribute(diag, options?.url),
+    });
+  }
+
+  if (semconvStability & SemconvStability.STABLE) {
+    Object.assign(attributes, {
+      [ATTR_DB_SYSTEM_NAME]: 'redis',
+      [ATTR_SERVER_ADDRESS]: options?.socket?.host,
+      [ATTR_SERVER_PORT]: options?.socket?.port,
+    });
+  }
+
+  return attributes;
 }
 
 /**
