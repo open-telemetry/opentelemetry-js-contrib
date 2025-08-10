@@ -39,7 +39,18 @@ import {
   ROOT_CONTEXT,
   Attributes,
 } from '@opentelemetry/api';
-import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
+import { pubsubPropagation } from '@opentelemetry/propagation-utils';
+import {
+  ATTR_URL_FULL,
+  MESSAGINGDESTINATIONKINDVALUES_QUEUE,
+  MESSAGINGOPERATIONVALUES_PROCESS,
+  SEMATTRS_MESSAGING_DESTINATION,
+  SEMATTRS_MESSAGING_DESTINATION_KIND,
+  SEMATTRS_MESSAGING_MESSAGE_ID,
+  SEMATTRS_MESSAGING_OPERATION,
+  SEMATTRS_MESSAGING_SYSTEM,
+  SEMATTRS_MESSAGING_URL,
+} from '@opentelemetry/semantic-conventions';
 import { ATTR_CLOUD_ACCOUNT_ID, ATTR_FAAS_COLDSTART } from './semconv';
 import { ATTR_FAAS_EXECUTION, ATTR_FAAS_ID } from './semconv-obsolete';
 
@@ -62,6 +73,15 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   },
   get(carrier, key: string) {
     return carrier[key];
+  },
+};
+
+const sqsContextGetter = {
+  keys(carrier: any): string[] {
+    return Object.keys(carrier || {});
+  },
+  get(carrier: any, key: string) {
+    return carrier?.[key]?.stringValue;
   },
 };
 
@@ -319,6 +339,42 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         plugin._applyRequestHook(span, event, context);
 
         return otelContext.with(trace.setSpan(parent, span), () => {
+          if (event.Records) {
+            const messages = event.Records;
+            const queueArn = messages[0]?.eventSourceARN;
+            const queueName = queueArn?.split(':').pop() ?? 'unknown';
+
+            pubsubPropagation.patchMessagesArrayToStartProcessSpans({
+              messages,
+              parentContext: trace.setSpan(otelContext.active(), span),
+              tracer: plugin.tracer,
+              messageToSpanDetails: (message: any) => ({
+                name: queueName,
+                parentContext: propagation.extract(
+                  ROOT_CONTEXT,
+                  message.messageAttributes || {},
+                  sqsContextGetter
+                ),
+                attributes: {
+                  [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sqs',
+                  [SEMATTRS_MESSAGING_DESTINATION]: queueName,
+                  [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+                    MESSAGINGDESTINATIONKINDVALUES_QUEUE,
+                  [SEMATTRS_MESSAGING_MESSAGE_ID]: message.messageId,
+                  [SEMATTRS_MESSAGING_URL]: queueArn,
+                  [SEMATTRS_MESSAGING_OPERATION]:
+                    MESSAGINGOPERATIONVALUES_PROCESS,
+                },
+              }),
+            });
+
+            pubsubPropagation.patchArrayForProcessSpans(
+              messages,
+              plugin.tracer,
+              otelContext.active()
+            );
+          }
+
           // Support both callback-based and Promise-based handlers for backward compatibility
           if (callback) {
             const wrappedCallback = plugin._wrapCallback(callback, span);

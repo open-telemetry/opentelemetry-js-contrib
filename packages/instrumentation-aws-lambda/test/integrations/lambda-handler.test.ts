@@ -33,7 +33,7 @@ import {
   ReadableSpan,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { Context } from 'aws-lambda';
+import { APIGatewayProxyEvent, Context, SQSEvent } from 'aws-lambda';
 import * as assert from 'assert';
 import {
   ATTR_URL_FULL,
@@ -1218,6 +1218,46 @@ describe('lambda handler', () => {
           'highWaterMark symbol should be preserved after instrumentation'
         );
       });
+    });
+  });
+
+  describe('sqs test', () => {
+    it('creates process span for sqs record, with lambda invocation span as parent and span link to the producer traceId and spanId', async () => {
+      initializeHandler('lambda-test/sync.sqshandler');
+      const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
+      const producerSpanId = '83b7424a259945cb';
+      const event = {
+        Records: [
+          {
+            messageAttributes: {
+              traceparent: {
+                stringValue: `00-${producerTraceId}-${producerSpanId}-01`,
+                dataType: 'String',
+              },
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN:
+              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/sync').sqshandler(event, ctx, () => {});
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+
+      assert.equal(
+        spans[0].parentSpanContext?.traceId,
+        spans[1].spanContext().traceId
+      );
+      assert.equal(
+        spans[0].parentSpanContext?.spanId,
+        spans[1].spanContext().spanId
+      );
+
+      assert.equal(spans[0].links[0]?.context.traceId, producerTraceId);
+      assert.equal(spans[0].links[0].context.spanId, producerSpanId);
     });
   });
 });
