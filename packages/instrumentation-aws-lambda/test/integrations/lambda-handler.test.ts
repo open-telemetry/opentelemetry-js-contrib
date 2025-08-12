@@ -33,7 +33,7 @@ import {
   ReadableSpan,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { APIGatewayProxyEvent, Context, SQSEvent } from 'aws-lambda';
+import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
   ATTR_URL_FULL,
@@ -1226,7 +1226,7 @@ describe('lambda handler', () => {
       initializeHandler('lambda-test/sync.sqshandler');
       const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
       const producerSpanId = '83b7424a259945cb';
-      const event = {
+      const sqsEvent = {
         Records: [
           {
             messageAttributes: {
@@ -1242,11 +1242,14 @@ describe('lambda handler', () => {
         ],
       };
 
-      await lambdaRequire('lambda-test/sync').sqshandler(event, ctx, () => {});
+      await lambdaRequire('lambda-test/sync').sqshandler(
+        sqsEvent,
+        ctx,
+        () => {}
+      );
       const spans = memoryExporter.getFinishedSpans();
 
       assert.strictEqual(spans.length, 2);
-
       assert.equal(
         spans[0].parentSpanContext?.traceId,
         spans[1].spanContext().traceId
@@ -1255,7 +1258,6 @@ describe('lambda handler', () => {
         spans[0].parentSpanContext?.spanId,
         spans[1].spanContext().spanId
       );
-
       assert.equal(spans[0].links[0]?.context.traceId, producerTraceId);
       assert.equal(spans[0].links[0].context.spanId, producerSpanId);
     });
@@ -1266,7 +1268,7 @@ describe('lambda handler', () => {
       initializeHandler('lambda-test/async.sqshandler');
       const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
       const producerSpanId = '83b7424a259945cb';
-      const event = {
+      const sqsEvent = {
         Records: [
           {
             messageAttributes: {
@@ -1282,7 +1284,7 @@ describe('lambda handler', () => {
         ],
       };
 
-      await lambdaRequire('lambda-test/async').sqshandler(event, ctx);
+      await lambdaRequire('lambda-test/async').sqshandler(sqsEvent, ctx);
       const spans = memoryExporter.getFinishedSpans();
 
       assert.strictEqual(spans.length, 2);
