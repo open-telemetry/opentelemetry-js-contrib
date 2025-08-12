@@ -1221,7 +1221,7 @@ describe('lambda handler', () => {
     });
   });
 
-  describe('sqs test', () => {
+  describe('sync handler sqs propagation', () => {
     it('creates process span for sqs record, with lambda invocation span as parent and span link to the producer traceId and spanId', async () => {
       initializeHandler('lambda-test/sync.sqshandler');
       const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
@@ -1256,6 +1256,44 @@ describe('lambda handler', () => {
         spans[1].spanContext().spanId
       );
 
+      assert.equal(spans[0].links[0]?.context.traceId, producerTraceId);
+      assert.equal(spans[0].links[0].context.spanId, producerSpanId);
+    });
+  });
+
+  describe('async handler sqs propagation', () => {
+    it('creates process span for sqs record, with lambda invocation span as parent and span link to the producer traceId and spanId', async () => {
+      initializeHandler('lambda-test/async.sqshandler');
+      const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
+      const producerSpanId = '83b7424a259945cb';
+      const event = {
+        Records: [
+          {
+            messageAttributes: {
+              traceparent: {
+                stringValue: `00-${producerTraceId}-${producerSpanId}-01`,
+                dataType: 'String',
+              },
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN:
+              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/async').sqshandler(event, ctx);
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+      assert.equal(
+        spans[0].parentSpanContext?.traceId,
+        spans[1].spanContext().traceId
+      );
+      assert.equal(
+        spans[0].parentSpanContext?.spanId,
+        spans[1].spanContext().spanId
+      );
       assert.equal(spans[0].links[0]?.context.traceId, producerTraceId);
       assert.equal(spans[0].links[0].context.spanId, producerSpanId);
     });
