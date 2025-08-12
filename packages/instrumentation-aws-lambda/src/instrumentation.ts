@@ -61,6 +61,7 @@ import {
   Callback,
   Context,
   Handler,
+  SQSRecord,
 } from 'aws-lambda';
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
@@ -295,7 +296,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
             messages,
             parentContext: trace.setSpan(otelContext.active(), span),
             tracer: plugin.tracer,
-            messageToSpanDetails: (message: any) => ({
+            messageToSpanDetails: (message: SQSRecord) => ({
               name: queueName,
               parentContext: propagation.extract(
                 ROOT_CONTEXT,
