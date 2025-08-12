@@ -76,12 +76,15 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   },
 };
 
-const sqsContextGetter = {
-  keys(carrier: any): string[] {
-    return Object.keys(carrier || {});
+const sqsContextGetter: TextMapGetter = {
+  keys(carrier): string[] {
+    if (carrier == null) {
+      return [];
+    }
+    return Object.keys(carrier);
   },
-  get(carrier: any, key: string) {
-    return carrier?.[key]?.stringValue;
+  get(carrier, key: string) {
+    return carrier?.[key]?.stringValue || carrier?.[key]?.value;
   },
 };
 
