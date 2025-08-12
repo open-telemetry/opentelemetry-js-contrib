@@ -178,3 +178,23 @@ export const ATTR_AWS_SECRETSMANAGER_SECRET_ARN =
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_AWS_SNS_TOPIC_ARN = 'aws.sns.topic.arn' as const;
+
+/**
+ * The ARN of the AWS Step Functions Activity.
+ * Originally from '@opentelemetry/semantic-conventions/incubating'
+ * https://github.com/open-telemetry/semantic-conventions/blob/main/docs/registry/attributes/aws.md#amazon-step-functions-attributes
+ * @example arn:aws:states:us-east-1:123456789012:activity:get-greeting
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_STEP_FUNCTIONS_ACTIVITY_ARN =
+  'aws.step_functions.activity.arn' as const;
+
+/**
+ * The ARN of the AWS Step Functions State Machine.
+ * Originally from '@opentelemetry/semantic-conventions/incubating'
+ * https://github.com/open-telemetry/semantic-conventions/blob/main/docs/registry/attributes/aws.md#amazon-step-functions-attributes
+ * @example arn:aws:states:us-east-1:123456789012:stateMachine:myStateMachine:1
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_STEP_FUNCTIONS_STATE_MACHINE_ARN =
+  'aws.step_functions.state_machine.arn' as const;
