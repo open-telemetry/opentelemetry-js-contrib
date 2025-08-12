@@ -51,6 +51,6 @@ exports.callbackContext = function (event, context, callback) {
 
 exports.sqshandler = function (event, context, callback) {
   // Dummy forEach loop, to trigger sqs instrumentation
-  event.Records.forEach(_r => {});
+  event.Records.forEach(r => {});
   callback(null, 'ok');
 };
