@@ -24,6 +24,7 @@ import {
 import { BedrockRuntimeServiceExtension } from './bedrock-runtime';
 import { DynamodbServiceExtension } from './dynamodb';
 import { SnsServiceExtension } from './sns';
+import { StepFunctionsServiceExtension } from './stepfunctions';
 import { LambdaServiceExtension } from './lambda';
 import { S3ServiceExtension } from './s3';
 import { KinesisServiceExtension } from './kinesis';
@@ -32,6 +33,11 @@ export class ServicesExtensions implements ServiceExtension {
   services: Map<string, ServiceExtension> = new Map();
 
   constructor() {
+    this.registerServices();
+  }
+
+  private registerServices() {
+    this.services.set('SFN', new StepFunctionsServiceExtension());
     this.services.set('SQS', new SqsServiceExtension());
     this.services.set('SNS', new SnsServiceExtension());
     this.services.set('DynamoDB', new DynamodbServiceExtension());
