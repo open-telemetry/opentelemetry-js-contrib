@@ -5,8 +5,6 @@
   "description": "Example of mysql integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "docker:start": "docker run -p 3306:3306 --name example-mysql -e MYSQL_ROOT_PASSWORD=secret -d mysql:5.7",
     "docker:stop": "docker stop example-mysql && docker rm example-mysql",
     "zipkin:server": "cross-env EXPORTER=zipkin ts-node src/server.ts",
