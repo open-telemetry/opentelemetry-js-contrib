@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.21.0...instrumentation-dataloader-v0.21.1) (2025-08-13)
+
+
+### Bug Fixes
+
+* **instrumentation-dataloader:** support ESM imports of dataloader module ([#2973](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2973)) ([16979f6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/16979f6f4a9f1def110195c3d29300f691038921))
+
 ## [0.21.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.20.0...instrumentation-dataloader-v0.21.0) (2025-07-09)
 
 

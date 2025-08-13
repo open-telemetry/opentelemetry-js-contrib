@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.55.0...instrumentation-pg-v0.56.0) (2025-08-13)
+
+
+### Features
+
+* **instrumentation-pg:** update to stable semantic conventions with db-migration support ([#2881](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2881)) ([4384c7b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4384c7b8283c834ed1f8ecf1d694fd6e7261c74c))
+
 ## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.54.1...instrumentation-pg-v0.55.0) (2025-07-09)
 
 
