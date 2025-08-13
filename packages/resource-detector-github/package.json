@@ -14,8 +14,6 @@
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/resource-detector-github",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
