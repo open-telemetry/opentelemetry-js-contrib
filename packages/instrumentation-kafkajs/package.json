@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-kafkajs",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "OpenTelemetry instrumentation for `kafkajs` messaging client for Apache Kafka",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -19,7 +19,7 @@
     "lint:readme": "node ../../scripts/lint-readme",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-kafkajs",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-kafkajs",
     "compile": "tsc -p ."
   },
   "keywords": [

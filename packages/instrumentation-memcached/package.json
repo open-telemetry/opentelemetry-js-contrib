@@ -11,15 +11,18 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-memcached",
     "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-memcached",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.test.ts'",
-    "test:debug": "cross-env RUN_MEMCACHED_TESTS_LOCAL=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
-    "test:local": "cross-env RUN_MEMCACHED_TESTS_LOCAL=true npm run test",
+    "test:debug": "cross-env RUN_MEMCACHED_TESTS=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
+    "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
+    "//todo": "echo \"add test-all-versions\"",
+    "test-services:start": "cd ../.. && npm run test-services:start memcached",
+    "test-services:stop": "cd ../.. && npm run test-services:stop memcached",
     "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [

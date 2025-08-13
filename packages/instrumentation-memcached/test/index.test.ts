@@ -23,7 +23,6 @@ import {
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -71,8 +70,7 @@ const getClient = (...args: any[]): ExtendedMemcached => {
 };
 const KEY = 'foo';
 const VALUE = '_test_value_';
-const shouldTestLocal = process.env.RUN_MEMCACHED_TESTS_LOCAL;
-const shouldTest = process.env.RUN_MEMCACHED_TESTS || shouldTestLocal;
+const shouldTest = process.env.RUN_MEMCACHED_TESTS;
 
 describe('memcached@2.x', () => {
   const provider = new NodeTracerProvider({
@@ -102,16 +100,6 @@ describe('memcached@2.x', () => {
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
       this.skip();
-    }
-
-    if (shouldTestLocal) {
-      testUtils.startDocker('memcached');
-    }
-  });
-
-  after(() => {
-    if (shouldTestLocal) {
-      testUtils.cleanUpDocker('memcached');
     }
   });
 

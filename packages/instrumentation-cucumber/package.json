@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cucumber",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "description": "OpenTelemetry instrumentation for `@cucumber/cucumber` automated tests runner",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -19,7 +19,7 @@
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-cucumber",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-cucumber",
     "compile": "tsc -p ."
   },
   "keywords": [

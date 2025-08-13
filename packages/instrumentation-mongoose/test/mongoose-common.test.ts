@@ -38,7 +38,7 @@ import User, { IUser, loadUsers } from './user';
 import { assertSpan, getStatement } from './asserts';
 import { DB_NAME, MONGO_URI } from './config';
 
-// Please run mongodb in the background: docker run -d -p 27017:27017 -v ~/data:/data/db mongo
+// Please run `npm run test-services:start` before
 describe('mongoose instrumentation [common]', () => {
   before(async () => {
     try {
