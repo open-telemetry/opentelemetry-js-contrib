@@ -1,3 +1,4 @@
+/* eslint-disable yet-another-license-header/header */
 module.exports = {
   arrowParens: 'avoid',
   printWidth: 80,

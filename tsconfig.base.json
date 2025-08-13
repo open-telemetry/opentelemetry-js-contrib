@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
@@ -21,9 +22,7 @@
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
-    "target": "es2022"
-  },
-  "exclude": [
-    "node_modules"
-  ]
+    "target": "es2022",
+    "types": ["node", "mocha", "webpack-env"]
+  }
 }
