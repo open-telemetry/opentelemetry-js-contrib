@@ -10,6 +10,11 @@ module.exports = {
   parserOptions: {
     "project": null
   },
+  ignorePatterns: [
+    "**/build/**",
+    "**/coverage/**"
+  ],
+  root: true,
   rules: {
     "quotes": ["error", "single", { "avoidEscape": true }],
     "eqeqeq": [
