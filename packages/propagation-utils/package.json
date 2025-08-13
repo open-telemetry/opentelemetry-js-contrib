@@ -11,8 +11,6 @@
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/propagation-utils",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.test.ts'",
