@@ -17,7 +17,7 @@
 'use strict';
 
 const webpack = require('webpack');
-const webpackMerge = require('webpack-merge');
+const { merge } = require('webpack-merge');
 const path = require('path');
 
 const directory = path.resolve(__dirname);
@@ -25,9 +25,13 @@ const directory = path.resolve(__dirname);
 const common = {
   mode: 'development',
   entry: {
-    'document-load': 'examples/document-load/index.js',
-    meta: 'examples/meta/index.js',
-    'user-interaction': 'examples/user-interaction/index.js',
+    'document-load': path.resolve(__dirname, 'examples/document-load/index.js'),
+    meta: path.resolve(__dirname, 'examples/meta/index.js'),
+    'user-interaction': path.resolve(
+      __dirname,
+      'examples/user-interaction/index.js'
+    ),
+    'page-view': path.resolve(__dirname, 'examples/page-view/index.js'),
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -38,15 +42,15 @@ const common = {
   module: {
     rules: [
       {
-        test: /\.js[x]?$/,
-        exclude: /(node_modules)/,
+        test: /\.jsx?$/,
+        exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
         },
       },
       {
         test: /\.ts$/,
-        exclude: /(node_modules)/,
+        exclude: /node_modules/,
         use: {
           loader: 'ts-loader',
         },
@@ -59,14 +63,22 @@ const common = {
   },
 };
 
-module.exports = webpackMerge(common, {
+const devConfig = {
   devtool: 'eval-source-map',
   devServer: {
-    static: path.resolve(path.join(__dirname, 'examples')),
+    static: {
+      directory: path.resolve(__dirname, 'examples'),
+    },
+    compress: true,
+    port: 8090,
+    hot: true,
+    host: '0.0.0.0',
   },
   plugins: [
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify('development'),
     }),
   ],
-});
+};
+
+module.exports = merge(common, devConfig);
