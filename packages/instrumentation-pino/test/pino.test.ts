@@ -371,6 +371,48 @@ describe('PinoInstrumentation', () => {
       });
     });
 
+    it('propagates parameters to user mixin', () => {
+      const logger = pino(
+        {
+          name: 'LogLog',
+          mixin: (mergeObject: object, level: number, logger: Pino.Logger) => ({
+            mixinArgs: {
+              mergeObject,
+              level,
+              logger: {
+                bindings: logger.bindings(),
+              },
+            },
+            mixinProp: 'mixinValue',
+          }),
+        },
+        process.stdout
+      );
+
+      const childLogger = logger.child({ childProp: 'childValue' });
+
+      tracer.startActiveSpan('abc', span => {
+        childLogger.info({ objProp: 'objValue' }, 'a message');
+        span.end();
+
+        const record = JSON.parse(stdoutSpy.firstCall.args[0].toString());
+        assertRecord(record, span);
+        assert.deepStrictEqual(record['mixinArgs'], {
+          mergeObject: {
+            objProp: 'objValue',
+          },
+          level: 30,
+          logger: {
+            bindings: {
+              childProp: 'childValue',
+            },
+          },
+        });
+        assert.strictEqual(record['mixinProp'], 'mixinValue');
+        assert.strictEqual(record['name'], 'LogLog');
+      });
+    });
+
     it('ensures user mixin values take precedence', () => {
       const logger = pino(
         {
