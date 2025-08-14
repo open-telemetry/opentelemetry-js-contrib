@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.49.0...instrumentation-mysql2-v0.50.0) (2025-08-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-mysql2:** Missing masking of sql queries ([#2732](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2732))
+
+### Bug Fixes
+
+* **instrumentation-mysql2:** Missing masking of sql queries ([#2732](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2732)) ([bcf32cd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bcf32cdc6372159f940d87d503cc79f14ebaa107))
+
 ## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.48.1...instrumentation-mysql2-v0.49.0) (2025-07-09)
 
 
