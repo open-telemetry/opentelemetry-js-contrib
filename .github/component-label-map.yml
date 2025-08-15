@@ -253,10 +253,6 @@ pkg:propagation-utils:
       - any-glob-to-any-file:
           - packages/propagation-utils/**
           - packages/contrib-test-utils/**
-pkg:propagator-grpc-census-binary:
-  - changed-files:
-      - any-glob-to-any-file:
-          - propagators/opentelemetry-propagator-grpc-census-binary/**
 pkg:propagator-instana:
   - changed-files:
       - any-glob-to-any-file:
