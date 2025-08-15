@@ -63,6 +63,7 @@ interface AwsLogOptions {
  */
 export class AwsEcsDetector implements ResourceDetector {
   static readonly CONTAINER_ID_LENGTH = 64;
+  static readonly CONTAINER_ID_LENGTH_MIN = 32;
   static readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
 
   private static readFileAsync = util.promisify(fs.readFile);
@@ -161,19 +162,72 @@ export class AwsEcsDetector implements ResourceDetector {
         AwsEcsDetector.DEFAULT_CGROUP_PATH,
         'utf8'
       );
-      const splitData = rawData.trim().split('\n');
-      for (const str of splitData) {
-        if (str.length > AwsEcsDetector.CONTAINER_ID_LENGTH) {
-          containerId = str.substring(
-            str.length - AwsEcsDetector.CONTAINER_ID_LENGTH
-          );
-          break;
-        }
+      const lines = rawData
+        .split('\n')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      // Pass 1: Prefer primary ECS pattern across all lines
+      for (const line of lines) {
+        const id = this._extractPrimaryEcsContainerId(line);
+        if (id) return id;
+      }
+
+      // Pass 2: Fallback to last-segment with strict allowed chars (hex + hyphen)
+      for (const line of lines) {
+        const id = this._extractLastSegmentContainerId(line);
+        if (id) return id;
+      }
+
+      // Pass 3: Legacy fallback to last 64 chars (Docker-style), keep existing behavior
+      for (const line of lines) {
+        const id = this._extractLegacyContainerId(line);
+        if (id) return id;
       }
     } catch (e) {
       diag.debug('AwsEcsDetector failed to read container ID', e);
     }
     return containerId;
+  }
+
+
+  // Prefer primary ECS format extraction
+  private _extractPrimaryEcsContainerId(line: string): string | undefined {
+    const ecsPattern = /\/ecs\/[a-fA-F0-9-]+\/([a-fA-F0-9-]+)$/;
+    const match = line.match(ecsPattern);
+    if (
+      match &&
+      match[1] &&
+      match[1].length >= AwsEcsDetector.CONTAINER_ID_LENGTH_MIN &&
+      match[1].length <= AwsEcsDetector.CONTAINER_ID_LENGTH
+    ) {
+      return match[1];
+    }
+    return undefined;
+  }
+
+  // Fallback: accept last path segment if it looks like a container id (hex + '-')
+  private _extractLastSegmentContainerId(line: string): string | undefined {
+    const parts = line.split('/');
+    if (parts.length <= 1) return undefined;
+    const last = parts[parts.length - 1];
+    if (
+      last &&
+      last.length >= AwsEcsDetector.CONTAINER_ID_LENGTH_MIN &&
+      last.length <= AwsEcsDetector.CONTAINER_ID_LENGTH &&
+      /^[a-fA-F0-9-]+$/.test(last)
+    ) {
+      return last;
+    }
+    return undefined;
+  }
+
+  // Legacy fallback: keep existing behavior to avoid breaking users/tests
+  private _extractLegacyContainerId(line: string): string | undefined {
+    if (line.length > AwsEcsDetector.CONTAINER_ID_LENGTH) {
+      return line.substring(line.length - AwsEcsDetector.CONTAINER_ID_LENGTH);
+    }
+    return undefined;
   }
 
   /**
