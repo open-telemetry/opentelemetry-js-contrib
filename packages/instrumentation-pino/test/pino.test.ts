@@ -371,7 +371,14 @@ describe('PinoInstrumentation', () => {
       });
     });
 
-    it('propagates parameters to user mixin', () => {
+    it('propagates all parameters to user mixin', function () {
+      // In pino v8.14.0, a 3rd arg (the logger instance) was added to mixins.
+      const pinoSupportsThirdMixinArg =
+        pino.version && semver.satisfies(pino.version, '>=8.14.0');
+      if (!pinoSupportsThirdMixinArg) {
+        this.skip();
+      }
+
       const logger = pino(
         {
           name: 'LogLog',
@@ -405,6 +412,7 @@ describe('PinoInstrumentation', () => {
           logger: {
             bindings: {
               childProp: 'childValue',
+              name: 'LogLog',
             },
           },
         });
