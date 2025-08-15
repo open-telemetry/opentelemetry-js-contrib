@@ -22,7 +22,7 @@ jobs:
       args: ${{ steps.npm-workspace-args.outputs.args }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Parse labels into npm workspace arguments
         id: npm-workspace-args
         run: |
