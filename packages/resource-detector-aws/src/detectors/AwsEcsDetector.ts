@@ -63,6 +63,7 @@ interface AwsLogOptions {
  */
 export class AwsEcsDetector implements ResourceDetector {
   static readonly CONTAINER_ID_LENGTH = 64;
+  static readonly CONTAINER_ID_LENGTH_MIN = 32;
   static readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
 
   private static readFileAsync = util.promisify(fs.readFile);
@@ -161,12 +162,27 @@ export class AwsEcsDetector implements ResourceDetector {
         AwsEcsDetector.DEFAULT_CGROUP_PATH,
         'utf8'
       );
-      const splitData = rawData.trim().split('\n');
-      for (const str of splitData) {
-        containerId = this._extractContainerIdFromLine(str);
-        if (containerId) {
-          break;
-        }
+      const lines = rawData
+        .split('\n')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      // Pass 1: Prefer primary ECS pattern across all lines
+      for (const line of lines) {
+        const id = this._extractPrimaryEcsContainerId(line);
+        if (id) return id;
+      }
+
+      // Pass 2: Fallback to last-segment with strict allowed chars (hex + hyphen)
+      for (const line of lines) {
+        const id = this._extractLastSegmentContainerId(line);
+        if (id) return id;
+      }
+
+      // Pass 3: Legacy fallback to last 64 chars (Docker-style), keep existing behavior
+      for (const line of lines) {
+        const id = this._extractLegacyContainerId(line);
+        if (id) return id;
       }
     } catch (e) {
       diag.debug('AwsEcsDetector failed to read container ID', e);
@@ -174,49 +190,43 @@ export class AwsEcsDetector implements ResourceDetector {
     return containerId;
   }
 
-  /**
-   * Extract container ID from a cgroup line using regex pattern matching.
-   * Handles the new AWS ECS Fargate format: /ecs/<taskId>/<taskId>-<containerId>
-   * Returns the last segment after the final '/' which should be the complete container ID.
-   */
-  private _extractContainerIdFromLine(line: string): string | undefined {
-    if (!line) {
-      return undefined;
-    }
 
-    // Primary pattern: Match /ecs/taskId/taskId-containerId format (new ECS Fargate)
-    // This captures the full taskId-containerId part after the last slash
+  // Prefer primary ECS format extraction
+  private _extractPrimaryEcsContainerId(line: string): string | undefined {
     const ecsPattern = /\/ecs\/[a-fA-F0-9-]+\/([a-fA-F0-9-]+)$/;
-    const ecsMatch = line.match(ecsPattern);
+    const match = line.match(ecsPattern);
     if (
-      ecsMatch &&
-      ecsMatch[1] &&
-      ecsMatch[1].length >= 12 &&
-      ecsMatch[1].length <= AwsEcsDetector.CONTAINER_ID_LENGTH
+      match &&
+      match[1] &&
+      match[1].length >= AwsEcsDetector.CONTAINER_ID_LENGTH_MIN &&
+      match[1].length <= AwsEcsDetector.CONTAINER_ID_LENGTH
     ) {
-      return ecsMatch[1];
+      return match[1];
     }
+    return undefined;
+  }
 
-    // Fallback: Extract last segment after slash for any path-like format
-    const segments = line.split('/');
-    if (segments.length > 1) {
-      const lastSegment = segments[segments.length - 1];
-      if (
-        lastSegment &&
-        lastSegment.length >= 12 &&
-        lastSegment.length <= AwsEcsDetector.CONTAINER_ID_LENGTH
-      ) {
-        return lastSegment;
-      }
-    }
-
-    // Legacy fallback: original logic for lines that are just the container ID (64 chars)
+  // Fallback: accept last path segment if it looks like a container id (hex + '-')
+  private _extractLastSegmentContainerId(line: string): string | undefined {
+    const parts = line.split('/');
+    if (parts.length <= 1) return undefined;
+    const last = parts[parts.length - 1];
     if (
-      line.length > AwsEcsDetector.CONTAINER_ID_LENGTH
+      last &&
+      last.length >= AwsEcsDetector.CONTAINER_ID_LENGTH_MIN &&
+      last.length <= AwsEcsDetector.CONTAINER_ID_LENGTH &&
+      /^[a-fA-F0-9-]+$/.test(last)
     ) {
+      return last;
+    }
+    return undefined;
+  }
+
+  // Legacy fallback: keep existing behavior to avoid breaking users/tests
+  private _extractLegacyContainerId(line: string): string | undefined {
+    if (line.length > AwsEcsDetector.CONTAINER_ID_LENGTH) {
       return line.substring(line.length - AwsEcsDetector.CONTAINER_ID_LENGTH);
     }
-
     return undefined;
   }
 
