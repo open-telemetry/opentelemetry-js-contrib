@@ -20,7 +20,7 @@ import {
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
 import { RedisInstrumentation } from '../../src';
-import type { MultiErrorReply } from '../../src/v4/internal-types';
+import type { MultiErrorReply } from '../../src/v4-v5/internal-types';
 import * as assert from 'assert';
 
 import { redisTestConfig, redisTestUrl, shouldTest } from './utils';
@@ -49,7 +49,7 @@ import {
 import { RedisResponseCustomAttributeFunction } from '../../src/types';
 import { hrTimeToMilliseconds, suppressTracing } from '@opentelemetry/core';
 
-describe('redis v4', () => {
+describe('redis v4-v5', () => {
   before(function () {
     // needs to be "function" to have MochaContext "this" context
     if (!shouldTest) {
@@ -444,7 +444,7 @@ describe('redis v4', () => {
     it('duration covers create until server response', async () => {
       await client.set('another-key', 'another-value');
       const multiClient = client.multi();
-      let commands = multiClient.set('key', 'value');
+      let commands: any = multiClient.set('key', 'value');
       // wait 10 ms before adding next command
       // simulate long operation
       await new Promise(resolve => setTimeout(resolve, 10));
