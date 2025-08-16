@@ -39,11 +39,20 @@ import {
   ROOT_CONTEXT,
   Attributes,
 } from '@opentelemetry/api';
+import { pubsubPropagation } from '@opentelemetry/propagation-utils';
 import {
   ATTR_URL_FULL,
   SEMATTRS_FAAS_EXECUTION,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
   SEMRESATTRS_FAAS_ID,
+  MESSAGINGDESTINATIONKINDVALUES_QUEUE,
+  MESSAGINGOPERATIONVALUES_PROCESS,
+  SEMATTRS_MESSAGING_DESTINATION,
+  SEMATTRS_MESSAGING_DESTINATION_KIND,
+  SEMATTRS_MESSAGING_MESSAGE_ID,
+  SEMATTRS_MESSAGING_OPERATION,
+  SEMATTRS_MESSAGING_SYSTEM,
+  SEMATTRS_MESSAGING_URL,
 } from '@opentelemetry/semantic-conventions';
 import { ATTR_FAAS_COLDSTART } from './semconv';
 
@@ -52,6 +61,7 @@ import {
   Callback,
   Context,
   Handler,
+  SQSRecord,
 } from 'aws-lambda';
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
@@ -65,6 +75,18 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   },
   get(carrier, key: string) {
     return carrier[key];
+  },
+};
+
+const sqsContextGetter: TextMapGetter = {
+  keys(carrier): string[] {
+    if (carrier == null) {
+      return [];
+    }
+    return Object.keys(carrier);
+  },
+  get(carrier, key: string) {
+    return carrier?.[key]?.stringValue || carrier?.[key]?.value;
   },
 };
 
@@ -265,6 +287,42 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       }
 
       return otelContext.with(trace.setSpan(parent, span), () => {
+        if (event.Records) {
+          const messages = event.Records;
+          const queueArn = messages[0]?.eventSourceARN;
+          const queueName = queueArn?.split(':').pop() ?? 'unknown';
+
+          pubsubPropagation.patchMessagesArrayToStartProcessSpans({
+            messages,
+            parentContext: trace.setSpan(otelContext.active(), span),
+            tracer: plugin.tracer,
+            messageToSpanDetails: (message: SQSRecord) => ({
+              name: queueName,
+              parentContext: propagation.extract(
+                ROOT_CONTEXT,
+                message.messageAttributes || {},
+                sqsContextGetter
+              ),
+              attributes: {
+                [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sqs',
+                [SEMATTRS_MESSAGING_DESTINATION]: queueName,
+                [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+                  MESSAGINGDESTINATIONKINDVALUES_QUEUE,
+                [SEMATTRS_MESSAGING_MESSAGE_ID]: message.messageId,
+                [SEMATTRS_MESSAGING_URL]: queueArn,
+                [SEMATTRS_MESSAGING_OPERATION]:
+                  MESSAGINGOPERATIONVALUES_PROCESS,
+              },
+            }),
+          });
+
+          pubsubPropagation.patchArrayForProcessSpans(
+            messages,
+            plugin.tracer,
+            otelContext.active()
+          );
+        }
+
         // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
         // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
         // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
