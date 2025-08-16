@@ -343,33 +343,34 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         plugin._applyRequestHook(span, event, context);
 
         return otelContext.with(trace.setSpan(parent, span), () => {
-          if (event.Records) {
+          if (event.Records && event.Records[0].eventSource === 'aws:sqs') {
             const messages = event.Records;
             const queueArn = messages[0]?.eventSourceARN;
             const queueName = queueArn?.split(':').pop() ?? 'unknown';
-          pubsubPropagation.patchMessagesArrayToStartProcessSpans({
-            messages,
-            parentContext: trace.setSpan(otelContext.active(), span),
-            tracer: plugin.tracer,
-            messageToSpanDetails: (message: SQSRecord) => ({
-              name: queueName,
-              parentContext: propagation.extract(
-                ROOT_CONTEXT,
-                message.messageAttributes || {},
-                sqsContextGetter
-              ),
-              attributes: {
-                [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sqs',
-                [SEMATTRS_MESSAGING_DESTINATION]: queueName,
-                [SEMATTRS_MESSAGING_DESTINATION_KIND]:
-                  MESSAGINGDESTINATIONKINDVALUES_QUEUE,
-                [SEMATTRS_MESSAGING_MESSAGE_ID]: message.messageId,
-                [SEMATTRS_MESSAGING_URL]: queueArn,
-                [SEMATTRS_MESSAGING_OPERATION]:
-                  MESSAGINGOPERATIONVALUES_PROCESS,
-              },
-            }),
-          });
+
+            pubsubPropagation.patchMessagesArrayToStartProcessSpans({
+              messages,
+              parentContext: trace.setSpan(otelContext.active(), span),
+              tracer: plugin.tracer,
+              messageToSpanDetails: (message: SQSRecord) => ({
+                name: queueName,
+                parentContext: propagation.extract(
+                  ROOT_CONTEXT,
+                  message.messageAttributes || {},
+                  sqsContextGetter
+                ),
+                attributes: {
+                  [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sqs',
+                  [SEMATTRS_MESSAGING_DESTINATION]: queueName,
+                  [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+                    MESSAGINGDESTINATIONKINDVALUES_QUEUE,
+                  [SEMATTRS_MESSAGING_MESSAGE_ID]: message.messageId,
+                  [SEMATTRS_MESSAGING_URL]: queueArn,
+                  [SEMATTRS_MESSAGING_OPERATION]:
+                    MESSAGINGOPERATIONVALUES_PROCESS,
+                },
+              }),
+            });
 
             pubsubPropagation.patchMessagesArrayToStartProcessSpans({
               messages,
