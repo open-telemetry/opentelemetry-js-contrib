@@ -161,6 +161,16 @@ export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
 
 /**
  * Originally from '@opentelemetry/semantic-conventions/incubating'
+ * https://github.com/open-telemetry/semantic-conventions/blob/main/docs/registry/attributes/aws.md#amazon-secrets-manager-attributes
+ * The ARN of the Secret stored in the Secrets Mangger
+ * @example arn:aws:secretsmanager:us-east-1:123456789012:secret:SecretName-6RandomCharacters
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_SECRETSMANAGER_SECRET_ARN =
+  'aws.secretsmanager.secret.arn' as const;
+
+/**
+ * Originally from '@opentelemetry/semantic-conventions/incubating'
  * https://github.com/open-telemetry/semantic-conventions/blob/main/docs/registry/attributes/aws.md#amazon-sns-attributes
  * The ARN of the AWS SNS Topic. An Amazon SNS [topic](https://docs.aws.amazon.com/sns/latest/dg/sns-create-topic.html)
  *  is a logical access point that acts as a communication channel.
