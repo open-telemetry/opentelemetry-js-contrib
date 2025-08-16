@@ -89,24 +89,72 @@ By default, the tests that connect to RabbitMQ are skipped. To make sure these t
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This package supports both legacy and future stable OpenTelemetry semantic conventions for messaging systems. The behavior is controlled by the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable.
 
-Attributes collected:
+**Note**: The v1.36.0+ conventions are not yet stable but will become stable in the future. This instrumentation is progressively implementing the new attributes and span names in preparation for the transition to stable conventions.
 
-| Attribute                        | Short Description                                                      |
-| -------------------------------- | ---------------------------------------------------------------------- |
-| `messaging.destination`          | The message destination name.                                          |
-| `messaging.destination_kind`     | The kind of message destination.                                       |
-| `messaging.rabbitmq.routing_key` | RabbitMQ message routing key.                                          |
-| `messaging.operation`            | A string identifying the kind of message consumption.                  |
-| `messaging.message_id`           | A value used by the messaging system as an identifier for the message. |
-| `messaging.conversation_id`      | The ID identifying the conversation to which the message belongs.      |
-| `messaging.protocol`             | The name of the transport protocol.                                    |
-| `messaging.protocol_version`     | The version of the transport protocol.                                 |
-| `messaging.system`               | A string identifying the messaging system.                             |
-| `messaging.url`                  | The connection string.                                                 |
-| `net.peer.name`                  | Remote hostname or similar.                                            |
-| `net.peer.port`                  | Remote port number.                                                    |
+Configure the instrumentation using one of the following options:
+
+- **Empty (default)**: Emit only legacy v1.7.0 conventions ([messaging spec](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md))
+- **`messaging`**: Emit only stable v1.36.0+ conventions ([messaging spec](https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/messaging/messaging-spans.md) or [RabbitMQ messaging spec](https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/messaging/rabbitmq.md))
+- **`messaging/dup`**: Emit both legacy and stable conventions simultaneously for migration purposes
+
+### Attributes Collected
+
+| v1.7.0 semconv                    | v1.36.0+ semconv                             | Description |
+| --------------------------------- | --------------------------------------------- | ----------- |
+| `messaging.protocol`              | `network.protocol.name`                      | The name of the transport protocol (`AMQP`) |
+| `messaging.protocol_version`      | `network.protocol.version`                   | The version of the transport protocol (`0.9.1`) |
+| `net.peer.name`                   | `network.peer.address`                       | Remote hostname or similar |
+| `net.peer.port`                   | `network.peer.port`                          | Remote port number |
+| -                                 | `server.address`                              | Server hostname or similar |
+| -                                 | `server.port`                                 | Server port number |
+| `messaging.system`                | `messaging.system`                            | A string identifying the messaging system (`rabbitmq`) |
+| `messaging.url`                   | Removed                                       | The connection string (with credentials masked) |
+| `messaging.destination_kind`      | Removed                                       | The kind of message destination (always `topic` for RabbitMQ) |
+| -                                 | `messaging.operation.type`                   | A string identifying the type of operation (`send`, `receive`) |
+| `messaging.operation`             | `messaging.operation.name`                   | A string identifying the name of operation (`publish`, `consume`) |
+| `messaging.destination`           | `messaging.destination.name`                 | The message destination name (exchange name or destination) |
+| `messaging.message_id`            | `messaging.message.id`                       | A value used by the messaging system as an identifier for the message |
+| `messaging.conversation_id`       | `messaging.message.conversation_id`          | The ID identifying the conversation to which the message belongs |
+| -                                 | `messaging.message.body.size`                | The size of the message body in bytes |
+| `messaging.rabbitmq.routing_key`  | `messaging.rabbitmq.destination.routing_key` | RabbitMQ message routing key |
+| -                                 | `messaging.rabbitmq.message.delivery_tag`    | RabbitMQ message delivery tag (consume operations only) |
+
+### Span Naming Conventions
+
+The instrumentation generates different span names based on the semantic convention version:
+
+#### Publish Operations
+
+- **Legacy**: `publish {exchange}` (or `publish <default>` for default exchange)
+- **Stable**: `publish {destination}` where destination follows the pattern:
+  - `{exchange}:{routing_key}` when both are present
+  - `{exchange}` when only exchange is present
+  - `{routing_key}` when only routing key is present
+  - `amq.default` when neither is present
+
+#### Consume Operations
+
+- **Legacy**: `{queue} process`
+- **Stable**: `consume {destination}` where destination follows this priority pattern:
+  - `{exchange}:{routing_key}:{queue}` when all are present and routing_key ≠ queue
+  - `{exchange}:{routing_key}` when all are present and routing_key = queue, or when exchange and routing_key are present
+  - `{exchange}:{queue}` when exchange and queue are present (no routing_key)
+  - `{routing_key}:{queue}` when routing_key and queue are present (no exchange)
+  - `{exchange}` when only exchange is present
+  - `{routing_key}` when only routing_key is present
+  - `{queue}` when only queue is present
+  - `amq.default` when none are present
+
+### Migration Guide
+
+When upgrading to the new semantic conventions, it is recommended to follow this migration path:
+
+1. **Upgrade** `@opentelemetry/instrumentation-amqplib` to the latest version
+2. **Enable dual mode**: Set `OTEL_SEMCONV_STABILITY_OPT_IN=messaging/dup` to emit both old and new semantic conventions
+3. **Update monitoring**: Modify alerts, dashboards, metrics, and other processes to use the new semantic conventions
+4. **Switch to stable**: Set `OTEL_SEMCONV_STABILITY_OPT_IN=messaging` to emit only the new semantic conventions
 
 ## Useful links
 
