@@ -56,6 +56,7 @@ import {
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { AWSXRayLambdaPropagator } from '@opentelemetry/propagator-aws-xray-lambda';
+import { sqsContextGetter } from '../../src/instrumentation';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -1298,6 +1299,35 @@ describe('lambda handler', () => {
       );
       assert.equal(spans[0].links[0]?.context.traceId, producerTraceId);
       assert.equal(spans[0].links[0].context.spanId, producerSpanId);
+    });
+  });
+
+  describe('sqsContextGetter', () => {
+    it('returns the keys for a given message attributes carrier', () => {
+      const carrier = {
+        'x-amzn-trace-id': {
+          stringValue: 'dummy',
+          stringListValues: [],
+          binaryListValues: [],
+          dataType: 'String',
+        },
+        traceparent: {
+          stringValue: 'dummy',
+          stringListValues: [],
+          binaryListValues: [],
+          dataType: 'String',
+        },
+      };
+
+      const keys = sqsContextGetter.keys(carrier);
+      assert.deepEqual(keys, ['x-amzn-trace-id', 'traceparent']);
+    });
+
+    it('returns empty array for null or undefined carrier', () => {
+      const keysNull = sqsContextGetter.keys(null);
+      const keysUndefined = sqsContextGetter.keys(undefined);
+      assert.deepEqual(keysNull, []);
+      assert.deepEqual(keysUndefined, []);
     });
   });
 });
