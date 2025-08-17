@@ -63,7 +63,7 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   },
 };
 
-const sqsContextGetter: TextMapGetter = {
+export const sqsContextGetter: TextMapGetter = {
   keys(carrier): string[] {
     if (carrier == null) {
       return [];
