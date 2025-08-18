@@ -22,10 +22,9 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import {
-  SEMATTRS_CODE_FILEPATH,
-  SEMATTRS_CODE_FUNCTION,
-  SEMATTRS_CODE_LINENO,
-  SEMATTRS_CODE_NAMESPACE,
+  ATTR_CODE_FILE_PATH,
+  ATTR_CODE_FUNCTION_NAME,
+  ATTR_CODE_LINE_NUMBER,
 } from '@opentelemetry/semantic-conventions';
 
 import type * as cucumber from '@cucumber/cucumber';
@@ -47,7 +46,7 @@ type Cucumber = typeof cucumber;
 type Hook = (typeof hooks)[number];
 type Step = (typeof steps)[number];
 
-const supportedVersions = ['>=8.0.0 <12'];
+const supportedVersions = ['>=8.0.0 <13'];
 
 export class CucumberInstrumentation extends InstrumentationBase<CucumberInstrumentationConfig> {
   private module: Cucumber | undefined;
@@ -182,10 +181,9 @@ export class CucumberInstrumentation extends InstrumentationBase<CucumberInstrum
           {
             kind: SpanKind.CLIENT,
             attributes: {
-              [SEMATTRS_CODE_FILEPATH]: gherkinDocument.uri,
-              [SEMATTRS_CODE_LINENO]: scenario.location.line,
-              [SEMATTRS_CODE_FUNCTION]: scenario.name,
-              [SEMATTRS_CODE_NAMESPACE]: feature.name,
+              [ATTR_CODE_FILE_PATH]: gherkinDocument.uri,
+              [ATTR_CODE_LINE_NUMBER]: scenario.location.line,
+              [ATTR_CODE_FUNCTION_NAME]: `${feature.name} ${scenario.name}`,
               [AttributeNames.FEATURE_TAGS]: CucumberInstrumentation.mapTags(
                 feature.tags
               ),
@@ -222,7 +220,7 @@ export class CucumberInstrumentation extends InstrumentationBase<CucumberInstrum
       return async function (
         this: TestCaseRunner,
         ...args
-      ): Promise<messages.TestStepResult> {
+      ): ReturnType<TestCaseRunner['runStep']> {
         const [pickleStep] = args;
         return instrumentation.tracer.startActiveSpan(
           pickleStep.text,
@@ -234,13 +232,25 @@ export class CucumberInstrumentation extends InstrumentationBase<CucumberInstrum
           },
           async span => {
             try {
-              const result = await original.apply(this, args);
+              const runStepResult = await original.apply(this, args);
+              const { result, error } = (() => {
+                if ('result' in runStepResult) {
+                  return runStepResult;
+                }
+                return {
+                  result: runStepResult,
+                  error: undefined,
+                };
+              })();
               instrumentation.setSpanToStepStatus(
                 span,
                 result.status,
                 result.message
               );
-              return result;
+              if (error) {
+                CucumberInstrumentation.setSpanToError(span, error);
+              }
+              return runStepResult;
             } catch (error) {
               CucumberInstrumentation.setSpanToError(span, error);
               throw error;
