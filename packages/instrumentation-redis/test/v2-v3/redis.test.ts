@@ -39,6 +39,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 
 process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
 const instrumentation = testUtils.registerInstrumentationTesting(
@@ -168,6 +169,66 @@ describe('redis v2-v3', () => {
       client.del('hash', () => {
         testUtils.resetMemoryExporter();
         done();
+      });
+    });
+    describe('semconv stability config', () => {
+      function recordSetSpan(cb: (span: any) => void) {
+        client.set('covKey', 'val', (err: unknown) => {
+          assert.ifError(err);
+          const [span] = testUtils.getTestSpans();
+          cb(span);
+        });
+      }
+      it('should emit only old attributes when set to OLD', done => {
+        instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
+
+        recordSetSpan(span => {
+          assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+          assert.strictEqual(
+            span.attributes[SEMATTRS_DB_STATEMENT],
+            'set covKey [1 other arguments]'
+          );
+          assert.ok(!(ATTR_DB_SYSTEM_NAME in span.attributes));
+          assert.ok(!(ATTR_DB_QUERY_TEXT in span.attributes));
+          done();
+        });
+      });
+
+      it('should emit only new attributes when set to STABLE', done => {
+        instrumentation.setConfig({
+          semconvStability: SemconvStability.STABLE,
+        });
+
+        recordSetSpan(span => {
+          assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+          assert.strictEqual(
+            span.attributes[ATTR_DB_QUERY_TEXT],
+            'set covKey [1 other arguments]'
+          );
+          assert.ok(!(SEMATTRS_DB_SYSTEM in span.attributes));
+          assert.ok(!(SEMATTRS_DB_STATEMENT in span.attributes));
+          done();
+        });
+      });
+
+      it('should emit both old and new attributes when set to DUPLICATE', done => {
+        instrumentation.setConfig({
+          semconvStability: SemconvStability.DUPLICATE,
+        });
+
+        recordSetSpan(span => {
+          assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+          assert.strictEqual(
+            span.attributes[SEMATTRS_DB_STATEMENT],
+            'set covKey [1 other arguments]'
+          );
+          assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+          assert.strictEqual(
+            span.attributes[ATTR_DB_QUERY_TEXT],
+            'set covKey [1 other arguments]'
+          );
+          done();
+        });
       });
     });
 
