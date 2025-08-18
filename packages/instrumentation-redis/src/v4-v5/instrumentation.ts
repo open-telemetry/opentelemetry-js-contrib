@@ -67,6 +67,16 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     );
   }
 
+  override setConfig(config: RedisInstrumentationConfig = {}) {
+    super.setConfig(config);
+    this._semconvStability = config.semconvStability
+      ? config.semconvStability
+      : semconvStabilityFromStr(
+          'database',
+          process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+        );
+  }
+
   protected init() {
     // @node-redis/client is a new package introduced and consumed by 'redis 4.0.x'
     // on redis@4.1.0 it was changed to @redis/client.

@@ -59,6 +59,16 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
     );
   }
 
+  override setConfig(config: RedisInstrumentationConfig = {}) {
+    super.setConfig(config);
+    this._semconvStability = config.semconvStability
+      ? config.semconvStability
+      : semconvStabilityFromStr(
+          'database',
+          process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+        );
+  }
+
   protected init() {
     return [
       new InstrumentationNodeModuleDefinition(

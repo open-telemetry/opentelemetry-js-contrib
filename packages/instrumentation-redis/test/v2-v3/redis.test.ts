@@ -33,8 +33,14 @@ import {
   SEMATTRS_DB_SYSTEM,
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
 const instrumentation = testUtils.registerInstrumentationTesting(
   new RedisInstrumentation()
 );
@@ -50,6 +56,9 @@ const CONFIG = {
 const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
+  [ATTR_DB_SYSTEM_NAME]: 'redis',
+  [ATTR_SERVER_ADDRESS]: CONFIG.host,
+  [ATTR_SERVER_PORT]: CONFIG.port,
   [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
   [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
   [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
@@ -105,14 +114,16 @@ describe('redis v2-v3', () => {
       description: string;
       command: string;
       args: string[];
-      expectedDbStatement: string;
+      expectedDbStatementOld: string;
+      expectedDbStatementStable: string;
       method: (cb: Callback<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         command: 'hset',
         args: ['hash', 'random', 'random'],
-        expectedDbStatement: 'hash random [1 other arguments]',
+        expectedDbStatementOld: 'hash random [1 other arguments]',
+        expectedDbStatementStable: 'hset hash random [1 other arguments]',
         method: (cb: Callback<number>) =>
           client.hset('hash', 'random', 'random', cb),
       },
@@ -120,14 +131,16 @@ describe('redis v2-v3', () => {
         description: 'get',
         command: 'get',
         args: ['test'],
-        expectedDbStatement: 'test',
+        expectedDbStatementOld: 'test',
+        expectedDbStatementStable: 'get test',
         method: (cb: Callback<string | null>) => client.get('test', cb),
       },
       {
         description: 'delete',
         command: 'del',
         args: ['test'],
-        expectedDbStatement: 'test',
+        expectedDbStatementOld: 'test',
+        expectedDbStatementStable: 'del test',
         method: (cb: Callback<number>) => client.del('test', cb),
       },
     ];
@@ -163,7 +176,9 @@ describe('redis v2-v3', () => {
         it(`should create a child span for ${operation.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SEMATTRS_DB_STATEMENT]: `${operation.command} ${operation.expectedDbStatement}`,
+            [ATTR_DB_OPERATION_NAME]: operation.command,
+            [ATTR_DB_QUERY_TEXT]: operation.expectedDbStatementStable,
+            [SEMATTRS_DB_STATEMENT]: `${operation.command} ${operation.expectedDbStatementOld}`,
           };
           const span = tracer.startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
@@ -177,6 +192,7 @@ describe('redis v2-v3', () => {
                 endedSpans[0].name,
                 `redis-${operation.command}`
               );
+
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -231,6 +247,11 @@ describe('redis v2-v3', () => {
               );
               assert.strictEqual(
                 endedSpans[0].attributes[SEMATTRS_DB_STATEMENT],
+                expectedStatement
+              );
+
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
                 expectedStatement
               );
               done();
