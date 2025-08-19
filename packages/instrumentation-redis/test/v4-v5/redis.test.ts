@@ -371,6 +371,46 @@ describe('redis v4-v5', () => {
     });
   });
 
+  describe('Redis client connect with malformed URL', () => {
+    it('malformed URL should trigger diag error and reject connection', async () => {
+      instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
+
+      const diagErrors: any[] = [];
+      diag.setLogger(
+        {
+          verbose() {},
+          debug() {},
+          info() {},
+          warn() {},
+          error(...args) {
+            diagErrors.push(args);
+          },
+        },
+        DiagLogLevel.ALL
+      );
+
+      const client = createClient({
+        socket: { host: 'localhost', port: 9999 },
+      });
+
+      const opts = (client as any).options;
+      if (opts) opts.url = '://malformed-url-no-protocol';
+
+      await assert.rejects(() => client.connect());
+
+      try {
+        await client.disconnect();
+      } catch {}
+
+      assert.ok(diagErrors.length > 0, 'Expected at least one diag error');
+      const found = diagErrors.some(args =>
+        args.includes('failed to sanitize redis connection url')
+      );
+
+      assert.ok(found, 'Expected sanitize URL diag error');
+    });
+  });
+
   describe('multi (transactions) commands', () => {
     it('multi commands', async () => {
       await client.set('another-key', 'another-value');
