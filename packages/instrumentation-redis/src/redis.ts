@@ -25,7 +25,7 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
   requireParentSpan: false,
 };
 
-// Wrapper RedisInstrumentation that address all supported versions 
+// Wrapper RedisInstrumentation that address all supported versions
 export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentationConfig> {
   private instrumentationV2_V3: RedisInstrumentationV2_V3;
   private instrumentationV4_V5: RedisInstrumentationV4_V5;
