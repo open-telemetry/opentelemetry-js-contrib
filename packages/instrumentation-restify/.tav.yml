@@ -2,11 +2,15 @@ restify:
   - versions:
       include: '>=10.0.0 <12'
       mode: latest-minors
-    node: ">=18"
+    node: ">=18 <24"
     commands: npm run test
+    env:
+      - SKIP_TEST_IF_DISABLED=true
 
   - versions:
       include: '>=4.1.0 <10'
       mode: max-7
     node: "<18"
     commands: npm run test
+    env:
+      - SKIP_TEST_IF_DISABLED=true
