@@ -172,96 +172,386 @@ describe('redis v2-v3', () => {
       });
     });
     describe('semconv stability config', () => {
-      function recordSetSpan(cb: (span: any) => void) {
-        client.set('covKey', 'val', (err: unknown) => {
+      function recordSpanForOperation(operation: any, cb: (span: any) => void) {
+        operation.method((err: unknown) => {
           assert.ifError(err);
           const [span] = testUtils.getTestSpans();
           cb(span);
         });
       }
-      it('should emit only old attributes when set to OLD', done => {
-        instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
 
-        recordSetSpan(span => {
-          assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
-          assert.strictEqual(
-            span.attributes[SEMATTRS_DB_STATEMENT],
-            'set covKey [1 other arguments]'
-          );
-          assert.ok(!(ATTR_DB_SYSTEM_NAME in span.attributes));
-          assert.ok(!(ATTR_DB_QUERY_TEXT in span.attributes));
+      describe('semconv stability with get operation', () => {
+        const operation = REDIS_OPERATIONS.find(op => op.command === 'get')!;
 
-          assert.strictEqual(
-            span.attributes[SEMATTRS_NET_PEER_NAME],
-            CONFIG.host
-          );
-          assert.strictEqual(
-            span.attributes[SEMATTRS_NET_PEER_PORT],
-            CONFIG.port
-          );
-          assert.strictEqual(
-            span.attributes[SEMATTRS_DB_CONNECTION_STRING],
-            URL
-          );
-          assert.ok(!(ATTR_SERVER_ADDRESS in span.attributes));
-          assert.ok(!(ATTR_SERVER_PORT in span.attributes));
-          done();
+        it('should emit only old attributes when set to OLD', done => {
+          instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
+
+          recordSpanForOperation(operation, span => {
+            assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+            assert.strictEqual(
+              span.attributes[SEMATTRS_DB_STATEMENT],
+              `${operation.command} ${operation.expectedDbStatementOld}`
+            );
+
+            assert.ok(!(ATTR_DB_SYSTEM_NAME in span.attributes));
+            assert.ok(!(ATTR_DB_QUERY_TEXT in span.attributes));
+            assert.ok(!(ATTR_DB_OPERATION_NAME in span.attributes));
+
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_NAME],
+              CONFIG.host
+            );
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_PORT],
+              CONFIG.port
+            );
+            assert.strictEqual(
+              span.attributes[SEMATTRS_DB_CONNECTION_STRING],
+              URL
+            );
+
+            assert.ok(!(ATTR_SERVER_ADDRESS in span.attributes));
+            assert.ok(!(ATTR_SERVER_PORT in span.attributes));
+            done();
+          });
+        });
+
+        it('should emit only new attributes when set to STABLE', done => {
+          instrumentation.setConfig({
+            semconvStability: SemconvStability.STABLE,
+          });
+
+          recordSpanForOperation(operation, span => {
+            assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+            assert.strictEqual(
+              span.attributes[ATTR_DB_QUERY_TEXT],
+              operation.expectedDbStatementStable
+            );
+            assert.strictEqual(
+              span.attributes[ATTR_DB_OPERATION_NAME],
+              operation.command
+            );
+
+            assert.ok(!(SEMATTRS_DB_SYSTEM in span.attributes));
+            assert.ok(!(SEMATTRS_DB_STATEMENT in span.attributes));
+
+            assert.strictEqual(
+              span.attributes[ATTR_SERVER_ADDRESS],
+              CONFIG.host
+            );
+            assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
+
+            assert.ok(!(SEMATTRS_NET_PEER_NAME in span.attributes));
+            assert.ok(!(SEMATTRS_NET_PEER_PORT in span.attributes));
+            assert.ok(!(SEMATTRS_DB_CONNECTION_STRING in span.attributes));
+            done();
+          });
+        });
+
+        it('should emit both old and new attributes when set to DUPLICATE', done => {
+          instrumentation.setConfig({
+            semconvStability: SemconvStability.DUPLICATE,
+          });
+
+          recordSpanForOperation(operation, span => {
+            assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+            assert.strictEqual(
+              span.attributes[SEMATTRS_DB_STATEMENT],
+              `${operation.command} ${operation.expectedDbStatementOld}`
+            );
+            assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+            assert.strictEqual(
+              span.attributes[ATTR_DB_QUERY_TEXT],
+              operation.expectedDbStatementStable
+            );
+            assert.strictEqual(
+              span.attributes[ATTR_DB_OPERATION_NAME],
+              operation.command
+            );
+
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_NAME],
+              CONFIG.host
+            );
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_PORT],
+              CONFIG.port
+            );
+            assert.strictEqual(
+              span.attributes[ATTR_SERVER_ADDRESS],
+              CONFIG.host
+            );
+            assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
+            assert.strictEqual(
+              span.attributes[SEMATTRS_DB_CONNECTION_STRING],
+              URL
+            );
+            done();
+          });
         });
       });
 
-      it('should emit only new attributes when set to STABLE', done => {
-        instrumentation.setConfig({
-          semconvStability: SemconvStability.STABLE,
+      describe('edge cases for semconv stability', () => {
+        it('should handle missing address with OLD stability', done => {
+          instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
+
+          const originalAddress = client.address;
+          delete client.address;
+
+          client.get('test_no_address', (err: unknown) => {
+            assert.ifError(err);
+
+            client.address = originalAddress;
+
+            const spans = testUtils.getTestSpans();
+            assert.strictEqual(spans.length, 1);
+            const span = spans[0];
+
+            assert.ok(!(SEMATTRS_DB_CONNECTION_STRING in span.attributes));
+
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_NAME],
+              CONFIG.host
+            );
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_PORT],
+              CONFIG.port
+            );
+            done();
+          });
         });
 
-        recordSetSpan(span => {
-          assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
-          assert.strictEqual(
-            span.attributes[ATTR_DB_QUERY_TEXT],
-            'set covKey [1 other arguments]'
-          );
-          assert.ok(!(SEMATTRS_DB_SYSTEM in span.attributes));
-          assert.ok(!(SEMATTRS_DB_STATEMENT in span.attributes));
-          assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], CONFIG.host);
-          assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
-          assert.ok(!(SEMATTRS_NET_PEER_NAME in span.attributes));
-          assert.ok(!(SEMATTRS_NET_PEER_PORT in span.attributes));
-          assert.ok(!(SEMATTRS_DB_CONNECTION_STRING in span.attributes));
-          done();
+        it('should handle present address with OLD stability', done => {
+          instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
+
+          client.get('test_with_address', (err: unknown) => {
+            assert.ifError(err);
+
+            const spans = testUtils.getTestSpans();
+            assert.strictEqual(spans.length, 1);
+            const span = spans[0];
+
+            assert.strictEqual(
+              span.attributes[SEMATTRS_DB_CONNECTION_STRING],
+              URL
+            );
+
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_NAME],
+              CONFIG.host
+            );
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_PORT],
+              CONFIG.port
+            );
+            done();
+          });
+        });
+
+        it('should handle present address with STABLE stability', done => {
+          instrumentation.setConfig({
+            semconvStability: SemconvStability.STABLE,
+          });
+
+          client.get('test_with_address_stable', (err: unknown) => {
+            assert.ifError(err);
+
+            const spans = testUtils.getTestSpans();
+            assert.strictEqual(spans.length, 1);
+            const span = spans[0];
+
+            assert.ok(!(SEMATTRS_DB_CONNECTION_STRING in span.attributes));
+
+            assert.strictEqual(
+              span.attributes[ATTR_SERVER_ADDRESS],
+              CONFIG.host
+            );
+            assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
+            done();
+          });
+        });
+
+        it('should handle missing address with DUPLICATE stability', done => {
+          instrumentation.setConfig({
+            semconvStability: SemconvStability.DUPLICATE,
+          });
+
+          const originalAddress = client.address;
+          delete client.address;
+
+          client.del('test_dup_no_addr', (err: unknown) => {
+            assert.ifError(err);
+
+            client.address = originalAddress;
+
+            const spans = testUtils.getTestSpans();
+            assert.strictEqual(spans.length, 1);
+            const span = spans[0];
+
+            assert.ok(!(SEMATTRS_DB_CONNECTION_STRING in span.attributes));
+
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_NAME],
+              CONFIG.host
+            );
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_PORT],
+              CONFIG.port
+            );
+            assert.strictEqual(
+              span.attributes[ATTR_SERVER_ADDRESS],
+              CONFIG.host
+            );
+            assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
+            done();
+          });
+        });
+
+        it('should handle missing connection_options with STABLE stability', done => {
+          instrumentation.setConfig({
+            semconvStability: SemconvStability.STABLE,
+          });
+
+          const originalConnectionOptions = client.connection_options;
+          delete client.connection_options;
+
+          client.get('test_no_connection', (err: unknown) => {
+            assert.ifError(err);
+
+            client.connection_options = originalConnectionOptions;
+
+            const spans = testUtils.getTestSpans();
+            assert.strictEqual(spans.length, 1);
+            const span = spans[0];
+
+            assert.ok(!(ATTR_SERVER_ADDRESS in span.attributes));
+            assert.ok(!(ATTR_SERVER_PORT in span.attributes));
+
+            assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+            assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'get');
+            done();
+          });
+        });
+
+        it('should handle missing connection_options with DUPLICATE stability', done => {
+          instrumentation.setConfig({
+            semconvStability: SemconvStability.DUPLICATE,
+          });
+
+          const originalConnectionOptions = client.connection_options;
+          delete client.connection_options;
+
+          client.set('test_dup_no_conn', 'value', (err: any, result: any) => {
+            assert.ifError(err);
+
+            client.connection_options = originalConnectionOptions;
+
+            const spans = testUtils.getTestSpans();
+            assert.strictEqual(spans.length, 1);
+            const span = spans[0];
+
+            assert.ok(!(ATTR_SERVER_ADDRESS in span.attributes));
+            assert.ok(!(ATTR_SERVER_PORT in span.attributes));
+            assert.ok(!(SEMATTRS_NET_PEER_NAME in span.attributes));
+            assert.ok(!(SEMATTRS_NET_PEER_PORT in span.attributes));
+
+            assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+            assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+            assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'set');
+            done();
+          });
+        });
+
+        it('should handle present connection_options with STABLE stability', done => {
+          instrumentation.setConfig({
+            semconvStability: SemconvStability.STABLE,
+          });
+
+          client.get('test_with_connection_stable', (err: unknown) => {
+            assert.ifError(err);
+
+            const spans = testUtils.getTestSpans();
+            assert.strictEqual(spans.length, 1);
+            const span = spans[0];
+
+            assert.strictEqual(
+              span.attributes[ATTR_SERVER_ADDRESS],
+              CONFIG.host
+            );
+            assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
+
+            assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+            assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'get');
+            done();
+          });
+        });
+
+        it('should handle present connection_options with DUPLICATE stability', done => {
+          instrumentation.setConfig({
+            semconvStability: SemconvStability.DUPLICATE,
+          });
+
+          client.get('test_with_connection_dup', (err: unknown) => {
+            assert.ifError(err);
+
+            const spans = testUtils.getTestSpans();
+            assert.strictEqual(spans.length, 1);
+            const span = spans[0];
+
+            assert.strictEqual(
+              span.attributes[ATTR_SERVER_ADDRESS],
+              CONFIG.host
+            );
+            assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_NAME],
+              CONFIG.host
+            );
+            assert.strictEqual(
+              span.attributes[SEMATTRS_NET_PEER_PORT],
+              CONFIG.port
+            );
+
+            assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+            assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+            assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'get');
+            done();
+          });
         });
       });
+      describe('update semconv stability config', () => {
+        it('should update semconv stability when setConfig is called', done => {
+          instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
 
-      it('should emit both old and new attributes when set to DUPLICATE', done => {
-        instrumentation.setConfig({
-          semconvStability: SemconvStability.DUPLICATE,
-        });
+          client.get('test_setconfig_old', (err: unknown) => {
+            assert.ifError(err);
 
-        recordSetSpan(span => {
-          assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
-          assert.strictEqual(
-            span.attributes[SEMATTRS_DB_STATEMENT],
-            'set covKey [1 other arguments]'
-          );
-          assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
-          assert.strictEqual(
-            span.attributes[ATTR_DB_QUERY_TEXT],
-            'set covKey [1 other arguments]'
-          );
-          assert.strictEqual(
-            span.attributes[SEMATTRS_NET_PEER_NAME],
-            CONFIG.host
-          );
-          assert.strictEqual(
-            span.attributes[SEMATTRS_NET_PEER_PORT],
-            CONFIG.port
-          );
-          assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], CONFIG.host);
-          assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
-          assert.strictEqual(
-            span.attributes[SEMATTRS_DB_CONNECTION_STRING],
-            URL
-          );
-          done();
+            let spans = testUtils.getTestSpans();
+            assert.strictEqual(spans.length, 1);
+            let span = spans[0];
+
+            assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+            assert.ok(!(ATTR_DB_SYSTEM_NAME in span.attributes));
+
+            testUtils.resetMemoryExporter();
+
+            instrumentation.setConfig({
+              semconvStability: SemconvStability.STABLE,
+            });
+
+            client.get('test_setconfig_stable', (err: unknown) => {
+              assert.ifError(err);
+
+              spans = testUtils.getTestSpans();
+              assert.strictEqual(spans.length, 1);
+              span = spans[0];
+
+              assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+              assert.ok(!(SEMATTRS_DB_SYSTEM in span.attributes));
+
+              done();
+            });
+          });
         });
       });
     });
