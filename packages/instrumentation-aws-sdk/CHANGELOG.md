@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.56.0...instrumentation-aws-sdk-v0.57.0) (2025-08-13)
+
+
+### Features
+
+* **aws-sdk:** add exception hook ([#2398](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2398)) ([bf302a5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bf302a5716b79f28690dd82eb5ef50eae0a557fd))
+
 ## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.55.0...instrumentation-aws-sdk-v0.56.0) (2025-07-09)
 
 
