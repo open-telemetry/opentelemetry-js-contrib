@@ -190,6 +190,21 @@ describe('redis v2-v3', () => {
           );
           assert.ok(!(ATTR_DB_SYSTEM_NAME in span.attributes));
           assert.ok(!(ATTR_DB_QUERY_TEXT in span.attributes));
+
+          assert.strictEqual(
+            span.attributes[SEMATTRS_NET_PEER_NAME],
+            CONFIG.host
+          );
+          assert.strictEqual(
+            span.attributes[SEMATTRS_NET_PEER_PORT],
+            CONFIG.port
+          );
+          assert.strictEqual(
+            span.attributes[SEMATTRS_DB_CONNECTION_STRING],
+            URL
+          );
+          assert.ok(!(ATTR_SERVER_ADDRESS in span.attributes));
+          assert.ok(!(ATTR_SERVER_PORT in span.attributes));
           done();
         });
       });
@@ -207,6 +222,11 @@ describe('redis v2-v3', () => {
           );
           assert.ok(!(SEMATTRS_DB_SYSTEM in span.attributes));
           assert.ok(!(SEMATTRS_DB_STATEMENT in span.attributes));
+          assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], CONFIG.host);
+          assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
+          assert.ok(!(SEMATTRS_NET_PEER_NAME in span.attributes));
+          assert.ok(!(SEMATTRS_NET_PEER_PORT in span.attributes));
+          assert.ok(!(SEMATTRS_DB_CONNECTION_STRING in span.attributes));
           done();
         });
       });
@@ -226,6 +246,20 @@ describe('redis v2-v3', () => {
           assert.strictEqual(
             span.attributes[ATTR_DB_QUERY_TEXT],
             'set covKey [1 other arguments]'
+          );
+          assert.strictEqual(
+            span.attributes[SEMATTRS_NET_PEER_NAME],
+            CONFIG.host
+          );
+          assert.strictEqual(
+            span.attributes[SEMATTRS_NET_PEER_PORT],
+            CONFIG.port
+          );
+          assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], CONFIG.host);
+          assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
+          assert.strictEqual(
+            span.attributes[SEMATTRS_DB_CONNECTION_STRING],
+            URL
           );
           done();
         });
