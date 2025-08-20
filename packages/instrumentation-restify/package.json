@@ -18,7 +18,7 @@
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm test -- --watch-extensions ts --watch",
-    "test": "nyc --no-clean mocha 'test/**/*.ts'",
+    "test": "SKIP_TEST_IF_NODE_NEWER_THAN=23 nyc --no-clean mocha --require '../../scripts/skip-test-if.js' 'test/**/*.ts'",
     "test-all-versions": "tav",
     "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js",

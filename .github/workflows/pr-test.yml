@@ -49,6 +49,10 @@ jobs:
           - "20.6.0"
           - "20"
           - "22"
+          - "24"
+        include:
+            - node: 18
+              code-coverage: true
     runs-on: ubuntu-latest
     services:
       memcached:
