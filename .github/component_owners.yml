@@ -130,6 +130,7 @@ components:
     - d4nyll
   packages/instrumentation-openai:
     - trentm
+    - seemk
   packages/instrumentation-pg:
     - maryliag
   packages/instrumentation-pino:
