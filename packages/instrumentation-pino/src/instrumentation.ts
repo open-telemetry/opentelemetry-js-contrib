@@ -67,10 +67,14 @@ export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentation
           if (origMixin === undefined) {
             logger[mixinSym] = otelMixin;
           } else {
-            logger[mixinSym] = (ctx: object, level: number) => {
+            logger[mixinSym] = (
+              ctx: object,
+              level: number,
+              ...rest: unknown[]
+            ) => {
               return Object.assign(
                 otelMixin(ctx, level),
-                origMixin(ctx, level)
+                origMixin(ctx, level, ...rest)
               );
             };
           }
