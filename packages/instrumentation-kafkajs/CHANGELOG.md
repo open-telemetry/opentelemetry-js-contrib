@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.12.0...instrumentation-kafkajs-v0.13.0) (2025-08-13)
+
+
+### Features
+
+* **kafkajs:** instrument transaction send and sendBatch ([#2939](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2939)) ([c0593e6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c0593e65a6d74425a0922e358e4fd235e7112148))
+
 ## [0.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.11.0...instrumentation-kafkajs-v0.12.0) (2025-07-09)
 
 
