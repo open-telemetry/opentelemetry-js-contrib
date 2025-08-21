@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-sdk",
-  "version": "0.56.0",
+  "version": "0.57.0",
   "description": "OpenTelemetry instrumentation for `aws-sdk` and `@aws-sdk/client-*` clients for various AWS services",
   "keywords": [
     "aws",
@@ -59,6 +59,7 @@
     "@aws-sdk/client-kinesis": "^3.85.0",
     "@aws-sdk/client-lambda": "^3.85.0",
     "@aws-sdk/client-s3": "^3.85.0",
+    "@aws-sdk/client-secrets-manager": "^3.85.0",
     "@aws-sdk/client-sns": "^3.85.0",
     "@aws-sdk/client-sqs": "^3.85.0",
     "@aws-sdk/types": "^3.370.0",

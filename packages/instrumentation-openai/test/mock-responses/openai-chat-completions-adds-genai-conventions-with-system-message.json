@@ -1,0 +1,49 @@
+[
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/chat/completions",
+        "body": {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are an assistant which just answers every query with tomato"
+                },
+                {
+                    "role": "user",
+                    "content": "Say something"
+                }
+            ]
+        },
+        "status": 200,
+        "response": [
+            "1f8b08000000000000038c92414f1b311085effb2bac39675158821272041554950b11e2d00aad8c3dd9186c8f65cf564428ffbdb213b20ba5522f3ef89b377e6f3c6f951060342c05a88d64e582ad2ffbcbb3edeab5a187fb9fb7dfaf573f1edcb7bb8bedd562d55fddc0242be8e91915bfab4e14b960910df93d56112563ee7a3a3f6fe6cde2fc625680238d36cbbac0f58c6a67bca99b6933aba7f3fa7471506fc8284cb014bf2a2184782b67f6e935bec2524c27ef370e53921dc2f258240444b2f906644a26b1f40c93012af28cbe58bf2727994ec634e2ba4f323bf4bdb52320bd27963961f1f57820bba3134b5d88f4943e49616dbc499b36a24ce4f3ab892940a1bb4a88c792b8ff1002422417b8657ac1f25c33dbb78361ce033c3b30269676a4994fbe68d66a64696c1a0d0c94541bd4837298aeecb5a111a84691fff6f255ef7d6ce3bbff693f00a53030ea3644d4467dcc3b9445cc4bf8afb2e3888b6148187f1b852d1b8cf91b34ae656ff7ab01699b185dbb36bec318a229fb91bfb1da557f000000ffff03004946b69d22030000"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "9607310f4e8625e4-NRT",
+            "connection": "close",
+            "content-encoding": "gzip",
+            "content-type": "application/json",
+            "date": "Thu, 17 Jul 2025 05:03:14 GMT",
+            "openai-processing-ms": "239",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-envoy-upstream-service-time": "241",
+            "x-ratelimit-limit-requests": "5000",
+            "x-ratelimit-limit-tokens": "4000000",
+            "x-ratelimit-remaining-requests": "4999",
+            "x-ratelimit-remaining-tokens": "3999977",
+            "x-ratelimit-reset-requests": "12ms",
+            "x-ratelimit-reset-tokens": "0s",
+            "x-request-id": "req_12b64a999af2cbe909602adc344dba39"
+        },
+        "responseIsBinary": false
+    }
+]
