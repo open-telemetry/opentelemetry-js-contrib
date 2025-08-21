@@ -3,6 +3,7 @@
       include: "^4.0.0"
       mode: max-7
     commands: npm run test
+    peerDependencies: "@fastify/express@3.0.0"
   - versions:
       include: ">=5 <6"
       mode: max-7

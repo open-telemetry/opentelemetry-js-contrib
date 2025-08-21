@@ -19,8 +19,8 @@
     "test:ci:affected": "nx affected -t test",
     "test:browser": "nx run-many -t test:browser",
     "test:browser:ci:affected": "nx affected -t test:browser",
-    "test-all-versions": "npm run --if-present test-all-versions --workspaces",
-    "test-all-versions:ci:affected": "npm run list:affected | tail -n +5 | xargs -I {} -t npm run --if-present test-all-versions -w {}",
+    "test-all-versions": "nx run-many -t test-all-versions",
+    "test-all-versions:ci:affected": "nx affected -t test-all-versions",
     "test-services:start": "docker compose -f ./test/docker-compose.yaml up -d --wait",
     "test-services:stop": "docker compose -f ./test/docker-compose.yaml down",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env npm test",
@@ -34,7 +34,8 @@
     "lint:markdown": "markdownlint-cli2 $(git ls-files '*.md')",
     "lint:markdown:fix": "markdownlint-cli2 --fix $(git ls-files '*.md')",
     "lint:readme": "nx run-many -t lint:readme",
-    "lint:semconv-deps": "./scripts/lint-semconv-deps.mjs -x packages/contrib-test-utils/src/resource-assertions.ts"
+    "lint:semconv-deps": "./scripts/lint-semconv-deps.mjs -x packages/contrib-test-utils/src/resource-assertions.ts",
+    "postinstall": "patch-package"
   },
   "keywords": [
     "opentelemetry",
@@ -62,10 +63,13 @@
     "markdownlint-cli2": "0.13.0",
     "minimatch": "^9.0.3",
     "mocha": "^11.0.0",
+    "npm-package-arg": "^13.0.0",
     "nx": "20.8.2",
+    "patch-package": "^8.0.0",
     "prettier": "2.8.8",
     "process": "0.11.10",
     "semver": "^7.6.0",
+    "test-all-versions": "^6.0.0",
     "ts-node": "10.9.2",
     "typescript": "5.0.4",
     "util": "0.12.5"
