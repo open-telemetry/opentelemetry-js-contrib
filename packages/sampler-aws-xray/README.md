@@ -6,7 +6,7 @@ This module provides the remote/centralized sampler for AWS X-Ray.
 
 | Maturity                               | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
 | -------------------------------------- | ----------------------------------------------------- | --------------------- |
-| [Stable](../../CONTRIBUTING.md#stable) | @jj22ee @yiyuan-he                                    | API 1.0+<br/>SDK 2.0+ |
+| [Beta](../../CONTRIBUTING.md#beta)     | @jj22ee @yiyuan-he                                    | API 1.0+<br/>SDK 2.0+ |
 
 
 ## Usage

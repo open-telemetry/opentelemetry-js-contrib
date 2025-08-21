@@ -10,6 +10,7 @@
     "AWS",
     "X-Ray"
   ],
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/sampler-aws-xray#readme",
   "license": "Apache-2.0",
   "author": "OpenTelemetry Authors",
   "bugs": {
@@ -18,17 +19,26 @@
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "files": [
+    "build/esm/**/*.js",
+    "build/esm/**/*.js.map",
+    "build/esm/**/*.d.ts",
     "build/src/**/*.js",
     "build/src/**/*.js.map",
     "build/src/**/*.d.ts",
-    "doc",
     "LICENSE",
     "README.md"
   ],
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "packages/sampler-aws-xray"
+  },
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "compile": "tsc -p .",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/sampler-aws-xray",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
