@@ -281,7 +281,7 @@ jobs:
           name: tests-coverage-cache-${{ github.run_number }}-22
           path: .
       - name: Merge coverage (Delta)
-        run: npm run coverage:merge:ci:affected
+        run: npm run test-merge-coverage:ci:affected
       - name: Check coverage
         run: find . | grep coverage-final
       - name: Report Coverage
