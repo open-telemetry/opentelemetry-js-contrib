@@ -24,7 +24,7 @@
     "test-v4": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/mongodb-v4-v5-v6.metrics.test.ts' 'test/**/mongodb-v4.test.ts'",
     "test-v5-v6": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/mongodb-v4-v5-v6.metrics.test.ts' 'test/**/mongodb-v5-v6.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
-    "test-all-versions": "tav",
+    "test-all-versions": "../../test-all-versions.js",
     "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
     "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "test-services:start": "cd ../.. && npm run test-services:start mongodb",

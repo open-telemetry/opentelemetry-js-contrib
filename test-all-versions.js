@@ -20,6 +20,8 @@ const install = require('spawn-npm-install');
 const differ = require('ansi-diff-stream');
 const cliSpinners = require('cli-spinners');
 const which = require('which');
+const path = require('path');
+const npa = require('npm-package-arg');
 const argv = require('minimist')(process.argv.slice(2));
 
 const npm5plus = semver.gte(
@@ -163,58 +165,51 @@ function test(opts, cb) {
 
   if (argv.compat) console.log('Testing compatibility with %s:', opts.name);
 
-  pkgVersions(
-    opts.name,
-    argv.registry || opts.registry,
-    function (err, versions) {
+  pkgVersions(opts.name, function (err, versions) {
+    if (err) return cb(err);
+
+    verbose(
+      '-- %d available package versions:',
+      versions.length,
+      versions.join(', ')
+    );
+    verbose('-- applying version filter to available packages:', opts.versions);
+
+    filterVersions(opts, versions, (err, versions) => {
       if (err) return cb(err);
 
       verbose(
-        '-- %d available package versions:',
+        '-- %d package versions matching filter:',
         versions.length,
         versions.join(', ')
       );
-      verbose(
-        '-- applying version filter to available packages:',
-        opts.versions
-      );
 
-      filterVersions(opts, versions, (err, versions) => {
-        if (err) return cb(err);
-
-        verbose(
-          '-- %d package versions matching filter:',
-          versions.length,
-          versions.join(', ')
+      if (versions.length === 0) {
+        cb(
+          new Error(
+            `No versions of ${opts.name} matching filter: ${opts.versions}`
+          )
         );
+        return;
+      }
 
-        if (versions.length === 0) {
-          cb(
-            new Error(
-              `No versions of ${opts.name} matching filter: ${opts.versions}`
-            )
-          );
-          return;
-        }
+      run();
 
-        run();
-
-        function run(err) {
-          if (err || versions.length === 0) return cb(err);
-          const version = versions.pop();
-          if (argv.compat) spinner = getSpinner(version)();
-          testVersion(opts, version, function (err) {
-            if (argv.compat) {
-              spinner.done(!err);
-              run();
-            } else {
-              run(err);
-            }
-          });
-        }
-      });
-    }
-  );
+      function run(err) {
+        if (err || versions.length === 0) return cb(err);
+        const version = versions.pop();
+        if (argv.compat) spinner = getSpinner(version)();
+        testVersion(opts, version, function (err) {
+          if (argv.compat) {
+            spinner.done(!err);
+            run();
+          } else {
+            run(err);
+          }
+        });
+      }
+    });
+  });
 }
 
 function testVersion(test, version, cb) {
@@ -369,11 +364,38 @@ function attemptInstall(packages, registry, cb, attempts = 1) {
     return;
   }
 
+  const installPath = path.join(
+    process.cwd(),
+    'node_modules',
+    '.tav',
+    packages[packages.length - 1]
+  );
   /** @type {(err?: Error) => void} */
   const done = once(function (err) {
     clearTimeout(timeout);
 
-    if (!err) return cb();
+    if (!err) {
+      for (const pkg of packages) {
+        const parsed = npa(pkg);
+
+        if (parsed.scope) {
+          // ensure the deep scope path exists
+          fs.mkdirSync(path.join('node_modules', parsed.scope), {
+            recursive: true,
+          });
+        }
+
+        fs.rmSync(path.join('node_modules', parsed.name), {
+          recursive: true,
+          force: true,
+        });
+        fs.symlinkSync(
+          path.join(installPath, 'node_modules', parsed.name),
+          path.join('node_modules', parsed.name)
+        );
+      }
+      return cb();
+    }
 
     if (++attempts <= 10) {
       console.warn(
@@ -382,6 +404,10 @@ function attemptInstall(packages, registry, cb, attempts = 1) {
         err.message,
         attempts
       );
+      fs.rmSync(installPath, {
+        recursive: true,
+        force: true,
+      });
       attemptInstall(packages, registry, cb, attempts);
     } else {
       console.error('-- error installing %j - aborting!', packages);
@@ -390,7 +416,22 @@ function attemptInstall(packages, registry, cb, attempts = 1) {
     }
   });
 
-  const opts = { noSave: true, command: npmCmd };
+  // create a package directory
+  fs.mkdirSync(installPath, { recursive: true });
+  fs.writeFileSync(
+    path.join(installPath, 'package.json'),
+    JSON.stringify({ name: 'tav' }, null, 2)
+  );
+
+  // nx sets this env variable to true which breaks linked install strategy
+  // make sure it's not set
+  process.env.npm_config_legacy_peer_deps = undefined;
+
+  const opts = {
+    command: npmCmd,
+    'install-strategy': 'linked',
+    cwd: installPath,
+  };
   if (argv.verbose) opts.stdio = 'inherit';
   if (argv.registry || registry) opts.registry = argv.registry || registry;
 
