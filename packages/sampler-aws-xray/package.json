@@ -1,8 +1,7 @@
 {
   "name": "@opentelemetry/sampler-aws-xray",
-  "version": "0.34.0",
-  "private": true,
-  "description": "OpenTelemetry remote sampler for AWS X-Ray",
+  "version": "0.1.0",
+  "description": "OpenTelemetry Remote Sampler for AWS X-Ray",
   "keywords": [
     "aws",
     "sampler",
