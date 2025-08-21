@@ -155,6 +155,7 @@ export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentation
       () => logHook(span, record, level),
       err => {
         if (err) {
+          diag.error('added line to trigger a test');
           diag.error('pino instrumentation: error calling logHook', err);
         }
       },
