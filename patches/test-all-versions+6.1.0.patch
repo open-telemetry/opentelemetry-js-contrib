@@ -1,0 +1,126 @@
+diff --git a/node_modules/test-all-versions/index.js b/node_modules/test-all-versions/index.js
+index 8eb702d..e174cba 100755
+--- a/node_modules/test-all-versions/index.js
++++ b/node_modules/test-all-versions/index.js
+@@ -21,6 +21,8 @@ const install = require('spawn-npm-install')
+ const differ = require('ansi-diff-stream')
+ const cliSpinners = require('cli-spinners')
+ const which = require('which')
++const path = require('path')
++const npa = require('npm-package-arg')
+ const argv = require('minimist')(process.argv.slice(2))
+ 
+ const npm5plus = semver.gte(execSync('npm -v', { encoding: 'utf-8' }).trim(), '5.0.0')
+@@ -308,9 +310,36 @@ function ensurePackages (packages, cb) {
+   })
+ }
+ 
+-function attemptInstall (packages, attempts, cb) {
+-  if (typeof attempts === 'function') return attemptInstall(packages, 1, attempts)
+-
++const walkUp = function * (p) {
++  for (p = path.resolve(p); p;) {
++    yield p
++    const parent = path.dirname(p)
++    if (parent === p) {
++      break
++    } else {
++      p = parent
++    }
++  }
++}
++function fileExistsSync (path) {
++  try {
++    const stats = fs.statSync(path)
++    return stats.isFile()
++  } catch (_err) {
++    return false
++  }
++}
++function findPackagePathSync (cwd) {
++  for (const p of walkUp(cwd)) {
++    const packagePath = path.resolve(p, 'package.json')
++    const hasPackageJson = fileExistsSync(packagePath)
++    if (hasPackageJson) {
++      return packagePath
++    }
++  }
++  return null
++}
++function attemptInstall (packages, cb, attempts = 1) {
+   log('-- installing %j', packages)
+   if (argv['dry-run']) {
+     // Dry-run.
+@@ -318,14 +347,47 @@ function attemptInstall (packages, attempts, cb) {
+     return
+   }
+ 
++  const packagePath = path.dirname(findPackagePathSync(process.cwd()))
++  const installPath = path.join(
++    packagePath,
++    'node_modules',
++    '.tav',
++    packages[packages.length - 1]
++  )
++  /** @type {(err?: Error) => void} */
+   const done = once(function (err) {
+     clearTimeout(timeout)
+ 
+-    if (!err) return cb()
++    if (!err) {
++      for (const pkg of packages) {
++        const parsed = npa(pkg)
++
++        if (parsed.scope) {
++          // ensure the deep scope path exists
++          fs.mkdirSync(path.join(packagePath, 'node_modules', parsed.scope), {
++            recursive: true
++          })
++        }
++
++        fs.rmSync(path.join(packagePath, 'node_modules', parsed.name), {
++          recursive: true,
++          force: true
++        })
++        fs.symlinkSync(
++          path.join(installPath, 'node_modules', parsed.name),
++          path.join(packagePath, 'node_modules', parsed.name)
++        )
++      }
++      return cb()
++    }
+ 
+     if (++attempts <= 10) {
++      fs.rmSync(installPath, {
++        recursive: true,
++        force: true
++      })
+       console.warn('-- error installing %j (%s) - retrying (%d/10)...', packages, err.message, attempts)
+-      attemptInstall(packages, attempts, cb)
++      attemptInstall(packages, cb, attempts)
+     } else {
+       console.error('-- error installing %j - aborting!', packages)
+       console.error(err.stack)
+@@ -333,7 +395,21 @@ function attemptInstall (packages, attempts, cb) {
+     }
+   })
+ 
+-  const opts = { noSave: true, command: npmCmd }
++  // create a synthetic package directory
++  fs.mkdirSync(installPath, { recursive: true })
++  fs.writeFileSync(
++    path.join(installPath, 'package.json'),
++    JSON.stringify({ name: 'tav' }, null, 2)
++  )
++
++  // make sure legacy_peer_deps option is unset
++  process.env.npm_config_legacy_peer_deps = undefined
++
++  const opts = {
++    command: npmCmd,
++    'install-strategy': 'linked',
++    cwd: installPath
++  }
+   if (argv.verbose) opts.stdio = 'inherit'
+ 
+   // npm on Travis have a tendency to hang every once in a while

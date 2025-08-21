@@ -63,7 +63,6 @@
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "semver": "7.7.2",
-    "test-all-versions": "6.1.0",
     "typescript": "5.0.4"
   },
   "dependencies": {
