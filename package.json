@@ -21,7 +21,7 @@
     "test:browser": "nx run-many -t test:browser",
     "test:browser:ci:affected": "nx affected -t test:browser --base=origin/main --head=HEAD",
     "test-all-versions": "nx run-many -t test-all-versions",
-    "test-all-versions:ci:affected": "nx affected -t test-all-versions --base=origin/main --head=HEAD",
+    "test-all-versions:ci:affected": "nx affected --parallel=1 -t test-all-versions --base=origin/main --head=HEAD",
     "coverage:merge:ci:affected": "nx affected -t coverage:merge --base=origin/main --head=HEAD",
     "test-services:start": "docker compose -f ./test/docker-compose.yaml up -d --wait",
     "test-services:stop": "docker compose -f ./test/docker-compose.yaml down",
