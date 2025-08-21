@@ -156,7 +156,6 @@ export class AwsEcsDetector implements ResourceDetector {
    * and then return undefined.
    */
   private async _getContainerId(): Promise<string | undefined> {
-    let containerId = undefined;
     try {
       const rawData = await AwsEcsDetector.readFileAsync(
         AwsEcsDetector.DEFAULT_CGROUP_PATH,
@@ -187,7 +186,7 @@ export class AwsEcsDetector implements ResourceDetector {
     } catch (e) {
       diag.debug('AwsEcsDetector failed to read container ID', e);
     }
-    return containerId;
+    return undefined;
   }
 
 
