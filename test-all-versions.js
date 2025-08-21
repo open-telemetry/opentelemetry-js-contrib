@@ -20,6 +20,8 @@ const install = require('spawn-npm-install');
 const differ = require('ansi-diff-stream');
 const cliSpinners = require('cli-spinners');
 const which = require('which');
+const path = require('path');
+const npa = require('npm-package-arg');
 const argv = require('minimist')(process.argv.slice(2));
 
 const npm5plus = semver.gte(
@@ -165,7 +167,7 @@ function test(opts, cb) {
 
   pkgVersions(
     opts.name,
-    argv.registry || opts.registry,
+    // argv.registry || opts.registry,
     function (err, versions) {
       if (err) return cb(err);
 
@@ -360,6 +362,35 @@ function ensurePackages(packages, registry, cb) {
     );
   });
 }
+const walkUp = function* (p) {
+  for (p = path.resolve(p); p; ) {
+    yield p;
+    const parent = path.dirname(p);
+    if (parent === p) {
+      break;
+    } else {
+      p = parent;
+    }
+  }
+};
+function fileExistsSync(path) {
+  try {
+    const stats = fs.statSync(path);
+    return stats.isFile();
+  } catch (_err) {
+    return false;
+  }
+}
+function findPackagePathSync(cwd) {
+  for (const p of walkUp(cwd)) {
+    const packagePath = path.resolve(p, 'package.json');
+    const hasPackageJson = fileExistsSync(packagePath);
+    if (hasPackageJson) {
+      return packagePath;
+    }
+  }
+  return null;
+}
 
 function attemptInstall(packages, registry, cb, attempts = 1) {
   log('-- installing %j', packages);
@@ -369,13 +400,45 @@ function attemptInstall(packages, registry, cb, attempts = 1) {
     return;
   }
 
+  const packagePath = path.dirname(findPackagePathSync(process.cwd()));
+  const installPath = path.join(
+    packagePath,
+    'node_modules',
+    '.tav',
+    packages[packages.length - 1]
+  );
   /** @type {(err?: Error) => void} */
   const done = once(function (err) {
     clearTimeout(timeout);
 
-    if (!err) return cb();
+    if (!err) {
+      for (const pkg of packages) {
+        const parsed = npa(pkg);
+
+        if (parsed.scope) {
+          // ensure the deep scope path exists
+          fs.mkdirSync(path.join(packagePath, 'node_modules', parsed.scope), {
+            recursive: true,
+          });
+        }
+
+        fs.rmSync(path.join(packagePath, 'node_modules', parsed.name), {
+          recursive: true,
+          force: true,
+        });
+        fs.symlinkSync(
+          path.join(installPath, 'node_modules', parsed.name),
+          path.join(packagePath, 'node_modules', parsed.name)
+        );
+      }
+      return cb();
+    }
 
     if (++attempts <= 10) {
+      fs.rmSync(installPath, {
+        recursive: true,
+        force: true,
+      });
       console.warn(
         '-- error installing %j (%s) - retrying (%d/10)...',
         packages,
@@ -390,7 +453,21 @@ function attemptInstall(packages, registry, cb, attempts = 1) {
     }
   });
 
-  const opts = { noSave: true, command: npmCmd };
+  // create a package directory
+  fs.mkdirSync(installPath, { recursive: true });
+  fs.writeFileSync(
+    path.join(installPath, 'package.json'),
+    JSON.stringify({ name: 'tav' }, null, 2)
+  );
+
+  // make sure legacy_peer_deps option is unset
+  process.env.npm_config_legacy_peer_deps = undefined;
+
+  const opts = {
+    command: npmCmd,
+    'install-strategy': 'linked',
+    cwd: installPath,
+  };
   if (argv.verbose) opts.stdio = 'inherit';
   if (argv.registry || registry) opts.registry = argv.registry || registry;
 
