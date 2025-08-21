@@ -255,7 +255,6 @@ jobs:
       - name: Install
         run: npm ci
       # NOTE: keep this in sync with the node versions from `unit-test` job
-      # TODO: doownload browser coverage
       - name: Download Test Artifacts (18)
         uses: actions/download-artifact@v4
         with:
@@ -285,7 +284,6 @@ jobs:
         run: npm run coverage:merge:ci:affected
       - name: Check coverage
         run: find . | grep coverage-final
-
       - name: Report Coverage
         uses: codecov/codecov-action@v5
         env:
