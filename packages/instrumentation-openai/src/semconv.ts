@@ -21,6 +21,18 @@
  */
 
 /**
+ * Identifies the class / type of event.
+ *
+ * @example browser.mouse.click
+ * @example device.app.lifecycle
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by EventName top-level field on the LogRecord.
+ */
+export const ATTR_EVENT_NAME = 'event.name' as const;
+
+/**
  * The name of the operation being performed.
  *
  * @note If one of the predefined values applies, but specific system uses a different name it's **RECOMMENDED** to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries **SHOULD** use applicable predefined value.
@@ -28,6 +40,29 @@
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_GEN_AI_OPERATION_NAME = 'gen_ai.operation.name' as const;
+
+/**
+ * The encoding formats requested in an embeddings operation, if specified.
+ *
+ * @example ["base64"]
+ * @example ["float", "binary"]
+ *
+ * @note In some GenAI systems the encoding formats are called embedding types. Also, some GenAI systems only accept a single format per request.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_REQUEST_ENCODING_FORMATS =
+  'gen_ai.request.encoding_formats' as const;
+
+/**
+ * The frequency penalty setting for the GenAI request.
+ *
+ * @example 0.1
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY =
+  'gen_ai.request.frequency_penalty' as const;
 
 /**
  * The maximum number of tokens the model generates for a request.
@@ -47,6 +82,16 @@ export const ATTR_GEN_AI_REQUEST_MAX_TOKENS =
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_GEN_AI_REQUEST_MODEL = 'gen_ai.request.model' as const;
+
+/**
+ * The presence penalty setting for the GenAI request.
+ *
+ * @example 0.1
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY =
+  'gen_ai.request.presence_penalty' as const;
 
 /**
  * List of sequences that the model will use to stop generating further tokens.
@@ -87,6 +132,24 @@ export const ATTR_GEN_AI_REQUEST_TOP_P = 'gen_ai.request.top_p' as const;
  */
 export const ATTR_GEN_AI_RESPONSE_FINISH_REASONS =
   'gen_ai.response.finish_reasons' as const;
+
+/**
+ * The unique identifier for the completion.
+ *
+ * @example chatcmpl-123
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_RESPONSE_ID = 'gen_ai.response.id' as const;
+
+/**
+ * The name of the model that generated the response.
+ *
+ * @example gpt-4-0613
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_RESPONSE_MODEL = 'gen_ai.response.model' as const;
 
 /**
  * The Generative AI product as identified by the client or server instrumentation.
@@ -140,41 +203,17 @@ export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS =
   'gen_ai.usage.output_tokens' as const;
 
 /**
- * Enum value "chat" for attribute {@link ATTR_GEN_AI_OPERATION_NAME}.
+ * GenAI operation duration
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_OPERATION_NAME_VALUE_CHAT = 'chat' as const;
+export const METRIC_GEN_AI_CLIENT_OPERATION_DURATION =
+  'gen_ai.client.operation.duration' as const;
 
 /**
- * Enum value "aws.bedrock" for attribute {@link ATTR_GEN_AI_SYSTEM}.
+ * Measures number of input and output tokens used
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_SYSTEM_VALUE_AWS_BEDROCK = 'aws.bedrock' as const;
-
-/**
- * Enum value "input" for attribute {@link ATTR_GEN_AI_TOKEN_TYPE}.
- */
-export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
-
-/**
- * Enum value "output" for attribute {@link ATTR_GEN_AI_TOKEN_TYPE}.
- */
-export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
-
-/**
- * Originally from '@opentelemetry/semantic-conventions/incubating'
- * https://github.com/open-telemetry/semantic-conventions/blob/main/docs/registry/attributes/aws.md#amazon-secrets-manager-attributes
- * The ARN of the Secret stored in the Secrets Mangger
- * @example arn:aws:secretsmanager:us-east-1:123456789012:secret:SecretName-6RandomCharacters
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const ATTR_AWS_SECRETSMANAGER_SECRET_ARN =
-  'aws.secretsmanager.secret.arn' as const;
-
-/**
- * Originally from '@opentelemetry/semantic-conventions/incubating'
- * https://github.com/open-telemetry/semantic-conventions/blob/main/docs/registry/attributes/aws.md#amazon-sns-attributes
- * The ARN of the AWS SNS Topic. An Amazon SNS [topic](https://docs.aws.amazon.com/sns/latest/dg/sns-create-topic.html)
- *  is a logical access point that acts as a communication channel.
- * @example arn:aws:sns:us-east-1:123456789012:mystack-mytopic-NZJ5JSMVGFIE
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const ATTR_AWS_SNS_TOPIC_ARN = 'aws.sns.topic.arn' as const;
+export const METRIC_GEN_AI_CLIENT_TOKEN_USAGE =
+  'gen_ai.client.token.usage' as const;
