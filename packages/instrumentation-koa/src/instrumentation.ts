@@ -44,7 +44,7 @@ export class KoaInstrumentation extends InstrumentationBase<KoaInstrumentationCo
   protected init() {
     return new InstrumentationNodeModuleDefinition(
       'koa',
-      ['>=2.0.0 <3'],
+      ['>=2.0.0 <4'],
       (module: any) => {
         const moduleExports: typeof koa =
           module[Symbol.toStringTag] === 'Module'

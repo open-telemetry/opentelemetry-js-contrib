@@ -26,9 +26,9 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import {
+  ATTR_HTTP_ROUTE,
   SEMATTRS_EXCEPTION_MESSAGE,
   SEMATTRS_HTTP_METHOD,
-  SEMATTRS_HTTP_ROUTE,
 } from '@opentelemetry/semantic-conventions';
 
 type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
@@ -144,11 +144,6 @@ describe('Koa Instrumentation', function () {
       throw new Error('I failed!');
     };
 
-  const generatorMiddleware: () => koa.Middleware = () =>
-    function* generatorMiddleware(next) {
-      yield next;
-    };
-
   describe('Instrumenting @koa/router calls', function () {
     before(function () {
       if (!isrouterCompat) {
@@ -198,7 +193,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/post/:id'
           );
 
@@ -249,7 +244,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/^\\/post/'
           );
 
@@ -296,7 +291,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/post/:id'
           );
 
@@ -345,7 +340,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/:first/post/:id'
           );
 
@@ -392,7 +387,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/:first/post/:id'
           );
 
@@ -494,35 +489,6 @@ describe('Koa Instrumentation', function () {
             requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
             KoaLayerType.MIDDLEWARE
           );
-          const exportedRootSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name === 'rootSpan');
-          assert.notStrictEqual(exportedRootSpan, undefined);
-        }
-      );
-    });
-
-    it('should not instrument generator middleware functions', async () => {
-      const rootSpan = tracer.startSpan('rootSpan');
-      app.use((_ctx, next) =>
-        context.with(trace.setSpan(context.active(), rootSpan), next)
-      );
-
-      app.use(generatorMiddleware());
-      app.use(simpleResponse());
-
-      await context.with(
-        trace.setSpan(context.active(), rootSpan),
-        async () => {
-          await httpRequest.get(`http://localhost:${port}`);
-          rootSpan.end();
-          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
-
-          const simpleResponseSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name.includes('simpleResponse'));
-          assert.notStrictEqual(simpleResponseSpan, undefined);
-
           const exportedRootSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'rootSpan');
