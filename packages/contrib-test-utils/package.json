@@ -8,10 +8,10 @@
     "access": "public"
   },
   "scripts": {
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/contrib-test-utils",
     "lint": "eslint . --ext=ts,js,mjs",
     "lint:fix": "eslint . --ext=ts,js,mjs --fix",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/contrib-test-utils",
-    "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
   },

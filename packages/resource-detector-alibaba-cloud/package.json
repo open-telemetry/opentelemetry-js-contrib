@@ -12,8 +12,8 @@
   },
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/resource-detector-alibaba-cloud",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/resource-detector-alibaba-cloud",
     "lint": "eslint . --ext=ts,js,mjs",
     "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",

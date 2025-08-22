@@ -11,7 +11,7 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-connect",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-connect",
     "compile": "tsc -p .",
     "lint": "eslint . --ext=ts,js,mjs",
     "lint:fix": "eslint . --ext=ts,js,mjs --fix",

@@ -10,17 +10,17 @@
     "directory": "packages/instrumentation-undici"
   },
   "scripts": {
-    "prepublishOnly": "npm run compile",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
-    "compile": "tsc -p .",
-    "test": "nyc mocha test/**/*.test.ts",
-    "test-all-versions": "tav",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
     "lint": "eslint . --ext=ts,js,mjs",
     "lint:fix": "eslint . --ext=ts,js,mjs --fix",
-    "watch": "tsc -w",
-    "version:update": "node ../../scripts/version-update.js"
+    "prepublishOnly": "npm run compile",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc mocha test/**/*.test.ts",
+    "test-all-versions": "tav",
+    "version:update": "node ../../scripts/version-update.js",
+    "watch": "tsc -w"
   },
   "keywords": [
     "opentelemetry",

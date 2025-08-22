@@ -11,14 +11,18 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-tedious",
     "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-tedious",
     "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint": "eslint . --ext=ts,js,mjs",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.test.ts'",
+    "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "test-all-versions": "tav",
+    "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "test-services:start": "cd ../.. && npm run test-services:start mssql",
+    "test-services:stop": "cd ../.. && npm run test-services:stop mssql",
     "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
@@ -56,6 +60,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
+    "cross-env": "7.0.3",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "semver": "7.7.2",

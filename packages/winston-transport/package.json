@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/winston-transport",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "description": "OpenTelemetry Transport for winston",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -10,15 +10,15 @@
     "directory": "packages/winston-transport"
   },
   "scripts": {
-    "test": "nyc mocha 'test/**/*.test.ts'",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/winston-transport",
     "lint": "eslint . --ext=ts,js,mjs",
     "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/winston-transport",
-    "compile": "tsc -p ."
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc mocha 'test/**/*.test.ts'",
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "transport",
