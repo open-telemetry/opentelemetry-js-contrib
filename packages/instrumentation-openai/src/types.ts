@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-'use strict';
-
-const baseConfig = require('../../eslint.config');
-
-module.exports = {
-  ...baseConfig,
-  env: {
-    node: true,
-  },
-};
+export interface OpenAIInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * Set to true to enable capture of content data, such as prompt and
+   * completion content, tool call function arguments, etc. By default, this is
+   * `false` to avoid possible exposure of sensitive data. This can also be set
+   * via the `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true`
+   * environment variable.
+   */
+  captureMessageContent?: boolean;
+}
