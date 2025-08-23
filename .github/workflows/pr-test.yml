@@ -44,32 +44,32 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - "18.19.0"
-          - "18"
-          - "20.6.0"
-          - "20"
-          - "22"
-          - "24"
+          - '18.19.0'
+          - '18'
+          - '20.6.0'
+          - '20'
+          - '22'
+          - '24'
         include:
-            - node: 18
-              code-coverage: true
+          - node: 18
+            code-coverage: true
     runs-on: ubuntu-latest
     services:
       memcached:
         image: memcached:1.6.38-alpine
         ports:
-        - 11211:11211
+          - 11211:11211
       mongo:
         image: mongo
         ports:
-        - 27017:27017
+          - 27017:27017
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
           MSSQL_SA_PASSWORD: mssql_passw0rd
           ACCEPT_EULA: Y
         ports:
-        - 1433:1433
+          - 1433:1433
         options: >-
           --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $MSSQL_SA_PASSWORD -C -Q 'select 1' -b -o /dev/null"
           --health-interval 1s
@@ -84,7 +84,7 @@ jobs:
           MYSQL_DATABASE: otel_mysql_database
           MYSQL_ROOT_PASSWORD: rootpw
         ports:
-        - 3306:3306
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping"
           --health-interval 10s
@@ -110,7 +110,7 @@ jobs:
           POSTGRES_DB: otel_pg_database
           POSTGRES_PASSWORD: postgres
         ports:
-        - 5432:5432
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -119,7 +119,7 @@ jobs:
       redis:
         image: redis
         ports:
-        - 6379:6379
+          - 6379:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -128,11 +128,11 @@ jobs:
       cassandra:
         image: bitnami/cassandra:3
         ports:
-        - 9042:9042
+          - 9042:9042
       rabbitmq:
         image: rabbitmq:3
         ports:
-        - 22221:5672
+          - 22221:5672
         env:
           RABBITMQ_DEFAULT_USER: username
           RABBITMQ_DEFAULT_PASS: password
@@ -203,14 +203,15 @@ jobs:
           retention-days: 1
           path: |
             !node_modules
-            **/.nyc_output/**
+            packages/*/.nyc_output/**
+            incubator/*/.nyc_output/**
 
   browser-test:
     needs: compile
     strategy:
       fail-fast: false
       matrix:
-        node: ["22"]
+        node: ['22']
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_UNSAFE_PERM: true
