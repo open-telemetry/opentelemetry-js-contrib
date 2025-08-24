@@ -111,7 +111,7 @@ export const assertSpan = (
     assert.strictEqual(span.events.length, 0, 'span contains no events');
   }
 
-  // Error message changes between version se we will
+  // Error message changes between version so we will
   // only assert its presence
   if (validations.forceStatus) {
     assert.equal(
