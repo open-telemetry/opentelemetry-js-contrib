@@ -33,7 +33,7 @@ import { rabbitMqUrl } from './config';
 
 describe('utils', () => {
   describe('getConnectionAttributesFromServer', () => {
-    let conn: amqp.Connection;
+    let conn: amqp.ChannelModel;
     before(async function () {
       if (!shouldTest) {
         this.skip();
