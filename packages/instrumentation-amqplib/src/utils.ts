@@ -20,16 +20,42 @@ import {
   HrTime,
   Span,
   Attributes,
-  AttributeValue,
 } from '@opentelemetry/api';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 import {
+  ATTR_NETWORK_PEER_ADDRESS,
+  ATTR_NETWORK_PEER_PORT,
+  ATTR_NETWORK_PROTOCOL_NAME,
+  ATTR_NETWORK_PROTOCOL_VERSION,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+  MESSAGINGOPERATIONVALUES_PROCESS,
+  SEMATTRS_MESSAGING_CONVERSATION_ID,
+  SEMATTRS_MESSAGING_DESTINATION,
+  SEMATTRS_MESSAGING_DESTINATION_KIND,
+  SEMATTRS_MESSAGING_MESSAGE_ID,
+  SEMATTRS_MESSAGING_OPERATION,
   SEMATTRS_MESSAGING_PROTOCOL,
   SEMATTRS_MESSAGING_PROTOCOL_VERSION,
-  SEMATTRS_MESSAGING_SYSTEM,
+  SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY,
   SEMATTRS_MESSAGING_URL,
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_BODY_SIZE,
+  ATTR_MESSAGING_MESSAGE_CONVERSATION_ID,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION_NAME,
+  ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY,
+  ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG,
+  ATTR_MESSAGING_SYSTEM,
+  MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+  MESSAGING_OPERATION_TYPE_VALUE_SEND,
+} from '@opentelemetry/semantic-conventions/incubating';
 import type * as amqp from 'amqplib';
 
 export const MESSAGE_STORED_SPAN: unique symbol = Symbol(
@@ -65,9 +91,6 @@ const IS_CONFIRM_CHANNEL_CONTEXT_KEY: symbol = createContextKey(
   'opentelemetry.amqplib.channel.is-confirm-channel'
 );
 
-export const normalizeExchange = (exchangeName: string) =>
-  exchangeName !== '' ? exchangeName : '<default>';
-
 const censorPassword = (url: string): string => {
   return url.replace(/:[^:@/]*@/, ':***@');
 };
@@ -97,32 +120,13 @@ const getHostname = (hostnameFromUrl: string | undefined): string => {
   return hostnameFromUrl || 'localhost';
 };
 
-const extractConnectionAttributeOrLog = (
-  url: string | amqp.Options.Connect,
-  attributeKey: string,
-  attributeValue: AttributeValue,
-  nameForLog: string
-): Attributes => {
-  if (attributeValue) {
-    return { [attributeKey]: attributeValue };
-  } else {
-    diag.error(
-      `amqplib instrumentation: could not extract connection attribute ${nameForLog} from user supplied url`,
-      {
-        url,
-      }
-    );
-    return {};
-  }
-};
-
 export const getConnectionAttributesFromServer = (
   conn: amqp.Connection['connection']
 ): Attributes => {
   const product = conn.serverProperties.product?.toLowerCase?.();
   if (product) {
     return {
-      [SEMATTRS_MESSAGING_SYSTEM]: product,
+      [ATTR_MESSAGING_SYSTEM]: product,
     };
   } else {
     return {};
@@ -130,83 +134,53 @@ export const getConnectionAttributesFromServer = (
 };
 
 export const getConnectionAttributesFromUrl = (
-  url: string | amqp.Options.Connect
+  url: string | amqp.Options.Connect,
+  semconvStability: SemconvStability
 ): Attributes => {
-  const attributes: Attributes = {
+  const oldAttributes: Attributes = {
     [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1', // this is the only protocol supported by the instrumented library
+  };
+  const stableAttributes: Attributes = {
+    [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1', // this is the only protocol supported by the instrumented library
   };
 
   url = url || 'amqp://localhost';
   if (typeof url === 'object') {
-    const connectOptions = url as amqp.Options.Connect;
+    const protocol = getProtocol(url.protocol);
+    const hostname = getHostname(url.hostname);
+    const port = getPort(url.port, protocol);
 
-    const protocol = getProtocol(connectOptions?.protocol);
-    Object.assign(attributes, {
-      ...extractConnectionAttributeOrLog(
-        url,
-        SEMATTRS_MESSAGING_PROTOCOL,
-        protocol,
-        'protocol'
-      ),
-    });
+    oldAttributes[SEMATTRS_MESSAGING_PROTOCOL] = protocol;
+    oldAttributes[SEMATTRS_NET_PEER_NAME] = hostname;
+    oldAttributes[SEMATTRS_NET_PEER_PORT] = port;
 
-    const hostname = getHostname(connectOptions?.hostname);
-    Object.assign(attributes, {
-      ...extractConnectionAttributeOrLog(
-        url,
-        SEMATTRS_NET_PEER_NAME,
-        hostname,
-        'hostname'
-      ),
-    });
-
-    const port = getPort(connectOptions.port, protocol);
-    Object.assign(attributes, {
-      ...extractConnectionAttributeOrLog(
-        url,
-        SEMATTRS_NET_PEER_PORT,
-        port,
-        'port'
-      ),
-    });
+    stableAttributes[ATTR_NETWORK_PROTOCOL_NAME] = protocol;
+    stableAttributes[ATTR_NETWORK_PEER_ADDRESS] = hostname;
+    stableAttributes[ATTR_NETWORK_PEER_PORT] = port;
+    stableAttributes[ATTR_SERVER_ADDRESS] = hostname;
+    stableAttributes[ATTR_SERVER_PORT] = port;
   } else {
     const censoredUrl = censorPassword(url);
-    attributes[SEMATTRS_MESSAGING_URL] = censoredUrl;
+    oldAttributes[SEMATTRS_MESSAGING_URL] = censoredUrl;
+
     try {
       const urlParts = new URL(censoredUrl);
-
       const protocol = getProtocol(urlParts.protocol);
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          censoredUrl,
-          SEMATTRS_MESSAGING_PROTOCOL,
-          protocol,
-          'protocol'
-        ),
-      });
-
       const hostname = getHostname(urlParts.hostname);
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          censoredUrl,
-          SEMATTRS_NET_PEER_NAME,
-          hostname,
-          'hostname'
-        ),
-      });
-
       const port = getPort(
         urlParts.port ? parseInt(urlParts.port) : undefined,
         protocol
       );
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          censoredUrl,
-          SEMATTRS_NET_PEER_PORT,
-          port,
-          'port'
-        ),
-      });
+
+      oldAttributes[SEMATTRS_MESSAGING_PROTOCOL] = protocol;
+      oldAttributes[SEMATTRS_NET_PEER_NAME] = hostname;
+      oldAttributes[SEMATTRS_NET_PEER_PORT] = port;
+
+      stableAttributes[ATTR_NETWORK_PROTOCOL_NAME] = protocol;
+      stableAttributes[ATTR_NETWORK_PEER_ADDRESS] = hostname;
+      stableAttributes[ATTR_NETWORK_PEER_PORT] = port;
+      stableAttributes[ATTR_SERVER_ADDRESS] = hostname;
+      stableAttributes[ATTR_SERVER_PORT] = port;
     } catch (err) {
       diag.error(
         'amqplib instrumentation: error while extracting connection details from connection url',
@@ -217,7 +191,142 @@ export const getConnectionAttributesFromUrl = (
       );
     }
   }
+
+  let attributes: Attributes = {};
+  if (semconvStability & SemconvStability.OLD) {
+    attributes = oldAttributes;
+  }
+  if (semconvStability & SemconvStability.STABLE) {
+    attributes = { ...attributes, ...stableAttributes };
+  }
   return attributes;
+};
+
+export const getPublishSpanName = (
+  exchange: string,
+  routingKey: string,
+  semconvStability: SemconvStability
+): string => {
+  if (semconvStability & SemconvStability.STABLE) {
+    return `publish ${getPublishDestinationName(exchange, routingKey)}`;
+  }
+  return `publish ${normalizeExchange(exchange)}`;
+};
+
+export const getPublishAttributes = (
+  exchange: string,
+  routingKey: string,
+  contentLength: number,
+  options: amqp.Options.Publish = {},
+  semconvStability: SemconvStability
+): Attributes => {
+  const oldAttributes: Attributes = {
+    [SEMATTRS_MESSAGING_DESTINATION]: exchange,
+    [SEMATTRS_MESSAGING_DESTINATION_KIND]: MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+    [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
+    [SEMATTRS_MESSAGING_MESSAGE_ID]: options?.messageId,
+    [SEMATTRS_MESSAGING_CONVERSATION_ID]: options?.correlationId,
+  };
+  const stableAttributes: Attributes = {
+    [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_SEND,
+    [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+    [ATTR_MESSAGING_DESTINATION_NAME]: getPublishDestinationName(
+      exchange,
+      routingKey
+    ),
+    [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: routingKey,
+    [ATTR_MESSAGING_MESSAGE_ID]: options?.messageId,
+    [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: options?.correlationId,
+    [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: contentLength,
+  };
+
+  let attributes: Attributes = {};
+  if (semconvStability & SemconvStability.OLD) {
+    attributes = oldAttributes;
+  }
+  if (semconvStability & SemconvStability.STABLE) {
+    attributes = { ...attributes, ...stableAttributes };
+  }
+  return attributes;
+};
+
+const getPublishDestinationName = (
+  exchange: string,
+  routingKey: string
+): string => {
+  if (exchange && routingKey) return `${exchange}:${routingKey}`;
+  if (exchange) return exchange;
+  if (routingKey) return routingKey;
+  return 'amq.default';
+};
+
+const normalizeExchange = (exchangeName: string) =>
+  exchangeName !== '' ? exchangeName : '<default>';
+
+export const getConsumeSpanName = (
+  queue: string,
+  msg: amqp.ConsumeMessage,
+  semconvStability: SemconvStability
+): string => {
+  if (semconvStability & SemconvStability.STABLE) {
+    return `consume ${getConsumeDestinationName(
+      msg.fields?.exchange,
+      msg.fields?.routingKey,
+      queue
+    )}`;
+  }
+  return `${queue} process`;
+};
+
+export const getConsumeAttributes = (
+  queue: string,
+  msg: amqp.ConsumeMessage,
+  semconvStability: SemconvStability
+): Attributes => {
+  const oldAttributes: Attributes = {
+    [SEMATTRS_MESSAGING_DESTINATION]: msg.fields?.exchange,
+    [SEMATTRS_MESSAGING_DESTINATION_KIND]: MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+    [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
+    [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: msg.fields?.routingKey,
+    [SEMATTRS_MESSAGING_MESSAGE_ID]: msg.properties?.messageId,
+    [SEMATTRS_MESSAGING_CONVERSATION_ID]: msg.properties?.correlationId,
+  };
+  const stableAttributes: Attributes = {
+    [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+    [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+    [ATTR_MESSAGING_DESTINATION_NAME]: getConsumeDestinationName(
+      msg.fields?.exchange,
+      msg.fields?.routingKey,
+      queue
+    ),
+    [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: msg.fields?.routingKey,
+    [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: msg.fields?.deliveryTag,
+    [ATTR_MESSAGING_MESSAGE_ID]: msg.properties?.messageId,
+    [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: msg.properties?.correlationId,
+    [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: msg.content?.length,
+  };
+
+  let attributes: Attributes = {};
+  if (semconvStability & SemconvStability.OLD) {
+    attributes = oldAttributes;
+  }
+  if (semconvStability & SemconvStability.STABLE) {
+    attributes = { ...attributes, ...stableAttributes };
+  }
+  return attributes;
+};
+
+const getConsumeDestinationName = (
+  exchange: string,
+  routingKey: string,
+  queue: string
+): string => {
+  const parts: string[] = [];
+  if (exchange && !parts.includes(exchange)) parts.push(exchange);
+  if (routingKey && !parts.includes(routingKey)) parts.push(routingKey);
+  if (queue && !parts.includes(queue)) parts.push(queue);
+
+  return parts.length ? parts.join(':') : 'amq.default';
 };
 
 export const markConfirmChannelTracing = (context: Context) => {
