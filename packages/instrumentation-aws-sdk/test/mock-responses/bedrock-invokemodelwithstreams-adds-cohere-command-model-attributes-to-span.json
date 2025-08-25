@@ -1,0 +1,66 @@
+[
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/cohere.command-light-text-v14/invoke-with-response-stream",
+        "body": {
+            "prompt": "Say this is a test",
+            "max_tokens": 10,
+            "temperature": 0.8,
+            "p": 1,
+            "stop_sequences": [
+                "|"
+            ]
+        },
+        "status": 403,
+        "response": {
+            "message": "Signature expired: 20250808T105739Z is now earlier than 20250808T130125Z (20250808T130625Z - 5 min.)"
+        },
+        "rawHeaders": [
+            "Date",
+            "Fri, 08 Aug 2025 13:06:25 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "114",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "c69d0f37-e52d-4a04-97e3-ddc49f98d665",
+            "x-amzn-ErrorType",
+            "InvalidSignatureException:http://internal.amazon.com/coral/com.amazon.coral.service/"
+        ],
+        "responseIsBinary": false
+    },
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/cohere.command-light-text-v14/invoke-with-response-stream",
+        "body": {
+            "prompt": "Say this is a test",
+            "max_tokens": 10,
+            "temperature": 0.8,
+            "p": 1,
+            "stop_sequences": [
+                "|"
+            ]
+        },
+        "status": 200,
+        "response": "000002630000004b1776ebe70b3a6576656e742d747970650700056368756e6b0d3a636f6e74656e742d747970650700106170706c69636174696f6e2f6a736f6e0d3a6d6573736167652d747970650700056576656e747b226279746573223a2265794a705a434936496d4e6b5a6a51304e7a686b4c54457a595755744e4467325a4331694d5752694c5467324d4455314d6a4d77596a56684d534973496d646c626d5679595852706232357a496a706265794a705a434936496a526c5a444d305a6d557a4c544d334e4755744e446b7a4d6930354d4755334c5751354d6a646c4d6a63784d7a6c6a4e694973496e526c654851694f6949675432746865537767535342336157787349475a7662477876647942356233567949476c756333527964574e306157397563794268626d5167644768706379423361577873496977695a6d6c7561584e6f58334a6c59584e7662694936496b31425746395554307446546c4d6966563073496e42796232317764434936496c4e686553423061476c7a49476c7a494745676447567a64434973496d467459587076626931695a57527962324e724c576c75646d396a595852706232354e5a58527961574e7a496a7037496d6c7563485630564739725a57354462335675644349364e5377696233563063485630564739725a57354462335675644349364d544173496d6c75646d396a595852706232354d5958526c626d4e35496a6f794e7a5973496d5a70636e4e30516e6c305a5578686447567559336b694f6a49334e6e3139222c2270223a226162636465666768696a6b6c6d6e6f707172737475767778797a414243227d60d70fc7",
+        "rawHeaders": [
+            "Date",
+            "Fri, 08 Aug 2025 13:06:25 GMT",
+            "Content-Type",
+            "application/vnd.amazon.eventstream",
+            "Transfer-Encoding",
+            "chunked",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "cdf4478d-13ae-486d-b1db-86055230b5a1",
+            "X-Amzn-Bedrock-Content-Type",
+            "application/json"
+        ],
+        "responseIsBinary": true
+    }
+]
