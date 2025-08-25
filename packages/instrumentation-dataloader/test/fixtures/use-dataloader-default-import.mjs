@@ -25,15 +25,13 @@ import { DataloaderInstrumentation } from '../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-dataloader',
-  instrumentations: [
-    new DataloaderInstrumentation()
-  ]
-})
+  instrumentations: [new DataloaderInstrumentation()],
+});
 sdk.start();
 
 import Dataloader from 'dataloader';
 
-function getMd5HashFromIdx(idx ) {
+function getMd5HashFromIdx(idx) {
   return crypto.createHash('md5').update(String(idx)).digest('hex');
 }
 const dataloader = new Dataloader(
@@ -45,7 +43,7 @@ const dataloader = new Dataloader(
 );
 
 const tracer = trace.getTracer();
-await tracer.startActiveSpan('manual', async (span) => {
+await tracer.startActiveSpan('manual', async span => {
   await dataloader.load(1);
   span.end();
 });

@@ -25,11 +25,8 @@ import { ExpressInstrumentation } from '../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-express',
-  instrumentations: [
-    new HttpInstrumentation(),
-    new ExpressInstrumentation()
-  ]
-})
+  instrumentations: [new HttpInstrumentation(), new ExpressInstrumentation()],
+});
 sdk.start();
 
 import express from 'express';
@@ -55,12 +52,12 @@ await new Promise(resolve => server.listen(0, resolve));
 const port = server.address().port;
 
 await new Promise(resolve => {
-  http.get(`http://localhost:${port}/post/0`, (res) => {
+  http.get(`http://localhost:${port}/post/0`, res => {
     res.resume();
     res.on('end', () => {
       resolve();
     });
-  })
+  });
 });
 
 await new Promise(resolve => server.close(resolve));
