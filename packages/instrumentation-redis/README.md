@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`redis`](https://github.com/NodeRedis/node_redis) module versions `>=2.6.0 <5`, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`redis`](https://github.com/NodeRedis/node_redis) module versions `>=2.6.0 <6`, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-redis
 
 ### Supported Versions
 
-- [`redis`](https://www.npmjs.com/package/redis) versions `>=2.6.0 <5`
+- [`redis`](https://www.npmjs.com/package/redis) versions `>=2.6.0 <6`
 
 ## Usage
 
@@ -75,9 +75,15 @@ const redisInstrumentation = new RedisInstrumentation({
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md) ("old" conventions).
+
+It also supports the new stable semantic conventions introduced in [Version 1.33.0]
+By default, old semantic conventions are used. Use the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable to control which version to emit.
 
 Attributes collected:
+
+### Old Semantic Conventions (default)
 
 | Attribute              | Short Description                                            |
 |------------------------|--------------------------------------------------------------|
@@ -86,6 +92,17 @@ Attributes collected:
 | `db.system`            | Database identifier; always `redis`                          |
 | `net.peer.name`        | Hostname or IP of the connected Redis server                 |
 | `net.peer.port`        | Port of the connected Redis server                           |
+
+### Stable Semantic Conventions (v1.33.0)
+
+| Attribute              | Short Description                                            |
+|------------------------|--------------------------------------------------------------|
+| `db.operation.name` | Redis command name |
+| `db.operation.batch.size` | Number of commands in a Redis `MULTI/EXEC` transaction |
+| `db.query.text`         | The database query being executed                                     |
+| `db.system.name`            | Database identifier; always `redis`                          |
+| `server.address`        | Hostname or IP of the connected Redis server                 |
+| `server.port`        | Port of the connected Redis server                           |
 
 ## Useful links
 
