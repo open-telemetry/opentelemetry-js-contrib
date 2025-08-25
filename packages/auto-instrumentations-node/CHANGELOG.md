@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.62.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.62.1...auto-instrumentations-node-v0.62.2) (2025-08-25)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.57.0 to ^0.58.0
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.18.1 to ^0.19.0
+    * @opentelemetry/instrumentation-pino bumped from ^0.50.0 to ^0.50.1
+
 ## [0.62.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.62.0...auto-instrumentations-node-v0.62.1) (2025-08-13)
 
 
