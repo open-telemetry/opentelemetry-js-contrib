@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.57.0...instrumentation-aws-sdk-v0.58.0) (2025-08-25)
+
+
+### Features
+
+* **instrumentation-aws-sdk:** Add Semantic Convention Support for Amazon Secrets Manager Attributes ([#2971](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2971)) ([0c59990](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0c5999052e01d3b14d797e22361d495d7e4eeff1))
+
 ## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.56.0...instrumentation-aws-sdk-v0.57.0) (2025-08-13)
 
 
