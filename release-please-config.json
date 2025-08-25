@@ -22,6 +22,7 @@
     "packages/id-generator-aws-xray": {},
     "packages/propagation-utils": {},
     "packages/redis-common": {},
+    "packages/sampler-aws-xray": {},
     "packages/sql-common": {},
     "packages/contrib-test-utils": {},
     "packages/winston-transport": {},
