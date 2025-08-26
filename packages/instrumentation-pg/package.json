@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pg",
-  "version": "0.55.0",
+  "version": "0.56.0",
   "description": "OpenTelemetry instrumentation for `pg` and `pg-pool` database client for PostgreSQL",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,7 +11,7 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-pg",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-pg",
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
@@ -19,10 +19,12 @@
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.test.ts'",
-    "test-all-versions": "tav",
-    "test-all-versions:local": "cross-env RUN_POSTGRES_TESTS_LOCAL=true npm run test-all-versions",
     "test:debug": "mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
-    "test:local": "cross-env RUN_POSTGRES_TESTS_LOCAL=true npm run test",
+    "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
+    "test-all-versions": "tav",
+    "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "test-services:start": "cd ../.. && npm run test-services:start postgres",
+    "test-services:stop": "cd ../.. && npm run test-services:stop postgres",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },

@@ -36,11 +36,19 @@ import { FallbackSampler } from './fallback-sampler';
 import {
   AWSXRayRemoteSamplerConfig,
   GetSamplingRulesResponse,
+  GetSamplingTargetsBody,
+  GetSamplingTargetsResponse,
   SamplingRuleRecord,
+  SamplingTargetDocument,
+  TargetMap,
 } from './types';
-import { RuleCache } from './rule-cache';
+import {
+  DEFAULT_TARGET_POLLING_INTERVAL_SECONDS,
+  RuleCache,
+} from './rule-cache';
 
 import { SamplingRuleApplier } from './sampling-rule-applier';
+import { PACKAGE_NAME } from './version';
 
 // 5 minute default sampling rules polling interval
 const DEFAULT_RULES_POLLING_INTERVAL_SECONDS: number = 5 * 60;
@@ -94,17 +102,22 @@ export class AWSXRayRemoteSampler implements Sampler {
 // Not intended for external use, use Parent-based `AWSXRayRemoteSampler` instead.
 export class _AWSXRayRemoteSampler implements Sampler {
   private rulePollingIntervalMillis: number;
+  private targetPollingInterval: number;
   private awsProxyEndpoint: string;
   private ruleCache: RuleCache;
   private fallbackSampler: FallbackSampler;
   private samplerDiag: DiagLogger;
   private rulePoller: NodeJS.Timeout | undefined;
+  private targetPoller: NodeJS.Timeout | undefined;
   private clientId: string;
   private rulePollingJitterMillis: number;
+  private targetPollingJitterMillis: number;
   private samplingClient: AWSXRaySamplingClient;
 
   constructor(samplerConfig: AWSXRayRemoteSamplerConfig) {
-    this.samplerDiag = diag;
+    this.samplerDiag = diag.createComponentLogger({
+      namespace: PACKAGE_NAME,
+    });
 
     if (
       samplerConfig.pollingInterval == null ||
@@ -120,6 +133,8 @@ export class _AWSXRayRemoteSampler implements Sampler {
     }
 
     this.rulePollingJitterMillis = Math.random() * 5 * 1000;
+    this.targetPollingInterval = this.getDefaultTargetPollingInterval();
+    this.targetPollingJitterMillis = (Math.random() / 10) * 1000;
 
     this.awsProxyEndpoint = samplerConfig.endpoint
       ? samplerConfig.endpoint
@@ -137,7 +152,12 @@ export class _AWSXRayRemoteSampler implements Sampler {
     // Start the Sampling Rules poller
     this.startSamplingRulesPoller();
 
-    // TODO: Start the Sampling Targets poller
+    // Start the Sampling Targets poller where the first poll occurs after the default interval
+    this.startSamplingTargetsPoller();
+  }
+
+  public getDefaultTargetPollingInterval(): number {
+    return DEFAULT_TARGET_POLLING_INTERVAL_SECONDS;
   }
 
   public shouldSample(
@@ -203,6 +223,7 @@ export class _AWSXRayRemoteSampler implements Sampler {
 
   public stopPollers() {
     clearInterval(this.rulePoller);
+    clearInterval(this.targetPoller);
   }
 
   private startSamplingRulesPoller(): void {
@@ -214,6 +235,27 @@ export class _AWSXRayRemoteSampler implements Sampler {
       this.rulePollingIntervalMillis + this.rulePollingJitterMillis
     );
     this.rulePoller.unref();
+  }
+
+  private startSamplingTargetsPoller(): void {
+    // Update sampling targets every targetPollingInterval (usually 10 seconds)
+    this.targetPoller = setInterval(
+      () => this.getAndUpdateSamplingTargets(),
+      this.targetPollingInterval * 1000 + this.targetPollingJitterMillis
+    );
+    this.targetPoller.unref();
+  }
+
+  private getAndUpdateSamplingTargets(): void {
+    const requestBody: GetSamplingTargetsBody = {
+      SamplingStatisticsDocuments:
+        this.ruleCache.createSamplingStatisticsDocuments(this.clientId),
+    };
+
+    this.samplingClient.fetchSamplingTargets(
+      requestBody,
+      this.updateSamplingTargets.bind(this)
+    );
   }
 
   private getAndUpdateSamplingRules(): void {
@@ -239,6 +281,41 @@ export class _AWSXRayRemoteSampler implements Sampler {
       this.samplerDiag.error(
         'SamplingRuleRecords from GetSamplingRules request is not defined'
       );
+    }
+  }
+
+  private updateSamplingTargets(
+    responseObject: GetSamplingTargetsResponse
+  ): void {
+    try {
+      const targetDocuments: TargetMap = {};
+
+      // Create Target-Name-to-Target-Map from sampling targets response
+      responseObject.SamplingTargetDocuments.forEach(
+        (newTarget: SamplingTargetDocument) => {
+          targetDocuments[newTarget.RuleName] = newTarget;
+        }
+      );
+
+      // Update targets in the cache
+      const [refreshSamplingRules, nextPollingInterval]: [boolean, number] =
+        this.ruleCache.updateTargets(
+          targetDocuments,
+          responseObject.LastRuleModification
+        );
+      this.targetPollingInterval = nextPollingInterval;
+      clearInterval(this.targetPoller);
+      this.startSamplingTargetsPoller();
+
+      if (refreshSamplingRules) {
+        this.samplerDiag.debug(
+          'Performing out-of-band sampling rule polling to fetch updated rules.'
+        );
+        clearInterval(this.rulePoller);
+        this.startSamplingRulesPoller();
+      }
+    } catch (error: unknown) {
+      this.samplerDiag.debug('Error occurred when updating Sampling Targets');
     }
   }
 

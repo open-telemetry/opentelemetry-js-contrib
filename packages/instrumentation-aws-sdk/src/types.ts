@@ -47,6 +47,7 @@ export interface AwsSdkResponseHookInformation {
   moduleVersion?: string;
   response: NormalizedResponse;
 }
+
 /**
  * span can be used to add custom attributes, or for any other need.
  * response is the object that is returned to the user calling the aws-sdk operation.
@@ -54,6 +55,14 @@ export interface AwsSdkResponseHookInformation {
  */
 export interface AwsSdkResponseCustomAttributeFunction {
   (span: Span, responseInfo: AwsSdkResponseHookInformation): void;
+}
+
+/**
+ * span can be used to modify the status.
+ * As we have no response object, the request can be used to determine the failed aws-sdk operation.
+ */
+export interface AwsSdkExceptionCustomAttributeFunction {
+  (span: Span, requestInfo: AwsSdkRequestHookInformation, err: any): void;
 }
 
 export type AwsSdkDynamoDBStatementSerializer = (
@@ -68,6 +77,18 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
   /** hook for adding custom attributes when response is received from aws */
   responseHook?: AwsSdkResponseCustomAttributeFunction;
 
+<<<<<<< HEAD
+=======
+  /**
+   * Hook for adding custom attributes when exception is received from aws.
+   * This hook is only available with aws sdk v3
+   */
+  exceptionHook?: AwsSdkExceptionCustomAttributeFunction;
+
+  /** hook for adding custom attribute when an sqs process span is started */
+  sqsProcessHook?: AwsSdkSqsProcessCustomAttributeFunction;
+
+>>>>>>> main
   /** custom serializer function for the db.statement attribute in DynamoDB spans */
   dynamoDBStatementSerializer?: AwsSdkDynamoDBStatementSerializer;
 

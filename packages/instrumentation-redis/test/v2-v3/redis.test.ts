@@ -62,8 +62,7 @@ const unsetStatus: SpanStatus = {
 
 describe('redis v2-v3', () => {
   let redis: any;
-  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
-  const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
+  const shouldTest = process.env.RUN_REDIS_TESTS;
   const tracer = trace.getTracer('external');
 
   before(function () {
@@ -75,17 +74,7 @@ describe('redis v2-v3', () => {
       this.skip();
     }
 
-    if (shouldTestLocal) {
-      testUtils.startDocker('redis');
-    }
-
     redis = require('redis');
-  });
-
-  after(() => {
-    if (shouldTestLocal) {
-      testUtils.cleanUpDocker('redis');
-    }
   });
 
   describe('#createClient()', () => {
