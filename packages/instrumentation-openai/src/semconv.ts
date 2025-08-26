@@ -21,13 +21,16 @@
  */
 
 /**
- * The ARN of the AWS SNS Topic. An Amazon SNS [topic](https://docs.aws.amazon.com/sns/latest/dg/sns-create-topic.html) is a logical access point that acts as a communication channel.
+ * Identifies the class / type of event.
  *
- * @example arn:aws:sns:us-east-1:123456789012:mystack-mytopic-NZJ5JSMVGFIE
+ * @example browser.mouse.click
+ * @example device.app.lifecycle
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by EventName top-level field on the LogRecord.
  */
-export const ATTR_AWS_SNS_TOPIC_ARN = 'aws.sns.topic.arn' as const;
+export const ATTR_EVENT_NAME = 'event.name' as const;
 
 /**
  * The name of the operation being performed.
@@ -37,6 +40,29 @@ export const ATTR_AWS_SNS_TOPIC_ARN = 'aws.sns.topic.arn' as const;
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_GEN_AI_OPERATION_NAME = 'gen_ai.operation.name' as const;
+
+/**
+ * The encoding formats requested in an embeddings operation, if specified.
+ *
+ * @example ["base64"]
+ * @example ["float", "binary"]
+ *
+ * @note In some GenAI systems the encoding formats are called embedding types. Also, some GenAI systems only accept a single format per request.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_REQUEST_ENCODING_FORMATS =
+  'gen_ai.request.encoding_formats' as const;
+
+/**
+ * The frequency penalty setting for the GenAI request.
+ *
+ * @example 0.1
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY =
+  'gen_ai.request.frequency_penalty' as const;
 
 /**
  * The maximum number of tokens the model generates for a request.
@@ -56,6 +82,16 @@ export const ATTR_GEN_AI_REQUEST_MAX_TOKENS =
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_GEN_AI_REQUEST_MODEL = 'gen_ai.request.model' as const;
+
+/**
+ * The presence penalty setting for the GenAI request.
+ *
+ * @example 0.1
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY =
+  'gen_ai.request.presence_penalty' as const;
 
 /**
  * List of sequences that the model will use to stop generating further tokens.
@@ -96,6 +132,24 @@ export const ATTR_GEN_AI_REQUEST_TOP_P = 'gen_ai.request.top_p' as const;
  */
 export const ATTR_GEN_AI_RESPONSE_FINISH_REASONS =
   'gen_ai.response.finish_reasons' as const;
+
+/**
+ * The unique identifier for the completion.
+ *
+ * @example chatcmpl-123
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_RESPONSE_ID = 'gen_ai.response.id' as const;
+
+/**
+ * The name of the model that generated the response.
+ *
+ * @example gpt-4-0613
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_RESPONSE_MODEL = 'gen_ai.response.model' as const;
 
 /**
  * The Generative AI product as identified by the client or server instrumentation.
@@ -149,93 +203,17 @@ export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS =
   'gen_ai.usage.output_tokens' as const;
 
 /**
- * The number of messages sent, received, or processed in the scope of the batching operation.
+ * GenAI operation duration
  *
- * @example 0
- * @example 1
- * @example 2
- *
- * @note Instrumentations **SHOULD NOT** set `messaging.batch.message_count` on spans that operate with a single message. When a messaging client library supports both batch and single-message API for the same operation, instrumentations **SHOULD** use `messaging.batch.message_count` for batching APIs and **SHOULD NOT** use it for single-message APIs.
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_MESSAGING_BATCH_MESSAGE_COUNT =
-  'messaging.batch.message_count' as const;
+export const METRIC_GEN_AI_CLIENT_OPERATION_DURATION =
+  'gen_ai.client.operation.duration' as const;
 
 /**
- * The message destination name
+ * Measures number of input and output tokens used
  *
- * @example MyQueue
- * @example MyTopic
- *
- * @note Destination name **SHOULD** uniquely identify a specific queue, topic or other entity within the broker. If
- * the broker doesn't have such notion, the destination name **SHOULD** uniquely identify the broker.
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_MESSAGING_DESTINATION_NAME =
-  'messaging.destination.name' as const;
-
-/**
- * A value used by the messaging system as an identifier for the message, represented as a string.
- *
- * @example "452a7c7c7c7048c2f887f61572b18fc2"
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const ATTR_MESSAGING_MESSAGE_ID = 'messaging.message.id' as const;
-
-/**
- * A string identifying the type of the messaging operation.
- *
- * @note If a custom value is used, it **MUST** be of low cardinality.
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const ATTR_MESSAGING_OPERATION_TYPE =
-  'messaging.operation.type' as const;
-
-/**
- * Enum value "chat" for attribute {@link ATTR_GEN_AI_OPERATION_NAME}.
- *
- * Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
- *
- * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const GEN_AI_OPERATION_NAME_VALUE_CHAT = 'chat' as const;
-
-/**
- * Enum value "aws.bedrock" for attribute {@link ATTR_GEN_AI_SYSTEM}.
- *
- * AWS Bedrock
- *
- * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const GEN_AI_SYSTEM_VALUE_AWS_BEDROCK = 'aws.bedrock' as const;
-
-/**
- * Enum value "input" for attribute {@link ATTR_GEN_AI_TOKEN_TYPE}.
- *
- * Input tokens (prompt, input, etc.)
- *
- * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
-
-/**
- * Enum value "output" for attribute {@link ATTR_GEN_AI_TOKEN_TYPE}.
- *
- * Output tokens (completion, response, etc.)
- *
- * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
-
-/**
- * Originally from '@opentelemetry/semantic-conventions/incubating'
- * https://github.com/open-telemetry/semantic-conventions/blob/main/docs/registry/attributes/aws.md#amazon-secrets-manager-attributes
- * The ARN of the Secret stored in the Secrets Mangger
- * @example arn:aws:secretsmanager:us-east-1:123456789012:secret:SecretName-6RandomCharacters
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const ATTR_AWS_SECRETSMANAGER_SECRET_ARN =
-  'aws.secretsmanager.secret.arn' as const;
+export const METRIC_GEN_AI_CLIENT_TOKEN_USAGE =
+  'gen_ai.client.token.usage' as const;
