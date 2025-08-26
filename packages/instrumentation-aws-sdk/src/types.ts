@@ -77,18 +77,12 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
   /** hook for adding custom attributes when response is received from aws */
   responseHook?: AwsSdkResponseCustomAttributeFunction;
 
-<<<<<<< HEAD
-=======
   /**
    * Hook for adding custom attributes when exception is received from aws.
    * This hook is only available with aws sdk v3
    */
   exceptionHook?: AwsSdkExceptionCustomAttributeFunction;
 
-  /** hook for adding custom attribute when an sqs process span is started */
-  sqsProcessHook?: AwsSdkSqsProcessCustomAttributeFunction;
-
->>>>>>> main
   /** custom serializer function for the db.statement attribute in DynamoDB spans */
   dynamoDBStatementSerializer?: AwsSdkDynamoDBStatementSerializer;
 
