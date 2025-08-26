@@ -1,5 +1,6 @@
 {
   "name": "instrumentation-langchain",
+  "private": true,
   "version": "1.0.0",
   "description": "Langchain.js instrumentation following OpenTelemetry semantic convention.",
   "main": "dist/src/index.js",
