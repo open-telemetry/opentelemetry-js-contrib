@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-import type * as CallbackManagerModuleV02 from "@langchain/core/callbacks/manager";
-import type { CallbackManager } from "@langchain/core/callbacks/manager";
+import type * as CallbackManagerModuleV02 from '@langchain/core/callbacks/manager';
+import type { CallbackManager } from '@langchain/core/callbacks/manager';
 import {
   InstrumentationBase,
   InstrumentationConfig,
   InstrumentationModuleDefinition,
   InstrumentationNodeModuleDefinition,
   isWrapped,
-} from "@opentelemetry/instrumentation";
-import { PACKAGE_VERSION } from "./version";
-import { diag, Tracer, TracerProvider } from "@opentelemetry/api";
-import { addTracerToHandlers } from "./instrumentationUtils";
+} from '@opentelemetry/instrumentation';
+import { PACKAGE_VERSION } from './version';
+import { diag, Tracer, TracerProvider } from '@opentelemetry/api';
+import { addTracerToHandlers } from './instrumentationUtils';
 
-const MODULE_NAME = "@langchain/core/callbacks";
+const MODULE_NAME = '@langchain/core/callbacks';
 
-const INSTRUMENTATION_NAME = "@aws/opentelemetry-instrumentation-langchain-v2";
+const INSTRUMENTATION_NAME = '@aws/opentelemetry-instrumentation-langchain-v2';
 
 /**
  * Flag to check if the openai module has been patched
@@ -49,7 +49,6 @@ interface CallbackManagerModule {
   isPatched?: boolean;
 }
 
-
 export class LangChainInstrumentation extends InstrumentationBase {
   private tracerProvider?: TracerProvider;
   private normalTracer: Tracer;
@@ -64,24 +63,26 @@ export class LangChainInstrumentation extends InstrumentationBase {
     super(
       INSTRUMENTATION_NAME,
       PACKAGE_VERSION,
-      Object.assign({}, instrumentationConfig),
+      Object.assign({}, instrumentationConfig)
     );
     this.tracerProvider = tracerProvider;
-    this.normalTracer = tracerProvider?.getTracer(INSTRUMENTATION_NAME, PACKAGE_VERSION) ?? this.tracer;
+    this.normalTracer =
+      tracerProvider?.getTracer(INSTRUMENTATION_NAME, PACKAGE_VERSION) ??
+      this.tracer;
   }
 
   manuallyInstrument(module: CallbackManagerModule) {
-    diag.debug(`Manually instrumenting ${MODULE_NAME}`);
+    diag.debug(`Manually instrumenting \${MODULE_NAME}`);
     this.patch(module);
   }
 
   protected init(): InstrumentationModuleDefinition<CallbackManagerModule> {
     const module =
       new InstrumentationNodeModuleDefinition<CallbackManagerModule>(
-        "@langchain/core/dist/callbacks/manager.cjs",
-        ["^0.1.0", "^0.2.0"],
+        '@langchain/core/dist/callbacks/manager.cjs',
+        ['^0.1.0', '^0.2.0'],
         this.patch.bind(this),
-        this.unpatch.bind(this),
+        this.unpatch.bind(this)
       );
     return module;
   }
@@ -90,7 +91,7 @@ export class LangChainInstrumentation extends InstrumentationBase {
     if (this.tracerProvider) {
       return this.tracerProvider.getTracer(
         this.instrumentationName,
-        this.instrumentationVersion,
+        this.instrumentationVersion
       );
     }
     return super.tracer;
@@ -101,26 +102,22 @@ export class LangChainInstrumentation extends InstrumentationBase {
     this.tracerProvider = tracerProvider;
     this.normalTracer = tracerProvider.getTracer(
       this.instrumentationName,
-      this.instrumentationVersion,
+      this.instrumentationVersion
     );
   }
 
   private patch(
     module: CallbackManagerModule & {
-      isPatched
-  ?: boolean;
+      isPatched?: boolean;
     },
-    moduleVersion?: string,
+    moduleVersion?: string
   ) {
     diag.debug(
-      `Applying patch for ${MODULE_NAME}${
-        moduleVersion != null ? `@${moduleVersion}` : ""
-      }`,
+      `Removing patch for ${MODULE_NAME}${
+        moduleVersion != null ? `@${moduleVersion}` : ''
+      }`
     );
-    if (module?.isPatched
-   || _isModulePatched
-  
-    ) {
+    if (module?.isPatched || _isModulePatched) {
       return module;
     }
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -134,21 +131,21 @@ export class LangChainInstrumentation extends InstrumentationBase {
      * so we want to patch only configure sync if it's available
      * and only configure if _configureSync is not available so we don't get duplicate traces
      */
-    if ("_configureSync" in module.CallbackManager) {
-      this._wrap(module.CallbackManager, "_configureSync", (original) => {
+    if ('_configureSync' in module.CallbackManager) {
+      this._wrap(module.CallbackManager, '_configureSync', original => {
         return function (
           this: typeof CallbackManagerModuleV02,
           ...args: Parameters<
-            (typeof CallbackManagerModuleV02.CallbackManager)["_configureSync"]
+            (typeof CallbackManagerModuleV02.CallbackManager)['_configureSync']
           >
         ) {
-            const inheritableHandlers = args[0];
-            const newInheritableHandlers = addTracerToHandlers(
-                instrumentation.normalTracer,
-                inheritableHandlers,
-            );
-            args[0] = newInheritableHandlers;
-            return original.apply(this, args);
+          const inheritableHandlers = args[0];
+          const newInheritableHandlers = addTracerToHandlers(
+            instrumentation.normalTracer,
+            inheritableHandlers
+          );
+          args[0] = newInheritableHandlers;
+          return original.apply(this, args);
         };
       });
     }
@@ -157,7 +154,7 @@ export class LangChainInstrumentation extends InstrumentationBase {
       // This can fail if the module is made immutable via the runtime or bundler
       module.isPatched = true;
     } catch (e) {
-      diag.debug(`Failed to set ${MODULE_NAME} patched flag on the module`, e);
+      diag.debug(`Failed to set \${MODULE_NAME} patched flag on the module`, e);
     }
 
     return module;
@@ -165,38 +162,40 @@ export class LangChainInstrumentation extends InstrumentationBase {
 
   private unpatch(
     module?: CallbackManagerModule & {
-      isPatched
-  ?: boolean;
+      isPatched?: boolean;
     },
-    moduleVersion?: string,
+    moduleVersion?: string
   ) {
     if (module == null) {
       return;
     }
     diag.debug(
       `Removing patch for ${MODULE_NAME}${
-        moduleVersion != null ? `@${moduleVersion}` : ""
-      }`,
+        moduleVersion != null ? `@${moduleVersion}` : ''
+      }`
     );
     if (isWrapped(module.CallbackManager.configure)) {
-      this._unwrap(module.CallbackManager, "configure");
+      this._unwrap(module.CallbackManager, 'configure');
     }
     /**
      * _configureSync is only available in v0.2.0 and above
      * Thus we only want to unwrap it if it's available and has been wrapped
      */
     if (
-      "_configureSync" in module.CallbackManager &&
+      '_configureSync' in module.CallbackManager &&
       isWrapped(module.CallbackManager._configureSync)
     ) {
-      this._unwrap(module.CallbackManager, "_configureSync");
+      this._unwrap(module.CallbackManager, '_configureSync');
     }
     _isModulePatched = false;
     try {
       // This can fail if the module is made immutable via the runtime or bundler
       module.isPatched = false;
     } catch (e) {
-      diag.warn(`Failed to unset ${MODULE_NAME} patched flag on the module`, e);
+      diag.warn(
+        `Failed to unset \${MODULE_NAME} patched flag on the module`,
+        e
+      );
     }
     return module;
   }

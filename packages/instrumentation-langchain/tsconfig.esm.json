@@ -4,7 +4,7 @@
     "module": "ES2020",
     "moduleResolution": "node",
     "outDir": "dist/esm",
-    "rootDir": "src", // Changed from "src" to "."
+    "rootDir": "src", 
     "tsBuildInfoFile": "dist/esm/tsconfig.esm.tsbuildinfo",
     
     /* Core TypeScript Options */

@@ -1,5 +1,5 @@
 {
-  "name": "instrumentation-langchain",
+  "name": "@opentelemetry/instrumentation-langchain",
   "private": true,
   "version": "1.0.0",
   "description": "Langchain.js instrumentation following OpenTelemetry semantic convention.",
@@ -53,7 +53,7 @@
     "type:check": "tsc --noEmit",
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-koa",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-langchain",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",

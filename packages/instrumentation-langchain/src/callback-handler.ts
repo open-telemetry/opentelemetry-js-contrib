@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 import { Span, SpanKind, Tracer, SpanStatusCode } from '@opentelemetry/api';
 import { context, trace } from '@opentelemetry/api';
 import { GenAIOperationValues, Span_Attributes } from './span-attributes';
@@ -24,7 +22,6 @@ import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
 import { LLMResult } from '@langchain/core/outputs';
 import { AgentAction, AgentFinish } from '@langchain/core/agents';
 import { BaseMessage } from '@langchain/core/messages';
-
 
 const ASSOCIATION_PROPERTIES_KEY = Symbol('association_properties');
 const _SUPPRESS_INSTRUMENTATION_KEY = Symbol('suppress-instrumentation');
@@ -43,68 +40,109 @@ class SpanHolder {
   }
 }
 
-function _setReqParamsFromSerial(span: Span, serialized: Serialized, spanHolder: SpanHolder): void {
-  if (serialized && "kwargs" in serialized) {
-    let model_id = serialized["kwargs"]["model_id"];
-    let temperature = serialized["kwargs"]["temperature"];
-    let max_tokens = serialized["kwargs"]["max_tokens"];
-    let stop_sequences = serialized["kwargs"]["stop_sequences"];
-    let top_p = serialized["kwargs"]["top_p"];
+function _setReqParamsFromSerial(
+  span: Span,
+  serialized: Serialized,
+  spanHolder: SpanHolder
+): void {
+  if (serialized && 'kwargs' in serialized) {
+    const model_id = serialized['kwargs']['model_id'];
+    const temperature = serialized['kwargs']['temperature'];
+    const max_tokens = serialized['kwargs']['max_tokens'];
+    const stop_sequences = serialized['kwargs']['stop_sequences'];
+    const top_p = serialized['kwargs']['top_p'];
 
     spanHolder.requestModel = model_id;
 
     _setSpanAttribute(span, Span_Attributes.GEN_AI_REQUEST_MODEL, model_id);
     _setSpanAttribute(span, Span_Attributes.GEN_AI_RESPONSE_MODEL, model_id);
-    _setSpanAttribute(span, Span_Attributes.GEN_AI_REQUEST_TEMPERATURE, temperature);
-    _setSpanAttribute(span, Span_Attributes.GEN_AI_REQUEST_MAX_TOKENS, max_tokens);
-    _setSpanAttribute(span, Span_Attributes.GEN_AI_REQUEST_STOP_SEQUENCES, stop_sequences);
+    _setSpanAttribute(
+      span,
+      Span_Attributes.GEN_AI_REQUEST_TEMPERATURE,
+      temperature
+    );
+    _setSpanAttribute(
+      span,
+      Span_Attributes.GEN_AI_REQUEST_MAX_TOKENS,
+      max_tokens
+    );
+    _setSpanAttribute(
+      span,
+      Span_Attributes.GEN_AI_REQUEST_STOP_SEQUENCES,
+      stop_sequences
+    );
     _setSpanAttribute(span, Span_Attributes.GEN_AI_REQUEST_TOP_P, top_p);
   }
 
-  if (serialized && serialized["id"]) {
-    _setSpanAttribute(span, Span_Attributes.GEN_AI_SYSTEM, serialized["id"][serialized["id"].length - 1]);
+  if (serialized && serialized['id']) {
+    _setSpanAttribute(
+      span,
+      Span_Attributes.GEN_AI_SYSTEM,
+      serialized['id'][serialized['id'].length - 1]
+    );
   }
 }
 
-function _setReqParamFromLS(span: Span, metadata: Record<string, any>, spanHolder: SpanHolder): void {
-  
+function _setReqParamFromLS(
+  span: Span,
+  metadata: Record<string, any>,
+  spanHolder: SpanHolder
+): void {
   if (metadata) {
-    let model_id = metadata.ls_model_name;
-    let temperature = metadata.ls_temperature;
-    let max_tokens = metadata.ls_max_tokens;
-    let provider = metadata.ls_provider;
-    let model_type = metadata.model_type;
+    const model_id = metadata.ls_model_name;
+    const temperature = metadata.ls_temperature;
+    const max_tokens = metadata.ls_max_tokens;
+    const provider = metadata.ls_provider;
+    const model_type = metadata.model_type;
 
     spanHolder.requestModel = model_id;
     _setSpanAttribute(span, Span_Attributes.GEN_AI_REQUEST_MODEL, model_id);
     _setSpanAttribute(span, Span_Attributes.GEN_AI_RESPONSE_MODEL, model_id);
-    _setSpanAttribute(span, Span_Attributes.GEN_AI_REQUEST_TEMPERATURE, temperature);
-    _setSpanAttribute(span, Span_Attributes.GEN_AI_REQUEST_MAX_TOKENS, max_tokens);
+    _setSpanAttribute(
+      span,
+      Span_Attributes.GEN_AI_REQUEST_TEMPERATURE,
+      temperature
+    );
+    _setSpanAttribute(
+      span,
+      Span_Attributes.GEN_AI_REQUEST_MAX_TOKENS,
+      max_tokens
+    );
     _setSpanAttribute(span, Span_Attributes.GEN_AI_SYSTEM, provider);
     _setSpanAttribute(span, Span_Attributes.GEN_AI_OPERATION_NAME, model_type);
   }
 }
 
-
-function _getNameFromCallback(serialized: Serialized, extraParams?: Record<string, any>, metadata?: Record<string, any>) : any {
-  
-  if (metadata && metadata["ls_model_name"]) {
-    return metadata["ls_model_name"];
+function _getNameFromCallback(
+  serialized: Serialized,
+  extraParams?: Record<string, any>,
+  metadata?: Record<string, any>
+): any {
+  if (metadata && metadata['ls_model_name']) {
+    return metadata['ls_model_name'];
   }
 
-  if (serialized && "kwargs" in serialized && "model_id" in serialized["kwargs"]) {
-    return serialized["kwargs"]["model_id"];
+  if (
+    serialized &&
+    'kwargs' in serialized &&
+    'model_id' in serialized['kwargs']
+  ) {
+    return serialized['kwargs']['model_id'];
   }
 
-  if (extraParams && extraParams["invocation_params"] && extraParams["invocation_params"]["model"]) {
-    return extraParams["invocation_params"]["model"];
+  if (
+    extraParams &&
+    extraParams['invocation_params'] &&
+    extraParams['invocation_params']['model']
+  ) {
+    return extraParams['invocation_params']['model'];
   }
 
   if (serialized && serialized.id) {
     return serialized.id[serialized.id.length - 1];
   }
 
-  return "unknown";
+  return 'unknown';
 }
 
 function _setSpanAttribute(span: Span, name: string, value: any): void {
@@ -118,8 +156,12 @@ function _sanitizeMetadataValue(value: any): any {
     return null;
   }
 
-  if (typeof value === 'boolean' || typeof value === 'string' || 
-      typeof value === 'number' || Buffer.isBuffer(value)) {
+  if (
+    typeof value === 'boolean' ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    Buffer.isBuffer(value)
+  ) {
     return value;
   }
 
@@ -133,7 +175,7 @@ function _sanitizeMetadataValue(value: any): any {
 export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
   public tracer: Tracer;
   public spanMapping: Map<string, SpanHolder> = new Map();
-  name = "opentelemetry-callback-handler";
+  name = 'opentelemetry-callback-handler';
 
   constructor(tracer: Tracer) {
     super();
@@ -164,19 +206,21 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
     metadata = metadata || {};
 
     if (metadata !== null) {
-      const currentAssociationProperties = (context.active().getValue(ASSOCIATION_PROPERTIES_KEY) || {}) as Record<string, any>;
-      let sanitizedMetadata = {};
-      
+      const currentAssociationProperties = (context
+        .active()
+        .getValue(ASSOCIATION_PROPERTIES_KEY) || {}) as Record<string, any>;
+      const sanitizedMetadata = {};
+
       for (const [k, v] of Object.entries(metadata)) {
         if (v !== null && v !== undefined) {
           sanitizedMetadata[k] = _sanitizeMetadataValue(v);
         }
       }
-      
-      context.active().setValue(
-        ASSOCIATION_PROPERTIES_KEY,
-        { ...currentAssociationProperties, ...sanitizedMetadata }
-      );
+
+      context.active().setValue(ASSOCIATION_PROPERTIES_KEY, {
+        currentAssociationProperties,
+        sanitizedMetadata,
+      });
     }
 
     let span: Span;
@@ -199,10 +243,9 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
     if (parentRunId && this.spanMapping.has(parentRunId)) {
       this.spanMapping.get(parentRunId)!.children.push(runId);
     }
-    
+
     return span;
   }
-
 
   private _handleError(
     error: Error,
@@ -221,22 +264,20 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
     const span = this.spanMapping.get(runId)!.span;
     span.setStatus({
       code: SpanStatusCode.ERROR,
-      message: error.message
+      message: error.message,
     });
     span.recordException(error);
     this._endSpan(span, runId);
   }
 
-
   async handleChatModelStart(
     llm: Serialized,
     messages: BaseMessage[][],
-    runId: string, 
-    parentRunId?: string, 
-    extraParams?: Record<string, unknown>, 
-    tags?: string[], 
-    metadata?: Record<string, unknown>, 
-    runName?: string
+    runId: string,
+    parentRunId?: string,
+    extraParams?: Record<string, unknown>,
+    tags?: string[],
+    metadata?: Record<string, unknown>
   ): Promise<any> {
     if (context.active().getValue(_SUPPRESS_INSTRUMENTATION_KEY)) {
       return;
@@ -244,14 +285,26 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
 
     const name = _getNameFromCallback(llm, extraParams, metadata);
 
-    const spanName = GenAIOperationValues.CHAT + " " + name;
-    const span = this._createSpan(runId, parentRunId,
-                                  spanName, 
-                                  SpanKind.CLIENT, metadata);
-    
-    _setSpanAttribute(span, Span_Attributes.GEN_AI_OPERATION_NAME, GenAIOperationValues.CHAT);
-    _setSpanAttribute(span, Span_Attributes.GEN_AI_SYSTEM, GenAIOperationValues.UNKNOWN);
-    if (llm && "kwargs" in llm) {
+    const spanName = GenAIOperationValues.CHAT + ' ' + name;
+    const span = this._createSpan(
+      runId,
+      parentRunId,
+      spanName,
+      SpanKind.CLIENT,
+      metadata
+    );
+
+    _setSpanAttribute(
+      span,
+      Span_Attributes.GEN_AI_OPERATION_NAME,
+      GenAIOperationValues.CHAT
+    );
+    _setSpanAttribute(
+      span,
+      Span_Attributes.GEN_AI_SYSTEM,
+      GenAIOperationValues.UNKNOWN
+    );
+    if (llm && 'kwargs' in llm) {
       _setReqParamsFromSerial(span, llm, this.spanMapping.get(runId)!);
     }
     if (metadata && Object.keys(metadata).length > 0) {
@@ -260,27 +313,37 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
   }
 
   async handleLLMStart(
-    llm: Serialized, 
-    prompt: string[], 
-    runId: string, 
-    parentRunId?: string, 
-    extraParams?: Record<string, unknown>, 
-    tags?: string[], 
-    metadata?: Record<string, unknown>, 
-    runName?: string
+    llm: Serialized,
+    prompt: string[],
+    runId: string,
+    parentRunId?: string,
+    extraParams?: Record<string, unknown>,
+    tags?: string[],
+    metadata?: Record<string, unknown>
   ): Promise<any> {
     if (context.active().getValue(_SUPPRESS_INSTRUMENTATION_KEY)) {
       return;
     }
     const name = _getNameFromCallback(llm, extraParams, metadata);
-    const spanName = GenAIOperationValues.CHAT + " " + name;
+    const spanName = GenAIOperationValues.CHAT + ' ' + name;
     const span = this._createSpan(
-      runId, parentRunId,
+      runId,
+      parentRunId,
       spanName,
-      SpanKind.CLIENT, metadata);
+      SpanKind.CLIENT,
+      metadata
+    );
 
-    _setSpanAttribute(span, Span_Attributes.GEN_AI_SYSTEM, GenAIOperationValues.UNKNOWN);
-    _setSpanAttribute(span, Span_Attributes.GEN_AI_OPERATION_NAME, GenAIOperationValues.TEXT_COMPLETION);
+    _setSpanAttribute(
+      span,
+      Span_Attributes.GEN_AI_SYSTEM,
+      GenAIOperationValues.UNKNOWN
+    );
+    _setSpanAttribute(
+      span,
+      Span_Attributes.GEN_AI_OPERATION_NAME,
+      GenAIOperationValues.TEXT_COMPLETION
+    );
 
     if (llm) {
       _setReqParamsFromSerial(span, llm, this.spanMapping.get(runId)!);
@@ -290,13 +353,7 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
     }
   }
 
-  async handleLLMEnd(
-    output: LLMResult, 
-    runId: string, 
-    parentRunId?: string, 
-    tags?: string[], 
-    extraParams?: Record<string, unknown>
-  ): Promise<any> {
+  async handleLLMEnd(output: LLMResult, runId: string): Promise<any> {
     if (context.active().getValue(_SUPPRESS_INSTRUMENTATION_KEY)) {
       return;
     }
@@ -310,12 +367,24 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
         if (message.usage_metadata) {
           const inputTokens = message.usage_metadata.input_tokens;
           const outputTokens = message.usage_metadata.output_tokens;
-          _setSpanAttribute(span, Span_Attributes.GEN_AI_USAGE_INPUT_TOKENS, inputTokens);
-          _setSpanAttribute(span, Span_Attributes.GEN_AI_USAGE_OUTPUT_TOKENS, outputTokens);
+          _setSpanAttribute(
+            span,
+            Span_Attributes.GEN_AI_USAGE_INPUT_TOKENS,
+            inputTokens
+          );
+          _setSpanAttribute(
+            span,
+            Span_Attributes.GEN_AI_USAGE_OUTPUT_TOKENS,
+            outputTokens
+          );
         }
         if (message.id) {
-          let response_id = message.id;
-          _setSpanAttribute(span, Span_Attributes.GEN_AI_RESPONSE_ID, response_id);
+          const response_id = message.id;
+          _setSpanAttribute(
+            span,
+            Span_Attributes.GEN_AI_RESPONSE_ID,
+            response_id
+          );
         }
       }
     }
@@ -323,56 +392,52 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
   }
 
   async handleLLMError(
-    err: any, 
-    runId: string, 
-    parentRunId?: string, 
-    tags?: string[], 
-    extraParams?: Record<string, unknown>
+    err: any,
+    runId: string,
+    parentRunId?: string
   ): Promise<any> {
-    this._handleError(err, runId, parentRunId, extraParams);
+    this._handleError(err, runId, parentRunId);
   }
 
   async handleChainStart(
-    chain: Serialized, 
-    inputs: ChainValues, 
-    runId: string, 
-    parentRunId?: string, 
-    tags?: string[], 
-    metadata?: Record<string, unknown>, 
-    runType?: string, 
-    runName?: string,
+    chain: Serialized,
+    inputs: ChainValues,
+    runId: string,
+    parentRunId?: string,
+    tags?: string[],
+    metadata?: Record<string, unknown>,
+    runType?: string
   ): Promise<any> {
     if (context.active().getValue(_SUPPRESS_INSTRUMENTATION_KEY)) {
       return;
     }
 
-
-
-    let name = runName;
+    let name = runType;
     if (name === undefined && chain.id) {
       name = chain.id[chain.id.length - 1];
-    } 
+    }
 
-    const spanName = `chain ${name}`;
-    const span = this._createSpan(runId, parentRunId, spanName, SpanKind.INTERNAL, metadata);
+    const spanName = `chain \${name}`;
+    const span = this._createSpan(
+      runId,
+      parentRunId,
+      spanName,
+      SpanKind.INTERNAL,
+      metadata
+    );
 
     const spanContext = trace.setSpan(context.active(), span);
     if (metadata && metadata.agent_name) {
-      _setSpanAttribute(span, Span_Attributes.GEN_AI_AGENT_NAME, metadata.agent_name);
+      _setSpanAttribute(
+        span,
+        Span_Attributes.GEN_AI_AGENT_NAME,
+        metadata.agent_name
+      );
     }
     _setSpanAttribute(span, 'gen_ai.prompt', JSON.stringify(inputs, null, 2));
   }
 
-
-  async handleChainEnd(
-    outputs: ChainValues, 
-    runId: string, 
-    parentRunId?: string,
-    tags?: string[], 
-    kwargs?: {
-        inputs?: Record<string, unknown>;
-    }
-  ): Promise<any> {
+  async handleChainEnd(outputs: ChainValues, runId: string): Promise<any> {
     if (context.active().getValue(_SUPPRESS_INSTRUMENTATION_KEY)) {
       return;
     }
@@ -383,42 +448,47 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
 
     const spanHolder = this.spanMapping.get(runId)!;
     const span = spanHolder.span;
-    
-    _setSpanAttribute(span, 'gen_ai.completion', JSON.stringify(outputs, null, 2));
+
+    _setSpanAttribute(
+      span,
+      'gen_ai.completion',
+      JSON.stringify(outputs, null, 2)
+    );
     this._endSpan(span, runId);
   }
 
   async handleChainError(
-    err: any, 
-    runId: string, 
-    parentRunId?: string, 
-    tags?: string[], 
-    kwargs?: {
-        inputs?: Record<string, unknown>;
-    }
+    err: any,
+    runId: string,
+    parentRunId?: string
   ): Promise<any> {
-     this._handleError(err, runId, parentRunId, kwargs);
+    this._handleError(err, runId, parentRunId);
   }
 
   async handleToolStart(
-    tool: Serialized, 
-    input: string, 
-    runId: string, 
-    parentRunId?: string, 
-    tags?: string[], 
-    metadata?: Record<string, unknown>, 
-    runName?: string
+    tool: Serialized,
+    input: string,
+    runId: string,
+    parentRunId?: string,
+    tags?: string[],
+    metadata?: Record<string, unknown>
   ): Promise<any> {
     if (context.active().getValue(_SUPPRESS_INSTRUMENTATION_KEY)) {
       return;
     }
 
-    let name = runName;
+    let name;
     if (name === undefined && tool.id) {
       name = tool.id[tool.id.length - 1];
-    } 
-    const spanName = `execute_tool ${name}`;
-    const span = this._createSpan(runId, parentRunId, spanName, SpanKind.INTERNAL, metadata);
+    }
+    const spanName = `execute_tool \${name}`;
+    const span = this._createSpan(
+      runId,
+      parentRunId,
+      spanName,
+      SpanKind.INTERNAL,
+      metadata
+    );
 
     _setSpanAttribute(span, 'gen_ai.tool.input', input);
 
@@ -427,15 +497,14 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
     }
 
     _setSpanAttribute(span, Span_Attributes.GEN_AI_TOOL_NAME, name);
-    _setSpanAttribute(span, Span_Attributes.GEN_AI_OPERATION_NAME, GenAIOperationValues.EXECUTE_TOOL);
+    _setSpanAttribute(
+      span,
+      Span_Attributes.GEN_AI_OPERATION_NAME,
+      GenAIOperationValues.EXECUTE_TOOL
+    );
   }
 
-  async handleToolEnd(
-    output: any, 
-    runId: string, 
-    parentRunId?: string, 
-    tags?: string[],
-  ): Promise<any> {
+  async handleToolEnd(output: any, runId: string): Promise<any> {
     if (context.active().getValue(_SUPPRESS_INSTRUMENTATION_KEY)) {
       return;
     }
@@ -445,9 +514,9 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
     }
     const span = this.spanMapping.get(runId)!.span;
 
-    if (output["kwargs"]) {
-      let content = output["kwargs"]["content"];
-      let call_id = output["kwargs"]["tool_call_id"];
+    if (output['kwargs']) {
+      const content = output['kwargs']['content'];
+      const call_id = output['kwargs']['tool_call_id'];
       _setSpanAttribute(span, 'gen_ai.tool.output', content);
       _setSpanAttribute(span, Span_Attributes.GEN_AI_TOOL_CALL_ID, call_id);
     }
@@ -455,41 +524,38 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
   }
 
   async handleToolError(
-    err: any, 
-    runId: string, 
-    parentRunId?: string, 
-    tags?: string[]
+    err: any,
+    runId: string,
+    parentRunId?: string
   ): Promise<any> {
     this._handleError(err, runId, parentRunId, {});
   }
 
-  async handleAgentAction(
-    action: AgentAction, 
-    runId: string, 
-    parentRunId?: string, 
-    tags?: string[],
-  ): Promise<void> {
+  async handleAgentAction(action: AgentAction, runId: string): Promise<void> {
     const tool = action.tool;
     const toolInput = action.toolInput;
 
     if (this.spanMapping.has(runId)) {
-      const span = this.spanMapping.get(runId)!.span;
-      
+      const span = this.spanMapping.get(runId).span;
+
       _setSpanAttribute(span, 'gen_ai.agent.tool.input', toolInput);
       _setSpanAttribute(span, 'gen_ai.agent.tool.name', tool);
-      _setSpanAttribute(span, Span_Attributes.GEN_AI_OPERATION_NAME, GenAIOperationValues.INVOKE_AGENT);
+      _setSpanAttribute(
+        span,
+        Span_Attributes.GEN_AI_OPERATION_NAME,
+        GenAIOperationValues.INVOKE_AGENT
+      );
     }
   }
 
-  async handleAgentEnd(
-    action: AgentFinish, 
-    runId: string, 
-    parentRunId?: string, 
-    tags?: string[],
-  ): Promise<void> {
+  async handleAgentEnd(action: AgentFinish, runId: string): Promise<void> {
     if (this.spanMapping.has(runId)) {
-      const span = this.spanMapping.get(runId)!.span;
-      _setSpanAttribute(span, 'gen_ai.agent.tool.output', action.returnValues.output);
+      const span = this.spanMapping.get(runId).span;
+      _setSpanAttribute(
+        span,
+        'gen_ai.agent.tool.output',
+        action.returnValues.output
+      );
     }
   }
 }

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import { addTracerToHandlers } from "../src/instrumentationUtils";
-import { OpenTelemetryCallbackHandler } from "../src/callback-handler";
-import { Tracer } from "@opentelemetry/api";
+import { addTracerToHandlers } from '../src/instrumentationUtils';
+import { OpenTelemetryCallbackHandler } from '../src/callback-handler';
+import { Tracer } from '@opentelemetry/api';
 
-describe("addTracerToHandlers", () => {
-  it("should add a tracer if there are no handlers", () => {
+describe('addTracerToHandlers', () => {
+  it('should add a tracer if there are no handlers', () => {
     const tracer = {} as Tracer;
 
     const result = addTracerToHandlers(tracer);
@@ -31,7 +31,7 @@ describe("addTracerToHandlers", () => {
     }
   });
 
-  it("should add a handler to a pre-existing array of handlers", () => {
+  it('should add a handler to a pre-existing array of handlers', () => {
     const tracer = {} as Tracer;
     const handlers = [{}];
 
@@ -44,7 +44,7 @@ describe("addTracerToHandlers", () => {
     }
   });
 
-  it("should not add a handler if it already exists in an array of handlers", () => {
+  it('should not add a handler if it already exists in an array of handlers', () => {
     const tracer = {} as Tracer;
     const callbackHandler = new OpenTelemetryCallbackHandler(tracer);
     const handlers = [callbackHandler];
