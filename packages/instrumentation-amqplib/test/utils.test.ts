@@ -18,10 +18,28 @@ import { expect } from 'expect';
 import {
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
+  getConsumeAttributes,
+  getConsumeSpanName,
+  getPublishAttributes,
+  getPublishSpanName,
 } from '../src/utils';
 import {
-  SEMATTRS_MESSAGING_PROTOCOL,
+  ATTR_NETWORK_PEER_ADDRESS,
+  ATTR_NETWORK_PEER_PORT,
+  ATTR_NETWORK_PROTOCOL_NAME,
+  ATTR_NETWORK_PROTOCOL_VERSION,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+  MESSAGINGOPERATIONVALUES_PROCESS,
+  SEMATTRS_MESSAGING_CONVERSATION_ID,
+  SEMATTRS_MESSAGING_DESTINATION_KIND,
+  SEMATTRS_MESSAGING_DESTINATION,
+  SEMATTRS_MESSAGING_MESSAGE_ID,
+  SEMATTRS_MESSAGING_OPERATION,
   SEMATTRS_MESSAGING_PROTOCOL_VERSION,
+  SEMATTRS_MESSAGING_PROTOCOL,
+  SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY,
   SEMATTRS_MESSAGING_SYSTEM,
   SEMATTRS_MESSAGING_URL,
   SEMATTRS_NET_PEER_NAME,
@@ -30,6 +48,19 @@ import {
 import * as amqp from 'amqplib';
 import { shouldTest } from './utils';
 import { rabbitMqUrl } from './config';
+import { SemconvStability } from '@opentelemetry/instrumentation';
+import {
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_BODY_SIZE,
+  ATTR_MESSAGING_MESSAGE_CONVERSATION_ID,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION_NAME,
+  ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY,
+  ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG,
+  ATTR_MESSAGING_SYSTEM,
+  MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+} from '@opentelemetry/semantic-conventions/incubating';
 
 describe('utils', () => {
   describe('getConnectionAttributesFromServer', () => {
@@ -47,128 +78,1228 @@ describe('utils', () => {
       }
     });
 
-    it('messaging system attribute', () => {
-      const attributes = getConnectionAttributesFromServer(conn.connection);
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_SYSTEM]: 'rabbitmq',
+    describe('Old attributes', () => {
+      it('messaging system attribute', () => {
+        const attributes = getConnectionAttributesFromServer(conn.connection);
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_SYSTEM]: 'rabbitmq',
+        });
+      });
+    });
+
+    describe('Stable attributes', () => {
+      it('messaging system attribute', () => {
+        const attributes = getConnectionAttributesFromServer(conn.connection);
+        expect(attributes).toStrictEqual({
+          [ATTR_MESSAGING_SYSTEM]: 'rabbitmq',
+        });
       });
     });
   });
 
   describe('getConnectionAttributesFromUrl', () => {
-    it('all features', () => {
-      const attributes = getConnectionAttributesFromUrl(
-        'amqp://user:pass@host:10000/vhost'
-      );
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'host',
-        [SEMATTRS_NET_PEER_PORT]: 10000,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://user:***@host:10000/vhost',
+    describe('Old attributes', () => {
+      it('all features', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user:pass@host:10000/vhost',
+          SemconvStability.OLD
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_NET_PEER_NAME]: 'host',
+          [SEMATTRS_NET_PEER_PORT]: 10000,
+          [SEMATTRS_MESSAGING_URL]: 'amqp://user:***@host:10000/vhost',
+        });
+      });
+
+      it('all features encoded', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user%61:%61pass@ho%61st:10000/v%2fhost',
+          SemconvStability.OLD
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_NET_PEER_NAME]: 'ho%61st',
+          [SEMATTRS_NET_PEER_PORT]: 10000,
+          [SEMATTRS_MESSAGING_URL]: 'amqp://user%61:***@ho%61st:10000/v%2fhost',
+        });
+      });
+
+      it('only protocol', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://',
+          SemconvStability.OLD
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_NET_PEER_NAME]: 'localhost',
+          [SEMATTRS_NET_PEER_PORT]: 5672,
+          [SEMATTRS_MESSAGING_URL]: 'amqp://',
+        });
+      });
+
+      it('empty username and password', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://:@/',
+          SemconvStability.OLD
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_MESSAGING_URL]: 'amqp://:***@/',
+        });
+      });
+
+      it('username and no password', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user@',
+          SemconvStability.OLD
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_MESSAGING_URL]: 'amqp://user@',
+        });
+      });
+
+      it('username and password, no host', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user:pass@',
+          SemconvStability.OLD
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_MESSAGING_URL]: 'amqp://user:***@',
+        });
+      });
+
+      it('host only', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://host',
+          SemconvStability.OLD
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_NET_PEER_NAME]: 'host',
+          [SEMATTRS_NET_PEER_PORT]: 5672,
+          [SEMATTRS_MESSAGING_URL]: 'amqp://host',
+        });
+      });
+
+      it('vhost only', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp:///vhost',
+          SemconvStability.OLD
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_NET_PEER_NAME]: 'localhost',
+          [SEMATTRS_NET_PEER_PORT]: 5672,
+          [SEMATTRS_MESSAGING_URL]: 'amqp:///vhost',
+        });
+      });
+
+      it('host only, trailing slash', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://host/',
+          SemconvStability.OLD
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_NET_PEER_NAME]: 'host',
+          [SEMATTRS_NET_PEER_PORT]: 5672,
+          [SEMATTRS_MESSAGING_URL]: 'amqp://host/',
+        });
+      });
+
+      it('vhost encoded', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://host/%2f',
+          SemconvStability.OLD
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_NET_PEER_NAME]: 'host',
+          [SEMATTRS_NET_PEER_PORT]: 5672,
+          [SEMATTRS_MESSAGING_URL]: 'amqp://host/%2f',
+        });
+      });
+
+      it('IPv6 host', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://[::1]',
+          SemconvStability.OLD
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_NET_PEER_NAME]: '[::1]',
+          [SEMATTRS_NET_PEER_PORT]: 5672,
+          [SEMATTRS_MESSAGING_URL]: 'amqp://[::1]',
+        });
       });
     });
 
-    it('all features encoded', () => {
-      const attributes = getConnectionAttributesFromUrl(
-        'amqp://user%61:%61pass@ho%61st:10000/v%2fhost'
-      );
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'ho%61st',
-        [SEMATTRS_NET_PEER_PORT]: 10000,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://user%61:***@ho%61st:10000/v%2fhost',
+    describe('Stable attributes', () => {
+      it('all features', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user:pass@host:10000/vhost',
+          SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [ATTR_NETWORK_PROTOCOL_NAME]: 'AMQP',
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+          [ATTR_NETWORK_PEER_ADDRESS]: 'host',
+          [ATTR_NETWORK_PEER_PORT]: 10000,
+          [ATTR_SERVER_ADDRESS]: 'host',
+          [ATTR_SERVER_PORT]: 10000,
+        });
+      });
+
+      it('all features encoded', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user%61:%61pass@ho%61st:10000/v%2fhost',
+          SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [ATTR_NETWORK_PROTOCOL_NAME]: 'AMQP',
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+          [ATTR_NETWORK_PEER_ADDRESS]: 'ho%61st',
+          [ATTR_NETWORK_PEER_PORT]: 10000,
+          [ATTR_SERVER_ADDRESS]: 'ho%61st',
+          [ATTR_SERVER_PORT]: 10000,
+        });
+      });
+
+      it('only protocol', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://',
+          SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [ATTR_NETWORK_PROTOCOL_NAME]: 'AMQP',
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+          [ATTR_NETWORK_PEER_ADDRESS]: 'localhost',
+          [ATTR_NETWORK_PEER_PORT]: 5672,
+          [ATTR_SERVER_ADDRESS]: 'localhost',
+          [ATTR_SERVER_PORT]: 5672,
+        });
+      });
+
+      it('empty username and password', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://:@/',
+          SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+        });
+      });
+
+      it('username and no password', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user@',
+          SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+        });
+      });
+
+      it('username and password, no host', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user:pass@',
+          SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+        });
+      });
+
+      it('host only', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://host',
+          SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [ATTR_NETWORK_PROTOCOL_NAME]: 'AMQP',
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+          [ATTR_NETWORK_PEER_ADDRESS]: 'host',
+          [ATTR_NETWORK_PEER_PORT]: 5672,
+          [ATTR_SERVER_ADDRESS]: 'host',
+          [ATTR_SERVER_PORT]: 5672,
+        });
+      });
+
+      it('vhost only', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp:///vhost',
+          SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [ATTR_NETWORK_PROTOCOL_NAME]: 'AMQP',
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+          [ATTR_NETWORK_PEER_ADDRESS]: 'localhost',
+          [ATTR_NETWORK_PEER_PORT]: 5672,
+          [ATTR_SERVER_ADDRESS]: 'localhost',
+          [ATTR_SERVER_PORT]: 5672,
+        });
+      });
+
+      it('host only, trailing slash', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://host/',
+          SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [ATTR_NETWORK_PROTOCOL_NAME]: 'AMQP',
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+          [ATTR_NETWORK_PEER_ADDRESS]: 'host',
+          [ATTR_NETWORK_PEER_PORT]: 5672,
+          [ATTR_SERVER_ADDRESS]: 'host',
+          [ATTR_SERVER_PORT]: 5672,
+        });
+      });
+
+      it('vhost encoded', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://host/%2f',
+          SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [ATTR_NETWORK_PROTOCOL_NAME]: 'AMQP',
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+          [ATTR_NETWORK_PEER_ADDRESS]: 'host',
+          [ATTR_NETWORK_PEER_PORT]: 5672,
+          [ATTR_SERVER_ADDRESS]: 'host',
+          [ATTR_SERVER_PORT]: 5672,
+        });
+      });
+
+      it('IPv6 host', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://[::1]',
+          SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [ATTR_NETWORK_PROTOCOL_NAME]: 'AMQP',
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+          [ATTR_NETWORK_PEER_ADDRESS]: '[::1]',
+          [ATTR_NETWORK_PEER_PORT]: 5672,
+          [ATTR_SERVER_ADDRESS]: '[::1]',
+          [ATTR_SERVER_PORT]: 5672,
+        });
       });
     });
 
-    it('only protocol', () => {
-      const attributes = getConnectionAttributesFromUrl('amqp://');
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'localhost',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://',
+    describe('Both old and stable attributes', () => {
+      it('all features', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user:pass@host:10000/vhost',
+          SemconvStability.OLD | SemconvStability.STABLE
+        );
+        expect(attributes).toStrictEqual({
+          [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
+          [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+          [SEMATTRS_NET_PEER_NAME]: 'host',
+          [SEMATTRS_NET_PEER_PORT]: 10000,
+          [SEMATTRS_MESSAGING_URL]: 'amqp://user:***@host:10000/vhost',
+          [ATTR_NETWORK_PROTOCOL_NAME]: 'AMQP',
+          [ATTR_NETWORK_PROTOCOL_VERSION]: '0.9.1',
+          [ATTR_NETWORK_PEER_ADDRESS]: 'host',
+          [ATTR_NETWORK_PEER_PORT]: 10000,
+          [ATTR_SERVER_ADDRESS]: 'host',
+          [ATTR_SERVER_PORT]: 10000,
+        });
+      });
+    });
+  });
+
+  describe('getPublishSpanName', () => {
+    describe('Old attributes', () => {
+      it('should return the exchange name', () => {
+        expect(
+          getPublishSpanName(
+            'test-exchange',
+            'routing.key',
+            SemconvStability.OLD
+          )
+        ).toBe('publish test-exchange');
+      });
+
+      it('should handle empty exchange as <default>', () => {
+        expect(
+          getPublishSpanName('', 'routing.key', SemconvStability.OLD)
+        ).toBe('publish <default>');
+      });
+
+      it('should handle special characters in exchange name', () => {
+        expect(
+          getPublishSpanName(
+            'exchange.with-special_chars',
+            'routing.key',
+            SemconvStability.OLD
+          )
+        ).toBe('publish exchange.with-special_chars');
+      });
+
+      it('should handle long exchange names', () => {
+        expect(
+          getPublishSpanName(
+            'very-long-exchange-name-with-many-characters',
+            'routing.key',
+            SemconvStability.OLD
+          )
+        ).toBe('publish very-long-exchange-name-with-many-characters');
+      });
+
+      it('should ignore the routing key value', () => {
+        expect(
+          getPublishSpanName(
+            'test-exchange',
+            'different.routing.key',
+            SemconvStability.OLD
+          )
+        ).toBe('publish test-exchange');
       });
     });
 
-    it('empty username and password', () => {
-      const attributes = getConnectionAttributesFromUrl('amqp://:@/');
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_MESSAGING_URL]: 'amqp://:***@/',
+    describe('Stable attributes', () => {
+      it('should return exchange:routingKey when both are present', () => {
+        expect(
+          getPublishSpanName(
+            'test-exchange',
+            'routing.key',
+            SemconvStability.STABLE
+          )
+        ).toBe('publish test-exchange:routing.key');
+      });
+
+      it('should return only exchange when routing key is empty', () => {
+        expect(
+          getPublishSpanName('test-exchange', '', SemconvStability.STABLE)
+        ).toBe('publish test-exchange');
+      });
+
+      it('should return only routing key when exchange is empty', () => {
+        expect(
+          getPublishSpanName('', 'routing.key', SemconvStability.STABLE)
+        ).toBe('publish routing.key');
+      });
+
+      it('should use amq.default when both are empty', () => {
+        expect(getPublishSpanName('', '', SemconvStability.STABLE)).toBe(
+          'publish amq.default'
+        );
+      });
+
+      it('should handle dots in exchange and routing key', () => {
+        expect(
+          getPublishSpanName(
+            'app.service.exchange',
+            'user.created.event',
+            SemconvStability.STABLE
+          )
+        ).toBe('publish app.service.exchange:user.created.event');
+      });
+
+      it('should handle special characters', () => {
+        expect(
+          getPublishSpanName(
+            'exchange-with_special.chars',
+            'routing.key-with_special.chars',
+            SemconvStability.STABLE
+          )
+        ).toBe(
+          'publish exchange-with_special.chars:routing.key-with_special.chars'
+        );
       });
     });
 
-    it('username and no password', () => {
-      const attributes = getConnectionAttributesFromUrl('amqp://user@');
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_MESSAGING_URL]: 'amqp://user@',
+    describe('Both old and stable attributes', () => {
+      it('should use stable format when both flags are set', () => {
+        expect(
+          getPublishSpanName(
+            'test-exchange',
+            'routing.key',
+            SemconvStability.OLD | SemconvStability.STABLE
+          )
+        ).toBe('publish test-exchange:routing.key');
+      });
+
+      it('should prioritize stable format over old format', () => {
+        const spanName = getPublishSpanName(
+          'my-exchange',
+          'my.key',
+          SemconvStability.OLD | SemconvStability.STABLE
+        );
+        expect(spanName).toBe('publish my-exchange:my.key');
+        expect(spanName).not.toBe('publish my-exchange');
+      });
+
+      it('should use stable default when both are empty', () => {
+        const spanName = getPublishSpanName(
+          '',
+          '',
+          SemconvStability.OLD | SemconvStability.STABLE
+        );
+        expect(spanName).toBe('publish amq.default');
+        expect(spanName).not.toBe('publish <default>');
+      });
+    });
+  });
+
+  describe('getPublishAttributes', () => {
+    describe('Old attributes', () => {
+      it('should return minimal attributes', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            1024,
+            {},
+            SemconvStability.OLD
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+        });
+      });
+
+      it('should support messageId and correlationId', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            2048,
+            { messageId: 'msg-123', correlationId: 'corr-456' },
+            SemconvStability.OLD
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: 'corr-456',
+        });
+      });
+
+      it('should handle empty exchange', () => {
+        expect(
+          getPublishAttributes('', 'routing.key', 512, {}, SemconvStability.OLD)
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: '',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+        });
+      });
+
+      it('should handle empty routing key', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            '',
+            256,
+            {},
+            SemconvStability.OLD
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: '',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+        });
+      });
+
+      it('should handle special characters', () => {
+        expect(
+          getPublishAttributes(
+            'test.exchange-with_special.chars',
+            'routing.key.with-special_chars',
+            100,
+            { messageId: 'special-chars-msg' },
+            SemconvStability.OLD
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test.exchange-with_special.chars',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]:
+            'routing.key.with-special_chars',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: 'special-chars-msg',
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+        });
       });
     });
 
-    it('username and password, no host', () => {
-      const attributes = getConnectionAttributesFromUrl('amqp://user:pass@');
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_MESSAGING_URL]: 'amqp://user:***@',
+    describe('Stable attributes', () => {
+      it('should return minimal attributes', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            1024,
+            {},
+            SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'test-exchange:routing.key',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 1024,
+        });
+      });
+
+      it('should support messageId and correlationId', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            2048,
+            { messageId: 'msg-123', correlationId: 'corr-456' },
+            SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'test-exchange:routing.key',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 2048,
+        });
+      });
+
+      it('should handle empty exchange', () => {
+        expect(
+          getPublishAttributes(
+            '',
+            'routing.key',
+            512,
+            {},
+            SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'routing.key',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 512,
+        });
+      });
+
+      it('should handle empty routing key', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            '',
+            256,
+            {},
+            SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'test-exchange',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: '',
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 256,
+        });
+      });
+
+      it('should handle zero content length', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            0,
+            {},
+            SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'test-exchange:routing.key',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 0,
+        });
       });
     });
 
-    it('host only', () => {
-      const attributes = getConnectionAttributesFromUrl('amqp://host');
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'host',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://host',
+    describe('Both old and stable attributes', () => {
+      it('should combine minimal attributes', () => {
+        expect(
+          getPublishAttributes(
+            'exchange',
+            '',
+            256,
+            {},
+            SemconvStability.OLD | SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: '',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'exchange',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: '',
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 256,
+        });
+      });
+
+      it('should combine with all options', () => {
+        expect(
+          getPublishAttributes(
+            'test-exchange',
+            'routing.key',
+            1024,
+            { messageId: 'msg-123', correlationId: 'corr-456' },
+            SemconvStability.OLD | SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_OPERATION_TYPE]: 'send',
+          [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'test-exchange:routing.key',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 1024,
+        });
+      });
+    });
+  });
+
+  describe('getConsumeSpanName', () => {
+    describe('Old attributes', () => {
+      it('should return "<queue> process" with a basic queue name', () => {
+        expect(
+          getConsumeSpanName(
+            'test-queue',
+            {} as amqp.ConsumeMessage,
+            SemconvStability.OLD
+          )
+        ).toBe('test-queue process');
+      });
+
+      it('should handle empty queue', () => {
+        expect(
+          getConsumeSpanName(
+            '',
+            {} as amqp.ConsumeMessage,
+            SemconvStability.OLD
+          )
+        ).toBe(' process');
+      });
+
+      it('should allow special characters in queue name', () => {
+        expect(
+          getConsumeSpanName(
+            'queue.with-special_chars',
+            {} as amqp.ConsumeMessage,
+            SemconvStability.OLD
+          )
+        ).toBe('queue.with-special_chars process');
+      });
+
+      it('should handle long queue name', () => {
+        expect(
+          getConsumeSpanName(
+            'very-long-queue-name-with-many-characters',
+            {} as amqp.ConsumeMessage,
+            SemconvStability.OLD
+          )
+        ).toBe('very-long-queue-name-with-many-characters process');
+      });
+
+      it('should allow underscores in queue name', () => {
+        expect(
+          getConsumeSpanName(
+            'my_queue_name',
+            {} as amqp.ConsumeMessage,
+            SemconvStability.OLD
+          )
+        ).toBe('my_queue_name process');
       });
     });
 
-    it('vhost only', () => {
-      const attributes = getConnectionAttributesFromUrl('amqp:///vhost');
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'localhost',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp:///vhost',
+    describe('Stable attributes', () => {
+      it('should return "consume <queue>" with a queue', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: '' },
+        } as amqp.ConsumeMessage;
+        expect(
+          getConsumeSpanName('my-special-queue', msg, SemconvStability.STABLE)
+        ).toBe('consume my-special-queue');
+      });
+
+      it('should use "amq.default" when queue is empty and fields empty', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: '' },
+        } as amqp.ConsumeMessage;
+        expect(getConsumeSpanName('', msg, SemconvStability.STABLE)).toBe(
+          'consume amq.default'
+        );
+      });
+
+      it('should return "consume exchange:routingKey" when queue and routingKey equals and exchange is present', () => {
+        const msg = {
+          fields: { exchange: 'a', routingKey: 'b' },
+        } as amqp.ConsumeMessage;
+        expect(getConsumeSpanName('b', msg, SemconvStability.STABLE)).toBe(
+          'consume a:b'
+        );
+      });
+
+      it('should return "consume queue" when queue==routingKey and no exchange', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: 'c' },
+        } as amqp.ConsumeMessage;
+        expect(getConsumeSpanName('c', msg, SemconvStability.STABLE)).toBe(
+          'consume c'
+        );
+      });
+
+      it('should return "consume exchange" when exchange==queue==routingKey', () => {
+        const msg = {
+          fields: { exchange: 'x', routingKey: 'x' },
+        } as amqp.ConsumeMessage;
+        expect(getConsumeSpanName('x', msg, SemconvStability.STABLE)).toBe(
+          'consume x'
+        );
+      });
+
+      it('should return "consume exchange:routingKey:queue" when all are different', () => {
+        const msg = {
+          fields: { exchange: 'test-exchange', routingKey: 'routing.key' },
+        } as amqp.ConsumeMessage;
+        expect(
+          getConsumeSpanName('different-queue', msg, SemconvStability.STABLE)
+        ).toBe('consume test-exchange:routing.key:different-queue');
+      });
+
+      it('should return "consume exchange:routingKey" when queue is empty', () => {
+        const msg = {
+          fields: { exchange: 'ex', routingKey: 'rk' },
+        } as amqp.ConsumeMessage;
+        expect(getConsumeSpanName('', msg, SemconvStability.STABLE)).toBe(
+          'consume ex:rk'
+        );
+      });
+
+      it('should return "consume exchange:queue" when routingKey is empty', () => {
+        const msg = {
+          fields: { exchange: 'ex', routingKey: '' },
+        } as amqp.ConsumeMessage;
+        expect(getConsumeSpanName('q', msg, SemconvStability.STABLE)).toBe(
+          'consume ex:q'
+        );
+      });
+
+      it('should return "consume routingKey:queue" when exchange is empty', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: 'r' },
+        } as amqp.ConsumeMessage;
+        expect(getConsumeSpanName('q', msg, SemconvStability.STABLE)).toBe(
+          'consume r:q'
+        );
+      });
+
+      it('should allow special characters in queue name', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: '' },
+        } as amqp.ConsumeMessage;
+        expect(
+          getConsumeSpanName(
+            'queue.with-special_chars',
+            msg,
+            SemconvStability.STABLE
+          )
+        ).toBe('consume queue.with-special_chars');
+      });
+
+      it('should handle long queue names', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: '' },
+        } as amqp.ConsumeMessage;
+        expect(
+          getConsumeSpanName(
+            'very-long-queue-name-with-many-characters',
+            msg,
+            SemconvStability.STABLE
+          )
+        ).toBe('consume very-long-queue-name-with-many-characters');
+      });
+
+      it('should handle numeric queue name', () => {
+        expect(
+          getConsumeSpanName(
+            '123456',
+            {} as amqp.ConsumeMessage,
+            SemconvStability.STABLE
+          )
+        ).toBe('consume 123456');
+      });
+
+      it('should handle dotted queue name', () => {
+        expect(
+          getConsumeSpanName(
+            'app.service-worker.queue',
+            {} as amqp.ConsumeMessage,
+            SemconvStability.STABLE
+          )
+        ).toBe('consume app.service-worker.queue');
+      });
+
+      it('should handle queue name with unicode', () => {
+        expect(
+          getConsumeSpanName(
+            'queue-émojis-🚀',
+            {} as amqp.ConsumeMessage,
+            SemconvStability.STABLE
+          )
+        ).toBe('consume queue-émojis-🚀');
       });
     });
 
-    it('host only, trailing slash', () => {
-      const attributes = getConnectionAttributesFromUrl('amqp://host/');
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'host',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://host/',
+    describe('Both old and stable attributes', () => {
+      it('should prioritize stable format over old format', () => {
+        const spanName = getConsumeSpanName(
+          'my-queue',
+          {} as amqp.ConsumeMessage,
+          SemconvStability.OLD | SemconvStability.STABLE
+        );
+        expect(spanName).toBe('consume my-queue');
+        expect(spanName).not.toBe('my-queue process');
+      });
+    });
+  });
+
+  describe('getConsumeAttributes', () => {
+    describe('Old attributes', () => {
+      it('should return minimal attributes', () => {
+        const msg = {} as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes('queue-name', msg, SemconvStability.OLD)
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: undefined,
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: undefined,
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+        });
+      });
+
+      it('should return all consume attributes from fields/properties', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'routing.key',
+            deliveryTag: 2,
+          },
+          properties: {
+            messageId: 'msg-123',
+            correlationId: 'corr-456',
+          },
+          content: Buffer.from('test message with properties'),
+        } as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes('queue-name', msg, SemconvStability.OLD)
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: 'corr-456',
+        });
       });
     });
 
-    it('vhost encoded', () => {
-      const attributes = getConnectionAttributesFromUrl('amqp://host/%2f');
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'host',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://host/%2f',
+    describe('Stable attributes', () => {
+      it('should return minimal stable attributes', () => {
+        const msg = {} as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes('', msg, SemconvStability.STABLE)
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]:
+            MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+          [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'amq.default',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: undefined,
+          [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: undefined,
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: undefined,
+        });
+      });
+
+      it('should return all consume attributes from fields/properties', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'routing.key',
+            deliveryTag: 2,
+          },
+          properties: {
+            messageId: 'msg-123',
+            correlationId: 'corr-456',
+          },
+          content: Buffer.from('test message with properties'),
+        } as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes('queue-name', msg, SemconvStability.STABLE)
+        ).toStrictEqual({
+          [ATTR_MESSAGING_OPERATION_TYPE]:
+            MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+          [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+          [ATTR_MESSAGING_DESTINATION_NAME]:
+            'test-exchange:routing.key:queue-name',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: 2,
+          [ATTR_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 28,
+        });
+      });
+
+      it('should use exchange:routingKey when queue == routingKey', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'queue-name',
+            deliveryTag: 1,
+          },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes(
+          'queue-name',
+          msg,
+          SemconvStability.STABLE
+        );
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+          'test-exchange:queue-name'
+        );
+      });
+
+      it('should use exchange:routingKey:queue when all different', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'routing.key',
+            deliveryTag: 1,
+          },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes(
+          'different-queue',
+          msg,
+          SemconvStability.STABLE
+        );
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+          'test-exchange:routing.key:different-queue'
+        );
+      });
+
+      it('should use exchange:routingKey when queue is missing', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'routing.key',
+            deliveryTag: 1,
+          },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes('', msg, SemconvStability.STABLE);
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+          'test-exchange:routing.key'
+        );
+      });
+
+      it('should use exchange:queue when routingKey is missing', () => {
+        const msg = {
+          fields: { exchange: 'test-exchange', routingKey: '', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes(
+          'test-queue',
+          msg,
+          SemconvStability.STABLE
+        );
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+          'test-exchange:test-queue'
+        );
+      });
+
+      it('should use routingKey:queue when exchange is empty', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: 'routing.key', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes(
+          'test-queue',
+          msg,
+          SemconvStability.STABLE
+        );
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+          'routing.key:test-queue'
+        );
+      });
+
+      it('should use only exchange if only exchange is present', () => {
+        const msg = {
+          fields: { exchange: 'test-exchange', routingKey: '', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes('', msg, SemconvStability.STABLE);
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe('test-exchange');
+      });
+
+      it('should use only routingKey if only routingKey is present', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: 'routing.key', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes('', msg, SemconvStability.STABLE);
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe('routing.key');
+      });
+
+      it('should use only queue if only queue is present', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: '', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes(
+          'test-queue',
+          msg,
+          SemconvStability.STABLE
+        );
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe('test-queue');
+      });
+
+      it('should use amq.default if all are empty', () => {
+        const msg = {
+          fields: { exchange: '', routingKey: '', deliveryTag: 1 },
+          properties: {},
+          content: Buffer.from('test'),
+        } as amqp.ConsumeMessage;
+        const attrs = getConsumeAttributes('', msg, SemconvStability.STABLE);
+        expect(attrs[ATTR_MESSAGING_DESTINATION_NAME]).toBe('amq.default');
       });
     });
 
-    it('IPv6 host', () => {
-      const attributes = getConnectionAttributesFromUrl('amqp://[::1]');
-      expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: '[::1]',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://[::1]',
+    describe('Both old and stable attributes', () => {
+      it('should combine minimal attributes', () => {
+        const msg = {} as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes(
+            '',
+            msg,
+            SemconvStability.OLD | SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: undefined,
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: undefined,
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: undefined,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_OPERATION_TYPE]:
+            MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+          [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+          [ATTR_MESSAGING_DESTINATION_NAME]: 'amq.default',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: undefined,
+          [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: undefined,
+          [ATTR_MESSAGING_MESSAGE_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: undefined,
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: undefined,
+        });
+      });
+
+      it('should combine all options', () => {
+        const msg = {
+          fields: {
+            exchange: 'test-exchange',
+            routingKey: 'routing.key',
+            deliveryTag: 1,
+          },
+          properties: {
+            messageId: 'msg-123',
+            correlationId: 'corr-456',
+          },
+          content: Buffer.from('complete test message'),
+        } as amqp.ConsumeMessage;
+        expect(
+          getConsumeAttributes(
+            'queue-name',
+            msg,
+            SemconvStability.OLD | SemconvStability.STABLE
+          )
+        ).toStrictEqual({
+          [SEMATTRS_MESSAGING_DESTINATION]: 'test-exchange',
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: 'routing.key',
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_OPERATION_TYPE]:
+            MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+          [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+          [ATTR_MESSAGING_DESTINATION_NAME]:
+            'test-exchange:routing.key:queue-name',
+          [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: 'routing.key',
+          [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: 1,
+          [ATTR_MESSAGING_MESSAGE_ID]: 'msg-123',
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: 'corr-456',
+          [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 21,
+        });
       });
     });
   });
