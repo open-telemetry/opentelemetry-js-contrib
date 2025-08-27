@@ -21,6 +21,45 @@
  */
 
 /**
+ * The ARN of the Secret stored in the Secrets Mangger
+ *
+ * @example arn:aws:secretsmanager:us-east-1:123456789012:secret:SecretName-6RandomCharacters
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_SECRETSMANAGER_SECRET_ARN =
+  'aws.secretsmanager.secret.arn' as const;
+
+/**
+ * The ARN of the AWS SNS Topic. An Amazon SNS [topic](https://docs.aws.amazon.com/sns/latest/dg/sns-create-topic.html) is a logical access point that acts as a communication channel.
+ *
+ * @example arn:aws:sns:us-east-1:123456789012:mystack-mytopic-NZJ5JSMVGFIE
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_SNS_TOPIC_ARN = 'aws.sns.topic.arn' as const;
+
+/**
+ * The ARN of the AWS Step Functions Activity.
+ *
+ * @example arn:aws:states:us-east-1:123456789012:activity:get-greeting
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_STEP_FUNCTIONS_ACTIVITY_ARN =
+  'aws.step_functions.activity.arn' as const;
+
+/**
+ * The ARN of the AWS Step Functions State Machine.
+ *
+ * @example arn:aws:states:us-east-1:123456789012:stateMachine:myStateMachine:1
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_STEP_FUNCTIONS_STATE_MACHINE_ARN =
+  'aws.step_functions.state_machine.arn' as const;
+
+/**
  * The name of the operation being performed.
  *
  * @note If one of the predefined values applies, but specific system uses a different name it's **RECOMMENDED** to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries **SHOULD** use applicable predefined value.
@@ -140,31 +179,83 @@ export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS =
   'gen_ai.usage.output_tokens' as const;
 
 /**
+ * The number of messages sent, received, or processed in the scope of the batching operation.
+ *
+ * @example 0
+ * @example 1
+ * @example 2
+ *
+ * @note Instrumentations **SHOULD NOT** set `messaging.batch.message_count` on spans that operate with a single message. When a messaging client library supports both batch and single-message API for the same operation, instrumentations **SHOULD** use `messaging.batch.message_count` for batching APIs and **SHOULD NOT** use it for single-message APIs.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_BATCH_MESSAGE_COUNT =
+  'messaging.batch.message_count' as const;
+
+/**
+ * The message destination name
+ *
+ * @example MyQueue
+ * @example MyTopic
+ *
+ * @note Destination name **SHOULD** uniquely identify a specific queue, topic or other entity within the broker. If
+ * the broker doesn't have such notion, the destination name **SHOULD** uniquely identify the broker.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_DESTINATION_NAME =
+  'messaging.destination.name' as const;
+
+/**
+ * A value used by the messaging system as an identifier for the message, represented as a string.
+ *
+ * @example "452a7c7c7c7048c2f887f61572b18fc2"
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_MESSAGE_ID = 'messaging.message.id' as const;
+
+/**
+ * A string identifying the type of the messaging operation.
+ *
+ * @note If a custom value is used, it **MUST** be of low cardinality.
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_OPERATION_TYPE =
+  'messaging.operation.type' as const;
+
+/**
  * Enum value "chat" for attribute {@link ATTR_GEN_AI_OPERATION_NAME}.
+ *
+ * Chat completion operation such as [OpenAI Chat API](https://platform.openai.com/docs/api-reference/chat)
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const GEN_AI_OPERATION_NAME_VALUE_CHAT = 'chat' as const;
 
 /**
  * Enum value "aws.bedrock" for attribute {@link ATTR_GEN_AI_SYSTEM}.
+ *
+ * AWS Bedrock
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const GEN_AI_SYSTEM_VALUE_AWS_BEDROCK = 'aws.bedrock' as const;
 
 /**
  * Enum value "input" for attribute {@link ATTR_GEN_AI_TOKEN_TYPE}.
+ *
+ * Input tokens (prompt, input, etc.)
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
 
 /**
  * Enum value "output" for attribute {@link ATTR_GEN_AI_TOKEN_TYPE}.
+ *
+ * Output tokens (completion, response, etc.)
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
-
-/**
- * Originally from '@opentelemetry/semantic-conventions/incubating'
- * https://github.com/open-telemetry/semantic-conventions/blob/main/docs/registry/attributes/aws.md#amazon-sns-attributes
- * The ARN of the AWS SNS Topic. An Amazon SNS [topic](https://docs.aws.amazon.com/sns/latest/dg/sns-create-topic.html)
- *  is a logical access point that acts as a communication channel.
- * @example arn:aws:sns:us-east-1:123456789012:mystack-mytopic-NZJ5JSMVGFIE
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const ATTR_AWS_SNS_TOPIC_ARN = 'aws.sns.topic.arn' as const;

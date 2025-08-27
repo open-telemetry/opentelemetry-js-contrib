@@ -4,8 +4,8 @@ redis:
       mode: latest-minors
     commands: npm run test-v2-v3
   - versions:
-      include: '>=4 <5'
+      include: '>=4 <6'
       # "4.6.9" was a bad release that accidentally broke node v14 support.
       exclude: "4.6.9"
       mode: latest-minors
-    commands: npm test
+    commands: npm run test

@@ -50,6 +50,7 @@
   "packages/instrumentation-mysql2": "0.50.0",
   "packages/instrumentation-nestjs-core": "0.49.0",
   "packages/instrumentation-net": "0.47.0",
+  "packages/instrumentation-openai": "0.0.1",
   "packages/instrumentation-oracledb": "0.29.0",
   "packages/instrumentation-pg": "0.56.0",
   "packages/instrumentation-pino": "0.50.0",
