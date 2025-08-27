@@ -20,11 +20,12 @@ import {
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
 import { RedisInstrumentation } from '../../src';
-import type { MultiErrorReply } from '../../src/v4/internal-types';
+import type { MultiErrorReply } from '../../src/v4-v5/internal-types';
 import * as assert from 'assert';
 
 import { redisTestConfig, redisTestUrl, shouldTest } from './utils';
 
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
 const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
 );
@@ -45,11 +46,18 @@ import {
   SEMATTRS_EXCEPTION_MESSAGE,
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  ATTR_EXCEPTION_MESSAGE,
 } from '@opentelemetry/semantic-conventions';
 import { RedisResponseCustomAttributeFunction } from '../../src/types';
 import { hrTimeToMilliseconds, suppressTracing } from '@opentelemetry/core';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 
-describe('redis v4', () => {
+describe('redis v4-v5', () => {
   before(function () {
     // needs to be "function" to have MochaContext "this" context
     if (!shouldTest) {
@@ -88,9 +96,14 @@ describe('redis v4', () => {
       assert.ok(setSpan);
       assert.strictEqual(setSpan?.kind, SpanKind.CLIENT);
       assert.strictEqual(setSpan?.name, 'redis-SET');
+      assert.strictEqual(setSpan?.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
       assert.strictEqual(setSpan?.attributes[SEMATTRS_DB_SYSTEM], 'redis');
       assert.strictEqual(
         setSpan?.attributes[SEMATTRS_DB_STATEMENT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
+        setSpan?.attributes[ATTR_DB_QUERY_TEXT],
         'SET key [1 other arguments]'
       );
       assert.strictEqual(
@@ -98,9 +111,18 @@ describe('redis v4', () => {
         redisTestConfig.host
       );
       assert.strictEqual(
+        setSpan?.attributes[ATTR_SERVER_ADDRESS],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
         setSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
+      assert.strictEqual(
+        setSpan?.attributes[ATTR_SERVER_PORT],
+        redisTestConfig.port
+      );
+      assert.strictEqual(setSpan?.attributes[ATTR_DB_OPERATION_NAME], 'SET');
       assert.strictEqual(
         setSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
@@ -110,6 +132,8 @@ describe('redis v4', () => {
       assert.ok(getSpan);
       assert.strictEqual(getSpan?.kind, SpanKind.CLIENT);
       assert.strictEqual(getSpan?.name, 'redis-GET');
+      assert.strictEqual(getSpan?.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+      assert.strictEqual(getSpan?.attributes[ATTR_DB_QUERY_TEXT], 'GET key');
       assert.strictEqual(getSpan?.attributes[SEMATTRS_DB_SYSTEM], 'redis');
       assert.strictEqual(getSpan?.attributes[SEMATTRS_DB_STATEMENT], 'GET key');
       assert.strictEqual(
@@ -117,7 +141,15 @@ describe('redis v4', () => {
         redisTestConfig.host
       );
       assert.strictEqual(
+        getSpan?.attributes[ATTR_SERVER_ADDRESS],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
         getSpan?.attributes[SEMATTRS_NET_PEER_PORT],
+        redisTestConfig.port
+      );
+      assert.strictEqual(
+        getSpan?.attributes[ATTR_SERVER_PORT],
         redisTestConfig.port
       );
       assert.strictEqual(
@@ -138,13 +170,26 @@ describe('redis v4', () => {
         'SET key [1 other arguments]'
       );
       assert.strictEqual(
+        setSpan?.attributes[ATTR_DB_QUERY_TEXT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
         setSpan?.attributes[SEMATTRS_NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        setSpan?.attributes[ATTR_SERVER_ADDRESS],
         redisTestConfig.host
       );
       assert.strictEqual(
         setSpan?.attributes[SEMATTRS_NET_PEER_PORT],
         redisTestConfig.port
       );
+      assert.strictEqual(
+        setSpan?.attributes[ATTR_SERVER_PORT],
+        redisTestConfig.port
+      );
+      assert.strictEqual(setSpan?.attributes[ATTR_DB_OPERATION_NAME], 'SET');
     });
 
     it('command with error', async () => {
@@ -168,6 +213,10 @@ describe('redis v4', () => {
         exceptions?.[0].attributes?.[SEMATTRS_EXCEPTION_MESSAGE],
         'ERR value is not an integer or out of range'
       );
+      assert.strictEqual(
+        exceptions?.[0].attributes?.[ATTR_EXCEPTION_MESSAGE],
+        'ERR value is not an integer or out of range'
+      );
     });
   });
 
@@ -188,12 +237,21 @@ describe('redis v4', () => {
       assert.strictEqual(span.name, 'redis-connect');
 
       assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
       assert.strictEqual(
         span.attributes[SEMATTRS_NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
+        span.attributes[ATTR_SERVER_ADDRESS],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
         span.attributes[SEMATTRS_NET_PEER_PORT],
+        redisTestConfig.port
+      );
+      assert.strictEqual(
+        span.attributes[ATTR_SERVER_PORT],
         redisTestConfig.port
       );
       assert.strictEqual(
@@ -312,6 +370,46 @@ describe('redis v4', () => {
     });
   });
 
+  describe('Redis client connect with malformed URL', () => {
+    it('malformed URL should trigger diag error and reject connection', async () => {
+      instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
+
+      const diagErrors: any[] = [];
+      diag.setLogger(
+        {
+          verbose() {},
+          debug() {},
+          info() {},
+          warn() {},
+          error(...args) {
+            diagErrors.push(args);
+          },
+        },
+        DiagLogLevel.ALL
+      );
+
+      const client = createClient({
+        socket: { host: 'localhost', port: 9999 },
+      });
+
+      const opts = (client as any).options;
+      if (opts) opts.url = '://malformed-url-no-protocol';
+
+      await assert.rejects(() => client.connect());
+
+      try {
+        await client.disconnect();
+      } catch {}
+
+      assert.ok(diagErrors.length > 0, 'Expected at least one diag error');
+      const found = diagErrors.some(args =>
+        args.includes('failed to sanitize redis connection url')
+      );
+
+      assert.ok(found, 'Expected sanitize URL diag error');
+    });
+  });
+
   describe('multi (transactions) commands', () => {
     it('multi commands', async () => {
       await client.set('another-key', 'another-value');
@@ -335,7 +433,15 @@ describe('redis v4', () => {
         'SET key [1 other arguments]'
       );
       assert.strictEqual(
+        multiSetSpan.attributes[ATTR_DB_QUERY_TEXT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
         multiSetSpan?.attributes[SEMATTRS_NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        multiSetSpan?.attributes[ATTR_SERVER_ADDRESS],
         redisTestConfig.host
       );
       assert.strictEqual(
@@ -343,8 +449,16 @@ describe('redis v4', () => {
         redisTestConfig.port
       );
       assert.strictEqual(
+        multiSetSpan?.attributes[ATTR_SERVER_PORT],
+        redisTestConfig.port
+      );
+      assert.strictEqual(
         multiSetSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
+      );
+      assert.strictEqual(
+        multiSetSpan?.attributes[ATTR_DB_OPERATION_NAME],
+        'SET'
       );
 
       assert.ok(multiGetSpan);
@@ -354,7 +468,15 @@ describe('redis v4', () => {
         'GET another-key'
       );
       assert.strictEqual(
+        multiGetSpan.attributes[ATTR_DB_QUERY_TEXT],
+        'GET another-key'
+      );
+      assert.strictEqual(
         multiGetSpan?.attributes[SEMATTRS_NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        multiGetSpan?.attributes[ATTR_SERVER_ADDRESS],
         redisTestConfig.host
       );
       assert.strictEqual(
@@ -362,8 +484,16 @@ describe('redis v4', () => {
         redisTestConfig.port
       );
       assert.strictEqual(
+        multiGetSpan?.attributes[ATTR_SERVER_PORT],
+        redisTestConfig.port
+      );
+      assert.strictEqual(
         multiGetSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
+      );
+      assert.strictEqual(
+        multiGetSpan?.attributes[ATTR_DB_OPERATION_NAME],
+        'GET'
       );
     });
 
@@ -381,7 +511,15 @@ describe('redis v4', () => {
         'SET key [1 other arguments]'
       );
       assert.strictEqual(
+        multiSetSpan.attributes[ATTR_DB_QUERY_TEXT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
         multiSetSpan?.attributes[SEMATTRS_NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        multiSetSpan?.attributes[ATTR_SERVER_ADDRESS],
         redisTestConfig.host
       );
       assert.strictEqual(
@@ -389,8 +527,16 @@ describe('redis v4', () => {
         redisTestConfig.port
       );
       assert.strictEqual(
+        multiSetSpan?.attributes[ATTR_SERVER_PORT],
+        redisTestConfig.port
+      );
+      assert.strictEqual(
         multiSetSpan?.attributes[SEMATTRS_DB_CONNECTION_STRING],
         redisTestUrl
+      );
+      assert.strictEqual(
+        multiSetSpan?.attributes[ATTR_DB_OPERATION_NAME],
+        'SET'
       );
     });
 
@@ -444,7 +590,7 @@ describe('redis v4', () => {
     it('duration covers create until server response', async () => {
       await client.set('another-key', 'another-value');
       const multiClient = client.multi();
-      let commands = multiClient.set('key', 'value');
+      let commands: any = multiClient.set('key', 'value');
       // wait 10 ms before adding next command
       // simulate long operation
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -533,6 +679,10 @@ describe('redis v4', () => {
           span.attributes[SEMATTRS_DB_STATEMENT],
           'SET key value'
         );
+        assert.strictEqual(
+          span.attributes[ATTR_DB_QUERY_TEXT],
+          'SET key value'
+        );
       });
 
       it('dbStatementSerializer throws', async () => {
@@ -545,6 +695,7 @@ describe('redis v4', () => {
         const [span] = getTestSpans();
         assert.ok(span);
         assert.ok(!(SEMATTRS_DB_STATEMENT in span.attributes));
+        assert.ok(!(ATTR_DB_QUERY_TEXT in span.attributes));
       });
     });
 
@@ -604,6 +755,82 @@ describe('redis v4', () => {
         });
         span.end();
       });
+    });
+  });
+
+  describe('semconv stability configuration', () => {
+    async function getSpan(client: RedisClientType) {
+      await client.set('key', 'value');
+      const spans = getTestSpans();
+      return spans.find(s => s.name.includes('SET'));
+    }
+
+    it('should emit only old attributes when semconvStability is OLD', async () => {
+      instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
+      const setSpan = await getSpan(client);
+      assert.ok(setSpan);
+
+      assert.strictEqual(setSpan.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+      assert.strictEqual(
+        setSpan.attributes[SEMATTRS_DB_STATEMENT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
+        setSpan.attributes[SEMATTRS_NET_PEER_NAME],
+        redisTestConfig.host
+      );
+
+      assert.ok(!(ATTR_DB_SYSTEM_NAME in setSpan.attributes));
+      assert.ok(!(ATTR_DB_QUERY_TEXT in setSpan.attributes));
+      assert.ok(!(ATTR_SERVER_ADDRESS in setSpan.attributes));
+    });
+
+    it('should emit only new attributes when semconvStability is STABLE', async () => {
+      instrumentation.setConfig({ semconvStability: SemconvStability.STABLE });
+      const setSpan = await getSpan(client);
+      assert.ok(setSpan);
+
+      assert.strictEqual(setSpan.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+      assert.strictEqual(
+        setSpan.attributes[ATTR_DB_QUERY_TEXT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
+        setSpan.attributes[ATTR_SERVER_ADDRESS],
+        redisTestConfig.host
+      );
+
+      assert.ok(!(SEMATTRS_DB_SYSTEM in setSpan.attributes));
+      assert.ok(!(SEMATTRS_DB_STATEMENT in setSpan.attributes));
+      assert.ok(!(SEMATTRS_NET_PEER_NAME in setSpan.attributes));
+    });
+
+    it('should emit both old and new attributes when semconvStability is DUPLICATE', async () => {
+      instrumentation.setConfig({
+        semconvStability: SemconvStability.DUPLICATE,
+      });
+      const setSpan = await getSpan(client);
+      assert.ok(setSpan);
+
+      assert.strictEqual(setSpan.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+      assert.strictEqual(
+        setSpan.attributes[SEMATTRS_DB_STATEMENT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
+        setSpan.attributes[SEMATTRS_NET_PEER_NAME],
+        redisTestConfig.host
+      );
+
+      assert.strictEqual(setSpan.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+      assert.strictEqual(
+        setSpan.attributes[ATTR_DB_QUERY_TEXT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
+        setSpan.attributes[ATTR_SERVER_ADDRESS],
+        redisTestConfig.host
+      );
     });
   });
 });
