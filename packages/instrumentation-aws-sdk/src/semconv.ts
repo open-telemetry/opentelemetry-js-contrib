@@ -40,6 +40,26 @@ export const ATTR_AWS_SECRETSMANAGER_SECRET_ARN =
 export const ATTR_AWS_SNS_TOPIC_ARN = 'aws.sns.topic.arn' as const;
 
 /**
+ * The ARN of the AWS Step Functions Activity.
+ *
+ * @example arn:aws:states:us-east-1:123456789012:activity:get-greeting
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_STEP_FUNCTIONS_ACTIVITY_ARN =
+  'aws.step_functions.activity.arn' as const;
+
+/**
+ * The ARN of the AWS Step Functions State Machine.
+ *
+ * @example arn:aws:states:us-east-1:123456789012:stateMachine:myStateMachine:1
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_STEP_FUNCTIONS_STATE_MACHINE_ARN =
+  'aws.step_functions.state_machine.arn' as const;
+
+/**
  * The name of the operation being performed.
  *
  * @note If one of the predefined values applies, but specific system uses a different name it's **RECOMMENDED** to document it in the semantic conventions for specific GenAI system and use system-specific name in the instrumentation. If a different name is not documented, instrumentation libraries **SHOULD** use applicable predefined value.
