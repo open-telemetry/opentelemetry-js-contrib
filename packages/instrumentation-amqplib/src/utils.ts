@@ -45,12 +45,15 @@ export const CONNECTION_ATTRIBUTES: unique symbol = Symbol(
   'opentelemetry.amqplib.connection.attributes'
 );
 
+export type InstrumentationConnection = amqp.Connection & {
+  [CONNECTION_ATTRIBUTES]?: Attributes;
+};
 export type InstrumentationPublishChannel = (
   | amqp.Channel
   | amqp.ConfirmChannel
-) & { connection: { [CONNECTION_ATTRIBUTES]: Attributes } };
+) & { connection: InstrumentationConnection };
 export type InstrumentationConsumeChannel = amqp.Channel & {
-  connection: { [CONNECTION_ATTRIBUTES]: Attributes };
+  connection: InstrumentationConnection;
   [CHANNEL_SPANS_NOT_ENDED]?: {
     msg: amqp.ConsumeMessage;
     timeOfConsume: HrTime;
@@ -58,6 +61,9 @@ export type InstrumentationConsumeChannel = amqp.Channel & {
   [CHANNEL_CONSUME_TIMEOUT_TIMER]?: NodeJS.Timeout;
 };
 export type InstrumentationMessage = amqp.Message & {
+  [MESSAGE_STORED_SPAN]?: Span;
+};
+export type InstrumentationConsumeMessage = amqp.ConsumeMessage & {
   [MESSAGE_STORED_SPAN]?: Span;
 };
 
@@ -117,7 +123,7 @@ const extractConnectionAttributeOrLog = (
 };
 
 export const getConnectionAttributesFromServer = (
-  conn: amqp.Connection['connection']
+  conn: amqp.Connection
 ): Attributes => {
   const product = conn.serverProperties.product?.toLowerCase?.();
   if (product) {
