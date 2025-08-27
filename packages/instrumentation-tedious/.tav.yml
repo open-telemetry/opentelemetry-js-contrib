@@ -1,6 +1,13 @@
 tedious:
   - versions:
-      include: ">=1.11.0 <12"
+      include: ">=1.11.0 <2"
+      mode: latest-majors
+    # tedious@1 uses tls.createSecurePair() which was removed in Node.js 24
+    # (https://nodejs.org/api/all.html#DEP0064).
+    node: "<24"
+    commands: npm run test
+  - versions:
+      include: ">=2 <12"
       # 4.0.0 is broken: https://github.com/tediousjs/tedious/commit/4eceb48
       exclude: "4.0.0"
       mode: latest-majors

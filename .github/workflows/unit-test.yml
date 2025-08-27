@@ -48,13 +48,14 @@ jobs:
           - "20.6.0"
           - "20"
           - "22"
+          - "24"
         include:
             - node: 18
               code-coverage: true
     runs-on: ubuntu-latest
     services:
       memcached:
-        image: memcached:1.6.38-alpine
+        image: memcached:1.6.39-alpine
         ports:
         - 11211:11211
       mongo:
@@ -182,7 +183,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: tests-build-cache-${{ github.run_number }}
           path: .nx
@@ -223,7 +224,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: tests-build-cache-${{ github.run_number }}
           path: .nx
