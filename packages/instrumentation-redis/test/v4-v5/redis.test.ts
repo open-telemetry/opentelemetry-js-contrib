@@ -52,7 +52,6 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   ATTR_EXCEPTION_MESSAGE,
-  ATTR_DB_OPERATION_BATCH_SIZE,
 } from '@opentelemetry/semantic-conventions';
 import { RedisResponseCustomAttributeFunction } from '../../src/types';
 import { hrTimeToMilliseconds, suppressTracing } from '@opentelemetry/core';
@@ -660,28 +659,6 @@ describe('redis v4-v5', () => {
         multiGetSpan.attributes['test.db.response'],
         'another-value'
       );
-    });
-  });
-
-  describe('extra coverage batch size and URL sanitization', () => {
-    const stableCfg = { semconvStability: SemconvStability.STABLE };
-
-    afterEach(() => {
-      instrumentation.setConfig({});
-    });
-
-    it('should set ATTR_DB_OPERATION_BATCH_SIZE when multi has 3 commands', async () => {
-      instrumentation.setConfig(stableCfg);
-      const multi = client.multi();
-      multi.set('covKey1', 'v1');
-      multi.get('covKey1');
-      multi.set('covKey2', 'v2');
-      await multi.exec();
-
-      const spanWithBatch = getTestSpans().find(
-        s => s.attributes[ATTR_DB_OPERATION_BATCH_SIZE] === 3
-      );
-      assert.ok(spanWithBatch, 'No span had batch size 3');
     });
   });
 

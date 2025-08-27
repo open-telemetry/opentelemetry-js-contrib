@@ -31,7 +31,7 @@ import { RedisInstrumentationConfig } from '../types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
 import type { RedisCommand, RedisPluginClientTypes } from './internal-types';
-import { SpanKind, context, trace } from '@opentelemetry/api';
+import { Attributes, SpanKind, context, trace } from '@opentelemetry/api';
 import {
   DBSYSTEMVALUES_REDIS,
   SEMATTRS_DB_CONNECTION_STRING,
@@ -53,10 +53,12 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
 
   constructor(config: RedisInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._semconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
+    this._semconvStability = config.semconvStability
+      ? config.semconvStability
+      : semconvStabilityFromStr(
+          'database',
+          process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+        );
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
@@ -150,7 +152,7 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
         const dbStatementSerializer =
           config?.dbStatementSerializer || defaultDbStatementSerializer;
 
-        const attributes: { [key: string]: any } = {};
+        const attributes: Attributes = {};
 
         if (instrumentation._semconvStability & SemconvStability.OLD) {
           Object.assign(attributes, {
@@ -180,7 +182,7 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
 
         // Set attributes for not explicitly typed RedisPluginClientTypes
         if (this.connection_options) {
-          const connectionAttributes: { [key: string]: any } = {};
+          const connectionAttributes: Attributes = {};
 
           if (instrumentation._semconvStability & SemconvStability.OLD) {
             Object.assign(connectionAttributes, {

@@ -37,7 +37,6 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
 import {
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
-  ATTR_DB_OPERATION_BATCH_SIZE,
   SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
 import type { MultiErrorReply } from './internal-types';
@@ -61,10 +60,12 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
 
   constructor(config: RedisInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._semconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
+    this._semconvStability = config.semconvStability
+      ? config.semconvStability
+      : semconvStabilityFromStr(
+          'database',
+          process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+        );
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
@@ -409,11 +410,10 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
       clientOptions,
       this._semconvStability
     );
-
+    if (this._semconvStability & SemconvStability.STABLE) {
+      attributes[ATTR_DB_OPERATION_NAME] = commandName;
+    }
     try {
-      if (this._semconvStability & SemconvStability.STABLE) {
-        attributes[ATTR_DB_OPERATION_NAME] = commandName;
-      }
       const dbStatement = dbStatementSerializer(commandName, commandArgs);
       if (dbStatement != null) {
         if (this._semconvStability & SemconvStability.OLD) {
@@ -487,12 +487,6 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
 
     for (let i = 0; i < openSpans.length; i++) {
       const { span, commandName, commandArgs } = openSpans[i];
-      if (
-        openSpans.length >= 2 &&
-        this._semconvStability & SemconvStability.STABLE
-      ) {
-        span.setAttribute(ATTR_DB_OPERATION_BATCH_SIZE, openSpans.length);
-      }
       const currCommandRes = replies[i];
       const [res, err] =
         currCommandRes instanceof Error
