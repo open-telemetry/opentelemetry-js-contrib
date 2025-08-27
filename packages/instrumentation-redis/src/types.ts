@@ -15,7 +15,10 @@
  */
 
 import { Span } from '@opentelemetry/api';
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import {
+  InstrumentationConfig,
+  SemconvStability,
+} from '@opentelemetry/instrumentation';
 
 /**
  * Function that can be used to serialize db.statement tag
@@ -56,4 +59,12 @@ export interface RedisInstrumentationConfig extends InstrumentationConfig {
 
   /** Require parent to create redis span, default when unset is false */
   requireParentSpan?: boolean;
+
+  /**
+   * Controls which semantic-convention attributes are emitted on spans.
+   * Default: 'OLD'.
+   * When this option is set, it takes precedence over any value provided via
+   * the OTEL_SEMCONV_STABILITY_OPT_IN environment variable.
+   */
+  semconvStability?: SemconvStability;
 }
