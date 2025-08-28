@@ -32,7 +32,7 @@ jobs:
       # ref: https://nx.dev/ci/features/affected#configure-affected-on-ci
       - name: Set base and head commits
         run: |
-          if [ "${{github.event_name}}" == "push" ] then
+          if [ "${{github.event_name}}" == "push" ]; then
             export NX_BASE=origin/main~1
             export NX_HEAD=origin/main
           else
@@ -204,7 +204,7 @@ jobs:
       # See comment in the compile job
       - name: Set base and head commits
         run: |
-          if [ "${{github.event_name}}" == "push" ] then
+          if [ "${{github.event_name}}" == "push" ]; then
             export NX_BASE=origin/main~1
             export NX_HEAD=origin/main
           else
