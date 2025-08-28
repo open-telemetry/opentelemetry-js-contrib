@@ -15,6 +15,7 @@
   "packages/id-generator-aws-xray": "2.0.0",
   "packages/propagation-utils": "0.31.3",
   "packages/redis-common": "0.38.0",
+  "packages/sampler-aws-xray": "0.0.1",
   "packages/sql-common": "0.41.0",
   "packages/contrib-test-utils": "0.49.0",
   "packages/winston-transport": "0.14.1",
