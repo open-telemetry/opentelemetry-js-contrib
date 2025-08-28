@@ -140,7 +140,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       cassandra:
-        image: bitnami/cassandra:3.11.9
+        image: cassandra:3
         ports:
         - 9042:9042
       rabbitmq:
