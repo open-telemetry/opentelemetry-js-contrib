@@ -33,11 +33,11 @@ jobs:
       - name: Set base and head commits
         run: |
           if [ "${{github.event_name}}" == "push" ]; then
-            export NX_BASE=origin/main~1
-            export NX_HEAD=origin/main
+            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
+            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
           else
-            export NX_BASE=origin/main
-            export NX_HEAD=HEAD
+            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
+            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
           fi
       - name: Compile (Delta)
         run: npm run compile:ci:affected
@@ -205,11 +205,11 @@ jobs:
       - name: Set base and head commits
         run: |
           if [ "${{github.event_name}}" == "push" ]; then
-            export NX_BASE=origin/main~1
-            export NX_HEAD=origin/main
+            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
+            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
           else
-            export NX_BASE=origin/main
-            export NX_HEAD=HEAD
+            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
+            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
           fi
       - name: Compile (Delta)
         run: npm run compile:ci:affected
