@@ -22,8 +22,6 @@ const download = async (url, dst) => {
 };
 
 const TOP = process.cwd();
-// const TEMP = os.tmpdir();
-
 const pkgInfo = readPkg(TOP);
 const pkgFiles = pkgInfo.workspaces.map((exp) => globSync(path.join(exp, 'package.json')));
 const codecovPath = path.resolve(TOP, 'codecov');
@@ -33,7 +31,7 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
   const name = info.name;
   const flag = name.replace('@opentelemetry/', '');
   const report = path + 'coverage/coverage-final.json';
-  const command = `${codecovPath} do-upload -t <token> -f ${report} --disable-search -F ${flag} -d`;
+  const command = `./codecov do-upload -t <token> -f ${report} --disable-search -F ${flag} -d`;
   return { name, flag, len: flag.length, path, report, command };
 });
 
@@ -72,7 +70,6 @@ for (const pkg of pkgsWithFlag) {
   if (existsSync(pkg.report)) {
     const command = pkg.command.replace('<token>', token)
     console.log(`Uploading report of ${pkg.name} with flag ${pkg.flag}`);
-    console.log(`Command: ${command}`);
     execSync(command, {cwd: TOP, encoding: 'utf-8'});
   } else {
     console.log(`Report of ${pkg.name} not found. Expected existence of ${pkg.report}`);
