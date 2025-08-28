@@ -199,7 +199,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
@@ -249,27 +249,27 @@ jobs:
         run: npm ci
       # NOTE: keep this in sync with the node versions from `unit-test` job
       - name: Download Test Artifacts (18)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-18
           path: .
       - name: Download Test Artifacts (18.19.0)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-18.19.0
           path: .
       - name: Download Test Artifacts (20)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-20
           path: .
       - name: Download Test Artifacts (20.6.0)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-20.6.0
           path: .
       - name: Download Test Artifacts (22)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-22
           path: .
