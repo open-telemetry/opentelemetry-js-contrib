@@ -234,42 +234,6 @@ jobs:
             packages/*/.nyc_output/**
             LICENSE
 
-  # browser-test:
-  #   needs: compile
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       node: ["22"]
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     NPM_CONFIG_UNSAFE_PERM: true
-  #     NODE_OPTIONS: --max-old-space-size=4096
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: ${{ matrix.node }}
-  #     - name: Install
-  #       run: npm ci
-  #     - name: Download Build Artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: compile-cache-${{ github.run_number }}
-  #         path: .nx
-  #     - name: Build
-  #       run: npm run compile
-  #     - name: Unit tests (Delta)
-  #       run: npm run test:browser:ci:affected
-  #     - name: Report Coverage
-  #       uses: codecov/codecov-action@v5
-  #       env:
-  #         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  #       with:
-  #         verbose: true
-
   test-coverage-report:
     runs-on: ubuntu-latest
     needs: unit-test
