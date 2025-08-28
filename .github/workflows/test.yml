@@ -27,7 +27,9 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci
-      # Set the right values for base and head commits depending
+      # Note: when pushing to main we want to test only what changed in
+      # last commit. Otherwise we want to test all changes from origin/main.
+      # So we set the right values for base and head commits depending
       # on the type of event (PR or push)
       # ref: https://nx.dev/ci/features/affected#configure-affected-on-ci
       - name: Set base and head commits
@@ -201,7 +203,7 @@ jobs:
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
-      # See comment in the compile job
+      # Note: see comment in the compile job
       - name: Set base and head commits
         run: |
           if [ "${{github.event_name}}" == "push" ]; then
