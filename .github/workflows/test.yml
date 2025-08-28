@@ -27,14 +27,19 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci
-      # Defaults for base and head commits are okay for PRs but
-      # for pushed commits to main we should take as base the commit before
+      # Set the right values for base and head commits depending
+      # on the type of event (PR or push)
       # ref: https://nx.dev/ci/features/affected#configure-affected-on-ci
-      - name: Set base and head commits (Push)
+      - name: Set base and head commits
         if: ${{ github.event_name == 'push' }}
         run: |
-          export NX_BASE=origin/main~1
-          export NX_HEAD=origin/main
+          if [ "${{github.event_name}}" == "push" ] then
+            export NX_BASE=origin/main~1
+            export NX_HEAD=origin/main
+          else
+            export NX_BASE=origin/main
+            export NX_HEAD=HEAD
+          fi
       - name: Compile (Delta)
         run: npm run compile:ci:affected
       - name: Upload Build Artifacts
@@ -198,11 +203,16 @@ jobs:
           name: compile-cache-${{ github.run_number }}
           path: .nx
       # See comment in the compile job
-      - name: Set base and head commits (Push)
+      - name: Set base and head commits
         if: ${{ github.event_name == 'push' }}
         run: |
-          export NX_BASE=origin/main~1
-          export NX_HEAD=origin/main
+          if [ "${{github.event_name}}" == "push" ] then
+            export NX_BASE=origin/main~1
+            export NX_HEAD=origin/main
+          else
+            export NX_BASE=origin/main
+            export NX_HEAD=HEAD
+          fi
       - name: Compile (Delta)
         run: npm run compile:ci:affected
       - name: Unit tests (Browser - Delta)
