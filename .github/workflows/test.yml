@@ -31,7 +31,6 @@ jobs:
       # on the type of event (PR or push)
       # ref: https://nx.dev/ci/features/affected#configure-affected-on-ci
       - name: Set base and head commits
-        if: ${{ github.event_name == 'push' }}
         run: |
           if [ "${{github.event_name}}" == "push" ] then
             export NX_BASE=origin/main~1
@@ -204,7 +203,6 @@ jobs:
           path: .nx
       # See comment in the compile job
       - name: Set base and head commits
-        if: ${{ github.event_name == 'push' }}
         run: |
           if [ "${{github.event_name}}" == "push" ] then
             export NX_BASE=origin/main~1
