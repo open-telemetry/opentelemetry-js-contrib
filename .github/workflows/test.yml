@@ -1,7 +1,8 @@
-name: Pull Request Tests
+name: Test Packages
 on:
+  push:
+    branches: [main]
   pull_request:
-    # TODO: remove it
     branches: [main]
 
 permissions:
@@ -26,7 +27,14 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci
-      # TODO: check if compiling only the affected modules is correct
+      # Defaults for base and head commits are okay for PRs but
+      # for pushed commits to main we should take as base the commit before
+      # ref: https://nx.dev/ci/features/affected#configure-affected-on-ci
+      - name: Set base and head commits (Push)
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          export NX_BASE=origin/main~1
+          export NX_HEAD=origin/main
       - name: Compile (Delta)
         run: npm run compile:ci:affected
       - name: Upload Build Artifacts
@@ -173,47 +181,6 @@ jobs:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       NPM_CONFIG_UNSAFE_PERM: true
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-      - name: Install
-        run: npm ci
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: compile-cache-${{ github.run_number }}
-          path: .nx
-      - name: Compile (Delta)
-        run: npm run compile:ci:affected
-      - name: Unit tests (Delta)
-        run: npm run test:ci:affected
-      - name: Test All Versions (Delta)
-        run: npm run test-all-versions:ci:affected
-      - name: Upload Test Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: tests-coverage-cache-${{ github.run_number }}-${{ matrix.node }}
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 1
-          path: |
-            !node_modules
-            **/.nyc_output/**
-
-  browser-test:
-    needs: compile
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ["22"]
-    runs-on: ubuntu-latest
-    env:
-      NPM_CONFIG_UNSAFE_PERM: true
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout
@@ -230,16 +197,68 @@ jobs:
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
-      - name: Build
-        run: npm run compile
-      - name: Unit tests
-        run: npm run test:browser
-      - name: Report Coverage
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      # See comment in the compile job
+      - name: Set base and head commits (Push)
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          export NX_BASE=origin/main~1
+          export NX_HEAD=origin/main
+      - name: Compile (Delta)
+        run: npm run compile:ci:affected
+      - name: Unit tests (Browser - Delta)
+        if: ${{ matrix.node == '22' }}
+        run: npm run test:browser:ci:affected
+      - name: Unit tests (Nodejs - Delta)
+        run: npm run test:ci:affected
+      - name: Test All Versions (Delta)
+        run: npm run test-all-versions:ci:affected
+      - name: Upload Test Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          verbose: true
+          name: tests-coverage-cache-${{ github.run_number }}-${{ matrix.node }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            !node_modules
+            packages/*/.nyc_output/**
+            LICENSE
+
+  # browser-test:
+  #   needs: compile
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       node: ["22"]
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     NPM_CONFIG_UNSAFE_PERM: true
+  #     NODE_OPTIONS: --max-old-space-size=4096
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ matrix.node }}
+  #     - name: Install
+  #       run: npm ci
+  #     - name: Download Build Artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: compile-cache-${{ github.run_number }}
+  #         path: .nx
+  #     - name: Build
+  #       run: npm run compile
+  #     - name: Unit tests (Delta)
+  #       run: npm run test:browser:ci:affected
+  #     - name: Report Coverage
+  #       uses: codecov/codecov-action@v5
+  #       env:
+  #         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  #       with:
+  #         verbose: true
 
   test-coverage-report:
     runs-on: ubuntu-latest
@@ -290,4 +309,3 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           verbose: true
-          dry_run: true
