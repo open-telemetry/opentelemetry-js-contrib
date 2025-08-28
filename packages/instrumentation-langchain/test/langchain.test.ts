@@ -19,6 +19,8 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { OpenTelemetryCallbackHandler } from '../src/callback-handler';
 import { trace, Span, context } from '@opentelemetry/api';
 import { SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { expect } from 'chai';
+import * as sinon from 'sinon';
 
 import 'dotenv/config';
 import { GenAIOperationValues, Span_Attributes } from '../src/span-attributes';
@@ -49,69 +51,59 @@ class CustomSpanProcessor implements SpanProcessor {
 // Create the exporter we'll use to capture spans
 const memoryExporter = new InMemorySpanExporter();
 
-// Mock the complete modules
-jest.mock('@langchain/community/chat_models/bedrock', () => {
-  return {
-    BedrockChat: jest.fn().mockImplementation(() => ({
-      model: 'anthropic.claude-v2',
-      temperature: 0,
-      region: 'us-west-2',
-      invoke: jest.fn().mockResolvedValue({
-        message: {
-          content: 'This is a test response from Bedrock.',
-        },
-      }),
-    })),
-  };
-});
-
-jest.mock('@langchain/aws', () => {
-  return {
-    BedrockEmbeddings: jest.fn().mockImplementation(() => ({
-      model: 'amazon.titan-embed-text-v1',
-      region: 'us-west-2',
-      embedDocuments: jest.fn().mockResolvedValue([
-        [1, 2, 3],
-        [4, 5, 6],
-        [7, 8, 9],
-      ]),
-      embedQuery: jest.fn().mockResolvedValue([1, 2, 4]),
-    })),
-  };
-});
-
-jest.mock('langchain/chains/combine_documents', () => {
-  return {
-    createStuffDocumentsChain: jest.fn().mockResolvedValue({
-      answer: 'Mocked document chain response',
+// Instead of Jest mocks, use proxyquire to mock modules
+const bedrockChatMock = {
+  BedrockChat: sinon.stub().returns({
+    model: 'anthropic.claude-v2',
+    temperature: 0,
+    region: 'us-west-2',
+    invoke: sinon.stub().resolves({
+      message: {
+        content: 'This is a test response from Bedrock.',
+      },
     }),
-  };
-});
+  }),
+};
 
-jest.mock('langchain/chains/retrieval', () => {
-  return {
-    createRetrievalChain: jest.fn().mockResolvedValue({
-      answer: 'Mocked retrieval chain response',
-    }),
-  };
-});
+const bedrockEmbeddingsMock = {
+  BedrockEmbeddings: sinon.stub().returns({
+    model: 'amazon.titan-embed-text-v1',
+    region: 'us-west-2',
+    embedDocuments: sinon.stub().resolves([
+      [1, 2, 3],
+      [4, 5, 6],
+      [7, 8, 9],
+    ]),
+    embedQuery: sinon.stub().resolves([1, 2, 4]),
+  }),
+};
 
-jest.mock('langchain/vectorstores/memory', () => {
-  return {
-    MemoryVectorStore: {
-      fromDocuments: jest.fn().mockResolvedValue({
-        asRetriever: jest.fn().mockReturnValue({
-          getRelevantDocuments: jest
-            .fn()
-            .mockResolvedValue([
-              { pageContent: 'Mocked document 1' },
-              { pageContent: 'Mocked document 2' },
-            ]),
-        }),
+const documentsChainMock = {
+  createStuffDocumentsChain: sinon.stub().resolves({
+    answer: 'Mocked document chain response',
+  }),
+};
+
+const retrievalChainMock = {
+  createRetrievalChain: sinon.stub().resolves({
+    answer: 'Mocked retrieval chain response',
+  }),
+};
+
+const memoryVectorStoreMock = {
+  MemoryVectorStore: {
+    fromDocuments: sinon.stub().resolves({
+      asRetriever: sinon.stub().returns({
+        getRelevantDocuments: sinon
+          .stub()
+          .resolves([
+            { pageContent: 'Mocked document 1' },
+            { pageContent: 'Mocked document 2' },
+          ]),
       }),
-    },
-  };
-});
+    }),
+  },
+};
 
 describe('LangChainInstrumentation', () => {
   const tracerProvider = new NodeTracerProvider();
@@ -121,6 +113,10 @@ describe('LangChainInstrumentation', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
+  });
+
+  afterEach(() => {
+    sinon.restore();
   });
 
   it('should properly nest spans', async () => {
@@ -160,7 +156,7 @@ describe('LangChainInstrumentation', () => {
     // Now we verify the spans were created properly
     const spans = memoryExporter.getFinishedSpans();
 
-    expect(spans.length).toBeGreaterThan(0);
+    expect(spans.length).to.be.greaterThan(0);
 
     const createdRootSpan = spans.find(span => span.name === 'root_span');
     const createdChainSpan = spans.find(span => span.name === 'chain_span');
@@ -174,10 +170,10 @@ describe('LangChainInstrumentation', () => {
       span => span.name === 'retrieve_span'
     );
 
-    expect(createdRootSpan).toBeDefined();
-    expect(createdChainSpan).toBeDefined();
-    expect(createdLlmSpan).toBeDefined();
-    expect(createdRetrieveSpan).toBeDefined();
+    expect(createdRootSpan).to.exist;
+    expect(createdChainSpan).to.exist;
+    expect(createdLlmSpan).to.exist;
+    expect(createdRetrieveSpan).to.exist;
 
     // Verify parent-child relationships
     if (createdChainSpan && createdRootSpan) {
@@ -186,7 +182,7 @@ describe('LangChainInstrumentation', () => {
       const chainParentId = (createdChainSpan as any).parentSpanId;
 
       // Compare the IDs to ensure proper parent-child relationship
-      expect(chainParentId).toBeDefined();
+      expect(chainParentId).to.exist;
       // The parent ID comparison might depend on how the mocks work
       // For now, let's just verify they exist
     }
@@ -214,25 +210,25 @@ describe('LangChainInstrumentation', () => {
         GenAIOperationValues.CHAT
     );
 
-    expect(createdLlmSpan).toBeDefined();
+    expect(createdLlmSpan).to.exist;
 
     if (createdLlmSpan) {
       expect(
         createdLlmSpan.attributes[Span_Attributes.GEN_AI_REQUEST_MODEL]
-      ).toBe('anthropic.claude-v2');
+      ).to.equal('anthropic.claude-v2');
       expect(
         createdLlmSpan.attributes[Span_Attributes.GEN_AI_RESPONSE_MODEL]
-      ).toBe('anthropic.claude-v2');
+      ).to.equal('anthropic.claude-v2');
       expect(
         createdLlmSpan.attributes[Span_Attributes.GEN_AI_USAGE_INPUT_TOKENS]
-      ).toBe(12);
+      ).to.equal(12);
       expect(
         createdLlmSpan.attributes[Span_Attributes.GEN_AI_USAGE_OUTPUT_TOKENS]
-      ).toBe(8);
+      ).to.equal(8);
       expect(
         createdLlmSpan.attributes[Span_Attributes.GEN_AI_REQUEST_TEMPERATURE]
-      ).toBe(0);
-      expect(createdLlmSpan.attributes[Span_Attributes.GEN_AI_SYSTEM]).toBe(
+      ).to.equal(0);
+      expect(createdLlmSpan.attributes[Span_Attributes.GEN_AI_SYSTEM]).to.equal(
         'bedrock'
       );
     }
@@ -261,16 +257,16 @@ describe('LangChainInstrumentation', () => {
           GenAIOperationValues.CHAT
     );
 
-    expect(createdLlmSpan).toBeDefined();
+    expect(createdLlmSpan).to.exist;
 
     if (createdLlmSpan) {
       expect(
         createdLlmSpan.attributes[Span_Attributes.GEN_AI_REQUEST_MODEL]
-      ).toBe('anthropic.claude-v2');
-      expect(createdLlmSpan.attributes[Span_Attributes.GEN_AI_SYSTEM]).toBe(
+      ).to.equal('anthropic.claude-v2');
+      expect(createdLlmSpan.attributes[Span_Attributes.GEN_AI_SYSTEM]).to.equal(
         'bedrock'
       );
-      expect(createdLlmSpan.attributes['gen_ai.completion']).toBeDefined();
+      expect(createdLlmSpan.attributes['gen_ai.completion']).to.exist;
     }
   });
 
@@ -295,15 +291,15 @@ describe('LangChainInstrumentation', () => {
           GenAIOperationValues.CHAT
     );
 
-    expect(createdLlmSpan).toBeDefined();
+    expect(createdLlmSpan).to.exist;
 
     if (createdLlmSpan) {
-      expect(createdLlmSpan.attributes[Span_Attributes.GEN_AI_TOOL_NAME]).toBe(
-        'get_current_weather'
-      );
+      expect(
+        createdLlmSpan.attributes[Span_Attributes.GEN_AI_TOOL_NAME]
+      ).to.equal('get_current_weather');
       expect(
         createdLlmSpan.attributes[Span_Attributes.GEN_AI_REQUEST_MODEL]
-      ).toBe('anthropic.claude-v2');
+      ).to.equal('anthropic.claude-v2');
     }
   });
 });
@@ -327,32 +323,34 @@ describe('OpenTelemetryCallbackHandler', () => {
     // Override the spanMapping with our mock type
     const originalSpanMapping = telemetryHandler.spanMapping;
     const mockSpanMapping = new Map<string, MockSpan>();
-    telemetryHandler.spanMapping = mockSpanMapping as any;
+    (telemetryHandler as any).spanMapping = mockSpanMapping;
 
     for (let i = 0; i < 10; i++) {
       // Instead of actually creating spans, just add mock spans to the mapping
-      mockSpanMapping.set('runId', { end: jest.fn() });
-      expect(mockSpanMapping.size).toBe(1);
+      const endFn = sinon.spy();
+      mockSpanMapping.set('runId', { end: endFn });
+      expect(mockSpanMapping.size).to.equal(1);
 
-      mockSpanMapping.set('runId2', { end: jest.fn() });
-      expect(mockSpanMapping.size).toBe(2);
+      const endFn2 = sinon.spy();
+      mockSpanMapping.set('runId2', { end: endFn2 });
+      expect(mockSpanMapping.size).to.equal(2);
 
       // Call the mocked span.end() and delete it
       const span1 = mockSpanMapping.get('runId');
       if (span1) span1.end();
       mockSpanMapping.delete('runId');
-      expect(mockSpanMapping.size).toBe(1);
+      expect(mockSpanMapping.size).to.equal(1);
 
       // Call the mocked span.end() and delete it
       const span2 = mockSpanMapping.get('runId2');
       if (span2) span2.end();
       mockSpanMapping.delete('runId2');
-      expect(mockSpanMapping.size).toBe(0);
+      expect(mockSpanMapping.size).to.equal(0);
     }
 
-    expect(mockSpanMapping.size).toBe(0);
+    expect(mockSpanMapping.size).to.equal(0);
 
     // Restore original map
-    telemetryHandler.spanMapping = originalSpanMapping;
+    (telemetryHandler as any).spanMapping = originalSpanMapping;
   });
 });

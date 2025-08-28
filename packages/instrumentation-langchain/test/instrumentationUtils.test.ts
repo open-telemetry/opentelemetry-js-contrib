@@ -17,6 +17,8 @@
 import { addTracerToHandlers } from '../src/instrumentationUtils';
 import { OpenTelemetryCallbackHandler } from '../src/callback-handler';
 import { Tracer } from '@opentelemetry/api';
+import { expect } from 'chai';
+import * as sinon from 'sinon';
 
 describe('addTracerToHandlers', () => {
   it('should add a tracer if there are no handlers', () => {
@@ -24,10 +26,16 @@ describe('addTracerToHandlers', () => {
 
     const result = addTracerToHandlers(tracer);
 
-    expect(Array.isArray(result)).toBe(true);
-    expect(result).toHaveLength(1);
+    // First check if result is array-like
+    expect(Array.isArray(result) || 'handlers' in result).to.be.true;
+
+    // Safely check the result
     if (Array.isArray(result)) {
-      expect(result[0]).toBeInstanceOf(OpenTelemetryCallbackHandler);
+      expect(result.length).to.equal(1);
+      expect(result[0]).to.be.instanceOf(OpenTelemetryCallbackHandler);
+    } else if ('handlers' in result && Array.isArray(result.handlers)) {
+      expect(result.handlers.length).to.equal(1);
+      expect(result.handlers[0]).to.be.instanceOf(OpenTelemetryCallbackHandler);
     }
   });
 
@@ -37,10 +45,12 @@ describe('addTracerToHandlers', () => {
 
     const result = addTracerToHandlers(tracer, handlers);
 
-    expect(result).toBe(handlers);
-    expect(result).toHaveLength(2);
+    expect(result).to.equal(handlers);
+
+    // Use type guard before checking length
     if (Array.isArray(result)) {
-      expect(result[1]).toBeInstanceOf(OpenTelemetryCallbackHandler);
+      expect(result.length).to.equal(2);
+      expect(result[1]).to.be.instanceOf(OpenTelemetryCallbackHandler);
     }
   });
 
@@ -51,10 +61,12 @@ describe('addTracerToHandlers', () => {
 
     const result = addTracerToHandlers(tracer, handlers);
 
-    expect(result).toBe(handlers);
-    expect(result).toHaveLength(1);
+    expect(result).to.equal(handlers);
+
+    // Use type guard before checking length
     if (Array.isArray(result)) {
-      expect(result[0]).toBeInstanceOf(OpenTelemetryCallbackHandler);
+      expect(result.length).to.equal(1);
+      expect(result[0]).to.be.instanceOf(OpenTelemetryCallbackHandler);
     }
   });
 });

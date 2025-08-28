@@ -417,7 +417,7 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
       name = chain.id[chain.id.length - 1];
     }
 
-    const spanName = `chain \${name}`;
+    const spanName = `chain ${name}`;
     const span = this._createSpan(
       runId,
       parentRunId,
@@ -481,7 +481,7 @@ export class OpenTelemetryCallbackHandler extends BaseCallbackHandler {
     if (name === undefined && tool.id) {
       name = tool.id[tool.id.length - 1];
     }
-    const spanName = `execute_tool \${name}`;
+    const spanName = `execute_tool ${name}`;
     const span = this._createSpan(
       runId,
       parentRunId,
