@@ -14,8 +14,8 @@
     "clean": "rimraf build/*",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-runtime-node",
     "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "version:update": "node ../../scripts/version-update.js"
