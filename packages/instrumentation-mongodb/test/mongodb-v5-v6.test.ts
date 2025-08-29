@@ -678,17 +678,13 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
       instrumentation.setConfig();
     });
 
-    it('should not create spans without parent span when requireParentSpan is explicitly set to true', done => {
-      context.with(trace.deleteSpan(context.active()), () => {
-        collection
-          .insertOne({ a: 1 })
-          .then(() => {
-            assert.strictEqual(getTestSpans().length, 0);
-            done();
-          })
-          .catch(err => {
-            done(err);
-          });
+    it('should not create spans without parent span when requireParentSpan is explicitly set to true', async () => {
+      await context.with(trace.deleteSpan(context.active()), async () => {
+        console.log(getTestSpans());
+        assert.strictEqual(getTestSpans().length, 0);
+        await collection.insertOne({ a: 1 });
+        console.log(getTestSpans());
+        assert.strictEqual(getTestSpans().length, 0);
       });
     });
 
