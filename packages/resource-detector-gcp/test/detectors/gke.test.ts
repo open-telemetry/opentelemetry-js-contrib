@@ -67,7 +67,10 @@ describe('GKE', () => {
         .resolves('us-east4');
 
       const zoneOrRegion = await gke.availabilityZoneOrRegion();
-      assert.deepStrictEqual(zoneOrRegion, {type: 'region', value: 'us-east4'});
+      assert.deepStrictEqual(zoneOrRegion, {
+        type: 'region',
+        value: 'us-east4',
+      });
     });
 
     it('detects zone', async () => {
@@ -89,7 +92,7 @@ describe('GKE', () => {
 
       await assert.rejects(
         gke.availabilityZoneOrRegion(),
-        /unrecognized format for cluster location/,
+        /unrecognized format for cluster location/
       );
     });
   });

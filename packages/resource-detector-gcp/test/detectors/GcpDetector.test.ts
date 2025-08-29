@@ -19,11 +19,7 @@ import * as sinon from 'sinon';
 import * as metadata from 'gcp-metadata';
 
 import { gcpDetector } from '../../src/';
-import {
-  detectResources,
-  ResourceDetector,
-  Resource,
-} from '@opentelemetry/resources';
+import { detectResources, Resource } from '@opentelemetry/resources';
 import * as assert from 'assert';
 
 async function detectAndWait(): Promise<Resource> {

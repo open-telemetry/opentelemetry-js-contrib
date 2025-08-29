@@ -20,7 +20,7 @@ import * as metadata from 'gcp-metadata';
 
 import * as faas from '../../src/detectors/faas';
 import * as assert from 'assert';
-import {BigNumber} from 'bignumber.js';
+import { BigNumber } from 'bignumber.js';
 
 describe('FaaS (Cloud Run/Functions)', () => {
   let metadataStub: sinon.SinonStubbedInstance<typeof metadata>;
