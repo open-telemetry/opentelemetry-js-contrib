@@ -15,7 +15,7 @@
 import * as sinon from 'sinon';
 import * as metadata from 'gcp-metadata';
 
-import {GcpDetectorSync} from '../../src/detector/detector';
+import { gcpDetector } from '../../src/';
 import {
   detectResources,
   ResourceDetector,
@@ -23,13 +23,13 @@ import {
 } from '@opentelemetry/resources';
 import * as assert from 'assert';
 
-async function detectAndWait(detector: ResourceDetector): Promise<Resource> {
-  const resource = detectResources({detectors: [detector]});
+async function detectAndWait(): Promise<Resource> {
+  const resource = detectResources({ detectors: [gcpDetector] });
   await resource.waitForAsyncAttributes?.();
   return resource;
 }
 
-describe('GcpDetectorSync', () => {
+describe('gcpDetector', () => {
   let metadataStub: sinon.SinonStubbedInstance<typeof metadata>;
   let envStub: NodeJS.ProcessEnv;
   beforeEach(() => {
@@ -46,7 +46,7 @@ describe('GcpDetectorSync', () => {
 
   it('returns empty resource when metadata server is not available', async () => {
     metadataStub.isAvailable.resolves(false);
-    const resource = await detectAndWait(new GcpDetectorSync());
+    const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {});
   });
 
@@ -65,7 +65,7 @@ describe('GcpDetectorSync', () => {
       metadataStub.instance
         .withArgs('attributes/cluster-location')
         .resolves('us-east4-b');
-      const resource = await detectAndWait(new GcpDetectorSync());
+      const resource = await detectAndWait();
       assert.deepStrictEqual(resource.attributes, {
         'cloud.account.id': 'fake-project-id',
         'cloud.availability_zone': 'us-east4-b',
@@ -80,7 +80,7 @@ describe('GcpDetectorSync', () => {
       metadataStub.instance
         .withArgs('attributes/cluster-location')
         .resolves('us-east4');
-      const resource = await detectAndWait(new GcpDetectorSync());
+      const resource = await detectAndWait();
       assert.deepStrictEqual(resource.attributes, {
         'cloud.account.id': 'fake-project-id',
         'cloud.platform': 'gcp_kubernetes_engine',
@@ -106,7 +106,7 @@ describe('GcpDetectorSync', () => {
       .withArgs('zone')
       .resolves('projects/233510669999/zones/us-east4-b');
 
-    const resource = await detectAndWait(new GcpDetectorSync());
+    const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {
       'cloud.account.id': 'fake-project-id',
       'cloud.availability_zone': 'us-east4-b',
@@ -130,7 +130,7 @@ describe('GcpDetectorSync', () => {
       .withArgs('region')
       .resolves('projects/233510669999/regions/us-east4');
 
-    const resource = await detectAndWait(new GcpDetectorSync());
+    const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {
       'cloud.account.id': 'fake-project-id',
       'cloud.platform': 'gcp_cloud_run',
@@ -153,7 +153,7 @@ describe('GcpDetectorSync', () => {
       .withArgs('region')
       .resolves('projects/233510669999/regions/us-east4');
 
-    const resource = await detectAndWait(new GcpDetectorSync());
+    const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {
       'cloud.account.id': 'fake-project-id',
       'cloud.platform': 'gcp_cloud_functions',
@@ -175,7 +175,7 @@ describe('GcpDetectorSync', () => {
       .withArgs('region')
       .resolves('projects/233510669999/regions/us-east4');
 
-    const resource = await detectAndWait(new GcpDetectorSync());
+    const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {
       'cloud.account.id': 'fake-project-id',
       'cloud.availability_zone': 'us-east4-b',
@@ -196,7 +196,7 @@ describe('GcpDetectorSync', () => {
       .withArgs('zone')
       .resolves('projects/233510669999/zones/us-east4-b');
 
-    const resource = await detectAndWait(new GcpDetectorSync());
+    const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {
       'cloud.account.id': 'fake-project-id',
       'cloud.availability_zone': 'us-east4-b',
@@ -214,7 +214,7 @@ describe('GcpDetectorSync', () => {
     metadataStub.instance.rejects();
     metadataStub.project.rejects();
 
-    const resource = await detectAndWait(new GcpDetectorSync());
+    const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {});
   });
 });
