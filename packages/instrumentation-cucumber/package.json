@@ -11,7 +11,7 @@
   },
   "scripts": {
     "test": "nyc mocha 'test/**/*.test.ts'",
-    "test-all-versions": "tav",
+    "test-all-versions": "../../test-all-versions.js",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",

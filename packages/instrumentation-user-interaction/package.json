@@ -30,7 +30,8 @@
     "tracing",
     "profiling",
     "metrics",
-    "stats"
+    "stats",
+    "user-interaction"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
