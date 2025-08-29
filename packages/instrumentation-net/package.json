@@ -10,7 +10,7 @@
     "directory": "packages/instrumentation-net"
   },
   "scripts": {
-    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext=ts,js,mjs",
@@ -18,8 +18,9 @@
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
+    "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-net",
-    "compile": "tsc -p ."
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json"
   },
   "keywords": [
     "connect",

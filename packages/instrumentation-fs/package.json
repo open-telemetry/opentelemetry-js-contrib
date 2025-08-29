@@ -10,7 +10,7 @@
     "directory": "packages/instrumentation-fs"
   },
   "scripts": {
-    "test": "mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext=ts,js,mjs",

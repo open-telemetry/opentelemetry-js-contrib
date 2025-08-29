@@ -17,10 +17,11 @@
     "lint": "eslint . --ext=ts,js,mjs",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "test-all-versions": "tav",
     "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "test-services:start": "cd ../.. && npm run test-services:start mssql",
     "test-services:stop": "cd ../.. && npm run test-services:stop mssql",
     "version:update": "node ../../scripts/version-update.js"
