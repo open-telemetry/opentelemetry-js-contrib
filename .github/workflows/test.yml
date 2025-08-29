@@ -285,9 +285,11 @@ jobs:
           fi
       - name: Merge coverage (Delta)
         run: npm run test-merge-coverage:ci:affected
-      - name: Report Coverage
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          verbose: true
+      - name: Report Coverage with Flags
+        run: node ./scripts/codecov-upload-flags.mjs
+      # - name: Report Coverage
+      #   uses: codecov/codecov-action@v5
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      #   with:
+      #     verbose: true

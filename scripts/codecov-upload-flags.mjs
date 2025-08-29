@@ -1,53 +1,48 @@
 import { execSync } from 'child_process';
 import { globSync } from 'glob';
-import { chmod, chmodSync, createWriteStream, existsSync, readFileSync } from 'fs';
+import { chmodSync, existsSync, readFileSync } from 'fs';
 import path from 'path';
-import os from 'os';
-import { Readable } from 'stream';
 
+const ROOT_DIR = process.cwd();
 const readPkg = (dir) => JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
-const download = async (url, dst) => {
-  const resp = await fetch(url);
-  return new Promise((res, rej) => {
-    if (resp.ok && resp.body) {
-      console.log("Writing to file:", dst);
-      let writer = createWriteStream(dst);
-      Readable.fromWeb(resp.body).pipe(writer);
-      writer.on('finish', res);
-      writer.on('error', rej);
-    } else {
-      rej(new Error('Could not get body from request'));
-    }
-  });
-};
+const execCmd = (cmd, opts = {}) => execSync(cmd, {cwd: ROOT_DIR, encoding: 'utf-8', stdio: 'inherit', ...opts})
 
-const TOP = process.cwd();
-const pkgInfo = readPkg(TOP);
+const commitSha = execCmd('git rev-parse HEAD', {stdio: 'pipe'}).replace('\n', '');
+const branchName = execCmd('git rev-parse --abbrev-ref HEAD', {stdio: 'pipe'}).replace('\n', '');
+const pkgInfo = readPkg(ROOT_DIR);
 const pkgFiles = pkgInfo.workspaces.map((exp) => globSync(path.join(exp, 'package.json')));
-const codecovPath = path.resolve(TOP, 'codecov');
+const codecovPath = path.resolve(ROOT_DIR, 'codecov');
 const pkgsWithFlag = pkgFiles.flat().map((f) => {
   const path = f.replace('package.json', '');
   const info = readPkg(path);
   const name = info.name;
   const flag = name.replace('@opentelemetry/', '');
   const report = path + 'coverage/coverage-final.json';
-  const command = `./codecov do-upload -t <token> -f ${report} --disable-search -F ${flag} -d`;
+  // NOTE: command extracted fromt the codecov action. You can see an example in
+  // https://github.com/open-telemetry/opentelemetry-js-contrib/actions/runs/17320649481/job/49176411722?pr=2866
+  //
+  // Example:
+  // ./codecov --verbose upload-coverage --git-service github --sha f08e6cceec6f39d61b1a9c35aed2e53b54a55d36 --branch david-luna:dluna-ci-pr-speed-and-coverage --gcov-executable gcov
+  const command = [
+    './codecov --verbose',
+    'upload-coverage',
+    '--git-service github',
+    '--gcov-executable gcov',
+    '--sha', commitSha,
+    '--branch', branchName,
+    '--dry-run',
+  ].join(' ');
   return { name, flag, len: flag.length, path, report, command };
 });
 
 // Download codecov
+const baseUrl = 'https://cli.codecov.io/latest/';
 const urlMap = {
-  linux: 'https://cli.codecov.io/latest/linux/codecov',
-  darwin: 'https://cli.codecov.io/latest/macos/codecov',
+  linux: `${baseUrl}linux/codecov`,
+  darwin: `${baseUrl}macos/codecov`,
 };
+
 const url = urlMap[process.platform];
-const token = process.argv[2];
-// Validations
-if (typeof token !== 'string') {
-  console.log('Token is missing. Usage:');
-  console.log('node ./scripts/codecov-upload-flags.mjs my-codecov-token');
-  process.exit(-1); 
-}
 if (!url) {
   console.log(`No codecov binary available for platform "${process.platform}"`);
   console.log(`Available platforms are "${Object.keys(urlMap)}"`);
@@ -59,8 +54,12 @@ if (existsSync(codecovPath)) {
   console.log(`Codecov binary found.`);
 } else {
   console.log(`Codecov binary missing. Downloading from ${url}`);
-  await download(url, codecovPath);
-  console.log(`Codecov binary downloaded to ${codecovPath}`);
+  execCmd(`curl -O "${url}"`);
+  console.log(`Verifying codecov binary downloaded to ${codecovPath}`);
+  execCmd(`echo "$(curl -s https://keybase.io/codecovsecurity/pgp_keys.asc)" | gpg --no-default-keyring --import`);
+  execCmd(`curl -O "${url}.SHA256SUM"`);
+  execCmd(`curl -O "${url}.SHA256SUM.sig"`);
+  execCmd(`gpg --verify "${codecovPath}.SHA256SUM.sig" "${codecovPath}.SHA256SUM"`);
 }
 // make sure we have exec perms
 chmodSync(codecovPath, 0o555);
@@ -68,9 +67,10 @@ chmodSync(codecovPath, 0o555);
 // Compute the commands to run
 for (const pkg of pkgsWithFlag) {
   if (existsSync(pkg.report)) {
-    const command = pkg.command.replace('<token>', token)
     console.log(`Uploading report of ${pkg.name} with flag ${pkg.flag}`);
-    execSync(command, {cwd: TOP, encoding: 'utf-8'});
+    const command = pkg.command.replace('<sha>', 'Oxffff').replace('<branch>', 'my-branch');
+    // execCmd(command, {cwd: TOP, encoding: 'utf-8'});
+    console.log(command)
   } else {
     console.log(`Report of ${pkg.name} not found. Expected existence of ${pkg.report}`);
   }
