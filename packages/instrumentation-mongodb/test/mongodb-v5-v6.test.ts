@@ -509,18 +509,29 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         create({
           responseHook: (span: Span, result: any) => {
             const { data } = result;
-            if (data.n) {
-              span.setAttribute('mongodb_insert_count', result.data.n);
+
+            // from 6.19.0 insert returns a MongoDBResponse class with a
+            // `toObject()` method instead of the plain { ok: 1, n: [Number] } response
+            let insertCount = data.n;
+            if (!insertCount && typeof data.toObject === 'function') {
+              insertCount = data.toObject().n;
             }
+
+            if (insertCount) {
+              span.setAttribute('mongodb_insert_count', insertCount);
+            }
+
             // from v6.8.0 the cursor property is not an object but an instance of
             // `CursorResponse`. We need to use the `toObject` method to be able to inspect the data
-            const cursorObj = data.cursor.firstBatch
-              ? data.cursor
-              : data.cursor.toObject();
-            span.setAttribute(
-              'mongodb_first_result',
-              JSON.stringify(cursorObj.firstBatch[0])
-            );
+            if (data.cursor) {
+              const cursorObj = data.cursor.firstBatch
+                ? data.cursor
+                : data.cursor.toObject();
+              span.setAttribute(
+                'mongodb_first_result',
+                JSON.stringify(cursorObj.firstBatch[0])
+              );
+            }
           },
         });
       });
