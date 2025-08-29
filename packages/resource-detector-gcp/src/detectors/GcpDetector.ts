@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import { context } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import {
   CLOUDPLATFORMVALUES_GCP_APP_ENGINE,
   CLOUDPLATFORMVALUES_GCP_CLOUD_FUNCTIONS,
@@ -207,7 +209,11 @@ async function makeResource(attrs: GcpResourceAttributes): Promise<Resource> {
  */
 export class GcpDetector implements ResourceDetector {
   private async _asyncAttributes(): Promise<Attributes> {
-    return (await detect()).attributes;
+    const resource = await context.with(
+      suppressTracing(context.active()),
+      detect
+    );
+    return resource.attributes;
   }
 
   detect(): DetectedResource {
