@@ -17,7 +17,7 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       # Use the same Node.js version used for `release-please` workflow.
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       memcached:
-        image: memcached:1.6.38-alpine
+        image: memcached:1.6.39-alpine
         ports:
         - 11211:11211
       mongo:
@@ -125,7 +125,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       cassandra:
-        image: bitnami/cassandra:3
+        image: cassandra:3
         ports:
         - 9042:9042
       rabbitmq:
@@ -174,7 +174,7 @@ jobs:
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v4
@@ -183,7 +183,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: tests-build-cache-${{ github.run_number }}
           path: .nx
@@ -215,7 +215,7 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v4
@@ -224,7 +224,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: tests-build-cache-${{ github.run_number }}
           path: .nx

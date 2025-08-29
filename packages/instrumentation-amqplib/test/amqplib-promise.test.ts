@@ -68,7 +68,7 @@ const CHANNEL_CLOSED_IN_TEST = Symbol(
 );
 
 describe('amqplib instrumentation promise model', () => {
-  let conn: amqp.Connection;
+  let conn: amqp.ChannelModel;
   before(async function () {
     if (!shouldTest) {
       this.skip();

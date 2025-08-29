@@ -25,7 +25,7 @@ services:
       retries: 30
 
   memcached:
-    image: memcached:1.6.38-alpine
+    image: memcached:1.6.39-alpine
     ports:
     - 11211:11211
 
