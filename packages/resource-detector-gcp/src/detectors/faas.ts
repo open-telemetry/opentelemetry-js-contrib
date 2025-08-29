@@ -61,7 +61,7 @@ export async function faasVersion(): Promise<string> {
 export async function faasInstance(): Promise<string> {
   // May be a bignumber.js BigNumber which can just be converted with toString(). See
   // https://github.com/googleapis/gcp-metadata#take-care-with-large-number-valued-properties
-  const id = await metadata.instance<number | Object>(ID_METADATA_ATTR);
+  const id = await metadata.instance<number | object>(ID_METADATA_ATTR);
   return id.toString();
 }
 

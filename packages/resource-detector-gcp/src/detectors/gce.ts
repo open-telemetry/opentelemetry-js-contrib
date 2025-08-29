@@ -20,7 +20,7 @@
  * https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/blob/v1.8.0/detectors/gcp/gce.go
  */
 
-import {diag} from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import * as metadata from 'gcp-metadata';
 
 const MACHINE_TYPE_METADATA_ATTR = 'machine-type';
@@ -36,7 +36,7 @@ export async function onGce(): Promise<boolean> {
     diag.debug(
       'Could not fetch metadata attribute %s, assuming not on GCE. Error was %s',
       MACHINE_TYPE_METADATA_ATTR,
-      err,
+      err
     );
     return false;
   }
@@ -57,7 +57,7 @@ export async function hostType(): Promise<string> {
 export async function hostId(): Promise<string> {
   // May be a bignumber.js BigNumber which can just be converted with toString(). See
   // https://github.com/googleapis/gcp-metadata#take-care-with-large-number-valued-properties
-  const id = await metadata.instance<number | Object>(ID_METADATA_ATTR);
+  const id = await metadata.instance<number | object>(ID_METADATA_ATTR);
   return id.toString();
 }
 
@@ -82,12 +82,12 @@ export async function availabilityZoneAndRegion(): Promise<{
   // Format described in
   // https://cloud.google.com/compute/docs/metadata/default-metadata-values#vm_instance_metadata
   const re = /projects\/\d+\/zones\/(?<zone>(?<region>\w+-\w+)-\w+)/;
-  const {zone, region} = fullZone.match(re)?.groups ?? {};
+  const { zone, region } = fullZone.match(re)?.groups ?? {};
   if (!zone || !region) {
     throw new Error(
-      `zone was not in the expected format: projects/PROJECT_NUM/zones/COUNTRY-REGION-ZONE. Got ${fullZone}`,
+      `zone was not in the expected format: projects/PROJECT_NUM/zones/COUNTRY-REGION-ZONE. Got ${fullZone}`
     );
   }
 
-  return {zone, region};
+  return { zone, region };
 }

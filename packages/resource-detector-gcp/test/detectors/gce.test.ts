@@ -20,7 +20,7 @@ import * as metadata from 'gcp-metadata';
 
 import * as gce from '../../src/detectors/gce';
 import * as assert from 'assert';
-import {BigNumber} from 'bignumber.js';
+import { BigNumber } from 'bignumber.js';
 
 describe('GCE', () => {
   let metadataStub: sinon.SinonStubbedInstance<typeof metadata>;
@@ -102,7 +102,7 @@ describe('GCE', () => {
 
       await assert.rejects(
         gce.availabilityZoneAndRegion(),
-        /zone was not in the expected format/,
+        /zone was not in the expected format/
       );
     });
   });
