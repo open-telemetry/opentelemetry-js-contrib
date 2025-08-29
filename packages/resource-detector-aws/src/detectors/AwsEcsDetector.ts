@@ -189,7 +189,6 @@ export class AwsEcsDetector implements ResourceDetector {
     return undefined;
   }
 
-
   // Prefer primary ECS format extraction
   private _extractPrimaryEcsContainerId(line: string): string | undefined {
     const ecsPattern = /\/ecs\/[a-fA-F0-9-]+\/([a-fA-F0-9-]+)$/;

@@ -534,7 +534,8 @@ describe('AwsEcsResourceDetector', () => {
     });
 
     it('should extract container ID from Docker format cgroup', async () => {
-      const dockerContainerId = 'a4d00c9dd675d67f866c786181419e1b44832d4696780152e61afd44a3e02856';
+      const dockerContainerId =
+        'a4d00c9dd675d67f866c786181419e1b44832d4696780152e61afd44a3e02856';
       const cgroupData = `1:blkio:/docker/${dockerContainerId}
 2:cpu:/docker/${dockerContainerId}
 3:cpuacct:/docker/${dockerContainerId}`;
