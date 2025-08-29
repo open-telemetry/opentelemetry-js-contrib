@@ -3,12 +3,22 @@ import { globSync } from 'glob';
 import { chmodSync, existsSync, readFileSync } from 'fs';
 import path from 'path';
 
+const branchName = process.argv[2];
+const commitSha = process.argv[3];
+
+if (typeof branchName !== 'string') {
+  console.log('Branch name missing! Exiting');
+  process.exit(-1);
+}
+if (typeof commitSha !== 'string') {
+  console.log('Commit sha missing! Exiting');
+  process.exit(-1);
+}
+
 const ROOT_DIR = process.cwd();
 const readPkg = (dir) => JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
-const execCmd = (cmd, opts = {}) => execSync(cmd, {cwd: ROOT_DIR, encoding: 'utf-8', stdio: 'inherit', ...opts})
+const execCmd = (cmd, opts = {}) => execSync(cmd, {cwd: process.cwd(), encoding: 'utf-8', stdio: 'inherit', ...opts});
 
-const commitSha = execCmd('git rev-parse HEAD', {stdio: 'pipe'}).replace('\n', '');
-const branchName = execCmd('git rev-parse --abbrev-ref HEAD', {stdio: 'pipe'}).replace('\n', '');
 const pkgInfo = readPkg(ROOT_DIR);
 const pkgFiles = pkgInfo.workspaces.map((exp) => globSync(path.join(exp, 'package.json')));
 const codecovPath = path.resolve(ROOT_DIR, 'codecov');
