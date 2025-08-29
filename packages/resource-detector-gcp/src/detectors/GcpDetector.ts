@@ -33,7 +33,7 @@ import {
   SEMRESATTRS_K8S_CLUSTER_NAME,
 } from '@opentelemetry/semantic-conventions';
 
-import {AttributeValue, Attributes} from '@opentelemetry/api';
+import { AttributeValue, Attributes } from '@opentelemetry/api';
 import {
   DetectedResource,
   DetectedResourceAttributes,
@@ -152,7 +152,7 @@ async function gaeResource(): Promise<Resource> {
       gae.standardCloudRegion(),
     ]);
   } else {
-    ({zone, region} = await gce.availabilityZoneAndRegion());
+    ({ zone, region } = await gce.availabilityZoneAndRegion());
   }
   const [faasName, faasVersion, faasInstance] = await Promise.all([
     gae.serviceName(),
@@ -202,7 +202,7 @@ async function makeResource(attrs: GcpResourceAttributes): Promise<Resource> {
  * Google Cloud resource detector which populates attributes based on the environment this
  * process is running in. If not on GCP, returns an empty resource.
  */
-export class GcpDetectorSync implements ResourceDetector {
+export class GcpDetector implements ResourceDetector {
   private async _asyncAttributes(): Promise<Attributes> {
     return (await detect()).attributes;
   }
@@ -215,6 +215,8 @@ export class GcpDetectorSync implements ResourceDetector {
       attributes[name] = asyncAttributes.then(data => data[name]);
     });
 
-    return {attributes};
+    return { attributes };
   }
 }
+
+export const gcpDetector = new GcpDetector();
