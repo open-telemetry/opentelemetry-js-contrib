@@ -15,7 +15,7 @@
 import * as sinon from 'sinon';
 import * as metadata from 'gcp-metadata';
 
-import * as gke from '../../src/detector/gke';
+import * as gke from '../../src/detectors/gke';
 import * as assert from 'assert';
 
 describe('GKE', () => {

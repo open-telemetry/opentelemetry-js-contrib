@@ -15,7 +15,7 @@
 import * as sinon from 'sinon';
 import * as metadata from 'gcp-metadata';
 
-import * as gce from '../../src/detector/gce';
+import * as gce from '../../src/detectors/gce';
 import * as assert from 'assert';
 import {BigNumber} from 'bignumber.js';
 
