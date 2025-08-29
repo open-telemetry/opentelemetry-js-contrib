@@ -15,7 +15,7 @@
 import * as sinon from 'sinon';
 import * as metadata from 'gcp-metadata';
 
-import * as gae from '../../src/detector/gae';
+import * as gae from '../../src/detectors/gae';
 import * as assert from 'assert';
 
 describe('App Engine (GAE)', () => {
@@ -81,7 +81,7 @@ describe('App Engine (GAE)', () => {
 
       await assert.rejects(
         gae.flexAvailabilityZoneAndRegion(),
-        /zone was not in the expected format/,
+        /zone was not in the expected format/
       );
     });
   });

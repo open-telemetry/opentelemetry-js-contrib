@@ -15,7 +15,7 @@
 import * as sinon from 'sinon';
 import * as metadata from 'gcp-metadata';
 
-import * as faas from '../../src/detector/faas';
+import * as faas from '../../src/detectors/faas';
 import * as assert from 'assert';
 import {BigNumber} from 'bignumber.js';
 
