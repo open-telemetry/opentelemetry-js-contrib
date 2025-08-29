@@ -286,7 +286,7 @@ jobs:
       - name: Merge coverage (Delta)
         run: npm run test-merge-coverage:ci:affected
       - name: Report Coverage with Flags
-        run: node ./scripts/codecov-upload-flags.mjs ${{github.ref_name}} ${{github.sha}}
+        run: node ./scripts/codecov-upload-flags.mjs ${{github.ref}} ${{github.sha}}
       # - name: Report Coverage
       #   uses: codecov/codecov-action@v5
       #   env:

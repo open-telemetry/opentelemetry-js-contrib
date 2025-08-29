@@ -81,7 +81,5 @@ for (const pkg of pkgsWithFlag) {
     const command = pkg.command.replace('<sha>', 'Oxffff').replace('<branch>', 'my-branch');
     // execCmd(command, {cwd: TOP, encoding: 'utf-8'});
     console.log(command)
-  } else {
-    console.log(`Report of ${pkg.name} not found. Expected existence of ${pkg.report}`);
   }
 }
