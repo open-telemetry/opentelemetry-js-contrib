@@ -1,7 +1,6 @@
 {
-  "name": "opentelemetry-contrib-scripts",
+  "name": "opentelemetry-js-contrib-scripts",
   "private": true,
   "license": "Apache-2.0",
-  "dependencies": {
-  }
+  "dependencies": {}
 }
