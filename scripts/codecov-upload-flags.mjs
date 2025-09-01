@@ -79,6 +79,6 @@ for (const pkg of pkgsWithFlag) {
   if (existsSync(pkg.report)) {
     console.log(`CODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n\n`);
     const command = pkg.command.replace('<sha>', 'Oxffff').replace('<branch>', 'my-branch');
-    execCmd(command, {cwd: TOP, encoding: 'utf-8'});
+    execCmd(command);
   }
 }
