@@ -17,6 +17,10 @@ jobs:
       NPM_CONFIG_UNSAFE_PERM: true
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
+      - name: Echo label & sha
+        run: |
+          echo "${{ github.event.pull_request.head.label }}"
+          echo "${{ github.event.pull_request.head.sha }}"
       - name: Checkout
         uses: actions/checkout@v5
         with:
@@ -286,7 +290,7 @@ jobs:
       - name: Merge coverage (Delta)
         run: npm run test-merge-coverage:ci:affected
       - name: Report Coverage with Flags
-        run: node ./scripts/codecov-upload-flags.mjs ${{github.ref}} ${{github.sha}}
+        run: node ./scripts/codecov-upload-flags.mjs ${{ github.event.pull_request.head.label }} ${{ github.event.pull_request.head.sha }}
       # - name: Report Coverage
       #   uses: codecov/codecov-action@v5
       #   env:
