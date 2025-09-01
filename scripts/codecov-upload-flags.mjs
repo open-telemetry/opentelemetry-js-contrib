@@ -37,9 +37,12 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
     './codecov --verbose',
     'upload-coverage',
     '--git-service github',
+    '--plugin gcov', // we don't need xcrun or pycoverage
     '--gcov-executable gcov',
     '--sha', commitSha,
     '--branch', branchName,
+    '--file', report,
+    '--flag', flag,
     '--dry-run',
   ].join(' ');
   return { name, flag, len: flag.length, path, report, command };
@@ -77,8 +80,8 @@ chmodSync(codecovPath, 0o555);
 // Compute the commands to run
 for (const pkg of pkgsWithFlag) {
   if (existsSync(pkg.report)) {
-    console.log(`CODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n\n`);
-    const command = pkg.command.replace('<sha>', 'Oxffff').replace('<branch>', 'my-branch');
+    const command = pkg.command;
+    console.log(`CODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${command}\n\n`);
     execCmd(command);
   }
 }
