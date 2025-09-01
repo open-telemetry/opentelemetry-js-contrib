@@ -28,22 +28,25 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
   const name = info.name;
   const flag = name.replace('@opentelemetry/', '');
   const report = path + 'coverage/coverage-final.json';
-  // NOTE: command extracted fromt the codecov action. You can see an example in
-  // https://github.com/open-telemetry/opentelemetry-js-contrib/actions/runs/17320649481/job/49176411722?pr=2866
-  //
-  // Example:
-  // ./codecov --verbose upload-coverage --git-service github --sha f08e6cceec6f39d61b1a9c35aed2e53b54a55d36 --branch david-luna:dluna-ci-pr-speed-and-coverage --gcov-executable gcov
+  // To get a list of available options run
+  // ```
+  //   ./codecov --verbose upload-coverage --help
+  // ```
+  // or check https://docs.codecov.com/docs/cli-options
   const command = [
     './codecov --verbose',
     'upload-coverage',
     '--git-service github',
-    '--plugin gcov', // we don't need xcrun or pycoverage
+    // we don't need xcrun or pycoverage
+    '--plugin gcov',
     '--gcov-executable gcov',
     '--sha', commitSha,
     '--branch', branchName,
-    '--dir', path,
     '--file', report,
     '--flag', flag,
+    // limit any scan to the pacakge folder
+    '--network-root-folder', path,
+    '--dir', path,
     '--dry-run',
   ].join(' ');
   return { name, flag, len: flag.length, path, report, command };
