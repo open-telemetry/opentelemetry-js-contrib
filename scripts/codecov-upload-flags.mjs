@@ -41,6 +41,7 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
     '--gcov-executable gcov',
     '--sha', commitSha,
     '--branch', branchName,
+    '--dir', path,
     '--file', report,
     '--flag', flag,
     '--dry-run',
