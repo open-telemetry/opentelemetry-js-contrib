@@ -37,7 +37,7 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
     './codecov --verbose',
     'upload-coverage',
     '--git-service github',
-    // we don't need xcrun or pycoverage
+    // we don't need xcrun or pycoverage plugins
     '--plugin gcov',
     '--gcov-executable gcov',
     '--sha', commitSha,
@@ -52,7 +52,7 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
   return { name, flag, len: flag.length, path, report, command };
 });
 
-// Download codecov
+// Download codecov-cli if necessary
 const baseUrl = 'https://cli.codecov.io/latest/';
 const urlMap = {
   linux: `${baseUrl}linux/codecov`,
@@ -66,7 +66,6 @@ if (!url) {
   process.exit(-1);
 }
 
-// Download CLI tool if needed
 if (existsSync(codecovPath)) {
   console.log(`Codecov binary found.`);
 } else {
@@ -85,7 +84,7 @@ chmodSync(codecovPath, 0o555);
 for (const pkg of pkgsWithFlag) {
   if (existsSync(pkg.report)) {
     const command = pkg.command;
-    console.log(`CODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${command}\n\n`);
+    console.log(`\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${command}`);
     execCmd(command);
   }
 }
