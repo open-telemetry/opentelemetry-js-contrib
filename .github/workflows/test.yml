@@ -17,10 +17,6 @@ jobs:
       NPM_CONFIG_UNSAFE_PERM: true
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
-      - name: Echo label & sha
-        run: |
-          echo "${{ github.event.pull_request.head.label }}"
-          echo "${{ github.event.pull_request.head.sha }}"
       - name: Checkout
         uses: actions/checkout@v5
         with:

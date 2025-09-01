@@ -77,9 +77,8 @@ chmodSync(codecovPath, 0o555);
 // Compute the commands to run
 for (const pkg of pkgsWithFlag) {
   if (existsSync(pkg.report)) {
-    console.log(`Uploading report of ${pkg.name} with flag ${pkg.flag}`);
+    console.log(`CODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n\n`);
     const command = pkg.command.replace('<sha>', 'Oxffff').replace('<branch>', 'my-branch');
-    // execCmd(command, {cwd: TOP, encoding: 'utf-8'});
-    console.log(command)
+    execCmd(command, {cwd: TOP, encoding: 'utf-8'});
   }
 }
