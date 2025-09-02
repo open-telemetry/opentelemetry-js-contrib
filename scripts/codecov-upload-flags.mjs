@@ -52,6 +52,7 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
 });
 
 // Download codecov-cli if necessary
+const codecovPath = './codecov';
 const baseUrl = 'https://cli.codecov.io/latest/';
 const urlMap = {
   linux: `${baseUrl}linux/codecov`,
@@ -71,7 +72,7 @@ if (existsSync(codecovPath)) {
 } else {
   console.log(`Codecov binary missing. Downloading from ${url}`);
   execSync(`curl -O "${url}"`, execOpts);
-  console.log(`Verifying codecov binary downloaded to "./codecov"`);
+  console.log(`Verifying codecov binary downloaded to "${codecovPath}"`);
   execSync(`echo "$(curl -s https://keybase.io/codecovsecurity/pgp_keys.asc)" | gpg --no-default-keyring --import`, execOpts);
   execSync(`curl -O "${url}.SHA256SUM"`, execOpts);
   execSync(`curl -O "${url}.SHA256SUM.sig"`, execOpts);
