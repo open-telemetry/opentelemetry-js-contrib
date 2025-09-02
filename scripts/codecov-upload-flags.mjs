@@ -21,7 +21,7 @@ if (typeof commitSha !== 'string') {
 }
 
 const readPkg = (dir) => JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
-const execCmd = (cmd, opts = {}) => execSync(cmd, {cwd: ROOT_DIR, encoding: 'utf-8', stdio: 'inherit', ...opts});
+const execCmd = (cmd, opts = {}) => execSync(cmd, {cwd: process.argv[2], encoding: 'utf-8', stdio: 'inherit', ...opts});
 
 const pkgInfo = readPkg(ROOT_DIR);
 const pkgFiles = pkgInfo.workspaces.map((exp) => globSync(path.join(exp, 'package.json')));
