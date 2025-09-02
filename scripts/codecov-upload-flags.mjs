@@ -3,9 +3,14 @@ import { globSync } from 'glob';
 import { chmodSync, existsSync, readFileSync } from 'fs';
 import path from 'path';
 
-const branchName = process.argv[2];
-const commitSha = process.argv[3];
+const ROOT_DIR = process.argv[2];
+const branchName = process.argv[3];
+const commitSha = process.argv[4];
 
+if (typeof ROOT_DIR !== 'string') {
+  console.log('Workspace missing! Exiting');
+  process.exit(-1);
+}
 if (typeof branchName !== 'string') {
   console.log('Branch name missing! Exiting');
   process.exit(-1);
@@ -15,9 +20,8 @@ if (typeof commitSha !== 'string') {
   process.exit(-1);
 }
 
-const ROOT_DIR = process.cwd();
 const readPkg = (dir) => JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
-const execCmd = (cmd, opts = {}) => execSync(cmd, {encoding: 'utf-8', stdio: 'inherit', ...opts});
+const execCmd = (cmd, opts = {}) => execSync(cmd, {cwd: ROOT_DIR, encoding: 'utf-8', stdio: 'inherit', ...opts});
 
 const pkgInfo = readPkg(ROOT_DIR);
 const pkgFiles = pkgInfo.workspaces.map((exp) => globSync(path.join(exp, 'package.json')));
