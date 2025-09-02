@@ -3,14 +3,12 @@ import { globSync } from 'glob';
 import { chmodSync, existsSync, readFileSync } from 'fs';
 import path from 'path';
 
-const ROOT_DIR = process.argv[2];
+// Usage
+// node ./scripts/codecov-upload-flags.mjs
+
 const branchName = process.argv[3];
 const commitSha = process.argv[4];
 
-if (typeof ROOT_DIR !== 'string') {
-  console.log('Workspace missing! Exiting');
-  process.exit(-1);
-}
 if (typeof branchName !== 'string') {
   console.log('Branch name missing! Exiting');
   process.exit(-1);
@@ -21,11 +19,8 @@ if (typeof commitSha !== 'string') {
 }
 
 const readPkg = (dir) => JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
-const execCmd = (cmd, opts = {}) => execSync(cmd, {cwd: process.argv[2], encoding: 'utf-8', stdio: 'inherit', ...opts});
-
-const pkgInfo = readPkg(ROOT_DIR);
+const pkgInfo = readPkg('.');
 const pkgFiles = pkgInfo.workspaces.map((exp) => globSync(path.join(exp, 'package.json')));
-const codecovPath = path.resolve(ROOT_DIR, 'codecov');
 const pkgsWithFlag = pkgFiles.flat().map((f) => {
   const path = f.replace('package.json', '');
   const info = readPkg(path);
@@ -70,16 +65,17 @@ if (!url) {
   process.exit(-1);
 }
 
+const execOpts = {encoding: 'utf-8', stdio: 'inherit'};
 if (existsSync(codecovPath)) {
   console.log(`Codecov binary found.`);
 } else {
   console.log(`Codecov binary missing. Downloading from ${url}`);
-  execCmd(`curl -O "${url}"`);
-  console.log(`Verifying codecov binary downloaded to ${codecovPath}`);
-  execCmd(`echo "$(curl -s https://keybase.io/codecovsecurity/pgp_keys.asc)" | gpg --no-default-keyring --import`);
-  execCmd(`curl -O "${url}.SHA256SUM"`);
-  execCmd(`curl -O "${url}.SHA256SUM.sig"`);
-  execCmd(`gpg --verify "${codecovPath}.SHA256SUM.sig" "${codecovPath}.SHA256SUM"`);
+  execSync(`curl -O "${url}"`, execOpts);
+  console.log(`Verifying codecov binary downloaded to "./codecov"`);
+  execSync(`echo "$(curl -s https://keybase.io/codecovsecurity/pgp_keys.asc)" | gpg --no-default-keyring --import`, execOpts);
+  execSync(`curl -O "${url}.SHA256SUM"`, execOpts);
+  execSync(`curl -O "${url}.SHA256SUM.sig"`, execOpts);
+  execSync(`gpg --verify "codecov.SHA256SUM.sig" "codecov.SHA256SUM"`, execOpts);
 }
 // make sure we have exec perms
 chmodSync(codecovPath, 0o555);
@@ -88,6 +84,6 @@ chmodSync(codecovPath, 0o555);
 for (const pkg of pkgsWithFlag) {
   if (existsSync(pkg.report)) {
     console.log(`\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${pkg.command}`);
-    execCmd(pkg.command);
+    execSync(pkg.command, execOpts);
   }
 }
