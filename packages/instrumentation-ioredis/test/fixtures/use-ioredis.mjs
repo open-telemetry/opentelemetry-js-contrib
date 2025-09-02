@@ -24,10 +24,8 @@ import { IORedisInstrumentation } from '../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-ioredis',
-  instrumentations: [
-    new IORedisInstrumentation()
-  ]
-})
+  instrumentations: [new IORedisInstrumentation()],
+});
 sdk.start();
 
 import assert from 'assert';
@@ -41,7 +39,7 @@ const randomId = ((Math.random() * 2 ** 32) >>> 0).toString(16);
 const testKeyName = `test-${randomId}`;
 
 const tracer = trace.getTracer();
-await tracer.startActiveSpan('manual', async (span) => {
+await tracer.startActiveSpan('manual', async span => {
   redis.set(testKeyName, 'bar');
   let val = await redis.get(testKeyName);
   assert(val === 'bar');

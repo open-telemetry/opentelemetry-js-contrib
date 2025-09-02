@@ -22,11 +22,8 @@ import { ExpressInstrumentation } from '../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-express-nested',
-  instrumentations: [
-    new HttpInstrumentation(),
-    new ExpressInstrumentation()
-  ]
-})
+  instrumentations: [new HttpInstrumentation(), new ExpressInstrumentation()],
+});
 
 sdk.start();
 
@@ -58,14 +55,13 @@ const server = http.createServer(app);
 await new Promise(resolve => server.listen(0, resolve));
 const port = server.address().port;
 
-
 await new Promise(resolve => {
-  http.get(`http://localhost:${port}/api/user/123`, (res) => {
+  http.get(`http://localhost:${port}/api/user/123`, res => {
     res.resume();
     res.on('end', data => {
       resolve(data);
     });
-  })
+  });
 });
 
 await new Promise(resolve => server.close(resolve));
