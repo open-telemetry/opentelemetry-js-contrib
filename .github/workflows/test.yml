@@ -287,9 +287,6 @@ jobs:
         run: npm run test-merge-coverage:ci:affected
       - name: Report Coverage with Flags
         run: node ./scripts/codecov-upload-flags.mjs ${{ github.event.pull_request.head.label }} ${{ github.event.pull_request.head.sha }}
-      # - name: Report Coverage
-      #   uses: codecov/codecov-action@v5
-      #   env:
-      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      #   with:
-      #     verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
