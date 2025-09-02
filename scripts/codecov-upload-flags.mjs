@@ -5,7 +5,6 @@ import path from 'path';
 
 const branchName = process.argv[2];
 const commitSha = process.argv[3];
-const codecovToken = process.env.CODECOV_TOKEN;
 
 if (typeof branchName !== 'string') {
   console.log('Branch name missing! Exiting');
@@ -13,10 +12,6 @@ if (typeof branchName !== 'string') {
 }
 if (typeof commitSha !== 'string') {
   console.log('Commit sha missing! Exiting');
-  process.exit(-1);
-}
-if (typeof codecovToken !== 'string') {
-  console.log('CODECOV_TOKEN env var missing! Exiting');
   process.exit(-1);
 }
 
@@ -41,7 +36,6 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
   const command = [
     './codecov --verbose',
     'upload-coverage',
-    '--token <token>',
     '--git-service github',
     // we don't need xcrun or pycoverage plugins
     '--plugin gcov',
@@ -89,9 +83,7 @@ chmodSync(codecovPath, 0o555);
 // Compute the commands to run
 for (const pkg of pkgsWithFlag) {
   if (existsSync(pkg.report)) {
-    const commandForLog = pkg.command;
-    const commandForShell = pkg.command.replace('<token>', codecovToken);
-    console.log(`\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${commandForLog}`);
-    execCmd(commandForShell);
+    console.log(`\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${pkg.command}`);
+    execCmd(pkg.command);
   }
 }
