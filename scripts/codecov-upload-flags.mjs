@@ -6,8 +6,8 @@ import path from 'path';
 // Usage
 // node ./scripts/codecov-upload-flags.mjs
 
-const branchName = process.argv[3];
-const commitSha = process.argv[4];
+const branchName = process.argv[2];
+const commitSha = process.argv[3];
 
 if (typeof branchName !== 'string') {
   console.log('Branch name missing! Exiting');
