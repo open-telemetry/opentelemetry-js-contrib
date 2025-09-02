@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pg",
-  "version": "0.56.0",
+  "version": "0.56.1",
   "description": "OpenTelemetry instrumentation for `pg` and `pg-pool` database client for PostgreSQL",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -13,8 +13,8 @@
     "clean": "rimraf build/*",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-pg",
     "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
