@@ -9,15 +9,6 @@ import path from 'path';
 const commitSha = process.argv[2];
 const branchName = process.argv[3];
 
-if (typeof commitSha !== 'string') {
-  console.log('Error: Commit sha missing. Exiting');
-  process.exit(-1);
-}
-if (typeof branchName !== 'string') {
-  console.log('Warn: Branch name missing.');
-}
-
-
 const readPkg = (dir) => JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
 const pkgInfo = readPkg('.');
 const pkgFiles = pkgInfo.workspaces.map((exp) => globSync(path.join(exp, 'package.json')));
@@ -39,16 +30,19 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
     // we don't need xcrun or pycoverage plugins
     '--plugin gcov',
     '--gcov-executable gcov',
-    '--sha', commitSha,
     '--file', report,
     '--flag', flag,
     // limit any scan to the pacakge folder
     '--dir', path,
   ];
 
-  if (branchName) {
+  if (typeof commitSha === 'string') {
+    command.push('--sha', commitSha);
+  }
+  if (typeof branchName === 'string') {
     command.push('--branch', branchName);
   }
+
   return { name, flag, path, report, command: command.join(' ') };
 });
 
