@@ -15,10 +15,13 @@ coverage:
         target: auto
         threshold: 1%
 # Codecov action does not read this file to do the split of coverage
-# by flag. So there is no reaso to have explicit flag definition.
+# by flag. So there is no reason to have explicit flag definition.
 # We use automatinc flag management.
 # ref: https://about.codecov.io/blog/introducing-improved-flag-management-with-automatic-flags/
 # note: Uploads are made per package(flag) in ./scripts/codecov-upload-flags.mjs
 flag_management:
   default_rules:
     carryforward: true
+# Now that we upload a report per package we need path fixing
+fixes:
+  - "/home/runner/work/opentelemetry-js-contrib/::"
