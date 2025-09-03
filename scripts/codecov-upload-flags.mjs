@@ -6,17 +6,17 @@ import path from 'path';
 // Usage
 // node ./scripts/codecov-upload-flags.mjs
 
-const branchName = process.argv[2];
-const commitSha = process.argv[3];
+const commitSha = process.argv[2];
+const branchName = process.argv[3];
 
-if (typeof branchName !== 'string') {
-  console.log('Branch name missing! Exiting');
-  process.exit(-1);
-}
 if (typeof commitSha !== 'string') {
-  console.log('Commit sha missing! Exiting');
+  console.log('Error: Commit sha missing. Exiting');
   process.exit(-1);
 }
+if (typeof branchName !== 'string') {
+  console.log('Warn: Branch name missing.');
+}
+
 
 const readPkg = (dir) => JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
 const pkgInfo = readPkg('.');
@@ -40,14 +40,16 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
     '--plugin gcov',
     '--gcov-executable gcov',
     '--sha', commitSha,
-    '--branch', branchName,
     '--file', report,
     '--flag', flag,
     // limit any scan to the pacakge folder
-    // '--network-root-folder', path,
     '--dir', path,
-  ].join(' ');
-  return { name, flag, len: flag.length, path, report, command };
+  ];
+
+  if (branchName) {
+    command.push('--branch', branchName);
+  }
+  return { name, flag, path, report, command: command.join(' ') };
 });
 
 // Download codecov-cli if necessary
