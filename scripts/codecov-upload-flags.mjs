@@ -46,7 +46,6 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
     // limit any scan to the pacakge folder
     '--network-root-folder', path,
     '--dir', path,
-    '--dry-run',
   ].join(' ');
   return { name, flag, len: flag.length, path, report, command };
 });
