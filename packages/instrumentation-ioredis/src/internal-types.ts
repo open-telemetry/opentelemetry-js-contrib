@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { Command, Redis } from 'ioredis';
+import type { Cluster, Command, Redis } from 'ioredis';
 import type * as LegacyIORedis from 'ioredis4';
 
 interface LegacyIORedisCommand {
@@ -27,3 +27,4 @@ interface LegacyIORedisCommand {
 
 export type IORedisCommand = Command | LegacyIORedisCommand;
 export type RedisInterface = Redis | LegacyIORedis.Redis;
+export type ClusterInterface = Cluster | LegacyIORedis.Cluster;
