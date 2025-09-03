@@ -22,6 +22,3 @@ coverage:
 flag_management:
   default_rules:
     carryforward: true
-# Now that we upload a report per package we need path fixing
-fixes:
-  - "/home/runner/work/opentelemetry-js-contrib/opentelemetry-js-contrib/::"

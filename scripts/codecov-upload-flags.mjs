@@ -44,7 +44,7 @@ const pkgsWithFlag = pkgFiles.flat().map((f) => {
     '--file', report,
     '--flag', flag,
     // limit any scan to the pacakge folder
-    '--network-root-folder', path,
+    // '--network-root-folder', path,
     '--dir', path,
   ].join(' ');
   return { name, flag, len: flag.length, path, report, command };
