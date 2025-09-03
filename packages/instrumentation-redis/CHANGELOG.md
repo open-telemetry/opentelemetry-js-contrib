@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.51.0...instrumentation-redis-v0.52.0) (2025-09-01)
+
+
+### Features
+
+* **redis:** add support for redis v5 ([#2950](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2950)) ([8b09de9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8b09de916959cfc765b51aeab8b585b8c8e42a45))
+
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.50.0...instrumentation-redis-v0.51.0) (2025-07-09)
 
 

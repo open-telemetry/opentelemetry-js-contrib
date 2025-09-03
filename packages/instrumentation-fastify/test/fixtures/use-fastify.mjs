@@ -23,10 +23,8 @@ import { FastifyInstrumentation } from '../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-fastify',
-  instrumentations: [
-    new FastifyInstrumentation()
-  ]
-})
+  instrumentations: [new FastifyInstrumentation()],
+});
 sdk.start();
 
 import Fastify from 'fastify';
@@ -36,18 +34,18 @@ import http from 'http';
 const app = Fastify();
 app.get('/a-route', function aRoute(_request, reply) {
   reply.send({ hello: 'world' });
-})
+});
 const addr = await app.listen({ port: 0 });
 
 // Make a single request to it.
 await new Promise(resolve => {
-  http.get(addr + '/a-route', (res) => {
+  http.get(addr + '/a-route', res => {
     res.resume();
     res.on('end', () => {
       resolve();
     });
-  })
-})
+  });
+});
 
 await app.close();
 await sdk.shutdown();

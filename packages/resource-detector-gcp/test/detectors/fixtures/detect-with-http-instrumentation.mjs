@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { detectResources } from '@opentelemetry/resources';
 
-const karmaWebpackConfig = require('../../karma.webpack');
-const karmaBaseConfig = require('../../karma.base');
+const sdk = new NodeSDK({
+  instrumentations: [new HttpInstrumentation()],
+});
+sdk.start();
 
-module.exports = config => {
-  config.set(
-    Object.assign({}, karmaBaseConfig, {
-      webpack: karmaWebpackConfig,
-    })
-  );
-};
+// Defer import until after instrumentation is added
+const { gcpDetector } = await import(
+  '../../../build/src/detectors/GcpDetector.js'
+);
+const resource = detectResources({ detectors: [gcpDetector] });
+await resource.waitForAsyncAttributes?.();
+
+console.log(resource);
+
+await sdk.shutdown();
