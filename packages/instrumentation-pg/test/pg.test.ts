@@ -35,11 +35,11 @@ import * as assert from 'assert';
 import type * as pg from 'pg';
 import * as sinon from 'sinon';
 import stringify from 'safe-stable-stringify';
-import {
-  PgInstrumentation,
+import type {
   PgInstrumentationConfig,
   PgResponseHookInformation,
-} from '../src';
+} from '../src/types';
+import { PgInstrumentation } from '../src/instrumentation';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { TimedEvent } from './types';
 import {

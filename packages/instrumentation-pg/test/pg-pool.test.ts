@@ -24,11 +24,6 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base';
-import {
-  PgInstrumentation,
-  PgInstrumentationConfig,
-  PgResponseHookInformation,
-} from '../src';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
@@ -38,6 +33,11 @@ import {
 import * as assert from 'assert';
 import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
+import type {
+  PgInstrumentationConfig,
+  PgResponseHookInformation,
+} from '../src/types';
+import { PgInstrumentation } from '../src/instrumentation';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { TimedEvent } from './types';
 import {
