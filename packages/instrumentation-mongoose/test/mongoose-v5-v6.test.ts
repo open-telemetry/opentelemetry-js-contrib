@@ -35,7 +35,7 @@ import { DB_NAME, MONGO_URI } from './config';
 // We can't use @ts-expect-error because it will fail depending on the used mongoose version on tests
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
-// Please run mongodb in the background: docker run -d -p 27017:27017 -v ~/data:/data/db mongo
+// Please run `npm run test-services:start` before
 describe('mongoose instrumentation [v5/v6]', () => {
   before(async () => {
     try {

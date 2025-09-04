@@ -8,10 +8,10 @@
     "access": "public"
   },
   "scripts": {
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/redis-common",
     "compile": "tsc --build tsconfig.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/redis-common",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "watch": "tsc -w"

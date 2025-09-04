@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/propagator-ot-trace",
-  "version": "0.28.0",
+  "version": "0.28.1",
   "description": "The OpenTelemetry OTTracepropagator implements the propagation format used by the \"basic tracer\" implementations from the OpenTracing project",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -11,15 +11,15 @@
     "directory": "packages/propagator-ot-trace"
   },
   "scripts": {
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/propagator-ot-trace",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/propagator-ot-trace",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
+    "prepublishOnly": "npm run compile",
     "test": "nyc mocha test/**/*.test.ts",
     "test:browser": "nyc karma start --single-run",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json",
-    "prepublishOnly": "npm run compile"
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },
   "keywords": [
     "opentelemetry",
@@ -68,7 +68,7 @@
     "karma-webpack": "5.0.1",
     "nyc": "17.1.0",
     "sinon": "15.1.2",
-    "ts-loader": "9.5.2",
+    "ts-loader": "9.5.4",
     "typescript": "5.0.4",
     "webpack": "5.94.0",
     "webpack-cli": "5.1.4",

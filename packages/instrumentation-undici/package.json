@@ -12,16 +12,15 @@
     "directory": "packages/instrumentation-undici"
   },
   "scripts": {
-    "prepublishOnly": "npm run compile",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
-    "compile": "tsc --build tsconfig.json tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > build/cjs/package.json",
     "clean": "tsc --build --clean tsconfig.json tsconfig.cjs.json",
-    "test": "nyc mocha --loader=ts-node/esm test/**/*.test.ts",
-    "test-all-versions": "tav",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "compile": "tsc --build tsconfig.json tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > build/cjs/package.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "watch": "tsc -w",
+    "prepublishOnly": "npm run compile",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc mocha --loader=ts-node/esm test/**/*.test.ts",
+    "test-all-versions": "tav",
     "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [

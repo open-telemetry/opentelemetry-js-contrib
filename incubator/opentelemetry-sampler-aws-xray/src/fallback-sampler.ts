@@ -21,16 +21,20 @@
 import { Attributes, Context, Link, SpanKind } from '@opentelemetry/api';
 import {
   Sampler,
+  SamplingDecision,
   SamplingResult,
   TraceIdRatioBasedSampler,
 } from '@opentelemetry/sdk-trace-base';
+import { RateLimitingSampler } from './rate-limiting-sampler';
 
 // FallbackSampler samples 1 req/sec and additional 5% of requests using TraceIdRatioBasedSampler.
 export class FallbackSampler implements Sampler {
   private fixedRateSampler: TraceIdRatioBasedSampler;
+  private rateLimitingSampler: RateLimitingSampler;
 
-  constructor() {
-    this.fixedRateSampler = new TraceIdRatioBasedSampler(0.05);
+  constructor(ratio = 0.05, quota = 1) {
+    this.fixedRateSampler = new TraceIdRatioBasedSampler(ratio);
+    this.rateLimitingSampler = new RateLimitingSampler(quota);
   }
 
   shouldSample(
@@ -41,7 +45,19 @@ export class FallbackSampler implements Sampler {
     attributes: Attributes,
     links: Link[]
   ): SamplingResult {
-    // TODO: implement and use Rate Limiting Sampler
+    const samplingResult: SamplingResult =
+      this.rateLimitingSampler.shouldSample(
+        context,
+        traceId,
+        spanName,
+        spanKind,
+        attributes,
+        links
+      );
+
+    if (samplingResult.decision !== SamplingDecision.NOT_RECORD) {
+      return samplingResult;
+    }
 
     return this.fixedRateSampler.shouldSample(context, traceId);
   }

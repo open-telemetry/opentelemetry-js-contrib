@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/id-generator-aws-xray",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "AWS X-Ray ID generator for OpenTelemetry",
   "main": "build/src/index.js",
   "publishConfig": {
@@ -19,13 +19,13 @@
     "directory": "packages/id-generator-aws-xray"
   },
   "scripts": {
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/id-generator-aws-xray",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/id-generator-aws-xray",
     "test": "nyc mocha test/**/*.test.ts",
     "test:browser": "nyc karma start --single-run",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json",
     "prepublishOnly": "npm run compile"
   },
@@ -73,7 +73,7 @@
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.1.2",
-    "ts-loader": "9.5.2",
+    "ts-loader": "9.5.4",
     "typescript": "5.0.4",
     "webpack": "5.94.0",
     "webpack-cli": "5.1.4",

@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.62.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.62.1...auto-instrumentations-node-v0.62.2) (2025-09-01)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.54.0 to ^0.54.1
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.57.0 to ^0.58.0
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.18.1 to ^0.19.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.56.0 to ^0.56.1
+    * @opentelemetry/instrumentation-pino bumped from ^0.50.0 to ^0.50.1
+    * @opentelemetry/instrumentation-redis bumped from ^0.51.0 to ^0.52.0
+
+## [0.62.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.62.0...auto-instrumentations-node-v0.62.1) (2025-08-13)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.56.0 to ^0.57.0
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.18.0 to ^0.18.1
+    * @opentelemetry/instrumentation-dataloader bumped from ^0.21.0 to ^0.21.1
+    * @opentelemetry/instrumentation-kafkajs bumped from ^0.12.0 to ^0.13.0
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.49.0 to ^0.50.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.55.0 to ^0.56.0
+    * @opentelemetry/instrumentation-runtime-node bumped from ^0.17.0 to ^0.17.1
+    * @opentelemetry/instrumentation-winston bumped from ^0.48.0 to ^0.48.1
+
 ## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.61.0...auto-instrumentations-node-v0.62.0) (2025-07-09)
 
 

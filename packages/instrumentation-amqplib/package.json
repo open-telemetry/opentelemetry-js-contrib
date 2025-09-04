@@ -31,18 +31,22 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-amqplib",
     "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-amqplib",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test": "nyc --no-clean  mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "test-all-versions": "tav",
+    "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
+    "test-services:start": "cd ../.. && npm run test-services:start rabbitmq",
+    "test-services:stop": "cd ../.. && npm run test-services:stop rabbitmq",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc -w",
-    "test:docker:run": "docker run -d --hostname demo-amqplib-rabbit --name amqplib-unittests -p 22221:5672 --env RABBITMQ_DEFAULT_USER=username --env RABBITMQ_DEFAULT_PASS=password rabbitmq:3"
+    "watch": "tsc -w"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"
@@ -55,12 +59,13 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/contrib-test-utils": "^0.49.0",
-    "@types/amqplib": "^0.5.17",
+    "@types/amqplib": "^0.10.7",
     "@types/lodash": "4.14.199",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
     "amqplib": "0.8.0",
+    "cross-env": "7.0.3",
     "expect": "29.2.0",
     "lodash": "4.17.21",
     "nyc": "17.1.0",

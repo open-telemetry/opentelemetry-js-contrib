@@ -70,15 +70,12 @@ await new Promise(resolve => server.listen(0, resolve));
 const port = server.address().port;
 
 await new Promise(resolve => {
-  http.get(
-    `http://localhost:${port}${process.env.TEST_REGEX_ROUTE}`,
-    res => {
-      res.resume();
-      res.on('end', () => {
-        resolve();
-      });
-    }
-  );
+  http.get(`http://localhost:${port}${process.env.TEST_REGEX_ROUTE}`, res => {
+    res.resume();
+    res.on('end', () => {
+      resolve();
+    });
+  });
 });
 
 await new Promise(resolve => server.close(resolve));

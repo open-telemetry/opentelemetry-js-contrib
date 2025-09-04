@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cucumber",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "description": "OpenTelemetry instrumentation for `@cucumber/cucumber` automated tests runner",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -14,12 +14,12 @@
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-cucumber",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-cucumber",
     "compile": "tsc -p ."
   },
   "keywords": [
@@ -47,8 +47,8 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
-    "@cucumber/cucumber": "^11.0.0",
-    "@cucumber/messages": "^22.0.0",
+    "@cucumber/cucumber": "^12.0.0",
+    "@cucumber/messages": "^28.0.0",
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
