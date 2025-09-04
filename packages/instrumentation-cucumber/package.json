@@ -10,8 +10,9 @@
     "directory": "packages/instrumentation-cucumber"
   },
   "scripts": {
-    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext=ts,js,mjs",
