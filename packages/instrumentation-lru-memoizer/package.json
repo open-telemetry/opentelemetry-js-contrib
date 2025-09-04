@@ -10,17 +10,18 @@
     "directory": "packages/instrumentation-lru-memoizer"
   },
   "scripts": {
-    "test": "mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
-    "test-all-versions": "tav",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-lru-memoizer",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-lru-memoizer",
-    "compile": "tsc -p ."
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "lru-memoizer",

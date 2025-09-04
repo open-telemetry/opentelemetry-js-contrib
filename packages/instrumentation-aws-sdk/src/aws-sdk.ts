@@ -233,6 +233,30 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     );
   }
 
+  private _callUserExceptionResponseHook(
+    span: Span,
+    request: NormalizedRequest,
+    err: any
+  ) {
+    const { exceptionHook } = this.getConfig();
+    if (!exceptionHook) return;
+    const requestInfo: AwsSdkRequestHookInformation = {
+      request,
+    };
+
+    safeExecuteInTheMiddle(
+      () => exceptionHook(span, requestInfo, err),
+      (e: Error | undefined) => {
+        if (e)
+          diag.error(
+            `${AwsInstrumentation.component} instrumentation: exceptionHook error`,
+            e
+          );
+      },
+      true
+    );
+  }
+
   private _getV3ConstructStackPatch(
     moduleVersion: string | undefined,
     original: (...args: unknown[]) => MiddlewareStack<any, any>
@@ -443,6 +467,11 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                     message: err.message,
                   });
                   span.recordException(err);
+                  self._callUserExceptionResponseHook(
+                    span,
+                    normalizedRequest,
+                    err
+                  );
                   throw err;
                 })
                 .finally(() => {

@@ -88,6 +88,12 @@ module.exports = {
       parserOptions: {
         sourceType: 'module',
       }
+    },
+    {
+      files: ["test/**/*.js", "test/**/*.mjs"],
+      rules: {
+        "no-unused-vars": "off",
+      }
     }
   ]
 };

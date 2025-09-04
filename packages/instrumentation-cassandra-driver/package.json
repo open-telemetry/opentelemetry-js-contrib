@@ -10,16 +10,22 @@
     "directory": "packages/instrumentation-cassandra-driver"
   },
   "scripts": {
-    "test": "nyc mocha 'test/**/*.test.ts'",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-cassandra-driver",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../scripts/version-update.js",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-cassandra-driver",
-    "compile": "tsc -p ."
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
+    "//todo": "echo \"add test-all-versions\"",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
+    "test-services:start": "cd ../.. && npm run test-services:start cassandra",
+    "test-services:stop": "cd ../.. && npm run test-services:stop cassandra",
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "cassandra-driver",
@@ -57,6 +63,7 @@
     "@types/semver": "7.5.8",
     "@types/sinon": "17.0.4",
     "cassandra-driver": "4.6.4",
+    "cross-env": "7.0.3",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",

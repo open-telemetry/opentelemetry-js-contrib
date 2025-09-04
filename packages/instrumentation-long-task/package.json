@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-long-task",
-  "version": "0.48.0",
+  "version": "0.48.1",
   "description": "OpenTelemetry instrumentation for long task Web API",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -12,16 +12,16 @@
     "directory": "packages/instrumentation-long-task"
   },
   "scripts": {
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../scripts/lint-readme.js",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-long-task",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-long-task",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
+    "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "karma start",
     "test:browser": "nyc karma start --single-run",
+    "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
   },
   "keywords": [
@@ -73,7 +73,7 @@
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.1.2",
-    "ts-loader": "9.5.2",
+    "ts-loader": "9.5.4",
     "typescript": "5.0.4",
     "webpack": "5.94.0",
     "webpack-cli": "5.1.4",

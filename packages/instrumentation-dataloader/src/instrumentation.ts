@@ -44,6 +44,13 @@ type PrimeFn = (typeof Dataloader.prototype)['prime'];
 type ClearFn = (typeof Dataloader.prototype)['clear'];
 type ClearAllFn = (typeof Dataloader.prototype)['clearAll'];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractModuleExports(module: any) {
+  return module[Symbol.toStringTag] === 'Module'
+    ? module.default // ESM
+    : module; // CommonJS
+}
+
 export class DataloaderInstrumentation extends InstrumentationBase<DataloaderInstrumentationConfig> {
   constructor(config: DataloaderInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -54,7 +61,8 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
         ['>=2.0.0 <3'],
-        dataloader => {
+        module => {
+          const dataloader = extractModuleExports(module);
           this._patchLoad(dataloader.prototype);
           this._patchLoadMany(dataloader.prototype);
           this._patchPrime(dataloader.prototype);
@@ -63,14 +71,15 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
 
           return this._getPatchedConstructor(dataloader);
         },
-        dataloader => {
+        module => {
+          const dataloader = extractModuleExports(module);
           ['load', 'loadMany', 'prime', 'clear', 'clearAll'].forEach(method => {
             if (isWrapped(dataloader.prototype[method])) {
               this._unwrap(dataloader.prototype, method);
             }
           });
         }
-      ) as InstrumentationNodeModuleDefinition,
+      ),
     ];
   }
 
