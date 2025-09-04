@@ -4,3 +4,4 @@
 *.json5
 *.yml
 *.yaml
+!package.json
