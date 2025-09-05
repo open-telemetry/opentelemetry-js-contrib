@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "outDir": "dist/esnext",
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist/esnext/tsconfig.esnext.tsbuildinfo",
+    
+    "module": "esnext",
+    "target": "es2017",
+    "moduleResolution": "node",
+    
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": false,
+    "declaration": true,
+    "sourceMap": true,
+    "composite": true,
+    "incremental": true,
+        
+    "baseUrl": ".",
+    
+    "paths": {
+      "langchainV0.1/*": ["node_modules/langchainV0.1/*"],
+      "@langchain/coreV0.1/*": ["node_modules/@langchain/coreV0.1/*"],
+      "@langchain/aws": ["node_modules/@langchain/aws"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "references": []
+}
