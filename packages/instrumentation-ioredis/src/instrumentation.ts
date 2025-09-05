@@ -38,6 +38,7 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
+  instrumentCluster: false,
 };
 
 export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumentationConfig> {
