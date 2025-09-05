@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+// XXX trent wuz here
+
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 import { RedisInstrumentationConfig } from './types';
 /** @knipignore */
