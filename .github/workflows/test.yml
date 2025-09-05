@@ -193,8 +193,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - name: Install
-        run: npm ci
+      # Install the latest npm to avoid npm@10. With npm@10, at least, `npm
+      # install --no-save foo@1.2.3` is known to sometimes not install foo
+      # version "1.2.3" and still exit 0. This makes text-all-versions useless.
+      - run: npm install -g npm@latest
+      - run: npm ci
       - name: Download Build Artifacts
         uses: actions/download-artifact@v5
         with:
