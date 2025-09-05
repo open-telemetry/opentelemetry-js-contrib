@@ -25,11 +25,11 @@ import {
   MeterProvider,
 } from '@opentelemetry/sdk-metrics';
 
-import { UndiciInstrumentation } from '../src/undici';
+import { UndiciInstrumentation } from '../src/undici.js';
 
-import { MockServer } from './utils/mock-server';
-import { MockMetricsReader } from './utils/mock-metrics-reader';
-import { SemanticAttributes } from '../src/enums/SemanticAttributes';
+import { MockServer } from './utils/mock-server.js';
+import { MockMetricsReader } from './utils/mock-metrics-reader.js';
+import { SemanticAttributes } from '../src/enums/SemanticAttributes.js';
 
 describe('UndiciInstrumentation metrics tests', function () {
   let instrumentation: UndiciInstrumentation;
