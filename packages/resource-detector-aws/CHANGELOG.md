@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v2.3.0...resource-detector-aws-v2.3.1) (2025-09-05)
+
+
+### Bug Fixes
+
+* **detector-aws:** extract full container ID from ECS Fargate cgroup ([#2855](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2855)) ([c1866e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c1866e119a091939a26e26a8ff737440173afa59))
+
 ## [2.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v2.2.0...resource-detector-aws-v2.3.0) (2025-07-09)
 
 

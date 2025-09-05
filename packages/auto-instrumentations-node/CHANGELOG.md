@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.62.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.62.2...auto-instrumentations-node-v0.62.3) (2025-09-05)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/resource-detector-aws bumped from ^2.3.0 to ^2.3.1
+
 ## [0.62.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.62.1...auto-instrumentations-node-v0.62.2) (2025-09-01)
 
 
