@@ -66,6 +66,9 @@ components:
     # Unmaintained
   packages/instrumentation-kafkajs:
     - seemk
+  packages/instrumentation-langchain:
+    - haneric00
+    - yiyuan-he
   packages/instrumentation-lru-memoizer:
     - blumamir
   packages/instrumentation-mongoose:
