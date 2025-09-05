@@ -937,6 +937,22 @@ describe('pg-pool', () => {
 });
 
 describe('pg-pool (ESM)', () => {
+  const testPostgres = process.env.RUN_POSTGRES_TESTS;
+  const shouldTest = testPostgres; // Skips these tests if false (default)
+
+  before(function () {
+    const skip = () => {
+      // this.skip() workaround
+      // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
+      this.test!.parent!.pending = true;
+      this.skip();
+    };
+
+    if (!shouldTest) {
+      skip();
+    }
+  });
+
   it('should work with ESM usage', async () => {
     await testUtils.runTestFixture({
       cwd: __dirname,
