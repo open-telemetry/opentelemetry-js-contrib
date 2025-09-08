@@ -14,3 +14,8 @@
       mode: latest-minors
     node: '>=18'
     commands: npm test
+  - versions:
+      include: '^12.0.0'
+      mode: latest-minors
+    node: '>=20'
+    commands: npm test

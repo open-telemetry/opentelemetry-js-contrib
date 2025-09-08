@@ -26,11 +26,14 @@ import {
 import { SpanStatusCode } from '@opentelemetry/api';
 import { SerializerPayload } from '../src';
 import { DB_NAME, MONGO_HOST, MONGO_PORT } from './config';
+import User from './user';
 
 export const assertSpan = (span: ReadableSpan) => {
   expect(span.status.code).toBe(SpanStatusCode.UNSET);
   expect(span.attributes[SEMATTRS_DB_SYSTEM]).toEqual('mongoose');
-  expect(span.attributes[SEMATTRS_DB_MONGODB_COLLECTION]).toEqual('users');
+  expect(span.attributes[SEMATTRS_DB_MONGODB_COLLECTION]).toEqual(
+    User.collection.name
+  );
   expect(span.attributes[SEMATTRS_DB_NAME]).toEqual(DB_NAME);
   expect(span.attributes[SEMATTRS_NET_PEER_NAME]).toEqual(MONGO_HOST);
   expect(span.attributes[SEMATTRS_NET_PEER_PORT]).toEqual(MONGO_PORT);

@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.56.1...instrumentation-pg-v0.57.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.49.0 to ^0.50.0
+
+## [0.56.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.56.0...instrumentation-pg-v0.56.1) (2025-09-01)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2948](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2948)) ([5836d7a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5836d7ab3244adef62b715ef22a26b54dba6719b))
+
+## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.55.0...instrumentation-pg-v0.56.0) (2025-08-13)
+
+
+### Features
+
+* **instrumentation-pg:** update to stable semantic conventions with db-migration support ([#2881](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2881)) ([4384c7b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4384c7b8283c834ed1f8ecf1d694fd6e7261c74c))
+
 ## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.54.1...instrumentation-pg-v0.55.0) (2025-07-09)
 
 

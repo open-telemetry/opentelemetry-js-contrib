@@ -21,7 +21,7 @@ const options = {
   hostname: 'example.com',
   port: 80,
   path: '/',
-  method: 'GET'
+  method: 'GET',
 };
 
 const req = http.request(options);

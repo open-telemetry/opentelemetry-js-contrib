@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.58.0...instrumentation-aws-sdk-v0.59.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.49.0 to ^0.50.0
+
+## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.57.0...instrumentation-aws-sdk-v0.58.0) (2025-09-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **aws-sdk:** SQS receive: use span links instead of processing spans ([#2345](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2345))
+
+### Features
+
+* **aws-sdk:** SQS receive: use span links instead of processing spans ([#2345](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2345)) ([bd9e782](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd9e782e06b17f471b12f8ad54c18cf5b27e35a9))
+* **instrumentation-aws-sdk:** Add Semantic Convention Support for Amazon Secrets Manager Attributes ([#2971](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2971)) ([0c59990](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0c5999052e01d3b14d797e22361d495d7e4eeff1))
+* **instrumentation-aws-sdk:** Add semconv attributes for AWS Step Functions ([#2977](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2977)) ([c7a91fc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c7a91fc64d0ac819e8df7c096a25af60fd7c2f7e))
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2948](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2948)) ([5836d7a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5836d7ab3244adef62b715ef22a26b54dba6719b))
+
+## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.56.0...instrumentation-aws-sdk-v0.57.0) (2025-08-13)
+
+
+### Features
+
+* **aws-sdk:** add exception hook ([#2398](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2398)) ([bf302a5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bf302a5716b79f28690dd82eb5ef50eae0a557fd))
+
 ## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.55.0...instrumentation-aws-sdk-v0.56.0) (2025-07-09)
 
 

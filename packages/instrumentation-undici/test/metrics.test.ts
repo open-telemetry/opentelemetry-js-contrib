@@ -63,6 +63,11 @@ describe('UndiciInstrumentation metrics tests', function () {
     );
     mockServer.start(done);
     mockServer.mockListener((req, res) => {
+      if (req.url === '/error') {
+        // Simulate an error
+        res.destroy();
+        return;
+      }
       // Return a valid response always
       res.statusCode = 200;
       res.setHeader('content-type', 'application/json');
@@ -143,7 +148,7 @@ describe('UndiciInstrumentation metrics tests', function () {
     });
 
     it('should have error.type in "http.client.request.duration" metric', async () => {
-      const fetchUrl = 'http://unknownhost/';
+      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/error`;
 
       try {
         await fetch(fetchUrl);
@@ -181,9 +186,12 @@ describe('UndiciInstrumentation metrics tests', function () {
       );
       assert.strictEqual(
         metricAttributes[SemanticAttributes.SERVER_ADDRESS],
-        'unknownhost'
+        hostname
       );
-      assert.strictEqual(metricAttributes[SemanticAttributes.SERVER_PORT], 80);
+      assert.strictEqual(
+        metricAttributes[SemanticAttributes.SERVER_PORT],
+        mockServer.port
+      );
       assert.ok(
         metricAttributes[SemanticAttributes.ERROR_TYPE],
         `the metric contains "${SemanticAttributes.ERROR_TYPE}" attribute if request failed`

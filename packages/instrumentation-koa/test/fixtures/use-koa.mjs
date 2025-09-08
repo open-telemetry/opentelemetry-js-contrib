@@ -25,11 +25,8 @@ import { KoaInstrumentation } from '../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-koa',
-  instrumentations: [
-    new KoaInstrumentation(),
-    new HttpInstrumentation()
-  ]
-})
+  instrumentations: [new KoaInstrumentation(), new HttpInstrumentation()],
+});
 sdk.start();
 
 import Koa from 'koa';
@@ -59,12 +56,12 @@ await new Promise(resolve => server.listen(0, resolve));
 const port = server.address().port;
 
 await new Promise(resolve => {
-  http.get(`http://localhost:${port}/post/0`, (res) => {
+  http.get(`http://localhost:${port}/post/0`, res => {
     res.resume();
     res.on('end', () => {
       resolve();
     });
-  })
+  });
 });
 
 await new Promise(resolve => server.close(resolve));

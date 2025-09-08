@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.14.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.13.0...instrumentation-kafkajs-v0.14.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.49.0 to ^0.50.0
+
+## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.12.0...instrumentation-kafkajs-v0.13.0) (2025-08-13)
+
+
+### Features
+
+* **kafkajs:** instrument transaction send and sendBatch ([#2939](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2939)) ([c0593e6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c0593e65a6d74425a0922e358e4fd235e7112148))
+
 ## [0.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.11.0...instrumentation-kafkajs-v0.12.0) (2025-07-09)
 
 

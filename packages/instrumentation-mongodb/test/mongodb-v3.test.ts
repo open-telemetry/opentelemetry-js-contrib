@@ -104,9 +104,10 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
     }
   });
 
-  after(() => {
+  after(done => {
     if (client) {
-      client.close();
+      // @ts-ignore -- v5 removed callback support
+      client.close(done);
     }
   });
 
@@ -636,9 +637,10 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           done();
         });
     });
-    after(() => {
+    after(done => {
       if (client) {
-        client.close();
+        // @ts-ignore -- v5 removed callback support
+        client.close(done);
       }
     });
     it('should generate correct span attributes', done => {

@@ -21,8 +21,6 @@ export type {
   AwsSdkRequestHookInformation,
   AwsSdkResponseCustomAttributeFunction,
   AwsSdkResponseHookInformation,
-  AwsSdkSqsProcessCustomAttributeFunction,
-  AwsSdkSqsProcessHookInformation,
   CommandInput,
   NormalizedRequest,
   NormalizedResponse,

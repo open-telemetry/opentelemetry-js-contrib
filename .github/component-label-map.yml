@@ -193,6 +193,11 @@ pkg:instrumentation-oracledb:
       - any-glob-to-any-file:
           - packages/instrumentation-oracledb/**
           - packages/contrib-test-utils/**
+pkg:instrumentation-openai:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/instrumentation-openai/**
+          - packages/contrib-test-utils/**
 pkg:instrumentation-pg:
   - changed-files:
       - any-glob-to-any-file:
@@ -253,10 +258,6 @@ pkg:propagation-utils:
       - any-glob-to-any-file:
           - packages/propagation-utils/**
           - packages/contrib-test-utils/**
-pkg:propagator-grpc-census-binary:
-  - changed-files:
-      - any-glob-to-any-file:
-          - propagators/opentelemetry-propagator-grpc-census-binary/**
 pkg:propagator-instana:
   - changed-files:
       - any-glob-to-any-file:

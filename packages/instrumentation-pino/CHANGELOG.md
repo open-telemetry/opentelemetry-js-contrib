@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.50.1...instrumentation-pino-v0.51.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.49.0 to ^0.50.0
+
+## [0.50.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.50.0...instrumentation-pino-v0.50.1) (2025-09-01)
+
+
+### Bug Fixes
+
+* **instrumentation-pino:** Propagate all args to `mixin` ([#2983](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2983)) ([3263936](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/326393626768a6d498c8d91a5cd142f76a1ca5dd))
+
 ## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.49.1...instrumentation-pino-v0.50.0) (2025-07-09)
 
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v2.3.0...resource-detector-aws-v2.4.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
+
+### Bug Fixes
+
+* **detector-aws:** extract full container ID from ECS Fargate cgroup ([#2855](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2855)) ([c1866e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c1866e119a091939a26e26a8ff737440173afa59))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.49.0 to ^0.50.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.23.0 to ^0.24.0
+
 ## [2.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v2.2.0...resource-detector-aws-v2.3.0) (2025-07-09)
 
 

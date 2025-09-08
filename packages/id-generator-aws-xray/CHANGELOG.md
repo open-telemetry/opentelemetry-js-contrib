@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/id-generator-aws-xray-v2.0.0...id-generator-aws-xray-v2.0.1) (2025-09-01)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2948](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2948)) ([5836d7a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5836d7ab3244adef62b715ef22a26b54dba6719b))
+
 ## [2.0.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/id-generator-aws-xray-v1.2.3...id-generator-aws-xray-v2.0.0) (2025-03-18)
 
 

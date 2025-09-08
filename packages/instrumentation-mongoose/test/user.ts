@@ -15,6 +15,7 @@
  */
 import { Schema, Document } from 'mongoose';
 import * as mongoose from 'mongoose';
+import * as crypto from 'node:crypto';
 
 export interface IUser extends Document {
   email: string;
@@ -31,7 +32,7 @@ const UserSchema: Schema = new Schema({
 });
 
 // Export the model and return your IUser interface
-const User = mongoose.model<IUser>('User', UserSchema);
+const User = mongoose.model<IUser>(crypto.randomUUID() + 'User', UserSchema);
 export default User;
 
 export const loadUsers = async () => {

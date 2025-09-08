@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-long-task-v0.48.1...instrumentation-long-task-v0.49.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
+## [0.48.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-long-task-v0.48.0...instrumentation-long-task-v0.48.1) (2025-09-01)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#2948](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2948)) ([5836d7a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5836d7ab3244adef62b715ef22a26b54dba6719b))
+
 ## [0.48.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-long-task-v0.47.0...instrumentation-long-task-v0.48.0) (2025-07-09)
 
 
