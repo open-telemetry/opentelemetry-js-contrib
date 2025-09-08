@@ -92,19 +92,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       return [];
     }
 
-    // Provide a temporary awslambda polyfill for CommonJS modules during loading
-    // This prevents ReferenceError when modules use awslambda.streamifyResponse at load time
-    if (typeof globalThis.awslambda === 'undefined') {
-      (globalThis as any).awslambda = {
-        streamifyResponse: (handler: any) => {
-          // Add the streaming symbols that the instrumentation looks for
-          handler[AWS_HANDLER_STREAMING_SYMBOL] =
-            AWS_HANDLER_STREAMING_RESPONSE;
-          return handler;
-        },
-      };
-    }
-
     const handler = path.basename(handlerDef);
     const moduleRoot = handlerDef.substring(
       0,
@@ -192,32 +179,23 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     return (
       original: Handler | StreamifyHandler
     ): Handler | StreamifyHandler => {
-      if (this._isStreamingHandler(original)) {
-        const patchedHandler = this._getPatchHandler(
-          original,
-          handlerLoadStartTime
-        );
+      const patchedHandler = this._getPatchHandler(
+        original,
+        handlerLoadStartTime
+      );
 
+      if (this._isStreamingHandler(original)) {
         // Streaming handlers have special symbols that we need to copy over to the patched handler.
         for (const symbol of Object.getOwnPropertySymbols(original)) {
           (patchedHandler as unknown as Record<symbol, unknown>)[symbol] = (
             original as unknown as Record<symbol, unknown>
           )[symbol];
         }
-
-        return patchedHandler;
       }
 
-      return this._getPatchHandler(original, handlerLoadStartTime);
+      return patchedHandler;
     };
   }
-
-  private _getPatchHandler(original: Handler, lambdaStartTime: number): Handler;
-
-  private _getPatchHandler(
-    original: StreamifyHandler,
-    lambdaStartTime: number
-  ): StreamifyHandler;
 
   private _getPatchHandler(
     original: Handler | StreamifyHandler,
