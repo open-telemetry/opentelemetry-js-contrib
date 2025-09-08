@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { InstrumentationBase } from '@opentelemetry/instrumentation';
+import {
+  InstrumentationBase,
+  InstrumentationModuleDefinition,
+} from '@opentelemetry/instrumentation';
 import { RedisInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -55,6 +58,15 @@ export class RedisInstrumentation extends InstrumentationBase<RedisInstrumentati
   }
 
   override init() {}
+
+  // Return underlying modules, as consumers (like https://github.com/DrewCorlin/opentelemetry-node-bundler-plugins) may
+  // expect them to be populated without knowing that this module wraps 2 instrumentations
+  override getModuleDefinitions(): InstrumentationModuleDefinition[] {
+    return [
+      ...this.instrumentationV2_V3.getModuleDefinitions(),
+      ...this.instrumentationV4_V5.getModuleDefinitions(),
+    ];
+  }
 
   override setTracerProvider(tracerProvider: TracerProvider) {
     super.setTracerProvider(tracerProvider);
