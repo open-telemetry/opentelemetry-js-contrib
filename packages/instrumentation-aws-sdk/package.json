@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-sdk",
-  "version": "0.57.0",
+  "version": "0.58.0",
   "description": "OpenTelemetry instrumentation for `aws-sdk` and `@aws-sdk/client-*` clients for various AWS services",
   "keywords": [
     "aws",
@@ -34,13 +34,14 @@
     "clean": "rimraf build/*",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-aws-sdk",
     "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },

@@ -12,12 +12,13 @@
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-runtime-node#readme",
   "scripts": {
     "clean": "rimraf build/*",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-runtime-node",
     "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-runtime-node",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
-    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js"
   },
   "author": "OpenTelemetry Authors",

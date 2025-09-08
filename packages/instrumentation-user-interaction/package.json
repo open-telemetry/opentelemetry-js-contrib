@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-user-interaction",
-  "version": "0.48.0",
+  "version": "0.48.1",
   "description": "OpenTelemetry instrumentation for user interactions as click events in a web application",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -15,8 +15,8 @@
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-user-interaction",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "karma start",
@@ -30,7 +30,8 @@
     "tracing",
     "profiling",
     "metrics",
-    "stats"
+    "stats",
+    "user-interaction"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

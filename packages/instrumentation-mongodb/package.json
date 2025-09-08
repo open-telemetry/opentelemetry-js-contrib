@@ -11,8 +11,8 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "version:update": "node ../../scripts/version-update.js",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-mongodb",
@@ -26,6 +26,7 @@
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "test-all-versions": "tav",
     "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "test-services:start": "cd ../.. && npm run test-services:start mongodb",
     "test-services:stop": "cd ../.. && npm run test-services:stop mongodb",
     "watch": "tsc -w"
@@ -65,7 +66,7 @@
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "cross-env": "7.0.3",
-    "mongodb": "6.15.0",
+    "mongodb": "6.19.0",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "test-all-versions": "6.1.0",
