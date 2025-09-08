@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.14.1...winston-transport-v0.15.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
 ## [0.14.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.14.0...winston-transport-v0.14.1) (2025-08-13)
 
 
