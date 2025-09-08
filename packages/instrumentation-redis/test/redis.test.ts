@@ -16,6 +16,7 @@
 
 import { RedisInstrumentation } from '../src';
 import * as assert from 'assert';
+
 describe('redis', () => {
   it('Returns module definitions of sub-instrumentations', () => {
     const instrumentation = new RedisInstrumentation();
