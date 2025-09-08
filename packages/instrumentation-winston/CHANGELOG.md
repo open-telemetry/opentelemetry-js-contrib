@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.48.1...instrumentation-winston-v0.49.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/winston-transport bumped from ^0.14.1 to ^0.15.0
+
 ## [0.48.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.48.0...instrumentation-winston-v0.48.1) (2025-08-13)
 
 
