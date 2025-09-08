@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.17.1...instrumentation-runtime-node-v0.18.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
 ## [0.17.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.17.0...instrumentation-runtime-node-v0.17.1) (2025-08-13)
 
 
