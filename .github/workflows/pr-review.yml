@@ -5,10 +5,16 @@ on:
     types:
       - submitted
 
+permissions:
+  contents: read
+
 jobs:
   add-owner-approved-label:
     if: github.event.review.state == 'approved'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
