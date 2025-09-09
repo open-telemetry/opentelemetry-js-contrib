@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.15.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.14.1...winston-transport-v0.15.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
+## [0.14.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.14.0...winston-transport-v0.14.1) (2025-08-13)
+
+
+### Bug Fixes
+
+* **winston-transport, instrumentation-winston:** get the correct severityText and severityNumber with winston.format.colorize() is used ([#2956](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2956)) ([952abc7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/952abc7ffb677adf0a4be9ca3a46927a6335e355))
+
+## [0.14.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.13.0...winston-transport-v0.14.0) (2025-07-09)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2930](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2930)) ([e4ab2a9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e4ab2a932084016f9750bd09d3f9a469c44628ea))
+
 ## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.12.0...winston-transport-v0.13.0) (2025-06-02)
 
 

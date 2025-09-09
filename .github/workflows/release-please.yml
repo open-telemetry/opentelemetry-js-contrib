@@ -3,16 +3,20 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 name: Run Release Please
 jobs:
   release-please:
     runs-on: ubuntu-latest
     permissions:
+      contents: write # required for pushing changes
       id-token: write
     steps:
       # The logic below handles the npm publication:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -39,7 +43,7 @@ jobs:
       - name: Checkout release PR
         # only checkout if a PR has been created, otherwise this will fail
         if: ${{ steps.release.outputs.pr }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: release-please--branches--main
           # use a token so that workflows on the PR run when we push later
@@ -61,7 +65,7 @@ jobs:
       - name: Checkout Repository
         # only checkout if a release has been created
         if: ${{ steps.release.outputs.releases_created }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 

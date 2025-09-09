@@ -3,16 +3,21 @@ name: Create or Update OpenTelemetry Update PR
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   create-or-update-deps-pr:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # required for pushing changes
     steps:
       - name: Fork
         run: gh repo fork open-telemetry/opentelemetry-js-contrib
         env:
           GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: opentelemetrybot/opentelemetry-js-contrib
           ref: main

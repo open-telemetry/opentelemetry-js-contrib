@@ -29,16 +29,26 @@ import {
 import {
   ParentBasedSampler,
   Sampler,
-  SamplingDecision,
   SamplingResult,
 } from '@opentelemetry/sdk-trace-base';
 import { AWSXRaySamplingClient } from './aws-xray-sampling-client';
+import { FallbackSampler } from './fallback-sampler';
 import {
   AWSXRayRemoteSamplerConfig,
   GetSamplingRulesResponse,
+  GetSamplingTargetsBody,
+  GetSamplingTargetsResponse,
   SamplingRuleRecord,
+  SamplingTargetDocument,
+  TargetMap,
 } from './types';
+import {
+  DEFAULT_TARGET_POLLING_INTERVAL_SECONDS,
+  RuleCache,
+} from './rule-cache';
+
 import { SamplingRuleApplier } from './sampling-rule-applier';
+import { PACKAGE_NAME } from './version';
 
 // 5 minute default sampling rules polling interval
 const DEFAULT_RULES_POLLING_INTERVAL_SECONDS: number = 5 * 60;
@@ -50,12 +60,14 @@ const DEFAULT_AWS_PROXY_ENDPOINT = 'http://localhost:2000';
 export class AWSXRayRemoteSampler implements Sampler {
   private _root: ParentBasedSampler;
   private internalXraySampler: _AWSXRayRemoteSampler;
+
   constructor(samplerConfig: AWSXRayRemoteSamplerConfig) {
     this.internalXraySampler = new _AWSXRayRemoteSampler(samplerConfig);
     this._root = new ParentBasedSampler({
       root: this.internalXraySampler,
     });
   }
+
   public shouldSample(
     context: Context,
     traceId: string,
@@ -90,14 +102,22 @@ export class AWSXRayRemoteSampler implements Sampler {
 // Not intended for external use, use Parent-based `AWSXRayRemoteSampler` instead.
 export class _AWSXRayRemoteSampler implements Sampler {
   private rulePollingIntervalMillis: number;
+  private targetPollingInterval: number;
   private awsProxyEndpoint: string;
+  private ruleCache: RuleCache;
+  private fallbackSampler: FallbackSampler;
   private samplerDiag: DiagLogger;
   private rulePoller: NodeJS.Timeout | undefined;
+  private targetPoller: NodeJS.Timeout | undefined;
+  private clientId: string;
   private rulePollingJitterMillis: number;
+  private targetPollingJitterMillis: number;
   private samplingClient: AWSXRaySamplingClient;
 
   constructor(samplerConfig: AWSXRayRemoteSamplerConfig) {
-    this.samplerDiag = diag;
+    this.samplerDiag = diag.createComponentLogger({
+      namespace: PACKAGE_NAME,
+    });
 
     if (
       samplerConfig.pollingInterval == null ||
@@ -113,10 +133,16 @@ export class _AWSXRayRemoteSampler implements Sampler {
     }
 
     this.rulePollingJitterMillis = Math.random() * 5 * 1000;
+    this.targetPollingInterval = this.getDefaultTargetPollingInterval();
+    this.targetPollingJitterMillis = (Math.random() / 10) * 1000;
 
     this.awsProxyEndpoint = samplerConfig.endpoint
       ? samplerConfig.endpoint
       : DEFAULT_AWS_PROXY_ENDPOINT;
+    this.fallbackSampler = new FallbackSampler();
+    // TODO: Use clientId for retrieving Sampling Targets
+    this.clientId = _AWSXRayRemoteSampler.generateClientId();
+    this.ruleCache = new RuleCache(samplerConfig.resource);
 
     this.samplingClient = new AWSXRaySamplingClient(
       this.awsProxyEndpoint,
@@ -126,7 +152,12 @@ export class _AWSXRayRemoteSampler implements Sampler {
     // Start the Sampling Rules poller
     this.startSamplingRulesPoller();
 
-    // TODO: Start the Sampling Targets poller
+    // Start the Sampling Targets poller where the first poll occurs after the default interval
+    this.startSamplingTargetsPoller();
+  }
+
+  public getDefaultTargetPollingInterval(): number {
+    return DEFAULT_TARGET_POLLING_INTERVAL_SECONDS;
   }
 
   public shouldSample(
@@ -137,8 +168,51 @@ export class _AWSXRayRemoteSampler implements Sampler {
     attributes: Attributes,
     links: Link[]
   ): SamplingResult {
-    // Implementation to be added
-    return { decision: SamplingDecision.NOT_RECORD };
+    if (this.ruleCache.isExpired()) {
+      this.samplerDiag.debug(
+        'Rule cache is expired, so using fallback sampling strategy'
+      );
+      return this.fallbackSampler.shouldSample(
+        context,
+        traceId,
+        spanName,
+        spanKind,
+        attributes,
+        links
+      );
+    }
+
+    try {
+      const matchedRule: SamplingRuleApplier | undefined =
+        this.ruleCache.getMatchedRule(attributes);
+      if (matchedRule) {
+        return matchedRule.shouldSample(
+          context,
+          traceId,
+          spanName,
+          spanKind,
+          attributes,
+          links
+        );
+      }
+    } catch (e: unknown) {
+      this.samplerDiag.debug(
+        'Unexpected error occurred when trying to match or applying a sampling rule',
+        e
+      );
+    }
+
+    this.samplerDiag.debug(
+      'Using fallback sampler as no rule match was found. This is likely due to a bug, since default rule should always match'
+    );
+    return this.fallbackSampler.shouldSample(
+      context,
+      traceId,
+      spanName,
+      spanKind,
+      attributes,
+      links
+    );
   }
 
   public toString(): string {
@@ -149,6 +223,7 @@ export class _AWSXRayRemoteSampler implements Sampler {
 
   public stopPollers() {
     clearInterval(this.rulePoller);
+    clearInterval(this.targetPoller);
   }
 
   private startSamplingRulesPoller(): void {
@@ -160,6 +235,27 @@ export class _AWSXRayRemoteSampler implements Sampler {
       this.rulePollingIntervalMillis + this.rulePollingJitterMillis
     );
     this.rulePoller.unref();
+  }
+
+  private startSamplingTargetsPoller(): void {
+    // Update sampling targets every targetPollingInterval (usually 10 seconds)
+    this.targetPoller = setInterval(
+      () => this.getAndUpdateSamplingTargets(),
+      this.targetPollingInterval * 1000 + this.targetPollingJitterMillis
+    );
+    this.targetPoller.unref();
+  }
+
+  private getAndUpdateSamplingTargets(): void {
+    const requestBody: GetSamplingTargetsBody = {
+      SamplingStatisticsDocuments:
+        this.ruleCache.createSamplingStatisticsDocuments(this.clientId),
+    };
+
+    this.samplingClient.fetchSamplingTargets(
+      requestBody,
+      this.updateSamplingTargets.bind(this)
+    );
   }
 
   private getAndUpdateSamplingRules(): void {
@@ -180,13 +276,72 @@ export class _AWSXRayRemoteSampler implements Sampler {
           }
         }
       );
-
-      // TODO: pass samplingRules to rule cache, temporarily logging the samplingRules array
-      this.samplerDiag.debug('sampling rules: ', samplingRules);
+      this.ruleCache.updateRules(samplingRules);
     } else {
       this.samplerDiag.error(
         'SamplingRuleRecords from GetSamplingRules request is not defined'
       );
     }
+  }
+
+  private updateSamplingTargets(
+    responseObject: GetSamplingTargetsResponse
+  ): void {
+    try {
+      const targetDocuments: TargetMap = {};
+
+      // Create Target-Name-to-Target-Map from sampling targets response
+      responseObject.SamplingTargetDocuments.forEach(
+        (newTarget: SamplingTargetDocument) => {
+          targetDocuments[newTarget.RuleName] = newTarget;
+        }
+      );
+
+      // Update targets in the cache
+      const [refreshSamplingRules, nextPollingInterval]: [boolean, number] =
+        this.ruleCache.updateTargets(
+          targetDocuments,
+          responseObject.LastRuleModification
+        );
+      this.targetPollingInterval = nextPollingInterval;
+      clearInterval(this.targetPoller);
+      this.startSamplingTargetsPoller();
+
+      if (refreshSamplingRules) {
+        this.samplerDiag.debug(
+          'Performing out-of-band sampling rule polling to fetch updated rules.'
+        );
+        clearInterval(this.rulePoller);
+        this.startSamplingRulesPoller();
+      }
+    } catch (error: unknown) {
+      this.samplerDiag.debug('Error occurred when updating Sampling Targets');
+    }
+  }
+
+  private static generateClientId(): string {
+    const hexChars: string[] = [
+      '0',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      'a',
+      'b',
+      'c',
+      'd',
+      'e',
+      'f',
+    ];
+    const clientIdArray: string[] = [];
+    for (let _ = 0; _ < 24; _ += 1) {
+      clientIdArray.push(hexChars[Math.floor(Math.random() * hexChars.length)]);
+    }
+    return clientIdArray.join('');
   }
 }

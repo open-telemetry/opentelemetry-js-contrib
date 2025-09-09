@@ -117,7 +117,7 @@ The required steps to start development on a pacakge are:
 
 - `npm ci` from root folder to install dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
 - `cd` into the pacakge you want to apply changes.
-- `npm run setup:dev` compiles the TypeScript files for this package and its dependencies within the repository.
+- `npm run compile:with-dependencies` compiles the TypeScript files for this package and its dependencies within the repository.
 
 Then you can proceed to do apply the changes and use the scripts below for development workflow
 
@@ -134,6 +134,32 @@ The conventional commit type (in PR title) is very important to automatically bu
 - `fix` will bump patch
 
 There is no need to update the CHANGELOG in a PR because it will be updated as part of the release process (see [RELEASING.md](RELEASING.md) for more details).
+
+### Testing
+
+Most unit tests case be run via:
+
+```sh
+npm test
+```
+
+However, some instrumentations require test-services to be running (e.g. the `instrumentation-mongodb` package requires a MongoDB server). Use the `test-services`-related npm scripts to start all required services in Docker and then run the tests with the appropriate configuration to use those services:
+
+```sh
+npm run test-services:start    # starts services in Docker
+npm run test:with-services-env # runs 'npm test' with envvars from test/test-services.env
+npm run test-services:stop     # stops services in Docker
+```
+
+If you only want to test a single package that dfepends on a service (e.g. the `instrumentation-mongodb`) you can `cd` into it and
+use the same scripts for testing. In this case the script will only start the services needed to test the package.
+
+```sh
+cd packages/instrumentation-mongodb # get into the instrumenation folder
+npm run test-services:start         # start the MongoDB service in Docker
+npm run test:with-services-env      # runs 'npm test' with envvars from test/test-services.env
+npm run test-services:stop          # stop MongoDB service in Docker
+```
 
 ### Benchmarks
 
