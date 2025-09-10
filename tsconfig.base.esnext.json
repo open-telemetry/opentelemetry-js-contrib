@@ -1,9 +1,9 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "module": "esnext",
-    // target should be aligned with tsconfig.base.json
     "target": "es2022",
-    "moduleResolution": "node16"
-  },
+    "moduleResolution": "bundler"
+  }
 }

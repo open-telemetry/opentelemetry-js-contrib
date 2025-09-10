@@ -1,7 +1,8 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "module": "es2022",
-    "moduleResolution": "node16"
+    "moduleResolution": "bundler"
   }
 }
