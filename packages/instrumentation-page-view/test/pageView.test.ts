@@ -108,14 +108,20 @@ describe('PageView Instrumentation', () => {
       assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
 
       const pageViewLogRecord =
-        exporter.getFinishedLogRecords()[0] as ReadableLogRecord;
+        exporter.getFinishedLogRecords()[0] as any as ReadableLogRecord;
       assert.strictEqual(pageViewLogRecord.eventName, EVENT_NAME);
-
-      assert.deepEqual(pageViewLogRecord.attributes, {
-        [URL_FULL_ATTRIBUTE]: window.location.href,
-        [REFERRER_ATTRIBUTE]: referrer,
-        [PAGE_TYPE_ATTRIBUTE]: PageTypes.VIRTUAL_PAGE,
-      });
+      assert.strictEqual(
+        (pageViewLogRecord.attributes as any)[URL_FULL_ATTRIBUTE],
+        window.location.href
+      );
+      assert.strictEqual(
+        (pageViewLogRecord.attributes as any)[REFERRER_ATTRIBUTE],
+        referrer
+      );
+      assert.strictEqual(
+        (pageViewLogRecord.attributes as any)[PAGE_TYPE_ATTRIBUTE],
+        PageTypes.VIRTUAL_PAGE
+      );
       assert.strictEqual(
         (pageViewLogRecord.attributes as any)['vp.startTime'],
         vpStartTime
@@ -144,12 +150,18 @@ describe('PageView Instrumentation', () => {
       const pageViewLogRecord =
         exporter.getFinishedLogRecords()[0] as ReadableLogRecord;
       assert.strictEqual(pageViewLogRecord.eventName, EVENT_NAME);
-
-      assert.deepEqual(pageViewLogRecord.attributes, {
-        [URL_FULL_ATTRIBUTE]: window.location.href,
-        [REFERRER_ATTRIBUTE]: referrer,
-        [PAGE_TYPE_ATTRIBUTE]: PageTypes.VIRTUAL_PAGE,
-      });
+      assert.strictEqual(
+        (pageViewLogRecord.attributes as any)[URL_FULL_ATTRIBUTE],
+        window.location.href
+      );
+      assert.strictEqual(
+        (pageViewLogRecord.attributes as any)[REFERRER_ATTRIBUTE],
+        referrer
+      );
+      assert.strictEqual(
+        (pageViewLogRecord.attributes as any)[PAGE_TYPE_ATTRIBUTE],
+        PageTypes.VIRTUAL_PAGE
+      );
       assert.strictEqual(
         (pageViewLogRecord.attributes as any)['vp.startTime'],
         vpStartTime
@@ -175,14 +187,20 @@ describe('PageView Instrumentation', () => {
       assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
 
       const pageViewLogRecord =
-        exporter.getFinishedLogRecords()[0] as ReadableLogRecord;
+        exporter.getFinishedLogRecords()[0] as any as ReadableLogRecord;
       assert.strictEqual(pageViewLogRecord.eventName, EVENT_NAME);
-
-      assert.deepEqual(pageViewLogRecord.attributes, {
-        [URL_FULL_ATTRIBUTE]: window.location.href,
-        [REFERRER_ATTRIBUTE]: firstReferrer,
-        [PAGE_TYPE_ATTRIBUTE]: PageTypes.VIRTUAL_PAGE,
-      });
+      assert.strictEqual(
+        (pageViewLogRecord.attributes as any)[URL_FULL_ATTRIBUTE],
+        window.location.href
+      );
+      assert.strictEqual(
+        (pageViewLogRecord.attributes as any)[REFERRER_ATTRIBUTE],
+        firstReferrer
+      );
+      assert.strictEqual(
+        (pageViewLogRecord.attributes as any)[PAGE_TYPE_ATTRIBUTE],
+        PageTypes.VIRTUAL_PAGE
+      );
       assert.strictEqual(
         (pageViewLogRecord.attributes as any)['vp.startTime'],
         vpStartTime
@@ -193,15 +211,21 @@ describe('PageView Instrumentation', () => {
       assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
 
       const pageViewLogRecord2 =
-        exporter.getFinishedLogRecords()[0] as ReadableLogRecord;
+        exporter.getFinishedLogRecords()[0] as any as ReadableLogRecord;
 
       assert.strictEqual(pageViewLogRecord2.eventName, EVENT_NAME);
-
-      assert.deepEqual(pageViewLogRecord2.attributes, {
-        [URL_FULL_ATTRIBUTE]: window.location.href,
-        [REFERRER_ATTRIBUTE]: firstReferrer,
-        [PAGE_TYPE_ATTRIBUTE]: PageTypes.VIRTUAL_PAGE,
-      });
+      assert.strictEqual(
+        (pageViewLogRecord2.attributes as any)[URL_FULL_ATTRIBUTE],
+        window.location.href
+      );
+      assert.strictEqual(
+        (pageViewLogRecord2.attributes as any)[REFERRER_ATTRIBUTE],
+        firstReferrer
+      );
+      assert.strictEqual(
+        (pageViewLogRecord2.attributes as any)[PAGE_TYPE_ATTRIBUTE],
+        PageTypes.VIRTUAL_PAGE
+      );
       assert.strictEqual(
         (pageViewLogRecord2.attributes as any)['vp.startTime'],
         vpStartTime

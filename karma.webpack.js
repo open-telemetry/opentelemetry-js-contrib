@@ -23,10 +23,16 @@ module.exports = {
   output: {filename: 'bundle.js'},
   resolve: {
     extensions: ['.ts', '.js', '.tsx'],
+    alias: {
+      // Some ESM packages (e.g., sinon-esm) import 'process/browser' directly and require full path resolution
+      'process/browser': require.resolve('process/browser'),
+    },
     fallback: {
       // Enable the assert library polyfill because that is used in tests
       "assert": require.resolve('assert/'),
       "util": require.resolve('util/'),
+      // Polyfill Node's process for browser bundles
+      "process": require.resolve('process/browser'),
     },
   },
   devtool: 'eval-source-map',
