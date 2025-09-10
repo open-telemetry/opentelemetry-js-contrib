@@ -17,9 +17,7 @@ import { KoaLayerType, KoaInstrumentationConfig } from './types';
 import { KoaContext, KoaMiddleware } from './internal-types';
 import { AttributeNames } from './enums/AttributeNames';
 import { Attributes } from '@opentelemetry/api';
-import {
-  ATTR_HTTP_ROUTE,
-} from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 
 export const getMiddlewareMetadata = (
   context: KoaContext,

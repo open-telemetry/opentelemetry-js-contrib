@@ -502,9 +502,9 @@ describe('Koa Instrumentation', function () {
       );
     });
 
-    it('should not instrument generator middleware functions', async function() {
+    it('should not instrument generator middleware functions', async function () {
       if (typeof (app as any).createAsyncCtxStorageMiddleware !== 'function') {
-        this.skip()
+        this.skip();
       }
 
       const rootSpan = tracer.startSpan('rootSpan');
