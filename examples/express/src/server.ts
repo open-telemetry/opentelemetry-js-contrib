@@ -21,7 +21,7 @@ setupTracing('example-express-server');
 
 // Require in rest of modules
 import * as express from 'express';
-import * as axios from 'axios';
+import axios from 'axios';
 import { RequestHandler } from 'express';
 
 // Setup express
