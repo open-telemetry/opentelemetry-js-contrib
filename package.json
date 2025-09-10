@@ -68,7 +68,8 @@
     "semver": "^7.6.0",
     "ts-node": "10.9.2",
     "typescript": "5.0.4",
-    "util": "0.12.5"
+    "util": "0.12.5",
+    "nx": "20.8.2"
   },
   "changelog": {
     "labels": {

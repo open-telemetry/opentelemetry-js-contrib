@@ -138,4 +138,3 @@ const prepareClickEvent = () => {
 };
 
 window.addEventListener('load', prepareClickEvent);
-
