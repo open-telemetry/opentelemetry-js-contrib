@@ -3,14 +3,12 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "build",
+    "skipLibCheck": true,
     "paths": {
       "@opentelemetry/semantic-conventions/incubating": [
         "../../node_modules/@opentelemetry/semantic-conventions/build/src/index-incubating.d.ts"
       ]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }
