@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-redis",
-  "version": "0.52.0",
+  "version": "0.54.0",
   "description": "OpenTelemetry instrumentation for `redis` database client for Redis",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -18,12 +18,13 @@
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test-v2-v3": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/v2-v3/*.test.ts'",
-    "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/v4-v5/*.test.ts'",
+    "test-v2-v3": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/v2-v3/*.test.ts'",
+    "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/v4-v5/*.test.ts'",
     "test:debug": "cross-env RUN_REDIS_TESTS=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "test-all-versions": "tav",
     "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "test-services:start": "cd ../.. && npm run test-services:start redis",
     "test-services:stop": "cd ../.. && npm run test-services:stop redis",
     "version:update": "node ../../scripts/version-update.js"
@@ -55,7 +56,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.49.0",
+    "@opentelemetry/contrib-test-utils": "^0.51.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/mocha": "10.0.10",
@@ -68,7 +69,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.203.0",
+    "@opentelemetry/instrumentation": "^0.205.0",
     "@opentelemetry/redis-common": "^0.38.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
