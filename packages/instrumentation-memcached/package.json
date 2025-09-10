@@ -53,13 +53,7 @@
     "@opentelemetry/contrib-test-utils": "^0.55.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "cross-env": "7.0.3",
-    "memcached": "2.2.2",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "typescript": "5.0.4"
+    "memcached": "2.2.2"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.208.0",

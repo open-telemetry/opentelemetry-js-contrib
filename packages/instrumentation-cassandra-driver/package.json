@@ -55,17 +55,8 @@
     "@opentelemetry/contrib-test-utils": "^0.55.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "@types/semver": "7.5.8",
-    "@types/sinon": "17.0.4",
-    "cassandra-driver": "4.6.4",
-    "cross-env": "7.0.3",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "sinon": "15.2.0",
-    "typescript": "5.0.4"
+    "@opentelemetry/semantic-conventions": "^1.37.0",
+    "cassandra-driver": "4.6.4"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.208.0"

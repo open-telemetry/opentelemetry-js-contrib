@@ -44,13 +44,6 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.55.0",
-    "@types/mocha": "^10.0.0",
-    "@types/node": "18.18.14",
-    "@types/sinon": "^17.0.0",
-    "expect": "29.2.0",
-    "nyc": "17.1.0",
-    "sinon": "15.2.0",
-    "typescript": "5.0.4"
+    "@opentelemetry/contrib-test-utils": "^0.55.0"
   }
 }

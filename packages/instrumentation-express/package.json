@@ -51,16 +51,8 @@
     "@opentelemetry/contrib-test-utils": "^0.55.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@types/express": "5.0.5",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "@types/sinon": "17.0.4",
-    "express": "^5.1.0",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "sinon": "15.2.0",
-    "test-all-versions": "6.1.0",
-    "typescript": "5.0.4"
+    "@types/express": "^5.0.5",
+    "express": "^5.1.0"
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
