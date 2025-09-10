@@ -31,7 +31,8 @@ module.exports = config => {
 
   {
     const plugins = (karmaBaseConfig.plugins = []);
-    const toAdd = Object.keys(require('./package.json').devDependencies)
+    const rootPackageJson = require('../../package.json');
+    const toAdd = Object.keys(rootPackageJson.devDependencies || {})
       .filter(packageName => packageName.startsWith('karma-'))
       .map(packageName => require(packageName));
     plugins.push(...toAdd);
