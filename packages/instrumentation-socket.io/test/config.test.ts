@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { SocketIoInstrumentation, SocketIoInstrumentationConfig } from '../src';
-import * as expect from 'expect';
+import expect from 'expect';
 
 describe('SocketIoInstrumentationConfig', () => {
   it('forces *IgnoreEventList to be an Array', () => {

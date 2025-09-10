@@ -8,14 +8,16 @@
             "max_tokens": 10,
             "temperature": 0.8,
             "top_p": 1,
-            "stop": ["|"]
+            "stop": [
+                "|"
+            ]
         },
         "status": 200,
         "response": {
             "outputs": [
                 {
-                  "text": "\nHello! I am a computer program designed to help you with",
-                  "stop_reason": "max_tokens"
+                    "text": "\nHello! I am a computer program designed to help you with",
+                    "stop_reason": "max_tokens"
                 }
             ]
         },
@@ -25,7 +27,7 @@
             "Content-Type",
             "application/json",
             "Content-Length",
-            "68",
+            "110",
             "Connection",
             "keep-alive",
             "x-amzn-RequestId",
