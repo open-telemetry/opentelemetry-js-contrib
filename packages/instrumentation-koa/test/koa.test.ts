@@ -144,6 +144,11 @@ describe('Koa Instrumentation', function () {
       throw new Error('I failed!');
     };
 
+  const generatorMiddleware: () => koa.Middleware = () =>
+    function* generatorMiddleware(next) {
+      yield next;
+    };
+
   describe('Instrumenting @koa/router calls', function () {
     before(function () {
       if (!isrouterCompat) {
@@ -489,6 +494,39 @@ describe('Koa Instrumentation', function () {
             requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
             KoaLayerType.MIDDLEWARE
           );
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
+    });
+
+    it('should not instrument generator middleware functions', async function() {
+      if (typeof (app as any).createAsyncCtxStorageMiddleware !== 'function') {
+        this.skip()
+      }
+
+      const rootSpan = tracer.startSpan('rootSpan');
+      app.use((_ctx, next) =>
+        context.with(trace.setSpan(context.active(), rootSpan), next)
+      );
+
+      app.use(generatorMiddleware());
+      app.use(simpleResponse());
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}`);
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+          const simpleResponseSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('simpleResponse'));
+          assert.notStrictEqual(simpleResponseSpan, undefined);
+
           const exportedRootSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'rootSpan');
