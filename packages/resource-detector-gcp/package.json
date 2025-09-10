@@ -52,9 +52,10 @@
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/semver": "7.5.8",
-    "nock": "13.3.3",
+    "@types/sinon": "17.0.4",
+    "bignumber.js": "9.3.1",
     "nyc": "17.1.0",
-    "rimraf": "5.0.10",
+    "sinon": "15.2.0",
     "typescript": "5.0.4"
   },
   "peerDependencies": {

@@ -1,4 +1,5 @@
 /*
+ * Copyright 2022 Google LLC
  * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,212 +15,205 @@
  * limitations under the License.
  */
 
-import {
-  BASE_PATH,
-  HEADER_NAME,
-  HEADER_VALUE,
-  HOST_ADDRESS,
-  SECONDARY_HOST_ADDRESS,
-  resetIsAvailableCache,
-} from 'gcp-metadata';
-import * as nock from 'nock';
-import { gcpDetector } from '../../src';
-import {
-  assertCloudResource,
-  assertHostResource,
-  assertK8sResource,
-  assertContainerResource,
-  assertEmptyResource,
-} from '@opentelemetry/contrib-test-utils';
-import { detectResources } from '@opentelemetry/resources';
+import * as sinon from 'sinon';
+import * as metadata from 'gcp-metadata';
 
-const HEADERS = {
-  [HEADER_NAME.toLowerCase()]: HEADER_VALUE,
-};
-const INSTANCE_PATH = BASE_PATH + '/instance';
-const INSTANCE_ID_PATH = BASE_PATH + '/instance/id';
-const PROJECT_ID_PATH = BASE_PATH + '/project/project-id';
-const ZONE_PATH = BASE_PATH + '/instance/zone';
-const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
-const HOSTNAME_PATH = BASE_PATH + '/instance/hostname';
+import { gcpDetector } from '../../src/';
+import { detectResources, Resource } from '@opentelemetry/resources';
+import * as assert from 'assert';
+
+async function detectAndWait(): Promise<Resource> {
+  const resource = detectResources({ detectors: [gcpDetector] });
+  await resource.waitForAsyncAttributes?.();
+  return resource;
+}
 
 describe('gcpDetector', () => {
-  describe('.detect', () => {
-    before(() => {
-      nock.disableNetConnect();
-    });
+  let metadataStub: sinon.SinonStubbedInstance<typeof metadata>;
+  let envStub: NodeJS.ProcessEnv;
+  beforeEach(() => {
+    metadataStub = sinon.stub(metadata);
+    metadataStub.isAvailable.resolves(true);
+    metadataStub.project.withArgs('project-id').resolves('fake-project-id');
 
-    after(() => {
-      nock.enableNetConnect();
-      delete process.env.KUBERNETES_SERVICE_HOST;
-      delete process.env.NAMESPACE;
-      delete process.env.CONTAINER_NAME;
-      delete process.env.HOSTNAME;
-    });
+    envStub = sinon.replace(process, 'env', {});
+  });
 
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('returns empty resource when metadata server is not available', async () => {
+    metadataStub.isAvailable.resolves(false);
+    const resource = await detectAndWait();
+    assert.deepStrictEqual(resource.attributes, {});
+  });
+
+  describe('detects a GKE resource', () => {
     beforeEach(() => {
-      resetIsAvailableCache();
-      nock.cleanAll();
-      delete process.env.KUBERNETES_SERVICE_HOST;
-      delete process.env.NAMESPACE;
-      delete process.env.CONTAINER_NAME;
-      delete process.env.HOSTNAME;
+      envStub.KUBERNETES_SERVICE_HOST = 'fake-service-host';
+      metadataStub.instance
+        .withArgs('id')
+        .resolves(12345)
+
+        .withArgs('attributes/cluster-name')
+        .resolves('fake-cluster-name');
     });
 
-    it('should return resource with GCP metadata', async () => {
-      const scope = nock(HOST_ADDRESS)
-        .get(INSTANCE_PATH)
-        .reply(200, {}, HEADERS)
-        .get(INSTANCE_ID_PATH)
-        // This number is too large to be safely represented by a JS number
-        // See https://github.com/googleapis/gcp-metadata/tree/fc2f0778138b36285643b2f716c485bf9614611f#take-care-with-large-number-valued-properties
-        .reply(200, () => '4520031799277581759', HEADERS)
-        .get(PROJECT_ID_PATH)
-        .reply(200, () => 'my-project-id', HEADERS)
-        .get(ZONE_PATH)
-        .reply(200, () => 'project/zone/my-zone', HEADERS)
-        .get(HOSTNAME_PATH)
-        .reply(200, () => 'dev.my-project.local', HEADERS);
-      const secondaryScope = nock(SECONDARY_HOST_ADDRESS)
-        .get(INSTANCE_PATH)
-        .reply(200, {}, HEADERS);
-
-      const resource = detectResources({ detectors: [gcpDetector] });
-      await resource.waitForAsyncAttributes?.();
-
-      secondaryScope.done();
-      scope.done();
-
-      assertCloudResource(resource, {
-        provider: 'gcp',
-        accountId: 'my-project-id',
-        zone: 'my-zone',
-      });
-      assertHostResource(resource, {
-        id: '4520031799277581759',
-        name: 'dev.my-project.local',
+    it('zonal', async () => {
+      metadataStub.instance
+        .withArgs('attributes/cluster-location')
+        .resolves('us-east4-b');
+      const resource = await detectAndWait();
+      assert.deepStrictEqual(resource.attributes, {
+        'cloud.account.id': 'fake-project-id',
+        'cloud.availability_zone': 'us-east4-b',
+        'cloud.platform': 'gcp_kubernetes_engine',
+        'cloud.provider': 'gcp',
+        'host.id': '12345',
+        'k8s.cluster.name': 'fake-cluster-name',
       });
     });
 
-    it('should populate K8s attributes when KUBERNETES_SERVICE_HOST is set', async () => {
-      process.env.KUBERNETES_SERVICE_HOST = 'my-host';
-      process.env.NAMESPACE = 'my-namespace';
-      process.env.HOSTNAME = 'my-hostname';
-      process.env.CONTAINER_NAME = 'my-container-name';
-      const scope = nock(HOST_ADDRESS)
-        .get(INSTANCE_PATH)
-        .reply(200, {}, HEADERS)
-        .get(INSTANCE_ID_PATH)
-        .reply(200, () => '4520031799277581759', HEADERS)
-        .get(CLUSTER_NAME_PATH)
-        .reply(200, () => 'my-cluster', HEADERS)
-        .get(PROJECT_ID_PATH)
-        .reply(200, () => 'my-project-id', HEADERS)
-        .get(ZONE_PATH)
-        .reply(200, () => 'project/zone/my-zone', HEADERS)
-        .get(HOSTNAME_PATH)
-        .reply(200, () => 'dev.my-project.local', HEADERS);
-      const secondaryScope = nock(SECONDARY_HOST_ADDRESS)
-        .get(INSTANCE_PATH)
-        .reply(200, {}, HEADERS);
-
-      const resource = detectResources({ detectors: [gcpDetector] });
-      await resource.waitForAsyncAttributes?.();
-
-      secondaryScope.done();
-      scope.done();
-
-      assertCloudResource(resource, {
-        provider: 'gcp',
-        accountId: 'my-project-id',
-        zone: 'my-zone',
-      });
-      assertK8sResource(resource, {
-        clusterName: 'my-cluster',
-        podName: 'my-hostname',
-        namespaceName: 'my-namespace',
-      });
-      assertContainerResource(resource, { name: 'my-container-name' });
-    });
-
-    it('should return resource and empty data for non-available metadata attributes', async () => {
-      // Set KUBERNETES_SERVICE_HOST to have the implementation call
-      // CLUSTER_NAME_PATH, to be able to test it handling the HTTP 413.
-      process.env.KUBERNETES_SERVICE_HOST = 'my-host';
-      const scope = nock(HOST_ADDRESS)
-        .get(INSTANCE_PATH)
-        .reply(200, {}, HEADERS)
-        .get(PROJECT_ID_PATH)
-        .reply(200, () => 'my-project-id', HEADERS)
-        .get(ZONE_PATH)
-        .reply(413)
-        .get(INSTANCE_ID_PATH)
-        .reply(400, undefined, HEADERS)
-        .get(CLUSTER_NAME_PATH)
-        .reply(413)
-        .get(HOSTNAME_PATH)
-        .reply(400, undefined, HEADERS);
-      const secondaryScope = nock(SECONDARY_HOST_ADDRESS)
-        .get(INSTANCE_PATH)
-        .reply(200, {}, HEADERS);
-
-      const resource = detectResources({ detectors: [gcpDetector] });
-      await resource.waitForAsyncAttributes?.();
-
-      secondaryScope.done();
-      scope.done();
-
-      assertCloudResource(resource, {
-        provider: 'gcp',
-        accountId: 'my-project-id',
-        zone: '',
+    it('regional', async () => {
+      metadataStub.instance
+        .withArgs('attributes/cluster-location')
+        .resolves('us-east4');
+      const resource = await detectAndWait();
+      assert.deepStrictEqual(resource.attributes, {
+        'cloud.account.id': 'fake-project-id',
+        'cloud.platform': 'gcp_kubernetes_engine',
+        'cloud.provider': 'gcp',
+        'cloud.region': 'us-east4',
+        'host.id': '12345',
+        'k8s.cluster.name': 'fake-cluster-name',
       });
     });
+  });
 
-    it('should return resource and undefined for non-available kubernetes attributes', async () => {
-      process.env.KUBERNETES_SERVICE_HOST = 'my-host';
-      process.env.HOSTNAME = 'my-hostname';
-      process.env.CONTAINER_NAME = 'my-container-name';
-      const scope = nock(HOST_ADDRESS)
-        .get(INSTANCE_PATH)
-        .reply(200, {}, HEADERS)
-        .get(INSTANCE_ID_PATH)
-        .reply(200, () => '4520031799277581759', HEADERS)
-        .get(CLUSTER_NAME_PATH)
-        .reply(200, () => 'my-cluster', HEADERS)
-        .get(PROJECT_ID_PATH)
-        .reply(200, () => 'my-project-id', HEADERS)
-        .get(ZONE_PATH)
-        .reply(200, () => 'project/zone/my-zone', HEADERS)
-        .get(HOSTNAME_PATH)
-        .reply(200, () => 'dev.my-project.local', HEADERS);
-      const secondaryScope = nock(SECONDARY_HOST_ADDRESS)
-        .get(INSTANCE_PATH)
-        .reply(200, {}, HEADERS);
+  it('detects a GCE resource', async () => {
+    metadataStub.instance
+      .withArgs('id')
+      .resolves(12345)
 
-      const resource = detectResources({ detectors: [gcpDetector] });
-      await resource.waitForAsyncAttributes?.();
+      .withArgs('machine-type')
+      .resolves('fake-machine-type')
 
-      secondaryScope.done();
-      scope.done();
+      .withArgs('name')
+      .resolves('fake-name')
 
-      assertCloudResource(resource, {
-        provider: 'gcp',
-        accountId: 'my-project-id',
-        zone: 'my-zone',
-      });
-      assertK8sResource(resource, {
-        clusterName: 'my-cluster',
-        podName: 'my-hostname',
-        namespaceName: undefined,
-      });
-      assertContainerResource(resource, { name: 'my-container-name' });
+      .withArgs('zone')
+      .resolves('projects/233510669999/zones/us-east4-b');
+
+    const resource = await detectAndWait();
+    assert.deepStrictEqual(resource.attributes, {
+      'cloud.account.id': 'fake-project-id',
+      'cloud.availability_zone': 'us-east4-b',
+      'cloud.platform': 'gcp_compute_engine',
+      'cloud.provider': 'gcp',
+      'cloud.region': 'us-east4',
+      'host.id': '12345',
+      'host.name': 'fake-name',
+      'host.type': 'fake-machine-type',
     });
+  });
 
-    it('returns empty resource if not detected', async () => {
-      const resource = detectResources({ detectors: [gcpDetector] });
-      await resource.waitForAsyncAttributes?.();
-      assertEmptyResource(resource);
+  it('detects a Cloud Run resource', async () => {
+    envStub.K_CONFIGURATION = 'fake-configuration';
+    envStub.K_SERVICE = 'fake-service';
+    envStub.K_REVISION = 'fake-revision';
+    metadataStub.instance
+      .withArgs('id')
+      .resolves(12345)
+
+      .withArgs('region')
+      .resolves('projects/233510669999/regions/us-east4');
+
+    const resource = await detectAndWait();
+    assert.deepStrictEqual(resource.attributes, {
+      'cloud.account.id': 'fake-project-id',
+      'cloud.platform': 'gcp_cloud_run',
+      'cloud.provider': 'gcp',
+      'cloud.region': 'us-east4',
+      'faas.instance': '12345',
+      'faas.name': 'fake-service',
+      'faas.version': 'fake-revision',
     });
+  });
+
+  it('detects a Cloud Functions resource', async () => {
+    envStub.FUNCTION_TARGET = 'fake-function-target';
+    envStub.K_SERVICE = 'fake-service';
+    envStub.K_REVISION = 'fake-revision';
+    metadataStub.instance
+      .withArgs('id')
+      .resolves(12345)
+
+      .withArgs('region')
+      .resolves('projects/233510669999/regions/us-east4');
+
+    const resource = await detectAndWait();
+    assert.deepStrictEqual(resource.attributes, {
+      'cloud.account.id': 'fake-project-id',
+      'cloud.platform': 'gcp_cloud_functions',
+      'cloud.provider': 'gcp',
+      'cloud.region': 'us-east4',
+      'faas.instance': '12345',
+      'faas.name': 'fake-service',
+      'faas.version': 'fake-revision',
+    });
+  });
+
+  it('detects a App Engine Standard resource', async () => {
+    envStub.GAE_ENV = 'standard';
+    envStub.GAE_SERVICE = 'fake-service';
+    envStub.GAE_VERSION = 'fake-version';
+    envStub.GAE_INSTANCE = 'fake-instance';
+    metadataStub.instance.withArgs('zone').resolves('us-east4-b');
+    metadataStub.instance
+      .withArgs('region')
+      .resolves('projects/233510669999/regions/us-east4');
+
+    const resource = await detectAndWait();
+    assert.deepStrictEqual(resource.attributes, {
+      'cloud.account.id': 'fake-project-id',
+      'cloud.availability_zone': 'us-east4-b',
+      'cloud.platform': 'gcp_app_engine',
+      'cloud.provider': 'gcp',
+      'cloud.region': 'us-east4',
+      'faas.instance': 'fake-instance',
+      'faas.name': 'fake-service',
+      'faas.version': 'fake-version',
+    });
+  });
+
+  it('detects a App Engine Flex resource', async () => {
+    envStub.GAE_SERVICE = 'fake-service';
+    envStub.GAE_VERSION = 'fake-version';
+    envStub.GAE_INSTANCE = 'fake-instance';
+    metadataStub.instance
+      .withArgs('zone')
+      .resolves('projects/233510669999/zones/us-east4-b');
+
+    const resource = await detectAndWait();
+    assert.deepStrictEqual(resource.attributes, {
+      'cloud.account.id': 'fake-project-id',
+      'cloud.availability_zone': 'us-east4-b',
+      'cloud.platform': 'gcp_app_engine',
+      'cloud.provider': 'gcp',
+      'cloud.region': 'us-east4',
+      'faas.instance': 'fake-instance',
+      'faas.name': 'fake-service',
+      'faas.version': 'fake-version',
+    });
+  });
+
+  it('detects empty resource when nothing else can be detected', async () => {
+    // gcp-metadata throws when it can't access the metadata server
+    metadataStub.instance.rejects();
+    metadataStub.project.rejects();
+
+    const resource = await detectAndWait();
+    assert.deepStrictEqual(resource.attributes, {});
   });
 });
