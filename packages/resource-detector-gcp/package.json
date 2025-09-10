@@ -49,7 +49,8 @@
     "@opentelemetry/contrib-test-utils": "^0.51.0",
     "@opentelemetry/instrumentation-http": "^0.205.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "bignumber.js": "9.3.1"
+    "bignumber.js": "9.3.1",
+    "json-bigint": "1.0.0"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.0.0"
@@ -58,8 +59,7 @@
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/resources": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
-    "gcp-metadata": "^6.0.0",
-    "json-bigint": "1.0.0"
+    "gcp-metadata": "^6.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/resource-detector-gcp#readme",
   "sideEffects": false
