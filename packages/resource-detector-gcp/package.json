@@ -50,6 +50,7 @@
     "@opentelemetry/instrumentation-http": "^0.205.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "bignumber.js": "9.3.1",
+    "google-logging-utils": "^0.0.2",
     "json-bigint": "1.0.0"
   },
   "peerDependencies": {
