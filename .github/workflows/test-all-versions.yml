@@ -152,6 +152,7 @@ jobs:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       RUN_MONGODB_TESTS: 1
+      RUN_MONGOOSE_TESTS: 1
       RUN_MSSQL_TESTS: 1
       RUN_MYSQL_TESTS: 1
       RUN_ORACLEDB_TESTS: 1
