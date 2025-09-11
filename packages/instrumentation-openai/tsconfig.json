@@ -5,8 +5,5 @@
     "outDir": "build",
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"],
-  "ts-node": {
-    "transpileOnly": true
-  }
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }
