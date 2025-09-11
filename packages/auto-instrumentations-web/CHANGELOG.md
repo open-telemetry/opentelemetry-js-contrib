@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.50.0...auto-instrumentations-web-v0.51.0) (2025-09-10)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3034](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3034)) ([bee0a66](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bee0a66ef825145fb1a9b172c3468ccf0c97a820))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.49.0 to ^0.50.0
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.49.0 to ^0.50.0
+
+## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.49.1...auto-instrumentations-web-v0.50.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.48.0 to ^0.49.0
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.48.1 to ^0.49.0
+
 ## [0.49.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.49.0...auto-instrumentations-web-v0.49.1) (2025-09-01)
 
 
