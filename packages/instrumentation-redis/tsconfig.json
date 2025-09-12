@@ -2,7 +2,12 @@
   "extends": "../../tsconfig.base",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "build"
+    "outDir": "build",
+    /* Work-around for the node-redis type-checking bug
+   (see https://github.com/redis/node-redis/issues/3009). */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true  
   },
   "include": [
     "src/**/*.ts",

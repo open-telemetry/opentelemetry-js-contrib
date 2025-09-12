@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-fs",
-  "version": "0.23.0",
+  "version": "0.25.0",
   "description": "OpenTelemetry instrumentation for `node:fs` file system interactions module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -10,11 +10,11 @@
     "directory": "packages/instrumentation-fs"
   },
   "scripts": {
-    "test": "mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.203.0"
+    "@opentelemetry/instrumentation": "^0.205.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-fs#readme"
 }
