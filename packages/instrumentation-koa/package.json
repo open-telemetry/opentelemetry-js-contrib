@@ -47,11 +47,11 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.3.0"
+    "@opentelemetry/api": "^1.9.0"
   },
   "devDependencies": {
     "@koa/router": "14.0.0",
-    "@opentelemetry/api": "^1.3.0",
+    "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
     "@opentelemetry/contrib-test-utils": "^0.51.0",
     "@opentelemetry/instrumentation-http": "^0.205.0",
@@ -62,7 +62,7 @@
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
-    "koa": "2.16.2",
+    "koa": "3.0.1",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "semver": "7.7.2",
@@ -73,7 +73,7 @@
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/instrumentation": "^0.205.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/semantic-conventions": "^1.36.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-koa#readme"
 }

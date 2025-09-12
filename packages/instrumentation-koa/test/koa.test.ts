@@ -26,9 +26,9 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import {
+  ATTR_HTTP_ROUTE,
   SEMATTRS_EXCEPTION_MESSAGE,
   SEMATTRS_HTTP_METHOD,
-  SEMATTRS_HTTP_ROUTE,
 } from '@opentelemetry/semantic-conventions';
 
 type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
@@ -198,7 +198,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/post/:id'
           );
 
@@ -249,7 +249,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/^\\/post/'
           );
 
@@ -296,7 +296,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/post/:id'
           );
 
@@ -345,7 +345,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/:first/post/:id'
           );
 
@@ -392,7 +392,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/:first/post/:id'
           );
 
@@ -502,7 +502,11 @@ describe('Koa Instrumentation', function () {
       );
     });
 
-    it('should not instrument generator middleware functions', async () => {
+    it('should not instrument generator middleware functions', async function () {
+      if (typeof (app as any).createAsyncCtxStorageMiddleware !== 'function') {
+        this.skip();
+      }
+
       const rootSpan = tracer.startSpan('rootSpan');
       app.use((_ctx, next) =>
         context.with(trace.setSpan(context.active(), rootSpan), next)
