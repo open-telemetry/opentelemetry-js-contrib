@@ -12,23 +12,8 @@ jobs:
     permissions:
       contents: write # required for pushing changes
     steps:
-      - name: Fork
-        run: gh repo fork open-telemetry/opentelemetry-js-contrib
-        env:
-          GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
       - name: Checkout
         uses: actions/checkout@v5
-        with:
-          repository: opentelemetrybot/opentelemetry-js-contrib
-          ref: main
-          token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
-      - name: Sync with upstream
-        run: |
-          git remote show origin
-          git remote add upstream https://github.com/open-telemetry/opentelemetry-js-contrib.git
-          git fetch upstream
-          git reset --hard upstream/main
-          git push origin main --force
 
       - uses: actions/setup-node@v4
         with:
@@ -40,14 +25,20 @@ jobs:
 
       - run: npm ci
 
+      - uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        id: otelbot-token
+        with:
+          app-id: ${{ vars.OTELBOT_APP_ID }}
+          private-key: ${{ secrets.OTELBOT_PRIVATE_KEY }}
+
       - name: Create/Update Release PR
         run: |
-          git config user.name opentelemetrybot
-          git config user.email 107717825+opentelemetrybot@users.noreply.github.com
-          git checkout -b feat/update-otel-deps
+          git config user.name otelbot
+          git config user.email 197425009+otelbot@users.noreply.github.com
+          git checkout -b otelbot/update-otel-deps
           node ./scripts/update-otel-deps.js
           git commit -am "feat(deps): update deps matching '@opentelemetry/*'"
-          git push --set-upstream origin feat/update-otel-deps --force
-          gh pr create --repo open-telemetry/opentelemetry-js-contrib --title "feat(deps): update deps matching '@opentelemetry/*'" --body 'Updates all `@opentelemetry/*` dependencies to latest'
+          git push --set-upstream origin otelbot/update-otel-deps --force
+          gh pr create --title "feat(deps): update deps matching '@opentelemetry/*'" --body 'Updates all `@opentelemetry/*` dependencies to latest'
         env:
-          GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.otelbot-token.outputs.token }}
