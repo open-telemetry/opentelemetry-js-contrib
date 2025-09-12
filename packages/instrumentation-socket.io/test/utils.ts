@@ -21,7 +21,7 @@ import { SEMATTRS_MESSAGING_SYSTEM } from '@opentelemetry/semantic-conventions';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 
-import * as expect from 'expect';
+import expect from 'expect';
 import { Server } from 'socket.io';
 import * as socketIo from 'socket.io';
 import * as ioClient from 'socket.io-client';
