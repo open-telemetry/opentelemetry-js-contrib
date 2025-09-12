@@ -5,8 +5,6 @@
   "description": "Example of using meta package for default auto instrumentations in node",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "zipkin:server": "cross-env EXPORTER=zipkin node ./server.js",
     "zipkin:client": "cross-env EXPORTER=zipkin node ./client.js"
   },

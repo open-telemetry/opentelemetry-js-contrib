@@ -69,7 +69,7 @@ describe('NetInstrumentation', () => {
         const spans = memoryExporter.getFinishedSpans();
         assert.strictEqual(spans.length, 0);
         assert.strictEqual(isWrapped(net.Socket.prototype.connect), false);
-        assert.strictEqual((tracer.startSpan as sinon.SinonSpy).called, false);
+        assert.strictEqual((tracer.startSpan as Sinon.SinonSpy).called, false);
         done();
       });
     });

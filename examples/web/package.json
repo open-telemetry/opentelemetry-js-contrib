@@ -5,8 +5,6 @@
   "description": "Example of using web plugins in browser",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "docker:start": "cd ./docker && docker compose down && docker compose up",
     "docker:startd": "cd ./docker && docker compose down && docker compose up -d",
     "start": "webpack-dev-server --progress --color --port 8090 --config ./webpack.config.js --hot --host 0.0.0.0"
