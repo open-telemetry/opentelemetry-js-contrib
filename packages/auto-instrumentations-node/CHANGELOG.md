@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.64.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.64.0...auto-instrumentations-node-v0.64.1) (2025-09-11)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-redis bumped from ^0.54.0 to ^0.54.1
+    * @opentelemetry/resource-detector-gcp bumped from ^0.39.0 to ^0.40.0
+
 ## [0.64.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.63.0...auto-instrumentations-node-v0.64.0) (2025-09-10)
 
 

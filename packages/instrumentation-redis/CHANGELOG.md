@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.54.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.54.0...instrumentation-redis-v0.54.1) (2025-09-11)
+
+
+### Bug Fixes
+
+* **instrumentation-redis:** properly implement getModuleDefinitions() in the merged-from-two RedisInstrumentation ([#3025](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3025)) ([976dcd2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/976dcd23e810a162ef33d4e3f89451f8e96604be))
+
 ## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.53.0...instrumentation-redis-v0.54.0) (2025-09-10)
 
 
