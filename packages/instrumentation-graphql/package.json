@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-graphql",
-  "version": "0.52.0",
+  "version": "0.53.0",
   "description": "OpenTelemetry instrumentation for `graphql` gql query language and runtime for GraphQL",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -61,7 +61,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.204.0"
+    "@opentelemetry/instrumentation": "^0.205.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-graphql#readme"
 }

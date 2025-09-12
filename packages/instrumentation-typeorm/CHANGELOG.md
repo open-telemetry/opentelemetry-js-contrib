@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-typeorm-v0.5.0...instrumentation-typeorm-v0.6.0) (2025-09-10)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3034](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3034)) ([bee0a66](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bee0a66ef825145fb1a9b172c3468ccf0c97a820))
+
+
+### Bug Fixes
+
+* **instrumentation-typeorm:** trim operation name ([#3030](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3030)) ([8003f7a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8003f7a7bd1ea0dc22ee5e9abfd7ca7f92a06d25))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.50.0 to ^0.51.0
+
 ## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-typeorm-v0.4.0...instrumentation-typeorm-v0.5.0) (2025-09-08)
 
 

@@ -1,4 +1,5 @@
 /*
+ * Copyright 2022 Google LLC
  * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,147 +15,216 @@
  * limitations under the License.
  */
 
-import * as gcpMetadata from 'gcp-metadata';
 import { context } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import {
-  ResourceDetectionConfig,
-  ResourceDetector,
-  DetectedResource,
-  DetectedResourceAttributes,
-} from '@opentelemetry/resources';
-import {
+  CLOUDPLATFORMVALUES_GCP_APP_ENGINE,
+  CLOUDPLATFORMVALUES_GCP_CLOUD_FUNCTIONS,
+  CLOUDPLATFORMVALUES_GCP_CLOUD_RUN,
+  CLOUDPLATFORMVALUES_GCP_COMPUTE_ENGINE,
+  CLOUDPLATFORMVALUES_GCP_KUBERNETES_ENGINE,
   CLOUDPROVIDERVALUES_GCP,
   SEMRESATTRS_CLOUD_ACCOUNT_ID,
   SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
+  SEMRESATTRS_CLOUD_PLATFORM,
   SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CONTAINER_NAME,
+  SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_FAAS_INSTANCE,
+  SEMRESATTRS_FAAS_NAME,
+  SEMRESATTRS_FAAS_VERSION,
   SEMRESATTRS_HOST_ID,
   SEMRESATTRS_HOST_NAME,
+  SEMRESATTRS_HOST_TYPE,
   SEMRESATTRS_K8S_CLUSTER_NAME,
-  SEMRESATTRS_K8S_NAMESPACE_NAME,
-  SEMRESATTRS_K8S_POD_NAME,
 } from '@opentelemetry/semantic-conventions';
 
+import { AttributeValue, Attributes } from '@opentelemetry/api';
+import {
+  DetectedResource,
+  DetectedResourceAttributes,
+  emptyResource,
+  Resource,
+  ResourceDetector,
+  resourceFromAttributes,
+} from '@opentelemetry/resources';
+import * as metadata from 'gcp-metadata';
+import * as faas from './faas';
+import * as gae from './gae';
+import * as gce from './gce';
+import * as gke from './gke';
+
+const ATTRIBUTE_NAMES = [
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
+  SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_K8S_CLUSTER_NAME,
+  SEMRESATTRS_HOST_TYPE,
+  SEMRESATTRS_HOST_ID,
+  SEMRESATTRS_HOST_NAME,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_ACCOUNT_ID,
+  SEMRESATTRS_FAAS_NAME,
+  SEMRESATTRS_FAAS_VERSION,
+  SEMRESATTRS_FAAS_INSTANCE,
+] as const;
+
+// Ensure that all resource keys are accounted for in ATTRIBUTE_NAMES
+type GcpResourceAttributeName = (typeof ATTRIBUTE_NAMES)[number];
+type GcpResourceAttributes = Partial<
+  Record<GcpResourceAttributeName, AttributeValue>
+>;
+
+async function detect(): Promise<Resource> {
+  if (!(await metadata.isAvailable())) {
+    return emptyResource();
+  }
+
+  // Note the order of these if checks is significant with more specific resources coming
+  // first. E.g. Cloud Functions gen2 are executed in Cloud Run so it must be checked first.
+  if (await gke.onGke()) {
+    return await gkeResource();
+  } else if (await faas.onCloudFunctions()) {
+    return await cloudFunctionsResource();
+  } else if (await faas.onCloudRun()) {
+    return await cloudRunResource();
+  } else if (await gae.onAppEngine()) {
+    return await gaeResource();
+  } else if (await gce.onGce()) {
+    return await gceResource();
+  }
+
+  return emptyResource();
+}
+
+async function gkeResource(): Promise<Resource> {
+  const [zoneOrRegion, k8sClusterName, hostId] = await Promise.all([
+    gke.availabilityZoneOrRegion(),
+    gke.clusterName(),
+    gke.hostId(),
+  ]);
+
+  return await makeResource({
+    [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_GCP_KUBERNETES_ENGINE,
+    [zoneOrRegion.type === 'zone'
+      ? SEMRESATTRS_CLOUD_AVAILABILITY_ZONE
+      : SEMRESATTRS_CLOUD_REGION]: zoneOrRegion.value,
+    [SEMRESATTRS_K8S_CLUSTER_NAME]: k8sClusterName,
+    [SEMRESATTRS_HOST_ID]: hostId,
+  });
+}
+
+async function cloudRunResource(): Promise<Resource> {
+  const [faasName, faasVersion, faasInstance, faasCloudRegion] =
+    await Promise.all([
+      faas.faasName(),
+      faas.faasVersion(),
+      faas.faasInstance(),
+      faas.faasCloudRegion(),
+    ]);
+
+  return await makeResource({
+    [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_GCP_CLOUD_RUN,
+    [SEMRESATTRS_FAAS_NAME]: faasName,
+    [SEMRESATTRS_FAAS_VERSION]: faasVersion,
+    [SEMRESATTRS_FAAS_INSTANCE]: faasInstance,
+    [SEMRESATTRS_CLOUD_REGION]: faasCloudRegion,
+  });
+}
+
+async function cloudFunctionsResource(): Promise<Resource> {
+  const [faasName, faasVersion, faasInstance, faasCloudRegion] =
+    await Promise.all([
+      faas.faasName(),
+      faas.faasVersion(),
+      faas.faasInstance(),
+      faas.faasCloudRegion(),
+    ]);
+
+  return await makeResource({
+    [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_GCP_CLOUD_FUNCTIONS,
+    [SEMRESATTRS_FAAS_NAME]: faasName,
+    [SEMRESATTRS_FAAS_VERSION]: faasVersion,
+    [SEMRESATTRS_FAAS_INSTANCE]: faasInstance,
+    [SEMRESATTRS_CLOUD_REGION]: faasCloudRegion,
+  });
+}
+
+async function gaeResource(): Promise<Resource> {
+  let zone, region;
+  if (await gae.onAppEngineStandard()) {
+    [zone, region] = await Promise.all([
+      gae.standardAvailabilityZone(),
+      gae.standardCloudRegion(),
+    ]);
+  } else {
+    ({ zone, region } = await gce.availabilityZoneAndRegion());
+  }
+  const [faasName, faasVersion, faasInstance] = await Promise.all([
+    gae.serviceName(),
+    gae.serviceVersion(),
+    gae.serviceInstance(),
+  ]);
+
+  return await makeResource({
+    [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_GCP_APP_ENGINE,
+    [SEMRESATTRS_FAAS_NAME]: faasName,
+    [SEMRESATTRS_FAAS_VERSION]: faasVersion,
+    [SEMRESATTRS_FAAS_INSTANCE]: faasInstance,
+    [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: zone,
+    [SEMRESATTRS_CLOUD_REGION]: region,
+  });
+}
+
+async function gceResource(): Promise<Resource> {
+  const [zoneAndRegion, hostType, hostId, hostName] = await Promise.all([
+    gce.availabilityZoneAndRegion(),
+    gce.hostType(),
+    gce.hostId(),
+    gce.hostName(),
+  ]);
+
+  return await makeResource({
+    [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_GCP_COMPUTE_ENGINE,
+    [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: zoneAndRegion.zone,
+    [SEMRESATTRS_CLOUD_REGION]: zoneAndRegion.region,
+    [SEMRESATTRS_HOST_TYPE]: hostType,
+    [SEMRESATTRS_HOST_ID]: hostId,
+    [SEMRESATTRS_HOST_NAME]: hostName,
+  });
+}
+
+async function makeResource(attrs: GcpResourceAttributes): Promise<Resource> {
+  const project = await metadata.project<string>('project-id');
+
+  return resourceFromAttributes({
+    [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_GCP,
+    [SEMRESATTRS_CLOUD_ACCOUNT_ID]: project,
+    ...attrs,
+  } satisfies GcpResourceAttributes);
+}
+
 /**
- * The GcpDetector can be used to detect if a process is running in the Google
- * Cloud Platform and return a {@link Resource} populated with metadata about
- * the instance. Returns an empty Resource if detection fails.
+ * Google Cloud resource detector which populates attributes based on the environment this
+ * process is running in. If not on GCP, returns an empty resource.
  */
-class GcpDetector implements ResourceDetector {
-  detect(_config?: ResourceDetectionConfig): DetectedResource {
-    const attributes = context.with(suppressTracing(context.active()), () =>
-      this._getAttributes()
+export class GcpDetector implements ResourceDetector {
+  private async _asyncAttributes(): Promise<Attributes> {
+    const resource = await context.with(
+      suppressTracing(context.active()),
+      detect
     );
+    return resource.attributes;
+  }
+
+  detect(): DetectedResource {
+    const asyncAttributes = this._asyncAttributes();
+    const attributes = {} as DetectedResourceAttributes;
+    ATTRIBUTE_NAMES.forEach(name => {
+      // Each resource attribute is determined asynchronously in _gatherData().
+      attributes[name] = asyncAttributes.then(data => data[name]);
+    });
+
     return { attributes };
-  }
-
-  /**
-   * Asynchronously gather GCP cloud metadata.
-   */
-  private _getAttributes(): DetectedResourceAttributes {
-    const isAvail = gcpMetadata.isAvailable();
-
-    const attributes: DetectedResourceAttributes = {
-      [SEMRESATTRS_CLOUD_PROVIDER]: (async () => {
-        return (await isAvail) ? CLOUDPROVIDERVALUES_GCP : undefined;
-      })(),
-      [SEMRESATTRS_CLOUD_ACCOUNT_ID]: this._getProjectId(isAvail),
-      [SEMRESATTRS_HOST_ID]: this._getInstanceId(isAvail),
-      [SEMRESATTRS_HOST_NAME]: this._getHostname(isAvail),
-      [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: this._getZone(isAvail),
-    };
-
-    // Add resource attributes for K8s.
-    if (process.env.KUBERNETES_SERVICE_HOST) {
-      attributes[SEMRESATTRS_K8S_CLUSTER_NAME] = this._getClusterName(isAvail);
-      attributes[SEMRESATTRS_K8S_NAMESPACE_NAME] = (async () => {
-        return (await isAvail) ? process.env.NAMESPACE : undefined;
-      })();
-      attributes[SEMRESATTRS_K8S_POD_NAME] = (async () => {
-        return (await isAvail) ? process.env.HOSTNAME : undefined;
-      })();
-      attributes[SEMRESATTRS_CONTAINER_NAME] = (async () => {
-        return (await isAvail) ? process.env.CONTAINER_NAME : undefined;
-      })();
-    }
-
-    return attributes;
-  }
-
-  /** Gets project id from GCP project metadata. */
-  private async _getProjectId(
-    isAvail: Promise<boolean>
-  ): Promise<string | undefined> {
-    if (!(await isAvail)) {
-      return undefined;
-    }
-    try {
-      return await gcpMetadata.project('project-id');
-    } catch {
-      return '';
-    }
-  }
-
-  /** Gets instance id from GCP instance metadata. */
-  private async _getInstanceId(
-    isAvail: Promise<boolean>
-  ): Promise<string | undefined> {
-    if (!(await isAvail)) {
-      return undefined;
-    }
-    try {
-      const id = await gcpMetadata.instance('id');
-      return id.toString();
-    } catch {
-      return '';
-    }
-  }
-
-  /** Gets zone from GCP instance metadata. */
-  private async _getZone(
-    isAvail: Promise<boolean>
-  ): Promise<string | undefined> {
-    if (!(await isAvail)) {
-      return undefined;
-    }
-    try {
-      const zoneId = await gcpMetadata.instance('zone');
-      if (zoneId) {
-        return zoneId.split('/').pop();
-      }
-      return '';
-    } catch {
-      return '';
-    }
-  }
-
-  /** Gets cluster name from GCP instance metadata. */
-  private async _getClusterName(
-    isAvail: Promise<boolean>
-  ): Promise<string | undefined> {
-    if (!(await isAvail)) {
-      return undefined;
-    }
-    try {
-      return await gcpMetadata.instance('attributes/cluster-name');
-    } catch {
-      return '';
-    }
-  }
-
-  /** Gets hostname from GCP instance metadata. */
-  private async _getHostname(
-    isAvail: Promise<boolean>
-  ): Promise<string | undefined> {
-    if (!(await isAvail)) {
-      return undefined;
-    }
-    try {
-      return await gcpMetadata.instance('hostname');
-    } catch {
-      return '';
-    }
   }
 }
 

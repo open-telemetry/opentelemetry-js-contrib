@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/plugin-react-load",
-  "version": "0.36.0",
+  "version": "0.37.0",
   "description": "OpenTelemetry instrumentation for React class component lifecycle methods",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -91,7 +91,7 @@
     "react": "^16.13.1 || ^17.0.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.204.0",
+    "@opentelemetry/instrumentation": "^0.205.0",
     "shimmer": "^1.2.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/plugin-react-load#readme"
