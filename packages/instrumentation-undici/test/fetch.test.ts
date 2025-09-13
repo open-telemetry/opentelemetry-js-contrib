@@ -64,6 +64,11 @@ describe('UndiciInstrumentation `fetch` tests', function () {
     );
     mockServer.start(done);
     mockServer.mockListener((req, res) => {
+      if (req.url === '/error') {
+        // Simulate an error
+        res.destroy();
+        return;
+      }
       // There are some situations where there is no way to access headers
       // for trace propagation asserts like:
       // const resp = await fetch('http://host:port')
@@ -364,7 +369,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
 
       let fetchError;
       try {
-        const fetchUrl = 'http://unexistent-host-name/path';
+        const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/error`;
         await fetch(fetchUrl);
       } catch (err) {
         // Expected error
@@ -376,14 +381,14 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       assert.ok(span, 'a span is present');
       assert.strictEqual(spans.length, 1);
       assertSpan(span, {
-        hostname: 'unexistent-host-name',
+        hostname,
         httpMethod: 'GET',
-        path: '/path',
+        path: '/error',
         error: fetchError,
         noNetPeer: true, // do not check network attribs
         forceStatus: {
           code: SpanStatusCode.ERROR,
-          message: 'getaddrinfo ENOTFOUND unexistent-host-name',
+          message: 'other side closed',
         },
       });
     });
@@ -405,7 +410,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       }
 
       // Let the error be published to diagnostics channel
-      await new Promise(r => setTimeout(r, 5));
+      await new Promise(r => setTimeout(r, 50));
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];

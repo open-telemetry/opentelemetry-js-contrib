@@ -11,7 +11,9 @@ components:
     - abhee11
   packages/resource-detector-gcp:
     - aabmass
-    - punya
+    - psx95
+    - DylanRussell
+    - dashpole
   packages/resource-detector-github: []
     # Unmaintained
   packages/resource-detector-instana:
