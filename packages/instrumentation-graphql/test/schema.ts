@@ -38,32 +38,41 @@ function getData(url: string): any {
   });
 }
 
-const authors: Author[] = [];
-const books: Book[] = [];
-
 interface Book {
+  __typename: 'Book';
+  id: number;
+  name: string;
+  authorIds: number[];
+}
+
+interface EBook {
+  __typename: 'EBook';
   id: number;
   name: string;
   authorIds: number[];
 }
 
 interface Address {
+  __typename: 'Address';
   country: string;
   city: string;
 }
 
 interface Author {
+  __typename: 'Author';
   id: number;
   name: string;
   address: Address;
 }
 
-function addBook(name: string, authorIds: string | number[] = []) {
-  if (typeof authorIds === 'string') {
-    authorIds = authorIds.split(',').map(id => parseInt(id, 10));
-  }
+const books: Book[] = [];
+const ebooks: EBook[] = [];
+const authors: Author[] = [];
+
+function addBook(name: string, authorIds: number[] = []) {
   const id = books.length;
   books.push({
+    __typename: 'Book',
     id: id,
     name: name,
     authorIds: authorIds,
@@ -71,9 +80,25 @@ function addBook(name: string, authorIds: string | number[] = []) {
   return books[books.length - 1];
 }
 
+function addEBook(name: string, authorIds: number[] = []) {
+  const id = books.length;
+  ebooks.push({
+    __typename: 'EBook',
+    id: id,
+    name: name,
+    authorIds: authorIds,
+  });
+  return ebooks[ebooks.length - 1];
+}
+
 function addAuthor(name: string, country: string, city: string) {
   const id = authors.length;
-  authors.push({ id, name, address: { country, city } });
+  authors.push({
+    __typename: 'Author',
+    id,
+    name,
+    address: { __typename: 'Address', country, city },
+  });
   return authors[authors.length - 1];
 }
 
@@ -93,11 +118,30 @@ function prepareData() {
   addBook('First Book', [0, 1]);
   addBook('Second Book', [2]);
   addBook('Third Book', [3]);
+  addEBook('First EBook', [1, 3]);
 }
 
 prepareData();
 
 export function buildTestSchema() {
+  const Address = new graphql.GraphQLObjectType({
+    name: 'Address',
+    fields: {
+      country: {
+        type: graphql.GraphQLString,
+        resolve(obj, args) {
+          return obj.country;
+        },
+      },
+      city: {
+        type: graphql.GraphQLString,
+        resolve(obj, args) {
+          return obj.city;
+        },
+      },
+    },
+  });
+
   const Author = new graphql.GraphQLObjectType({
     name: 'Author',
     fields: {
@@ -124,23 +168,7 @@ export function buildTestSchema() {
         },
       },
       address: {
-        type: new graphql.GraphQLObjectType({
-          name: 'Address',
-          fields: {
-            country: {
-              type: graphql.GraphQLString,
-              resolve(obj, args) {
-                return obj.country;
-              },
-            },
-            city: {
-              type: graphql.GraphQLString,
-              resolve(obj, args) {
-                return obj.city;
-              },
-            },
-          },
-        }),
+        type: Address,
         resolve(obj, args) {
           return obj.address;
         },
@@ -174,6 +202,40 @@ export function buildTestSchema() {
     },
   });
 
+  // DO NOT RE-USE THIS TYPE DIRECTLY
+  // To truly test union type support, we need a type with sub-resolvers that is only found under a union type.
+  // This type is currently used only under the 'SearchResult' union type.
+  const EBook = new graphql.GraphQLObjectType({
+    name: 'EBook',
+    fields: {
+      id: {
+        type: graphql.GraphQLInt,
+        resolve(obj, args) {
+          return obj.id;
+        },
+      },
+      name: {
+        type: graphql.GraphQLString,
+        resolve(obj, args) {
+          return obj.name;
+        },
+      },
+      authors: {
+        type: new graphql.GraphQLList(Author),
+        resolve(obj, args) {
+          return obj.authorIds.map((id: number) => {
+            return authors[id];
+          });
+        },
+      },
+    },
+  });
+
+  const searchResult = new graphql.GraphQLUnionType({
+    name: 'SearchResult',
+    types: [Book, EBook],
+  });
+
   const query = new graphql.GraphQLObjectType({
     name: 'Query',
     fields: {
@@ -205,6 +267,19 @@ export function buildTestSchema() {
         type: new graphql.GraphQLList(Book),
         resolve(obj, args, context) {
           return Promise.resolve(books);
+        },
+      },
+      search: {
+        type: new graphql.GraphQLList(searchResult),
+        args: {
+          name: { type: new graphql.GraphQLNonNull(graphql.GraphQLString) },
+        },
+        resolve(obj, args, context) {
+          const searchName = args.name.toLowerCase();
+          const results = [...books, ...ebooks].filter(item =>
+            item.name.toLowerCase().includes(searchName)
+          );
+          return Promise.resolve(results);
         },
       },
     },
