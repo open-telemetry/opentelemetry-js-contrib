@@ -1,10 +1,13 @@
 # AWS X-Ray Remote Sampler
 
-> This component is still in development and has not been released as an npm package.
-
-[component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @jj22ee, @yiyuan-he
-
 This module provides the remote/centralized sampler for AWS X-Ray.
+
+## Status
+
+| Maturity                               | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
+| -------------------------------------- | ----------------------------------------------------- | --------------------- |
+| [Beta](../../CONTRIBUTING.md#beta)     | @jj22ee @yiyuan-he                                    | API 1.1+<br/>SDK 2.0+ |
+
 
 ## Usage
 
