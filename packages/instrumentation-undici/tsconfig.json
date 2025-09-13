@@ -1,8 +1,10 @@
 {
-  "extends": "../../tsconfig.base",
+  "extends": "../../tsconfig.base.esm.json",
   "compilerOptions": {
+    "outDir": "build",
     "rootDir": ".",
-    "outDir": "build"
+    "module": "node16",
+    "tsBuildInfoFile": "build/src/tsconfig.esm.tsbuildinfo"
   },
   "include": [
     "src/**/*.ts",

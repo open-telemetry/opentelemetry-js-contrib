@@ -3,25 +3,25 @@
   "version": "0.16.0",
   "description": "OpenTelemetry instrumentation for `undici` http client and Node.js fetch()",
   "main": "build/src/index.js",
+  "module": "build/esm/index.js",
   "types": "build/src/index.d.ts",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
     "directory": "packages/instrumentation-undici"
   },
   "scripts": {
-    "clean": "rimraf build/*",
-    "compile": "tsc -p .",
+    "clean": "tsc --build --clean tsconfig.json tsconfig.cjs.json",
+    "compile": "tsc --build tsconfig.json tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > build/cjs/package.json",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc --no-clean mocha test/**/*.test.ts",
+    "test": "nyc mocha --loader=ts-node/esm test/**/*.test.ts",
     "test-all-versions": "tav",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
-    "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "opentelemetry",
@@ -36,10 +36,23 @@
   "engines": {
     "node": "^18.19.0 || >=20.6.0"
   },
+  "exports": {
+    "import": {
+      "types": "./build/src/index.d.ts",
+      "default": "./build/src/index.js"
+    },
+    "require": {
+      "types": "./build/cjs/index.d.ts",
+      "default": "./build/cjs/index.js"
+    }
+  },
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
-    "build/src/**/*.d.ts"
+    "build/src/**/*.d.ts",
+    "build/cjs/**/*.js",
+    "build/cjs/**/*.js.map",
+    "build/cjs/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
