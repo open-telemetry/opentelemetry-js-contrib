@@ -81,5 +81,7 @@ for (const pkg of pkgsWithFlag) {
   if (existsSync(pkg.report)) {
     console.log(`\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${pkg.command}`);
     execSync(pkg.command, execOpts);
+  } else {
+    console.log(`\n\nCODECOV: No report found for "${pkg.name}" with flag "${pkg.flag}"\n`);
   }
 }
