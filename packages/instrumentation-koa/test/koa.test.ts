@@ -596,7 +596,7 @@ describe('Koa Instrumentation', function () {
       assert.ok(exceptionEvent, 'There should be an exception event recorded');
       assert.deepStrictEqual(exceptionEvent.name, 'exception');
       assert.deepStrictEqual(
-        exceptionEvent.attributes![SEMATTRS_EXCEPTION_MESSAGE],
+        exceptionEvent.attributes![ATTR_EXCEPTION_MESSAGE],
         'I failed!'
       );
     });
