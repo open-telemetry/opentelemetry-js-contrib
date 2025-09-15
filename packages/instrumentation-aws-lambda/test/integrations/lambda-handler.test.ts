@@ -823,10 +823,17 @@ describe('lambda handler', () => {
   });
 
   describe('streaming handlers', () => {
-    const createMockResponseStream = () => ({
-      write: () => {},
-      end: () => {},
-    });
+    const createMockResponseStream = () => {
+      const writeCalls: any[] = [];
+
+      return {
+        write: (data: any) => {
+          writeCalls.push(data);
+        },
+        end: () => {},
+        getWriteCalls: () => writeCalls,
+      };
+    };
 
     describe('async streaming handler success', () => {
       it('should export a valid span', async () => {
@@ -845,6 +852,22 @@ describe('lambda handler', () => {
         assert.strictEqual(spans.length, 1);
         assertSpanSuccess(span);
         assert.strictEqual(span.parentSpanContext?.spanId, undefined);
+      });
+
+      it('should validate write() receives expected inputs from handler', async () => {
+        initializeHandler('lambda-test/streaming.handler');
+
+        const responseStream = createMockResponseStream();
+        const result = await lambdaRequire('lambda-test/streaming').handler(
+          'arg',
+          responseStream,
+          ctx
+        );
+
+        assert.strictEqual(result, 'stream-ok');
+        const writeCalls = responseStream.getWriteCalls();
+        assert.strictEqual(writeCalls.length, 1);
+        assert.strictEqual(writeCalls[0], '{"message": "ok"}');
       });
 
       it('should record coldstart for streaming handlers', async () => {
