@@ -15,13 +15,13 @@
  */
 
 import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
-import { ATTR_CONTAINER_ID } from '@opentelemetry/semantic-conventions/incubating';
 
 import * as fs from 'fs';
 import * as util from 'util';
 import { context, diag } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import { extractContainerIdFromLine } from './utils';
+import { ATTR_CONTAINER_ID } from '../semconv';
 
 export class ContainerDetector implements ResourceDetector {
   readonly CONTAINER_ID_LENGTH = 64;
