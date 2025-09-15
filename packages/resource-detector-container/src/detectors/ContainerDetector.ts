@@ -15,7 +15,7 @@
  */
 
 import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
-import { SEMRESATTRS_CONTAINER_ID } from '@opentelemetry/semantic-conventions';
+import { ATTR_CONTAINER_ID } from '@opentelemetry/semantic-conventions/incubating';
 
 import * as fs from 'fs';
 import * as util from 'util';
@@ -39,7 +39,7 @@ export class ContainerDetector implements ResourceDetector {
 
   detect(): DetectedResource {
     const attributes = {
-      [SEMRESATTRS_CONTAINER_ID]: this._getContainerIdWithSuppressedTracing(),
+      [ATTR_CONTAINER_ID]: this._getContainerIdWithSuppressedTracing(),
     };
     return { attributes };
   }
