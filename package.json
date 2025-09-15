@@ -21,7 +21,6 @@
     "test:browser:ci:affected": "nx affected -t test:browser",
     "test-all-versions": "npm run --if-present test-all-versions --workspaces",
     "test-all-versions:ci:affected": "npm run list:affected | tail -n +5 | xargs -I {} -t npm run --if-present test-all-versions -w {}",
-    "test-merge-coverage:ci:affected": "nx affected -t test-merge-coverage",
     "test-services:start": "docker compose -f ./test/docker-compose.yaml up -d --wait",
     "test-services:stop": "docker compose -f ./test/docker-compose.yaml down",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env npm test",
