@@ -287,6 +287,10 @@ pkg:propagator-aws-xray-lambda:
   - changed-files:
       - any-glob-to-any-file:
           - packages/propagator-aws-xray-lambda/**
+pkg:instrumentation-page-view:
+    - changed-files:
+        - any-glob-to-any-file:
+            - packages/instrumentation-page-view/**
 pkg-status:unmaintained:
   - changed-files:
       - any-glob-to-any-file:
