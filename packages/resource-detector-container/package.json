@@ -58,8 +58,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/resources": "^2.0.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/resources": "^2.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/resource-detector-container#readme",
   "sideEffects": false
