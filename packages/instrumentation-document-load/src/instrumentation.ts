@@ -41,10 +41,7 @@ import {
 import { AttributeNames } from './enums/AttributeNames';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import {
-  SEMATTRS_HTTP_URL,
-  SEMATTRS_HTTP_USER_AGENT,
-} from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_URL, ATTR_HTTP_USER_AGENT } from './semconv';
 import {
   addSpanPerformancePaintEvents,
   getPerformanceNavigationEntries,
@@ -115,7 +112,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
           entries
         );
         if (fetchSpan) {
-          fetchSpan.setAttribute(SEMATTRS_HTTP_URL, location.href);
+          fetchSpan.setAttribute(ATTR_HTTP_URL, location.href);
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
             addSpanNetworkEvents(
               fetchSpan,
@@ -131,8 +128,8 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
         }
       });
 
-      rootSpan.setAttribute(SEMATTRS_HTTP_URL, location.href);
-      rootSpan.setAttribute(SEMATTRS_HTTP_USER_AGENT, navigator.userAgent);
+      rootSpan.setAttribute(ATTR_HTTP_URL, location.href);
+      rootSpan.setAttribute(ATTR_HTTP_USER_AGENT, navigator.userAgent);
 
       this._addResourcesSpans(rootSpan);
 
@@ -206,7 +203,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
       parentSpan
     );
     if (span) {
-      span.setAttribute(SEMATTRS_HTTP_URL, resource.name);
+      span.setAttribute(ATTR_HTTP_URL, resource.name);
       addSpanNetworkEvents(
         span,
         resource,

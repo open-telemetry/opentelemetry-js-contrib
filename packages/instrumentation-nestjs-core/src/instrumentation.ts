@@ -22,16 +22,13 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
 } from '@opentelemetry/instrumentation';
+import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import type { NestFactory } from '@nestjs/core/nest-factory.js';
 import type { RouterExecutionContext } from '@nestjs/core/router/router-execution-context.js';
 import type { Controller } from '@nestjs/common/interfaces';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import {
-  SEMATTRS_HTTP_METHOD,
-  SEMATTRS_HTTP_ROUTE,
-  SEMATTRS_HTTP_URL,
-} from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_METHOD, ATTR_HTTP_URL } from './semconv';
 import { AttributeNames, NestType } from './enums';
 
 const supportedVersions = ['>=4.0.0 <12'];
@@ -175,9 +172,9 @@ function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
             ...NestInstrumentation.COMMON_ATTRIBUTES,
             [AttributeNames.VERSION]: moduleVersion,
             [AttributeNames.TYPE]: NestType.REQUEST_CONTEXT,
-            [SEMATTRS_HTTP_METHOD]: req.method,
-            [SEMATTRS_HTTP_URL]: req.originalUrl || req.url,
-            [SEMATTRS_HTTP_ROUTE]:
+            [ATTR_HTTP_METHOD]: req.method,
+            [ATTR_HTTP_URL]: req.originalUrl || req.url,
+            [ATTR_HTTP_ROUTE]:
               req.route?.path || req.routeOptions?.url || req.routerPath,
             [AttributeNames.CONTROLLER]: instanceName,
             [AttributeNames.CALLBACK]: callbackName,

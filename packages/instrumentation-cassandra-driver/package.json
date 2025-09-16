@@ -22,7 +22,6 @@
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "//todo": "echo \"add test-all-versions\"",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "test-services:start": "cd ../.. && npm run test-services:start cassandra",
     "test-services:stop": "cd ../.. && npm run test-services:stop cassandra",
     "version:update": "node ../../scripts/version-update.js"
