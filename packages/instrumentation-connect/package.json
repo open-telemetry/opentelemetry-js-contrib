@@ -18,7 +18,6 @@
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
