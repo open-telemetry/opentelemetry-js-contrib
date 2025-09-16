@@ -19,7 +19,6 @@
     "prepublishOnly": "npm run compile",
     "tdd": "npm test -- --watch-extensions ts --watch",
     "test": "nyc --no-clean mocha 'test/**/*.ts'",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },

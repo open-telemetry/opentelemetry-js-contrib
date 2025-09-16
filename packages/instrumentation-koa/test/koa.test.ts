@@ -27,8 +27,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import {
   ATTR_HTTP_ROUTE,
-  SEMATTRS_EXCEPTION_MESSAGE,
-  SEMATTRS_HTTP_METHOD,
+  ATTR_EXCEPTION_MESSAGE,
 } from '@opentelemetry/semantic-conventions';
 
 type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
@@ -597,7 +596,7 @@ describe('Koa Instrumentation', function () {
       assert.ok(exceptionEvent, 'There should be an exception event recorded');
       assert.deepStrictEqual(exceptionEvent.name, 'exception');
       assert.deepStrictEqual(
-        exceptionEvent.attributes![SEMATTRS_EXCEPTION_MESSAGE],
+        exceptionEvent.attributes![ATTR_EXCEPTION_MESSAGE],
         'I failed!'
       );
     });
@@ -625,7 +624,7 @@ describe('Koa Instrumentation', function () {
 
       const requestHook = sinon.spy(
         (span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
-          span.setAttribute(SEMATTRS_HTTP_METHOD, info.context.request.method);
+          span.setAttribute('http.method', info.context.request.method);
 
           throw Error('error thrown in requestHook');
         }
