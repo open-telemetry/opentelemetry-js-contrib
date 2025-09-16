@@ -18,14 +18,14 @@ import * as semver from 'semver';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
-  DBSYSTEMVALUES_MYSQL,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_MYSQL,
+  ATTR_DB_NAME,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_USER,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from '../src/semconv';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   BasicTracerProvider,
@@ -214,7 +214,7 @@ describe('mysql2', () => {
           query.on('end', () => {
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans[0].name, 'SELECT');
-            assert.strictEqual(spans[0].attributes[SEMATTRS_DB_STATEMENT], sql);
+            assert.strictEqual(spans[0].attributes[ATTR_DB_STATEMENT], sql);
             done();
           });
         });
@@ -232,7 +232,7 @@ describe('mysql2', () => {
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans[0].name, 'SELECT');
             assert.strictEqual(
-              spans[0].attributes[SEMATTRS_DB_STATEMENT],
+              spans[0].attributes[ATTR_DB_STATEMENT],
               query.sql
             );
             done();
@@ -1568,15 +1568,12 @@ function assertSpan(
   values?: any,
   errorMessage?: string
 ) {
-  assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], DBSYSTEMVALUES_MYSQL);
-  assert.strictEqual(span.attributes[SEMATTRS_DB_NAME], database);
-  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_PORT], port);
-  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_NAME], host);
-  assert.strictEqual(span.attributes[SEMATTRS_DB_USER], user);
-  assert.strictEqual(
-    span.attributes[SEMATTRS_DB_STATEMENT],
-    format(sql, values)
-  );
+  assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MYSQL);
+  assert.strictEqual(span.attributes[ATTR_DB_NAME], database);
+  assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], port);
+  assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], host);
+  assert.strictEqual(span.attributes[ATTR_DB_USER], user);
+  assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], format(sql, values));
   if (errorMessage) {
     assert.strictEqual(span.status.message, errorMessage);
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
