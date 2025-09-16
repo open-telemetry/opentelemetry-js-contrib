@@ -36,16 +36,18 @@ import {
   ATTR_DB_SYSTEM_NAME,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_OPERATION,
-  SEMATTRS_DB_SQL_TABLE,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-  SEMATTRS_NET_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DB_NAME,
+  ATTR_DB_OPERATION,
+  ATTR_DB_SQL_TABLE,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_USER,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+  ATTR_NET_TRANSPORT,
+} from './semconv';
 
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
 const DEFAULT_CONFIG: KnexInstrumentationConfig = {
@@ -159,14 +161,14 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
 
         if (instrumentation._semconvStability & SemconvStability.OLD) {
           Object.assign(attributes, {
-            [SEMATTRS_DB_SYSTEM]: utils.mapSystem(config.client),
-            [SEMATTRS_DB_SQL_TABLE]: table,
-            [SEMATTRS_DB_OPERATION]: operation,
-            [SEMATTRS_DB_USER]: config?.connection?.user,
-            [SEMATTRS_DB_NAME]: name,
-            [SEMATTRS_NET_PEER_NAME]: config?.connection?.host,
-            [SEMATTRS_NET_PEER_PORT]: config?.connection?.port,
-            [SEMATTRS_NET_TRANSPORT]: transport,
+            [ATTR_DB_SYSTEM]: utils.mapSystem(config.client),
+            [ATTR_DB_SQL_TABLE]: table,
+            [ATTR_DB_OPERATION]: operation,
+            [ATTR_DB_USER]: config?.connection?.user,
+            [ATTR_DB_NAME]: name,
+            [ATTR_NET_PEER_NAME]: config?.connection?.host,
+            [ATTR_NET_PEER_PORT]: config?.connection?.port,
+            [ATTR_NET_TRANSPORT]: transport,
           });
         }
         if (instrumentation._semconvStability & SemconvStability.STABLE) {
@@ -186,7 +188,7 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
             attributes[ATTR_DB_QUERY_TEXT] = queryText;
           }
           if (instrumentation._semconvStability & SemconvStability.OLD) {
-            attributes[SEMATTRS_DB_STATEMENT] = queryText;
+            attributes[ATTR_DB_STATEMENT] = queryText;
           }
         }
 
