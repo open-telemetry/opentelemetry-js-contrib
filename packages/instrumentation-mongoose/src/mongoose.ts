@@ -30,10 +30,10 @@ import {
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
-  SEMATTRS_DB_OPERATION,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_DB_OPERATION,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+} from './semconv';
 
 const contextCaptureFunctionsCommon = [
   'deleteOne',
@@ -210,13 +210,10 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[SEMATTRS_DB_STATEMENT] = dbStatementSerializer(
-            'aggregate',
-            {
-              options: this.options,
-              aggregatePipeline: this._pipeline,
-            }
-          );
+          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer('aggregate', {
+            options: this.options,
+            aggregatePipeline: this._pipeline,
+          });
         }
 
         const span = self._startSpan(
@@ -254,7 +251,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[SEMATTRS_DB_STATEMENT] = dbStatementSerializer(this.op, {
+          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer(this.op, {
             condition: this._conditions,
             updates: this._update,
             options: this.options,
@@ -299,7 +296,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[SEMATTRS_DB_STATEMENT] = dbStatementSerializer(
+          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer(
             op,
             serializePayload
           );
@@ -367,7 +364,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[SEMATTRS_DB_STATEMENT] = dbStatementSerializer(
+          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer(
             op,
             serializePayload
           );
@@ -436,8 +433,8 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         attributes: {
           ...attributes,
           ...getAttributesFromCollection(collection),
-          [SEMATTRS_DB_OPERATION]: operation,
-          [SEMATTRS_DB_SYSTEM]: 'mongoose',
+          [ATTR_DB_OPERATION]: operation,
+          [ATTR_DB_SYSTEM]: 'mongoose',
         },
       },
       parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined
