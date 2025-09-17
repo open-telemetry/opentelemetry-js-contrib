@@ -33,19 +33,6 @@
 export const ATTR_DB_NAME = 'db.name' as const;
 
 /**
- * Deprecated, use `db.operation.name` instead.
- *
- * @example findAndModify
- * @example HMSET
- * @example SELECT
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.operation.name`.
- */
-export const ATTR_DB_OPERATION = 'db.operation' as const;
-
-/**
  * Deprecated, use `db.collection.name` instead.
  *
  * @example "mytable"
@@ -112,19 +99,10 @@ export const ATTR_NET_PEER_NAME = 'net.peer.name' as const;
 export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
 
 /**
- * Deprecated, use `network.transport`.
+ * Enum value "mssql" for attribute {@link ATTR_DB_SYSTEM}.
  *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `network.transport`.
- */
-export const ATTR_NET_TRANSPORT = 'net.transport' as const;
-
-/**
- * Enum value "sqlite" for attribute {@link ATTR_DB_SYSTEM_NAME}.
- *
- * [SQLite](https://www.sqlite.org/)
+ * Microsoft SQL Server
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const DB_SYSTEM_NAME_VALUE_SQLITE = 'sqlite' as const;
+export const DB_SYSTEM_VALUE_MSSQL = 'mssql' as const;
