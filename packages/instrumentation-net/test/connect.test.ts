@@ -19,7 +19,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { SEMATTRS_NET_TRANSPORT } from '@opentelemetry/semantic-conventions';
+import { ATTR_NET_TRANSPORT } from '../src/semconv';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import * as net from 'net';
 import * as assert from 'assert';
@@ -186,10 +186,7 @@ describe('NetInstrumentation', () => {
       const assertSpan = () => {
         try {
           const span = getSpan();
-          assert.strictEqual(
-            span.attributes[SEMATTRS_NET_TRANSPORT],
-            undefined
-          );
+          assert.strictEqual(span.attributes[ATTR_NET_TRANSPORT], undefined);
           assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
           done();
         } catch (e) {
