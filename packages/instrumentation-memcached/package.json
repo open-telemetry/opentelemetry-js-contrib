@@ -55,6 +55,7 @@
     "@opentelemetry/contrib-test-utils": "^0.51.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "cross-env": "7.0.3",
@@ -65,7 +66,6 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.205.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/memcached": "^2.2.6"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-memcached#readme"
