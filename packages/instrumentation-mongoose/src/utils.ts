@@ -18,22 +18,22 @@ import type { Collection } from 'mongoose';
 import { MongooseResponseCustomAttributesFunction } from './types';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
-  SEMATTRS_DB_MONGODB_COLLECTION,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_DB_MONGODB_COLLECTION,
+  ATTR_DB_NAME,
+  ATTR_DB_USER,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from './semconv';
 
 export function getAttributesFromCollection(
   collection: Collection
 ): Attributes {
   return {
-    [SEMATTRS_DB_MONGODB_COLLECTION]: collection.name,
-    [SEMATTRS_DB_NAME]: collection.conn.name,
-    [SEMATTRS_DB_USER]: collection.conn.user,
-    [SEMATTRS_NET_PEER_NAME]: collection.conn.host,
-    [SEMATTRS_NET_PEER_PORT]: collection.conn.port,
+    [ATTR_DB_MONGODB_COLLECTION]: collection.name,
+    [ATTR_DB_NAME]: collection.conn.name,
+    [ATTR_DB_USER]: collection.conn.user,
+    [ATTR_NET_PEER_NAME]: collection.conn.host,
+    [ATTR_NET_PEER_PORT]: collection.conn.port,
   };
 }
 

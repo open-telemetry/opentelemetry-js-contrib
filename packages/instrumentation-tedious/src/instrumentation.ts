@@ -22,15 +22,15 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import {
-  DBSYSTEMVALUES_MSSQL,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_SQL_TABLE,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_MSSQL,
+  ATTR_DB_NAME,
+  ATTR_DB_SQL_TABLE,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_USER,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from './semconv';
 import type * as tedious from 'tedious';
 import { TediousInstrumentationConfig } from './types';
 import { getSpanName, once } from './utils';
@@ -159,16 +159,16 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
           {
             kind: api.SpanKind.CLIENT,
             attributes: {
-              [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MSSQL,
-              [SEMATTRS_DB_NAME]: databaseName,
-              [SEMATTRS_NET_PEER_PORT]: this.config?.options?.port,
-              [SEMATTRS_NET_PEER_NAME]: this.config?.server,
+              [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MSSQL,
+              [ATTR_DB_NAME]: databaseName,
+              [ATTR_NET_PEER_PORT]: this.config?.options?.port,
+              [ATTR_NET_PEER_NAME]: this.config?.server,
               // >=4 uses `authentication` object, older versions just userName and password pair
-              [SEMATTRS_DB_USER]:
+              [ATTR_DB_USER]:
                 this.config?.userName ??
                 this.config?.authentication?.options?.userName,
-              [SEMATTRS_DB_STATEMENT]: sql,
-              [SEMATTRS_DB_SQL_TABLE]: request.table,
+              [ATTR_DB_STATEMENT]: sql,
+              [ATTR_DB_SQL_TABLE]: request.table,
             },
           }
         );
