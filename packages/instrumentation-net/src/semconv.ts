@@ -21,73 +21,37 @@
  */
 
 /**
- * Deprecated, use `db.namespace` instead.
+ * Deprecated, use `network.local.address`.
  *
- * @example customers
- * @example main
+ * @example "192.168.0.1"
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  *
- * @deprecated Replaced by `db.namespace`.
+ * @deprecated Replaced by `network.local.address`.
  */
-export const ATTR_DB_NAME = 'db.name' as const;
+export const ATTR_NET_HOST_IP = 'net.host.ip' as const;
 
 /**
- * Deprecated, use `db.operation.name` instead.
+ * Deprecated, use `server.port`.
  *
- * @example findAndModify
- * @example HMSET
- * @example SELECT
+ * @example 8080
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  *
- * @deprecated Replaced by `db.operation.name`.
+ * @deprecated Replaced by `server.port`.
  */
-export const ATTR_DB_OPERATION = 'db.operation' as const;
+export const ATTR_NET_HOST_PORT = 'net.host.port' as const;
 
 /**
- * Deprecated, use `db.collection.name` instead.
+ * Deprecated, use `network.peer.address`.
  *
- * @example "mytable"
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.collection.name`, but only if not extracting the value from `db.query.text`.
- */
-export const ATTR_DB_SQL_TABLE = 'db.sql.table' as const;
-
-/**
- * The database statement being executed.
- *
- * @example SELECT * FROM wuser_table
- * @example SET mykey "WuValue"
+ * @example "127.0.0.1"
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  *
- * @deprecated Replaced by `db.query.text`.
+ * @deprecated Replaced by `network.peer.address`.
  */
-export const ATTR_DB_STATEMENT = 'db.statement' as const;
-
-/**
- * Deprecated, use `db.system.name` instead.
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.system.name`.
- */
-export const ATTR_DB_SYSTEM = 'db.system' as const;
-
-/**
- * Deprecated, no replacement at this time.
- *
- * @example readonly_user
- * @example reporting_user
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Removed, no replacement at this time.
- */
-export const ATTR_DB_USER = 'db.user' as const;
+export const ATTR_NET_PEER_IP = 'net.peer.ip' as const;
 
 /**
  * Deprecated, use `server.address` on client spans and `client.address` on server spans.
@@ -121,10 +85,17 @@ export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
 export const ATTR_NET_TRANSPORT = 'net.transport' as const;
 
 /**
- * Enum value "sqlite" for attribute {@link ATTR_DB_SYSTEM_NAME}.
- *
- * [SQLite](https://www.sqlite.org/)
+ * Enum value "ip_tcp" for attribute {@link ATTR_NET_TRANSPORT}.
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const DB_SYSTEM_NAME_VALUE_SQLITE = 'sqlite' as const;
+export const NET_TRANSPORT_VALUE_IP_TCP = 'ip_tcp' as const;
+
+/**
+ * Enum value "pipe" for attribute {@link ATTR_NET_TRANSPORT}.
+ *
+ * Named or anonymous pipe.
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const NET_TRANSPORT_VALUE_PIPE = 'pipe' as const;

@@ -33,30 +33,6 @@
 export const ATTR_DB_NAME = 'db.name' as const;
 
 /**
- * Deprecated, use `db.operation.name` instead.
- *
- * @example findAndModify
- * @example HMSET
- * @example SELECT
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.operation.name`.
- */
-export const ATTR_DB_OPERATION = 'db.operation' as const;
-
-/**
- * Deprecated, use `db.collection.name` instead.
- *
- * @example "mytable"
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.collection.name`, but only if not extracting the value from `db.query.text`.
- */
-export const ATTR_DB_SQL_TABLE = 'db.sql.table' as const;
-
-/**
  * The database statement being executed.
  *
  * @example SELECT * FROM wuser_table
@@ -112,19 +88,10 @@ export const ATTR_NET_PEER_NAME = 'net.peer.name' as const;
 export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
 
 /**
- * Deprecated, use `network.transport`.
+ * Enum value "cassandra" for attribute {@link ATTR_DB_SYSTEM}.
  *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `network.transport`.
- */
-export const ATTR_NET_TRANSPORT = 'net.transport' as const;
-
-/**
- * Enum value "sqlite" for attribute {@link ATTR_DB_SYSTEM_NAME}.
- *
- * [SQLite](https://www.sqlite.org/)
+ * Apache Cassandra
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const DB_SYSTEM_NAME_VALUE_SQLITE = 'sqlite' as const;
+export const DB_SYSTEM_VALUE_CASSANDRA = 'cassandra' as const;

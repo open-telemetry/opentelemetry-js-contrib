@@ -21,6 +21,17 @@
  */
 
 /**
+ * Deprecated, use `db.collection.name` instead.
+ *
+ * @example "mytable"
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `db.collection.name`.
+ */
+export const ATTR_DB_MONGODB_COLLECTION = 'db.mongodb.collection' as const;
+
+/**
  * Deprecated, use `db.namespace` instead.
  *
  * @example customers
@@ -44,17 +55,6 @@ export const ATTR_DB_NAME = 'db.name' as const;
  * @deprecated Replaced by `db.operation.name`.
  */
 export const ATTR_DB_OPERATION = 'db.operation' as const;
-
-/**
- * Deprecated, use `db.collection.name` instead.
- *
- * @example "mytable"
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.collection.name`, but only if not extracting the value from `db.query.text`.
- */
-export const ATTR_DB_SQL_TABLE = 'db.sql.table' as const;
 
 /**
  * The database statement being executed.
@@ -110,21 +110,3 @@ export const ATTR_NET_PEER_NAME = 'net.peer.name' as const;
  * @deprecated Replaced by `server.port` on client spans and `client.port` on server spans.
  */
 export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
-
-/**
- * Deprecated, use `network.transport`.
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `network.transport`.
- */
-export const ATTR_NET_TRANSPORT = 'net.transport' as const;
-
-/**
- * Enum value "sqlite" for attribute {@link ATTR_DB_SYSTEM_NAME}.
- *
- * [SQLite](https://www.sqlite.org/)
- *
- * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const DB_SYSTEM_NAME_VALUE_SQLITE = 'sqlite' as const;

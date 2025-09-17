@@ -27,14 +27,13 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
+import { ATTR_MESSAGING_OPERATION, ATTR_MESSAGING_SYSTEM } from './semconv';
 import {
-  SEMATTRS_MESSAGING_DESTINATION,
-  SEMATTRS_MESSAGING_DESTINATION_KIND,
-  SEMATTRS_MESSAGING_OPERATION,
-  SEMATTRS_MESSAGING_SYSTEM,
-  MESSAGINGOPERATIONVALUES_RECEIVE,
-  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_MESSAGING_DESTINATION,
+  ATTR_MESSAGING_DESTINATION_KIND,
+  MESSAGING_OPERATION_VALUE_RECEIVE,
+  MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+} from './semconv-obsolete';
 import { SocketIoInstrumentationConfig } from './types';
 import { SocketIoInstrumentationAttributes } from './AttributeNames';
 /** @knipignore */
@@ -295,14 +294,13 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
           const eventName = ev;
           const namespace = this.name || this.adapter?.nsp?.name;
           const span: Span = self.tracer.startSpan(
-            `${MESSAGINGOPERATIONVALUES_RECEIVE} ${namespace}`,
+            `${MESSAGING_OPERATION_VALUE_RECEIVE} ${namespace}`,
             {
               kind: SpanKind.CONSUMER,
               attributes: {
-                [SEMATTRS_MESSAGING_SYSTEM]: 'socket.io',
-                [SEMATTRS_MESSAGING_DESTINATION]: namespace,
-                [SEMATTRS_MESSAGING_OPERATION]:
-                  MESSAGINGOPERATIONVALUES_RECEIVE,
+                [ATTR_MESSAGING_SYSTEM]: 'socket.io',
+                [ATTR_MESSAGING_DESTINATION]: namespace,
+                [ATTR_MESSAGING_OPERATION]: MESSAGING_OPERATION_VALUE_RECEIVE,
                 [SocketIoInstrumentationAttributes.SOCKET_IO_EVENT_NAME]:
                   eventName,
               },
@@ -372,9 +370,9 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
         const messagingSystem = 'socket.io';
         const eventName = ev;
         const attributes: any = {
-          [SEMATTRS_MESSAGING_SYSTEM]: messagingSystem,
-          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
-            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [ATTR_MESSAGING_SYSTEM]: messagingSystem,
+          [ATTR_MESSAGING_DESTINATION_KIND]:
+            MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
           [SocketIoInstrumentationAttributes.SOCKET_IO_EVENT_NAME]: eventName,
         };
 
@@ -387,7 +385,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
         if (namespace) {
           attributes[SocketIoInstrumentationAttributes.SOCKET_IO_NAMESPACE] =
             namespace;
-          attributes[SEMATTRS_MESSAGING_DESTINATION] = namespace;
+          attributes[ATTR_MESSAGING_DESTINATION] = namespace;
         }
         const span = self.tracer.startSpan(`send ${namespace}`, {
           kind: SpanKind.PRODUCER,
