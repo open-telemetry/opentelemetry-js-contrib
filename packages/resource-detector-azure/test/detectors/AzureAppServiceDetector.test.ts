@@ -24,7 +24,7 @@ import {
   ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
   ATTR_HOST_ID,
   ATTR_SERVICE_INSTANCE_ID,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../../src/semconv';
 import { azureFunctionsDetector } from '../../src';
 import { detectResources } from '@opentelemetry/resources';
 

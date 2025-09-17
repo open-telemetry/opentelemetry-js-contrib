@@ -33,7 +33,7 @@ import {
   ATTR_HOST_NAME,
   ATTR_HOST_TYPE,
   ATTR_OS_VERSION,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../semconv';
 import {
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
   AZURE_VM_METADATA_HOST,

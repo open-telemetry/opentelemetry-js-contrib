@@ -25,7 +25,7 @@ import {
   CLOUD_PLATFORM_VALUE_AZURE_FUNCTIONS,
   ATTR_CLOUD_REGION,
   ATTR_PROCESS_PID,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../semconv';
 import {
   WEBSITE_SITE_NAME,
   WEBSITE_INSTANCE_ID,

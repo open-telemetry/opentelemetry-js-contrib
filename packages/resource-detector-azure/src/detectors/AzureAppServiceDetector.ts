@@ -35,7 +35,7 @@ import {
   CLOUD_PROVIDER_VALUE_AZURE,
   ATTR_CLOUD_PLATFORM,
   CLOUD_PLATFORM_VALUE_AZURE_APP_SERVICE,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../semconv';
 import { getAzureResourceUri, isAzureFunction } from '../utils';
 
 const APP_SERVICE_ATTRIBUTE_ENV_VARS = {

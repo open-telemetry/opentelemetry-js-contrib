@@ -26,7 +26,7 @@ import {
   ATTR_FAAS_MAX_MEMORY,
   ATTR_PROCESS_PID,
   ATTR_SERVICE_INSTANCE_ID,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../../src/semconv';
 import { detectResources } from '@opentelemetry/resources';
 import { AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE } from '../../src/types';
 
