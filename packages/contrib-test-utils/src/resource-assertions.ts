@@ -49,7 +49,11 @@ import {
   ATTR_SERVICE_INSTANCE_ID,
   ATTR_SERVICE_NAMESPACE,
 } from './semconv';
-import * as semconv from '@opentelemetry/semantic-conventions';
+
+// Specifically import the incubating entry-point so we can search *all*
+// `ATTR_` constants (even unstable ones) in `assertHasOneLabel` below.
+// This file is excluded from the `npm run lint:semconv-deps` rule.
+import * as semconv from '@opentelemetry/semantic-conventions/incubating';
 
 /**
  * Test utility method to validate a cloud resource
