@@ -27,18 +27,20 @@ import * as testUtils from '@opentelemetry/contrib-test-utils';
 import * as assert from 'assert';
 import { RedisInstrumentation } from '../../src';
 import {
-  DBSYSTEMVALUES_REDIS,
-  SEMATTRS_DB_CONNECTION_STRING,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
   ATTR_DB_SYSTEM_NAME,
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DB_CONNECTION_STRING,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+  DB_SYSTEM_VALUE_REDIS,
+} from '../../src/semconv';
 import { SemconvStability } from '@opentelemetry/instrumentation';
 
 process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
@@ -60,10 +62,10 @@ const DEFAULT_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: 'redis',
   [ATTR_SERVER_ADDRESS]: CONFIG.host,
   [ATTR_SERVER_PORT]: CONFIG.port,
-  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
-  [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
-  [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
-  [SEMATTRS_DB_CONNECTION_STRING]: URL,
+  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_REDIS,
+  [ATTR_NET_PEER_NAME]: CONFIG.host,
+  [ATTR_NET_PEER_PORT]: CONFIG.port,
+  [ATTR_DB_CONNECTION_STRING]: URL,
 };
 
 const unsetStatus: SpanStatus = {
@@ -187,9 +189,9 @@ describe('redis v2-v3', () => {
           instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
 
           recordSpanForOperation(operation, span => {
-            assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+            assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], 'redis');
             assert.strictEqual(
-              span.attributes[SEMATTRS_DB_STATEMENT],
+              span.attributes[ATTR_DB_STATEMENT],
               `${operation.command} ${operation.expectedDbStatementOld}`
             );
 
@@ -198,17 +200,14 @@ describe('redis v2-v3', () => {
             assert.ok(!(ATTR_DB_OPERATION_NAME in span.attributes));
 
             assert.strictEqual(
-              span.attributes[SEMATTRS_NET_PEER_NAME],
+              span.attributes[ATTR_NET_PEER_NAME],
               CONFIG.host
             );
             assert.strictEqual(
-              span.attributes[SEMATTRS_NET_PEER_PORT],
+              span.attributes[ATTR_NET_PEER_PORT],
               CONFIG.port
             );
-            assert.strictEqual(
-              span.attributes[SEMATTRS_DB_CONNECTION_STRING],
-              URL
-            );
+            assert.strictEqual(span.attributes[ATTR_DB_CONNECTION_STRING], URL);
 
             assert.ok(!(ATTR_SERVER_ADDRESS in span.attributes));
             assert.ok(!(ATTR_SERVER_PORT in span.attributes));
@@ -232,8 +231,8 @@ describe('redis v2-v3', () => {
               operation.command
             );
 
-            assert.ok(!(SEMATTRS_DB_SYSTEM in span.attributes));
-            assert.ok(!(SEMATTRS_DB_STATEMENT in span.attributes));
+            assert.ok(!(ATTR_DB_SYSTEM in span.attributes));
+            assert.ok(!(ATTR_DB_STATEMENT in span.attributes));
 
             assert.strictEqual(
               span.attributes[ATTR_SERVER_ADDRESS],
@@ -241,9 +240,9 @@ describe('redis v2-v3', () => {
             );
             assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
 
-            assert.ok(!(SEMATTRS_NET_PEER_NAME in span.attributes));
-            assert.ok(!(SEMATTRS_NET_PEER_PORT in span.attributes));
-            assert.ok(!(SEMATTRS_DB_CONNECTION_STRING in span.attributes));
+            assert.ok(!(ATTR_NET_PEER_NAME in span.attributes));
+            assert.ok(!(ATTR_NET_PEER_PORT in span.attributes));
+            assert.ok(!(ATTR_DB_CONNECTION_STRING in span.attributes));
             done();
           });
         });
@@ -254,9 +253,9 @@ describe('redis v2-v3', () => {
           });
 
           recordSpanForOperation(operation, span => {
-            assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], 'redis');
+            assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], 'redis');
             assert.strictEqual(
-              span.attributes[SEMATTRS_DB_STATEMENT],
+              span.attributes[ATTR_DB_STATEMENT],
               `${operation.command} ${operation.expectedDbStatementOld}`
             );
             assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
@@ -270,11 +269,11 @@ describe('redis v2-v3', () => {
             );
 
             assert.strictEqual(
-              span.attributes[SEMATTRS_NET_PEER_NAME],
+              span.attributes[ATTR_NET_PEER_NAME],
               CONFIG.host
             );
             assert.strictEqual(
-              span.attributes[SEMATTRS_NET_PEER_PORT],
+              span.attributes[ATTR_NET_PEER_PORT],
               CONFIG.port
             );
             assert.strictEqual(
@@ -282,10 +281,7 @@ describe('redis v2-v3', () => {
               CONFIG.host
             );
             assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
-            assert.strictEqual(
-              span.attributes[SEMATTRS_DB_CONNECTION_STRING],
-              URL
-            );
+            assert.strictEqual(span.attributes[ATTR_DB_CONNECTION_STRING], URL);
             done();
           });
         });
@@ -299,7 +295,7 @@ describe('redis v2-v3', () => {
             ...DEFAULT_ATTRIBUTES,
             [ATTR_DB_OPERATION_NAME]: operation.command,
             [ATTR_DB_QUERY_TEXT]: operation.expectedDbStatementStable,
-            [SEMATTRS_DB_STATEMENT]: `${operation.command} ${operation.expectedDbStatementOld}`,
+            [ATTR_DB_STATEMENT]: `${operation.command} ${operation.expectedDbStatementOld}`,
           };
           const span = tracer.startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
@@ -367,7 +363,7 @@ describe('redis v2-v3', () => {
                 operation.args
               );
               assert.strictEqual(
-                endedSpans[0].attributes[SEMATTRS_DB_STATEMENT],
+                endedSpans[0].attributes[ATTR_DB_STATEMENT],
                 expectedStatement
               );
 
