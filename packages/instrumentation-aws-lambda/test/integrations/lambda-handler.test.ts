@@ -895,12 +895,12 @@ describe('lambda handler', () => {
         assert.strictEqual(result1, 'stream-ok');
         assertSpanSuccess(span1);
         assert.strictEqual(span1.parentSpanContext?.spanId, undefined);
-        assert.strictEqual(span1.attributes[SEMATTRS_FAAS_COLDSTART], true);
+        assert.strictEqual(span1.attributes[ATTR_FAAS_COLDSTART], true);
 
         assert.strictEqual(result2, 'stream-ok');
         assertSpanSuccess(span2);
         assert.strictEqual(span2.parentSpanContext?.spanId, undefined);
-        assert.strictEqual(span2.attributes[SEMATTRS_FAAS_COLDSTART], false);
+        assert.strictEqual(span2.attributes[ATTR_FAAS_COLDSTART], false);
       });
 
       it('context should have parent trace', async () => {
@@ -1117,7 +1117,7 @@ describe('lambda handler', () => {
         it('should apply requestHook to streaming handler', async () => {
           initializeHandler('lambda-test/streaming.handler', {
             requestHook: (span, { context }) => {
-              span.setAttribute(SEMRESATTRS_FAAS_NAME, context.functionName);
+              span.setAttribute(ATTR_FAAS_NAME, context.functionName);
             },
           });
 
@@ -1131,10 +1131,7 @@ describe('lambda handler', () => {
           const spans = memoryExporter.getFinishedSpans();
           const [span] = spans;
           assert.strictEqual(spans.length, 1);
-          assert.strictEqual(
-            span.attributes[SEMRESATTRS_FAAS_NAME],
-            ctx.functionName
-          );
+          assert.strictEqual(span.attributes[ATTR_FAAS_NAME], ctx.functionName);
           assertSpanSuccess(span);
         });
       });
