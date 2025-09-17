@@ -17,15 +17,15 @@
 import { context, trace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
-  DBSYSTEMVALUES_MSSQL,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_SQL_TABLE,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_MSSQL,
+  ATTR_DB_NAME,
+  ATTR_DB_SQL_TABLE,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_USER,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from '../src/semconv';
 import * as util from 'util';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
@@ -341,14 +341,14 @@ function assertSpan(span: ReadableSpan, expected: any) {
   assert(span);
   assert.strictEqual(span.name, expected.name);
   assert.strictEqual(span.kind, SpanKind.CLIENT);
-  assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], DBSYSTEMVALUES_MSSQL);
+  assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MSSQL);
   assert.strictEqual(
-    span.attributes[SEMATTRS_DB_NAME],
+    span.attributes[ATTR_DB_NAME],
     expected.database ?? database
   );
-  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_PORT], port);
-  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_NAME], host);
-  assert.strictEqual(span.attributes[SEMATTRS_DB_USER], user);
+  assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], port);
+  assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], host);
+  assert.strictEqual(span.attributes[ATTR_DB_USER], user);
   assert.strictEqual(
     span.attributes['tedious.procedure_count'],
     expected.procCount ?? 1,
@@ -365,18 +365,18 @@ function assertSpan(span: ReadableSpan, expected: any) {
       expected.parentSpan.spanContext().spanId
     );
   }
-  assert.strictEqual(span.attributes[SEMATTRS_DB_SQL_TABLE], expected.table);
+  assert.strictEqual(span.attributes[ATTR_DB_SQL_TABLE], expected.table);
   if (expected.sql) {
     if (expected.sql instanceof RegExp) {
       assertMatch(
-        span.attributes[SEMATTRS_DB_STATEMENT] as string | undefined,
+        span.attributes[ATTR_DB_STATEMENT] as string | undefined,
         expected.sql
       );
     } else {
-      assert.strictEqual(span.attributes[SEMATTRS_DB_STATEMENT], expected.sql);
+      assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], expected.sql);
     }
   } else {
-    assert.strictEqual(span.attributes[SEMATTRS_DB_STATEMENT], undefined);
+    assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], undefined);
   }
   if (expected.error) {
     assert(
