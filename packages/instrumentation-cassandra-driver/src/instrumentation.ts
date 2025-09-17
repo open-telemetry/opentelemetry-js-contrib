@@ -31,14 +31,14 @@ import {
 } from '@opentelemetry/instrumentation';
 import { CassandraDriverInstrumentationConfig, ResultSet } from './types';
 import {
-  DBSYSTEMVALUES_CASSANDRA,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_CASSANDRA,
+  ATTR_DB_NAME,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_USER,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from './semconv';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { EventEmitter } from 'events';
@@ -174,10 +174,10 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
         if (span !== undefined && conn !== undefined) {
           const port = parseInt(conn.port, 10);
 
-          span.setAttribute(SEMATTRS_NET_PEER_NAME, conn.address);
+          span.setAttribute(ATTR_NET_PEER_NAME, conn.address);
 
           if (!isNaN(port)) {
-            span.setAttribute(SEMATTRS_NET_PEER_PORT, port);
+            span.setAttribute(ATTR_NET_PEER_PORT, port);
           }
         }
 
@@ -305,23 +305,23 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
     client: CassandraDriver.Client
   ): Span {
     const attributes: Attributes = {
-      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_CASSANDRA,
+      [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_CASSANDRA,
     };
 
     if (this._shouldIncludeDbStatement() && query !== undefined) {
       const statement = truncateQuery(query, this._getMaxQueryLength());
-      attributes[SEMATTRS_DB_STATEMENT] = statement;
+      attributes[ATTR_DB_STATEMENT] = statement;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (client as any).options?.credentials?.username;
 
     if (user) {
-      attributes[SEMATTRS_DB_USER] = user;
+      attributes[ATTR_DB_USER] = user;
     }
 
     if (client.keyspace) {
-      attributes[SEMATTRS_DB_NAME] = client.keyspace;
+      attributes[ATTR_DB_NAME] = client.keyspace;
     }
 
     return this.tracer.startSpan(`cassandra-driver.${op}`, {

@@ -30,16 +30,18 @@ import {
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
-  DBSYSTEMVALUES_CASSANDRA,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
-  SEMATTRS_EXCEPTION_MESSAGE,
-  SEMATTRS_EXCEPTION_STACKTRACE,
-  SEMATTRS_EXCEPTION_TYPE,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
+  ATTR_EXCEPTION_MESSAGE,
+  ATTR_EXCEPTION_STACKTRACE,
+  ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
+import {
+  DB_SYSTEM_VALUE_CASSANDRA,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_USER,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from '../src/semconv';
 import * as assert from 'assert';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import type * as CassandraDriver from 'cassandra-driver';
@@ -69,13 +71,13 @@ function assertSpan(
   customAttributes?: Attributes
 ) {
   const attributes: Attributes = {
-    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_CASSANDRA,
-    [SEMATTRS_DB_USER]: 'cassandra',
+    [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_CASSANDRA,
+    [ATTR_DB_USER]: 'cassandra',
     ...customAttributes,
   };
 
   if (query !== undefined) {
-    attributes[SEMATTRS_DB_STATEMENT] = query;
+    attributes[ATTR_DB_STATEMENT] = query;
   }
 
   const spanStatus =
@@ -113,13 +115,13 @@ function assertErrorSpan(
   const [span] = spans;
 
   const attributes: Attributes = {
-    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_CASSANDRA,
-    [SEMATTRS_DB_USER]: 'cassandra',
+    [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_CASSANDRA,
+    [ATTR_DB_USER]: 'cassandra',
     ...customAttributes,
   };
 
   if (query !== undefined) {
-    attributes[SEMATTRS_DB_STATEMENT] = query;
+    attributes[ATTR_DB_STATEMENT] = query;
   }
 
   const events = [
@@ -127,9 +129,9 @@ function assertErrorSpan(
       name: 'exception',
       droppedAttributesCount: 0,
       attributes: {
-        [SEMATTRS_EXCEPTION_STACKTRACE]: error.stack,
-        [SEMATTRS_EXCEPTION_MESSAGE]: error.message,
-        [SEMATTRS_EXCEPTION_TYPE]: String(error.code),
+        [ATTR_EXCEPTION_STACKTRACE]: error.stack,
+        [ATTR_EXCEPTION_MESSAGE]: error.message,
+        [ATTR_EXCEPTION_TYPE]: String(error.code),
       },
       time: span.events[0].time,
     },
@@ -193,16 +195,16 @@ describe('CassandraDriverInstrumentation', () => {
     it('creates a span for promise based execute', async () => {
       await client.execute('select * from ot.test');
       assertSingleSpan('cassandra-driver.execute', undefined, undefined, {
-        [SEMATTRS_NET_PEER_NAME]: cassandraContactPoint,
-        [SEMATTRS_NET_PEER_PORT]: 9042,
+        [ATTR_NET_PEER_NAME]: cassandraContactPoint,
+        [ATTR_NET_PEER_PORT]: 9042,
       });
     });
 
     it('creates a span for callback based execute', done => {
       client.execute('select * from ot.test', () => {
         assertSingleSpan('cassandra-driver.execute', undefined, undefined, {
-          [SEMATTRS_NET_PEER_NAME]: cassandraContactPoint,
-          [SEMATTRS_NET_PEER_PORT]: 9042,
+          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
+          [ATTR_NET_PEER_PORT]: 9042,
         });
         done();
       });
@@ -213,8 +215,8 @@ describe('CassandraDriverInstrumentation', () => {
         await client.execute('selec * from');
       } catch (e: any) {
         assertErrorSpan('cassandra-driver.execute', e, undefined, {
-          [SEMATTRS_NET_PEER_NAME]: cassandraContactPoint,
-          [SEMATTRS_NET_PEER_PORT]: 9042,
+          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
+          [ATTR_NET_PEER_PORT]: 9042,
         });
         return;
       }
@@ -243,8 +245,8 @@ describe('CassandraDriverInstrumentation', () => {
         const query = 'select * from ot.test';
         await client.execute(query);
         assertSingleSpan('cassandra-driver.execute', query, undefined, {
-          [SEMATTRS_NET_PEER_NAME]: cassandraContactPoint,
-          [SEMATTRS_NET_PEER_PORT]: 9042,
+          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
+          [ATTR_NET_PEER_PORT]: 9042,
         });
       });
 
@@ -252,8 +254,8 @@ describe('CassandraDriverInstrumentation', () => {
         const query = 'select userid, count from ot.test';
         await client.execute(query);
         const customAttributes = {
-          [SEMATTRS_NET_PEER_NAME]: cassandraContactPoint,
-          [SEMATTRS_NET_PEER_PORT]: 9042,
+          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
+          [ATTR_NET_PEER_PORT]: 9042,
         };
         assertSingleSpan(
           'cassandra-driver.execute',
@@ -299,8 +301,8 @@ describe('CassandraDriverInstrumentation', () => {
         assertAttributeInSingleSpan('cassandra-driver.execute', {
           [customAttributeName]: customAttributeValue,
           [responseAttributeName]: 2,
-          [SEMATTRS_NET_PEER_NAME]: cassandraContactPoint,
-          [SEMATTRS_NET_PEER_PORT]: 9042,
+          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
+          [ATTR_NET_PEER_PORT]: 9042,
         });
       });
 
@@ -322,8 +324,8 @@ describe('CassandraDriverInstrumentation', () => {
 
         assertAttributeInSingleSpan('cassandra-driver.execute', {
           [hookAttributeName]: hookAttributeValue,
-          [SEMATTRS_NET_PEER_NAME]: cassandraContactPoint,
-          [SEMATTRS_NET_PEER_PORT]: 9042,
+          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
+          [ATTR_NET_PEER_PORT]: 9042,
         });
       });
     });
@@ -346,8 +348,8 @@ describe('CassandraDriverInstrumentation', () => {
     it('creates a span for callback based batch', done => {
       client.batch([q1, q2], () => {
         assertSingleSpan('cassandra-driver.batch', undefined, undefined, {
-          [SEMATTRS_NET_PEER_NAME]: cassandraContactPoint,
-          [SEMATTRS_NET_PEER_PORT]: 9042,
+          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
+          [ATTR_NET_PEER_PORT]: 9042,
         });
         done();
       });
@@ -399,8 +401,8 @@ describe('CassandraDriverInstrumentation', () => {
       // stream internally uses execute
       assert.strictEqual(spans.length, 2);
       assertSpan(spans[0], 'cassandra-driver.execute', undefined, undefined, {
-        [SEMATTRS_NET_PEER_NAME]: cassandraContactPoint,
-        [SEMATTRS_NET_PEER_PORT]: 9042,
+        [ATTR_NET_PEER_NAME]: cassandraContactPoint,
+        [ATTR_NET_PEER_PORT]: 9042,
       });
       assertSpan(spans[1], 'cassandra-driver.stream');
     }
