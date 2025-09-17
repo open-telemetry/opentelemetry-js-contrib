@@ -41,9 +41,9 @@ import chai from 'chai/chai.js';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
 import {
-  SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH,
-  SEMATTRS_HTTP_URL,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_HTTP_RESPONSE_CONTENT_LENGTH,
+  ATTR_HTTP_URL,
+} from '../src/semconv';
 import { EventNames } from '../src/enums/EventNames';
 
 const assert = chai.assert;
@@ -357,9 +357,7 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
         assert.ok(
-          (rootSpan.attributes[
-            SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH
-          ] as number) > 0
+          (rootSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH] as number) > 0
         );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
@@ -459,11 +457,11 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.attributes[SEMATTRS_HTTP_URL],
+          spanResource1.attributes[ATTR_HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.attributes[SEMATTRS_HTTP_URL],
+          spanResource2.attributes[ATTR_HTTP_URL],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -495,7 +493,7 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.attributes[SEMATTRS_HTTP_URL],
+          spanResource1.attributes[ATTR_HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
 
@@ -847,7 +845,7 @@ describe('DocumentLoad Instrumentation', () => {
         ) as ReadableSpan;
         assert.isOk(resourceSpan, 'resourceFetch span should exist');
         assert.exists(
-          resourceSpan.attributes[SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH],
+          resourceSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
           'http.response_content_length attribute should exist'
         );
         done();
