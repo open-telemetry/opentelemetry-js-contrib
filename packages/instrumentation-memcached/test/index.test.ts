@@ -30,13 +30,13 @@ import {
 import type * as Memcached from 'memcached';
 import * as assert from 'assert';
 import { MemcachedInstrumentation } from '../src';
+import { ATTR_EXCEPTION_MESSAGE } from '@opentelemetry/semantic-conventions';
 import {
-  DBSYSTEMVALUES_MEMCACHED,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_EXCEPTION_MESSAGE,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_MEMCACHED,
+  ATTR_DB_SYSTEM,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from '../src/semconv';
 import * as util from 'util';
 
 const instrumentation = new MemcachedInstrumentation();
@@ -50,9 +50,9 @@ const CONFIG = {
 };
 
 const DEFAULT_ATTRIBUTES: Attributes = {
-  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MEMCACHED,
-  [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
-  [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
+  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MEMCACHED,
+  [ATTR_NET_PEER_NAME]: CONFIG.host,
+  [ATTR_NET_PEER_PORT]: CONFIG.port,
 };
 
 interface ExtendedMemcached extends Memcached {
@@ -170,7 +170,7 @@ describe('memcached@2.x', () => {
 
           assertMatch(
             instrumentationSpans?.[0]?.events[0]?.attributes?.[
-              SEMATTRS_EXCEPTION_MESSAGE
+              ATTR_EXCEPTION_MESSAGE
             ] as 'string',
             /not stored/
           );
