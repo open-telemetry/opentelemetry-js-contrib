@@ -129,7 +129,7 @@ The document load instrumentation plugin has few options available to choose fro
 ## Semantic Conventions
 
 This instrumentation creates spans that include some HTTP-related data as span attributes (URL, User-Agent header).
-Up to and including v0.50.0, `instrumentation-document-load` follows [Semantic Conventions v1.22.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.22.0/semantic_conventions/README.md) for these attributes.
+Up to and including v0.50.0, `instrumentation-document-load` follows [Semantic Conventions v1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md) for these attributes.
 
 HTTP semantic conventions (semconv) were stabilized in semconv v1.23.0, and a [migration process](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/http-migration.md#http-semantic-convention-stability-migration) was defined. `instrumentation-document-load` versions 0.51.0 and later include support for migrating to stable HTTP semantic conventions, as described below. The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new HTTP semconv, after which a new minor version will change to use the *new* semconv by default and drop support for the old semconv. See the [HTTP semconv migration plan for OpenTelemetry JS instrumentations](https://github.com/open-telemetry/opentelemetry-js/issues/5646).
 
@@ -139,7 +139,7 @@ To select which semconv version(s) is emitted from this instrumentation, use the
 - `http/dup`: emit **both** the old and the new (stable) v1.23.0 semantics
 - By default, if `semconvStabilityOptIn` includes neither of the above tokens, the old semconv is used.
 
-| v1.22.0 semconv   | v1.23.0 semconv       | Notes |
+| v1.7.0 semconv    | v1.23.0 semconv       | Notes |
 | ----------------- | --------------------- | ----- |
 | `http.url`        | `url.full`            | Full HTTP request URL |
 | `http.user_agent` | `user_agent.original` | Value of the [HTTP User-Agent](https://www.rfc-editor.org/rfc/rfc9110.html#field.user-agent) header sent by the client. |
