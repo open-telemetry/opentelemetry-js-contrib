@@ -15,11 +15,11 @@
  */
 import { Span, SpanKind, Tracer, diag, Attributes } from '@opentelemetry/api';
 import {
-  SEMATTRS_FAAS_EXECUTION,
-  SEMATTRS_FAAS_INVOKED_NAME,
-  SEMATTRS_FAAS_INVOKED_PROVIDER,
-  SEMATTRS_FAAS_INVOKED_REGION,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_FAAS_INVOKED_NAME,
+  ATTR_FAAS_INVOKED_PROVIDER,
+  ATTR_FAAS_INVOKED_REGION,
+} from '../semconv';
+import { ATTR_FAAS_EXECUTION } from '../semconv-obsolete';
 import {
   AwsSdkInstrumentationConfig,
   NormalizedRequest,
@@ -45,11 +45,11 @@ export class LambdaServiceExtension implements ServiceExtension {
     switch (request.commandName) {
       case 'Invoke':
         spanAttributes = {
-          [SEMATTRS_FAAS_INVOKED_NAME]: functionName,
-          [SEMATTRS_FAAS_INVOKED_PROVIDER]: 'aws',
+          [ATTR_FAAS_INVOKED_NAME]: functionName,
+          [ATTR_FAAS_INVOKED_PROVIDER]: 'aws',
         };
         if (request.region) {
-          spanAttributes[SEMATTRS_FAAS_INVOKED_REGION] = request.region;
+          spanAttributes[ATTR_FAAS_INVOKED_REGION] = request.region;
         }
         spanName = `${functionName} ${LambdaCommands.Invoke}`;
         break;
@@ -85,7 +85,7 @@ export class LambdaServiceExtension implements ServiceExtension {
     switch (response.request.commandName) {
       case LambdaCommands.Invoke:
         {
-          span.setAttribute(SEMATTRS_FAAS_EXECUTION, response.requestId);
+          span.setAttribute(ATTR_FAAS_EXECUTION, response.requestId);
         }
         break;
     }

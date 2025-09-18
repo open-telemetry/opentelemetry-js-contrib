@@ -17,16 +17,16 @@
 import * as assert from 'assert';
 import { azureFunctionsDetector } from '../../src/detectors/AzureFunctionsDetector';
 import { azureAppServiceDetector } from '../../src/detectors/AzureAppServiceDetector';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
-  SEMRESATTRS_CLOUD_PLATFORM,
-  SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CLOUD_REGION,
-  SEMRESATTRS_FAAS_INSTANCE,
-  SEMRESATTRS_FAAS_MAX_MEMORY,
-  SEMRESATTRS_PROCESS_PID,
-  SEMRESATTRS_SERVICE_INSTANCE_ID,
-  SEMRESATTRS_SERVICE_NAME,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_CLOUD_PLATFORM,
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_REGION,
+  ATTR_FAAS_INSTANCE,
+  ATTR_FAAS_MAX_MEMORY,
+  ATTR_PROCESS_PID,
+  ATTR_SERVICE_INSTANCE_ID,
+} from '../../src/semconv';
 import { detectResources } from '@opentelemetry/resources';
 import { AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE } from '../../src/types';
 
@@ -54,22 +54,16 @@ describe('AzureFunctionsDetector', () => {
     });
     assert.ok(resource);
     const attributes = resource.attributes;
-    assert.strictEqual(attributes[SEMRESATTRS_SERVICE_NAME], 'test-service');
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_PROVIDER], 'azure');
-    assert.strictEqual(
-      attributes[SEMRESATTRS_CLOUD_PLATFORM],
-      'azure_functions'
-    );
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
-    assert.strictEqual(
-      attributes[SEMRESATTRS_FAAS_INSTANCE],
-      'test-instance-id'
-    );
-    assert.strictEqual(attributes[SEMRESATTRS_FAAS_MAX_MEMORY], '1000');
+    assert.strictEqual(attributes[ATTR_SERVICE_NAME], 'test-service');
+    assert.strictEqual(attributes[ATTR_CLOUD_PROVIDER], 'azure');
+    assert.strictEqual(attributes[ATTR_CLOUD_PLATFORM], 'azure.functions');
+    assert.strictEqual(attributes[ATTR_CLOUD_REGION], 'test-region');
+    assert.strictEqual(attributes[ATTR_FAAS_INSTANCE], 'test-instance-id');
+    assert.strictEqual(attributes[ATTR_FAAS_MAX_MEMORY], '1000');
 
     // Should not detect app service values
-    assert.strictEqual(attributes[SEMRESATTRS_SERVICE_INSTANCE_ID], undefined);
-    assert.strictEqual(attributes[SEMRESATTRS_PROCESS_PID], process.pid);
+    assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
+    assert.strictEqual(attributes[ATTR_PROCESS_PID], process.pid);
 
     assert.strictEqual(
       attributes['cloud.resource_id'],
@@ -118,11 +112,11 @@ it('should detect azure functions if websiteSku is defined as FlexConsumption', 
   });
   assert.ok(resource);
   const attributes = resource.attributes;
-  assert.strictEqual(attributes[SEMRESATTRS_SERVICE_NAME], 'test-service');
-  assert.strictEqual(attributes[SEMRESATTRS_CLOUD_PROVIDER], 'azure');
+  assert.strictEqual(attributes[ATTR_SERVICE_NAME], 'test-service');
+  assert.strictEqual(attributes[ATTR_CLOUD_PROVIDER], 'azure');
 
   // Should not detect app service values
-  assert.strictEqual(attributes[SEMRESATTRS_SERVICE_INSTANCE_ID], undefined);
-  assert.strictEqual(attributes[SEMRESATTRS_PROCESS_PID], process.pid);
+  assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
+  assert.strictEqual(attributes[ATTR_PROCESS_PID], process.pid);
   delete process.env.WEBSITE_SKU;
 });

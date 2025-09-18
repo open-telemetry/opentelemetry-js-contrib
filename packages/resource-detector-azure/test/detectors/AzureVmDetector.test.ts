@@ -339,7 +339,7 @@ const windowsTestResponse: AzureVmMetadata = {
 const linuxAttributes: any = {
   'azure.vm.scaleset.name': 'crpteste9vflji9',
   'azure.vm.sku': '20_04-lts-gen2',
-  'cloud.platform': 'azure_vm',
+  'cloud.platform': 'azure.vm',
   'cloud.provider': 'azure',
   'cloud.region': 'westus',
   'cloud.resource_id':
@@ -355,7 +355,7 @@ const linuxAttributes: any = {
 const windowsAttributes: any = {
   'azure.vm.scaleset.name': 'crpteste9vflji9',
   'azure.vm.sku': '2019-Datacenter',
-  'cloud.platform': 'azure_vm',
+  'cloud.platform': 'azure.vm',
   'cloud.provider': 'azure',
   'cloud.region': 'westus',
   'cloud.resource_id':

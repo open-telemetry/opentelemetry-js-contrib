@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 import { Attributes, Context, context } from '@opentelemetry/api';
-import {
-  SEMATTRS_RPC_METHOD,
-  SEMATTRS_RPC_SERVICE,
-  SEMATTRS_RPC_SYSTEM,
-} from '@opentelemetry/semantic-conventions';
+import { ATTR_RPC_METHOD, ATTR_RPC_SERVICE, ATTR_RPC_SYSTEM } from './semconv';
 import { AttributeNames } from './enums';
 import { NormalizedRequest } from './types';
 
@@ -53,9 +49,9 @@ export const extractAttributesFromNormalizedRequest = (
   normalizedRequest: NormalizedRequest
 ): Attributes => {
   return {
-    [SEMATTRS_RPC_SYSTEM]: 'aws-api',
-    [SEMATTRS_RPC_METHOD]: normalizedRequest.commandName,
-    [SEMATTRS_RPC_SERVICE]: normalizedRequest.serviceName,
+    [ATTR_RPC_SYSTEM]: 'aws-api',
+    [ATTR_RPC_METHOD]: normalizedRequest.commandName,
+    [ATTR_RPC_SERVICE]: normalizedRequest.serviceName,
     [AttributeNames.CLOUD_REGION]: normalizedRequest.region,
   };
 };

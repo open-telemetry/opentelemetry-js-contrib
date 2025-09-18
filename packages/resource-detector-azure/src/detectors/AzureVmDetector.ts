@@ -24,16 +24,16 @@ import {
   DetectedResourceAttributes,
 } from '@opentelemetry/resources';
 import {
-  CLOUDPLATFORMVALUES_AZURE_VM,
-  CLOUDPROVIDERVALUES_AZURE,
-  SEMRESATTRS_CLOUD_PLATFORM,
-  SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CLOUD_REGION,
-  SEMRESATTRS_HOST_ID,
-  SEMRESATTRS_HOST_NAME,
-  SEMRESATTRS_HOST_TYPE,
-  SEMRESATTRS_OS_VERSION,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_CLOUD_PLATFORM,
+  CLOUD_PLATFORM_VALUE_AZURE_VM,
+  ATTR_CLOUD_PROVIDER,
+  CLOUD_PROVIDER_VALUE_AZURE,
+  ATTR_CLOUD_REGION,
+  ATTR_HOST_ID,
+  ATTR_HOST_NAME,
+  ATTR_HOST_TYPE,
+  ATTR_OS_VERSION,
+} from '../semconv';
 import {
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
   AZURE_VM_METADATA_HOST,
@@ -56,14 +56,14 @@ class AzureVmResourceDetector implements ResourceDetector {
     const attrNames = [
       AZURE_VM_SCALE_SET_NAME_ATTRIBUTE,
       AZURE_VM_SKU_ATTRIBUTE,
-      SEMRESATTRS_CLOUD_PLATFORM,
-      SEMRESATTRS_CLOUD_PROVIDER,
-      SEMRESATTRS_CLOUD_REGION,
+      ATTR_CLOUD_PLATFORM,
+      ATTR_CLOUD_PROVIDER,
+      ATTR_CLOUD_REGION,
       CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
-      SEMRESATTRS_HOST_ID,
-      SEMRESATTRS_HOST_NAME,
-      SEMRESATTRS_HOST_TYPE,
-      SEMRESATTRS_OS_VERSION,
+      ATTR_HOST_ID,
+      ATTR_HOST_NAME,
+      ATTR_HOST_TYPE,
+      ATTR_OS_VERSION,
     ];
 
     const attributes = {} as DetectedResourceAttributes;
@@ -122,14 +122,14 @@ class AzureVmResourceDetector implements ResourceDetector {
       const attributes = {
         [AZURE_VM_SCALE_SET_NAME_ATTRIBUTE]: metadata['vmScaleSetName'],
         [AZURE_VM_SKU_ATTRIBUTE]: metadata['sku'],
-        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AZURE_VM,
-        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AZURE,
-        [SEMRESATTRS_CLOUD_REGION]: metadata['location'],
+        [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_AZURE_VM,
+        [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_AZURE,
+        [ATTR_CLOUD_REGION]: metadata['location'],
         [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: metadata['resourceId'],
-        [SEMRESATTRS_HOST_ID]: metadata['vmId'],
-        [SEMRESATTRS_HOST_NAME]: metadata['name'],
-        [SEMRESATTRS_HOST_TYPE]: metadata['vmSize'],
-        [SEMRESATTRS_OS_VERSION]: metadata['version'],
+        [ATTR_HOST_ID]: metadata['vmId'],
+        [ATTR_HOST_NAME]: metadata['name'],
+        [ATTR_HOST_TYPE]: metadata['vmSize'],
+        [ATTR_OS_VERSION]: metadata['version'],
       };
       return attributes;
     } catch (err: any) {
