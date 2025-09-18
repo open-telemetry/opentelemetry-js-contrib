@@ -15,17 +15,17 @@
  */
 
 import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
-  SEMRESATTRS_FAAS_MAX_MEMORY,
-  SEMRESATTRS_FAAS_INSTANCE,
-  SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CLOUD_PLATFORM,
-  SEMRESATTRS_CLOUD_REGION,
-  CLOUDPROVIDERVALUES_AZURE,
-  CLOUDPLATFORMVALUES_AZURE_FUNCTIONS,
-  SEMRESATTRS_SERVICE_NAME,
-  SEMRESATTRS_PROCESS_PID,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_FAAS_MAX_MEMORY,
+  ATTR_FAAS_INSTANCE,
+  ATTR_CLOUD_PROVIDER,
+  CLOUD_PROVIDER_VALUE_AZURE,
+  ATTR_CLOUD_PLATFORM,
+  CLOUD_PLATFORM_VALUE_AZURE_FUNCTIONS,
+  ATTR_CLOUD_REGION,
+  ATTR_PROCESS_PID,
+} from '../semconv';
 import {
   WEBSITE_SITE_NAME,
   WEBSITE_INSTANCE_ID,
@@ -36,9 +36,9 @@ import {
 import { getAzureResourceUri, isAzureFunction } from '../utils';
 
 const AZURE_FUNCTIONS_ATTRIBUTE_ENV_VARS = {
-  [SEMRESATTRS_SERVICE_NAME]: WEBSITE_SITE_NAME,
-  [SEMRESATTRS_FAAS_INSTANCE]: WEBSITE_INSTANCE_ID,
-  [SEMRESATTRS_FAAS_MAX_MEMORY]: FUNCTIONS_MEM_LIMIT,
+  [ATTR_SERVICE_NAME]: WEBSITE_SITE_NAME,
+  [ATTR_FAAS_INSTANCE]: WEBSITE_INSTANCE_ID,
+  [ATTR_FAAS_MAX_MEMORY]: FUNCTIONS_MEM_LIMIT,
 };
 
 /**
@@ -60,28 +60,28 @@ class AzureFunctionsDetector implements ResourceDetector {
       const functionMemLimit = process.env[FUNCTIONS_MEM_LIMIT];
 
       attributes = {
-        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AZURE,
-        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AZURE_FUNCTIONS,
-        [SEMRESATTRS_CLOUD_REGION]: process.env[REGION_NAME],
-        [SEMRESATTRS_PROCESS_PID]: process.pid,
+        [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_AZURE,
+        [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_AZURE_FUNCTIONS,
+        [ATTR_CLOUD_REGION]: process.env[REGION_NAME],
+        [ATTR_PROCESS_PID]: process.pid,
       };
 
       if (serviceName) {
         attributes = {
           ...attributes,
-          [SEMRESATTRS_SERVICE_NAME]: serviceName,
+          [ATTR_SERVICE_NAME]: serviceName,
         };
       }
       if (functionInstance) {
         attributes = {
           ...attributes,
-          [SEMRESATTRS_FAAS_INSTANCE]: functionInstance,
+          [ATTR_FAAS_INSTANCE]: functionInstance,
         };
       }
       if (functionMemLimit) {
         attributes = {
           ...attributes,
-          [SEMRESATTRS_FAAS_MAX_MEMORY]: functionMemLimit,
+          [ATTR_FAAS_MAX_MEMORY]: functionMemLimit,
         };
       }
       const azureResourceUri = getAzureResourceUri(serviceName);

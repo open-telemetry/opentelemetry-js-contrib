@@ -13,6 +13,6 @@
 koa:
   # Testing ^2.7.0 covers at least 97% of the downloaded koa versions
   versions:
-    include: "^2.7.0"
+    include: ">=2.7.0 <4"
     mode: latest-minors
   commands: npm run test
