@@ -170,11 +170,9 @@ To select which semconv version(s) is emitted from this instrumentation, use the
 
 For this instrumentation, the only impacted attributes are as follows:
 
-```
 | v1.7.0 semconv     | v1.23.0 semconv             | Short Description         |
 | ------------------ | --------------------------- | ------------------------- |
 | `http.status_code` | `http.response.status_code` | HTTP response status code |
-```
 
 See the [HTTP semconv migration plan for OpenTelemetry JS instrumentations](https://github.com/open-telemetry/opentelemetry-js/issues/5646) for more details.
 
