@@ -33,18 +33,21 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
 import type { RedisCommand, RedisPluginClientTypes } from './internal-types';
 import { Attributes, SpanKind, context, trace } from '@opentelemetry/api';
 import {
-  DBSYSTEMVALUES_REDIS,
-  SEMATTRS_DB_CONNECTION_STRING,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
   ATTR_DB_SYSTEM_NAME,
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_OPERATION_NAME,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DB_CONNECTION_STRING,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+  DB_SYSTEM_NAME_VALUE_REDIS,
+  DB_SYSTEM_VALUE_REDIS,
+} from '../semconv';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 
 export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrumentationConfig> {
@@ -156,17 +159,14 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
 
         if (instrumentation._semconvStability & SemconvStability.OLD) {
           Object.assign(attributes, {
-            [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
-            [SEMATTRS_DB_STATEMENT]: dbStatementSerializer(
-              cmd.command,
-              cmd.args
-            ),
+            [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_REDIS,
+            [ATTR_DB_STATEMENT]: dbStatementSerializer(cmd.command, cmd.args),
           });
         }
 
         if (instrumentation._semconvStability & SemconvStability.STABLE) {
           Object.assign(attributes, {
-            [ATTR_DB_SYSTEM_NAME]: 'redis',
+            [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_REDIS,
             [ATTR_DB_OPERATION_NAME]: cmd.command,
             [ATTR_DB_QUERY_TEXT]: dbStatementSerializer(cmd.command, cmd.args),
           });
@@ -186,8 +186,8 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
 
           if (instrumentation._semconvStability & SemconvStability.OLD) {
             Object.assign(connectionAttributes, {
-              [SEMATTRS_NET_PEER_NAME]: this.connection_options.host,
-              [SEMATTRS_NET_PEER_PORT]: this.connection_options.port,
+              [ATTR_NET_PEER_NAME]: this.connection_options.host,
+              [ATTR_NET_PEER_PORT]: this.connection_options.port,
             });
           }
 
@@ -206,7 +206,7 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
           instrumentation._semconvStability & SemconvStability.OLD
         ) {
           span.setAttribute(
-            SEMATTRS_DB_CONNECTION_STRING,
+            ATTR_DB_CONNECTION_STRING,
             `redis://${this.address}`
           );
         }

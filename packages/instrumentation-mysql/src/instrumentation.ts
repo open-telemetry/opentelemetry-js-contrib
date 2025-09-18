@@ -28,10 +28,10 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import {
-  DBSYSTEMVALUES_MYSQL,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_MYSQL,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+} from './semconv';
 import type * as mysqlTypes from 'mysql';
 import { AttributeNames } from './AttributeNames';
 import { MySQLInstrumentationConfig } from './types';
@@ -53,7 +53,7 @@ type getConnectionCallbackType = (
 
 export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentationConfig> {
   static readonly COMMON_ATTRIBUTES = {
-    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MYSQL,
+    [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MYSQL,
   };
   private declare _connectionsUsage: UpDownCounter;
 
@@ -310,7 +310,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
           },
         });
 
-        span.setAttribute(SEMATTRS_DB_STATEMENT, getDbStatement(query));
+        span.setAttribute(ATTR_DB_STATEMENT, getDbStatement(query));
 
         if (thisPlugin.getConfig().enhancedDatabaseReporting) {
           let values;

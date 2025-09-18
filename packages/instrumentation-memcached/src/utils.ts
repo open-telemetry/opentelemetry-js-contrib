@@ -15,10 +15,7 @@
  */
 
 import type * as Memcached from 'memcached';
-import {
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+import { ATTR_NET_PEER_NAME, ATTR_NET_PEER_PORT } from './semconv';
 
 export const getPeerAttributes = (
   client: any /* Memcached, but the type definitions are lacking */,
@@ -52,12 +49,12 @@ export const getPeerAttributes = (
       const portNumber = parseInt(port, 10);
       if (!isNaN(portNumber)) {
         return {
-          [SEMATTRS_NET_PEER_NAME]: host,
-          [SEMATTRS_NET_PEER_PORT]: portNumber,
+          [ATTR_NET_PEER_NAME]: host,
+          [ATTR_NET_PEER_PORT]: portNumber,
         };
       }
       return {
-        [SEMATTRS_NET_PEER_NAME]: host,
+        [ATTR_NET_PEER_NAME]: host,
       };
     }
   }
