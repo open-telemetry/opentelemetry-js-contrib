@@ -45,6 +45,7 @@ import { AttributeNames } from '../src/enums';
 import { expect } from 'expect';
 import * as fs from 'fs';
 import * as nock from 'nock';
+import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 const region = 'us-east-1';
 
@@ -77,6 +78,11 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       expect(span.name).toEqual('S3.PutObject');
       expect(span.kind).toEqual(SpanKind.CLIENT);
       expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+
+      // We also expect the stable `http.response.status_code` because
+      // `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` has been set before creating
+      // the instrumentation.
+      expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
     });
 
     it('callback interface', done => {
