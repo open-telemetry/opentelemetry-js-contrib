@@ -32,8 +32,8 @@ jobs:
       - uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
         id: otelbot-token
         with:
-          app-id: ${{ vars.OTELBOT_JS_APP_ID }}
-          private-key: ${{ secrets.OTELBOT_JS_PRIVATE_KEY }}
+          app-id: ${{ vars.OTELBOT_JS_CONTRIB_APP_ID }}
+          private-key: ${{ secrets.OTELBOT_JS_CONTRIB_PRIVATE_KEY }}
 
       - uses: googleapis/release-please-action@7987652d64b4581673a76e33ad5e98e3dd56832f # v4.1.3
         id: release
