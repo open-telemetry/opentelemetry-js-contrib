@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.54.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.54.1...instrumentation-redis-v0.54.2) (2025-09-19)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.51.0 to ^0.52.0
+
 ## [0.54.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.54.0...instrumentation-redis-v0.54.1) (2025-09-11)
 
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.50.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.50.0...instrumentation-fastify-v0.50.1) (2025-09-19)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.51.0 to ^0.52.0
+
 ## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.49.0...instrumentation-fastify-v0.50.0) (2025-09-10)
 
 
