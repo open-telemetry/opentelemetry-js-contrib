@@ -109,6 +109,7 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
         expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
         expect(span.name).toEqual('S3.PutObject');
         expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+        expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
         done();
       });
     });
@@ -138,6 +139,7 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
       expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+      expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
     });
 
     it('aws error', async () => {
@@ -172,6 +174,7 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
           'invalid-bucket-name'
         );
         expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(403);
+        expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(403);
         expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
         expect(span.attributes[AttributeNames.AWS_REQUEST_ID]).toEqual(
           'MS95GTS7KXQ34X2S'

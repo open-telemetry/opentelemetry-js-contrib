@@ -462,7 +462,15 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
 
                   const httpStatusCode = err?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
-                    span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
+                    if (self._semconvStability & SemconvStability.OLD) {
+                      span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
+                    }
+                    if (self._semconvStability & SemconvStability.STABLE) {
+                      span.setAttribute(
+                        ATTR_HTTP_RESPONSE_STATUS_CODE,
+                        httpStatusCode
+                      );
+                    }
                   }
 
                   const extendedRequestId = err?.extendedRequestId;
