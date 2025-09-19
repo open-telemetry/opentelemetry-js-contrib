@@ -39,6 +39,7 @@ import {
   ATTR_URL_FULL,
   ATTR_URL_PATH,
   ATTR_SERVICE_NAME,
+  // XXX can we drop this? (else replace it with semconv-obsolete.ts usage)
   SEMRESATTRS_FAAS_ID,
 } from '@opentelemetry/semantic-conventions';
 import {

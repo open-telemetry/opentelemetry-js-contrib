@@ -34,10 +34,7 @@ import {
 } from '@opentelemetry/api';
 import { SamplingDecision } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import {
-  SEMRESATTRS_CLOUD_PLATFORM,
-  ATTR_SERVICE_NAME,
-} from '@opentelemetry/semantic-conventions';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { expect } from 'expect';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
@@ -46,6 +43,7 @@ import {
   AWSXRayRemoteSampler,
 } from '../src/remote-sampler';
 import { AWSXRaySamplingClient } from '../src/aws-xray-sampling-client';
+import { ATTR_CLOUD_PLATFORM } from '../src/semconv';
 
 const DATA_DIR_SAMPLING_RULES =
   __dirname + '/data/test-remote-sampler_sampling-rules-response-sample.json';
@@ -81,7 +79,7 @@ describe('AWSXRayRemoteSampler', () => {
   it('testCreateRemoteSamplerWithPopulatedResource', () => {
     const resource = resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'test-service-name',
-      [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
+      [ATTR_CLOUD_PLATFORM]: 'test-cloud-platform',
     });
     sampler = new AWSXRayRemoteSampler({ resource: resource });
 
@@ -100,7 +98,7 @@ describe('AWSXRayRemoteSampler', () => {
   it('testCreateRemoteSamplerWithAllFieldsPopulated', () => {
     const resource = resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'test-service-name',
-      [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
+      [ATTR_CLOUD_PLATFORM]: 'test-cloud-platform',
     });
     sampler = new AWSXRayRemoteSampler({
       resource: resource,
@@ -132,7 +130,7 @@ describe('AWSXRayRemoteSampler', () => {
       .reply(200, require(DATA_DIR_SAMPLING_TARGETS));
     const resource = resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'test-service-name',
-      [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
+      [ATTR_CLOUD_PLATFORM]: 'test-cloud-platform',
     });
 
     sampler = new AWSXRayRemoteSampler({
@@ -203,7 +201,7 @@ describe('AWSXRayRemoteSampler', () => {
       .reply(200, require(DATA_DIR_SAMPLING_TARGETS));
     const resource = resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'test-service-name',
-      [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
+      [ATTR_CLOUD_PLATFORM]: 'test-cloud-platform',
     });
     const attributes = { abc: '1234' };
 
@@ -269,7 +267,7 @@ describe('AWSXRayRemoteSampler', () => {
       .reply(200, require(DATA_DIR_SAMPLING_TARGETS));
     const resource = resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'test-service-name',
-      [SEMRESATTRS_CLOUD_PLATFORM]: 'test-cloud-platform',
+      [ATTR_CLOUD_PLATFORM]: 'test-cloud-platform',
     });
     const attributes = {
       abc: 'non-matching attribute value, use default rule',
