@@ -30,6 +30,11 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import { AwsInstrumentation } from '../src';
 
+// This is a meagre testing of just a single value of
+// OTEL_SEMCONV_STABILITY_OPT_IN, because testing multiple configurations of
+// `AwsInstrumentation` in this all-in-one-process test setup is difficult.
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup';
+
 export const instrumentation = new AwsInstrumentation();
 export const metricExporter = new InMemoryMetricExporter(
   AggregationTemporality.DELTA

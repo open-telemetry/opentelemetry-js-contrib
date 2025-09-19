@@ -102,13 +102,16 @@ The instrumentation is doing best effort to support the trace specification of O
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This package emits telemetry using a mix of Semantic Convention versions. While not ideal, this is a result of there being a number of separate AWS services instrumented with independent maintenance.
 
-Attributes collected:
+- As a baseline, initial implementations follow [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md).
+- SQS instrumentation was [updated](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/2345) to follow v1.36.0.
+
+Attributes collected (this list is currently not exhaustive):
 
 | Attribute                                     | Short Description                                                                              | Service  |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------- |
-| `http.status_code`                            | (aws-sdk) HTTP response status code.                                                           |          |
+| `http.status_code` / `http.response.status_code` | (aws-sdk) HTTP response status code. See "HTTP Semantic Convention migration" note below.   |          |
 | `rpc.method`                                  | The name of the (logical) method being called.                                                 |          |
 | `rpc.service`                                 | The full (logical) name of the service being called.                                           |          |
 | `rpc.system`                                  | A string identifying the remoting system.                                                      |          |
@@ -148,6 +151,31 @@ Attributes collected:
 | `messaging.operation`                         | A string identifying the kind of message consumption.                                          | sqs      |
 | `messaging.message_id`                        | A value used by the messaging system as an identifier for the message.                         | sqs      |
 | `messaging.url`                               | The connection string.                                                                         | sqs      |
+
+### HTTP Semantic Convention migration
+
+HTTP semantic conventions (semconv) were stabilized in v1.23.0, and a [migration process](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/http-migration.md#http-semantic-convention-stability-migration)
+was defined.  `instrumentation-aws-sdk` adds some minimal HTTP-related
+attributes on created spans. Starting with `instrumentation-aws-sdk` version
+0.61.0, the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable can be used to
+customize which HTTP semantic conventions are used for those HTTP-related
+attributes.
+
+To select which semconv version(s) is emitted from this instrumentation, use the
+`OTEL_SEMCONV_STABILITY_OPT_IN` environment variable.
+
+- `http`: emit the new (stable) v1.23.0+ semantics
+- `http/dup`: emit **both** the old v1.7.0 and the new (stable) v1.23.0+ semantics
+- By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` includes neither of the above tokens, the old v1.7.0 semconv is used.
+
+For this instrumentation, the only impacted attributes are as follows:
+
+| v1.7.0 semconv     | v1.23.0 semconv             | Short Description         |
+| ------------------ | --------------------------- | ------------------------- |
+| `http.status_code` | `http.response.status_code` | HTTP response status code |
+
+See the [HTTP semconv migration plan for OpenTelemetry JS instrumentations](https://github.com/open-telemetry/opentelemetry-js/issues/5646) for more details.
+
 
 ## Useful links
 
