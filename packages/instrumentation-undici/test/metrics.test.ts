@@ -24,12 +24,19 @@ import {
   InMemoryMetricExporter,
   MeterProvider,
 } from '@opentelemetry/sdk-metrics';
+import {
+  ATTR_ERROR_TYPE,
+  ATTR_HTTP_REQUEST_METHOD,
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  ATTR_URL_SCHEME,
+} from '@opentelemetry/semantic-conventions';
 
 import { UndiciInstrumentation } from '../src/undici';
 
 import { MockServer } from './utils/mock-server';
 import { MockMetricsReader } from './utils/mock-metrics-reader';
-import { SemanticAttributes } from '../src/enums/SemanticAttributes';
 
 describe('UndiciInstrumentation metrics tests', function () {
   let instrumentation: UndiciInstrumentation;
@@ -125,26 +132,11 @@ describe('UndiciInstrumentation metrics tests', function () {
       assert.strictEqual(metrics[0].dataPoints.length, 1);
 
       const metricAttributes = metrics[0].dataPoints[0].attributes;
-      assert.strictEqual(
-        metricAttributes[SemanticAttributes.URL_SCHEME],
-        'http'
-      );
-      assert.strictEqual(
-        metricAttributes[SemanticAttributes.HTTP_REQUEST_METHOD],
-        'GET'
-      );
-      assert.strictEqual(
-        metricAttributes[SemanticAttributes.SERVER_ADDRESS],
-        'localhost'
-      );
-      assert.strictEqual(
-        metricAttributes[SemanticAttributes.SERVER_PORT],
-        mockServer.port
-      );
-      assert.strictEqual(
-        metricAttributes[SemanticAttributes.HTTP_RESPONSE_STATUS_CODE],
-        200
-      );
+      assert.strictEqual(metricAttributes[ATTR_URL_SCHEME], 'http');
+      assert.strictEqual(metricAttributes[ATTR_HTTP_REQUEST_METHOD], 'GET');
+      assert.strictEqual(metricAttributes[ATTR_SERVER_ADDRESS], 'localhost');
+      assert.strictEqual(metricAttributes[ATTR_SERVER_PORT], mockServer.port);
+      assert.strictEqual(metricAttributes[ATTR_HTTP_RESPONSE_STATUS_CODE], 200);
     });
 
     it('should have error.type in "http.client.request.duration" metric', async () => {
@@ -176,25 +168,13 @@ describe('UndiciInstrumentation metrics tests', function () {
       assert.strictEqual(metrics[0].dataPoints.length, 1);
 
       const metricAttributes = metrics[0].dataPoints[0].attributes;
-      assert.strictEqual(
-        metricAttributes[SemanticAttributes.URL_SCHEME],
-        'http'
-      );
-      assert.strictEqual(
-        metricAttributes[SemanticAttributes.HTTP_REQUEST_METHOD],
-        'GET'
-      );
-      assert.strictEqual(
-        metricAttributes[SemanticAttributes.SERVER_ADDRESS],
-        hostname
-      );
-      assert.strictEqual(
-        metricAttributes[SemanticAttributes.SERVER_PORT],
-        mockServer.port
-      );
+      assert.strictEqual(metricAttributes[ATTR_URL_SCHEME], 'http');
+      assert.strictEqual(metricAttributes[ATTR_HTTP_REQUEST_METHOD], 'GET');
+      assert.strictEqual(metricAttributes[ATTR_SERVER_ADDRESS], hostname);
+      assert.strictEqual(metricAttributes[ATTR_SERVER_PORT], mockServer.port);
       assert.ok(
-        metricAttributes[SemanticAttributes.ERROR_TYPE],
-        `the metric contains "${SemanticAttributes.ERROR_TYPE}" attribute if request failed`
+        metricAttributes[ATTR_ERROR_TYPE],
+        `the metric contains "${ATTR_ERROR_TYPE}" attribute if request failed`
       );
     });
   });
