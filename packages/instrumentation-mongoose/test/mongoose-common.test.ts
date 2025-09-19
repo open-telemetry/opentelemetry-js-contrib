@@ -37,7 +37,20 @@ import { DB_NAME, MONGO_URI } from './config';
 
 // Please run `npm run test-services:start` before
 describe('mongoose instrumentation [common]', () => {
-  before(async () => {
+  // For these tests, MongoDB must be running. Add RUN_MONGOOSE_TESTS to run
+  // these tests.
+  const RUN_MONGOOSE_TESTS = process.env.RUN_MONGOOSE_TESTS;
+  let shouldTest = true;
+
+  before(async function () {
+    // Check if tests should run
+    if (!RUN_MONGOOSE_TESTS) {
+      console.log('Skipping mongoose tests. Set RUN_MONGOOSE_TESTS env to run');
+      shouldTest = false;
+      return;
+    }
+
+    // Try to connect to MongoDB
     try {
       await mongoose.connect(MONGO_URI, {
         useNewUrlParser: true,
@@ -51,18 +64,37 @@ describe('mongoose instrumentation [common]', () => {
       // the following check tries both signatures, so test-all-versions
       // can run against both versions.
       if (err?.name === 'MongoParseError') {
-        await mongoose.connect(MONGO_URI, {
-          dbName: DB_NAME,
-        }); // TODO: amir - document older mongoose support
+        try {
+          await mongoose.connect(MONGO_URI, {
+            dbName: DB_NAME,
+          }); // TODO: amir - document older mongoose support
+        } catch (innerErr: any) {
+          console.log(
+            'Skipping mongoose tests. Connection failed:',
+            innerErr.message
+          );
+          shouldTest = false;
+        }
+      } else {
+        console.log('Skipping mongoose tests. Connection failed:', err.message);
+        shouldTest = false;
       }
     }
   });
 
   after(async () => {
-    await mongoose.connection.close();
+    if (shouldTest) {
+      await mongoose.connection.close();
+    }
   });
 
-  beforeEach(async () => {
+  beforeEach(async function () {
+    // Skipping all tests in beforeEach() is a workaround. Mocha does not work
+    // properly when skipping tests in before() on nested describe() calls.
+    // https://github.com/mochajs/mocha/issues/2819
+    if (!shouldTest) {
+      this.skip();
+    }
     instrumentation.disable();
     instrumentation.setConfig({
       dbStatementSerializer: (_operation: string, payload) => {
@@ -77,7 +109,9 @@ describe('mongoose instrumentation [common]', () => {
 
   afterEach(async () => {
     instrumentation.disable();
-    await User.collection.drop().catch();
+    if (shouldTest) {
+      await User.collection.drop().catch();
+    }
   });
 
   describe('instrumenting save operation', async () => {
