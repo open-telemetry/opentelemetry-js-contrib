@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.60.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.60.0...instrumentation-aws-sdk-v0.60.1) (2025-09-19)
+
+
+### Bug Fixes
+
+* **instrumentation-aws-sdk:** use `skipLibCheck` option to avoid compilation error ([#3041](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3041)) ([f6e8e1c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f6e8e1caaed84be0e41da2e4a976dfceb2f8d184))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.51.0 to ^0.52.0
+
 ## [0.60.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.59.0...instrumentation-aws-sdk-v0.60.0) (2025-09-10)
 
 
