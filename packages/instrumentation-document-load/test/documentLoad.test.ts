@@ -851,6 +851,83 @@ describe('DocumentLoad Instrumentation', () => {
         done();
       });
     });
+
+    it('should *not* have http.response_content_length attr if semconvStabilityOptIn=http', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        semconvStabilityOptIn: 'http',
+      });
+      plugin.enable();
+
+      setTimeout(() => {
+        const spans = exporter.getFinishedSpans();
+        const resourceSpan = spans.find(
+          s => s.name === 'resourceFetch'
+        ) as ReadableSpan;
+        assert.isOk(resourceSpan, 'resourceFetch span should exist');
+        assert.equal(
+          resourceSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
+          undefined,
+          'http.response_content_length attribute should *not* exist'
+        );
+        done();
+      });
+    });
+  });
+
+  describe('semconvStabilityOptIn', () => {
+    it('(empty) should use old semconv attributes', done => {
+      plugin = new DocumentLoadInstrumentation();
+      setTimeout(() => {
+        const spans = exporter.getFinishedSpans();
+        assert.strictEqual(spans[0].name, 'documentFetch');
+        assert.isOk(
+          (spans[0].attributes['http.url'] as string).startsWith(
+            'http://localhost:8000/?wtr-session-id='
+          )
+        );
+        assert.equal(spans[0].attributes['url.full'], undefined);
+        done();
+      });
+    });
+
+    it('"http" should use new semconv attributes', done => {
+      plugin = new DocumentLoadInstrumentation({
+        semconvStabilityOptIn: 'http',
+      });
+      setTimeout(() => {
+        const spans = exporter.getFinishedSpans();
+        assert.strictEqual(spans[0].name, 'documentFetch');
+        assert.equal(spans[0].attributes['http.url'], undefined);
+        assert.isOk(
+          (spans[0].attributes['url.full'] as string).startsWith(
+            'http://localhost:8000/?wtr-session-id='
+          )
+        );
+        done();
+      });
+    });
+
+    it('"http/dup" should use old and new semconv attributes', done => {
+      plugin = new DocumentLoadInstrumentation({
+        semconvStabilityOptIn: 'http/dup',
+      });
+      setTimeout(() => {
+        const spans = exporter.getFinishedSpans();
+        assert.strictEqual(spans[0].name, 'documentFetch');
+        assert.isOk(
+          (spans[0].attributes['http.url'] as string).startsWith(
+            'http://localhost:8000/?wtr-session-id='
+          )
+        );
+        assert.isOk(
+          (spans[0].attributes['url.full'] as string).startsWith(
+            'http://localhost:8000/?wtr-session-id='
+          )
+        );
+        done();
+      });
+    });
   });
 });
 

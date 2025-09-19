@@ -30,9 +30,15 @@ import {
   PerformanceTimingNames as PTN,
 } from '@opentelemetry/sdk-trace-web';
 import {
+  SemconvStability,
+  semconvStabilityFromStr,
   InstrumentationBase,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
+import {
+  ATTR_URL_FULL,
+  ATTR_USER_AGENT_ORIGINAL,
+} from '@opentelemetry/semantic-conventions';
 import {
   DocumentLoadCustomAttributeFunction,
   DocumentLoadInstrumentationConfig,
@@ -55,8 +61,14 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
   readonly version: string = '1';
   moduleName = this.component;
 
+  private _semconvStability: SemconvStability;
+
   constructor(config: DocumentLoadInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._semconvStability = semconvStabilityFromStr(
+      'http',
+      config?.semconvStabilityOptIn
+    );
   }
 
   init() {}
@@ -112,12 +124,22 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
           entries
         );
         if (fetchSpan) {
-          fetchSpan.setAttribute(ATTR_HTTP_URL, location.href);
+          if (this._semconvStability & SemconvStability.OLD) {
+            fetchSpan.setAttribute(ATTR_HTTP_URL, location.href);
+          }
+          if (this._semconvStability & SemconvStability.STABLE) {
+            fetchSpan.setAttribute(ATTR_URL_FULL, location.href);
+          }
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
+            const skipOldSemconvContentLengthAttrs = !(
+              this._semconvStability & SemconvStability.OLD
+            );
             addSpanNetworkEvents(
               fetchSpan,
               entries,
-              this.getConfig().ignoreNetworkEvents
+              this.getConfig().ignoreNetworkEvents,
+              undefined,
+              skipOldSemconvContentLengthAttrs
             );
             this._addCustomAttributesOnSpan(
               fetchSpan,
@@ -128,8 +150,14 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
         }
       });
 
-      rootSpan.setAttribute(ATTR_HTTP_URL, location.href);
-      rootSpan.setAttribute(ATTR_HTTP_USER_AGENT, navigator.userAgent);
+      if (this._semconvStability & SemconvStability.OLD) {
+        rootSpan.setAttribute(ATTR_HTTP_URL, location.href);
+        rootSpan.setAttribute(ATTR_HTTP_USER_AGENT, navigator.userAgent);
+      }
+      if (this._semconvStability & SemconvStability.STABLE) {
+        rootSpan.setAttribute(ATTR_URL_FULL, location.href);
+        rootSpan.setAttribute(ATTR_USER_AGENT_ORIGINAL, navigator.userAgent);
+      }
 
       this._addResourcesSpans(rootSpan);
 
@@ -203,11 +231,22 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
       parentSpan
     );
     if (span) {
-      span.setAttribute(ATTR_HTTP_URL, resource.name);
+      if (this._semconvStability & SemconvStability.OLD) {
+        span.setAttribute(ATTR_HTTP_URL, resource.name);
+      }
+      if (this._semconvStability & SemconvStability.STABLE) {
+        span.setAttribute(ATTR_URL_FULL, resource.name);
+      }
+
+      const skipOldSemconvContentLengthAttrs = !(
+        this._semconvStability & SemconvStability.OLD
+      );
       addSpanNetworkEvents(
         span,
         resource,
-        this.getConfig().ignoreNetworkEvents
+        this.getConfig().ignoreNetworkEvents,
+        undefined,
+        skipOldSemconvContentLengthAttrs
       );
       this._addCustomAttributesOnResourceSpan(
         span,
