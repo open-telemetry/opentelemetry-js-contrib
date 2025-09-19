@@ -65,7 +65,6 @@
     "rimraf": "5.0.10",
     "semver": "7.7.2",
     "tedious": "17.0.0",
-    "test-all-versions": "6.1.0",
     "typescript": "5.0.4"
   },
   "dependencies": {
