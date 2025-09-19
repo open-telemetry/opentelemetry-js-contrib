@@ -21,7 +21,11 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import { IORedisInstrumentationConfig } from './types';
-import { ClusterInterface, IORedisCommand, RedisInterface } from './internal-types';
+import {
+  ClusterInterface,
+  IORedisCommand,
+  RedisInterface,
+} from './internal-types';
 import {
   DBSYSTEMVALUES_REDIS,
   SEMATTRS_DB_CONNECTION_STRING,
@@ -290,9 +294,12 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
 
       const dbStatementSerializer =
         config.dbStatementSerializer || defaultDbStatementSerializer;
-        
-      const startupNodes = 'startupNodes' in this ? parseStartupNodes(this['startupNodes']) : [];
-      const nodes = this.nodes().map(node => `${node.options.host}:${node.options.port}`);
+
+      const startupNodes =
+        'startupNodes' in this ? parseStartupNodes(this['startupNodes']) : [];
+      const nodes = this.nodes().map(
+        node => `${node.options.host}:${node.options.port}`
+      );
 
       // Create cluster-level parent span
       const span = instrumentation.tracer.startSpan(`cluster.${cmd.name}`, {
@@ -318,7 +325,10 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
             }),
           e => {
             if (e) {
-              diag.error('ioredis cluster instrumentation: request hook failed', e);
+              diag.error(
+                'ioredis cluster instrumentation: request hook failed',
+                e
+              );
             }
           },
           true
@@ -339,7 +349,10 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
               () => config.responseHook?.(span, cmd.name, cmd.args, result),
               e => {
                 if (e) {
-                  diag.error('ioredis cluster instrumentation: response hook failed', e);
+                  diag.error(
+                    'ioredis cluster instrumentation: response hook failed',
+                    e
+                  );
                 }
               },
               true
@@ -372,8 +385,11 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
         return original.apply(this, arguments);
       }
 
-      const startupNodes = 'startupNodes' in this ? parseStartupNodes(this['startupNodes']) : [];
-      const nodes = this.nodes().map(node => `${node.options.host}:${node.options.port}`);
+      const startupNodes =
+        'startupNodes' in this ? parseStartupNodes(this['startupNodes']) : [];
+      const nodes = this.nodes().map(
+        node => `${node.options.host}:${node.options.port}`
+      );
 
       const span = instrumentation.tracer.startSpan('cluster.connect', {
         kind: SpanKind.CLIENT,

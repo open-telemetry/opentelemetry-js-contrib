@@ -37,10 +37,10 @@ export const parseStartupNodes = (
     return [];
   }
 
-  return startupNodes.map((node) => {
-    if (typeof node === "string") {
+  return startupNodes.map(node => {
+    if (typeof node === 'string') {
       return node;
-    } else if (typeof node === "number") {
+    } else if (typeof node === 'number') {
       return `localhost:${node}`;
     } else {
       return `${node.host}:${node.port}`;
