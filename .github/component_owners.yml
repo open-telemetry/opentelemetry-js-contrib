@@ -18,7 +18,7 @@ components:
     # Unmaintained
   packages/resource-detector-instana:
     - kirrg001
-  incubator/opentelemetry-sampler-aws-xray:
+  packages/sampler-aws-xray:
     - jj22ee
     - yiyuan-he
   packages/auto-configuration-propagators:
