@@ -61,7 +61,7 @@ jobs:
           git add package-lock.json
           git config user.name otelbot
           git config user.email 197425009+otelbot@users.noreply.github.com
-          git commit --amend --reset-author
+          git commit --amend --reset-author --no-edit
           git push --force
 
   install-and-compile:
