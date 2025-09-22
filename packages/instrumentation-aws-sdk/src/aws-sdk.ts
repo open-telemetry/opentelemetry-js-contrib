@@ -40,6 +40,8 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import type {
   MiddlewareStack,
@@ -57,6 +59,7 @@ import {
 import { propwrap } from './propwrap';
 import { RequestMetadata } from './services/ServiceExtension';
 import { ATTR_HTTP_STATUS_CODE } from './semconv';
+import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 const V3_CLIENT_CONFIG_KEY = Symbol(
   'opentelemetry.instrumentation.aws-sdk.client.config'
@@ -70,8 +73,14 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
   // need declare since initialized in callbacks from super constructor
   private declare servicesExtensions: ServicesExtensions;
 
+  private _semconvStability: SemconvStability;
+
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._semconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   protected init(): InstrumentationModuleDefinition[] {
@@ -406,7 +415,15 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                   const httpStatusCode =
                     response.output?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
-                    span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
+                    if (self._semconvStability & SemconvStability.OLD) {
+                      span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
+                    }
+                    if (self._semconvStability & SemconvStability.STABLE) {
+                      span.setAttribute(
+                        ATTR_HTTP_RESPONSE_STATUS_CODE,
+                        httpStatusCode
+                      );
+                    }
                   }
 
                   const extendedRequestId =
@@ -445,7 +462,15 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
 
                   const httpStatusCode = err?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
-                    span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
+                    if (self._semconvStability & SemconvStability.OLD) {
+                      span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
+                    }
+                    if (self._semconvStability & SemconvStability.STABLE) {
+                      span.setAttribute(
+                        ATTR_HTTP_RESPONSE_STATUS_CODE,
+                        httpStatusCode
+                      );
+                    }
                   }
 
                   const extendedRequestId = err?.extendedRequestId;
