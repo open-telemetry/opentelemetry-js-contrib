@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/baggage-log-record-processor-v0.5.0...baggage-log-record-processor-v0.6.0) (2025-09-10)
