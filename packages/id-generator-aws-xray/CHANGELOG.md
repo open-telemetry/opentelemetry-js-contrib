@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [2.0.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/id-generator-aws-xray-v2.0.0...id-generator-aws-xray-v2.0.1) (2025-09-01)

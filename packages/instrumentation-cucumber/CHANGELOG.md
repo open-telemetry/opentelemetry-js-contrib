@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.21.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.20.0...instrumentation-cucumber-v0.21.0) (2025-09-10)

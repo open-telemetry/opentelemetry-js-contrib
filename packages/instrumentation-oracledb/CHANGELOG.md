@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.30.0...instrumentation-oracledb-v0.31.0) (2025-09-10)

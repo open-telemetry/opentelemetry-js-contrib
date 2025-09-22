@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.50.0...contrib-test-utils-v0.51.0) (2025-09-10)
