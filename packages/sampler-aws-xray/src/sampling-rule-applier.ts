@@ -39,8 +39,6 @@ import {
   ATTR_URL_FULL,
   ATTR_URL_PATH,
   ATTR_SERVICE_NAME,
-  // XXX can we drop this? (else replace it with semconv-obsolete.ts usage)
-  SEMRESATTRS_FAAS_ID,
 } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_HTTP_HOST,
@@ -261,7 +259,6 @@ export class SamplingRuleApplier {
   ): AttributeValue | undefined {
     const arn: AttributeValue | undefined =
       resource?.attributes[ATTR_CLOUD_RESOURCE_ID] ||
-      resource?.attributes[SEMRESATTRS_FAAS_ID] ||
       attributes[ATTR_AWS_LAMBDA_INVOKED_ARN];
     return arn;
   }
