@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/sql-common-v0.40.1...sql-common-v0.41.0) (2025-03-18)

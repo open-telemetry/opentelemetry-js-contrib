@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.48.0...instrumentation-net-v0.49.0) (2025-09-10)

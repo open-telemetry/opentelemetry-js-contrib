@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [2.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v2.4.0...resource-detector-aws-v2.5.0) (2025-09-10)

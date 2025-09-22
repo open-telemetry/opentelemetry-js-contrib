@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.4.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-instana-v0.4.0...propagator-instana-v0.4.1) (2025-09-01)
