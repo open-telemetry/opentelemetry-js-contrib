@@ -51,7 +51,8 @@ jobs:
           # use a token so that workflows on the PR run when we push later
           token: ${{ steps.otelbot-token.outputs.token }}
 
-      # release-please does not do this on its own, so we do it here instead
+      # previous commiter does not have CLA signed, and the commit is missing updates to package-lock.json,
+      # so we re-write that commit here with the proper changes
       - name: Update package-lock.json in PR
         # only update if a PR has been created
         if: ${{ steps.release.outputs.pr }}
@@ -60,8 +61,8 @@ jobs:
           git add package-lock.json
           git config user.name otelbot
           git config user.email 197425009+otelbot@users.noreply.github.com
-          git commit -m "chore: sync package-lock.json"
-          git push
+          git commit --amend --reset-author
+          git push --force
 
   install-and-compile:
     needs: release-please
