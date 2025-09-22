@@ -305,11 +305,7 @@ export function wrapFields(
   tracer: api.Tracer,
   getConfig: () => GraphQLInstrumentationParsedConfig
 ): void {
-  if (
-    !type ||
-    typeof type.getFields !== 'function' ||
-    type[OTEL_PATCHED_SYMBOL]
-  ) {
+  if (!type || type[OTEL_PATCHED_SYMBOL]) {
     return;
   }
   const fields = type.getFields();
@@ -328,14 +324,45 @@ export function wrapFields(
     }
 
     if (field.type) {
-      let unwrappedType: any = field.type;
-
-      while (unwrappedType.ofType) {
-        unwrappedType = unwrappedType.ofType;
+      const unwrappedTypes = unwrapType(field.type);
+      for (const unwrappedType of unwrappedTypes) {
+        wrapFields(unwrappedType, tracer, getConfig);
       }
-      wrapFields(unwrappedType, tracer, getConfig);
     }
   });
+}
+
+function unwrapType(
+  type: graphqlTypes.GraphQLOutputType
+): readonly graphqlTypes.GraphQLObjectType[] {
+  // unwrap wrapping types (non-nullable and list types)
+  if ('ofType' in type) {
+    return unwrapType(type.ofType);
+  }
+
+  // unwrap union types
+  if (isGraphQLUnionType(type)) {
+    return type.getTypes();
+  }
+
+  // return object types
+  if (isGraphQLObjectType(type)) {
+    return [type];
+  }
+
+  return [];
+}
+
+function isGraphQLUnionType(
+  type: graphqlTypes.GraphQLType
+): type is graphqlTypes.GraphQLUnionType {
+  return 'getTypes' in type && typeof type.getTypes === 'function';
+}
+
+function isGraphQLObjectType(
+  type: graphqlTypes.GraphQLType
+): type is graphqlTypes.GraphQLObjectType {
+  return 'getFields' in type && typeof type.getFields === 'function';
 }
 
 const handleResolveSpanError = (
