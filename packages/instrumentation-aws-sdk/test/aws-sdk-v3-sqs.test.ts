@@ -30,7 +30,10 @@ process.env.AWS_SECRET_ACCESS_KEY = 'testing';
 import 'mocha';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { context, trace } from '@opentelemetry/api';
-import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_URL_FULL,
+} from '@opentelemetry/semantic-conventions';
 import {
   ATTR_HTTP_STATUS_CODE,
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
@@ -95,6 +98,7 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
       response.MessageId
     );
     expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+    expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
   });
 
   it('sqs send message batch attributes', async () => {
@@ -145,6 +149,7 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
     );
     expect(span.attributes[ATTR_URL_FULL]).toEqual(params.QueueUrl);
     expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+    expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
   });
 
   it('sqs receive add messaging attributes', done => {
@@ -178,6 +183,7 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
       expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('SQS');
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+      expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
       expect(span.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT]).toEqual(2);
       expect(span.links.length).toBe(2);
 

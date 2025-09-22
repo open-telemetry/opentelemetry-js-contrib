@@ -21,8 +21,14 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
-import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_HTTP_REQUEST_METHOD,
+  ATTR_HTTP_ROUTE,
+  ATTR_URL_FULL,
+} from '@opentelemetry/semantic-conventions';
 import type { NestFactory } from '@nestjs/core/nest-factory.js';
 import type { RouterExecutionContext } from '@nestjs/core/router/router-execution-context.js';
 import type { Controller } from '@nestjs/common/interfaces';
@@ -39,8 +45,14 @@ export class NestInstrumentation extends InstrumentationBase {
     component: NestInstrumentation.COMPONENT,
   };
 
+  private _semconvStability: SemconvStability;
+
   constructor(config: InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._semconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   init() {
@@ -83,7 +95,11 @@ export class NestInstrumentation extends InstrumentationBase {
         this.ensureWrapped(
           RouterExecutionContext.RouterExecutionContext.prototype,
           'create',
-          createWrapCreateHandler(this.tracer, moduleVersion)
+          createWrapCreateHandler(
+            this.tracer,
+            moduleVersion,
+            this._semconvStability
+          )
         );
         return RouterExecutionContext;
       },
@@ -141,7 +157,11 @@ function createWrapNestFactoryCreate(
   };
 }
 
-function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
+function createWrapCreateHandler(
+  tracer: api.Tracer,
+  moduleVersion: string | undefined,
+  semconvStability: SemconvStability
+) {
   return function wrapCreateHandler(
     original: RouterExecutionContext['create']
   ) {
@@ -167,19 +187,24 @@ function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
         res: any,
         next: (...args: any[]) => unknown
       ) {
-        const span = tracer.startSpan(spanName, {
-          attributes: {
-            ...NestInstrumentation.COMMON_ATTRIBUTES,
-            [AttributeNames.VERSION]: moduleVersion,
-            [AttributeNames.TYPE]: NestType.REQUEST_CONTEXT,
-            [ATTR_HTTP_METHOD]: req.method,
-            [ATTR_HTTP_URL]: req.originalUrl || req.url,
-            [ATTR_HTTP_ROUTE]:
-              req.route?.path || req.routeOptions?.url || req.routerPath,
-            [AttributeNames.CONTROLLER]: instanceName,
-            [AttributeNames.CALLBACK]: callbackName,
-          },
-        });
+        const attributes: api.Attributes = {
+          ...NestInstrumentation.COMMON_ATTRIBUTES,
+          [AttributeNames.VERSION]: moduleVersion,
+          [AttributeNames.TYPE]: NestType.REQUEST_CONTEXT,
+          [ATTR_HTTP_ROUTE]:
+            req.route?.path || req.routeOptions?.url || req.routerPath,
+          [AttributeNames.CONTROLLER]: instanceName,
+          [AttributeNames.CALLBACK]: callbackName,
+        };
+        if (semconvStability & SemconvStability.OLD) {
+          attributes[ATTR_HTTP_METHOD] = req.method;
+          attributes[ATTR_HTTP_URL] = req.originalUrl || req.url;
+        }
+        if (semconvStability & SemconvStability.STABLE) {
+          attributes[ATTR_HTTP_REQUEST_METHOD] = req.method;
+          attributes[ATTR_URL_FULL] = req.originalUrl || req.url;
+        }
+        const span = tracer.startSpan(spanName, { attributes });
         const spanContext = api.trace.setSpan(api.context.active(), span);
 
         return api.context.with(spanContext, async () => {
