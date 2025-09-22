@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.2.0...instrumentation-openai-v0.3.0) (2025-09-10)

@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.37.0...redis-common-v0.38.0) (2025-07-04)

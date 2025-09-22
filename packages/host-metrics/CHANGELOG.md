@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.35.5...host-metrics-v0.36.0) (2025-03-18)
