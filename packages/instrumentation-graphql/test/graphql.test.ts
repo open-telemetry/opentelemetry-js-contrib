@@ -86,6 +86,21 @@ const sourceFindUsingVariable = `
   }
 `;
 
+const sourceSearch = `
+  query Search ($name: String!) {
+    search(name: $name) {
+      ... on Book {
+        __typename
+        name
+      }
+      ... on EBook {
+        __typename
+        name
+      }
+    }
+  }
+`;
+
 const badQuery = `
   query foo bar
 `;
@@ -244,6 +259,7 @@ describe('graphql', () => {
         assert.ok(times[RESOLVE].end <= times[EXECUTE].end);
       });
     });
+
     describe('AND source is query with param', () => {
       let spans: ReadableSpan[];
 
@@ -338,6 +354,7 @@ describe('graphql', () => {
         );
       });
     });
+
     describe('AND source is query with param and variables', () => {
       let spans: ReadableSpan[];
 
@@ -436,6 +453,110 @@ describe('graphql', () => {
           span1,
           'name',
           'book.name',
+          'String',
+          'name',
+          parentId
+        );
+      });
+    });
+
+    describe('AND source is query to get a list of union type', () => {
+      let spans: ReadableSpan[];
+      beforeEach(async () => {
+        create({});
+        await graphql({
+          schema,
+          source: sourceSearch,
+          variableValues: { name: 'first' },
+        });
+        spans = exporter.getFinishedSpans();
+      });
+
+      afterEach(() => {
+        exporter.reset();
+        graphQLInstrumentation.disable();
+        spans = [];
+      });
+
+      it('should have 6 spans', () => {
+        assert.deepStrictEqual(spans.length, 6);
+      });
+
+      it('should instrument parse', () => {
+        const parseSpan = spans[0];
+        assert.deepStrictEqual(
+          parseSpan.attributes[AttributeNames.SOURCE],
+          sourceSearch
+        );
+        assert.deepStrictEqual(parseSpan.name, SpanNames.PARSE);
+      });
+
+      it('should instrument validate', () => {
+        const validateSpan = spans[1];
+
+        assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
+        assert.deepStrictEqual(
+          validateSpan.parentSpanContext?.spanId,
+          undefined
+        );
+      });
+
+      it('should instrument execute', () => {
+        const executeSpan = spans[5];
+
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.SOURCE],
+          sourceSearch
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_TYPE],
+          'query'
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_NAME],
+          'Search'
+        );
+        assert.deepStrictEqual(executeSpan.name, 'query Search');
+        assert.deepStrictEqual(
+          executeSpan.parentSpanContext?.spanId,
+          undefined
+        );
+      });
+
+      it('should instrument resolvers', () => {
+        const [, , resolveParentSpan, span1, span2, executeSpan] = spans;
+
+        assertResolveSpan(
+          resolveParentSpan,
+          'search',
+          'search',
+          '[SearchResult]',
+          'search(name: $name) {\n' +
+            '      ... on Book {\n' +
+            '        __typename\n' +
+            '        name\n' +
+            '      }\n' +
+            '      ... on EBook {\n' +
+            '        __typename\n' +
+            '        name\n' +
+            '      }\n' +
+            '    }',
+          executeSpan.spanContext().spanId
+        );
+
+        const parentId = resolveParentSpan.spanContext().spanId;
+        assertResolveSpan(
+          span1,
+          'name',
+          'search.0.name',
+          'String',
+          'name',
+          parentId
+        );
+        assertResolveSpan(
+          span2,
+          'name',
+          'search.1.name',
           'String',
           'name',
           parentId

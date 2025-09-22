@@ -31,6 +31,12 @@ import * as util from 'util';
 
 const LIB_VERSION = require('@nestjs/core/package.json').version;
 
+// This is a meagre testing of just a single value of
+// OTEL_SEMCONV_STABILITY_OPT_IN, because testing multiple configurations of
+// `NestInstrumentation` in this all-in-one-process is more trouble than it
+// it is worth for the ~6mo migration process.
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup';
+
 const instrumentation = new NestInstrumentation();
 const memoryExporter = new InMemorySpanExporter();
 
@@ -215,8 +221,17 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
 
       assert.strictEqual(span.name, expected.name);
 
+      // Because OTEL_SEMCONV_STABILITY_OPT_IN=http/dup is being set for testing
+      // we expect both the deprecated:
       assert.strictEqual(span.attributes['http.method'], expected.method);
       assert.strictEqual(span.attributes['http.url'], expected.url);
+      // ... and stable HTTP semconv attributes:
+      assert.strictEqual(
+        span.attributes['http.request.method'],
+        expected.method
+      );
+      assert.strictEqual(span.attributes['url.full'], expected.url);
+
       assert.strictEqual(span.attributes['http.route'], expected.path);
       assert.strictEqual(span.attributes['nestjs.type'], expected.type);
       assert.strictEqual(span.attributes['nestjs.callback'], expected.callback);
