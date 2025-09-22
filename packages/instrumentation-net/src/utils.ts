@@ -15,14 +15,20 @@
  */
 
 import { NormalizedOptions } from './internal-types';
-import {
-  NETTRANSPORTVALUES_PIPE,
-  NETTRANSPORTVALUES_UNIX,
-} from '@opentelemetry/semantic-conventions';
+import { NET_TRANSPORT_VALUE_PIPE } from './semconv';
 import { platform } from 'os';
 
+// Currently the `IPC_TRANSPORT` values are for 'net.transport'. In semconv
+// v1.21.0 a breaking change (https://github.com/open-telemetry/opentelemetry-specification/pull/3426)
+// replaced 'net.transport' with 'network.transport'. The deprecated
+// 'net.transport' *removed* the 'unix' value (not sure if intentional). As a
+// result, the JS `@opentelemetry/semantic-conventions` package does not export
+// a `NET_TRANSPORT_VALUE_UNIX`.
+//
+// (TODO: update instrumentation-net (per PR-3426) to use 'network.transport',
+// then the `NETWORK_TRANSPORT_VALUE_UNIX` constant can be used.)
 export const IPC_TRANSPORT =
-  platform() === 'win32' ? NETTRANSPORTVALUES_PIPE : NETTRANSPORTVALUES_UNIX;
+  platform() === 'win32' ? NET_TRANSPORT_VALUE_PIPE : 'unix';
 
 function getHost(args: unknown[]) {
   return typeof args[1] === 'string' ? args[1] : 'localhost';

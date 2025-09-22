@@ -19,7 +19,6 @@
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc --no-clean mocha test/**/*.test.ts",
     "test-all-versions": "tav",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
@@ -63,7 +62,8 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.205.0"
+    "@opentelemetry/instrumentation": "^0.205.0",
+    "@opentelemetry/semantic-conventions": "^1.24.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-undici#readme",
   "sideEffects": false

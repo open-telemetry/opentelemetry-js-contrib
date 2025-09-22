@@ -19,7 +19,6 @@
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "//todo": "echo \"add test-all-versions\"",
     "test-services:start": "cd ../.. && npm run test-services:start mysql",
     "test-services:stop": "cd ../.. && npm run test-services:stop mysql",
@@ -67,7 +66,6 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.205.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/mysql": "2.15.27"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-mysql#readme"

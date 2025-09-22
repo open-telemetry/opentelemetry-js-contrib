@@ -18,7 +18,7 @@ import { setTimeout as setTimeoutP } from 'timers/promises';
 import * as nock from 'nock';
 import * as assert from 'assert';
 import { detectResources } from '@opentelemetry/resources';
-import { CLOUDPROVIDERVALUES_ALIBABA_CLOUD } from '@opentelemetry/semantic-conventions';
+import { CLOUD_PROVIDER_VALUE_ALIBABA_CLOUD } from '../../src/semconv';
 import {
   assertCloudResource,
   assertHostResource,
@@ -74,7 +74,7 @@ describe('alibabaCloudEcsDetector', () => {
       assert.ok(resource);
 
       assertCloudResource(resource, {
-        provider: CLOUDPROVIDERVALUES_ALIBABA_CLOUD,
+        provider: CLOUD_PROVIDER_VALUE_ALIBABA_CLOUD,
         accountId: 'my-owner-account-id',
         region: 'my-region-id',
         zone: 'my-zone-id',

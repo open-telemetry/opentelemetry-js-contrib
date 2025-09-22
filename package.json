@@ -21,7 +21,6 @@
     "test:browser:ci:affected": "nx affected -t test:browser",
     "test-all-versions": "npm run --if-present test-all-versions --workspaces",
     "test-all-versions:ci:affected": "npm run list:affected | tail -n +5 | xargs -I {} -t npm run --if-present test-all-versions -w {}",
-    "test-merge-coverage:ci:affected": "nx affected -t test-merge-coverage",
     "test-services:start": "docker compose -f ./test/docker-compose.yaml up -d --wait",
     "test-services:stop": "docker compose -f ./test/docker-compose.yaml down",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env npm test",
@@ -35,7 +34,7 @@
     "lint:markdown": "markdownlint-cli2 $(git ls-files '*.md')",
     "lint:markdown:fix": "markdownlint-cli2 --fix $(git ls-files '*.md')",
     "lint:readme": "nx run-many -t lint:readme",
-    "lint:semconv-deps": "./scripts/lint-semconv-deps.mjs"
+    "lint:semconv-deps": "./scripts/lint-semconv-deps.mjs -x packages/contrib-test-utils/src/resource-assertions.ts"
   },
   "keywords": [
     "opentelemetry",
@@ -57,8 +56,8 @@
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.5",
-    "glob": "^10.4.5",
-    "lerna": "8.2.3",
+    "glob": "^11.0.3",
+    "lerna": "8.2.4",
     "lerna-changelog": "2.2.0",
     "markdownlint-cli2": "0.13.0",
     "minimatch": "^9.0.3",

@@ -19,7 +19,6 @@
     "prepublishOnly": "npm run compile",
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test:debug": "cross-env RUN_REDIS_TESTS=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
@@ -59,6 +58,7 @@
     "@opentelemetry/contrib-test-utils": "^0.51.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/ioredis4": "npm:@types/ioredis@4.28.10",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
@@ -73,8 +73,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.205.0",
-    "@opentelemetry/redis-common": "^0.38.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/redis-common": "^0.38.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-ioredis#readme"
 }

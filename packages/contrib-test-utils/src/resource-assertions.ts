@@ -18,37 +18,42 @@ import { SDK_INFO } from '@opentelemetry/core';
 import * as assert from 'assert';
 import { Resource } from '@opentelemetry/resources';
 import {
-  SEMRESATTRS_CLOUD_ACCOUNT_ID,
-  SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
-  SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CLOUD_REGION,
-  SEMRESATTRS_CONTAINER_ID,
-  SEMRESATTRS_CONTAINER_IMAGE_NAME,
-  SEMRESATTRS_CONTAINER_IMAGE_TAG,
-  SEMRESATTRS_CONTAINER_NAME,
-  SEMRESATTRS_HOST_ID,
-  SEMRESATTRS_HOST_IMAGE_ID,
-  SEMRESATTRS_HOST_IMAGE_NAME,
-  SEMRESATTRS_HOST_IMAGE_VERSION,
-  SEMRESATTRS_HOST_NAME,
-  SEMRESATTRS_HOST_TYPE,
-  SEMRESATTRS_K8S_CLUSTER_NAME,
-  SEMRESATTRS_K8S_DEPLOYMENT_NAME,
-  SEMRESATTRS_K8S_NAMESPACE_NAME,
-  SEMRESATTRS_K8S_POD_NAME,
-  SEMRESATTRS_PROCESS_COMMAND,
-  SEMRESATTRS_PROCESS_COMMAND_LINE,
-  SEMRESATTRS_PROCESS_EXECUTABLE_NAME,
-  SEMRESATTRS_PROCESS_PID,
-  SEMRESATTRS_SERVICE_INSTANCE_ID,
-  SEMRESATTRS_SERVICE_NAME,
-  SEMRESATTRS_SERVICE_NAMESPACE,
-  SEMRESATTRS_SERVICE_VERSION,
-  SEMRESATTRS_TELEMETRY_SDK_LANGUAGE,
-  SEMRESATTRS_TELEMETRY_SDK_NAME,
-  SEMRESATTRS_TELEMETRY_SDK_VERSION,
+  ATTR_SERVICE_NAME,
+  ATTR_SERVICE_VERSION,
+  ATTR_TELEMETRY_SDK_LANGUAGE,
+  ATTR_TELEMETRY_SDK_NAME,
+  ATTR_TELEMETRY_SDK_VERSION,
 } from '@opentelemetry/semantic-conventions';
-import * as semconv from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_CLOUD_ACCOUNT_ID,
+  ATTR_CLOUD_AVAILABILITY_ZONE,
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_REGION,
+  ATTR_CONTAINER_ID,
+  ATTR_CONTAINER_IMAGE_NAME,
+  ATTR_CONTAINER_NAME,
+  ATTR_HOST_ID,
+  ATTR_HOST_IMAGE_ID,
+  ATTR_HOST_IMAGE_NAME,
+  ATTR_HOST_IMAGE_VERSION,
+  ATTR_HOST_NAME,
+  ATTR_HOST_TYPE,
+  ATTR_K8S_CLUSTER_NAME,
+  ATTR_K8S_DEPLOYMENT_NAME,
+  ATTR_K8S_NAMESPACE_NAME,
+  ATTR_K8S_POD_NAME,
+  ATTR_PROCESS_COMMAND,
+  ATTR_PROCESS_COMMAND_LINE,
+  ATTR_PROCESS_EXECUTABLE_NAME,
+  ATTR_PROCESS_PID,
+  ATTR_SERVICE_INSTANCE_ID,
+  ATTR_SERVICE_NAMESPACE,
+} from './semconv';
+
+// Specifically import the incubating entry-point so we can search *all*
+// `ATTR_` constants (even unstable ones) in `assertHasOneLabel` below.
+// This file is excluded from the `npm run lint:semconv-deps` rule.
+import * as semconv from '@opentelemetry/semantic-conventions/incubating';
 
 /**
  * Test utility method to validate a cloud resource
@@ -68,22 +73,22 @@ export const assertCloudResource = (
   assertHasOneLabel('cloud', resource);
   if (validations.provider)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_CLOUD_PROVIDER],
+      resource.attributes[ATTR_CLOUD_PROVIDER],
       validations.provider
     );
   if (validations.accountId)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_CLOUD_ACCOUNT_ID],
+      resource.attributes[ATTR_CLOUD_ACCOUNT_ID],
       validations.accountId
     );
   if (validations.region)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_CLOUD_REGION],
+      resource.attributes[ATTR_CLOUD_REGION],
       validations.region
     );
   if (validations.zone)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_CLOUD_AVAILABILITY_ZONE],
+      resource.attributes[ATTR_CLOUD_AVAILABILITY_ZONE],
       validations.zone
     );
 };
@@ -100,29 +105,20 @@ export const assertContainerResource = (
     name?: string;
     id?: string;
     imageName?: string;
-    imageTag?: string;
   }
 ) => {
   assertHasOneLabel('container', resource);
   if (validations.name)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_CONTAINER_NAME],
+      resource.attributes[ATTR_CONTAINER_NAME],
       validations.name
     );
   if (validations.id)
-    assert.strictEqual(
-      resource.attributes[SEMRESATTRS_CONTAINER_ID],
-      validations.id
-    );
+    assert.strictEqual(resource.attributes[ATTR_CONTAINER_ID], validations.id);
   if (validations.imageName)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_CONTAINER_IMAGE_NAME],
+      resource.attributes[ATTR_CONTAINER_IMAGE_NAME],
       validations.imageName
-    );
-  if (validations.imageTag)
-    assert.strictEqual(
-      resource.attributes[SEMRESATTRS_CONTAINER_IMAGE_TAG],
-      validations.imageTag
     );
 };
 
@@ -145,33 +141,27 @@ export const assertHostResource = (
 ) => {
   assertHasOneLabel('host', resource);
   if (validations.id)
-    assert.strictEqual(
-      resource.attributes[SEMRESATTRS_HOST_ID],
-      validations.id
-    );
+    assert.strictEqual(resource.attributes[ATTR_HOST_ID], validations.id);
   if (validations.name)
-    assert.strictEqual(
-      resource.attributes[SEMRESATTRS_HOST_NAME],
-      validations.name
-    );
+    assert.strictEqual(resource.attributes[ATTR_HOST_NAME], validations.name);
   if (validations.hostType)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_HOST_TYPE],
+      resource.attributes[ATTR_HOST_TYPE],
       validations.hostType
     );
   if (validations.imageName)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_HOST_IMAGE_NAME],
+      resource.attributes[ATTR_HOST_IMAGE_NAME],
       validations.imageName
     );
   if (validations.imageId)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_HOST_IMAGE_ID],
+      resource.attributes[ATTR_HOST_IMAGE_ID],
       validations.imageId
     );
   if (validations.imageVersion)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_HOST_IMAGE_VERSION],
+      resource.attributes[ATTR_HOST_IMAGE_VERSION],
       validations.imageVersion
     );
 };
@@ -194,22 +184,22 @@ export const assertK8sResource = (
   assertHasOneLabel('k8s', resource);
   if (validations.clusterName)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_K8S_CLUSTER_NAME],
+      resource.attributes[ATTR_K8S_CLUSTER_NAME],
       validations.clusterName
     );
   if (validations.namespaceName)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_K8S_NAMESPACE_NAME],
+      resource.attributes[ATTR_K8S_NAMESPACE_NAME],
       validations.namespaceName
     );
   if (validations.podName)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_K8S_POD_NAME],
+      resource.attributes[ATTR_K8S_POD_NAME],
       validations.podName
     );
   if (validations.deploymentName)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_K8S_DEPLOYMENT_NAME],
+      resource.attributes[ATTR_K8S_DEPLOYMENT_NAME],
       validations.deploymentName
     );
 };
@@ -229,25 +219,25 @@ export const assertTelemetrySDKResource = (
   }
 ) => {
   const defaults = {
-    name: SDK_INFO[SEMRESATTRS_TELEMETRY_SDK_NAME],
-    language: SDK_INFO[SEMRESATTRS_TELEMETRY_SDK_LANGUAGE],
-    version: SDK_INFO[SEMRESATTRS_TELEMETRY_SDK_VERSION],
+    name: SDK_INFO[ATTR_TELEMETRY_SDK_NAME],
+    language: SDK_INFO[ATTR_TELEMETRY_SDK_LANGUAGE],
+    version: SDK_INFO[ATTR_TELEMETRY_SDK_VERSION],
   };
   validations = { ...defaults, ...validations };
 
   if (validations.name)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_TELEMETRY_SDK_NAME],
+      resource.attributes[ATTR_TELEMETRY_SDK_NAME],
       validations.name
     );
   if (validations.language)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_TELEMETRY_SDK_LANGUAGE],
+      resource.attributes[ATTR_TELEMETRY_SDK_LANGUAGE],
       validations.language
     );
   if (validations.version)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_TELEMETRY_SDK_VERSION],
+      resource.attributes[ATTR_TELEMETRY_SDK_VERSION],
       validations.version
     );
 };
@@ -267,22 +257,19 @@ export const assertServiceResource = (
     version?: string;
   }
 ) => {
+  assert.strictEqual(resource.attributes[ATTR_SERVICE_NAME], validations.name);
   assert.strictEqual(
-    resource.attributes[SEMRESATTRS_SERVICE_NAME],
-    validations.name
-  );
-  assert.strictEqual(
-    resource.attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
+    resource.attributes[ATTR_SERVICE_INSTANCE_ID],
     validations.instanceId
   );
   if (validations.namespace)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_SERVICE_NAMESPACE],
+      resource.attributes[ATTR_SERVICE_NAMESPACE],
       validations.namespace
     );
   if (validations.version)
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_SERVICE_VERSION],
+      resource.attributes[ATTR_SERVICE_VERSION],
       validations.version
     );
 };
@@ -302,25 +289,22 @@ export const assertProcessResource = (
     commandLine?: string;
   }
 ) => {
-  assert.strictEqual(
-    resource.attributes[SEMRESATTRS_PROCESS_PID],
-    validations.pid
-  );
+  assert.strictEqual(resource.attributes[ATTR_PROCESS_PID], validations.pid);
   if (validations.name) {
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_PROCESS_EXECUTABLE_NAME],
+      resource.attributes[ATTR_PROCESS_EXECUTABLE_NAME],
       validations.name
     );
   }
   if (validations.command) {
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_PROCESS_COMMAND],
+      resource.attributes[ATTR_PROCESS_COMMAND],
       validations.command
     );
   }
   if (validations.commandLine) {
     assert.strictEqual(
-      resource.attributes[SEMRESATTRS_PROCESS_COMMAND_LINE],
+      resource.attributes[ATTR_PROCESS_COMMAND_LINE],
       validations.commandLine
     );
   }
@@ -340,7 +324,7 @@ export const assertEmptyResource = (resource: Resource) => {
  * `prefix`. By "known", we mean it is an attribute defined in semconv.
  */
 const assertHasOneLabel = (prefix: string, resource: Resource): void => {
-  const semconvModPrefix = `SEMRESATTRS_${prefix.toUpperCase()}_`;
+  const semconvModPrefix = `ATTR_${prefix.toUpperCase()}_`;
   const knownAttrs: Set<string> = new Set(
     Object.entries(semconv)
       .filter(

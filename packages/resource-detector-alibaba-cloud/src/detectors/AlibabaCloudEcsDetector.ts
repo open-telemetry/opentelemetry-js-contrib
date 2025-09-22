@@ -22,17 +22,17 @@ import {
   DetectedResourceAttributes,
 } from '@opentelemetry/resources';
 import {
-  CLOUDPLATFORMVALUES_ALIBABA_CLOUD_ECS,
-  CLOUDPROVIDERVALUES_ALIBABA_CLOUD,
-  SEMRESATTRS_CLOUD_ACCOUNT_ID,
-  SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
-  SEMRESATTRS_CLOUD_PLATFORM,
-  SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CLOUD_REGION,
-  SEMRESATTRS_HOST_ID,
-  SEMRESATTRS_HOST_NAME,
-  SEMRESATTRS_HOST_TYPE,
-} from '@opentelemetry/semantic-conventions';
+  CLOUD_PLATFORM_VALUE_ALIBABA_CLOUD_ECS,
+  CLOUD_PROVIDER_VALUE_ALIBABA_CLOUD,
+  ATTR_CLOUD_ACCOUNT_ID,
+  ATTR_CLOUD_AVAILABILITY_ZONE,
+  ATTR_CLOUD_PLATFORM,
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_REGION,
+  ATTR_HOST_ID,
+  ATTR_HOST_NAME,
+  ATTR_HOST_TYPE,
+} from '../semconv';
 
 import * as http from 'http';
 
@@ -66,14 +66,14 @@ class AlibabaCloudEcsDetector implements ResourceDetector {
     );
 
     const attrNames = [
-      SEMRESATTRS_CLOUD_PROVIDER,
-      SEMRESATTRS_CLOUD_PLATFORM,
-      SEMRESATTRS_CLOUD_ACCOUNT_ID,
-      SEMRESATTRS_CLOUD_REGION,
-      SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
-      SEMRESATTRS_HOST_ID,
-      SEMRESATTRS_HOST_TYPE,
-      SEMRESATTRS_HOST_NAME,
+      ATTR_CLOUD_PROVIDER,
+      ATTR_CLOUD_PLATFORM,
+      ATTR_CLOUD_ACCOUNT_ID,
+      ATTR_CLOUD_REGION,
+      ATTR_CLOUD_AVAILABILITY_ZONE,
+      ATTR_HOST_ID,
+      ATTR_HOST_TYPE,
+      ATTR_HOST_NAME,
     ];
 
     const attributes = {} as DetectedResourceAttributes;
@@ -98,14 +98,14 @@ class AlibabaCloudEcsDetector implements ResourceDetector {
       const hostname = await this._fetchHost();
 
       return {
-        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_ALIBABA_CLOUD,
-        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_ALIBABA_CLOUD_ECS,
-        [SEMRESATTRS_CLOUD_ACCOUNT_ID]: accountId,
-        [SEMRESATTRS_CLOUD_REGION]: region,
-        [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
-        [SEMRESATTRS_HOST_ID]: instanceId,
-        [SEMRESATTRS_HOST_TYPE]: instanceType,
-        [SEMRESATTRS_HOST_NAME]: hostname,
+        [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_ALIBABA_CLOUD,
+        [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_ALIBABA_CLOUD_ECS,
+        [ATTR_CLOUD_ACCOUNT_ID]: accountId,
+        [ATTR_CLOUD_REGION]: region,
+        [ATTR_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
+        [ATTR_HOST_ID]: instanceId,
+        [ATTR_HOST_TYPE]: instanceType,
+        [ATTR_HOST_NAME]: hostname,
       };
     } catch (err: any) {
       diag.debug(

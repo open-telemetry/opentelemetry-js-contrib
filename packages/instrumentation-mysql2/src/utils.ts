@@ -16,12 +16,12 @@
 
 import { Attributes } from '@opentelemetry/api';
 import {
-  SEMATTRS_DB_CONNECTION_STRING,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_DB_CONNECTION_STRING,
+  ATTR_DB_NAME,
+  ATTR_DB_USER,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from './semconv';
 import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationQueryMaskingHook } from './types';
 
@@ -61,18 +61,18 @@ export function getConnectionAttributes(config: Config): Attributes {
   const portNumber = parseInt(port, 10);
   if (!isNaN(portNumber)) {
     return {
-      [SEMATTRS_NET_PEER_NAME]: host,
-      [SEMATTRS_NET_PEER_PORT]: portNumber,
-      [SEMATTRS_DB_CONNECTION_STRING]: getJDBCString(host, port, database),
-      [SEMATTRS_DB_NAME]: database,
-      [SEMATTRS_DB_USER]: user,
+      [ATTR_NET_PEER_NAME]: host,
+      [ATTR_NET_PEER_PORT]: portNumber,
+      [ATTR_DB_CONNECTION_STRING]: getJDBCString(host, port, database),
+      [ATTR_DB_NAME]: database,
+      [ATTR_DB_USER]: user,
     };
   }
   return {
-    [SEMATTRS_NET_PEER_NAME]: host,
-    [SEMATTRS_DB_CONNECTION_STRING]: getJDBCString(host, port, database),
-    [SEMATTRS_DB_NAME]: database,
-    [SEMATTRS_DB_USER]: user,
+    [ATTR_NET_PEER_NAME]: host,
+    [ATTR_DB_CONNECTION_STRING]: getJDBCString(host, port, database),
+    [ATTR_DB_NAME]: database,
+    [ATTR_DB_USER]: user,
   };
 }
 

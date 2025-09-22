@@ -20,7 +20,6 @@
     "tdd": "npm test -- --watch-extensions ts --watch",
     "test": "SKIP_TEST_IF_NODE_NEWER_THAN=23 nyc --no-clean mocha --require '../../scripts/skip-test-if.js' 'test/**/*.ts'",
     "test-all-versions": "tav",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },

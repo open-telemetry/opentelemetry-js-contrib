@@ -22,11 +22,11 @@ import {
 } from '@opentelemetry/instrumentation';
 import type * as Memcached from 'memcached';
 import {
-  DBSYSTEMVALUES_MEMCACHED,
-  SEMATTRS_DB_OPERATION,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_MEMCACHED,
+  ATTR_DB_OPERATION,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+} from './semconv';
 import * as utils from './utils';
 import { InstrumentationConfig } from './types';
 /** @knipignore */
@@ -35,7 +35,7 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 export class MemcachedInstrumentation extends InstrumentationBase<InstrumentationConfig> {
   static readonly COMPONENT = 'memcached';
   static readonly COMMON_ATTRIBUTES = {
-    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MEMCACHED,
+    [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MEMCACHED,
   };
   static readonly DEFAULT_CONFIG: InstrumentationConfig = {
     enhancedDatabaseReporting: false,
@@ -137,8 +137,8 @@ export class MemcachedInstrumentation extends InstrumentationBase<Instrumentatio
       span.setAttributes({
         'db.memcached.key': query.key,
         'db.memcached.lifetime': query.lifetime,
-        [SEMATTRS_DB_OPERATION]: query.type,
-        [SEMATTRS_DB_STATEMENT]: instrumentation.getConfig()
+        [ATTR_DB_OPERATION]: query.type,
+        [ATTR_DB_STATEMENT]: instrumentation.getConfig()
           .enhancedDatabaseReporting
           ? query.command
           : undefined,
