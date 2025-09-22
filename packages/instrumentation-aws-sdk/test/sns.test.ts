@@ -21,13 +21,15 @@ import * as nock from 'nock';
 import { expect } from 'expect';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
-  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
-  SEMATTRS_MESSAGING_DESTINATION,
-  SEMATTRS_MESSAGING_DESTINATION_KIND,
-  SEMATTRS_MESSAGING_SYSTEM,
-  SEMATTRS_RPC_METHOD,
-} from '@opentelemetry/semantic-conventions';
-import { ATTR_AWS_SNS_TOPIC_ARN } from '@opentelemetry/semantic-conventions/incubating';
+  ATTR_MESSAGING_SYSTEM,
+  ATTR_RPC_METHOD,
+  ATTR_AWS_SNS_TOPIC_ARN,
+} from '../src/semconv';
+import {
+  ATTR_MESSAGING_DESTINATION,
+  ATTR_MESSAGING_DESTINATION_KIND,
+  MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+} from '../src/semconv-obsolete';
 import { SpanKind } from '@opentelemetry/api';
 
 describe('SNS - v3', () => {
@@ -66,18 +68,18 @@ describe('SNS - v3', () => {
       expect(publishSpans.length).toBe(1);
 
       const publishSpan = publishSpans[0];
-      expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]).toBe(
-        MESSAGINGDESTINATIONKINDVALUES_TOPIC
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_KIND]).toBe(
+        MESSAGING_DESTINATION_KIND_VALUE_TOPIC
       );
-      expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toBe(
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION]).toBe(
         topicV3Name
       );
       expect(publishSpan.attributes['messaging.destination.name']).toBe(
         topicV3ARN
       );
       expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBe(topicV3ARN);
-      expect(publishSpan.attributes[SEMATTRS_RPC_METHOD]).toBe('Publish');
-      expect(publishSpan.attributes[SEMATTRS_MESSAGING_SYSTEM]).toBe('aws.sns');
+      expect(publishSpan.attributes[ATTR_RPC_METHOD]).toBe('Publish');
+      expect(publishSpan.attributes[ATTR_MESSAGING_SYSTEM]).toBe('aws.sns');
       expect(publishSpan.kind).toBe(SpanKind.PRODUCER);
     });
 
@@ -93,7 +95,7 @@ describe('SNS - v3', () => {
       );
       expect(publishSpans.length).toBe(1);
       const publishSpan = publishSpans[0];
-      expect(publishSpan.attributes[SEMATTRS_MESSAGING_DESTINATION]).toBe(
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION]).toBe(
         PhoneNumber
       );
       expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBeUndefined();

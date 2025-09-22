@@ -37,8 +37,8 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
 import {
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
-  SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
+import { ATTR_DB_STATEMENT } from '../semconv';
 import type { MultiErrorReply } from './internal-types';
 
 const OTEL_OPEN_SPANS = Symbol(
@@ -417,7 +417,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
       const dbStatement = dbStatementSerializer(commandName, commandArgs);
       if (dbStatement != null) {
         if (this._semconvStability & SemconvStability.OLD) {
-          attributes[SEMATTRS_DB_STATEMENT] = dbStatement;
+          attributes[ATTR_DB_STATEMENT] = dbStatement;
         }
         if (this._semconvStability & SemconvStability.STABLE) {
           attributes[ATTR_DB_QUERY_TEXT] = dbStatement;

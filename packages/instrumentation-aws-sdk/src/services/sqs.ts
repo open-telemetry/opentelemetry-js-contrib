@@ -29,15 +29,13 @@ import {
   NormalizedRequest,
   NormalizedResponse,
 } from '../types';
-import {
-  ATTR_URL_FULL,
-  SEMATTRS_MESSAGING_SYSTEM,
-} from '@opentelemetry/semantic-conventions';
+import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_MESSAGE_ID,
   ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_SYSTEM,
 } from '../semconv';
 import {
   contextGetter,
@@ -57,7 +55,7 @@ export class SqsServiceExtension implements ServiceExtension {
     let spanName: string | undefined;
 
     const spanAttributes: Attributes = {
-      [SEMATTRS_MESSAGING_SYSTEM]: 'aws_sqs',
+      [ATTR_MESSAGING_SYSTEM]: 'aws_sqs',
       [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
       [ATTR_URL_FULL]: queueUrl,
     };
