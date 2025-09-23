@@ -1,0 +1,7 @@
+ioredis:
+  # Ignoring v4.19.0. Tests never ends. Caused by https://github.com/luin/ioredis/pull/1219
+  versions:
+    include: '>=2.0.0 <6'
+    exclude: '4.19.0'
+    mode: max-7
+  commands: npm run test

@@ -1,0 +1,6 @@
+amqplib:
+  versions:
+    include: ">=0.5.5"
+    mode: latest-minors
+  commands:
+    - npm test

@@ -1,0 +1,62 @@
+{
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "groupName": "all patch versions",
+      "groupSlug": "all-patch",
+      "matchUpdateTypes": ["patch"],
+      "schedule": ["before 3am on Monday"],
+      "matchPackageNames": ["!prettier"]
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "matchPackageNames": ["@opentelemetry/api"],
+      "rangeStrategy": "widen"
+    },
+    {
+      "groupName": "OTel Core experimental",
+      "matchPackageNames": [
+        "@opentelemetry/api-events",
+        "@opentelemetry/api-logs",
+        "@opentelemetry/exporter-logs-otlp-grpc",
+        "@opentelemetry/exporter-logs-otlp-http",
+        "@opentelemetry/exporter-logs-otlp-proto",
+        "@opentelemetry/exporter-trace-otlp-grpc",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/exporter-trace-otlp-proto",
+        "@opentelemetry/browser-detector",
+        "@opentelemetry/exporter-metrics-otlp-grpc",
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/exporter-metrics-otlp-proto",
+        "@opentelemetry/exporter-prometheus",
+        "@opentelemetry/instrumentation",
+        "@opentelemetry/instrumentation-fetch",
+        "@opentelemetry/instrumentation-grpc",
+        "@opentelemetry/instrumentation-http",
+        "@opentelemetry/instrumentation-xml-http-request",
+        "@opentelemetry/sdk-node",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-grpc-exporter-base",
+        "@opentelemetry/otlp-proto-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/shim-opencensus"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": ["before 3am every weekday"]
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 3am on Monday"]
+  },
+  "ignoreDeps": ["lerna-changelog", "@types/node"],
+  "ignorePaths": ["archive/**", "examples/**"],
+  "assignees": ["@dyladan", "@legendecas", "@pichlermarc", "@trentm"],
+  "schedule": ["before 3am on Friday"],
+  "labels": ["dependencies"],
+  "semanticCommitType": "feat"
+}

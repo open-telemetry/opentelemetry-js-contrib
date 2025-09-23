@@ -1,0 +1,6 @@
+pg:
+  versions:
+    include: '>=8.0.3 <9'
+    mode: max-7
+  peerDependencies: pg-pool@^3
+  commands: npm run test

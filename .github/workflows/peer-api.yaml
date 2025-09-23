@@ -1,0 +1,25 @@
+name: Ensure API Peer Dependency
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  peer-api-check:
+    runs-on: ubuntu-latest
+    container:
+      image: node:20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install script dependencies
+        run: npm ci
+
+      - name: Check API dependency semantics
+        run: node ./scripts/peer-api-check.js

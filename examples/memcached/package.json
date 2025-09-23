@@ -1,0 +1,43 @@
+{
+  "name": "memcached-example",
+  "private": true,
+  "version": "0.23.0",
+  "description": "Example of Memcached client with OpenTelemetry",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
+    "docker:start": "docker run --rm -d --name otel-memcached -p 11211:11211 memcached:1.6.9-alpine",
+    "docker:stop": "docker rm -f otel-memcached",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js-contrib.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "instrumentation",
+    "memcached",
+    "tracing"
+  ],
+  "engines": {
+    "node": ">=8.5.0"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.0.2",
+    "@opentelemetry/instrumentation": "^0.25.0",
+    "@opentelemetry/instrumentation-memcached": "^0.23.0",
+    "@opentelemetry/resources": "^1.23.0",
+    "@opentelemetry/sdk-trace-base": "^0.25.0",
+    "@opentelemetry/sdk-trace-node": "^0.25.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
+    "memcached": "^2.2.2"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme"
+}
