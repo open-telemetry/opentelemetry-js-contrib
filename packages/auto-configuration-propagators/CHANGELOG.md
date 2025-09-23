@@ -1,4 +1,16 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
+
+## [0.4.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-configuration-propagators-v0.4.1...auto-configuration-propagators-v0.4.2) (2025-09-01)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.1.0 to ^2.1.1
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.55.0 to ^0.55.1
+    * @opentelemetry/propagator-ot-trace bumped from ^0.28.0 to ^0.28.1
 
 ## [0.4.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-configuration-propagators-v0.4.0...auto-configuration-propagators-v0.4.1) (2025-05-02)
 
@@ -74,5 +86,3 @@
 ### Features
 
 * Add package for automatic propagator configuration ([#2299](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2299)) ([4bb28c9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4bb28c99c29b52193bcd9d0f14202beac6c5dfa6))
-
-## Changelog

@@ -20,7 +20,7 @@ import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
   ATTR_AWS_STEP_FUNCTIONS_ACTIVITY_ARN,
   ATTR_AWS_STEP_FUNCTIONS_STATE_MACHINE_ARN,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../src/semconv';
 
 import { SFN } from '@aws-sdk/client-sfn';
 

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-ioredis",
-  "version": "0.51.0",
+  "version": "0.53.0",
   "description": "OpenTelemetry instrumentation for `ioredis` database redis client for Redis",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -13,15 +13,15 @@
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-ioredis",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc mocha 'test/**/*.test.ts'",
     "test:debug": "cross-env RUN_REDIS_TESTS=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
-    "test-all-versions": "tav",
     "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
     "test-services:start": "cd ../.. && npm run test-services:start redis redis-cluster",
     "test-services:stop": "cd ../.. && npm run test-services:stop redis redis-cluster",
@@ -55,9 +55,10 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.49.0",
+    "@opentelemetry/contrib-test-utils": "^0.51.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/ioredis4": "npm:@types/ioredis@4.28.10",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
@@ -71,9 +72,8 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.203.0",
-    "@opentelemetry/redis-common": "^0.38.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/instrumentation": "^0.205.0",
+    "@opentelemetry/redis-common": "^0.38.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-ioredis#readme"
 }

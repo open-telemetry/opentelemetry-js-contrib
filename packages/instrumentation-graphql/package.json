@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-graphql",
-  "version": "0.51.0",
+  "version": "0.53.0",
   "description": "OpenTelemetry instrumentation for `graphql` gql query language and runtime for GraphQL",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,15 +11,15 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-graphql",
     "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-graphql",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "test": "nyc mocha 'test/**/*.test.ts'",
-    "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
@@ -60,7 +60,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.203.0"
+    "@opentelemetry/instrumentation": "^0.205.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-graphql#readme"
 }

@@ -24,18 +24,16 @@ import { PinoInstrumentation } from '../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-pino',
-  instrumentations: [
-    new PinoInstrumentation()
-  ]
-})
+  instrumentations: [new PinoInstrumentation()],
+});
 sdk.start();
 
 import pino from 'pino';
 const logger = pino();
 
 const tracer = trace.getTracer();
-await tracer.startActiveSpan('manual', async (span) => {
-  logger.info('hi from logger')
+await tracer.startActiveSpan('manual', async span => {
+  logger.info('hi from logger');
   span.end();
 });
 

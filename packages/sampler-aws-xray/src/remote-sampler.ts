@@ -46,8 +46,8 @@ import {
   DEFAULT_TARGET_POLLING_INTERVAL_SECONDS,
   RuleCache,
 } from './rule-cache';
-
 import { SamplingRuleApplier } from './sampling-rule-applier';
+/** @knipignore */
 import { PACKAGE_NAME } from './version';
 
 // 5 minute default sampling rules polling interval

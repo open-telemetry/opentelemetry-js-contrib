@@ -1,4 +1,47 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
+
+## [0.54.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.54.0...instrumentation-redis-v0.54.1) (2025-09-11)
+
+
+### Bug Fixes
+
+* **instrumentation-redis:** properly implement getModuleDefinitions() in the merged-from-two RedisInstrumentation ([#3025](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3025)) ([976dcd2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/976dcd23e810a162ef33d4e3f89451f8e96604be))
+
+## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.53.0...instrumentation-redis-v0.54.0) (2025-09-10)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3034](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3034)) ([bee0a66](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bee0a66ef825145fb1a9b172c3468ccf0c97a820))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.50.0 to ^0.51.0
+
+## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.52.0...instrumentation-redis-v0.53.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.49.0 to ^0.50.0
+
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.51.0...instrumentation-redis-v0.52.0) (2025-09-01)
+
+
+### Features
+
+* **redis:** add support for redis v5 ([#2950](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2950)) ([8b09de9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8b09de916959cfc765b51aeab8b585b8c8e42a45))
 
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.50.0...instrumentation-redis-v0.51.0) (2025-07-09)
 
