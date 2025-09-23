@@ -1,0 +1,40 @@
+{
+  "name": "host-metrics-example",
+  "private": true,
+  "version": "0.23.0",
+  "description": "Example of using @opentelemetry/host-metrics",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
+    "start": "node node.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js-contrib.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "http",
+    "tracing",
+    "metrics"
+  ],
+  "engines": {
+    "node": ">=8"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.0.2",
+    "@opentelemetry/core": "^0.25.0",
+    "@opentelemetry/exporter-collector": "^0.25.0",
+    "@opentelemetry/exporter-prometheus": "^0.25.0",
+    "@opentelemetry/host-metrics": "^0.24.0",
+    "@opentelemetry/instrumentation": "^0.25.0",
+    "@opentelemetry/sdk-metrics-base": "^0.25.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme"
+}

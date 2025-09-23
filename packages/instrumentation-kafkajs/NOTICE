@@ -1,0 +1,8 @@
+[Based on the instrumentation written by Aspecto](https://github.com/aspecto-io/opentelemetry-ext-js/tree/master/packages/instrumentation-kafkajs).
+
+The library contains the following changes compared to the original:
+* The codebase was converted to TypeScript.
+* bufferTextMapGetter compares propagation headers in a case insensitive manner.
+* Removed `moduleVersionAttributeName` configuration option.
+* Changed the function signature of `producerHook` and `consumerHook`.
+* Removed `messaging.destination_kind` attribute.

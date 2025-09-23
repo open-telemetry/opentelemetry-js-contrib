@@ -1,0 +1,61 @@
+{
+  "name": "opentelemetry-plugin-graphql-example",
+  "private": true,
+  "version": "0.26.0",
+  "description": "Example of using @opentelemetry/plugin-graphql with OpenTelemetry",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
+    "client": "node ./client.js",
+    "client:federation": "node ./client-federation.js",
+    "docker:start": "cd ./docker && docker-compose down && docker-compose up",
+    "docker:startd": "cd ./docker && docker-compose down && docker-compose up -d",
+    "docker:stop": "cd ./docker && docker-compose down",
+    "server:apollo": "node ./server-apollo.js",
+    "server:express": "node ./server-express.js",
+    "server:federation": "node ./server-federation.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "http",
+    "tracing",
+    "graphql"
+  ],
+  "engines": {
+    "node": ">=8"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
+  },
+  "dependencies": {
+    "@apollo/gateway": "^0.19.1",
+    "@graphql-tools/wrap": "^6.0.18",
+    "@opentelemetry/api": "^1.0.3",
+    "@opentelemetry/exporter-otlp-http": "~0.26.0",
+    "@opentelemetry/instrumentation": "~0.26.0",
+    "@opentelemetry/instrumentation-express": "~0.26.0",
+    "@opentelemetry/instrumentation-graphql": "~0.26.0",
+    "@opentelemetry/instrumentation-http": "~0.26.0",
+    "@opentelemetry/resources": "~1.0.0",
+    "@opentelemetry/sdk-trace-base": "~1.0.0",
+    "@opentelemetry/sdk-trace-node": "~1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
+    "apollo-server": "^2.18.1",
+    "cross-fetch": "^3.0.5",
+    "express": "^4.17.1",
+    "express-graphql": "^0.11.0",
+    "graphql": "^15.3.0",
+    "graphql-transform-federation": "^2.1.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}
