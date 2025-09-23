@@ -1,0 +1,22 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:55678
+        cors:
+          allowed_origins:
+          - http://localhost:3000
+
+exporters:
+  zipkin:
+    endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
+
+processors:
+  batch:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [zipkin]
+      processors: [batch]

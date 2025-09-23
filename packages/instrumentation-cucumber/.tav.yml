@@ -1,0 +1,21 @@
+'@cucumber/cucumber':
+  - versions:
+      include: '^8.0.0 || ^9.0.0'
+      mode: latest-minors
+    node: '>=14'
+    commands: npm test
+  - versions:
+      include: '^10.0.0'
+      mode: latest-minors
+    node: '>=18'
+    commands: npm test
+  - versions:
+      include: '^11.0.0'
+      mode: latest-minors
+    node: '>=18'
+    commands: npm test
+  - versions:
+      include: '^12.0.0'
+      mode: latest-minors
+    node: '>=20'
+    commands: npm test

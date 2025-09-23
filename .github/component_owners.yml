@@ -1,0 +1,171 @@
+# Keep all in alphabetical order
+components:
+  packages/resource-detector-alibaba-cloud:
+    - legendecas
+  packages/resource-detector-aws:
+    - jj22ee
+  packages/resource-detector-azure:
+    - jacksonweber
+    - hectorhdzg
+  packages/resource-detector-container:
+    - abhee11
+  packages/resource-detector-gcp:
+    - aabmass
+    - psx95
+    - DylanRussell
+    - dashpole
+  packages/resource-detector-github: []
+    # Unmaintained
+  packages/resource-detector-instana:
+    - kirrg001
+  packages/sampler-aws-xray:
+    - jj22ee
+    - yiyuan-he
+  packages/auto-configuration-propagators:
+    - pichlermarc
+  packages/auto-instrumentations-node:
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
+  packages/auto-instrumentations-web:
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
+  packages/baggage-log-record-processor:
+    - maryliag
+  packages/baggage-span-processor:
+    - mikegoldsmith
+    - jamiedanielson
+  packages/host-metrics:
+    - legendecas
+  packages/id-generator-aws-xray:
+    - jj22ee
+  packages/propagation-utils:
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
+  packages/redis-common: []
+    # Unmaintained
+  packages/contrib-test-utils:
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
+  packages/winston-transport:
+    - hectorhdzg
+  packages/instrumentation-amqplib:
+    - blumamir
+  packages/instrumentation-cucumber:
+    - Ugzuzg
+  packages/instrumentation-dataloader:
+    - henrinormak
+  packages/instrumentation-fs: []
+    # Unmaintained
+  packages/instrumentation-kafkajs:
+    - seemk
+  packages/instrumentation-lru-memoizer:
+    - blumamir
+  packages/instrumentation-mongoose:
+    - blumamir
+  packages/instrumentation-socket.io:
+    - mottibec
+  packages/instrumentation-tedious: []
+    # Unmaintained
+  packages/instrumentation-typeorm:
+    - seemk
+    - weyert
+    - t2t2
+    - mhennoch
+  packages/instrumentation-aws-lambda:
+    - jj22ee
+  packages/instrumentation-aws-sdk:
+    - blumamir
+    - jj22ee
+    - trivikr
+  packages/instrumentation-bunyan:
+    - seemk
+    - trentm
+  packages/instrumentation-cassandra-driver:
+    - seemk
+  packages/instrumentation-connect: []
+    # Unmaintained
+  packages/instrumentation-dns: []
+    # Unmaintained
+  packages/instrumentation-express:
+    - JamieDanielson
+    - pkanal
+    - raphael-theriault-swi
+  packages/instrumentation-fastify: []
+    # Unmaintained
+  packages/instrumentation-generic-pool: []
+    # Unmaintained
+  packages/instrumentation-graphql:
+    - obecny
+  packages/instrumentation-hapi: []
+    # Unmaintained
+  packages/instrumentation-ioredis:
+    - blumamir
+    - naseemkullah
+  packages/instrumentation-knex: []
+    # Unmaintained
+  packages/instrumentation-koa: []
+    # Unmaintained
+  packages/instrumentation-memcached: []
+    # Unmaintained
+  packages/instrumentation-mongodb:
+    - onurtemizkan
+  packages/instrumentation-mysql: []
+    # Unmaintained
+  packages/instrumentation-mysql2:
+    - raphael-theriault-swi
+  packages/instrumentation-nestjs-core: []
+    # Unmaintained
+  packages/instrumentation-net:
+    - seemk
+  packages/instrumentation-oracledb:
+    - sudarshan12s
+    - sharadraju
+  packages/instrumentation-runtime-node:
+    - d4nyll
+  packages/instrumentation-openai:
+    - trentm
+    - seemk
+  packages/instrumentation-pg:
+    - maryliag
+  packages/instrumentation-pino:
+    - seemk
+  packages/instrumentation-redis:
+    - blumamir
+  packages/instrumentation-restify: []
+    # Unmaintained
+  packages/instrumentation-router: []
+    # Unmaintained
+  packages/instrumentation-undici:
+    - david-luna
+    - trentm
+  packages/instrumentation-winston:
+    - seemk
+  packages/instrumentation-document-load:
+    - pkanal
+    - martinkuba
+  packages/instrumentation-long-task:
+    - mhennoch
+    - t2t2
+  packages/instrumentation-user-interaction:
+    - obecny
+  packages/plugin-react-load:
+    - martinkuba
+  packages/propagator-instana:
+    - kirrg001
+  packages/propagator-ot-trace: []
+    # Unmaintained
+  packages/propagator-aws-xray:
+    - jj22ee
+  packages/propagator-aws-xray-lambda: [ ]
+  # Unmaintained
+
+ignored-authors:
+  - renovate-bot

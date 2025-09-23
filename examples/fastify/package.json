@@ -1,0 +1,61 @@
+{
+  "name": "example-fastify",
+  "private": true,
+  "version": "0.26.0",
+  "description": "Example of Fastify integration with OpenTelemetry",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
+    "client": "cross-env OTEL_SERVICE_NAME=example-fastify-client node --require ./opentelemetry.js ./client.js",
+    "docker:start": "cd ./docker && docker compose down && docker compose up",
+    "docker:stop": "cd ./docker && docker compose down",
+    "server": "cross-env OTEL_SERVICE_NAME=example-fastify-server node --require ./opentelemetry.js ./server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "express",
+    "tracing"
+  ],
+  "engines": {
+    "node": ">=8"
+  },
+  "files": [
+    "build/src/**/*.js",
+    "build/src/**/*.map",
+    "build/src/**/*.d.ts",
+    "doc",
+    "LICENSE",
+    "README.md"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "1.7.0",
+    "@opentelemetry/sdk-node": "^0.46.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.46.0",
+    "@opentelemetry/exporter-metrics-otlp-proto": "^0.46.0",
+    "@opentelemetry/instrumentation": "^0.46.0",
+    "@opentelemetry/instrumentation-http": "^0.46.0",
+    "@opentelemetry/instrumentation-fastify": "^0.32.6",
+    "@opentelemetry/sdk-trace-node": "~1.19.0",
+    "@opentelemetry/resources": "~1.19.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
+    "@opentelemetry/sdk-trace-base": "~1.19.0",
+    "cross-env": "^7.0.3",
+    "axios": "^1.6.4",
+    "fastify": "^4.25.2",
+    "fastify-cors": "^6.1.0",
+    "@fastify/express": "^2.3.0",
+    "middie": "^7.1.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
+  "devDependencies": {}
+}

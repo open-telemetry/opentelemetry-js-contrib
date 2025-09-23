@@ -1,0 +1,24 @@
+codecov:
+  notify:
+    after_n_builds: 1
+  require_ci_to_pass: no
+comment:
+  layout: "header, changes, diff, flags, files"
+  behavior: default
+coverage:
+  status:
+    patch:
+      default:
+        target: 80%
+    project:
+      default:
+        target: auto
+        threshold: 1%
+# Codecov action does not read this file to do the split of coverage
+# by flag. So there is no reason to have explicit flag definition.
+# We use automatinc flag management.
+# ref: https://about.codecov.io/blog/introducing-improved-flag-management-with-automatic-flags/
+# note: Uploads are made per package(flag) in ./scripts/codecov-upload-flags.mjs
+flag_management:
+  default_rules:
+    carryforward: true
