@@ -55,7 +55,7 @@
   },
   "ignoreDeps": ["lerna-changelog", "@types/node"],
   "ignorePaths": ["archive/**", "examples/**"],
-  "assignees": ["@blumamir", "@dyladan", "@legendecas", "@pichlermarc"],
+  "assignees": ["@dyladan", "@legendecas", "@pichlermarc", "@trentm"],
   "schedule": ["before 3am on Friday"],
   "labels": ["dependencies"],
   "semanticCommitType": "feat"
