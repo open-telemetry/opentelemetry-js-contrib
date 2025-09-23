@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.57.0...instrumentation-pg-v0.58.0) (2025-09-10)

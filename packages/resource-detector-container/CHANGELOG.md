@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.7.5](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.7.4...resource-detector-container-v0.7.5) (2025-09-10)

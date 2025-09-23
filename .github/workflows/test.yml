@@ -277,5 +277,8 @@ jobs:
           name: tests-coverage-cache-${{ github.run_number }}-24
           path: .
       - name: Report Coverage with Flags
-        run: node ./scripts/codecov-upload-flags.mjs ${{ github.event.pull_request.head.sha }} ${{ github.event.pull_request.head.label }}
+        run: node ./scripts/codecov-upload-flags.mjs
+        env:
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BRANCH_NAME: ${{ github.event.pull_request.head.label }}
 

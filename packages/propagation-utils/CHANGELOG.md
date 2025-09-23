@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.31.5](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.31.4...propagation-utils-v0.31.5) (2025-09-10)
