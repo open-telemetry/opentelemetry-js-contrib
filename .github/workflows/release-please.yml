@@ -50,6 +50,7 @@ jobs:
           ref: release-please--branches--main
           # use a token so that workflows on the PR run when we push later
           token: ${{ steps.otelbot-token.outputs.token }}
+          fetch-depth: 0
 
       # previous commiter does not have CLA signed, and the commit is missing updates to package-lock.json,
       # so we re-write that commit here with the proper changes
