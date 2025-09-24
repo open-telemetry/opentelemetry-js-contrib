@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.53.0...instrumentation-koa-v0.54.0) (2025-09-24)
+
+
+### Features
+
+* **instrumentation-koa:** Add support for koa 3 ([#2957](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2957)) ([8d97f81](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8d97f8140722023e696cc2de3fb0988992dcd9cb))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.51.0 to ^0.52.0
+
 ## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.52.0...instrumentation-koa-v0.53.0) (2025-09-10)
 
 

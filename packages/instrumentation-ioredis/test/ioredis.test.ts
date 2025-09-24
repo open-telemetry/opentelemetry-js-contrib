@@ -166,7 +166,11 @@ describe('ioredis', () => {
       };
 
       context.with(trace.setSpan(context.active(), span), () => {
-        client = new ioredis(REDIS_URL);
+        client = new ioredis(REDIS_URL, {
+          // client info introduced in ioredis@5.8.0 - by disabling it we can ensure that assertions can remain
+          // consistent with ioredis@<5.8.0.
+          disableClientInfo: true,
+        });
         client.on('ready', readyHandler);
         client.on('error', errorHandler);
       });

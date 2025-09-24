@@ -11,7 +11,7 @@ jobs:
   # creates the release PR, and publishes releases
   release-please:
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
+      releases_created: ${{ steps.release.outputs.releases_created }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -50,6 +50,7 @@ jobs:
           ref: release-please--branches--main
           # use a token so that workflows on the PR run when we push later
           token: ${{ steps.otelbot-token.outputs.token }}
+          fetch-depth: 0
 
       # previous commiter does not have CLA signed, and the commit is missing updates to package-lock.json,
       # so we re-write that commit here with the proper changes
@@ -67,7 +68,7 @@ jobs:
   install-and-compile:
     needs: release-please
     # only if a release has been created
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.releases_created }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -92,7 +93,7 @@ jobs:
       - release-please
       - install-and-compile
     # only if a release has been created
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.releases_created }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
