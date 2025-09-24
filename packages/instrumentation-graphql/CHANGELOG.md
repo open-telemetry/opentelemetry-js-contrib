@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.53.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.53.0...instrumentation-graphql-v0.53.1) (2025-09-24)
+
+
+### Bug Fixes
+
+* Enable union type support in @opentelemetry/instrumentation-graphql ([#1506](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1506)) ([#2923](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2923)) ([692cf0a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/692cf0ad9abdb3f7aba070ff45071ecaa26e490e))
+
 ## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.52.0...instrumentation-graphql-v0.53.0) (2025-09-10)
 
 
