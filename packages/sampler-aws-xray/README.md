@@ -1,5 +1,8 @@
 # AWS X-Ray Remote Sampler
 
+[![NPM Published Version][npm-img]][npm-url]
+[![Apache License][license-image]][license-image]
+
 This module provides the remote/centralized sampler for AWS X-Ray.
 
 ## Status
@@ -65,3 +68,8 @@ This package does not currently generate any attributes from semantic convention
 ## License
 
 Apache 2.0 - See [LICENSE](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE) for more information.
+
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
+[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/sampler-aws-xray
+[npm-img]: https://img.shields.io/npm/v/%40opentelemetry%2Fsampler-aws-xray.svg

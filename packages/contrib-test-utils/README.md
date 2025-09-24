@@ -1,5 +1,8 @@
 # Test Utils for OpenTelemetry contrib packages
 
+[![NPM Published Version][npm-img]][npm-url]
+[![Apache License][license-image]][license-url]
+
 This is a internal utils package used across the contrib packages.
 No guarantees are given to uses outside of [open-telemetry/opentelemetry-js-contrib](https://github.com/open-telemetry/opentelemetry-js-contrib/) repository.
 
@@ -81,3 +84,6 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
+[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/contrib-test-utils
+[npm-img]: https://img.shields.io/npm/v/%40opentelemetry%2Fcontrib-test-utils.svg
