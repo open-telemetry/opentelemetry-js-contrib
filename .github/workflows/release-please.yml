@@ -11,7 +11,7 @@ jobs:
   # creates the release PR, and publishes releases
   release-please:
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
+      releases_created: ${{ steps.release.outputs.releases_created }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -67,7 +67,7 @@ jobs:
   install-and-compile:
     needs: release-please
     # only if a release has been created
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.releases_created }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -92,7 +92,7 @@ jobs:
       - release-please
       - install-and-compile
     # only if a release has been created
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.releases_created }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
