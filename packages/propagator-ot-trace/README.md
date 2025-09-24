@@ -55,6 +55,6 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/propagator-ot-trace
-[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fpropagator-ot-trace.svg
+[npm-img]: https://img.shields.io/npm/v/%40opentelemetry%2Fpropagator-ot-trace.svg
 [rfc7230-url]: https://tools.ietf.org/html/rfc7230#section-3.2
 [fields-spec-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/context/api-propagators.md#fields
