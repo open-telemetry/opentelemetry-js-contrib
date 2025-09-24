@@ -69,7 +69,6 @@
     "rimraf": "5.0.10",
     "safe-stable-stringify": "^2.4.1",
     "sinon": "15.2.0",
-    "test-all-versions": "6.1.0",
     "typescript": "5.0.4"
   },
   "dependencies": {
