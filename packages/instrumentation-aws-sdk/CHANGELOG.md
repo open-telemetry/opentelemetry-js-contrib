@@ -1,4 +1,38 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
+
+## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.60.0...instrumentation-aws-sdk-v0.61.0) (2025-09-24)
+
+
+### Features
+
+* **instrumentation-aws-sdk:** support migration to stable HTTP semconv ([#3077](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3077)) ([68989f3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/68989f36e0c6ee32eec95658a3298d8b755e224a))
+
+
+### Bug Fixes
+
+* **instrumentation-aws-sdk:** use `skipLibCheck` option to avoid compilation error ([#3041](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3041)) ([f6e8e1c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f6e8e1caaed84be0e41da2e4a976dfceb2f8d184))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.51.0 to ^0.52.0
+
+## [0.60.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.59.0...instrumentation-aws-sdk-v0.60.0) (2025-09-10)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3034](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3034)) ([bee0a66](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bee0a66ef825145fb1a9b172c3468ccf0c97a820))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.50.0 to ^0.51.0
 
 ## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.58.0...instrumentation-aws-sdk-v0.59.0) (2025-09-08)
 

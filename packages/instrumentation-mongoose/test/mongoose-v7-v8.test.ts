@@ -15,7 +15,7 @@
  */
 import 'mocha';
 import { expect } from 'expect';
-import { SEMATTRS_DB_OPERATION } from '@opentelemetry/semantic-conventions';
+import { ATTR_DB_OPERATION } from '../src/semconv';
 import { MongooseInstrumentation } from '../src';
 import {
   getTestSpans,
@@ -34,7 +34,20 @@ import { DB_NAME, MONGO_URI } from './config';
 
 // Please run `npm run test-services:start` before
 describe('mongoose instrumentation [v7/v8]', () => {
-  before(async () => {
+  // For these tests, MongoDB must be running. Add RUN_MONGOOSE_TESTS to run
+  // these tests.
+  const RUN_MONGOOSE_TESTS = process.env.RUN_MONGOOSE_TESTS;
+  let shouldTest = true;
+
+  before(async function () {
+    // Check if tests should run
+    if (!RUN_MONGOOSE_TESTS) {
+      console.log('Skipping mongoose tests. Set RUN_MONGOOSE_TESTS env to run');
+      shouldTest = false;
+      return;
+    }
+
+    // Try to connect to MongoDB
     try {
       await mongoose.connect(MONGO_URI, {
         useNewUrlParser: true,
@@ -48,18 +61,37 @@ describe('mongoose instrumentation [v7/v8]', () => {
       // the following check tries both signatures, so test-all-versions
       // can run against both versions.
       if (err?.name === 'MongoParseError') {
-        await mongoose.connect(MONGO_URI, {
-          dbName: DB_NAME,
-        }); // TODO: amir - document older mongoose support
+        try {
+          await mongoose.connect(MONGO_URI, {
+            dbName: DB_NAME,
+          }); // TODO: amir - document older mongoose support
+        } catch (innerErr: any) {
+          console.log(
+            'Skipping mongoose tests. Connection failed:',
+            innerErr.message
+          );
+          shouldTest = false;
+        }
+      } else {
+        console.log('Skipping mongoose tests. Connection failed:', err.message);
+        shouldTest = false;
       }
     }
   });
 
   after(async () => {
-    await mongoose.connection.close();
+    if (shouldTest) {
+      await mongoose.connection.close();
+    }
   });
 
-  beforeEach(async () => {
+  beforeEach(async function () {
+    // Skipping all tests in beforeEach() is a workaround. Mocha does not work
+    // properly when skipping tests in before() on nested describe() calls.
+    // https://github.com/mochajs/mocha/issues/2819
+    if (!shouldTest) {
+      this.skip();
+    }
     instrumentation.disable();
     instrumentation.setConfig({
       dbStatementSerializer: (_operation: string, payload) => {
@@ -74,7 +106,9 @@ describe('mongoose instrumentation [v7/v8]', () => {
 
   afterEach(async () => {
     instrumentation.disable();
-    await User.collection.drop().catch();
+    if (shouldTest) {
+      await User.collection.drop().catch();
+    }
   });
 
   it('instrumenting findOneAndUpdate operation', async () => {
@@ -86,7 +120,7 @@ describe('mongoose instrumentation [v7/v8]', () => {
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
     assertSpan(spans[0] as ReadableSpan);
-    expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('findOneAndUpdate');
+    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('findOneAndUpdate');
     const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });

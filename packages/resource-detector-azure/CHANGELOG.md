@@ -1,4 +1,43 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
+
+## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.12.0...resource-detector-azure-v0.13.0) (2025-09-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **resource-detector-azure:** This updates the Semantic Conventions of the emitted resource attributes from v1.19.0 to v1.37.0 which involves these breaking changes:
+    * App Service resource detector: `deployment.environment` -> `deployment.environment.name`
+      This changed in semconv v1.27.0 as part of https://github.com/open-telemetry/semantic-conventions/pull/1075
+    * Semconv v1.35.0 naming convention changes (https://github.com/open-telemetry/semantic-conventions/blob/main/CHANGELOG.md#v1350) resulted in a change in the name of some `cloud.platform` values:
+        * `azure_app_service` -> `azure.app_service`
+        * `azure_vm` -> `azure.vm`
+        * `azure_functions` -> `azure.functions`
+
+### Features
+
+* **resource-detector-azure:** update semconv usage to ATTR_ exports, update to semconv v1.37.0 ([#3063](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3063)) ([8e1ca48](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8e1ca48343b07f8fde3527bba727d721208491b1))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.51.0 to ^0.52.0
+
+## [0.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.11.0...resource-detector-azure-v0.12.0) (2025-09-10)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3034](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3034)) ([bee0a66](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bee0a66ef825145fb1a9b172c3468ccf0c97a820))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.50.0 to ^0.51.0
 
 ## [0.11.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.10.0...resource-detector-azure-v0.11.0) (2025-09-08)
 

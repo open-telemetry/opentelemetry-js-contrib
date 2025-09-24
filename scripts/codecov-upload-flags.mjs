@@ -6,8 +6,8 @@ import path from 'path';
 // Usage
 // node ./scripts/codecov-upload-flags.mjs
 
-const commitSha = process.argv[2];
-const branchName = process.argv[3];
+const commitSha = process.env.COMMIT_SHA;
+const branchName = process.env.PR_BRANCH_NAME;
 
 const readPkg = (dir) => JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
 const pkgInfo = readPkg('.');
@@ -78,7 +78,9 @@ chmodSync(codecovPath, 0o555);
 
 // Compute the commands to run
 for (const pkg of pkgsWithFlag) {
-  if (existsSync(pkg.report)) {
+  if (existsSync(`${pkg.path}.nyc_output`)) {
+    console.log(`\n\nCODECOV: Merging coverage reports of "${pkg.name}" into ${pkg.path}coverage/coverage-final.json.`);
+    execSync(`cd ${pkg.path} && npx nyc merge .nyc_output coverage/coverage-final.json`, execOpts);
     console.log(`\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${pkg.command}`);
     execSync(pkg.command, execOpts);
   }

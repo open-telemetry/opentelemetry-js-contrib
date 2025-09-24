@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.28.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-ot-trace-v0.28.0...propagator-ot-trace-v0.28.1) (2025-09-01)

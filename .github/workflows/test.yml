@@ -22,7 +22,7 @@ jobs:
         with:
           fetch-depth: 0
       # Use the same Node.js version used for `release-please` workflow.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 18
       - name: Install
@@ -151,6 +151,7 @@ jobs:
       RUN_CASSANDRA_TESTS: 1
       RUN_MEMCACHED_TESTS: 1
       RUN_MONGODB_TESTS: 1
+      RUN_MONGOOSE_TESTS: 1
       RUN_MYSQL_TESTS: 1
       RUN_MSSQL_TESTS: 1
       RUN_ORACLEDB_TESTS: 1
@@ -190,7 +191,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
       - name: Install
@@ -239,7 +240,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 18
       - name: Install
@@ -275,18 +276,9 @@ jobs:
         with:
           name: tests-coverage-cache-${{ github.run_number }}-24
           path: .
-      # Note: see comment in the compile job
-      - name: Set base and head commits
-        run: |
-          if [ "${{github.event_name}}" == "push" ]; then
-            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
-            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
-          else
-            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
-            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
-          fi
-      - name: Merge coverage (Delta)
-        run: npm run test-merge-coverage:ci:affected
       - name: Report Coverage with Flags
-        run: node ./scripts/codecov-upload-flags.mjs ${{ github.event.pull_request.head.sha }} ${{ github.event.pull_request.head.label }}
+        run: node ./scripts/codecov-upload-flags.mjs
+        env:
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BRANCH_NAME: ${{ github.event.pull_request.head.label }}
 

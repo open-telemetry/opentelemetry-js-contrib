@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cucumber",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "OpenTelemetry instrumentation for `@cucumber/cucumber` automated tests runner",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -12,7 +12,6 @@
   "scripts": {
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext=ts,js,mjs",
@@ -67,7 +66,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.204.0",
+    "@opentelemetry/instrumentation": "^0.205.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-cucumber#readme"

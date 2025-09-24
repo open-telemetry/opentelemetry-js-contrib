@@ -2,7 +2,12 @@
     "extends": "../../tsconfig.base",
     "compilerOptions": {
       "rootDir": ".",
-      "outDir": "build"
+      "outDir": "build",
+      // @smithy/core upgraded to TS@5.8.3 in https://github.com/smithy-lang/smithy-typescript/pull/1579
+      // resulting in this issue https://github.com/microsoft/TypeScript/issues/60638
+      // which is a breaking change for us. We should keep this option until we update to
+      // TypeScript 5.7+
+      "skipLibCheck": true
     },
     "include": [
       "src/**/*.ts",

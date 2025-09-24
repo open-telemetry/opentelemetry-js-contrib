@@ -21,6 +21,212 @@
  */
 
 /**
+ * The JSON-serialized value of each item in the `AttributeDefinitions` request field.
+ *
+ * @example ["{ "AttributeName": "string", "AttributeType": "string" }"]
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_ATTRIBUTE_DEFINITIONS =
+  'aws.dynamodb.attribute_definitions' as const;
+
+/**
+ * The value of the `ConsistentRead` request parameter.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_CONSISTENT_READ =
+  'aws.dynamodb.consistent_read' as const;
+
+/**
+ * The JSON-serialized value of each item in the `ConsumedCapacity` response field.
+ *
+ * @example ["{ "CapacityUnits": number, "GlobalSecondaryIndexes": { "string" : { "CapacityUnits": number, "ReadCapacityUnits": number, "WriteCapacityUnits": number } }, "LocalSecondaryIndexes": { "string" : { "CapacityUnits": number, "ReadCapacityUnits": number, "WriteCapacityUnits": number } }, "ReadCapacityUnits": number, "Table": { "CapacityUnits": number, "ReadCapacityUnits": number, "WriteCapacityUnits": number }, "TableName": "string", "WriteCapacityUnits": number }"]
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_CONSUMED_CAPACITY =
+  'aws.dynamodb.consumed_capacity' as const;
+
+/**
+ * The value of the `Count` response parameter.
+ *
+ * @example 10
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_COUNT = 'aws.dynamodb.count' as const;
+
+/**
+ * The value of the `ExclusiveStartTableName` request parameter.
+ *
+ * @example Users
+ * @example CatsTable
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_EXCLUSIVE_START_TABLE =
+  'aws.dynamodb.exclusive_start_table' as const;
+
+/**
+ * The JSON-serialized value of each item of the `GlobalSecondaryIndexes` request field
+ *
+ * @example ["{ "IndexName": "string", "KeySchema": [ { "AttributeName": "string", "KeyType": "string" } ], "Projection": { "NonKeyAttributes": [ "string" ], "ProjectionType": "string" }, "ProvisionedThroughput": { "ReadCapacityUnits": number, "WriteCapacityUnits": number } }"]
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEXES =
+  'aws.dynamodb.global_secondary_indexes' as const;
+
+/**
+ * The JSON-serialized value of each item in the `GlobalSecondaryIndexUpdates` request field.
+ *
+ * @example ["{ "Create": { "IndexName": "string", "KeySchema": [ { "AttributeName": "string", "KeyType": "string" } ], "Projection": { "NonKeyAttributes": [ "string" ], "ProjectionType": "string" }, "ProvisionedThroughput": { "ReadCapacityUnits": number, "WriteCapacityUnits": number } }"]
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES =
+  'aws.dynamodb.global_secondary_index_updates' as const;
+
+/**
+ * The value of the `IndexName` request parameter.
+ *
+ * @example name_to_group
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_INDEX_NAME = 'aws.dynamodb.index_name' as const;
+
+/**
+ * The JSON-serialized value of the `ItemCollectionMetrics` response field.
+ *
+ * @example { "string" : [ { "ItemCollectionKey": { "string" : { "B": blob, "BOOL": boolean, "BS": [ blob ], "L": [ "AttributeValue" ], "M": { "string" : "AttributeValue" }, "N": "string", "NS": [ "string" ], "NULL": boolean, "S": "string", "SS": [ "string" ] } }, "SizeEstimateRangeGB": [ number ] } ] }
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_ITEM_COLLECTION_METRICS =
+  'aws.dynamodb.item_collection_metrics' as const;
+
+/**
+ * The value of the `Limit` request parameter.
+ *
+ * @example 10
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_LIMIT = 'aws.dynamodb.limit' as const;
+
+/**
+ * The JSON-serialized value of each item of the `LocalSecondaryIndexes` request field.
+ *
+ * @example ["{ "IndexArn": "string", "IndexName": "string", "IndexSizeBytes": number, "ItemCount": number, "KeySchema": [ { "AttributeName": "string", "KeyType": "string" } ], "Projection": { "NonKeyAttributes": [ "string" ], "ProjectionType": "string" } }"]
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_LOCAL_SECONDARY_INDEXES =
+  'aws.dynamodb.local_secondary_indexes' as const;
+
+/**
+ * The value of the `ProjectionExpression` request parameter.
+ *
+ * @example Title
+ * @example Title, Price, Color
+ * @example Title, Description, RelatedItems, ProductReviews
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_PROJECTION = 'aws.dynamodb.projection' as const;
+
+/**
+ * The value of the `ProvisionedThroughput.ReadCapacityUnits` request parameter.
+ *
+ * @example 1.0
+ * @example 2.0
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_PROVISIONED_READ_CAPACITY =
+  'aws.dynamodb.provisioned_read_capacity' as const;
+
+/**
+ * The value of the `ProvisionedThroughput.WriteCapacityUnits` request parameter.
+ *
+ * @example 1.0
+ * @example 2.0
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY =
+  'aws.dynamodb.provisioned_write_capacity' as const;
+
+/**
+ * The value of the `ScannedCount` response parameter.
+ *
+ * @example 50
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_SCANNED_COUNT =
+  'aws.dynamodb.scanned_count' as const;
+
+/**
+ * The value of the `ScanIndexForward` request parameter.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_SCAN_FORWARD =
+  'aws.dynamodb.scan_forward' as const;
+
+/**
+ * The value of the `Segment` request parameter.
+ *
+ * @example 10
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_SEGMENT = 'aws.dynamodb.segment' as const;
+
+/**
+ * The value of the `Select` request parameter.
+ *
+ * @example ALL_ATTRIBUTES
+ * @example COUNT
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_SELECT = 'aws.dynamodb.select' as const;
+
+/**
+ * The number of items in the `TableNames` response parameter.
+ *
+ * @example 20
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_TABLE_COUNT =
+  'aws.dynamodb.table_count' as const;
+
+/**
+ * The keys in the `RequestItems` object field.
+ *
+ * @example ["Users", "Cats"]
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_TABLE_NAMES =
+  'aws.dynamodb.table_names' as const;
+
+/**
+ * The value of the `TotalSegments` request parameter.
+ *
+ * @example 100
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_DYNAMODB_TOTAL_SEGMENTS =
+  'aws.dynamodb.total_segments' as const;
+
+/**
  * The ARN of the Secret stored in the Secrets Mangger
  *
  * @example arn:aws:secretsmanager:us-east-1:123456789012:secret:SecretName-6RandomCharacters
@@ -58,6 +264,83 @@ export const ATTR_AWS_STEP_FUNCTIONS_ACTIVITY_ARN =
  */
 export const ATTR_AWS_STEP_FUNCTIONS_STATE_MACHINE_ARN =
   'aws.step_functions.state_machine.arn' as const;
+
+/**
+ * Deprecated, use `db.namespace` instead.
+ *
+ * @example customers
+ * @example main
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `db.namespace`.
+ */
+export const ATTR_DB_NAME = 'db.name' as const;
+
+/**
+ * Deprecated, use `db.operation.name` instead.
+ *
+ * @example findAndModify
+ * @example HMSET
+ * @example SELECT
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `db.operation.name`.
+ */
+export const ATTR_DB_OPERATION = 'db.operation' as const;
+
+/**
+ * The database statement being executed.
+ *
+ * @example SELECT * FROM wuser_table
+ * @example SET mykey "WuValue"
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `db.query.text`.
+ */
+export const ATTR_DB_STATEMENT = 'db.statement' as const;
+
+/**
+ * Deprecated, use `db.system.name` instead.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `db.system.name`.
+ */
+export const ATTR_DB_SYSTEM = 'db.system' as const;
+
+/**
+ * The name of the invoked function.
+ *
+ * @example "my-function"
+ *
+ * @note **SHOULD** be equal to the `faas.name` resource attribute of the invoked function.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_FAAS_INVOKED_NAME = 'faas.invoked_name' as const;
+
+/**
+ * The cloud provider of the invoked function.
+ *
+ * @note **SHOULD** be equal to the `cloud.provider` resource attribute of the invoked function.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_FAAS_INVOKED_PROVIDER = 'faas.invoked_provider' as const;
+
+/**
+ * The cloud region of the invoked function.
+ *
+ * @example "eu-central-1"
+ *
+ * @note **SHOULD** be equal to the `cloud.region` resource attribute of the invoked function.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_FAAS_INVOKED_REGION = 'faas.invoked_region' as const;
 
 /**
  * The name of the operation being performed.
@@ -128,23 +411,11 @@ export const ATTR_GEN_AI_RESPONSE_FINISH_REASONS =
   'gen_ai.response.finish_reasons' as const;
 
 /**
- * The Generative AI product as identified by the client or server instrumentation.
- *
- * @example "openai"
- *
- * @note The `gen_ai.system` describes a family of GenAI models with specific model identified
- * by `gen_ai.request.model` and `gen_ai.response.model` attributes.
- *
- * The actual GenAI product may differ from the one identified by the client.
- * Multiple systems, including Azure OpenAI and Gemini, are accessible by OpenAI client
- * libraries. In such cases, the `gen_ai.system` is set to `openai` based on the
- * instrumentation's best knowledge, instead of the actual system. The `server.address`
- * attribute may help identify the actual system in use for `openai`.
- *
- * For custom model, a custom friendly name **SHOULD** be used.
- * If none of these options apply, the `gen_ai.system` **SHOULD** be set to `_OTHER`.
+ * Deprecated, use `gen_ai.provider.name` instead.
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `gen_ai.provider.name`.
  */
 export const ATTR_GEN_AI_SYSTEM = 'gen_ai.system' as const;
 
@@ -177,6 +448,17 @@ export const ATTR_GEN_AI_USAGE_INPUT_TOKENS =
  */
 export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS =
   'gen_ai.usage.output_tokens' as const;
+
+/**
+ * Deprecated, use `http.response.status_code` instead.
+ *
+ * @example 200
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `http.response.status_code`.
+ */
+export const ATTR_HTTP_STATUS_CODE = 'http.status_code' as const;
 
 /**
  * The number of messages sent, received, or processed in the scope of the batching operation.
@@ -216,6 +498,19 @@ export const ATTR_MESSAGING_DESTINATION_NAME =
 export const ATTR_MESSAGING_MESSAGE_ID = 'messaging.message.id' as const;
 
 /**
+ * Deprecated, use `messaging.operation.type` instead.
+ *
+ * @example publish
+ * @example create
+ * @example process
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `messaging.operation.type`.
+ */
+export const ATTR_MESSAGING_OPERATION = 'messaging.operation' as const;
+
+/**
  * A string identifying the type of the messaging operation.
  *
  * @note If a custom value is used, it **MUST** be of low cardinality.
@@ -223,6 +518,53 @@ export const ATTR_MESSAGING_MESSAGE_ID = 'messaging.message.id' as const;
  */
 export const ATTR_MESSAGING_OPERATION_TYPE =
   'messaging.operation.type' as const;
+
+/**
+ * The messaging system as identified by the client instrumentation.
+ *
+ * @note The actual messaging system may differ from the one known by the client. For example, when using Kafka client libraries to communicate with Azure Event Hubs, the `messaging.system` is set to `kafka` based on the instrumentation's best knowledge.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_SYSTEM = 'messaging.system' as const;
+
+/**
+ * The name of the (logical) method being called, must be equal to the $method part in the span name.
+ *
+ * @example "exampleMethod"
+ *
+ * @note This is the logical name of the method from the RPC interface perspective, which can be different from the name of any implementing method/function. The `code.function.name` attribute may be used to store the latter (e.g., method actually executing the call on the server side, RPC client stub method on the client side).
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_RPC_METHOD = 'rpc.method' as const;
+
+/**
+ * The full (logical) name of the service being called, including its package name, if applicable.
+ *
+ * @example "myservice.EchoService"
+ *
+ * @note This is the logical name of the service from the RPC interface perspective, which can be different from the name of any implementing class. The `code.namespace` attribute may be used to store the latter (despite the attribute name, it may include a class name; e.g., class with method actually executing the call on the server side, RPC client stub class on the client side).
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_RPC_SERVICE = 'rpc.service' as const;
+
+/**
+ * A string identifying the remoting system. See below for a list of well-known identifiers.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_RPC_SYSTEM = 'rpc.system' as const;
+
+/**
+ * Enum value "dynamodb" for attribute {@link ATTR_DB_SYSTEM}.
+ *
+ * Amazon DynamoDB
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const DB_SYSTEM_VALUE_DYNAMODB = 'dynamodb' as const;
 
 /**
  * Enum value "chat" for attribute {@link ATTR_GEN_AI_OPERATION_NAME}.

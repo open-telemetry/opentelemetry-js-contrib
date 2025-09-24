@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-restify",
-  "version": "0.50.0",
+  "version": "0.51.0",
   "description": "OpenTelemetry instrumentation for `restify` http web application framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -20,7 +20,6 @@
     "tdd": "npm test -- --watch-extensions ts --watch",
     "test": "SKIP_TEST_IF_NODE_NEWER_THAN=23 nyc --no-clean mocha --require '../../scripts/skip-test-if.js' 'test/**/*.ts'",
     "test-all-versions": "tav",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
@@ -65,7 +64,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.204.0",
+    "@opentelemetry/instrumentation": "^0.205.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-restify#readme"

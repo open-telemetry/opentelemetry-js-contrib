@@ -1,4 +1,23 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
+
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.51.0...contrib-test-utils-v0.52.0) (2025-09-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **contrib-test-utils:** update semconv usage to ATTR_ exports ([#3061](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3061))
+
+### Miscellaneous Chores
+
+* **contrib-test-utils:** update semconv usage to ATTR_ exports ([#3061](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3061)) ([8af41a9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8af41a9afc731234275607b6a81cda36ac2832e5)), closes [#2377](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2377)
+
+## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.50.0...contrib-test-utils-v0.51.0) (2025-09-10)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3034](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3034)) ([bee0a66](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bee0a66ef825145fb1a9b172c3468ccf0c97a820))
 
 ## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.49.0...contrib-test-utils-v0.50.0) (2025-09-08)
 
