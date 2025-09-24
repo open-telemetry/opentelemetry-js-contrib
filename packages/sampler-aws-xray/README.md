@@ -67,7 +67,7 @@ This package does not currently generate any attributes from semantic convention
 
 ## License
 
-Apache 2.0 - See [LICENSE](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE) for more information.
+Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
