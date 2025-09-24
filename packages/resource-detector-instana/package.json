@@ -52,7 +52,7 @@
     "@types/semver": "7.5.8",
     "nock": "13.3.3",
     "nyc": "17.1.0",
-    "rimraf": "5.0.10",
+    "rimraf": "6.0.1",
     "typescript": "5.0.4"
   },
   "dependencies": {

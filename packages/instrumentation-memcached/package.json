@@ -61,7 +61,7 @@
     "cross-env": "7.0.3",
     "memcached": "2.2.2",
     "nyc": "17.1.0",
-    "rimraf": "5.0.10",
+    "rimraf": "6.0.1",
     "typescript": "5.0.4"
   },
   "dependencies": {

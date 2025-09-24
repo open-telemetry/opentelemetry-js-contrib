@@ -74,7 +74,7 @@
     "expect": "29.2.0",
     "nock": "13.3.3",
     "nyc": "17.1.0",
-    "rimraf": "5.0.10",
+    "rimraf": "6.0.1",
     "sinon": "15.2.0",
     "test-all-versions": "6.1.0",
     "typescript": "5.0.4"

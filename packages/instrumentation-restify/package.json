@@ -57,7 +57,7 @@
     "@types/semver": "7.5.8",
     "nyc": "17.1.0",
     "restify": "11.1.0",
-    "rimraf": "5.0.10",
+    "rimraf": "6.0.1",
     "semver": "7.7.2",
     "test-all-versions": "^6.0.0",
     "typescript": "5.0.4"

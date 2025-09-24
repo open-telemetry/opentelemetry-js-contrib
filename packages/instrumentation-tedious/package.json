@@ -62,7 +62,7 @@
     "@types/node": "18.18.14",
     "cross-env": "7.0.3",
     "nyc": "17.1.0",
-    "rimraf": "5.0.10",
+    "rimraf": "6.0.1",
     "semver": "7.7.2",
     "tedious": "17.0.0",
     "test-all-versions": "6.1.0",
