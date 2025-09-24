@@ -47,8 +47,6 @@ const user = process.env.MSSQL_USER || 'sa';
 const password = process.env.MSSQL_PASSWORD || 'mssql_passw0rd';
 
 const instrumentation = new TediousInstrumentation();
-instrumentation.enable();
-instrumentation.disable();
 
 const config: any = {
   userName: user,
@@ -307,6 +305,77 @@ describe('tedious', () => {
       procCount: 0,
       table: 'test_bulk',
     });
+  });
+
+  describe('trace context propagation via CONTEXT_INFO', () => {
+
+    function traceparentFromSpan(span: ReadableSpan) {
+      const sc = span.spanContext();
+      const flags = (sc.traceFlags & 0x01) ? '01' : '00';
+      return `00-${sc.traceId}-${sc.spanId}-${flags}`;
+    }
+
+    function findDbSpan(spans: ReadableSpan[], startsWith: string) {
+      return spans.find(
+        s =>
+          s.kind === SpanKind.CLIENT &&
+          s.attributes[SEMATTRS_DB_SYSTEM] === DBSYSTEMVALUES_MSSQL &&
+          s.name.startsWith(startsWith)
+      )!;
+    }
+
+    beforeEach(() => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+      });
+    });
+
+    after(() => {
+      instrumentation.setConfig({enableTraceContextPropagation: false});
+    });
+
+    it('injects DB-span traceparent for execSql', async function () {
+      const sql  = "SELECT REPLACE(CONVERT(varchar(128), CONTEXT_INFO()), CHAR(0), '') AS traceparent";
+      const result = await tedious.query(connection, sql)
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const dbSpan = findDbSpan(spans, 'execSql');
+      const expectedTp = traceparentFromSpan(dbSpan);
+      assert.strictEqual(result[0], expectedTp, 'CONTEXT_INFO traceparent should match DB span');
+    });
+
+    it('injects for execSqlBatch', async function () {
+      const batch = `
+          SELECT REPLACE(CONVERT(varchar(128), CONTEXT_INFO()), CHAR(0), '') AS tp;
+          SELECT 42;
+        `;
+      const result = await tedious.query(connection, batch, 'execSqlBatch');
+
+      assert.deepStrictEqual(result, [result[0], 42]);
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const dbSpan = findDbSpan(spans, 'execSqlBatch');
+      const expectedTp = traceparentFromSpan(dbSpan);
+
+      assert.strictEqual(result[0], expectedTp);
+    });
+
+    it('when disabled, CONTEXT_INFO stays empty', async function () {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: false,
+      });
+
+      const [val] = await tedious.query(
+        connection,
+        "SELECT REPLACE(CONVERT(varchar(128), CONTEXT_INFO()), CHAR(0), '')"
+      );
+      assert.strictEqual(val, null);
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+    });
+
   });
 });
 

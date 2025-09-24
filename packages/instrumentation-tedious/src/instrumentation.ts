@@ -40,6 +40,11 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 const CURRENT_DATABASE = Symbol(
   'opentelemetry.instrumentation-tedious.current-database'
 );
+
+export const INJECTED_CTX = Symbol(
+  'opentelemetry.instrumentation-tedious.context-info-injected'
+);
+
 const PATCHED_METHODS = [
   'callProcedure',
   'execSql',
@@ -89,7 +94,7 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
             this._wrap(
               ConnectionPrototype,
               method,
-              this._patchQuery(method) as any
+              this._patchQuery(method, moduleExports) as any
             );
           }
 
@@ -127,11 +132,65 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
     };
   }
 
-  private _patchQuery(operation: string) {
+  private _buildTraceparent(span: api.Span): string {
+    const sc = span.spanContext();
+    const sampled =
+      (sc.traceFlags & api.TraceFlags.SAMPLED) === api.TraceFlags.SAMPLED
+        ? '01'
+        : '00';
+    return `00-${sc.traceId}-${sc.spanId}-${sampled}`;
+  }
+
+  /**
+   * Fire a one-off `SET CONTEXT_INFO @opentelemetry_traceparent` on the same
+   * connection. Marks the request with INJECTED_CTX so our patch skips it.
+   */
+  private _injectContextInfo(
+    connection: any,
+    tediousModule: typeof tedious,
+    traceparent: string
+  ): Promise<void> {
+    return new Promise((resolve) => {
+      try {
+        const sql = 'set context_info @opentelemetry_traceparent';
+        const req = new tediousModule.Request(sql, (_err: any) => {
+          resolve();
+        });
+        Object.defineProperty(req, INJECTED_CTX, { value: true });
+        const buf = Buffer.from(traceparent, 'utf8');
+        req.addParameter(
+          'opentelemetry_traceparent',
+          (tediousModule as any).TYPES.VarBinary,
+          buf,
+          { length: buf.length }
+        );
+
+        connection.execSql(req);
+      } catch {
+        resolve();
+      }
+    });
+  }
+
+  private _shouldInjectFor(operation: string): boolean {
+    return (
+      operation === 'execSql' ||
+      operation === 'execSqlBatch' ||
+      operation === 'callProcedure' ||
+      operation === 'execute'
+    );
+  }
+
+  private _patchQuery(operation: string, tediousModule: typeof tedious) {
     return (originalMethod: UnknownFunction): UnknownFunction => {
       const thisPlugin = this;
 
       function patchedMethod(this: ApproxConnection, request: ApproxRequest) {
+        // Skip our own injected request
+        if ((request as any)?.[INJECTED_CTX]) {
+          return originalMethod.apply(this, arguments as unknown as any[]);
+        }
+
         if (!(request instanceof EventEmitter)) {
           thisPlugin._diag.warn(
             `Unexpected invocation of patched ${operation} method. Span not recorded`
@@ -207,12 +266,34 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
           thisPlugin._diag.error('Expected request.callback to be a function');
         }
 
-        return api.context.with(
-          api.trace.setSpan(api.context.active(), span),
-          originalMethod,
-          this,
-          ...arguments
-        );
+        const runUserRequest = () => {
+          return api.context.with(
+            api.trace.setSpan(api.context.active(), span),
+            originalMethod,
+            this,
+            ...arguments
+          );
+        };
+
+        const cfg = thisPlugin.getConfig?.() as TediousInstrumentationConfig | undefined;
+        const shouldInject =
+          cfg?.enableTraceContextPropagation && thisPlugin._shouldInjectFor(operation);
+
+        if (shouldInject) {
+          try {
+            const traceparent = thisPlugin._buildTraceparent(span);
+            // Include overhead in the span by injecting first, then running the user request.
+            thisPlugin
+              ._injectContextInfo(this, tediousModule, traceparent)
+              .then(runUserRequest)
+              .catch(() => runUserRequest());
+            return;
+          } catch (e: any) {
+            return runUserRequest();
+          }
+        }
+
+        return runUserRequest();
       }
 
       Object.defineProperty(patchedMethod, 'length', {
