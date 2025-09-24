@@ -8,7 +8,6 @@ This is an internal utils package used for the different redis instrumentations:
 1. ioredis
 2. redis
 
-[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/redis-common
 [npm-img]: https://img.shields.io/npm/v/%40opentelemetry%2Fredis-common.svg
