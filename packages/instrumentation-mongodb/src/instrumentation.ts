@@ -950,6 +950,19 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     );
   }
 
+  private _getDefaultDbStatementReplacer(): Replacer {
+    const seen = new WeakSet();
+    return (_key, value) => {
+      // undefined, boolean, number, bigint, string, symbol, function || null
+      if (typeof value !== 'object' || !value) return '?';
+
+      // objects (including arrays)
+      if (seen.has(value)) return '[Circular]';
+      seen.add(value);
+      return value;
+    };
+  }
+
   private _defaultDbStatementSerializer(commandObj: Record<string, unknown>) {
     const { enhancedDatabaseReporting } = this.getConfig();
 
@@ -957,21 +970,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       return JSON.stringify(commandObj);
     }
 
-    const getReplacer = (): Replacer => {
-      // WeakSet is used for tracking seen objects to avoid memory leaks
-      const seen = new WeakSet();
-      return (_key, value) => {
-        // undefined, boolean, number, bigint, string, symbol, function || null
-        if (typeof value !== 'object' || !value) return '?';
-
-        // objects (including arrays)
-        if (seen.has(value)) return '[Circular]';
-        seen.add(value);
-        return value;
-      };
-    };
-
-    return JSON.stringify(commandObj, getReplacer());
+    return JSON.stringify(commandObj, this._getDefaultDbStatementReplacer());
   }
 
   /**
