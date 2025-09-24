@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.56.0...instrumentation-aws-lambda-v0.57.0) (2025-09-24)
+
+
+### Features
+
+* **instrumentation-aws-lambda:** support streaming handlers ([#2970](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2970)) ([cf9e2f5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cf9e2f583a4e32e0d5020782da2c7130a9672b44))
+
 ## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.55.0...instrumentation-aws-lambda-v0.56.0) (2025-09-10)
 
 
