@@ -1,7 +1,7 @@
 # OpenTelemetry Resource Detector for GitHub Actions
 
 [![NPM Published Version][npm-img]][npm-url]
-[![Apache License][license-image]][license-image]
+[![Apache License][license-image]][license-url]
 
 Resource detector for GitHub Actions.
 
