@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
 ## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/baggage-span-processor-v0.3.1...baggage-span-processor-v0.4.0) (2025-03-18)

@@ -36,15 +36,16 @@ process.env.AWS_SECRET_ACCESS_KEY = 'testing';
 import 'mocha';
 import { SpanStatusCode, Span } from '@opentelemetry/api';
 import {
-  SEMATTRS_HTTP_STATUS_CODE,
-  SEMATTRS_RPC_METHOD,
-  SEMATTRS_RPC_SERVICE,
-  SEMATTRS_RPC_SYSTEM,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_HTTP_STATUS_CODE,
+  ATTR_RPC_METHOD,
+  ATTR_RPC_SERVICE,
+  ATTR_RPC_SYSTEM,
+} from '../src/semconv';
 import { AttributeNames } from '../src/enums';
 import { expect } from 'expect';
 import * as fs from 'fs';
 import * as nock from 'nock';
+import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 const region = 'us-east-1';
 
@@ -67,16 +68,21 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       await s3Client.putObject(params);
       expect(getTestSpans().length).toBe(1);
       const [span] = getTestSpans();
-      expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
-      expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('PutObject');
-      expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('S3');
+      expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+      expect(span.attributes[ATTR_RPC_METHOD]).toEqual('PutObject');
+      expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('S3');
       expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
         'ot-demo-test'
       );
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
       expect(span.kind).toEqual(SpanKind.CLIENT);
-      expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
+      expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+
+      // We also expect the stable `http.response.status_code` because
+      // `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` has been set before creating
+      // the instrumentation.
+      expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
     });
 
     it('callback interface', done => {
@@ -94,15 +100,16 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       s3Client.putObject(params, (err: any, data?: PutObjectCommandOutput) => {
         expect(getTestSpans().length).toBe(1);
         const [span] = getTestSpans();
-        expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
-        expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('PutObject');
-        expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('S3');
+        expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+        expect(span.attributes[ATTR_RPC_METHOD]).toEqual('PutObject');
+        expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('S3');
         expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
           'ot-demo-test'
         );
         expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
         expect(span.name).toEqual('S3.PutObject');
-        expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
+        expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+        expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
         done();
       });
     });
@@ -123,15 +130,16 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       await client.send(new PutObjectCommand(params));
       expect(getTestSpans().length).toBe(1);
       const [span] = getTestSpans();
-      expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
-      expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('PutObject');
-      expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('S3');
+      expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+      expect(span.attributes[ATTR_RPC_METHOD]).toEqual('PutObject');
+      expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('S3');
       expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
         'ot-demo-test'
       );
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
-      expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
+      expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+      expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
     });
 
     it('aws error', async () => {
@@ -159,13 +167,14 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
         expect(span.events.length).toBe(1);
         expect(span.events[0].name).toEqual('exception');
 
-        expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
-        expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('PutObject');
-        expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('S3');
+        expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+        expect(span.attributes[ATTR_RPC_METHOD]).toEqual('PutObject');
+        expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('S3');
         expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
           'invalid-bucket-name'
         );
-        expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(403);
+        expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(403);
+        expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(403);
         expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
         expect(span.attributes[AttributeNames.AWS_REQUEST_ID]).toEqual(
           'MS95GTS7KXQ34X2S'

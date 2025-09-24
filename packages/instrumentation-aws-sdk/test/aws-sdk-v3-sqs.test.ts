@@ -31,20 +31,21 @@ import 'mocha';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { context, trace } from '@opentelemetry/api';
 import {
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_URL_FULL,
-  MESSAGINGOPERATIONVALUES_RECEIVE,
-  SEMATTRS_HTTP_STATUS_CODE,
-  SEMATTRS_MESSAGING_OPERATION,
-  SEMATTRS_MESSAGING_SYSTEM,
-  SEMATTRS_RPC_METHOD,
-  SEMATTRS_RPC_SERVICE,
-  SEMATTRS_RPC_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_HTTP_STATUS_CODE,
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION,
+  ATTR_MESSAGING_SYSTEM,
+  ATTR_RPC_METHOD,
+  ATTR_RPC_SERVICE,
+  ATTR_RPC_SYSTEM,
 } from '../src/semconv';
+import { MESSAGING_OPERATION_VALUE_RECEIVE } from '../src/semconv-obsolete';
 import { AttributeNames } from '../src/enums';
 import { expect } from 'expect';
 import * as fs from 'fs';
@@ -82,13 +83,13 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
     const [span] = getTestSpans();
 
     // make sure we have the general aws attributes:
-    expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
-    expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('SendMessage');
-    expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('SQS');
+    expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+    expect(span.attributes[ATTR_RPC_METHOD]).toEqual('SendMessage');
+    expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('SQS');
     expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
 
     // custom messaging attributes
-    expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual('aws_sqs');
+    expect(span.attributes[ATTR_MESSAGING_SYSTEM]).toEqual('aws_sqs');
     expect(span.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toEqual(
       'otel-demo-aws-sdk'
     );
@@ -96,7 +97,8 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
     expect(span.attributes[ATTR_MESSAGING_MESSAGE_ID]).toEqual(
       response.MessageId
     );
-    expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
+    expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+    expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
   });
 
   it('sqs send message batch attributes', async () => {
@@ -135,18 +137,19 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
     const [span] = getTestSpans();
 
     // make sure we have the general aws attributes:
-    expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
-    expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('SendMessageBatch');
-    expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('SQS');
+    expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+    expect(span.attributes[ATTR_RPC_METHOD]).toEqual('SendMessageBatch');
+    expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('SQS');
     expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
 
     // messaging semantic attributes
-    expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual('aws_sqs');
+    expect(span.attributes[ATTR_MESSAGING_SYSTEM]).toEqual('aws_sqs');
     expect(span.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toEqual(
       'otel-demo-aws-sdk'
     );
     expect(span.attributes[ATTR_URL_FULL]).toEqual(params.QueueUrl);
-    expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
+    expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+    expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
   });
 
   it('sqs receive add messaging attributes', done => {
@@ -175,11 +178,12 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
       const [span] = getTestSpans();
 
       // make sure we have the general aws attributes:
-      expect(span.attributes[SEMATTRS_RPC_SYSTEM]).toEqual('aws-api');
-      expect(span.attributes[SEMATTRS_RPC_METHOD]).toEqual('ReceiveMessage');
-      expect(span.attributes[SEMATTRS_RPC_SERVICE]).toEqual('SQS');
+      expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+      expect(span.attributes[ATTR_RPC_METHOD]).toEqual('ReceiveMessage');
+      expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('SQS');
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
-      expect(span.attributes[SEMATTRS_HTTP_STATUS_CODE]).toEqual(200);
+      expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+      expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
       expect(span.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT]).toEqual(2);
       expect(span.links.length).toBe(2);
 
@@ -231,8 +235,8 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
       expect(receiveCallbackSpan).toBeDefined();
       const attributes = (receiveCallbackSpan as unknown as ReadableSpan)
         .attributes;
-      expect(attributes[SEMATTRS_MESSAGING_OPERATION]).toMatch(
-        MESSAGINGOPERATIONVALUES_RECEIVE
+      expect(attributes[ATTR_MESSAGING_OPERATION]).toMatch(
+        MESSAGING_OPERATION_VALUE_RECEIVE
       );
       done();
     });

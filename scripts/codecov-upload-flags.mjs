@@ -6,8 +6,8 @@ import path from 'path';
 // Usage
 // node ./scripts/codecov-upload-flags.mjs
 
-const commitSha = process.argv[2];
-const branchName = process.argv[3];
+const commitSha = process.env.COMMIT_SHA;
+const branchName = process.env.PR_BRANCH_NAME;
 
 const readPkg = (dir) => JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
 const pkgInfo = readPkg('.');
