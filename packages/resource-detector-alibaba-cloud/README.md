@@ -1,5 +1,8 @@
 # OpenTelemetry Resource Detector for Alibaba Cloud
 
+[![NPM Published Version][npm-img]][npm-url]
+[![Apache License][license-image]][license-image]
+
 Resource detector for Alibaba Cloud.
 
 The OpenTelemetry Resource is an immutable representation of the entity producing telemetry. For example, a process producing telemetry that is running in a container on Kubernetes has a Pod name, it is in a namespace and possibly is part of a Deployment which also has a name. All three of these attributes can be included in the `Resource`.
