@@ -1,6 +1,15 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.53.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.53.0...instrumentation-ioredis-v0.53.1) (2025-09-24)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.51.0 to ^0.52.0
+
 ## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.52.0...instrumentation-ioredis-v0.53.0) (2025-09-10)
 
 

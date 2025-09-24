@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.51.0...instrumentation-nestjs-core-v0.52.0) (2025-09-24)
+
+
+### Features
+
+* **instrumentation-nestjs-core:** support migration to stable HTTP semconv ([#3080](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3080)) ([143a61e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/143a61ef7077613f6fc63e1bad34a23a143b4813))
+
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.50.0...instrumentation-nestjs-core-v0.51.0) (2025-09-10)
 
 

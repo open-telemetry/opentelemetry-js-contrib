@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.50.0...instrumentation-document-load-v0.51.0) (2025-09-24)
+
+
+### Features
+
+* **instrumentation-document-load:** support migration to stable HTTP semconv, v1.23.1 ([#3075](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3075)) ([a3a2c78](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a3a2c7860a64de658e9fbffb000e0b1a6ce9a00e))
+
 ## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.49.0...instrumentation-document-load-v0.50.0) (2025-09-10)
 
 
