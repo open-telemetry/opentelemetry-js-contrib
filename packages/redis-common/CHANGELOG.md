@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.38.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.38.0...redis-common-v0.38.1) (2025-09-24)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.37.0...redis-common-v0.38.0) (2025-07-04)
 
 

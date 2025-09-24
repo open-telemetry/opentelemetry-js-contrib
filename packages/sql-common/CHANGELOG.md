@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/sql-common-v0.41.0...sql-common-v0.41.1) (2025-09-24)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
 ## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/sql-common-v0.40.1...sql-common-v0.41.0) (2025-03-18)
 
 
