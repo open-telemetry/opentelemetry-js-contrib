@@ -64,7 +64,7 @@ jobs:
           npm install --ignore-scripts --package-lock-only
           git add package-lock.json
           git commit -m "chore: sync package-lock.json 'dependencies' key"
-          git push
+          git push --force
 
   install-and-compile:
     needs: release-please
