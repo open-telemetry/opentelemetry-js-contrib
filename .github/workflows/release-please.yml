@@ -53,19 +53,16 @@ jobs:
           fetch-depth: 0
 
       # If we've created/updated a PR:
-      # 1. Amend the author to 'otelbot', which passes EasyCLA.
-      # 2. Sync the legacy "dependencies" key in package-lock.json.
+      # Sync the legacy "dependencies" key in package-lock.json.
       - name: Update package-lock.json in PR
         if: ${{ steps.release.outputs.pr }}
         run: |
           git config user.name otelbot
           git config user.email 197425009+otelbot@users.noreply.github.com
-          git fetch origin main:refs/remotes/origin/main
-          git rebase origin/main -x "git commit --amend --reset-author --no-edit"
           npm install --ignore-scripts --package-lock-only
           git add package-lock.json
           git commit -m "chore: sync package-lock.json 'dependencies' key"
-          git push --force
+          git push
 
   install-and-compile:
     needs: release-please
