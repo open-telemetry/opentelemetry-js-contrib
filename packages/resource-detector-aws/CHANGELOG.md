@@ -1,6 +1,21 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [2.5.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v2.5.1...resource-detector-aws-v2.5.2) (2025-09-25)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.0 to ^0.52.1
+    * @opentelemetry/instrumentation-fs bumped from ^0.25.0 to ^0.25.1
+
 ## [2.5.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v2.5.0...resource-detector-aws-v2.5.1) (2025-09-24)
 
 
