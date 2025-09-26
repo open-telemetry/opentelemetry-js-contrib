@@ -24,7 +24,7 @@ jobs:
       # Use the same Node.js version used for `release-please` workflow.
       - uses: actions/setup-node@v5
         with:
-          node-version: 18
+          node-version: 20
       - name: Install
         run: npm ci --ignore-scripts
       # Note: when pushing to main we want to test only what changed in
@@ -242,7 +242,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
-          node-version: 18
+          node-version: 20
       - name: Install
         run: npm ci --ignore-scripts
       # NOTE: keep this in sync with the node versions from `unit-test` job
@@ -281,4 +281,3 @@ jobs:
         env:
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           PR_BRANCH_NAME: ${{ github.event.pull_request.head.label }}
-
