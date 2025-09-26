@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.51.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.51.1...instrumentation-bunyan-v0.51.2) (2025-09-25)
+
+
+### Bug Fixes
+
+* **instrumentation-bunyan:** force new release-please PR ([#3109](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3109)) ([86483f4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/86483f468a9265a33fd62f0eea67a8d5e9651c67)), closes [#3108](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3108)
+
+## [0.51.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.51.0...instrumentation-bunyan-v0.51.1) (2025-09-25)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.50.0...instrumentation-bunyan-v0.51.0) (2025-09-10)
 
 

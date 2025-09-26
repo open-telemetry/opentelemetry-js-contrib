@@ -1,6 +1,22 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.54.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.54.2...instrumentation-redis-v0.54.3) (2025-09-25)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/redis-common bumped from ^0.38.0 to ^0.38.1
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.0 to ^0.52.1
+
 ## [0.54.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.54.1...instrumentation-redis-v0.54.2) (2025-09-24)
 
 
