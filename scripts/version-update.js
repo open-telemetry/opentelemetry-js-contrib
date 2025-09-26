@@ -1,4 +1,4 @@
-/*!
+/*
  * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,6 +44,6 @@ export const PACKAGE_VERSION = '${pjson.version}';
 export const PACKAGE_NAME = '${pjson.name}';
 `;
 
-const fileUrl = path.join(appRoot, 'src', 'version.ts')
+const fileUrl = path.join(appRoot, 'src', 'version.ts');
 
 fs.writeFileSync(fileUrl, content);
