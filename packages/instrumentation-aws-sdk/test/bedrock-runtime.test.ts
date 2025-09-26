@@ -36,6 +36,7 @@ import {
   ConverseStreamCommand,
   ConversationRole,
   InvokeModelCommand,
+  InvokeModelWithResponseStreamCommand,
 } from '@aws-sdk/client-bedrock-runtime';
 import { AwsCredentialIdentity } from '@aws-sdk/types';
 import * as path from 'path';
@@ -79,6 +80,7 @@ const sanitizeRecordings = (scopes: Definition[]) => {
 describe('Bedrock', () => {
   nockBack.fixtures = path.join(__dirname, 'mock-responses');
   let credentials: AwsCredentialIdentity | undefined;
+
   if (nockBack.currentMode === 'dryrun') {
     credentials = {
       accessKeyId: 'testing',
@@ -642,4 +644,328 @@ describe('Bedrock', () => {
       });
     });
   });
+
+  describe('InvokeModelWithStreams', () => {
+    it('adds amazon titan model attributes to span', async () => {
+      const modelId = 'amazon.titan-text-lite-v1';
+      const prompt = '\n\nHuman: Hello, How are you today? \n\nAssistant:';
+
+      const body = {
+        inputText: prompt,
+        textGenerationConfig: {
+          maxTokenCount: 10,
+          temperature: 0.8,
+          topP: 1,
+          stopSequences: ['|'],
+        },
+      };
+      const command = new InvokeModelWithResponseStreamCommand({
+        modelId,
+        body: JSON.stringify(body),
+        contentType: 'application/json',
+        accept: 'application/json',
+      });
+
+      const response = await client.send(command);
+
+      let collectedText = '';
+      if (!response.body) return;
+      for await (const chunk of response.body) {
+        if (chunk?.chunk?.bytes instanceof Uint8Array) {
+          const parsed = JSON.parse(decodeChunk(chunk));
+          collectedText += parsed.outputText;
+        }
+      }
+      expect(collectedText).toBe(" Hello there! I'm doing well. Thank you");
+
+      const invokeModelSpans: ReadableSpan[] =
+        getInvokeModelWithResponseStreamSpans();
+
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 13,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['LENGTH'],
+      });
+    });
+    it('adds claude model attributes to span', async () => {
+      const modelId = 'anthropic.claude-3-5-sonnet-20240620-v1:0';
+      const prompt = '\n\nHuman: Hello, How are you today? \n\nAssistant:';
+
+      const body = {
+        anthropic_version: 'bedrock-2023-05-31',
+        max_tokens: 12,
+        top_k: 250,
+        stop_sequences: ['|'],
+        temperature: 0.8,
+        top_p: 1,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      };
+
+      const command = new InvokeModelWithResponseStreamCommand({
+        modelId,
+        body: JSON.stringify(body),
+        contentType: 'application/json',
+        accept: 'application/json',
+      });
+
+      const response = await client.send(command);
+
+      let collectedText = '';
+      if (!response.body) return;
+      for await (const chunk of response.body) {
+        if (chunk?.chunk?.bytes instanceof Uint8Array) {
+          const parsed = JSON.parse(decodeChunk(chunk));
+          if (
+            parsed.type === 'content_block_delta' &&
+            parsed.delta?.type === 'text_delta'
+          ) {
+            collectedText += parsed.delta.text;
+          }
+        }
+      }
+      expect(collectedText).toBe(
+        "Hello! I'm doing well, thank you for asking."
+      );
+
+      const invokeModelSpans: ReadableSpan[] =
+        getInvokeModelWithResponseStreamSpans();
+
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 12,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 1,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
+    });
+
+    it('adds amazon nova model attributes to span', async () => {
+      const modelId = 'amazon.nova-pro-v1:0';
+      const prompt = 'Say this is a test';
+      const nativeRequest: any = {
+        messages: [{ role: 'user', content: [{ text: prompt }] }],
+        inferenceConfig: {
+          max_new_tokens: 10,
+          temperature: 0.8,
+          top_p: 1,
+          stopSequences: ['|'],
+        },
+      };
+      const command = new InvokeModelWithResponseStreamCommand({
+        modelId,
+        body: JSON.stringify(nativeRequest),
+      });
+
+      const response = await client.send(command);
+
+      let collectedText = '';
+      if (!response.body) return;
+      for await (const chunk of response.body) {
+        if (chunk?.chunk?.bytes instanceof Uint8Array) {
+          const parsed = JSON.parse(decodeChunk(chunk));
+          if (parsed.contentBlockDelta?.delta) {
+            collectedText += parsed.contentBlockDelta?.delta.text;
+          }
+        }
+      }
+
+      expect(collectedText).toBe(
+        "Certainly! If you're indicating that this interaction"
+      );
+
+      const invokeModelSpans: ReadableSpan[] =
+        getInvokeModelWithResponseStreamSpans();
+
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 5,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
+      });
+    });
+
+    it('adds mistral ai model attributes to span', async () => {
+      const modelId = 'mistral.mistral-small-2402-v1:0';
+
+      const prompt = '\n\nHuman: Hello, How are you today? \n\nAssistant:';
+      const nativeRequest: any = {
+        prompt: prompt,
+        max_tokens: 20,
+        temperature: 0.8,
+        top_p: 1,
+        stop: ['|'],
+      };
+      const command = new InvokeModelWithResponseStreamCommand({
+        modelId,
+        body: JSON.stringify(nativeRequest),
+      });
+
+      const response = await client.send(command);
+
+      let collectedText = '';
+      if (!response.body) return;
+      for await (const chunk of response.body) {
+        if (chunk?.chunk?.bytes instanceof Uint8Array) {
+          const parsed = JSON.parse(decodeChunk(chunk));
+
+          if (parsed.outputs[0].text) {
+            collectedText += parsed.outputs[0].text;
+          }
+        }
+      }
+      expect(collectedText).toBe(
+        " I'm an AI, so I don't have feelings, but I'm functioning well"
+      );
+
+      const invokeModelSpans: ReadableSpan[] =
+        getInvokeModelWithResponseStreamSpans();
+
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 20,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 1,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['length'],
+      });
+    });
+
+    it('adds cohere command r model attributes to span', async () => {
+      const modelId = 'cohere.command-r-v1:0';
+      const prompt = 'Say this is a test';
+      const nativeRequest: any = {
+        message: prompt,
+        max_tokens: 10,
+        temperature: 0.8,
+        p: 0.99,
+        stop_sequences: ['|'],
+      };
+
+      const command = new InvokeModelWithResponseStreamCommand({
+        modelId,
+        body: JSON.stringify(nativeRequest),
+      });
+
+      const response = await client.send(command);
+
+      let collectedText = '';
+      if (!response.body) return;
+      for await (const chunk of response.body) {
+        if (chunk?.chunk?.bytes instanceof Uint8Array) {
+          const parsed = JSON.parse(decodeChunk(chunk));
+          if (parsed.text) {
+            collectedText += parsed.text;
+          }
+        }
+      }
+      expect(collectedText).toBe("This is indeed a test. Hopefully, it's");
+
+      const invokeModelSpans: ReadableSpan[] =
+        getInvokeModelWithResponseStreamSpans();
+
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 0.99,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 3,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 1,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['MAX_TOKENS'],
+      });
+    });
+
+    it('adds cohere command model attributes to span', async () => {
+      const modelId = 'cohere.command-light-text-v14';
+      const prompt = 'Say this is a test';
+      const nativeRequest: any = {
+        prompt: prompt,
+        max_tokens: 10,
+        temperature: 0.8,
+        p: 1,
+        stop_sequences: ['|'],
+      };
+
+      const command = new InvokeModelWithResponseStreamCommand({
+        modelId,
+        body: JSON.stringify(nativeRequest),
+      });
+
+      const response = await client.send(command);
+
+      let collectedText = '';
+      if (!response.body) return;
+      for await (const chunk of response.body) {
+        if (chunk?.chunk?.bytes instanceof Uint8Array) {
+          const parsed = JSON.parse(decodeChunk(chunk));
+          if (parsed.generations[0].text) {
+            collectedText += parsed.generations[0].text;
+          }
+        }
+      }
+      expect(collectedText).toBe(
+        ' Okay, I will follow your instructions and this will'
+      );
+
+      const invokeModelSpans: ReadableSpan[] =
+        getInvokeModelWithResponseStreamSpans();
+
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 10,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.8,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 3,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 9,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['MAX_TOKENS'],
+      });
+    });
+  });
+
+  function getInvokeModelWithResponseStreamSpans(): ReadableSpan[] {
+    return getTestSpans().filter((s: ReadableSpan) => {
+      return s.name === 'BedrockRuntime.InvokeModelWithResponseStream';
+    });
+  }
+
+  function decodeChunk(chunk: any) {
+    return Buffer.from(chunk.chunk.bytes).toString('utf-8');
+  }
 });
