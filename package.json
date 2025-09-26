@@ -51,6 +51,8 @@
     "@nx/eslint": "20.8.2",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.17.1",
+    "@types/semver": "^7.7.1",
+    "@types/webpack-env": "^1.18.8",
     "cross-env": "^7.0.3",
     "eslint": "9.34.0",
     "eslint-config-prettier": "10.1.8",
