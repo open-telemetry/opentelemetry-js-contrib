@@ -49,14 +49,7 @@
     "@opentelemetry/contrib-test-utils": "^0.52.1",
     "@opentelemetry/instrumentation-http": "^0.205.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "@types/semver": "7.5.8",
-    "@types/sinon": "17.0.4",
-    "bignumber.js": "9.3.1",
-    "nyc": "17.1.0",
-    "sinon": "15.2.0",
-    "typescript": "5.0.4"
+    "bignumber.js": "9.3.1"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.0.0"
