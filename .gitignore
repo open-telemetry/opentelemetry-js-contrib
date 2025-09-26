@@ -83,3 +83,5 @@ docs
 # version.ts file is automatically generated at compile time
 version.ts
 /.vs
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
