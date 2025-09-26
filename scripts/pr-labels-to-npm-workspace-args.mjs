@@ -11,13 +11,19 @@ const labels = JSON.parse(process.argv[2]);
 console.error('Labels:', labels);
 
 const workspaces = labels
-  .filter((l) => {
+  .filter(l => {
     return l.startsWith('pkg:');
   })
-  .map((l) => {
+  .map(l => {
     return l.replace(/^pkg:/, '@opentelemetry/');
   });
 
 console.error('Workspaces:', workspaces);
 
-console.log(workspaces.map((w) => { return `-w ${w}`; }).join(' '));
+console.log(
+  workspaces
+    .map(w => {
+      return `-w ${w}`;
+    })
+    .join(' ')
+);
