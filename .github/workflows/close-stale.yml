@@ -13,7 +13,7 @@ jobs:
       pull-requests: write # required for closing stale PRs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v9
+      - uses: actions/stale@v10
         with:
           days-before-stale: 60
           days-before-close: 14
@@ -26,7 +26,7 @@ jobs:
           exempt-issue-labels: never-stale
           exempt-pr-labels: never-stale
           any-of-labels: information-requested
-      - uses: actions/stale@v9
+      - uses: actions/stale@v10
         with:
           days-before-issue-stale: 0
           days-before-issue-close: 14
@@ -38,7 +38,7 @@ jobs:
           only-labels: pkg-status:unmaintained,feature-request
           exempt-issue-labels: bug,has:sponsor,type:semconv-update
           remove-stale-when-updated: false
-      - uses: actions/stale@v9
+      - uses: actions/stale@v10
         with:
           days-before-pr-stale: 0
           days-before-pr-close: 14
