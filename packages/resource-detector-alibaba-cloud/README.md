@@ -1,8 +1,5 @@
 # OpenTelemetry Resource Detector for Alibaba Cloud
 
-[![NPM Published Version][npm-img]][npm-url]
-[![Apache License][license-image]][license-url]
-
 Resource detector for Alibaba Cloud.
 
 The OpenTelemetry Resource is an immutable representation of the entity producing telemetry. For example, a process producing telemetry that is running in a container on Kubernetes has a Pod name, it is in a namespace and possibly is part of a Deployment which also has a name. All three of these attributes can be included in the `Resource`.
@@ -49,7 +46,3 @@ Populates `cloud` and `host` for processes running on [Alibaba Cloud ECS](https:
 | host.type               | Value of `instance-type` on Alibaba Cloud                       |
 
 [resource-semantic_conventions]: https://github.com/open-telemetry/opentelemetry-specification/tree/master/specification/resource/semantic_conventions
-[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
-[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[npm-url]: https://www.npmjs.com/package/@opentelemetry/resource-detector-alibaba-cloud
-[npm-img]: https://img.shields.io/npm/v/%40opentelemetry%2Fresource-detector-alibaba-cloud.svg
