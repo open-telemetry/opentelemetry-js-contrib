@@ -27,7 +27,7 @@ jobs:
 
       - name: Install packages
         run: |
-          npm ci
+          npm ci --ignore-scripts
 
       - uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
         id: otelbot-token
@@ -80,7 +80,7 @@ jobs:
           # Require npm 11.5.1 or later for https://docs.npmjs.com/trusted-publishers.
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run compile
       # Release Please has already incremented versions and published tags, so we just
       # need to publish all unpublished versions to npm here
