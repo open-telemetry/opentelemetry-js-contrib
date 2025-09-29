@@ -1,0 +1,36 @@
+[
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/cohere.command-light-text-v14/invoke",
+        "body": {
+            "prompt": "Say this is a test Say this is a test Say this",
+            "max_tokens": 10,
+            "temperature": 0.8,
+            "p": 1,
+            "stop_sequences": ["|"]
+        },
+        "status": 200,
+        "response": {
+            "generations": [
+                {
+                  "finish_reason": "max_tokens",
+                  "text": "\nHello! I am a computer program designed to help you with"
+                }
+              ]
+        },
+        "rawHeaders": [
+            "Date",
+            "Tue, 25 Mar 2025 23:50:27 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "68",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "3f776833-761b-4ca0-bced-4ca60ae9ca08"
+        ],
+        "responseIsBinary": false
+    }
+]

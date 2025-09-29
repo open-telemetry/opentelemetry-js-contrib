@@ -5,6 +5,8 @@
   "description": "Example of NET & TLS integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "zipkin:client": "cross-env EXPORTER=zipkin node ./client.js",
     "jaeger:client": "cross-env EXPORTER=jaeger node ./client.js"
   },
@@ -31,7 +33,7 @@
     "@opentelemetry/exporter-jaeger": "^0.25.0",
     "@opentelemetry/exporter-zipkin": "^0.25.0",
     "@opentelemetry/instrumentation": "^0.25.0",
-    "@opentelemetry/instrumentation-net": "file:../../plugins/node/opentelemetry-instrumentation-net",
+    "@opentelemetry/instrumentation-net": "file:../../packages/instrumentation-net",
     "@opentelemetry/instrumentation-http": "^0.25.0",
     "@opentelemetry/instrumentation-dns": "^0.23.0",
     "@opentelemetry/sdk-trace-node": "^0.25.0",

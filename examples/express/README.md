@@ -1,6 +1,6 @@
 # Overview
 
-OpenTelemetry Express Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we can use Zipkin or Jaeger for this example), to give observability to distributed systems.
+OpenTelemetry Express Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we use Jaeger for this example), to give observability to distributed systems.
 
 This is a simple example that demonstrates tracing calls made to Express API. The example
 shows key aspects of tracing such as
@@ -17,44 +17,34 @@ shows key aspects of tracing such as
 npm install
 ```
 
-Setup [Zipkin Tracing](https://zipkin.io/pages/quickstart.html)
-or
-Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/#all-in-one)
+Start Jaeger in Docker for receiving tracing data (see [the Jaeger docs](https://www.jaegertracing.io/docs/2.0/getting-started/#in-docker) for more details about running Jaeger):
+
+```bash
+docker run --rm --name jaeger \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  -p 14250:14250 \
+  -p 14268:14268 \
+  -p 9411:9411 \
+  jaegertracing/jaeger:2.0.0 \
+  --set receivers.otlp.protocols.http.endpoint=0.0.0.0:4318 \
+  --set receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317
+```
 
 ## Run the Application
 
-### Zipkin
-
 Run the server:
 
 ```sh
-npm run zipkin:server
+npm run server
 ```
 
 Then run the client in a separate terminal:
 
 ```sh
-npm run zipkin:client
-```
-
-After a short time, the generated traces should be available in the Zipkin UI.
-Visit <http://localhost:9411/zipkin> and click the "RUN QUERY" button to view
-recent traces, then click "SHOW" on a given trace.
-
-<p align="center"><img alt="Zipkin UI with trace" src="./images/zipkin.jpg?raw=true"/></p>
-
-### Jaeger
-
-Run the server:
-
-```sh
-npm run jaeger:server
-```
-
-Then run the client in a separate terminal:
-
-```sh
-npm run jaeger:client
+npm run client
 ```
 
 Visit the Jaeger UI at <http://localhost:16686/search>, select a service (e.g. "example-express-client"), click "Find Traces", then click on a trace to view it.

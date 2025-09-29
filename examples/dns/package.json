@@ -5,6 +5,8 @@
   "description": "Example of DNS integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "zipkin:client": "cross-env EXPORTER=zipkin node ./client.js",
     "jaeger:client": "cross-env EXPORTER=jaeger node ./client.js"
   },

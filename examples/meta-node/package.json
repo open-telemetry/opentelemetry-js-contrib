@@ -5,8 +5,8 @@
   "description": "Example of using meta package for default auto instrumentations in node",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint . --ext .js",
-    "lint:fix": "eslint . --ext .js --fix",
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "zipkin:server": "cross-env EXPORTER=zipkin node ./server.js",
     "zipkin:client": "cross-env EXPORTER=zipkin node ./client.js"
   },
@@ -31,8 +31,7 @@
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
   "devDependencies": {
-    "cross-env": "^6.0.0",
-    "eslint": "^7.4.0"
+    "cross-env": "^6.0.0"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.0.2",

@@ -24,11 +24,10 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { OpenTelemetryTransportV3 } from '../src';
 
-const loggerProvider = new LoggerProvider();
 const memoryLogExporter = new InMemoryLogRecordExporter();
-loggerProvider.addLogRecordProcessor(
-  new SimpleLogRecordProcessor(memoryLogExporter)
-);
+const loggerProvider = new LoggerProvider({
+  processors: [new SimpleLogRecordProcessor(memoryLogExporter)],
+});
 logs.setGlobalLoggerProvider(loggerProvider);
 
 const kMessage = 'log-message';
@@ -75,13 +74,18 @@ describe('OpenTelemetryTransportV3', () => {
     it('npm levels', () => {
       const callback = () => {};
       const transport = new OpenTelemetryTransportV3();
-      transport.log({ message: kMessage, level: 'error' }, callback);
-      transport.log({ message: kMessage, level: 'warn' }, callback);
-      transport.log({ message: kMessage, level: 'info' }, callback);
-      transport.log({ message: kMessage, level: 'http' }, callback);
-      transport.log({ message: kMessage, level: 'verbose' }, callback);
-      transport.log({ message: kMessage, level: 'debug' }, callback);
-      transport.log({ message: kMessage, level: 'silly' }, callback);
+      const sym = Symbol.for('level');
+      for (const level of [
+        'error',
+        'warn',
+        'info',
+        'http',
+        'verbose',
+        'debug',
+        'silly',
+      ]) {
+        transport.log({ message: kMessage, level, [sym]: level }, callback);
+      }
       const logRecords = memoryLogExporter.getFinishedLogRecords();
       assert.strictEqual(logRecords.length, 7);
       assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.ERROR);
@@ -96,16 +100,21 @@ describe('OpenTelemetryTransportV3', () => {
     it('cli levels', () => {
       const callback = () => {};
       const transport = new OpenTelemetryTransportV3();
-      transport.log({ message: kMessage, level: 'error' }, callback);
-      transport.log({ message: kMessage, level: 'warn' }, callback);
-      transport.log({ message: kMessage, level: 'help' }, callback);
-      transport.log({ message: kMessage, level: 'data' }, callback);
-      transport.log({ message: kMessage, level: 'info' }, callback);
-      transport.log({ message: kMessage, level: 'debug' }, callback);
-      transport.log({ message: kMessage, level: 'verbose' }, callback);
-      transport.log({ message: kMessage, level: 'prompt' }, callback);
-      transport.log({ message: kMessage, level: 'input' }, callback);
-      transport.log({ message: kMessage, level: 'silly' }, callback);
+      const sym = Symbol.for('level');
+      for (const level of [
+        'error',
+        'warn',
+        'help',
+        'data',
+        'info',
+        'debug',
+        'verbose',
+        'prompt',
+        'input',
+        'silly',
+      ]) {
+        transport.log({ message: kMessage, level, [sym]: level }, callback);
+      }
       const logRecords = memoryLogExporter.getFinishedLogRecords();
       assert.strictEqual(logRecords.length, 10);
       assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.ERROR);
@@ -123,14 +132,19 @@ describe('OpenTelemetryTransportV3', () => {
     it('syslog levels', () => {
       const callback = () => {};
       const transport = new OpenTelemetryTransportV3();
-      transport.log({ message: kMessage, level: 'emerg' }, callback);
-      transport.log({ message: kMessage, level: 'alert' }, callback);
-      transport.log({ message: kMessage, level: 'crit' }, callback);
-      transport.log({ message: kMessage, level: 'error' }, callback);
-      transport.log({ message: kMessage, level: 'warning' }, callback);
-      transport.log({ message: kMessage, level: 'notice' }, callback);
-      transport.log({ message: kMessage, level: 'info' }, callback);
-      transport.log({ message: kMessage, level: 'debug' }, callback);
+      const sym = Symbol.for('level');
+      for (const level of [
+        'emerg',
+        'alert',
+        'crit',
+        'error',
+        'warning',
+        'notice',
+        'info',
+        'debug',
+      ]) {
+        transport.log({ message: kMessage, level, [sym]: level }, callback);
+      }
       const logRecords = memoryLogExporter.getFinishedLogRecords();
       assert.strictEqual(logRecords.length, 8);
       assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL3);

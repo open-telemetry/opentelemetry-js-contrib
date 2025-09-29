@@ -1,0 +1,44 @@
+name: Create or Update OpenTelemetry Update PR
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  create-or-update-deps-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        id: otelbot-token
+        with:
+          app-id: ${{ vars.OTELBOT_JS_CONTRIB_APP_ID }}
+          private-key: ${{ secrets.OTELBOT_JS_CONTRIB_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          token: ${{ steps.otelbot-token.outputs.token }}
+
+      - uses: actions/setup-node@v5
+        with:
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+          node-version: 22
+
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+
+      - name: Create/Update Release PR
+        run: |
+          git config user.name otelbot
+          git config user.email 197425009+otelbot@users.noreply.github.com
+          git checkout -b otelbot/update-otel-deps
+          node ./scripts/update-otel-deps.js
+          git commit -am "feat(deps): update deps matching '@opentelemetry/*'"
+          git push --set-upstream origin otelbot/update-otel-deps --force
+          gh pr create --title "feat(deps): update deps matching '@opentelemetry/*'" --body 'Updates all `@opentelemetry/*` dependencies to latest'
+        env:
+          GITHUB_TOKEN: ${{ steps.otelbot-token.outputs.token }}

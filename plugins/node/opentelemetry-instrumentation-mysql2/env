@@ -1,5 +1,0 @@
-export MYSQL_DATABASE=otel_mysql_database
-export MYSQL_HOST=mysql
-export MYSQL_PASSWORD=secret
-export MYSQL_PORT=3306
-export MYSQL_USER=otel

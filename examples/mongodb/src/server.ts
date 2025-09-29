@@ -1,18 +1,31 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import * as api from '@opentelemetry/api';
-
-import { setupTracing } from './tracer';
-
-setupTracing('example-mongodb-server')
-
-import { accessDB } from './utils';
 
 import * as http from 'http';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as mongodb from 'mongodb';
-import {Collection} from "mongodb";
+import { Collection } from 'mongodb';
+import { setupTracing } from './tracer';
+import { accessDB } from './utils';
 
-const DB_NAME = 'mydb'
-const COLLECTION_NAME = 'users'
+setupTracing('example-mongodb-server');
+
+const DB_NAME = 'mydb';
+const COLLECTION_NAME = 'users';
 const URL = `mongodb://localhost:27017/${DB_NAME}`;
 
 let db: mongodb.Db;
@@ -28,7 +41,6 @@ function startServer(port: number) {
       throw err;
     });
 
-
   // Creates a server
   const server = http.createServer(handleRequest);
   // Starts the server
@@ -40,16 +52,20 @@ function startServer(port: number) {
 /** A function which handles requests and send response. */
 function handleRequest(request: IncomingMessage, response: ServerResponse) {
   const currentSpan = api.trace.getSpan(api.context.active());
-  // display traceID in the terminal
-  const traceId = currentSpan?.spanContext();
-  console.log(`traceid: ${traceId}`);
-  console.log(`Jaeger URL: http://localhost:16686/trace/${traceId}`);
-  console.log(`Zipkin URL: http://localhost:9411/zipkin/traces/${traceId}`);
+  if (currentSpan) {
+    // display traceID in the terminal
+    const { traceId } = currentSpan.spanContext();
+    console.log(`traceid: ${traceId}`);
+    console.log(`Jaeger URL: http://localhost:16686/trace/${traceId}`);
+    console.log(`Zipkin URL: http://localhost:9411/zipkin/traces/${traceId}`);
+  } else {
+    console.log('No active span found');
+  }
 
   try {
     const body = [];
-    request.on('error', (err) => console.log(err));
-    request.on('data', (chunk) => body.push(chunk));
+    request.on('error', err => console.log(err));
+    request.on('data', chunk => body.push(chunk));
     request.on('end', async () => {
       if (request.url === '/collection/') {
         handleCreateCollection(response);
@@ -71,13 +87,17 @@ startServer(8080);
 function handleInsertQuery(response: ServerResponse) {
   const obj = { name: 'John', age: '20' };
   const usersCollection: Collection = db.collection(COLLECTION_NAME);
-  usersCollection.insertOne(obj)
+  usersCollection
+    .insertOne(obj)
     .then(() => {
       console.log('1 document inserted');
-      // find document to test context propagation using callback
-      usersCollection.findOne({}, function () {
-        response.end();
-      });
+      // find document to test context
+      usersCollection
+        .findOne({})
+        .then(res => {
+          console.log(JSON.stringify(res));
+        })
+        .catch(err => console.log(err));
     })
     .catch(err => {
       console.log('Error code:', err.code);
@@ -87,8 +107,8 @@ function handleInsertQuery(response: ServerResponse) {
 
 function handleGetQuery(response: ServerResponse) {
   const usersCollection: Collection = db.collection(COLLECTION_NAME);
-  usersCollection.
-    find({})
+  usersCollection
+    .find({})
     .toArray()
     .then(() => {
       console.log('1 document served');
@@ -96,7 +116,7 @@ function handleGetQuery(response: ServerResponse) {
     })
     .catch(err => {
       throw err;
-    })
+    });
 }
 
 function handleCreateCollection(response: ServerResponse) {
@@ -108,7 +128,7 @@ function handleCreateCollection(response: ServerResponse) {
     .catch(err => {
       console.log('Error code:', err.code);
       response.end(err.message);
-  });
+    });
 }
 
 function handleNotFound(response: ServerResponse) {

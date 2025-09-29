@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<CreateTopicResponse xmlns="https://sns.amazonaws.com/doc/2010-03-31/">
+    <CreateTopicResult>
+        <TopicArn>arn:aws:sns:us-east-1:123456789012:sns-topic-foo</TopicArn>
+    </CreateTopicResult>
+    <ResponseMetadata>
+        <RequestId>d74b8436-ae13-5ab4-a9ff-ce54dfea72a0</RequestId>
+    </ResponseMetadata>
+</CreateTopicResponse>

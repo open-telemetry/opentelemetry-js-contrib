@@ -1,7 +1,0 @@
-redis:
-  versions:
-    include: "^4.0.0"
-    # "4.6.9" was a bad release that accidentally broke node v14 support.
-    exclude: "4.6.9"
-    mode: latest-minors
-  commands: npm run test

@@ -5,6 +5,8 @@
   "description": "Example of Connect integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint . --ext=ts,js,mjs",
+    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "client": "node ./client.js",
     "docker:start": "cd ./docker && docker-compose down && docker-compose up",
     "docker:stop": "cd ./docker && docker-compose down",

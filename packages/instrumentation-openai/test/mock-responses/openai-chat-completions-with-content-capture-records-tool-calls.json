@@ -1,0 +1,172 @@
+[
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/chat/completions",
+        "body": {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant providing weather updates."
+                },
+                {
+                    "role": "user",
+                    "content": "What is the weather in New York City and London?"
+                }
+            ],
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_weather",
+                        "strict": true,
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "location"
+                            ],
+                            "additionalProperties": false
+                        }
+                    }
+                }
+            ]
+        },
+        "status": 200,
+        "response": [
+            "1f8b0800000000000003cc545d6f9b30147de75758f7394cf926e16ddd47272d5b966dea5a2d1572cc05dc181bd9266d14e5bf4f981648da4d7d1c0fc8dce373eeb9976b1f3c4280c710126019b52c2f847f51be9fe5b32f83c583fda9169ff2ebdd525d14e9cd75b6bafb01bd8aa13677c8ec13eb0d537921d072256b9869a4162bd541301906a3e964d67740ae6214152d2dac3f567ece25f787fde1d8ef07fe60f6c8ce1467682024bf3d420839b877e553c6f80021715a2e92a3313445089b4d848056a28a0035861b4ba5855e0b32252dcacaba2c85e800562911312a449bb87e0e9d75db2c2a4424a7cbb7235df2cb8589fbd9eae3b7d5d53cf9a059275f2dbd2f9ca1a494ac6952076fe2e159324240d2dc7153b4d13d529ba13ea3130254a7658ed256d6e1b006a118ad04d71092357cc57b72a3f496bce376bf86239cd08f9daf63ef5575c7c1f6f273915ce5f3e57eae76a6ff6bf65d8e83cd7f56f742c9b85affabe0667ddb19058d4969a8783e23544a655d063724b7de59db40a8b4d06a63cea89070c94d1669a4c695db9d36efc988b300e5c94043a1555ed8c8aa2dbaa493a01685f6ccb5e078fa085a65a968e383fea8f7825c14a3a5dc0d7c73c6186519c62db53d6bb48cb9ea005ea7f4e76e5ed2aecbe7327d8d7c0b308685c5382a34c69c9d56dc6ed3585d497fdbd634d91906837ac7194696a3ae7e478c092d457d5180d91b8b79947099a22e346f6e0befe8fd010000ffff030074ac2f3a30050000"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "9607f407de8cd760-NRT",
+            "connection": "close",
+            "content-encoding": "gzip",
+            "content-type": "application/json",
+            "date": "Thu, 17 Jul 2025 07:16:21 GMT",
+            "openai-processing-ms": "1284",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-envoy-upstream-service-time": "1290",
+            "x-ratelimit-limit-requests": "5000",
+            "x-ratelimit-limit-tokens": "4000000",
+            "x-ratelimit-remaining-requests": "4999",
+            "x-ratelimit-remaining-tokens": "3999970",
+            "x-ratelimit-reset-requests": "12ms",
+            "x-ratelimit-reset-tokens": "0s",
+            "x-request-id": "req_0c0558ababb0ad4c20131da9a47292ff"
+        },
+        "responseIsBinary": false
+    },
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/chat/completions",
+        "body": {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant providing weather updates."
+                },
+                {
+                    "role": "user",
+                    "content": "What is the weather in New York City and London?"
+                },
+                {
+                    "role": "assistant",
+                    "tool_calls": [
+                        {
+                            "id": "call_n6OA3ruiGLsd0hQFPQV9fErc",
+                            "type": "function",
+                            "function": {
+                                "name": "get_weather",
+                                "arguments": "{\"location\": \"New York City\"}"
+                            }
+                        },
+                        {
+                            "id": "call_d7kGKpfVm9Oy9ovs0W8Rn47b",
+                            "type": "function",
+                            "function": {
+                                "name": "get_weather",
+                                "arguments": "{\"location\": \"London\"}"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "role": "tool",
+                    "tool_call_id": "call_n6OA3ruiGLsd0hQFPQV9fErc",
+                    "content": "25 degrees and sunny"
+                },
+                {
+                    "role": "tool",
+                    "tool_call_id": "call_d7kGKpfVm9Oy9ovs0W8Rn47b",
+                    "content": "15 degrees and raining"
+                }
+            ],
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_weather",
+                        "strict": true,
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "location"
+                            ],
+                            "additionalProperties": false
+                        }
+                    }
+                }
+            ]
+        },
+        "status": 200,
+        "response": [
+            "1f8b08000000000000038c52c16ed34010bdfb2b467bb6abc434a4ca11504f55051481a0aaaccdeec41eba9e35bb634254e5dfd13a69ec4091b8ec61debcb7efcdcc5306a0c8aa1528d368316de78a37fdbb2b4f77d79ff9fadbcc6d7e7c587eb9091f6fefcc7a81ef559e187efd1d8d3cb32e8c6f3b87429e0fb009a80593ea7cb92897af5e2faeca0168bd4597687527c5a52f5a622aca597959cc96c5fceac86e3c198c6a05f71900c0d3f0269f6cf1975ac12c7faeb418a3ae51ad4e4d002a78972a4ac74851348bca47d07816e4c1faa706618b5a1a0c40114c1f02b2b81d940bb05807c4089a2dc49e7907c4708b5bf8eac323bc25d9e5b06dc861aadf78b69e7320493af37376d0c4c4f5c5d444c04d1f751a04f7ce4d00cdec45a7410ef11f8ec8fe14d8f9ba0b7e1dffa0aa0d31c5a60aa8a3e7142e8aefd480ee33808761b0fdd9ac54177cdb4925fe1187efe6e5e2a0a7c67d8e68b93c82e245bb096b51e62fe8551645938b93d528a34d8376a48e7bd4bd253f01b249eabfddbca47d484e5cff8ffc0818839da0adba8096cc79e2b12d603af77fb59da63c185611c34f32580961489bb0b8d1bd3b1ca18abb28d8561be21a431768b8c4b4c96c9ffd060000ffff0300eba7002f8c030000"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "9607f4147eb2e397-NRT",
+            "connection": "close",
+            "content-encoding": "gzip",
+            "content-type": "application/json",
+            "date": "Thu, 17 Jul 2025 07:16:23 GMT",
+            "openai-organization": "elastic-observability",
+            "openai-processing-ms": "721",
+            "openai-project": "proj_Pf1eM5R55Z35wBy4rt8PxAGq",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "set-cookie": "_cfuvid=hegbUOz2ZUjELe2UBdTlLWUoLuE69OC60214ou0kk7g-1752736583082-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-envoy-upstream-service-time": "725",
+            "x-ratelimit-limit-requests": "5000",
+            "x-ratelimit-limit-tokens": "4000000",
+            "x-ratelimit-remaining-requests": "4999",
+            "x-ratelimit-remaining-tokens": "3999957",
+            "x-ratelimit-reset-requests": "12ms",
+            "x-ratelimit-reset-tokens": "0s",
+            "x-request-id": "req_31fe1ff570cb59fc99ef7a4ef91280e8"
+        },
+        "responseIsBinary": false
+    }
+]

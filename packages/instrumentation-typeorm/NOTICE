@@ -1,0 +1,12 @@
+[Based on the instrumentation written by Aspecto](https://github.com/aspecto-io/opentelemetry-ext-js/tree/master/packages/instrumentation-typeorm).
+
+The library contains the following changes compared to the original:
+* Removed `moduleVersionAttributeName` configuration option.
+* Changed the function signature of `responseHook`.
+* Removed dependency on `is-promise` package.
+* Removed usage of SemanticAttributes in favor of explicit values.
+* Removed parsing of db operation from raw queries.
+* Changed db.database.parameters to db.typeorm.parameters.
+* Updated to OpenTelemetry semantic conventions 1.32.0.
+
+Refer to the changelog for any future changes.

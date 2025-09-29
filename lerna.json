@@ -1,6 +1,5 @@
 {
   "npmClient": "npm",
-  "useWorkspaces": true,
   "version": "independent",
   "changelog": {
     "repo": "open-telemetry/opentelemetry-js-contrib",

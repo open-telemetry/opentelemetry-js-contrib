@@ -1,0 +1,244 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Tests in this file originated from an earlier aws-sdk-v3.test.ts that
+// covered multiple `client-*` packages. Its tests could be merged into
+// sqs.test.ts.
+
+import { getTestSpans } from '@opentelemetry/contrib-test-utils';
+import './load-instrumentation';
+
+import { SQS } from '@aws-sdk/client-sqs';
+
+// set aws environment variables, so tests in non aws environment are able to run
+process.env.AWS_ACCESS_KEY_ID = 'testing';
+process.env.AWS_SECRET_ACCESS_KEY = 'testing';
+
+import 'mocha';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { context, trace } from '@opentelemetry/api';
+import {
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_URL_FULL,
+} from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_HTTP_STATUS_CODE,
+  ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION,
+  ATTR_MESSAGING_SYSTEM,
+  ATTR_RPC_METHOD,
+  ATTR_RPC_SERVICE,
+  ATTR_RPC_SYSTEM,
+} from '../src/semconv';
+import { MESSAGING_OPERATION_VALUE_RECEIVE } from '../src/semconv-obsolete';
+import { AttributeNames } from '../src/enums';
+import { expect } from 'expect';
+import * as fs from 'fs';
+import * as nock from 'nock';
+
+const region = 'us-east-1';
+
+describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
+  const sqsClient = new SQS({ region });
+
+  it('sqs send add messaging attributes', async () => {
+    nock(`https://sqs.${region}.amazonaws.com/`)
+      .matchHeader('content-type', 'application/x-www-form-urlencoded')
+      .post('/')
+      .reply(
+        200,
+        fs.readFileSync('./test/mock-responses/sqs-send.xml', 'utf8')
+      );
+    // @aws-sdk/client-sqs >=3.446.0 uses a new JSON protocol.
+    nock(`https://sqs.${region}.amazonaws.com/`)
+      .matchHeader('content-type', 'application/x-amz-json-1.0')
+      .post('/')
+      .reply(
+        200,
+        fs.readFileSync('./test/mock-responses/sqs-send.json', 'utf8')
+      );
+
+    const params = {
+      QueueUrl:
+        'https://sqs.us-east-1.amazonaws.com/731241200085/otel-demo-aws-sdk',
+      MessageBody: 'payload example from v3 without batch',
+    };
+    const response = await sqsClient.sendMessage(params);
+    expect(getTestSpans().length).toBe(1);
+    const [span] = getTestSpans();
+
+    // make sure we have the general aws attributes:
+    expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+    expect(span.attributes[ATTR_RPC_METHOD]).toEqual('SendMessage');
+    expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('SQS');
+    expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
+
+    // custom messaging attributes
+    expect(span.attributes[ATTR_MESSAGING_SYSTEM]).toEqual('aws_sqs');
+    expect(span.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toEqual(
+      'otel-demo-aws-sdk'
+    );
+    expect(span.attributes[ATTR_URL_FULL]).toEqual(params.QueueUrl);
+    expect(span.attributes[ATTR_MESSAGING_MESSAGE_ID]).toEqual(
+      response.MessageId
+    );
+    expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+    expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
+  });
+
+  it('sqs send message batch attributes', async () => {
+    nock(`https://sqs.${region}.amazonaws.com/`)
+      .matchHeader('content-type', 'application/x-www-form-urlencoded')
+      .post('/')
+      .reply(
+        200,
+        fs.readFileSync('./test/mock-responses/sqs-send-batch.xml', 'utf8')
+      );
+    nock(`https://sqs.${region}.amazonaws.com/`)
+      .matchHeader('content-type', 'application/x-amz-json-1.0')
+      .post('/')
+      .reply(
+        200,
+        fs.readFileSync('./test/mock-responses/sqs-send-batch.json', 'utf8')
+      );
+
+    const params = {
+      QueueUrl:
+        'https://sqs.us-east-1.amazonaws.com/731241200085/otel-demo-aws-sdk',
+      MessageBody: 'payload example from v3 without batch',
+      Entries: [
+        {
+          Id: '1000',
+          MessageBody: 'msg body for 1000',
+        },
+        {
+          Id: '1001',
+          MessageBody: 'msg body for 1001',
+        },
+      ],
+    };
+    await sqsClient.sendMessageBatch(params);
+    expect(getTestSpans().length).toBe(1);
+    const [span] = getTestSpans();
+
+    // make sure we have the general aws attributes:
+    expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+    expect(span.attributes[ATTR_RPC_METHOD]).toEqual('SendMessageBatch');
+    expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('SQS');
+    expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
+
+    // messaging semantic attributes
+    expect(span.attributes[ATTR_MESSAGING_SYSTEM]).toEqual('aws_sqs');
+    expect(span.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toEqual(
+      'otel-demo-aws-sdk'
+    );
+    expect(span.attributes[ATTR_URL_FULL]).toEqual(params.QueueUrl);
+    expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+    expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
+  });
+
+  it('sqs receive add messaging attributes', done => {
+    nock(`https://sqs.${region}.amazonaws.com/`)
+      .matchHeader('content-type', 'application/x-www-form-urlencoded')
+      .post('/')
+      .reply(
+        200,
+        fs.readFileSync('./test/mock-responses/sqs-receive.xml', 'utf8')
+      );
+    nock(`https://sqs.${region}.amazonaws.com/`)
+      .matchHeader('content-type', 'application/x-amz-json-1.0')
+      .post('/')
+      .reply(
+        200,
+        fs.readFileSync('./test/mock-responses/sqs-receive.json', 'utf8')
+      );
+
+    const params = {
+      QueueUrl:
+        'https://sqs.us-east-1.amazonaws.com/731241200085/otel-demo-aws-sdk',
+      MaxNumberOfMessages: 3,
+    };
+    sqsClient.receiveMessage(params).then(res => {
+      expect(getTestSpans().length).toBe(1);
+      const [span] = getTestSpans();
+
+      // make sure we have the general aws attributes:
+      expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+      expect(span.attributes[ATTR_RPC_METHOD]).toEqual('ReceiveMessage');
+      expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('SQS');
+      expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
+      expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
+      expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
+      expect(span.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT]).toEqual(2);
+      expect(span.links.length).toBe(2);
+
+      const messages = res.Messages || [];
+      expect(messages.length).toEqual(span.links.length);
+
+      for (let i = 0; i < span.links.length; i++) {
+        const link = span.links[i];
+        const messageId = messages[i].MessageId;
+        const traceparent =
+          messages[i].MessageAttributes?.traceparent.StringValue?.split('-') ||
+          [];
+        const traceId = traceparent[1];
+        const spanId = traceparent[2];
+        expect(link.attributes?.[ATTR_MESSAGING_MESSAGE_ID]).toEqual(messageId);
+        expect(link.context.traceId).toEqual(traceId);
+        expect(link.context.spanId).toEqual(spanId);
+      }
+      done();
+    });
+  });
+
+  // Propagating span context to SQS ReceiveMessage promise handler is
+  // broken with `@aws-sdk/client-sqs` v3.316.0 and later.
+  // https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1477
+  it.skip('sqs receive context', done => {
+    nock(`https://sqs.${region}.amazonaws.com/`)
+      .matchHeader('content-type', 'application/x-www-form-urlencoded')
+      .post('/')
+      .reply(
+        200,
+        fs.readFileSync('./test/mock-responses/sqs-receive.xml', 'utf8')
+      );
+    nock(`https://sqs.${region}.amazonaws.com/`)
+      .matchHeader('content-type', 'application/x-amz-json-1.0')
+      .post('/')
+      .reply(
+        200,
+        fs.readFileSync('./test/mock-responses/sqs-receive.json', 'utf8')
+      );
+
+    const params = {
+      QueueUrl:
+        'https://sqs.us-east-1.amazonaws.com/731241200085/otel-demo-aws-sdk',
+      MaxNumberOfMessages: 3,
+    };
+    sqsClient.receiveMessage(params).then(res => {
+      const receiveCallbackSpan = trace.getSpan(context.active());
+      expect(receiveCallbackSpan).toBeDefined();
+      const attributes = (receiveCallbackSpan as unknown as ReadableSpan)
+        .attributes;
+      expect(attributes[ATTR_MESSAGING_OPERATION]).toMatch(
+        MESSAGING_OPERATION_VALUE_RECEIVE
+      );
+      done();
+    });
+  });
+});
