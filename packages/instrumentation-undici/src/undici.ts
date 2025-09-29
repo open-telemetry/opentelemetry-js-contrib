@@ -52,6 +52,7 @@ import {
   ATTR_URL_QUERY,
   ATTR_URL_SCHEME,
   ATTR_USER_AGENT_ORIGINAL,
+  METRIC_HTTP_CLIENT_REQUEST_DURATION,
 } from '@opentelemetry/semantic-conventions';
 
 /** @knipignore */
@@ -136,7 +137,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
   protected override _updateMetricInstruments() {
     this._httpClientDurationHistogram = this.meter.createHistogram(
-      'http.client.request.duration',
+      METRIC_HTTP_CLIENT_REQUEST_DURATION,
       {
         description: 'Measures the duration of outbound HTTP requests.',
         unit: 's',
