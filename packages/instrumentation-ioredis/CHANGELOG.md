@@ -1,6 +1,22 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.53.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.53.2...instrumentation-ioredis-v0.53.3) (2025-09-29)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3123](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3123)) ([0dab838](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0dab8383b5349e21a968fe2cedd8a6e2243f86d0))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/redis-common bumped from ^0.38.1 to ^0.38.2
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.1 to ^0.52.2
+
 ## [0.53.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.53.1...instrumentation-ioredis-v0.53.2) (2025-09-25)
 
 
