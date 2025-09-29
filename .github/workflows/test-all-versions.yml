@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: 18
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Build
         run: npm run compile
       - name: Upload Build Artifacts
@@ -152,6 +152,7 @@ jobs:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       RUN_MONGODB_TESTS: 1
+      RUN_MONGOOSE_TESTS: 1
       RUN_MSSQL_TESTS: 1
       RUN_MYSQL_TESTS: 1
       RUN_ORACLEDB_TESTS: 1
@@ -167,7 +168,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Download Build Artifacts
         uses: actions/download-artifact@v5
         with:

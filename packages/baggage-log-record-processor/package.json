@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/baggage-log-record-processor",
-  "version": "0.6.0",
+  "version": "0.6.2",
   "description": "OpenTelemetry Baggage Log Record Processor",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

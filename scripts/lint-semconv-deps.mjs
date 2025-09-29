@@ -22,7 +22,7 @@
  * See "Rule:" comments for things that are checked.
  *
  * Usage:
- *      node scripts/lint-semconv-deps.js
+ *      node scripts/lint-semconv-deps.js [-x EXCLUDE-PATH]
  */
 
 import fs from 'fs';
@@ -57,7 +57,7 @@ function getAllWorkspaceDirs() {
     .map(path.dirname);
 }
 
-function lintSemconvDeps() {
+function lintSemconvDeps(excludePaths) {
   const wsDirs = getAllWorkspaceDirs();
 
   for (let wsDir of wsDirs) {
@@ -82,6 +82,9 @@ function lintSemconvDeps() {
     const srcFiles = globSync(path.join(wsDir, 'src', '**', '*.ts'));
     const usesIncubatingRe = /import\s+\{?[^{;]*\s+from\s+'@opentelemetry\/semantic-conventions\/incubating'/s;
     for (let srcFile of srcFiles) {
+      if (excludePaths.includes(srcFile)) {
+        continue;
+      }
       const srcText = fs.readFileSync(srcFile, 'utf8');
       const match = usesIncubatingRe.exec(srcText);
       if (match) {
@@ -91,8 +94,17 @@ function lintSemconvDeps() {
   }
 }
 
-// mainline
-await lintSemconvDeps();
+// ---- mainline
+
+// Collect `-x EXCLUDE-PATH` args.
+const excludePaths = [];
+for (let i = 2; i < process.argv.length; i += 2) {
+  if (process.argv[i] === '-x' && process.argv.length > i+1) {
+    excludePaths.push(process.argv[i+1]);
+  }
+}
+
+await lintSemconvDeps(excludePaths);
 if (numProbs > 0) {
   process.exitCode = 1;
 }

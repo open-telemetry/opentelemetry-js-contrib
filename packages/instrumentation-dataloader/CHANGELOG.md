@@ -1,4 +1,42 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
+
+## [0.23.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.23.2...instrumentation-dataloader-v0.23.3) (2025-09-29)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3123](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3123)) ([0dab838](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0dab8383b5349e21a968fe2cedd8a6e2243f86d0))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.1 to ^0.52.2
+
+## [0.23.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.23.1...instrumentation-dataloader-v0.23.2) (2025-09-25)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.0 to ^0.52.1
+
+## [0.23.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.23.0...instrumentation-dataloader-v0.23.1) (2025-09-24)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.51.0 to ^0.52.0
 
 ## [0.23.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.22.0...instrumentation-dataloader-v0.23.0) (2025-09-10)
 
@@ -285,5 +323,3 @@
 
 * add dataloader instrumentation ([#1171](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1171)) ([3898b11](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3898b11800f857c75c286f22c4633b5baf4e1f84))
 * upstream mocha instrumentation testing plugin from ext-js [#621](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/621) ([#669](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/669)) ([a5170c4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a5170c494706a2bec3ba51e59966d0ca8a41d00e))
-
-## Changelog

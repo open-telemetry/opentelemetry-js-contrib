@@ -15,7 +15,7 @@
  */
 
 import { resourceFromAttributes } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { getInstrumentation } from './instrumentation-singleton';
 import { registerInstrumentationTestingProvider } from './otel-default-provider';
 import { resetMemoryExporter } from './otel-provider-api';
@@ -49,7 +49,7 @@ export const mochaHooks = {
     }
     const provider = registerInstrumentationTestingProvider({
       resource: resourceFromAttributes({
-        [SEMRESATTRS_SERVICE_NAME]: serviceName,
+        [ATTR_SERVICE_NAME]: serviceName,
       }),
     });
     getInstrumentation()?.setTracerProvider(provider);

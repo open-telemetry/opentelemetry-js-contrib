@@ -28,16 +28,16 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  DBSYSTEMVALUES_MONGODB,
-  SEMATTRS_DB_CONNECTION_STRING,
-  SEMATTRS_DB_MONGODB_COLLECTION,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_OPERATION,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_DB_CONNECTION_STRING,
+  ATTR_DB_MONGODB_COLLECTION,
+  ATTR_DB_NAME,
+  ATTR_DB_OPERATION,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+  DB_SYSTEM_VALUE_MONGODB,
+} from './semconv';
 import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
   CursorState,
@@ -913,18 +913,18 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   ) {
     // add database related attributes
     span.setAttributes({
-      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MONGODB,
-      [SEMATTRS_DB_NAME]: dbName,
-      [SEMATTRS_DB_MONGODB_COLLECTION]: dbCollection,
-      [SEMATTRS_DB_OPERATION]: operation,
-      [SEMATTRS_DB_CONNECTION_STRING]: `mongodb://${host}:${port}/${dbName}`,
+      [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MONGODB,
+      [ATTR_DB_NAME]: dbName,
+      [ATTR_DB_MONGODB_COLLECTION]: dbCollection,
+      [ATTR_DB_OPERATION]: operation,
+      [ATTR_DB_CONNECTION_STRING]: `mongodb://${host}:${port}/${dbName}`,
     });
 
     if (host && port) {
-      span.setAttribute(SEMATTRS_NET_PEER_NAME, host);
+      span.setAttribute(ATTR_NET_PEER_NAME, host);
       const portNumber = parseInt(port, 10);
       if (!isNaN(portNumber)) {
-        span.setAttribute(SEMATTRS_NET_PEER_PORT, portNumber);
+        span.setAttribute(ATTR_NET_PEER_PORT, portNumber);
       }
     }
     if (!commandObj) return;
@@ -939,7 +939,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     safeExecuteInTheMiddle(
       () => {
         const query = dbStatementSerializer(commandObj);
-        span.setAttribute(SEMATTRS_DB_STATEMENT, query);
+        span.setAttribute(ATTR_DB_STATEMENT, query);
       },
       err => {
         if (err) {

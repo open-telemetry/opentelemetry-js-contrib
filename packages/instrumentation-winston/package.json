@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-winston",
-  "version": "0.50.0",
+  "version": "0.50.2",
   "description": "OpenTelemetry instrumentation for `winston` logger",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -51,7 +51,7 @@
     "@opentelemetry/context-async-hooks": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@opentelemetry/winston-transport": "^0.16.0",
+    "@opentelemetry/winston-transport": "^0.16.2",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",

@@ -20,13 +20,15 @@ import {
   getConnectionAttributesFromUrl,
 } from '../src/utils';
 import {
-  SEMATTRS_MESSAGING_PROTOCOL,
-  SEMATTRS_MESSAGING_PROTOCOL_VERSION,
-  SEMATTRS_MESSAGING_SYSTEM,
-  SEMATTRS_MESSAGING_URL,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_MESSAGING_SYSTEM,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from '../src/semconv';
+import {
+  ATTR_MESSAGING_PROTOCOL,
+  ATTR_MESSAGING_PROTOCOL_VERSION,
+  ATTR_MESSAGING_URL,
+} from '../src/semconv-obsolete';
 import * as amqp from 'amqplib';
 import { shouldTest } from './utils';
 import { rabbitMqUrl } from './config';
@@ -50,7 +52,7 @@ describe('utils', () => {
     it('messaging system attribute', () => {
       const attributes = getConnectionAttributesFromServer(conn.connection);
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_SYSTEM]: 'rabbitmq',
+        [ATTR_MESSAGING_SYSTEM]: 'rabbitmq',
       });
     });
   });
@@ -61,11 +63,11 @@ describe('utils', () => {
         'amqp://user:pass@host:10000/vhost'
       );
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'host',
-        [SEMATTRS_NET_PEER_PORT]: 10000,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://user:***@host:10000/vhost',
+        [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
+        [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [ATTR_NET_PEER_NAME]: 'host',
+        [ATTR_NET_PEER_PORT]: 10000,
+        [ATTR_MESSAGING_URL]: 'amqp://user:***@host:10000/vhost',
       });
     });
 
@@ -74,101 +76,101 @@ describe('utils', () => {
         'amqp://user%61:%61pass@ho%61st:10000/v%2fhost'
       );
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'ho%61st',
-        [SEMATTRS_NET_PEER_PORT]: 10000,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://user%61:***@ho%61st:10000/v%2fhost',
+        [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
+        [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [ATTR_NET_PEER_NAME]: 'ho%61st',
+        [ATTR_NET_PEER_PORT]: 10000,
+        [ATTR_MESSAGING_URL]: 'amqp://user%61:***@ho%61st:10000/v%2fhost',
       });
     });
 
     it('only protocol', () => {
       const attributes = getConnectionAttributesFromUrl('amqp://');
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'localhost',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://',
+        [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
+        [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [ATTR_NET_PEER_NAME]: 'localhost',
+        [ATTR_NET_PEER_PORT]: 5672,
+        [ATTR_MESSAGING_URL]: 'amqp://',
       });
     });
 
     it('empty username and password', () => {
       const attributes = getConnectionAttributesFromUrl('amqp://:@/');
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_MESSAGING_URL]: 'amqp://:***@/',
+        [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [ATTR_MESSAGING_URL]: 'amqp://:***@/',
       });
     });
 
     it('username and no password', () => {
       const attributes = getConnectionAttributesFromUrl('amqp://user@');
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_MESSAGING_URL]: 'amqp://user@',
+        [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [ATTR_MESSAGING_URL]: 'amqp://user@',
       });
     });
 
     it('username and password, no host', () => {
       const attributes = getConnectionAttributesFromUrl('amqp://user:pass@');
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_MESSAGING_URL]: 'amqp://user:***@',
+        [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [ATTR_MESSAGING_URL]: 'amqp://user:***@',
       });
     });
 
     it('host only', () => {
       const attributes = getConnectionAttributesFromUrl('amqp://host');
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'host',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://host',
+        [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
+        [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [ATTR_NET_PEER_NAME]: 'host',
+        [ATTR_NET_PEER_PORT]: 5672,
+        [ATTR_MESSAGING_URL]: 'amqp://host',
       });
     });
 
     it('vhost only', () => {
       const attributes = getConnectionAttributesFromUrl('amqp:///vhost');
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'localhost',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp:///vhost',
+        [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
+        [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [ATTR_NET_PEER_NAME]: 'localhost',
+        [ATTR_NET_PEER_PORT]: 5672,
+        [ATTR_MESSAGING_URL]: 'amqp:///vhost',
       });
     });
 
     it('host only, trailing slash', () => {
       const attributes = getConnectionAttributesFromUrl('amqp://host/');
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'host',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://host/',
+        [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
+        [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [ATTR_NET_PEER_NAME]: 'host',
+        [ATTR_NET_PEER_PORT]: 5672,
+        [ATTR_MESSAGING_URL]: 'amqp://host/',
       });
     });
 
     it('vhost encoded', () => {
       const attributes = getConnectionAttributesFromUrl('amqp://host/%2f');
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: 'host',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://host/%2f',
+        [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
+        [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [ATTR_NET_PEER_NAME]: 'host',
+        [ATTR_NET_PEER_PORT]: 5672,
+        [ATTR_MESSAGING_URL]: 'amqp://host/%2f',
       });
     });
 
     it('IPv6 host', () => {
       const attributes = getConnectionAttributesFromUrl('amqp://[::1]');
       expect(attributes).toStrictEqual({
-        [SEMATTRS_MESSAGING_PROTOCOL]: 'AMQP',
-        [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SEMATTRS_NET_PEER_NAME]: '[::1]',
-        [SEMATTRS_NET_PEER_PORT]: 5672,
-        [SEMATTRS_MESSAGING_URL]: 'amqp://[::1]',
+        [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
+        [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [ATTR_NET_PEER_NAME]: '[::1]',
+        [ATTR_NET_PEER_PORT]: 5672,
+        [ATTR_MESSAGING_URL]: 'amqp://[::1]',
       });
     });
   });
