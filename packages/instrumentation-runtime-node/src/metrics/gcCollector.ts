@@ -48,10 +48,9 @@ export class GCCollector extends BaseCollector {
       // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const kind = entry.detail ? kinds[entry.detail.kind] : kinds[entry.kind];
-      this._gcDurationByKindHistogram?.record(
-        entry.duration / 1000,
-        { [ATTR_V8JS_GC_TYPE]: kind }
-      );
+      this._gcDurationByKindHistogram?.record(entry.duration / 1000, {
+        [ATTR_V8JS_GC_TYPE]: kind,
+      });
     });
   }
 
