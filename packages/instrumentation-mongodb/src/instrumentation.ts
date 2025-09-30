@@ -39,7 +39,7 @@ import {
   DB_SYSTEM_VALUE_MONGODB,
   METRIC_DB_CLIENT_CONNECTIONS_USAGE,
 } from './semconv';
-import { MongoDBInstrumentationConfig, CommandResult, Replacer } from './types';
+import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
   CursorState,
   ServerSession,
@@ -50,6 +50,7 @@ import {
   WireProtocolInternal,
   V4Connection,
   V4ConnectionPool,
+  Replacer,
 } from './internal-types';
 import { V4Connect, V4Session } from './internal-types';
 /** @knipignore */
