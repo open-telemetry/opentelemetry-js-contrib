@@ -28,7 +28,14 @@ import {
 import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';
-import { ATTRIBUTE_NAMES } from '../src/enum';
+import {
+  ATTR_NETWORK_IO_DIRECTION,
+  ATTR_PROCESS_CPU_STATE,
+  ATTR_SYSTEM_CPU_LOGICAL_NUMBER,
+  ATTR_SYSTEM_CPU_STATE,
+  ATTR_SYSTEM_DEVICE,
+  ATTR_SYSTEM_MEMORY_STATE,
+} from '../src/semconv';
 import { HostMetrics } from '../src';
 
 const cpuJson = require('./mocks/cpu.json');
@@ -166,65 +173,88 @@ describe('Host Metrics', () => {
       sandbox.restore();
     });
 
-    const sysCpuStateAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_STATE;
-    const sysCpuNumAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_LOGICAL_NUMBER;
-    const sysMemStateAttr = ATTRIBUTE_NAMES.SYSTEM_MEMORY_STATE;
-    const sysDeviceAttr = ATTRIBUTE_NAMES.SYSTEM_DEVICE;
-    const sysNetDirAttr = ATTRIBUTE_NAMES.NETWORK_IO_DIRECTION;
-    const procCpuStateAttr = ATTRIBUTE_NAMES.PROCESS_CPU_STATE;
-
     it('should export CPU time metrics', async () => {
       const metric = await getRecords(reader, 'system.cpu.time');
 
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '0' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'user',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+        },
         90714.26
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '0' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'system',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+        },
         63192.83
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '0' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'idle',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+        },
         374870.8
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '0' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'interrupt',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+        },
         0
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '0' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'nice',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+        },
         0
       );
 
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '1' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'user',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+        },
         11005.72
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '1' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'system',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+        },
         7678.62
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '1' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'idle',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+        },
         510035
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '1' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'interrupt',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+        },
         0
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '1' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'nice',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+        },
         0
       );
     });
@@ -234,53 +264,83 @@ describe('Host Metrics', () => {
 
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '0' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'user',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+        },
         0.7
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '0' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'system',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+        },
         0.2
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '0' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'idle',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+        },
         0.1
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '0' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'interrupt',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+        },
         0
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '0' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'nice',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+        },
         0
       );
 
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '1' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'user',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+        },
         0.3
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '1' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'system',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+        },
         0.5
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '1' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'idle',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+        },
         0.2
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '1' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'interrupt',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+        },
         0
       );
       ensureValue(
         metric,
-        { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '1' },
+        {
+          [ATTR_SYSTEM_CPU_STATE]: 'nice',
+          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+        },
         0
       );
     });
@@ -288,15 +348,19 @@ describe('Host Metrics', () => {
     it('should export Memory usage metrics', async () => {
       const metric = await getRecords(reader, 'system.memory.usage');
 
-      ensureValue(metric, { [sysMemStateAttr]: 'used' }, 1024 * 1024 - 1024);
-      ensureValue(metric, { [sysMemStateAttr]: 'free' }, 1024);
+      ensureValue(
+        metric,
+        { [ATTR_SYSTEM_MEMORY_STATE]: 'used' },
+        1024 * 1024 - 1024
+      );
+      ensureValue(metric, { [ATTR_SYSTEM_MEMORY_STATE]: 'free' }, 1024);
     });
 
     it('should export Memory utilization metrics', async () => {
       const metric = await getRecords(reader, 'system.memory.utilization');
 
-      ensureValue(metric, { [sysMemStateAttr]: 'used' }, 0.9990234375);
-      ensureValue(metric, { [sysMemStateAttr]: 'free' }, 0.0009765625);
+      ensureValue(metric, { [ATTR_SYSTEM_MEMORY_STATE]: 'used' }, 0.9990234375);
+      ensureValue(metric, { [ATTR_SYSTEM_MEMORY_STATE]: 'free' }, 0.0009765625);
     });
 
     it('should export Network io dropped', async () => {
@@ -304,12 +368,18 @@ describe('Host Metrics', () => {
 
       ensureValue(
         metric,
-        { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' },
+        {
+          [ATTR_NETWORK_IO_DIRECTION]: 'receive',
+          [ATTR_SYSTEM_DEVICE]: 'eth0',
+        },
         1200
       );
       ensureValue(
         metric,
-        { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' },
+        {
+          [ATTR_NETWORK_IO_DIRECTION]: 'transmit',
+          [ATTR_SYSTEM_DEVICE]: 'eth0',
+        },
         12
       );
     });
@@ -319,12 +389,18 @@ describe('Host Metrics', () => {
 
       ensureValue(
         metric,
-        { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' },
+        {
+          [ATTR_NETWORK_IO_DIRECTION]: 'receive',
+          [ATTR_SYSTEM_DEVICE]: 'eth0',
+        },
         3
       );
       ensureValue(
         metric,
-        { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' },
+        {
+          [ATTR_NETWORK_IO_DIRECTION]: 'transmit',
+          [ATTR_SYSTEM_DEVICE]: 'eth0',
+        },
         15
       );
     });
@@ -334,12 +410,18 @@ describe('Host Metrics', () => {
 
       ensureValue(
         metric,
-        { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' },
+        {
+          [ATTR_NETWORK_IO_DIRECTION]: 'receive',
+          [ATTR_SYSTEM_DEVICE]: 'eth0',
+        },
         123123
       );
       ensureValue(
         metric,
-        { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' },
+        {
+          [ATTR_NETWORK_IO_DIRECTION]: 'transmit',
+          [ATTR_SYSTEM_DEVICE]: 'eth0',
+        },
         321321
       );
     });
@@ -347,15 +429,19 @@ describe('Host Metrics', () => {
     it('should export Process CPU time metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.time');
 
-      ensureValue(metric, { [procCpuStateAttr]: 'user' }, 90.71356);
-      ensureValue(metric, { [procCpuStateAttr]: 'system' }, 63.192629999999994);
+      ensureValue(metric, { [ATTR_PROCESS_CPU_STATE]: 'user' }, 90.71356);
+      ensureValue(
+        metric,
+        { [ATTR_PROCESS_CPU_STATE]: 'system' },
+        63.192629999999994
+      );
     });
 
     it('should export Process CPU utilization metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.utilization');
 
-      ensureValue(metric, { [procCpuStateAttr]: 'user' }, 0.025);
-      ensureValue(metric, { [procCpuStateAttr]: 'system' }, 0.05);
+      ensureValue(metric, { [ATTR_PROCESS_CPU_STATE]: 'user' }, 0.025);
+      ensureValue(metric, { [ATTR_PROCESS_CPU_STATE]: 'system' }, 0.05);
     });
 
     it('should export Process Memory usage metrics', async () => {
