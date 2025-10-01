@@ -601,3 +601,11 @@ export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
+
+/**
+ * Number of input and output tokens used.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_GEN_AI_CLIENT_TOKEN_USAGE =
+  'gen_ai.client.token.usage' as const;
