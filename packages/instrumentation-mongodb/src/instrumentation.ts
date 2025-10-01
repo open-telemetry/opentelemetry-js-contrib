@@ -37,6 +37,7 @@ import {
   ATTR_NET_PEER_NAME,
   ATTR_NET_PEER_PORT,
   DB_SYSTEM_VALUE_MONGODB,
+  METRIC_DB_CLIENT_CONNECTIONS_USAGE,
 } from './semconv';
 import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
@@ -74,7 +75,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
   override _updateMetricInstruments() {
     this._connectionsUsage = this.meter.createUpDownCounter(
-      'db.client.connections.usage',
+      METRIC_DB_CLIENT_CONNECTIONS_USAGE,
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',
