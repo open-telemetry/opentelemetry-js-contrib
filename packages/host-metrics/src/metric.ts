@@ -21,12 +21,33 @@ import {
   ObservableGauge,
 } from '@opentelemetry/api';
 import {
-  ATTRIBUTE_NAMES,
-  CPU_LABELS,
-  MEMORY_LABELS,
-  METRIC_NAMES,
-  NETWORK_LABELS,
-} from './enum';
+  ATTR_NETWORK_IO_DIRECTION,
+  ATTR_PROCESS_CPU_STATE,
+  ATTR_SYSTEM_CPU_LOGICAL_NUMBER,
+  ATTR_SYSTEM_CPU_STATE,
+  ATTR_SYSTEM_DEVICE,
+  ATTR_SYSTEM_MEMORY_STATE,
+  METRIC_PROCESS_CPU_TIME,
+  METRIC_PROCESS_CPU_UTILIZATION,
+  METRIC_PROCESS_MEMORY_USAGE,
+  METRIC_SYSTEM_CPU_TIME,
+  METRIC_SYSTEM_CPU_UTILIZATION,
+  METRIC_SYSTEM_MEMORY_USAGE,
+  METRIC_SYSTEM_MEMORY_UTILIZATION,
+  METRIC_SYSTEM_NETWORK_ERRORS,
+  METRIC_SYSTEM_NETWORK_IO,
+  NETWORK_IO_DIRECTION_VALUE_RECEIVE,
+  NETWORK_IO_DIRECTION_VALUE_TRANSMIT,
+  PROCESS_CPU_STATE_VALUE_SYSTEM,
+  PROCESS_CPU_STATE_VALUE_USER,
+  SYSTEM_CPU_STATE_VALUE_IDLE,
+  SYSTEM_CPU_STATE_VALUE_INTERRUPT,
+  SYSTEM_CPU_STATE_VALUE_NICE,
+  SYSTEM_CPU_STATE_VALUE_SYSTEM,
+  SYSTEM_CPU_STATE_VALUE_USER,
+  SYSTEM_MEMORY_STATE_VALUE_FREE,
+  SYSTEM_MEMORY_STATE_VALUE_USED,
+} from './semconv';
 
 import {
   getCpuUsageData,
@@ -46,51 +67,48 @@ export class HostMetrics extends BaseMetrics {
     observableResult: BatchObservableResult,
     cpuUsages: CpuUsageData[]
   ): void {
-    const stateAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_STATE;
-    const cpuAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_LOGICAL_NUMBER;
-
     for (let i = 0, j = cpuUsages.length; i < j; i++) {
       const cpuUsage = cpuUsages[i];
       observableResult.observe(this._cpuTime, cpuUsage.user, {
-        [stateAttr]: CPU_LABELS.USER,
-        [cpuAttr]: cpuUsage.cpuNumber,
+        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_USER,
+        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuTime, cpuUsage.system, {
-        [stateAttr]: CPU_LABELS.SYSTEM,
-        [cpuAttr]: cpuUsage.cpuNumber,
+        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_SYSTEM,
+        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuTime, cpuUsage.idle, {
-        [stateAttr]: CPU_LABELS.IDLE,
-        [cpuAttr]: cpuUsage.cpuNumber,
+        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_IDLE,
+        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuTime, cpuUsage.interrupt, {
-        [stateAttr]: CPU_LABELS.INTERRUPT,
-        [cpuAttr]: cpuUsage.cpuNumber,
+        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_INTERRUPT,
+        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuTime, cpuUsage.nice, {
-        [stateAttr]: CPU_LABELS.NICE,
-        [cpuAttr]: cpuUsage.cpuNumber,
+        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_NICE,
+        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
 
       observableResult.observe(this._cpuUtilization, cpuUsage.userP, {
-        [stateAttr]: CPU_LABELS.USER,
-        [cpuAttr]: cpuUsage.cpuNumber,
+        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_USER,
+        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuUtilization, cpuUsage.systemP, {
-        [stateAttr]: CPU_LABELS.SYSTEM,
-        [cpuAttr]: cpuUsage.cpuNumber,
+        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_SYSTEM,
+        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuUtilization, cpuUsage.idleP, {
-        [stateAttr]: CPU_LABELS.IDLE,
-        [cpuAttr]: cpuUsage.cpuNumber,
+        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_IDLE,
+        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuUtilization, cpuUsage.interruptP, {
-        [stateAttr]: CPU_LABELS.INTERRUPT,
-        [cpuAttr]: cpuUsage.cpuNumber,
+        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_INTERRUPT,
+        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuUtilization, cpuUsage.niceP, {
-        [stateAttr]: CPU_LABELS.NICE,
-        [cpuAttr]: cpuUsage.cpuNumber,
+        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_NICE,
+        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
     }
   }
@@ -99,27 +117,25 @@ export class HostMetrics extends BaseMetrics {
     observableResult: BatchObservableResult,
     processCpuUsage: ProcessCpuUsageData
   ): void {
-    const stateAttr = ATTRIBUTE_NAMES.PROCESS_CPU_STATE;
-
     observableResult.observe(this._processCpuTime, processCpuUsage.user, {
-      [stateAttr]: CPU_LABELS.USER,
+      [ATTR_PROCESS_CPU_STATE]: PROCESS_CPU_STATE_VALUE_USER,
     });
     observableResult.observe(this._processCpuTime, processCpuUsage.system, {
-      [stateAttr]: CPU_LABELS.SYSTEM,
+      [ATTR_PROCESS_CPU_STATE]: PROCESS_CPU_STATE_VALUE_SYSTEM,
     });
 
     observableResult.observe(
       this._processCpuUtilization,
       processCpuUsage.userP,
       {
-        [stateAttr]: CPU_LABELS.USER,
+        [ATTR_PROCESS_CPU_STATE]: PROCESS_CPU_STATE_VALUE_USER,
       }
     );
     observableResult.observe(
       this._processCpuUtilization,
       processCpuUsage.systemP,
       {
-        [stateAttr]: CPU_LABELS.SYSTEM,
+        [ATTR_PROCESS_CPU_STATE]: PROCESS_CPU_STATE_VALUE_SYSTEM,
       }
     );
   }
@@ -128,20 +144,18 @@ export class HostMetrics extends BaseMetrics {
     observableResult: BatchObservableResult,
     memUsage: MemoryData
   ): void {
-    const stateAttr = ATTRIBUTE_NAMES.SYSTEM_MEMORY_STATE;
-
     observableResult.observe(this._memoryUsage, memUsage.used, {
-      [stateAttr]: MEMORY_LABELS.USED,
+      [ATTR_SYSTEM_MEMORY_STATE]: SYSTEM_MEMORY_STATE_VALUE_USED,
     });
     observableResult.observe(this._memoryUsage, memUsage.free, {
-      [stateAttr]: MEMORY_LABELS.FREE,
+      [ATTR_SYSTEM_MEMORY_STATE]: SYSTEM_MEMORY_STATE_VALUE_FREE,
     });
 
     observableResult.observe(this._memoryUtilization, memUsage.usedP, {
-      [stateAttr]: MEMORY_LABELS.USED,
+      [ATTR_SYSTEM_MEMORY_STATE]: SYSTEM_MEMORY_STATE_VALUE_USED,
     });
     observableResult.observe(this._memoryUtilization, memUsage.freeP, {
-      [stateAttr]: MEMORY_LABELS.FREE,
+      [ATTR_SYSTEM_MEMORY_STATE]: SYSTEM_MEMORY_STATE_VALUE_FREE,
     });
   }
 
@@ -156,36 +170,33 @@ export class HostMetrics extends BaseMetrics {
     observableResult: BatchObservableResult,
     networkUsages: Systeminformation.NetworkStatsData[]
   ): void {
-    const deviceAttr = ATTRIBUTE_NAMES.SYSTEM_DEVICE;
-    const directionAttr = ATTRIBUTE_NAMES.NETWORK_IO_DIRECTION;
-
     for (let i = 0, j = networkUsages.length; i < j; i++) {
       const networkUsage = networkUsages[i];
       observableResult.observe(this._networkDropped, networkUsage.rx_dropped, {
-        [deviceAttr]: networkUsage.iface,
-        [directionAttr]: NETWORK_LABELS.RECEIVE,
+        [ATTR_SYSTEM_DEVICE]: networkUsage.iface,
+        [ATTR_NETWORK_IO_DIRECTION]: NETWORK_IO_DIRECTION_VALUE_RECEIVE,
       });
       observableResult.observe(this._networkDropped, networkUsage.tx_dropped, {
-        [deviceAttr]: networkUsage.iface,
-        [directionAttr]: NETWORK_LABELS.TRANSMIT,
+        [ATTR_SYSTEM_DEVICE]: networkUsage.iface,
+        [ATTR_NETWORK_IO_DIRECTION]: NETWORK_IO_DIRECTION_VALUE_TRANSMIT,
       });
 
       observableResult.observe(this._networkErrors, networkUsage.rx_errors, {
-        [deviceAttr]: networkUsage.iface,
-        [directionAttr]: NETWORK_LABELS.RECEIVE,
+        [ATTR_SYSTEM_DEVICE]: networkUsage.iface,
+        [ATTR_NETWORK_IO_DIRECTION]: NETWORK_IO_DIRECTION_VALUE_RECEIVE,
       });
       observableResult.observe(this._networkErrors, networkUsage.tx_errors, {
-        [deviceAttr]: networkUsage.iface,
-        [directionAttr]: NETWORK_LABELS.TRANSMIT,
+        [ATTR_SYSTEM_DEVICE]: networkUsage.iface,
+        [ATTR_NETWORK_IO_DIRECTION]: NETWORK_IO_DIRECTION_VALUE_TRANSMIT,
       });
 
       observableResult.observe(this._networkIo, networkUsage.rx_bytes, {
-        [deviceAttr]: networkUsage.iface,
-        [directionAttr]: NETWORK_LABELS.RECEIVE,
+        [ATTR_SYSTEM_DEVICE]: networkUsage.iface,
+        [ATTR_NETWORK_IO_DIRECTION]: NETWORK_IO_DIRECTION_VALUE_RECEIVE,
       });
       observableResult.observe(this._networkIo, networkUsage.tx_bytes, {
-        [deviceAttr]: networkUsage.iface,
-        [directionAttr]: NETWORK_LABELS.TRANSMIT,
+        [ATTR_SYSTEM_DEVICE]: networkUsage.iface,
+        [ATTR_NETWORK_IO_DIRECTION]: NETWORK_IO_DIRECTION_VALUE_TRANSMIT,
       });
     }
   }
@@ -194,64 +205,70 @@ export class HostMetrics extends BaseMetrics {
    * Creates metrics
    */
   protected _createMetrics(): void {
-    this._cpuTime = this._meter.createObservableCounter(METRIC_NAMES.CPU_TIME, {
-      description: 'Cpu time in seconds',
-      unit: 's',
-    });
+    this._cpuTime = this._meter.createObservableCounter(
+      METRIC_SYSTEM_CPU_TIME,
+      {
+        description: 'Cpu time in seconds',
+        unit: 's',
+      }
+    );
     this._cpuUtilization = this._meter.createObservableGauge(
-      METRIC_NAMES.CPU_UTILIZATION,
+      METRIC_SYSTEM_CPU_UTILIZATION,
       {
         description: 'Cpu usage time 0-1',
       }
     );
 
     this._memoryUsage = this._meter.createObservableGauge(
-      METRIC_NAMES.MEMORY_USAGE,
+      METRIC_SYSTEM_MEMORY_USAGE,
       {
         description: 'Memory usage in bytes',
       }
     );
     this._memoryUtilization = this._meter.createObservableGauge(
-      METRIC_NAMES.MEMORY_UTILIZATION,
+      METRIC_SYSTEM_MEMORY_UTILIZATION,
       {
         description: 'Memory usage 0-1',
       }
     );
 
     this._networkDropped = this._meter.createObservableCounter(
-      METRIC_NAMES.NETWORK_DROPPED,
+      // There is no semconv pkg export for this in v1.37.0 because
+      // https://github.com/open-telemetry/semantic-conventions/issues/2828.
+      // TODO: update to `METRIC_SYSTEM_NETWORK_PACKET_DROPPED` (breaking change)
+      'system.network.dropped',
       {
         description: 'Network dropped packets',
       }
     );
     this._networkErrors = this._meter.createObservableCounter(
-      METRIC_NAMES.NETWORK_ERRORS,
+      METRIC_SYSTEM_NETWORK_ERRORS,
       {
         description: 'Network errors counter',
       }
     );
     this._networkIo = this._meter.createObservableCounter(
-      METRIC_NAMES.NETWORK_IO,
+      METRIC_SYSTEM_NETWORK_IO,
       {
         description: 'Network transmit and received bytes',
       }
     );
 
     this._processCpuTime = this._meter.createObservableCounter(
-      METRIC_NAMES.PROCESS_CPU_TIME,
+      METRIC_PROCESS_CPU_TIME,
       {
         description: 'Process Cpu time in seconds',
         unit: 's',
       }
     );
     this._processCpuUtilization = this._meter.createObservableGauge(
-      METRIC_NAMES.PROCESS_CPU_UTILIZATION,
+      METRIC_PROCESS_CPU_UTILIZATION,
       {
         description: 'Process Cpu usage time 0-1',
       }
     );
     this._processMemoryUsage = this._meter.createObservableGauge(
-      METRIC_NAMES.PROCESS_MEMORY_USAGE,
+      METRIC_PROCESS_MEMORY_USAGE,
       {
         description: 'Process Memory usage in bytes',
       }
