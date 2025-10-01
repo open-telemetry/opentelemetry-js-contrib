@@ -15,12 +15,9 @@
  */
 
 import * as assert from 'assert';
-
 import { MeterProvider, DataPointType } from '@opentelemetry/sdk-metrics';
-
 import { RuntimeNodeInstrumentation } from '../src';
 import { TestMetricReader } from './testMetricsReader';
-
 import * as semconv from '../src/semconv';
 
 describe(`nodejs.eventloop.delay.*`, function () {

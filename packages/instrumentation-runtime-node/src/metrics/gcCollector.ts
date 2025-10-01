@@ -16,9 +16,7 @@
 
 import * as perf_hooks from 'node:perf_hooks';
 import { PerformanceObserver } from 'node:perf_hooks';
-
 import { Meter } from '@opentelemetry/api';
-
 import { RuntimeNodeInstrumentationConfig } from '../types';
 import { Histogram, ValueType } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';

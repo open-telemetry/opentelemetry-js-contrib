@@ -15,9 +15,7 @@
  */
 
 import * as assert from 'assert';
-
 import { MeterProvider } from '@opentelemetry/sdk-metrics';
-
 import { RuntimeNodeInstrumentation } from '../src';
 import { TestMetricReader } from './testMetricsReader';
 import { METRIC_NODEJS_EVENTLOOP_TIME } from '../src/semconv';

@@ -15,10 +15,8 @@
  */
 
 import * as assert from 'assert';
-
 import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
 import { GaugeMetricData } from '@opentelemetry/sdk-metrics/build/src/export/MetricData';
-
 import { RuntimeNodeInstrumentation } from '../src';
 import { TestMetricReader } from './testMetricsReader';
 import {

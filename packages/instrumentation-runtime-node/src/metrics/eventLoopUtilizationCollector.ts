@@ -15,9 +15,7 @@
  */
 
 import { EventLoopUtilization, performance } from 'node:perf_hooks';
-
 import { Meter } from '@opentelemetry/api';
-
 import { BaseCollector } from './baseCollector';
 import { METRIC_NODEJS_EVENTLOOP_UTILIZATION } from '../semconv';
 
