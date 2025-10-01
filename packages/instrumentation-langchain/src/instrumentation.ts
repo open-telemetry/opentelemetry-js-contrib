@@ -40,11 +40,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       new InstrumentationNodeModuleDefinition(
         'langchain',
         ['>=0.1.0'],
+        /* istanbul ignore next */
         modExports => {
           this._diag.debug('Applying LangChain instrumentation');
           // TODO: Add instrumentation patches here
           return modExports;
         },
+        /* istanbul ignore next */
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         modExports => {
           this._diag.debug('Removing LangChain instrumentation');

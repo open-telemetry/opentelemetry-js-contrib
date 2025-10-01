@@ -18,14 +18,22 @@ import { LangChainInstrumentation } from '../src';
 import { expect } from 'expect';
 
 describe('LangChainInstrumentation', () => {
+  let instrumentation: LangChainInstrumentation;
+
+  beforeEach(() => {
+    instrumentation = new LangChainInstrumentation();
+  });
+
+  afterEach(() => {
+    instrumentation.disable();
+  });
+
   describe('constructor', () => {
     it('should create an instance', () => {
-      const instrumentation = new LangChainInstrumentation();
       expect(instrumentation).toBeInstanceOf(LangChainInstrumentation);
     });
 
     it('should have correct instrumentationName', () => {
-      const instrumentation = new LangChainInstrumentation();
       expect(instrumentation.instrumentationName).toBe(
         '@opentelemetry/instrumentation-langchain'
       );
@@ -34,15 +42,15 @@ describe('LangChainInstrumentation', () => {
 
   describe('setConfig', () => {
     it('should normalize captureMessageContent config', () => {
-      const instrumentation = new LangChainInstrumentation({
+      const instr = new LangChainInstrumentation({
         captureMessageContent: true,
       });
-      const config = instrumentation.getConfig();
+      const config = instr.getConfig();
       expect(config.captureMessageContent).toBe(true);
+      instr.disable();
     });
 
     it('should default captureMessageContent to false', () => {
-      const instrumentation = new LangChainInstrumentation();
       const config = instrumentation.getConfig();
       expect(config.captureMessageContent).toBe(false);
     });
