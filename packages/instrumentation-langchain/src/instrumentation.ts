@@ -45,9 +45,11 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           // TODO: Add instrumentation patches here
           return modExports;
         },
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         modExports => {
           this._diag.debug('Removing LangChain instrumentation');
-          // TODO: Add unwrap calls here
+          // TODO: Add unwrap calls here, e.g.:
+          // this._unwrap(modExports.SomeClass.prototype, 'someMethod');
         }
       ),
     ];
