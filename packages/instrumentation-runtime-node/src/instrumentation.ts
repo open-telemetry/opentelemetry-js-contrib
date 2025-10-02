@@ -21,7 +21,6 @@ import { EventLoopUtilizationCollector } from './metrics/eventLoopUtilizationCol
 import { EventLoopDelayCollector } from './metrics/eventLoopDelayCollector';
 import { GCCollector } from './metrics/gcCollector';
 import { HeapSpacesSizeAndUsedCollector } from './metrics/heapSpacesSizeAndUsedCollector';
-import { ConventionalNamePrefix } from './types/ConventionalNamePrefix';
 import { EventLoopTimeCollector } from './metrics/eventLoopTimeCollector';
 /** @knipignore */
 import { PACKAGE_VERSION, PACKAGE_NAME } from './version';
@@ -40,17 +39,11 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
       Object.assign({}, DEFAULT_CONFIG, config)
     );
     this._collectors = [
-      new EventLoopUtilizationCollector(
-        this._config,
-        ConventionalNamePrefix.NodeJs
-      ),
-      new EventLoopTimeCollector(this._config, ConventionalNamePrefix.NodeJs),
-      new EventLoopDelayCollector(this._config, ConventionalNamePrefix.NodeJs),
-      new GCCollector(this._config, ConventionalNamePrefix.V8js),
-      new HeapSpacesSizeAndUsedCollector(
-        this._config,
-        ConventionalNamePrefix.V8js
-      ),
+      new EventLoopUtilizationCollector(this._config),
+      new EventLoopTimeCollector(this._config),
+      new EventLoopDelayCollector(this._config),
+      new GCCollector(this._config),
+      new HeapSpacesSizeAndUsedCollector(this._config),
     ];
     if (this._config.enabled) {
       for (const collector of this._collectors) {

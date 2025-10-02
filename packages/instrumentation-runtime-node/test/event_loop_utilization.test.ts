@@ -13,17 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { MeterProvider } from '@opentelemetry/sdk-metrics';
 
-import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
+import { MeterProvider } from '@opentelemetry/sdk-metrics';
+import { RuntimeNodeInstrumentation } from '../src';
 import { TestMetricReader } from './testMetricsReader';
-import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
-import { ATTR_NODEJS_EVENT_LOOP_UTILIZATION } from '../src/metrics/eventLoopUtilizationCollector';
+import { METRIC_NODEJS_EVENTLOOP_UTILIZATION } from '../src/semconv';
 
 const MEASUREMENT_INTERVAL = 10;
 
-describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`, function () {
+describe('nodejs.eventloop.utilization', function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -52,7 +51,7 @@ describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}
     assert.strictEqual(scopeMetrics.length, 0);
   });
 
-  it(`should write ${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`, async function () {
+  it(`should write nodejs.eventloop.utilization`, async function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
@@ -71,16 +70,14 @@ describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}
     );
     const scopeMetrics = resourceMetrics.scopeMetrics;
     const utilizationMetric = scopeMetrics[0].metrics.find(
-      x =>
-        x.descriptor.name ===
-        `${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`
+      x => x.descriptor.name === METRIC_NODEJS_EVENTLOOP_UTILIZATION
     );
 
     assert.notEqual(utilizationMetric, undefined, 'metric not found');
 
     assert.strictEqual(
       utilizationMetric!.descriptor.name,
-      `${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`,
+      METRIC_NODEJS_EVENTLOOP_UTILIZATION,
       'descriptor.name'
     );
 

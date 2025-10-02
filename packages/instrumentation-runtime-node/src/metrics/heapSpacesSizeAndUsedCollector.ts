@@ -13,74 +13,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RuntimeNodeInstrumentationConfig } from '../types';
-import { Meter } from '@opentelemetry/api';
-import { BaseCollector } from './baseCollector';
+
 import * as v8 from 'node:v8';
-import { HeapSpaceInfo } from 'v8';
-import { ATTR_V8JS_HEAP_SPACE_NAME } from '../consts/attributes';
+import type { HeapSpaceInfo } from 'v8';
 
-export enum V8HeapSpaceMetrics {
-  heapLimit = 'memory.heap.limit',
-  used = 'memory.heap.used',
-  available = 'memory.heap.space.available_size',
-  physical = 'memory.heap.space.physical_size',
-}
+import { Meter } from '@opentelemetry/api';
 
-export const metricNames: Record<V8HeapSpaceMetrics, { description: string }> =
-  {
-    [V8HeapSpaceMetrics.heapLimit]: {
-      description: 'Total heap memory size pre-allocated.',
-    },
-    [V8HeapSpaceMetrics.used]: {
-      description: 'Heap Memory size allocated.',
-    },
-    [V8HeapSpaceMetrics.available]: {
-      description: 'Heap space available size.',
-    },
-    [V8HeapSpaceMetrics.physical]: {
-      description: 'Committed size of a heap space.',
-    },
-  };
+import { BaseCollector } from './baseCollector';
+import {
+  ATTR_V8JS_HEAP_SPACE_NAME,
+  METRIC_V8JS_MEMORY_HEAP_LIMIT,
+  METRIC_V8JS_MEMORY_HEAP_USED,
+} from '../semconv';
 
 export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
-  constructor(
-    config: RuntimeNodeInstrumentationConfig = {},
-    namePrefix: string
-  ) {
-    super(config, namePrefix);
-  }
-
   updateMetricInstruments(meter: Meter): void {
     const heapLimit = meter.createObservableGauge(
-      `${this.namePrefix}.${V8HeapSpaceMetrics.heapLimit}`,
+      METRIC_V8JS_MEMORY_HEAP_LIMIT,
       {
-        description: metricNames[V8HeapSpaceMetrics.heapLimit].description,
+        description: 'Total heap memory size pre-allocated.',
         unit: 'By',
       }
     );
     const heapSpaceUsed = meter.createObservableGauge(
-      `${this.namePrefix}.${V8HeapSpaceMetrics.used}`,
+      METRIC_V8JS_MEMORY_HEAP_USED,
       {
-        description: metricNames[V8HeapSpaceMetrics.used].description,
+        description: 'Heap Memory size allocated.',
         unit: 'By',
       }
     );
     const heapSpaceAvailable = meter.createObservableGauge(
-      `${this.namePrefix}.${V8HeapSpaceMetrics.available}`,
+      // TODO: Use METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE when available in semconv v1.38.0
+      'v8js.memory.heap.space.available_size',
       {
-        description: metricNames[V8HeapSpaceMetrics.available].description,
+        description: 'Heap space available size.',
         unit: 'By',
       }
     );
     const heapSpacePhysical = meter.createObservableGauge(
-      `${this.namePrefix}.${V8HeapSpaceMetrics.physical}`,
+      // TODO: Use METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE when available in semconv v1.38.0
+      'v8js.memory.heap.space.physical_size',
       {
-        description: metricNames[V8HeapSpaceMetrics.physical].description,
+        description: 'Committed size of a heap space.',
         unit: 'By',
       }
     );
-    const heapSpaceNameAttributeName = `${this.namePrefix}.${ATTR_V8JS_HEAP_SPACE_NAME}`;
 
     meter.addBatchObservableCallback(
       observableResult => {
@@ -92,18 +69,18 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
           const spaceName = space.space_name;
 
           observableResult.observe(heapLimit, space.space_size, {
-            [heapSpaceNameAttributeName]: spaceName,
+            [ATTR_V8JS_HEAP_SPACE_NAME]: spaceName,
           });
 
           observableResult.observe(heapSpaceUsed, space.space_used_size, {
-            [heapSpaceNameAttributeName]: spaceName,
+            [ATTR_V8JS_HEAP_SPACE_NAME]: spaceName,
           });
 
           observableResult.observe(
             heapSpaceAvailable,
             space.space_available_size,
             {
-              [heapSpaceNameAttributeName]: spaceName,
+              [ATTR_V8JS_HEAP_SPACE_NAME]: spaceName,
             }
           );
 
@@ -111,7 +88,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
             heapSpacePhysical,
             space.physical_space_size,
             {
-              [heapSpaceNameAttributeName]: spaceName,
+              [ATTR_V8JS_HEAP_SPACE_NAME]: spaceName,
             }
           );
         }
