@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-node",
-  "version": "0.64.6",
+  "version": "0.64.7",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/auto-instrumentations-node#readme",
@@ -76,7 +76,7 @@
     "@opentelemetry/instrumentation-koa": "^0.54.2",
     "@opentelemetry/instrumentation-lru-memoizer": "^0.50.3",
     "@opentelemetry/instrumentation-memcached": "^0.49.3",
-    "@opentelemetry/instrumentation-mongodb": "^0.58.3",
+    "@opentelemetry/instrumentation-mongodb": "^0.58.4",
     "@opentelemetry/instrumentation-mongoose": "^0.52.3",
     "@opentelemetry/instrumentation-mysql": "^0.51.3",
     "@opentelemetry/instrumentation-mysql2": "^0.52.3",
