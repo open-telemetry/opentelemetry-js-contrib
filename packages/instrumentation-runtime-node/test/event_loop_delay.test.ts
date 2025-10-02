@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { MeterProvider, DataPointType } from '@opentelemetry/sdk-metrics';
 
-import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
+import { MeterProvider, DataPointType } from '@opentelemetry/sdk-metrics';
+import { RuntimeNodeInstrumentation } from '../src';
 import { TestMetricReader } from './testMetricsReader';
-import { metricNames } from '../src/metrics/eventLoopDelayCollector';
-import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
+import * as semconv from '../src/semconv';
 
-describe(`${ConventionalNamePrefix.NodeJs}.eventloop`, function () {
+describe(`nodejs.eventloop.delay.*`, function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -32,8 +31,11 @@ describe(`${ConventionalNamePrefix.NodeJs}.eventloop`, function () {
     });
   });
 
-  for (const metricName in metricNames) {
-    it(`should write ${ConventionalNamePrefix.NodeJs}.${metricName} after monitoringPrecision`, async function () {
+  const metricNames = Object.keys(semconv)
+    .filter(k => k.startsWith('METRIC_NODEJS_EVENTLOOP_DELAY_'))
+    .map(k => (semconv as any)[k]);
+  for (const metricName of metricNames) {
+    it(`should write ${metricName} after monitoringPrecision`, async function () {
       // arrange
       const instrumentation = new RuntimeNodeInstrumentation({
         monitoringPrecision: 10,
@@ -52,15 +54,10 @@ describe(`${ConventionalNamePrefix.NodeJs}.eventloop`, function () {
       );
       const scopeMetrics = resourceMetrics.scopeMetrics;
       const metric = scopeMetrics[0].metrics.find(
-        x =>
-          x.descriptor.name === `${ConventionalNamePrefix.NodeJs}.${metricName}`
+        x => x.descriptor.name === metricName
       );
 
-      assert.notEqual(
-        metric,
-        undefined,
-        `${ConventionalNamePrefix.NodeJs}.${metricName} not found`
-      );
+      assert.notEqual(metric, undefined, `${metricName} not found`);
 
       assert.strictEqual(
         metric!.dataPointType,
@@ -70,7 +67,7 @@ describe(`${ConventionalNamePrefix.NodeJs}.eventloop`, function () {
 
       assert.strictEqual(
         metric!.descriptor.name,
-        `${ConventionalNamePrefix.NodeJs}.${metricName}`,
+        metricName,
         'descriptor.name'
       );
     });

@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RuntimeNodeInstrumentationConfig } from '../types';
-import { Meter } from '@opentelemetry/api';
-import { Histogram, ValueType } from '@opentelemetry/api';
-import { BaseCollector } from './baseCollector';
+
 import * as perf_hooks from 'node:perf_hooks';
 import { PerformanceObserver } from 'node:perf_hooks';
+import { Meter } from '@opentelemetry/api';
+import { RuntimeNodeInstrumentationConfig } from '../types';
+import { Histogram, ValueType } from '@opentelemetry/api';
+import { BaseCollector } from './baseCollector';
+import { ATTR_V8JS_GC_TYPE, METRIC_V8JS_GC_DURATION } from '../semconv';
 
-const ATTR_NODEJS_GC_DURATION_SECONDS = 'gc.duration';
 const DEFAULT_GC_DURATION_BUCKETS = [0.01, 0.1, 1, 10];
 
 const kinds: string[] = [];
@@ -33,11 +34,8 @@ export class GCCollector extends BaseCollector {
   private _gcDurationByKindHistogram?: Histogram;
   private _observer: PerformanceObserver;
 
-  constructor(
-    config: RuntimeNodeInstrumentationConfig = {},
-    namePrefix: string
-  ) {
-    super(config, namePrefix);
+  constructor(config: RuntimeNodeInstrumentationConfig = {}) {
+    super(config);
     this._observer = new perf_hooks.PerformanceObserver(list => {
       if (!this._config.enabled) return;
 
@@ -48,16 +46,15 @@ export class GCCollector extends BaseCollector {
       // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const kind = entry.detail ? kinds[entry.detail.kind] : kinds[entry.kind];
-      this._gcDurationByKindHistogram?.record(
-        entry.duration / 1000,
-        Object.assign({ [`${this.namePrefix}.gc.type`]: kind })
-      );
+      this._gcDurationByKindHistogram?.record(entry.duration / 1000, {
+        [ATTR_V8JS_GC_TYPE]: kind,
+      });
     });
   }
 
   updateMetricInstruments(meter: Meter): void {
     this._gcDurationByKindHistogram = meter.createHistogram(
-      `${this.namePrefix}.${ATTR_NODEJS_GC_DURATION_SECONDS}`,
+      METRIC_V8JS_GC_DURATION,
       {
         description:
           'Garbage collection duration by kind, one of major, minor, incremental or weakcb.',

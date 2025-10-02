@@ -13,48 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RuntimeNodeInstrumentationConfig } from '../types';
 import { Meter } from '@opentelemetry/api';
 import * as perf_hooks from 'node:perf_hooks';
 import { IntervalHistogram } from 'node:perf_hooks';
+import {
+  METRIC_NODEJS_EVENTLOOP_DELAY_MAX,
+  METRIC_NODEJS_EVENTLOOP_DELAY_MEAN,
+  METRIC_NODEJS_EVENTLOOP_DELAY_MIN,
+  METRIC_NODEJS_EVENTLOOP_DELAY_P50,
+  METRIC_NODEJS_EVENTLOOP_DELAY_P90,
+  METRIC_NODEJS_EVENTLOOP_DELAY_P99,
+  METRIC_NODEJS_EVENTLOOP_DELAY_STDDEV,
+} from '../semconv';
+
+import type { RuntimeNodeInstrumentationConfig } from '../types';
 import { BaseCollector } from './baseCollector';
-
-enum NodeJsEventLoopDelayAttributes {
-  min = 'eventloop.delay.min',
-  max = 'eventloop.delay.max',
-  mean = 'eventloop.delay.mean',
-  stddev = 'eventloop.delay.stddev',
-  p50 = 'eventloop.delay.p50',
-  p90 = 'eventloop.delay.p90',
-  p99 = 'eventloop.delay.p99',
-}
-
-export const metricNames: Record<
-  NodeJsEventLoopDelayAttributes,
-  { description: string }
-> = {
-  [NodeJsEventLoopDelayAttributes.min]: {
-    description: 'Event loop minimum delay.',
-  },
-  [NodeJsEventLoopDelayAttributes.max]: {
-    description: 'Event loop maximum delay.',
-  },
-  [NodeJsEventLoopDelayAttributes.mean]: {
-    description: 'Event loop mean delay.',
-  },
-  [NodeJsEventLoopDelayAttributes.stddev]: {
-    description: 'Event loop standard deviation delay.',
-  },
-  [NodeJsEventLoopDelayAttributes.p50]: {
-    description: 'Event loop 50 percentile delay.',
-  },
-  [NodeJsEventLoopDelayAttributes.p90]: {
-    description: 'Event loop 90 percentile delay.',
-  },
-  [NodeJsEventLoopDelayAttributes.p99]: {
-    description: 'Event loop 99 percentile delay.',
-  },
-};
 
 export interface EventLoopLagInformation {
   min: number;
@@ -69,11 +42,8 @@ export interface EventLoopLagInformation {
 export class EventLoopDelayCollector extends BaseCollector {
   private _histogram: IntervalHistogram;
 
-  constructor(
-    config: RuntimeNodeInstrumentationConfig = {},
-    namePrefix: string
-  ) {
-    super(config, namePrefix);
+  constructor(config: RuntimeNodeInstrumentationConfig = {}) {
+    super(config);
     this._histogram = perf_hooks.monitorEventLoopDelay({
       resolution: config.monitoringPrecision,
     });
@@ -81,58 +51,51 @@ export class EventLoopDelayCollector extends BaseCollector {
 
   updateMetricInstruments(meter: Meter): void {
     const delayMin = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.min}`,
+      METRIC_NODEJS_EVENTLOOP_DELAY_MIN,
       {
-        description:
-          metricNames[NodeJsEventLoopDelayAttributes.min].description,
+        description: 'Event loop minimum delay.',
         unit: 's',
       }
     );
     const delayMax = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.max}`,
+      METRIC_NODEJS_EVENTLOOP_DELAY_MAX,
       {
-        description:
-          metricNames[NodeJsEventLoopDelayAttributes.max].description,
+        description: 'Event loop maximum delay.',
         unit: 's',
       }
     );
     const delayMean = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.mean}`,
+      METRIC_NODEJS_EVENTLOOP_DELAY_MEAN,
       {
-        description:
-          metricNames[NodeJsEventLoopDelayAttributes.mean].description,
+        description: 'Event loop mean delay.',
         unit: 's',
       }
     );
     const delayStddev = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.stddev}`,
+      METRIC_NODEJS_EVENTLOOP_DELAY_STDDEV,
       {
-        description:
-          metricNames[NodeJsEventLoopDelayAttributes.stddev].description,
+        description: 'Event loop standard deviation delay.',
         unit: 's',
       }
     );
     const delayp50 = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.p50}`,
+      METRIC_NODEJS_EVENTLOOP_DELAY_P50,
       {
-        description:
-          metricNames[NodeJsEventLoopDelayAttributes.p50].description,
+        description: 'Event loop 50 percentile delay.',
         unit: 's',
       }
     );
     const delayp90 = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.p90}`,
+      METRIC_NODEJS_EVENTLOOP_DELAY_P90,
       {
-        description:
-          metricNames[NodeJsEventLoopDelayAttributes.p90].description,
+        description: 'Event loop 90 percentile delay.',
         unit: 's',
       }
     );
     const delayp99 = meter.createObservableGauge(
-      `${this.namePrefix}.${NodeJsEventLoopDelayAttributes.p99}`,
+      METRIC_NODEJS_EVENTLOOP_DELAY_P99,
       {
-        description:
-          metricNames[NodeJsEventLoopDelayAttributes.p99].description,
+        description: 'Event loop 99 percentile delay.',
         unit: 's',
       }
     );
