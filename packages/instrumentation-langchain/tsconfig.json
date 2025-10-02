@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "composite": true,
+    "outDir": "dist",
+    "rootDir": ".",
+
+    "target": "es2016",
+    "lib": ["esnext"],
+    "module": "Node16",
+    "moduleResolution": "node16",
+    "baseUrl": ".",
+
+    "strict": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": false,
+
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+
+    "paths": {
+      "langchainV0.1/*": ["node_modules/langchainV0.1/*"],
+      "@langchain/coreV0.1/*": ["node_modules/@langchain/coreV0.1/*"],
+      "@langchain/aws": ["node_modules/@langchain/aws"]
+    },
+    "types": ["node", "jest"]
+  },
+  "include": ["src/**/*.ts",
+              "test/**/*.ts" 
+  ]
+}

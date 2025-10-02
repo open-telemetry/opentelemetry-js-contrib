@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "outDir": "dist/esm",
+    "rootDir": "src", 
+    "tsBuildInfoFile": "dist/esm/tsconfig.esm.tsbuildinfo",
+    
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": false,
+    "declaration": true,
+    "sourceMap": true,
+    "composite": true,
+    "incremental": true,
+    
+    "baseUrl": ".",
+    
+    "paths": {
+      "langchainV0.1/*": ["node_modules/langchainV0.1/*"],
+      "@langchain/coreV0.1/*": ["node_modules/@langchain/coreV0.1/*"],
+      "@langchain/aws": ["node_modules/@langchain/aws"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "references": [],
+  
+  "tsc-alias": {
+    "verbose": false,
+    "resolveFullPaths": true
+  }
+}
