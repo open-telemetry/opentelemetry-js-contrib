@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.58.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.58.3...instrumentation-mongodb-v0.58.4) (2025-10-02)
+
+
+### Bug Fixes
+
+* **instrumentation-mongodb:** maximum call stack exceeded in scrub statement ([#3131](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3131)) ([ffe8485](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ffe84857a9ca91bbe4e63b466edb1c7d33ce6f0d))
+
 ## [0.58.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.58.2...instrumentation-mongodb-v0.58.3) (2025-09-29)
 
 
