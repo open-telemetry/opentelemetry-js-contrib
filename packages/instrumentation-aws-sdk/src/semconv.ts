@@ -603,6 +603,14 @@ export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
 export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
 
 /**
+ * GenAI operation duration.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_GEN_AI_CLIENT_OPERATION_DURATION =
+  'gen_ai.client.operation.duration' as const;
+
+/**
  * Number of input and output tokens used.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
