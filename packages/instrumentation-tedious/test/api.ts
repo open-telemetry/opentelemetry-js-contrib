@@ -68,7 +68,7 @@ export const makeApi = (tedious: tedious) => {
     connection: Connection,
     params: string,
     method: Method = 'execSql',
-    noTracking?: boolean,
+    noTracking?: boolean
   ): Promise<any[]> => {
     return new Promise((resolve, reject) => {
       const result: any[] = [];

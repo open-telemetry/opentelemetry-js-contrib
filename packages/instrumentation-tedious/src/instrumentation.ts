@@ -150,7 +150,7 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
     tediousModule: typeof tedious,
     traceparent: string
   ): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       try {
         const sql = 'set context_info @opentelemetry_traceparent';
         const req = new tediousModule.Request(sql, (_err: any) => {
@@ -275,25 +275,19 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
           );
         };
 
-        const cfg = thisPlugin.getConfig?.() as TediousInstrumentationConfig | undefined;
+        const cfg = thisPlugin.getConfig();
         const shouldInject =
-          cfg?.enableTraceContextPropagation && thisPlugin._shouldInjectFor(operation);
+          cfg.enableTraceContextPropagation &&
+          thisPlugin._shouldInjectFor(operation);
 
-        if (shouldInject) {
-          try {
-            const traceparent = thisPlugin._buildTraceparent(span);
-            // Include overhead in the span by injecting first, then running the user request.
-            thisPlugin
-              ._injectContextInfo(this, tediousModule, traceparent)
-              .then(runUserRequest)
-              .catch(() => runUserRequest());
-            return;
-          } catch (e: any) {
-            return runUserRequest();
-          }
-        }
+        if (!shouldInject) return runUserRequest();
 
-        return runUserRequest();
+        const traceparent = thisPlugin._buildTraceparent(span);
+        thisPlugin
+          ._injectContextInfo(this, tediousModule, traceparent)
+          .finally(runUserRequest);
+
+        return;
       }
 
       Object.defineProperty(patchedMethod, 'length', {

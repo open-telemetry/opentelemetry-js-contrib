@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 export interface TediousInstrumentationConfig extends InstrumentationConfig {
   /**

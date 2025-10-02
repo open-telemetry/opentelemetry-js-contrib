@@ -308,10 +308,9 @@ describe('tedious', () => {
   });
 
   describe('trace context propagation via CONTEXT_INFO', () => {
-
     function traceparentFromSpan(span: ReadableSpan) {
       const sc = span.spanContext();
-      const flags = (sc.traceFlags & 0x01) ? '01' : '00';
+      const flags = sc.traceFlags & 0x01 ? '01' : '00';
       return `00-${sc.traceId}-${sc.spanId}-${flags}`;
     }
 
@@ -331,18 +330,23 @@ describe('tedious', () => {
     });
 
     after(() => {
-      instrumentation.setConfig({enableTraceContextPropagation: false});
+      instrumentation.setConfig({ enableTraceContextPropagation: false });
     });
 
     it('injects DB-span traceparent for execSql', async function () {
-      const sql  = "SELECT REPLACE(CONVERT(varchar(128), CONTEXT_INFO()), CHAR(0), '') AS traceparent";
-      const result = await tedious.query(connection, sql)
+      const sql =
+        "SELECT REPLACE(CONVERT(varchar(128), CONTEXT_INFO()), CHAR(0), '') AS traceparent";
+      const result = await tedious.query(connection, sql);
 
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 1);
       const dbSpan = findDbSpan(spans, 'execSql');
       const expectedTp = traceparentFromSpan(dbSpan);
-      assert.strictEqual(result[0], expectedTp, 'CONTEXT_INFO traceparent should match DB span');
+      assert.strictEqual(
+        result[0],
+        expectedTp,
+        'CONTEXT_INFO traceparent should match DB span'
+      );
     });
 
     it('injects for execSqlBatch', async function () {
@@ -375,7 +379,6 @@ describe('tedious', () => {
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 1);
     });
-
   });
 });
 
