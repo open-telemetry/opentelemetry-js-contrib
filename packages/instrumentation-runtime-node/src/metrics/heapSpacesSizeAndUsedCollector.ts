@@ -43,7 +43,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
       }
     );
     const heapSpaceAvailable = meter.createObservableGauge(
-      // TODO: fix to use METRIC_V8JS_HEAP_SPACE_AVAILABLE_SIZE (breaking change)
+      // TODO: Use METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE when available in semconv v1.38.0
       'v8js.memory.heap.space.available_size',
       {
         description: 'Heap space available size.',
@@ -51,7 +51,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
       }
     );
     const heapSpacePhysical = meter.createObservableGauge(
-      // TODO: fix to use METRIC_V8JS_HEAP_SPACE_PHYSICAL_SIZE (breaking change)
+      // TODO: Use METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE when available in semconv v1.38.0
       'v8js.memory.heap.space.physical_size',
       {
         description: 'Committed size of a heap space.',
