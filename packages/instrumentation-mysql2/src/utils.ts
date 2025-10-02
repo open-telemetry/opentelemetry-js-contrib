@@ -24,6 +24,11 @@ import {
 } from './semconv';
 import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationQueryMaskingHook } from './types';
+import { SemconvStability } from '@opentelemetry/instrumentation';
+import {
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
 type formatType = typeof mysqlTypes.format;
 
@@ -56,24 +61,32 @@ interface Config {
  *
  * @param config ConnectionConfig
  */
-export function getConnectionAttributes(config: Config): Attributes {
+export function getConnectionAttributes(
+  config: Config,
+  netSemconvStability: SemconvStability
+): Attributes {
   const { host, port, database, user } = getConfig(config);
-  const portNumber = parseInt(port, 10);
-  if (!isNaN(portNumber)) {
-    return {
-      [ATTR_NET_PEER_NAME]: host,
-      [ATTR_NET_PEER_PORT]: portNumber,
-      [ATTR_DB_CONNECTION_STRING]: getJDBCString(host, port, database),
-      [ATTR_DB_NAME]: database,
-      [ATTR_DB_USER]: user,
-    };
-  }
-  return {
-    [ATTR_NET_PEER_NAME]: host,
+  const attrs: Attributes = {
     [ATTR_DB_CONNECTION_STRING]: getJDBCString(host, port, database),
     [ATTR_DB_NAME]: database,
     [ATTR_DB_USER]: user,
   };
+
+  const portNumber = parseInt(port, 10);
+  if (netSemconvStability & SemconvStability.OLD) {
+    attrs[ATTR_NET_PEER_NAME] = host;
+    if (!isNaN(portNumber)) {
+      attrs[ATTR_NET_PEER_PORT] = portNumber;
+    }
+  }
+  if (netSemconvStability & SemconvStability.STABLE) {
+    attrs[ATTR_SERVER_ADDRESS] = host;
+    if (!isNaN(portNumber)) {
+      attrs[ATTR_SERVER_PORT] = portNumber;
+    }
+  }
+
+  return attrs;
 }
 
 function getConfig(config: any) {

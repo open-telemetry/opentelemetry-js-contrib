@@ -21,6 +21,8 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   DB_SYSTEM_VALUE_MYSQL,
@@ -49,8 +51,14 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
     [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MYSQL,
   };
 
+  private _netSemconvStability: SemconvStability;
+
   constructor(config: MySQL2InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._netSemconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   protected init() {
@@ -143,7 +151,10 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
           kind: api.SpanKind.CLIENT,
           attributes: {
             ...MySQL2Instrumentation.COMMON_ATTRIBUTES,
-            ...getConnectionAttributes(this.config),
+            ...getConnectionAttributes(
+              this.config,
+              thisPlugin._netSemconvStability
+            ),
             [ATTR_DB_STATEMENT]: getDbStatement(
               query,
               format,
