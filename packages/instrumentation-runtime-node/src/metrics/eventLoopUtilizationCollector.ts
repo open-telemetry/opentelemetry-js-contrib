@@ -35,7 +35,7 @@ export class EventLoopUtilizationCollector extends BaseCollector {
 
         const elu = eventLoopUtilizationCollector(this._lastValue);
         observableResult.observe(elu.utilization);
-        this._lastValue = elu;
+        this._lastValue = eventLoopUtilizationCollector();
       });
   }
 
