@@ -26,6 +26,7 @@ import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationQueryMaskingHook } from './types';
 import { SemconvStability } from '@opentelemetry/instrumentation';
 import {
+  ATTR_DB_NAMESPACE,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
@@ -56,6 +57,7 @@ interface Config {
   user?: string;
   connectionConfig?: Config;
 }
+
 /**
  * Get an Attributes map from a mysql connection config object
  *
@@ -63,14 +65,20 @@ interface Config {
  */
 export function getConnectionAttributes(
   config: Config,
+  dbSemconvStability: SemconvStability,
   netSemconvStability: SemconvStability
 ): Attributes {
   const { host, port, database, user } = getConfig(config);
-  const attrs: Attributes = {
-    [ATTR_DB_CONNECTION_STRING]: getJDBCString(host, port, database),
-    [ATTR_DB_NAME]: database,
-    [ATTR_DB_USER]: user,
-  };
+
+  const attrs: Attributes = {};
+  if (dbSemconvStability & SemconvStability.OLD) {
+    attrs[ATTR_DB_CONNECTION_STRING] = getJDBCString(host, port, database);
+    attrs[ATTR_DB_NAME] = database;
+    attrs[ATTR_DB_USER] = user;
+  }
+  if (dbSemconvStability & SemconvStability.STABLE) {
+    attrs[ATTR_DB_NAMESPACE] = database;
+  }
 
   const portNumber = parseInt(port, 10);
   if (netSemconvStability & SemconvStability.OLD) {
@@ -114,11 +122,9 @@ function getJDBCString(
 }
 
 /**
- * Conjures up the value for the db.statement attribute by formatting a SQL query.
- *
- * @returns the database statement being executed.
+ * Conjures up the value for the db.query.text attribute by formatting a SQL query.
  */
-export function getDbStatement(
+export function getQueryText(
   query: string | Query | QueryOptions,
   format?: formatType,
   values?: any[],
