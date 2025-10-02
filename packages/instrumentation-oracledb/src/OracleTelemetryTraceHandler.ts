@@ -26,18 +26,15 @@ import {
   diag,
 } from '@opentelemetry/api';
 import {
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_DB_OPERATION_NAME,
   ATTR_SERVER_PORT,
   ATTR_SERVER_ADDRESS,
   ATTR_NETWORK_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_DB_SYSTEM,
-  ATTR_DB_NAMESPACE,
-  ATTR_DB_OPERATION_NAME,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_OPERATION_PARAMETER,
-  ATTR_DB_USER,
-} from './semconv';
+import { ATTR_DB_USER, ATTR_DB_OPERATION_PARAMETER } from './semconv';
 
 import type * as oracleDBTypes from 'oracledb';
 type TraceHandlerBaseCtor = new () => any;
@@ -111,7 +108,7 @@ export function getOracleTelemetryTraceHandlerClass(
     // semantic standards and module custom keys.
     private _getConnectionSpanAttributes(config: SpanConnectionConfig) {
       return {
-        [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
+        [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_ORACLE,
         [ATTR_NETWORK_TRANSPORT]: config.protocol,
         [ATTR_DB_USER]: config.user,
         [ATTR_DB_NAMESPACE]: this._getDBNameSpace(
@@ -147,16 +144,16 @@ export function getOracleTelemetryTraceHandlerClass(
         if (Array.isArray(values)) {
           // Handle indexed (positional) parameters
           values.forEach((value, index) => {
-            const key = `${ATTR_DB_OPERATION_PARAMETER}.${index}`;
             const extractedValue = this._extractValue(value);
             if (extractedValue !== undefined) {
-              convertedValues[key] = extractedValue;
+              convertedValues[ATTR_DB_OPERATION_PARAMETER(`${index}`)] =
+                extractedValue;
             }
           });
         } else if (values && typeof values === 'object') {
           // Handle named parameters
           for (const [paramName, value] of Object.entries(values)) {
-            const key = `${ATTR_DB_OPERATION_PARAMETER}.${paramName}`;
+            const key = ATTR_DB_OPERATION_PARAMETER(paramName);
             let inVal: any = value;
 
             if (inVal && typeof inVal === 'object') {
@@ -216,7 +213,7 @@ export function getOracleTelemetryTraceHandlerClass(
           this._instrumentConfig.dbStatementDump ||
           this._instrumentConfig.enhancedDatabaseReporting
         ) {
-          span.setAttribute(ATTR_DB_STATEMENT, callConfig.statement);
+          span.setAttribute(ATTR_DB_QUERY_TEXT, callConfig.statement);
           if (this._instrumentConfig.enhancedDatabaseReporting && !roundTrip) {
             const values = this._getValues(callConfig.values);
             if (values) {
