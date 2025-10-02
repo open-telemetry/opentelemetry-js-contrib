@@ -36,6 +36,8 @@ import {
 import * as assert from 'assert';
 import { MySQL2Instrumentation, MySQL2InstrumentationConfig } from '../src';
 
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
+
 const LIB_VERSION = testUtils.getPackageVersion('mysql2');
 const port = Number(process.env.MYSQL_PORT) || 33306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
@@ -59,6 +61,14 @@ import type {
   Connection as ConnectionAsync,
   createConnection as createConnectionAsync,
 } from 'mysql2/promise';
+import {
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  DB_SYSTEM_NAME_VALUE_MYSQL,
+} from '@opentelemetry/semantic-conventions';
 
 interface Result extends RowDataPacket {
   solution: number;
@@ -1568,12 +1578,24 @@ function assertSpan(
   values?: any,
   errorMessage?: string
 ) {
+  // Assert both old and stable `db.*` semconv.
   assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MYSQL);
   assert.strictEqual(span.attributes[ATTR_DB_NAME], database);
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], port);
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], host);
   assert.strictEqual(span.attributes[ATTR_DB_USER], user);
   assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], format(sql, values));
+  assert.strictEqual(
+    span.attributes[ATTR_DB_SYSTEM_NAME],
+    DB_SYSTEM_NAME_VALUE_MYSQL
+  );
+  assert.strictEqual(span.attributes[ATTR_DB_NAMESPACE], database);
+  assert.strictEqual(span.attributes[ATTR_DB_QUERY_TEXT], format(sql, values));
+
+  // Assert both old and stable `net.*` semconv.
+  assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], host);
+  assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], port);
+  assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], host);
+  assert.strictEqual(span.attributes[ATTR_SERVER_PORT], port);
+
   if (errorMessage) {
     assert.strictEqual(span.status.message, errorMessage);
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
