@@ -32,9 +32,6 @@ import User, { IUser, loadUsers } from './user';
 import { assertSpan, getStatement } from './asserts';
 import { DB_NAME, MONGO_URI } from './config';
 
-// We can't use @ts-expect-error because it will fail depending on the used mongoose version on tests
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-
 // Please run `npm run test-services:start` before
 describe('mongoose instrumentation [v5/v6]', () => {
   // For these tests, MongoDB must be running. Add RUN_MONGOOSE_TESTS to run
@@ -425,5 +422,3 @@ describe('mongoose instrumentation [v5/v6]', () => {
     });
   });
 });
-
-/* eslint-enable @typescript-eslint/ban-ts-comment */

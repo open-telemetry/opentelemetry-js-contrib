@@ -37,9 +37,6 @@ import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { ATTR_DB_STATEMENT } from '../src/semconv';
 
-// We can't use @ts-expect-error because it will fail depending on the used mongodb version on tests
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-
 describe('MongoDBInstrumentation-Tracing-v4', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
@@ -741,5 +738,3 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
     });
   });
 });
-
-/* eslint-enable @typescript-eslint/ban-ts-comment */
