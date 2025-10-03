@@ -16,15 +16,15 @@
 
 import * as assert from 'assert';
 import { azureAppServiceDetector } from '../../src/detectors/AzureAppServiceDetector';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
-  SEMRESATTRS_CLOUD_PLATFORM,
-  SEMRESATTRS_CLOUD_PROVIDER,
-  SEMRESATTRS_CLOUD_REGION,
-  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
-  SEMRESATTRS_HOST_ID,
-  SEMRESATTRS_SERVICE_INSTANCE_ID,
-  SEMRESATTRS_SERVICE_NAME,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_CLOUD_PLATFORM,
+  ATTR_CLOUD_PROVIDER,
+  ATTR_CLOUD_REGION,
+  ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
+  ATTR_HOST_ID,
+  ATTR_SERVICE_INSTANCE_ID,
+} from '../../src/semconv';
 import { azureFunctionsDetector } from '../../src';
 import { detectResources } from '@opentelemetry/resources';
 
@@ -53,24 +53,21 @@ describe('AzureAppServiceDetector', () => {
     });
     assert.ok(resource);
     const attributes = resource.attributes;
-    assert.strictEqual(attributes[SEMRESATTRS_SERVICE_NAME], 'test-site');
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_PROVIDER], 'azure');
-    assert.strictEqual(
-      attributes[SEMRESATTRS_CLOUD_PLATFORM],
-      'azure_app_service'
-    );
+    assert.strictEqual(attributes[ATTR_SERVICE_NAME], 'test-site');
+    assert.strictEqual(attributes[ATTR_CLOUD_PROVIDER], 'azure');
+    assert.strictEqual(attributes[ATTR_CLOUD_PLATFORM], 'azure.app_service');
     assert.strictEqual(
       attributes['cloud.resource_id'],
       `/subscriptions/${process.env.WEBSITE_OWNER_NAME}/resourceGroups/${process.env.WEBSITE_RESOURCE_GROUP}/providers/Microsoft.Web/sites/${process.env.WEBSITE_SITE_NAME}`
     );
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
+    assert.strictEqual(attributes[ATTR_CLOUD_REGION], 'test-region');
     assert.strictEqual(
-      attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT],
+      attributes[ATTR_DEPLOYMENT_ENVIRONMENT_NAME],
       'test-slot'
     );
-    assert.strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
+    assert.strictEqual(attributes[ATTR_HOST_ID], 'test-hostname');
     assert.strictEqual(
-      attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
+      attributes[ATTR_SERVICE_INSTANCE_ID],
       'test-instance-id'
     );
     assert.strictEqual(
@@ -93,14 +90,14 @@ describe('AzureAppServiceDetector', () => {
     });
     assert.ok(resource);
     const attributes = resource.attributes;
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
+    assert.strictEqual(attributes[ATTR_CLOUD_REGION], 'test-region');
     assert.strictEqual(
-      attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT],
+      attributes[ATTR_DEPLOYMENT_ENVIRONMENT_NAME],
       'test-slot'
     );
-    assert.strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
+    assert.strictEqual(attributes[ATTR_HOST_ID], 'test-hostname');
     assert.strictEqual(
-      attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
+      attributes[ATTR_SERVICE_INSTANCE_ID],
       'test-instance-id'
     );
     assert.strictEqual(
@@ -124,14 +121,14 @@ describe('AzureAppServiceDetector', () => {
     });
     assert.ok(resource);
     const attributes = resource.attributes;
-    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
+    assert.strictEqual(attributes[ATTR_CLOUD_REGION], 'test-region');
     assert.strictEqual(
-      attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT],
+      attributes[ATTR_DEPLOYMENT_ENVIRONMENT_NAME],
       'test-slot'
     );
-    assert.strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
+    assert.strictEqual(attributes[ATTR_HOST_ID], 'test-hostname');
     assert.strictEqual(
-      attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
+      attributes[ATTR_SERVICE_INSTANCE_ID],
       'test-instance-id'
     );
     assert.strictEqual(

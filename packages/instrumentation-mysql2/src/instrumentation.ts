@@ -23,10 +23,10 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  DBSYSTEMVALUES_MYSQL,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_MYSQL,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+} from './semconv';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationConfig } from './types';
@@ -46,7 +46,7 @@ const supportedVersions = ['>=1.4.2 <4'];
 
 export class MySQL2Instrumentation extends InstrumentationBase<MySQL2InstrumentationConfig> {
   static readonly COMMON_ATTRIBUTES = {
-    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MYSQL,
+    [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MYSQL,
   };
 
   constructor(config: MySQL2InstrumentationConfig = {}) {
@@ -144,7 +144,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
           attributes: {
             ...MySQL2Instrumentation.COMMON_ATTRIBUTES,
             ...getConnectionAttributes(this.config),
-            [SEMATTRS_DB_STATEMENT]: getDbStatement(
+            [ATTR_DB_STATEMENT]: getDbStatement(
               query,
               format,
               values,

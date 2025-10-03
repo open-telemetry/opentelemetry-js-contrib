@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/sql-common",
-  "version": "0.41.0",
+  "version": "0.41.2",
   "description": "Utilities for SQL instrumentations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

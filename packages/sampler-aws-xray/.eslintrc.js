@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export enum ConventionalNamePrefix {
-  NodeJs = 'nodejs',
-  V8js = 'v8js',
-}
+module.exports = {
+  env: {
+    mocha: true,
+    commonjs: true,
+    node: true,
+  },
+  ...require('../../eslint.config.js'),
+};

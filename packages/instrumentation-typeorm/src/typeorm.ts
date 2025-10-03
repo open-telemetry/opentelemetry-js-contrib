@@ -158,7 +158,7 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
           this._wrap(
             moduleExports.EntityManager.prototype,
             method,
-            this._patchEntityManagerFunction(method)
+            this._patchEntityManagerFunction(method.trim())
           );
         });
 

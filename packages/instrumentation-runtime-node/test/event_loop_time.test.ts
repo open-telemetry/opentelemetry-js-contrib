@@ -13,17 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { MeterProvider } from '@opentelemetry/sdk-metrics';
 
-import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
+import { MeterProvider } from '@opentelemetry/sdk-metrics';
+import { RuntimeNodeInstrumentation } from '../src';
 import { TestMetricReader } from './testMetricsReader';
-import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
-import { ATTR_NODEJS_EVENT_LOOP_TIME } from '../src/metrics/eventLoopTimeCollector';
+import { METRIC_NODEJS_EVENTLOOP_TIME } from '../src/semconv';
 
 const MEASUREMENT_INTERVAL = 10;
 
-describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_TIME}`, function () {
+describe('nodejs.eventloop.time', function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -52,7 +51,7 @@ describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_TIME}`, func
     assert.strictEqual(scopeMetrics.length, 0);
   });
 
-  it(`should write ${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_TIME}`, async function () {
+  it(`should write 'nodejs.eventloop.time'`, async function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
@@ -71,16 +70,14 @@ describe(`${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_TIME}`, func
     );
     const scopeMetrics = resourceMetrics.scopeMetrics;
     const timeMetric = scopeMetrics[0].metrics.find(
-      x =>
-        x.descriptor.name ===
-        `${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_TIME}`
+      x => x.descriptor.name === METRIC_NODEJS_EVENTLOOP_TIME
     );
 
     assert.notEqual(timeMetric, undefined, 'metric not found');
 
     assert.strictEqual(
       timeMetric!.descriptor.name,
-      `${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_TIME}`,
+      METRIC_NODEJS_EVENTLOOP_TIME,
       'descriptor.name'
     );
 

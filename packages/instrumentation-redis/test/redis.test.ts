@@ -13,4 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export const ATTR_V8JS_HEAP_SPACE_NAME = 'heap.space.name';
+
+import { RedisInstrumentation } from '../src';
+import * as assert from 'assert';
+
+describe('redis', () => {
+  it('Returns module definitions of sub-instrumentations', () => {
+    const instrumentation = new RedisInstrumentation();
+    const moduleDefinitions = instrumentation.getModuleDefinitions();
+    assert.ok(moduleDefinitions.length >= 1);
+  });
+});

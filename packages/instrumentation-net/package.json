@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-net",
-  "version": "0.47.0",
+  "version": "0.49.2",
   "description": "OpenTelemetry instrumentation for `node:net` network API module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -19,8 +19,7 @@
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
     "compile": "tsc -p .",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-net",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json"
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-net"
   },
   "keywords": [
     "connect",
@@ -61,8 +60,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.203.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/instrumentation": "^0.205.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-net#readme"
 }

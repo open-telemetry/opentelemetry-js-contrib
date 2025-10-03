@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-router",
-  "version": "0.48.0",
+  "version": "0.50.2",
   "description": "OpenTelemetry instrumentation for `router` http middleware router",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -19,7 +19,6 @@
     "prepublishOnly": "npm run compile",
     "tdd": "npm test -- --watch-extensions ts --watch",
     "test": "nyc --no-clean mocha 'test/**/*.ts'",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
@@ -59,7 +58,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.203.0",
+    "@opentelemetry/instrumentation": "^0.205.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-router#readme"
