@@ -20,7 +20,7 @@ import { RuntimeNodeInstrumentation } from '../src';
 import { TestMetricReader } from './testMetricsReader';
 import * as semconv from '../src/semconv';
 
-describe(`nodejs.eventloop.delay.*`, function () {
+describe('nodejs.eventloop.delay.*', function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 

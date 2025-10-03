@@ -151,8 +151,6 @@ describe('mongoose instrumentation [common]', () => {
       expect(statement.options.wtimeout).toEqual(42);
 
       const createdUser = await User.findById(user._id).lean();
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore - v8 made `._id` optional
       expect(createdUser?._id.toString()).toEqual(user._id.toString());
     });
   });

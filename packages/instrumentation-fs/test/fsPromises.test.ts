@@ -78,7 +78,6 @@ describe('fs/promises instrumentation', () => {
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context
         .with(trace.setSpan(context.active(), rootSpan), () => {
-          // eslint-disable-next-line node/no-unsupported-features/node-builtins
           assert(
             typeof fsPromises[name] === 'function',
             `Expected fsPromises.${name} to be a function`
