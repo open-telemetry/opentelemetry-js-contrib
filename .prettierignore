@@ -6,5 +6,4 @@
 *.yaml
 !package.json
 
-/.nx/cache
-/.nx/workspace-data
+/.nx

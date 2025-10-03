@@ -15,7 +15,7 @@
     "src/platform/browser/*.ts",
     "test/*.ts",
     "webpack/*.js",
-    ".eslintrc.js"
+    "eslint.config.mjs"
   ],
   "all": true
 }
