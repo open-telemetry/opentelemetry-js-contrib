@@ -50,6 +50,7 @@ import {
   WireProtocolInternal,
   V4Connection,
   V4ConnectionPool,
+  Replacer,
 } from './internal-types';
 import { V4Connect, V4Session } from './internal-types';
 /** @knipignore */
@@ -951,30 +952,27 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     );
   }
 
-  private _defaultDbStatementSerializer(commandObj: Record<string, unknown>) {
-    const { enhancedDatabaseReporting } = this.getConfig();
-    const resultObj = enhancedDatabaseReporting
-      ? commandObj
-      : this._scrubStatement(commandObj);
-    return JSON.stringify(resultObj);
+  private _getDefaultDbStatementReplacer(): Replacer {
+    const seen = new WeakSet();
+    return (_key, value) => {
+      // undefined, boolean, number, bigint, string, symbol, function || null
+      if (typeof value !== 'object' || !value) return '?';
+
+      // objects (including arrays)
+      if (seen.has(value)) return '[Circular]';
+      seen.add(value);
+      return value;
+    };
   }
 
-  private _scrubStatement(value: unknown): unknown {
-    if (Array.isArray(value)) {
-      return value.map(element => this._scrubStatement(element));
+  private _defaultDbStatementSerializer(commandObj: Record<string, unknown>) {
+    const { enhancedDatabaseReporting } = this.getConfig();
+
+    if (enhancedDatabaseReporting) {
+      return JSON.stringify(commandObj);
     }
 
-    if (typeof value === 'object' && value !== null) {
-      return Object.fromEntries(
-        Object.entries(value).map(([key, element]) => [
-          key,
-          this._scrubStatement(element),
-        ])
-      );
-    }
-
-    // A value like string or number, possible contains PII, scrub it
-    return '?';
+    return JSON.stringify(commandObj, this._getDefaultDbStatementReplacer());
   }
 
   /**
