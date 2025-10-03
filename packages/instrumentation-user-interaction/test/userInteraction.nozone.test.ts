@@ -60,8 +60,7 @@ describe('UserInteractionInstrumentation', () => {
       });
 
       sandbox
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore this is private, but it exists
+        // @ts-expect-error this is private, but it exists
         .stub(userInteractionInstrumentation, '_getZoneWithPrototype')
         .callsFake(() => {
           return false as any;
