@@ -944,7 +944,7 @@ describe('instrumentation-kafkajs', () => {
           assert.strictEqual(
             transactionSpan.status.code,
             SpanStatusCode.ERROR,
-            `Expected transactionSpan status.code to be ERROR`
+            'Expected transactionSpan status.code to be ERROR'
           );
           assert.strictEqual(
             transactionSpan.status.message,

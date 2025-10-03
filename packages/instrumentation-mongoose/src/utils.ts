@@ -110,9 +110,11 @@ export function handleCallbackResponse(
   }
 
   args[callbackArgumentIndex] = (err: Error, response: any): any => {
-    err
-      ? setErrorStatus(span, err)
-      : applyResponseHook(span, response, responseHook, moduleVersion);
+    if (err) {
+      setErrorStatus(span, err);
+    } else {
+      applyResponseHook(span, response, responseHook, moduleVersion);
+    }
 
     span.end();
     return callback!(err, response);

@@ -30,7 +30,6 @@
   require this instrumentation.
 */
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface -- Our lint doesn't like it, but we prefer to keep it the way original source code has it
 interface Blob {}
 type Binary = Buffer | Uint8Array | Blob | string;
 
