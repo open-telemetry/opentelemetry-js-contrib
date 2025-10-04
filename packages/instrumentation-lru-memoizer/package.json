@@ -55,7 +55,6 @@
     "lru-memoizer": "2.1.4",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
-    "test-all-versions": "6.1.0",
     "typescript": "5.0.4"
   },
   "dependencies": {
