@@ -813,7 +813,7 @@ describe('oracledb', () => {
         attrList.push(connAttrList[connAttrList.length - 1]);
 
         await conn.close();
-        const spanNamesList = [];
+        const spanNamesList : string[]= [];
         spanNamesList.push(SpanNames.LOGOFF_MSG);
         spanNamesList.push(SpanNames.CONNECT_CLOSE);
         verifySpans(span, attrList, spanNamesList);

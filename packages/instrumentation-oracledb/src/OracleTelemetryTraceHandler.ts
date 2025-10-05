@@ -419,6 +419,42 @@ export function getOracleTelemetryTraceHandlerClass(
       this._updateSpanName(traceContext);
       traceContext.userContext.span.end();
     }
+
+    onPoolExpand? = (pool : OraclePoolExtended, poolAlias : string, openConns : number, inUseConns : number):void=> {
+      // console.log('new connection created')
+      metricsUtils.updateCounter(pool, poolAlias,openConns,inUseConns)
+    };
+
+    onAcquire? = (pool:OraclePoolExtended,):void=> {
+      // console.log('a connection is checked out of pool')
+      metricsUtils.updateCounter(pool,pool.poolAlias!!)
+    };
+
+    onPoolShrink? = (pool:OraclePoolExtended, poolAlias : string, openConns : number, inUseConns : number):void=> {
+      // console.log('connection removed/destroyed')
+      metricsUtils.updateCounter(pool, poolAlias,openConns,inUseConns)
+    };
+
+    onRelease? = (pool:OraclePoolExtended,):void=> {
+      // console.log('connection returned to pool')
+      metricsUtils.updateCounter(pool,pool.poolAlias!!)
+    };
+
+    onPoolClose? = (pool:OraclePoolExtended,):void=> {
+      // console.log('pool closed')
+      metricsUtils.updateCounter(pool,pool.poolAlias!!)
+    };
+
+    onWait? = (pool:OraclePoolExtended):void=> {
+      // console.log('connection request is waiting')
+      metricsUtils.updateCounter(pool,pool.poolAlias!!)
+    };
+
+    onTimeout? = (pool:OraclePoolExtended):void=> {
+      // console.log('connection request is timed-out')
+      metricsUtils.updateCounter(pool,pool.poolAlias!!)
+    };
+
   }
-  return OracleTelemetryTraceHandler;
+  return OracleTelemetryTraceMetricHandler;
 }
