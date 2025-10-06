@@ -314,15 +314,6 @@ describe('tedious', () => {
       return `00-${sc.traceId}-${sc.spanId}-${flags}`;
     }
 
-    function findDbSpan(spans: ReadableSpan[], startsWith: string) {
-      return spans.find(
-        s =>
-          s.kind === SpanKind.CLIENT &&
-          s.attributes[SEMATTRS_DB_SYSTEM] === DBSYSTEMVALUES_MSSQL &&
-          s.name.startsWith(startsWith)
-      )!;
-    }
-
     beforeEach(() => {
       instrumentation.setConfig({
         enableTraceContextPropagation: true,
@@ -340,8 +331,7 @@ describe('tedious', () => {
 
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 1);
-      const dbSpan = findDbSpan(spans, 'execSql');
-      const expectedTp = traceparentFromSpan(dbSpan);
+      const expectedTp = traceparentFromSpan(spans[0]);
       assert.strictEqual(
         result[0],
         expectedTp,
@@ -360,9 +350,7 @@ describe('tedious', () => {
 
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 1);
-      const dbSpan = findDbSpan(spans, 'execSqlBatch');
-      const expectedTp = traceparentFromSpan(dbSpan);
-
+      const expectedTp = traceparentFromSpan(spans[0]);
       assert.strictEqual(result[0], expectedTp);
     });
 
