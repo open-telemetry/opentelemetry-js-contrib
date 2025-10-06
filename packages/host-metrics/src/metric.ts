@@ -208,15 +208,15 @@ export class HostMetrics extends BaseMetrics {
     const observables = [];
 
     const systemCpuGroupEnabled =
-      !this._metricsGroups || this._metricsGroups.includes('system.cpu');
+      !this._metricGroups || this._metricGroups.includes('system.cpu');
     const systemMemoryGroupEnabled =
-      !this._metricsGroups || this._metricsGroups.includes('system.memory');
+      !this._metricGroups || this._metricGroups.includes('system.memory');
     const systemNetworkGroupEnabled =
-      !this._metricsGroups || this._metricsGroups.includes('system.network');
+      !this._metricGroups || this._metricGroups.includes('system.network');
     const processCpuGroupEnabled =
-      !this._metricsGroups || this._metricsGroups.includes('process.cpu');
+      !this._metricGroups || this._metricGroups.includes('process.cpu');
     const processMemoryGroupEnabled =
-      !this._metricsGroups || this._metricsGroups.includes('process.memory');
+      !this._metricGroups || this._metricGroups.includes('process.memory');
 
     if (systemCpuGroupEnabled) {
       this._cpuTime = this._meter.createObservableCounter(

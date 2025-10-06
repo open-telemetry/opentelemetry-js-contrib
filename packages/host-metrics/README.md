@@ -42,9 +42,9 @@ hostMetrics.start();
 
 ## Configuration
 
-| Option          | Type            | Description |
-| ----------------| --------------- | ----------- |
-| `metricsGroups` | `Array<string>` | Optionally specify zero or more groups of metrics to collect. This package can collect many metrics. They are grouped by metric name prefix (see the "Semantic Conventions" section below). If this option is specified, only metrics from the named groups will be collected. For example, `metricsGroups: ['process.cpu', 'process.memory']` will limit collection to just those 3 metrics. |
+| Option         | Type            | Description |
+| -------------- | --------------- | ----------- |
+| `metricGroups` | `Array<string>` | Optionally specify zero or more groups of metrics to collect. This package can collect many metrics. They are grouped by metric name prefix (see the "Semantic Conventions" section below). If this option is specified, only metrics from the named groups will be collected. For example, `metricGroups: ['process.cpu', 'process.memory']` will limit collection to just those 3 metrics. |
 
 ## Semantic Conventions
 
@@ -71,6 +71,8 @@ Metrics collected:
 |   `process.cpu.utilization`   | Difference in process.cpu.time since the last measurement |
 | **Group `process.memory`**    | |
 |   `process.memory.usage`      | The amount of physical memory in use                      |
+
+Note: the "Group" names are groupings used by the `metricGroups` configuration option.
 
 Attributes collected:
 
