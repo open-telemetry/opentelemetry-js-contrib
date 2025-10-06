@@ -27,6 +27,7 @@ export interface MetricsCollectorConfig {
   meterProvider?: MeterProvider;
   // Name of component
   name?: string;
+  metricsGroups?: Array<string>;
 }
 
 const DEFAULT_NAME = PACKAGE_NAME;
@@ -37,6 +38,7 @@ const DEFAULT_NAME = PACKAGE_NAME;
 export abstract class BaseMetrics {
   protected _meter: Meter;
   private _name: string;
+  protected _metricsGroups: Array<string> | undefined;
 
   constructor(config?: MetricsCollectorConfig) {
     // Do not use `??` operator to allow falling back to default when the
@@ -44,6 +46,7 @@ export abstract class BaseMetrics {
     this._name = config?.name || DEFAULT_NAME;
     const meterProvider = config?.meterProvider ?? metrics.getMeterProvider();
     this._meter = meterProvider.getMeter(this._name, PACKAGE_VERSION);
+    this._metricsGroups = config?.metricsGroups;
   }
 
   /**
