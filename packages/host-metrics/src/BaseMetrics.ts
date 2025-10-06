@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Meter, MeterProvider, diag, metrics } from '@opentelemetry/api';
+import { Meter, MeterProvider, metrics } from '@opentelemetry/api';
 
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -35,7 +35,6 @@ const DEFAULT_NAME = PACKAGE_NAME;
  * Base Class for metrics
  */
 export abstract class BaseMetrics {
-  protected _logger = diag;
   protected _meter: Meter;
   private _name: string;
 
