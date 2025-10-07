@@ -616,8 +616,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         for await (const chunk of stream) {
           const parsedChunk = this.parseChunk(chunk?.chunk?.bytes);
 
-          if (!parsedChunk) span.end();
-          if (modelId.includes('amazon.titan')) {
+          if (!parsedChunk) {
+            // pass through
+          } else if (modelId.includes('amazon.titan')) {
             BedrockRuntimeServiceExtension.recordTitanAttributes(
               parsedChunk,
               span
