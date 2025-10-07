@@ -222,6 +222,7 @@ jobs:
         run: npm run test:ci:affected
 
   test-all-versions:
+    # XXX I'd *like* this to use `needs: compile`, if possible. I'm getting some lint warns/errors on `needs:` here and below, though.
     needs: unit-test
     runs-on: ubuntu-latest
     strategy:

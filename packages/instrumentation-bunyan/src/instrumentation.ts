@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+'XXX trent wuz here';
+
 import { inherits } from 'util';
 import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
 import {
