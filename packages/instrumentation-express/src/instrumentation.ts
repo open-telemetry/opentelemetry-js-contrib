@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-'XXX trent wuz here';
-
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
   trace,
