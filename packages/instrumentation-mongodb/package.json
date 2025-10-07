@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-mongodb",
-  "version": "0.58.1",
+  "version": "0.59.0",
   "description": "OpenTelemetry instrumentation for `mongodb` database client for MongoDB",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -19,7 +19,8 @@
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test-v5-v6-run -- --watch-extensions ts --watch",
-    "test": "npm run test-v5-v6",
+    "test": "npm run test-v5-v6 && npm run test-unit",
+    "test-unit": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/unit/*.test.ts'",
     "test-v3": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/mongodb-v3.test.ts'",
     "test-v4": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/mongodb-v4-v5-v6.metrics.test.ts' 'test/**/mongodb-v4.test.ts'",
     "test-v5-v6": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/mongodb-v4-v5-v6.metrics.test.ts' 'test/**/mongodb-v5-v6.test.ts'",
@@ -57,7 +58,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.52.0",
+    "@opentelemetry/contrib-test-utils": "^0.53.0",
     "@opentelemetry/sdk-metrics": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
@@ -72,7 +73,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.205.0"
+    "@opentelemetry/instrumentation": "^0.206.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-mongodb#readme"
 }

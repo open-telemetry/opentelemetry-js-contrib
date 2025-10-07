@@ -1,6 +1,41 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.51.4...instrumentation-bunyan-v0.52.0) (2025-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3145](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3145)) ([704c716](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/704c7161f782590d7b644ab607b5f9c29cdfd63f))
+
+## [0.51.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.51.3...instrumentation-bunyan-v0.51.4) (2025-09-29)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3123](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3123)) ([0dab838](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0dab8383b5349e21a968fe2cedd8a6e2243f86d0))
+
+## [0.51.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.51.2...instrumentation-bunyan-v0.51.3) (2025-09-29)
+
+
+### Bug Fixes
+
+* force new release PR ([#3115](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3115)) ([5c9b26e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5c9b26e743fd54837552daa8ef0a1f23e1a4d3c3))
+
+## [0.51.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.51.1...instrumentation-bunyan-v0.51.2) (2025-09-25)
+
+
+### Bug Fixes
+
+* **instrumentation-bunyan:** force new release-please PR ([#3109](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3109)) ([86483f4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/86483f468a9265a33fd62f0eea67a8d5e9651c67)), closes [#3108](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3108)
+
+## [0.51.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.51.0...instrumentation-bunyan-v0.51.1) (2025-09-25)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.50.0...instrumentation-bunyan-v0.51.0) (2025-09-10)
 
 

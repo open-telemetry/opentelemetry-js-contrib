@@ -1,6 +1,38 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.4.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-configuration-propagators-v0.4.3...auto-configuration-propagators-v0.4.4) (2025-09-29)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3123](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3123)) ([0dab838](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0dab8383b5349e21a968fe2cedd8a6e2243f86d0))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.1.2 to ^2.1.3
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.55.2 to ^0.55.3
+    * @opentelemetry/propagator-ot-trace bumped from ^0.28.2 to ^0.28.3
+
+## [0.4.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-configuration-propagators-v0.4.2...auto-configuration-propagators-v0.4.3) (2025-09-25)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.1.1 to ^2.1.2
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.55.1 to ^0.55.2
+    * @opentelemetry/propagator-ot-trace bumped from ^0.28.1 to ^0.28.2
+
 ## [0.4.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-configuration-propagators-v0.4.1...auto-configuration-propagators-v0.4.2) (2025-09-01)
 
 

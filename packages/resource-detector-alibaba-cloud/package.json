@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-alibaba-cloud",
-  "version": "0.31.6",
+  "version": "0.31.9",
   "description": "OpenTelemetry resource detector for Alibaba Cloud",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.52.0",
+    "@opentelemetry/contrib-test-utils": "^0.53.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",

@@ -27,7 +27,7 @@ jobs:
 
       - name: Install packages
         run: |
-          npm ci
+          npm ci --ignore-scripts
 
       - uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
         id: otelbot-token
@@ -52,63 +52,24 @@ jobs:
           token: ${{ steps.otelbot-token.outputs.token }}
           fetch-depth: 0
 
-      # previous commiter does not have CLA signed, and the commit is missing updates to package-lock.json,
-      # so we re-write that commit here with the proper changes
-      - name: Update package-lock.json in PR
-        # only update if a PR has been created
-        if: ${{ steps.release.outputs.pr }}
-        run: |
-          npm install --ignore-scripts --package-lock-only
-          git add package-lock.json
-          git config user.name otelbot
-          git config user.email 197425009+otelbot@users.noreply.github.com
-          git commit --amend --reset-author --no-edit
-          git push --force
-
-  install-and-compile:
-    needs: release-please
-    # only if a release has been created
-    if: ${{ needs.release-please.outputs.releases_created }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - name: Rebuild Packages
-        run: |
-          npm ci
-          npm run compile
-      - name: Upload contents for publish
-        uses: actions/upload-artifact@v4
-        with:
-          name: publish-cache-${{ github.run_number }}
-          path: .
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 10
-
+  # If releases have been created, then publish to npm.
   npm-publish:
-    needs:
-      - release-please
-      - install-and-compile
-    # only if a release has been created
-    if: ${{ needs.release-please.outputs.releases_created }}
-    runs-on: ubuntu-latest
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
     permissions:
       contents: read
-      id-token: write # to generate npm provenance statements
+      id-token: write # needed for OIDC and provenance
+    runs-on: ubuntu-latest
     environment: npm-publish-environment
     steps:
-      - name: Setup Node
-        uses: actions/setup-node@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
+          # Require npm 11.5.1 or later for https://docs.npmjs.com/trusted-publishers.
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
-      - name: Download contents for publish
-        uses: actions/download-artifact@v5
-        with:
-          name: publish-cache-${{ github.run_number }}
+      - run: npm ci --ignore-scripts
+      - run: npm run compile
       # Release Please has already incremented versions and published tags, so we just
       # need to publish all unpublished versions to npm here
       # See: https://github.com/lerna/lerna/tree/main/libs/commands/publish#bump-from-package

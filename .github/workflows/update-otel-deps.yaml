@@ -29,7 +29,7 @@ jobs:
 
       - run: npm install -g npm@latest
 
-      - run: npm ci
+      - run: npm ci --ignore-scripts
 
       - name: Create/Update Release PR
         run: |

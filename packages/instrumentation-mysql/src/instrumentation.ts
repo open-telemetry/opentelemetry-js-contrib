@@ -31,6 +31,7 @@ import {
   DB_SYSTEM_VALUE_MYSQL,
   ATTR_DB_STATEMENT,
   ATTR_DB_SYSTEM,
+  METRIC_DB_CLIENT_CONNECTIONS_USAGE,
 } from './semconv';
 import type * as mysqlTypes from 'mysql';
 import { AttributeNames } from './AttributeNames';
@@ -63,7 +64,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
 
   protected override _updateMetricInstruments() {
     this._connectionsUsage = this.meter.createUpDownCounter(
-      'db.client.connections.usage', //TODO:: use semantic convention
+      METRIC_DB_CLIENT_CONNECTIONS_USAGE,
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',

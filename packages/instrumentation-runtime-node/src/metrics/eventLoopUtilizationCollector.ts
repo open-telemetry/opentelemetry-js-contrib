@@ -13,34 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { EventLoopUtilization, performance } from 'node:perf_hooks';
-import { RuntimeNodeInstrumentationConfig } from '../types';
 import { Meter } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
+import { METRIC_NODEJS_EVENTLOOP_UTILIZATION } from '../semconv';
 
 const { eventLoopUtilization: eventLoopUtilizationCollector } = performance;
-
-export const ATTR_NODEJS_EVENT_LOOP_UTILIZATION = 'eventloop.utilization';
 
 export class EventLoopUtilizationCollector extends BaseCollector {
   private _lastValue?: EventLoopUtilization;
 
-  constructor(
-    config: RuntimeNodeInstrumentationConfig = {},
-    namePrefix: string
-  ) {
-    super(config, namePrefix);
-  }
-
   public updateMetricInstruments(meter: Meter): void {
     meter
-      .createObservableGauge(
-        `${this.namePrefix}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`,
-        {
-          description: 'Event loop utilization',
-          unit: '1',
-        }
-      )
+      .createObservableGauge(METRIC_NODEJS_EVENTLOOP_UTILIZATION, {
+        description: 'Event loop utilization',
+        unit: '1',
+      })
       .addCallback(async observableResult => {
         if (!this._config.enabled) return;
 

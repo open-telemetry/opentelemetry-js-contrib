@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: 18
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
       # Note: when pushing to main we want to test only what changed in
       # last commit. Otherwise we want to test all changes from origin/main.
       # So we set the right values for base and head commits depending
@@ -244,7 +244,7 @@ jobs:
         with:
           node-version: 18
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
       # NOTE: keep this in sync with the node versions from `unit-test` job
       - name: Download Test Artifacts (18)
         uses: actions/download-artifact@v5
