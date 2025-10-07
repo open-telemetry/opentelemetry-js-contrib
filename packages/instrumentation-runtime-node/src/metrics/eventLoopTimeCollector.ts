@@ -13,26 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { EventLoopUtilization, performance } from 'node:perf_hooks';
-import { RuntimeNodeInstrumentationConfig } from '../types';
 import { Meter } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
+import {
+  METRIC_NODEJS_EVENTLOOP_TIME,
+  ATTR_NODEJS_EVENTLOOP_STATE,
+  NODEJS_EVENTLOOP_STATE_VALUE_ACTIVE,
+  NODEJS_EVENTLOOP_STATE_VALUE_IDLE,
+} from '../semconv';
 
 const { eventLoopUtilization: eventLoopUtilizationCollector } = performance;
 
-export const ATTR_NODEJS_EVENT_LOOP_TIME = 'eventloop.time';
-
 export class EventLoopTimeCollector extends BaseCollector {
-  constructor(
-    config: RuntimeNodeInstrumentationConfig = {},
-    namePrefix: string
-  ) {
-    super(config, namePrefix);
-  }
-
   public updateMetricInstruments(meter: Meter): void {
     const timeCounter = meter.createObservableCounter(
-      `${this.namePrefix}.${ATTR_NODEJS_EVENT_LOOP_TIME}`,
+      METRIC_NODEJS_EVENTLOOP_TIME,
       {
         description:
           'Cumulative duration of time the event loop has been in each state.',
@@ -48,10 +45,10 @@ export class EventLoopTimeCollector extends BaseCollector {
         if (data === undefined) return;
 
         observableResult.observe(timeCounter, data.active / 1000, {
-          [`${this.namePrefix}.eventloop.state`]: 'active',
+          [ATTR_NODEJS_EVENTLOOP_STATE]: NODEJS_EVENTLOOP_STATE_VALUE_ACTIVE,
         });
         observableResult.observe(timeCounter, data.idle / 1000, {
-          [`${this.namePrefix}.eventloop.state`]: 'idle',
+          [ATTR_NODEJS_EVENTLOOP_STATE]: NODEJS_EVENTLOOP_STATE_VALUE_IDLE,
         });
       },
       [timeCounter]

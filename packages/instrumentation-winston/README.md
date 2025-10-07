@@ -67,7 +67,7 @@ logger.info('foobar');
 | `disableLogSending`      | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
 | `logSeverity`           | `SeverityNumber`  | Control severity level for [log sending](#log-sending). Default `SeverityNumber.UNSPECIFIED`, it will use Winston Logger's current level when unspecified. |
 | `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
-| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |
+| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |  
 
 ### Log sending
 
@@ -175,4 +175,4 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-winston
-[npm-img]: https://img.shields.io/npm/v/%40opentelemetry%2Finstrumentation-winston.svg
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-winston.svg

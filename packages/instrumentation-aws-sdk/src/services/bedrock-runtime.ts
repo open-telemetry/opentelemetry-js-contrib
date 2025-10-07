@@ -40,6 +40,8 @@ import {
   GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
   GEN_AI_TOKEN_TYPE_VALUE_INPUT,
   GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+  METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
+  METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
 } from '../semconv';
 import {
   AwsSdkInstrumentationConfig,
@@ -62,7 +64,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
 
   updateMetricInstruments(meter: Meter) {
     // https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/#metric-gen_aiclienttokenusage
-    this.tokenUsage = meter.createHistogram('gen_ai.client.token.usage', {
+    this.tokenUsage = meter.createHistogram(METRIC_GEN_AI_CLIENT_TOKEN_USAGE, {
       unit: '{token}',
       description: 'Measures number of input and output tokens used',
       valueType: ValueType.INT,
@@ -76,7 +78,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
 
     // https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/#metric-gen_aiclientoperationduration
     this.operationDuration = meter.createHistogram(
-      'gen_ai.client.operation.duration',
+      METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
       {
         unit: 's',
         description: 'GenAI operation duration',

@@ -1,6 +1,28 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.57.2...instrumentation-aws-lambda-v0.58.0) (2025-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3145](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3145)) ([704c716](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/704c7161f782590d7b644ab607b5f9c29cdfd63f))
+
+## [0.57.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.57.1...instrumentation-aws-lambda-v0.57.2) (2025-09-29)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3123](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3123)) ([0dab838](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0dab8383b5349e21a968fe2cedd8a6e2243f86d0))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.1.2 to ^2.1.3
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.55.2 to ^0.55.3
+
 ## [0.57.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.57.0...instrumentation-aws-lambda-v0.57.1) (2025-09-25)
 
 

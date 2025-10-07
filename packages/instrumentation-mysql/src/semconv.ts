@@ -106,3 +106,13 @@ export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const DB_SYSTEM_VALUE_MYSQL = 'mysql' as const;
+
+/**
+ * Deprecated, use `db.client.connection.count` instead.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `db.client.connection.count`.
+ */
+export const METRIC_DB_CLIENT_CONNECTIONS_USAGE =
+  'db.client.connections.usage' as const;
