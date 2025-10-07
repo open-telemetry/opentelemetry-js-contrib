@@ -222,8 +222,7 @@ jobs:
         run: npm run test:ci:affected
 
   test-all-versions:
-    # XXX I'd *like* this to use `needs: compile`, if possible. I'm getting some lint warns/errors on `needs:` here and below, though.
-    needs: unit-test
+    needs: compile
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -234,7 +233,6 @@ jobs:
           - "22"
           - "24"
     services: *test_services
-    #XXX why lint error on env: here with the YAML alias
     env: *test_env
     steps:
       - uses: actions/checkout@v5
