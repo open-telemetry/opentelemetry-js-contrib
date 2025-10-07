@@ -52,18 +52,6 @@ jobs:
           token: ${{ steps.otelbot-token.outputs.token }}
           fetch-depth: 0
 
-      # If we've created/updated a PR:
-      # Sync the legacy "dependencies" key in package-lock.json.
-      - name: Update package-lock.json in PR
-        if: ${{ steps.release.outputs.pr }}
-        run: |
-          git config user.name otelbot
-          git config user.email 197425009+otelbot@users.noreply.github.com
-          npm install --ignore-scripts --package-lock-only
-          git add package-lock.json
-          git commit -m "chore: sync package-lock.json 'dependencies' key"
-          git push
-
   # If releases have been created, then publish to npm.
   npm-publish:
     needs: release-please
