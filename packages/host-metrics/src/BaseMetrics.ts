@@ -27,7 +27,7 @@ export interface MetricsCollectorConfig {
   meterProvider?: MeterProvider;
   // Name of component
   name?: string;
-  metricGroups?: Array<string>;
+  metricGroups?: string[];
 }
 
 const DEFAULT_NAME = PACKAGE_NAME;
