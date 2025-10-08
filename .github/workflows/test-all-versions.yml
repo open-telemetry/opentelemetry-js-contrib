@@ -168,7 +168,9 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - name: Install
-        run: npm ci --ignore-scripts
+        # Post install scripts are required for some deps for successful test
+        # runs: sqlite3, better-sqlite3, and possibly esbuild.
+        run: npm ci
       - name: Download Build Artifacts
         uses: actions/download-artifact@v5
         with:
