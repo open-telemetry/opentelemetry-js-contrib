@@ -57,6 +57,7 @@ import { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.i
 import { TediousInstrumentation } from '@opentelemetry/instrumentation-tedious';
 import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
+import { OpenAIInstrumentation } from '@opentelemetry/instrumentation-openai';
 
 import { alibabaCloudEcsDetector } from '@opentelemetry/resource-detector-alibaba-cloud';
 import {
@@ -135,6 +136,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-tedious': TediousInstrumentation,
   '@opentelemetry/instrumentation-undici': UndiciInstrumentation,
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
+  '@opentelemetry/instrumentation-openai': OpenAIInstrumentation,
 };
 
 const defaultExcludedInstrumentations = [
