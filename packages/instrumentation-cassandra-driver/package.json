@@ -55,6 +55,7 @@
     "@opentelemetry/contrib-test-utils": "^0.53.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
+    "@opentelemetry/semantic-conventions": "^1.37.0",
     "cassandra-driver": "4.6.4"
   },
   "dependencies": {
