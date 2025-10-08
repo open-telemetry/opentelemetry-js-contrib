@@ -445,6 +445,80 @@ describe('mysql2', () => {
       });
     });
 
+    describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
+      // Restore OTEL_SEMCONV_STABILITY_OPT_IN after we are done.
+      const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
+      after(() => {
+        process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
+        (instrumentation as any)._setSemconvStabilityFromEnv();
+      });
+
+      const sql = 'SELECT 1+1 as solution';
+      const queryAndGetSpan = (): Promise<ReadableSpan> => {
+        return new Promise(resolve => {
+          const span = provider.getTracer('default').startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            connection.query(sql, (err, res: RowDataPacket[]) => {
+              const spans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(spans.length, 1);
+              resolve(spans[0]);
+            });
+          });
+        });
+      };
+
+      it('OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
+        process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
+        (instrumentation as any)._setSemconvStabilityFromEnv();
+
+        const { attributes } = await queryAndGetSpan();
+
+        // old `db.*`
+        assert.strictEqual(attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MYSQL);
+        assert.strictEqual(attributes[ATTR_DB_NAME], database);
+        assert.strictEqual(attributes[ATTR_DB_USER], user);
+        assert.strictEqual(attributes[ATTR_DB_STATEMENT], format(sql));
+        // stable `db.*`
+        assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], undefined);
+        assert.strictEqual(attributes[ATTR_DB_NAMESPACE], undefined);
+        assert.strictEqual(attributes[ATTR_DB_QUERY_TEXT], undefined);
+
+        // old `net.*`
+        assert.strictEqual(attributes[ATTR_NET_PEER_NAME], host);
+        assert.strictEqual(attributes[ATTR_NET_PEER_PORT], port);
+        // stable `net.*`
+        assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], undefined);
+        assert.strictEqual(attributes[ATTR_SERVER_PORT], undefined);
+      });
+
+      it('OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
+        process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
+        (instrumentation as any)._setSemconvStabilityFromEnv();
+
+        const { attributes } = await queryAndGetSpan();
+
+        // old `db.*`
+        assert.strictEqual(attributes[ATTR_DB_SYSTEM], undefined);
+        assert.strictEqual(attributes[ATTR_DB_STATEMENT], undefined);
+        assert.strictEqual(attributes[ATTR_DB_NAME], undefined);
+        assert.strictEqual(attributes[ATTR_DB_USER], undefined);
+        // stable `db.*`
+        assert.strictEqual(
+          attributes[ATTR_DB_SYSTEM_NAME],
+          DB_SYSTEM_NAME_VALUE_MYSQL
+        );
+        assert.strictEqual(attributes[ATTR_DB_NAMESPACE], database);
+        assert.strictEqual(attributes[ATTR_DB_QUERY_TEXT], format(sql));
+
+        // old `net.*`
+        assert.strictEqual(attributes[ATTR_NET_PEER_NAME], undefined);
+        assert.strictEqual(attributes[ATTR_NET_PEER_PORT], undefined);
+        // stable `net.*`
+        assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], host);
+        assert.strictEqual(attributes[ATTR_SERVER_PORT], port);
+      });
+    });
+
     describe('#Connection.execute', () => {
       it('should intercept connection.execute(text: string)', done => {
         const span = provider.getTracer('default').startSpan('test span');

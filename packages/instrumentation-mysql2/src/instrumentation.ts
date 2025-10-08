@@ -52,11 +52,16 @@ type formatType = typeof mysqlTypes.format;
 const supportedVersions = ['>=1.4.2 <4'];
 
 export class MySQL2Instrumentation extends InstrumentationBase<MySQL2InstrumentationConfig> {
-  private _netSemconvStability: SemconvStability;
-  private _dbSemconvStability: SemconvStability;
+  private _netSemconvStability!: SemconvStability;
+  private _dbSemconvStability!: SemconvStability;
 
   constructor(config: MySQL2InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._setSemconvStabilityFromEnv();
+  }
+
+  // Used for testing.
+  private _setSemconvStabilityFromEnv() {
     this._netSemconvStability = semconvStabilityFromStr(
       'http',
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN
