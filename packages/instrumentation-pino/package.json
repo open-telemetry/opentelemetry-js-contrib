@@ -60,7 +60,7 @@
     "nyc": "17.1.0",
     "pino": "^8.21.0",
     "rimraf": "5.0.10",
-    "semver": "7.7.2",
+    "semver": "7.7.3",
     "sinon": "15.2.0",
     "test-all-versions": "6.1.0",
     "typescript": "5.0.4"
