@@ -19,7 +19,7 @@ npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrument
 
 ### Supported Versions
 
-- [`express`](https://www.npmjs.com/package/express) version `>=4.0.0 <5`
+- [`express`](https://www.npmjs.com/package/express) version `>=4.0.0 <6`
 
 ## Usage
 
