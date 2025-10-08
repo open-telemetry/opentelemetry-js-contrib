@@ -58,7 +58,7 @@
     "nyc": "17.1.0",
     "restify": "11.1.0",
     "rimraf": "5.0.10",
-    "semver": "7.7.2",
+    "semver": "7.7.3",
     "test-all-versions": "^6.0.0",
     "typescript": "5.0.4"
   },
