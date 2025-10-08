@@ -72,7 +72,7 @@ Attributes collected:
 | `db.connection_string` | Removed          | The connection string used to connect to the database. |
 | `db.name`              | Removed, integrated into the new `db.namespace` | The name of the database. |
 | `db.system`            | `db.system.name` | 'mysql' |
-| `db.statement`         | `db.query.text`  | The database query. |
+| `db.statement`         | `db.query.text`  | The database query being executed. |
 | `db.user`              | Removed          | User used to connect to the database. |
 | (not included)         | `db.namespace`   | The name of the database, fully qualified within the server address and port. |
 | `net.peer.port`        | `server.port`    | Remote port number. |
