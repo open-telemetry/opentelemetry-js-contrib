@@ -15,7 +15,7 @@ npm install --save @opentelemetry/instrumentation-openai
 
 ## Supported Versions
 
-- [`openai`](https://www.npmjs.com/package/openai) versions `>=4.19.0 <6`
+- [`openai`](https://www.npmjs.com/package/openai) versions `>=4.19.0 <7`
 
 ## Usage
 
