@@ -15,6 +15,12 @@
  */
 import { AnyValue } from '@opentelemetry/api-logs';
 
+// This mimicks `APIPromise` from `openai` sufficiently for usage in this
+// instrumentation. OpenAI's APIPromise adds some methods, but we don't use
+// those. We don't import the type directly from `openai` because how to
+// import it has changed between openai@4 and openai@5.
+export type APIPromise<T> = Promise<T>;
+
 export type GenAIFunction = {
   name: string;
   arguments?: AnyValue;
@@ -23,7 +29,7 @@ export type GenAIFunction = {
 export type GenAIToolCall = {
   id: string;
   type: string;
-  function: GenAIFunction;
+  function?: GenAIFunction;
 };
 
 export type GenAIMessage = {
