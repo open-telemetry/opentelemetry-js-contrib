@@ -118,19 +118,42 @@ function goBack() {
       const contentDiv = document.getElementById('content') || document.body;
       const backIndicator = document.createElement('div');
       backIndicator.className = 'nav-result';
-      backIndicator.innerHTML = 
-        `<div class="nav-result">
-          <h4>⬅️ Back Navigation</h4>
-          <p><strong>Method:</strong> history.back()</p>
-          <p><strong>Current URL:</strong> <code>${location.href}</code></p>
-          <p><strong>Expected Instrumentation:</strong></p>
-          <ul>
-            <li>✓ same_document: true</li>
-            <li>✓ hash_change: depends on URL change</li>
-            <li>✓ type: traverse</li>
-          </ul>
-          <p class="console-note">📊 Check console for navigation events!</p>
-        </div>`;
+      // Create elements safely to avoid XSS
+      const resultDiv = document.createElement('div');
+      resultDiv.className = 'nav-result';
+      
+      const title = document.createElement('h4');
+      title.textContent = '⬅️ Back Navigation';
+      
+      const method = document.createElement('p');
+      method.innerHTML = '<strong>Method:</strong> history.back()';
+      
+      const urlPara = document.createElement('p');
+      urlPara.innerHTML = '<strong>Current URL:</strong> <code></code>';
+      urlPara.querySelector('code').textContent = location.href; // Safe text assignment
+      
+      const expectedTitle = document.createElement('p');
+      expectedTitle.innerHTML = '<strong>Expected Instrumentation:</strong>';
+      
+      const list = document.createElement('ul');
+      list.innerHTML = `
+        <li>✓ same_document: true</li>
+        <li>✓ hash_change: depends on URL change</li>
+        <li>✓ type: traverse</li>
+      `;
+      
+      const consoleNote = document.createElement('p');
+      consoleNote.className = 'console-note';
+      consoleNote.textContent = '📊 Check console for navigation events!';
+      
+      resultDiv.appendChild(title);
+      resultDiv.appendChild(method);
+      resultDiv.appendChild(urlPara);
+      resultDiv.appendChild(expectedTitle);
+      resultDiv.appendChild(list);
+      resultDiv.appendChild(consoleNote);
+      
+      backIndicator.appendChild(resultDiv);
       contentDiv.appendChild(backIndicator);
       
       // Remove the indicator after 5 seconds
@@ -178,15 +201,44 @@ function testNavigationApiRoute(route, navigationType) {
       
       // Update content after navigation
       setTimeout(() => {
-        document.getElementById('nav-api-content').innerHTML = 
-          `<div class="nav-result">
-            <h4>✅ ${navigationType} Completed</h4>
-            <p><strong>Target:</strong> <code>${route}</code></p>
-            <p><strong>Current URL:</strong> <code>${window.location.href}</code></p>
-            <p><strong>Navigation API:</strong> Supported ✓</p>
-            <button id="navApiHashBtn" style="display: none;">Nav API: Hash</button>
-            <p class="console-note">📊 Check console for detailed navigation events and instrumentation data!</p>
-          </div>`;
+        const contentElement = document.getElementById('nav-api-content');
+        
+        // Create elements safely to avoid XSS
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'nav-result';
+        
+        const title = document.createElement('h4');
+        title.textContent = `✅ ${navigationType} Completed`;
+        
+        const targetPara = document.createElement('p');
+        targetPara.innerHTML = '<strong>Target:</strong> <code></code>';
+        targetPara.querySelector('code').textContent = route; // Safe text assignment
+        
+        const urlPara = document.createElement('p');
+        urlPara.innerHTML = '<strong>Current URL:</strong> <code></code>';
+        urlPara.querySelector('code').textContent = window.location.href; // Safe text assignment
+        
+        const apiPara = document.createElement('p');
+        apiPara.innerHTML = '<strong>Navigation API:</strong> Supported ✓';
+        
+        const button = document.createElement('button');
+        button.id = 'navApiHashBtn';
+        button.style.display = 'none';
+        button.textContent = 'Nav API: Hash';
+        
+        const consoleNote = document.createElement('p');
+        consoleNote.className = 'console-note';
+        consoleNote.textContent = '📊 Check console for detailed navigation events and instrumentation data!';
+        
+        resultDiv.appendChild(title);
+        resultDiv.appendChild(targetPara);
+        resultDiv.appendChild(urlPara);
+        resultDiv.appendChild(apiPara);
+        resultDiv.appendChild(button);
+        resultDiv.appendChild(consoleNote);
+        
+        contentElement.innerHTML = ''; // Clear existing content
+        contentElement.appendChild(resultDiv);
       }, 100);
       
     } catch (error) {
@@ -194,24 +246,63 @@ function testNavigationApiRoute(route, navigationType) {
       // Fallback to history API
       const fallbackRoute = route.startsWith('#') ? route : `?fallback=${Date.now()}`;
       history.pushState({}, '', fallbackRoute);
-      document.getElementById('nav-api-content').innerHTML = 
-       `<div class="nav-result error">
-         <h4>⚠️ Navigation API Failed</h4>
-         <p><strong>Fallback used:</strong> <code>${fallbackRoute}</code></p>
-         <p><strong>Error:</strong> ${error.message}</p>
-       </div>`;
+      
+      // Create error content safely
+      const contentElement = document.getElementById('nav-api-content');
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'nav-result error';
+      
+      const title = document.createElement('h4');
+      title.textContent = '⚠️ Navigation API Failed';
+      
+      const fallbackPara = document.createElement('p');
+      fallbackPara.innerHTML = '<strong>Fallback used:</strong> <code></code>';
+      fallbackPara.querySelector('code').textContent = fallbackRoute;
+      
+      const errorPara = document.createElement('p');
+      errorPara.innerHTML = '<strong>Error:</strong> ';
+      const errorSpan = document.createElement('span');
+      errorSpan.textContent = error.message;
+      errorPara.appendChild(errorSpan);
+      
+      errorDiv.appendChild(title);
+      errorDiv.appendChild(fallbackPara);
+      errorDiv.appendChild(errorPara);
+      
+      contentElement.innerHTML = '';
+      contentElement.appendChild(errorDiv);
     }
   } else {
     // Fallback for browsers without Navigation API
     const fallbackRoute = route.startsWith('#') ? route : `?fallback=${Date.now()}`;
     history.pushState({}, '', fallbackRoute);
-    document.getElementById('nav-api-content').innerHTML = 
-     `<div class="nav-result fallback">
-       <h4>📱 Navigation API Not Available</h4>
-       <p><strong>Fallback used:</strong> <code>${fallbackRoute}</code></p>
-       <p><strong>Method:</strong> history.pushState()</p>
-       <p class="console-note">📊 Check console for instrumentation data!</p>
-     </div>`;
+    
+    // Create fallback content safely
+    const contentElement = document.getElementById('nav-api-content');
+    const fallbackDiv = document.createElement('div');
+    fallbackDiv.className = 'nav-result fallback';
+    
+    const title = document.createElement('h4');
+    title.textContent = '📱 Navigation API Not Available';
+    
+    const fallbackPara = document.createElement('p');
+    fallbackPara.innerHTML = '<strong>Fallback used:</strong> <code></code>';
+    fallbackPara.querySelector('code').textContent = fallbackRoute;
+    
+    const methodPara = document.createElement('p');
+    methodPara.innerHTML = '<strong>Method:</strong> history.pushState()';
+    
+    const consoleNote = document.createElement('p');
+    consoleNote.className = 'console-note';
+    consoleNote.textContent = '📊 Check console for instrumentation data!';
+    
+    fallbackDiv.appendChild(title);
+    fallbackDiv.appendChild(fallbackPara);
+    fallbackDiv.appendChild(methodPara);
+    fallbackDiv.appendChild(consoleNote);
+    
+    contentElement.innerHTML = '';
+    contentElement.appendChild(fallbackDiv);
   }
 }
 
