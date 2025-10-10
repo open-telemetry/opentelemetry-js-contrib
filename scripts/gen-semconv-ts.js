@@ -56,6 +56,7 @@ function warn(...args) {
   console.log(...args);
 }
 
+// eslint-disable-next-line no-unused-vars
 function getAllWorkspaceDirs() {
   const pj = JSON.parse(
     fs.readFileSync(path.join(TOP, 'package.json'), 'utf8')
@@ -71,9 +72,10 @@ function genSemconvTs(wsDir) {
     paths: [path.join(wsDir, 'node_modules')],
   });
   const semconvStable = require(semconvPath);
-  const semconvVer = require(
-    path.resolve(semconvPath, '../../../package.json')
-  ).version;
+  const semconvVer = require(path.resolve(
+    semconvPath,
+    '../../../package.json'
+  )).version;
 
   // Gather unstable semconv imports. Consider any imports from
   // '@opentelemetry/semantic-conventions/incubating' or from an existing local
@@ -171,7 +173,9 @@ function genSemconvTs(wsDir) {
     const match = re.exec(src);
     if (!match) {
       throw new Error(
-        `could not find "${name}" export in semconv build files: ${re} did not match in content from ${srcPaths.join(', ')}`
+        `could not find "${name}" export in semconv build files: ${re} did not match in content from ${srcPaths.join(
+          ', '
+        )}`
       );
     }
 

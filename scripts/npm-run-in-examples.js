@@ -25,7 +25,7 @@
  *    ./scripts/npm-run-in-examples.js --if-present lint
  */
 
-const { spawn, spawnSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const path = require('path');
 
 const TOP = path.resolve(__dirname, '..');
@@ -74,7 +74,9 @@ async function npmRunInExamples(args) {
     });
     if (p.status || p.signal || p.error) {
       logError(
-        `"npm run ${args.join(' ')}" failed in "${pkgDir}": status=${p.status} signal=${p.signal} error=${p.error}`
+        `"npm run ${args.join(' ')}" failed in "${pkgDir}": status=${
+          p.status
+        } signal=${p.signal} error=${p.error}`
       );
       finalRetval = 1;
     }
