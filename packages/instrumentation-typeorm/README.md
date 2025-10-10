@@ -15,9 +15,9 @@ Compatible with OpenTelemetry JS API `^1.3.0` and SDK `2.0+`.
 npm install --save @opentelemetry/instrumentation-typeorm
 ```
 
-### Supported versions
+## Supported versions
 
-- `>=0.3.0 <1`
+- [`typeorm`](https://www.npmjs.com/package/typeorm) versions `>=0.3.0 <1`
 
 ## Usage
 
