@@ -22,7 +22,6 @@
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
-    "target": "es2022",
-    "types": ["node", "mocha", "webpack-env"]
+    "target": "es2022"
   }
 }
