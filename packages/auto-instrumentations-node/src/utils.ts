@@ -46,6 +46,7 @@ import { MySQL2Instrumentation } from '@opentelemetry/instrumentation-mysql2';
 import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 import { NetInstrumentation } from '@opentelemetry/instrumentation-net';
+import { OpenAIInstrumentation } from '@opentelemetry/instrumentation-openai';
 import { OracleInstrumentation } from '@opentelemetry/instrumentation-oracledb';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
@@ -124,6 +125,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
   '@opentelemetry/instrumentation-nestjs-core': NestInstrumentation,
   '@opentelemetry/instrumentation-net': NetInstrumentation,
+  '@opentelemetry/instrumentation-openai': OpenAIInstrumentation,
   '@opentelemetry/instrumentation-oracledb': OracleInstrumentation,
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
   '@opentelemetry/instrumentation-pino': PinoInstrumentation,
