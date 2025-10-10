@@ -1,6 +1,14 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.4.0...instrumentation-openai-v0.5.0) (2025-10-10)
+
+
+### Features
+
+* **auto-instrumentations-node:** add OpenAI instrumentation  ([#3164](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3164)) ([d2b090e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2b090e7f28a29ade7309022d52c84672d8be430))
+* **instrumentation-openai:** add support for instrumenting openai@6 ([#3165](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3165)) ([7ffc32f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7ffc32fca05b9cc555828c73d201537375b96b7a))
+
 ## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.3.3...instrumentation-openai-v0.4.0) (2025-10-06)
 
 

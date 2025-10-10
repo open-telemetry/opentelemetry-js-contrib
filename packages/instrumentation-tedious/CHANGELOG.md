@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.25.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.25.0...instrumentation-tedious-v0.25.1) (2025-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#3134](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3134)) ([c302e35](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c302e3530d6ee9a856ffb43730082e1cee87b0ee))
+
 ## [0.25.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.24.3...instrumentation-tedious-v0.25.0) (2025-10-06)
 
 
