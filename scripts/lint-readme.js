@@ -20,12 +20,10 @@ const path = require('path');
 const packageRoot = process.cwd();
 const monorepoRoot = path.resolve(__dirname, '..');
 
-const autoInstrumentationNodeDeps = require(
-  `${monorepoRoot}/packages/auto-instrumentations-node/package.json`
-).dependencies;
-const autoInstrumentationWebDeps = require(
-  `${monorepoRoot}/packages/auto-instrumentations-web/package.json`
-).dependencies;
+const autoInstrumentationNodeDeps =
+  require(`${monorepoRoot}/packages/auto-instrumentations-node/package.json`).dependencies;
+const autoInstrumentationWebDeps =
+  require(`${monorepoRoot}/packages/auto-instrumentations-web/package.json`).dependencies;
 
 // remove exempt instrumentations
 delete autoInstrumentationNodeDeps['@opentelemetry/instrumentation-fastify'];
@@ -36,6 +34,7 @@ const pjson = require(packageJsonUrl);
 const instrumentationPackageName = pjson.name;
 
 // identify if it's node or web
+// eslint-disable-next-line no-unused-vars
 const isNode = instrumentationPackageName in autoInstrumentationNodeDeps;
 const isWeb = instrumentationPackageName in autoInstrumentationWebDeps;
 
@@ -61,7 +60,9 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/${instrumentationPackageName}
-[npm-img]: https://badge.fury.io/js/${encodeURIComponent(instrumentationPackageName)}.svg
+[npm-img]: https://badge.fury.io/js/${encodeURIComponent(
+  instrumentationPackageName
+)}.svg
 `;
 
 if (!currentReadmeContent.includes(footerToVerify)) {
