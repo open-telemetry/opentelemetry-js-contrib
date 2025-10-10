@@ -41,38 +41,47 @@ function skipTestIf() {
 
   let minNodeMajor;
   if (process.env.SKIP_TEST_IF_NODE_OLDER_THAN) {
-    minNodeMajor = Number(process.env.SKIP_TEST_IF_NODE_OLDER_THAN)
+    minNodeMajor = Number(process.env.SKIP_TEST_IF_NODE_OLDER_THAN);
     if (isNaN(minNodeMajor) || !Number.isInteger(minNodeMajor)) {
-      console.warn(`skip-test-if warning: ignoring invalid SKIP_TEST_IF_NODE_OLDER_THAN value: "${process.env.SKIP_TEST_IF_NODE_OLDER_THAN}"`);
+      console.warn(
+        `skip-test-if warning: ignoring invalid SKIP_TEST_IF_NODE_OLDER_THAN value: "${process.env.SKIP_TEST_IF_NODE_OLDER_THAN}"`
+      );
       minNodeMajor = undefined;
     }
   }
   let maxNodeMajor;
   if (process.env.SKIP_TEST_IF_NODE_NEWER_THAN) {
-    maxNodeMajor = Number(process.env.SKIP_TEST_IF_NODE_NEWER_THAN)
+    maxNodeMajor = Number(process.env.SKIP_TEST_IF_NODE_NEWER_THAN);
     if (isNaN(maxNodeMajor) || !Number.isInteger(maxNodeMajor)) {
-      console.warn(`skip-test-if warning: ignoring invalid SKIP_TEST_IF_NODE_NEWER_THAN value: "${process.env.SKIP_TEST_IF_NODE_NEWER_THAN}"`);
+      console.warn(
+        `skip-test-if warning: ignoring invalid SKIP_TEST_IF_NODE_NEWER_THAN value: "${process.env.SKIP_TEST_IF_NODE_NEWER_THAN}"`
+      );
       maxNodeMajor = undefined;
     }
   }
 
   if (minNodeMajor === undefined && maxNodeMajor === undefined) {
-    console.warn('skip-test-if warning: skip-test-if.js was used, but no SKIP_TEST_IF_* envvars were set');
+    console.warn(
+      'skip-test-if warning: skip-test-if.js was used, but no SKIP_TEST_IF_* envvars were set'
+    );
     return;
   }
 
   const nodeMajor = Number(process.versions.node.split('.')[0]);
   if (minNodeMajor && nodeMajor < minNodeMajor) {
-    process.stderr.write(`skip-test-if: skipping tests on old Node.js (${nodeMajor} < ${minNodeMajor})\n`);
+    process.stderr.write(
+      `skip-test-if: skipping tests on old Node.js (${nodeMajor} < ${minNodeMajor})\n`
+    );
     // "Skip" tests by exiting the process. Mocha is all in one process.
     process.exit(0);
   }
   if (maxNodeMajor && nodeMajor > maxNodeMajor) {
-    process.stderr.write(`skip-test-if: skipping tests on too-new Node.js (${nodeMajor} > ${maxNodeMajor})\n`);
+    process.stderr.write(
+      `skip-test-if: skipping tests on too-new Node.js (${nodeMajor} > ${maxNodeMajor})\n`
+    );
     // "Skip" tests by exiting the process. Mocha is all in one process.
     process.exit(0);
   }
 }
 
-skipTestIf()
-
+skipTestIf();

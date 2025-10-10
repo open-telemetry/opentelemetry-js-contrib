@@ -172,7 +172,6 @@ describe('fastify', () => {
     });
 
     it('should generate span for named handler', async () => {
-      // eslint-disable-next-line prefer-arrow-callback
       app.get('/test', function namedHandler(req, res) {
         res.send('OK');
       });
@@ -236,7 +235,7 @@ describe('fastify', () => {
           fastify.use((req, res, next) => {
             next();
           });
-          // eslint-disable-next-line prefer-arrow-callback
+
           fastify.get('/test/:id', function foo(req, res) {
             res.send('OK');
           });

@@ -56,21 +56,26 @@ function warn(...args) {
   console.log(...args);
 }
 
+// eslint-disable-next-line no-unused-vars
 function getAllWorkspaceDirs() {
   const pj = JSON.parse(
     fs.readFileSync(path.join(TOP, 'package.json'), 'utf8')
   );
   return pj.workspaces
-    .map((wsGlob) => globSync(path.join(wsGlob, 'package.json')))
+    .map(wsGlob => globSync(path.join(wsGlob, 'package.json')))
     .flat()
     .map(path.dirname);
 }
 
 function genSemconvTs(wsDir) {
-  const semconvPath = require.resolve('@opentelemetry/semantic-conventions',
-      {paths: [path.join(wsDir, 'node_modules')]});
+  const semconvPath = require.resolve('@opentelemetry/semantic-conventions', {
+    paths: [path.join(wsDir, 'node_modules')],
+  });
   const semconvStable = require(semconvPath);
-  const semconvVer = require(path.resolve(semconvPath, '../../../package.json')).version;
+  const semconvVer = require(path.resolve(
+    semconvPath,
+    '../../../package.json'
+  )).version;
 
   // Gather unstable semconv imports. Consider any imports from
   // '@opentelemetry/semantic-conventions/incubating' or from an existing local
@@ -86,82 +91,108 @@ function genSemconvTs(wsDir) {
     for (const importRe of importRes) {
       const match = importRe.exec(srcText);
       if (match) {
-        match[1].trim().split(/,/g).forEach(n => {
-          n = n.trim();
-          if (n) {
-            if (semconvStable[n]) {
-              warn(`${wsDir}/${srcFile}: '${n}' export is available on the stable "@opentelemetry/semantic-conventions" entry-point. This definition will not be included in the generated semconv.ts. Instead use:\n    import { ${n} } from '@opentelemetry/semantic-conventions';`)
-            } else {
-              names.add(n);
+        match[1]
+          .trim()
+          .split(/,/g)
+          .forEach(n => {
+            n = n.trim();
+            if (n) {
+              if (semconvStable[n]) {
+                warn(
+                  `${wsDir}/${srcFile}: '${n}' export is available on the stable "@opentelemetry/semantic-conventions" entry-point. This definition will not be included in the generated semconv.ts. Instead use:\n    import { ${n} } from '@opentelemetry/semantic-conventions';`
+                );
+              } else {
+                names.add(n);
+              }
             }
-          }
-        });
+          });
       }
     }
   }
   if (names.size === 0) {
-    console.log(`Did not find any usage of unstable semconv exports in "${wsDir}/{src,test}/**/*.ts".`);
+    console.log(
+      `Did not find any usage of unstable semconv exports in "${wsDir}/{src,test}/**/*.ts".`
+    );
     console.log('No changes made.');
     return;
   } else {
-    console.log(`Found import of ${names.size} unstable semconv definitions.`)
+    console.log(`Found import of ${names.size} unstable semconv definitions.`);
   }
 
   // Find or get a
   let srcIsLocal = false;
   try {
-    const gitRemoteUrl = execSync(`git -C "${wsDir}" remote get-url origin`, {encoding: 'utf8'}).trim();
+    const gitRemoteUrl = execSync(`git -C "${wsDir}" remote get-url origin`, {
+      encoding: 'utf8',
+    }).trim();
     if (gitRemoteUrl.endsWith('/opentelemetry-js.git')) {
       srcIsLocal = true;
     }
-  } catch {}
+  } catch {
+    // Ignore error
+  }
 
   // Find or get semconv sources from a opentelemetry-js.git clone.
   let semconvSrcDir;
   if (srcIsLocal) {
-    const gitRootDir = execSync(`git -C "${wsDir}" rev-parse --show-toplevel`, {encoding: 'utf8'}).trim();
+    const gitRootDir = execSync(`git -C "${wsDir}" rev-parse --show-toplevel`, {
+      encoding: 'utf8',
+    }).trim();
     semconvSrcDir = path.join(gitRootDir, 'semantic-conventions');
     console.log(`Using local sources at "${semconvSrcDir}"`);
   } else {
     const tag = `semconv/v${semconvVer}`;
-    console.log(`Cloning opentelemetry-js.git#${tag} to working dir "${BUILD_DIR}"`);
+    console.log(
+      `Cloning opentelemetry-js.git#${tag} to working dir "${BUILD_DIR}"`
+    );
     rimraf.sync(BUILD_DIR);
     fs.mkdirSync(BUILD_DIR, { recursive: true });
-    execSync(`git clone --depth 1 --branch ${tag} https://github.com/open-telemetry/opentelemetry-js.git`, {
-      cwd: BUILD_DIR,
-      stdio: 'ignore'
-    });
-    semconvSrcDir = path.join(BUILD_DIR, 'opentelemetry-js', 'semantic-conventions');
+    execSync(
+      `git clone --depth 1 --branch ${tag} https://github.com/open-telemetry/opentelemetry-js.git`,
+      {
+        cwd: BUILD_DIR,
+        stdio: 'ignore',
+      }
+    );
+    semconvSrcDir = path.join(
+      BUILD_DIR,
+      'opentelemetry-js',
+      'semantic-conventions'
+    );
     console.log(`Using sources at "${semconvSrcDir}"`);
   }
-  const srcPaths = globSync(path.join(semconvSrcDir, 'src', 'experimental_*.ts'));
-  const src = srcPaths
-    .map(f => fs.readFileSync(f))
-    .join('\n\n');
+  const srcPaths = globSync(
+    path.join(semconvSrcDir, 'src', 'experimental_*.ts')
+  );
+  const src = srcPaths.map(f => fs.readFileSync(f)).join('\n\n');
 
   const sortedNames = Array.from(names).sort();
   const chunks = [];
   for (let name of sortedNames) {
-    const re = new RegExp(`^export const ${name} = .*;$`, 'm')
+    const re = new RegExp(`^export const ${name} = .*;$`, 'm');
     const match = re.exec(src);
     if (!match) {
-      throw new Error(`could not find "${name}" export in semconv build files: ${re} did not match in content from ${srcPaths.join(', ')}`);
+      throw new Error(
+        `could not find "${name}" export in semconv build files: ${re} did not match in content from ${srcPaths.join(
+          ', '
+        )}`
+      );
     }
 
     // Find a preceding block comment, if any.
     const WHITESPACE_CHARS = [' ', '\t', '\n', '\r'];
     let idx = match.index - 1;
-    while (idx >=1 && WHITESPACE_CHARS.includes(src[idx])) {
+    while (idx >= 1 && WHITESPACE_CHARS.includes(src[idx])) {
       idx--;
     }
-    if (src.slice(idx-1, idx+1) !== '*/') {
+    if (src.slice(idx - 1, idx + 1) !== '*/') {
       // There is not a block comment preceding the export.
       chunks.push(match[0]);
       continue;
     }
     idx -= 2;
     while (idx >= 0) {
-      if (src[idx] === '/' && src[idx+1] === '*') {
+      if (src[idx] === '/' && src[idx + 1] === '*') {
         // Found the start of the block comment.
         chunks.push(src.slice(idx, match.index) + match[0]);
         break;
@@ -201,8 +232,8 @@ ${chunks.join('\n\n')}
   );
   console.log(`Generated "${semconvTsPath}".`);
 
-  console.log(`Running 'npx eslint --fix src/semconv.ts' to fix formatting.`);
-  execSync(`npx eslint --fix src/semconv.ts`, { cwd: wsDir });
+  console.log('Running "npx eslint --fix src/semconv.ts" to fix formatting.');
+  execSync('npx eslint --fix src/semconv.ts', { cwd: wsDir });
 }
 
 // mainline

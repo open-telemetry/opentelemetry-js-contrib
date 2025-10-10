@@ -37,7 +37,6 @@ export function startSpan(
   const spans: Span[] = reply[spanRequestSymbol] || [];
   spans.push(span);
 
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   Object.defineProperty(reply, spanRequestSymbol, {
     enumerable: false,
     configurable: true,

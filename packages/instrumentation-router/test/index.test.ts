@@ -59,7 +59,6 @@ const createServer = async ({
   };
   helloRouter.get('/:name', preName);
 
-  /* eslint-disable-next-line prefer-arrow-callback */
   helloRouter.get('/:name', function announceRude(req, res, next) {
     res.end('How rude!');
   });
@@ -75,7 +74,6 @@ const createServer = async ({
     res.end(`Server error: ${err.message}!`);
   };
 
-  /* eslint-disable-next-line prefer-arrow-callback */
   router.use(function postMiddleware(req, res, next) {
     next();
   });
