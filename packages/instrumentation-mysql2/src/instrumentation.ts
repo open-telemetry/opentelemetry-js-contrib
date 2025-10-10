@@ -21,6 +21,8 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   DB_SYSTEM_VALUE_MYSQL,
@@ -33,24 +35,41 @@ import { MySQL2InstrumentationConfig } from './types';
 import {
   getConnectionAttributes,
   getConnectionPrototypeToInstrument,
-  getDbStatement,
+  getQueryText,
   getSpanName,
   once,
 } from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import {
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  DB_SYSTEM_NAME_VALUE_MYSQL,
+} from '@opentelemetry/semantic-conventions';
 
 type formatType = typeof mysqlTypes.format;
 
 const supportedVersions = ['>=1.4.2 <4'];
 
 export class MySQL2Instrumentation extends InstrumentationBase<MySQL2InstrumentationConfig> {
-  static readonly COMMON_ATTRIBUTES = {
-    [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MYSQL,
-  };
+  private _netSemconvStability!: SemconvStability;
+  private _dbSemconvStability!: SemconvStability;
 
   constructor(config: MySQL2InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._setSemconvStabilityFromEnv();
+  }
+
+  // Used for testing.
+  private _setSemconvStabilityFromEnv() {
+    this._netSemconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._dbSemconvStability = semconvStabilityFromStr(
+      'database',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   protected init() {
@@ -139,19 +158,31 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         }
         const { maskStatement, maskStatementHook, responseHook } =
           thisPlugin.getConfig();
+
+        const attributes: api.Attributes = getConnectionAttributes(
+          this.config,
+          thisPlugin._dbSemconvStability,
+          thisPlugin._netSemconvStability
+        );
+        const dbQueryText = getQueryText(
+          query,
+          format,
+          values,
+          maskStatement,
+          maskStatementHook
+        );
+        if (thisPlugin._dbSemconvStability & SemconvStability.OLD) {
+          attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MYSQL;
+          attributes[ATTR_DB_STATEMENT] = dbQueryText;
+        }
+        if (thisPlugin._dbSemconvStability & SemconvStability.STABLE) {
+          attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MYSQL;
+          attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
+        }
+
         const span = thisPlugin.tracer.startSpan(getSpanName(query), {
           kind: api.SpanKind.CLIENT,
-          attributes: {
-            ...MySQL2Instrumentation.COMMON_ATTRIBUTES,
-            ...getConnectionAttributes(this.config),
-            [ATTR_DB_STATEMENT]: getDbStatement(
-              query,
-              format,
-              values,
-              maskStatement,
-              maskStatementHook
-            ),
-          },
+          attributes,
         });
 
         if (
