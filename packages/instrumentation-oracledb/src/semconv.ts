@@ -50,3 +50,12 @@ export const ATTR_DB_OPERATION_PARAMETER = (key: string) =>
  * @deprecated Removed, no replacement at this time.
  */
 export const ATTR_DB_USER = 'db.user' as const;
+
+/**
+ * Enum value "oracle.db" for attribute {@link ATTR_DB_SYSTEM_NAME}.
+ *
+ * [Oracle Database](https://www.oracle.com/database/)
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const DB_SYSTEM_NAME_VALUE_ORACLE_DB = 'oracle.db' as const;

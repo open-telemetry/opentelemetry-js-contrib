@@ -34,7 +34,11 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_NETWORK_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_DB_USER, ATTR_DB_OPERATION_PARAMETER } from './semconv';
+import {
+  ATTR_DB_USER,
+  ATTR_DB_OPERATION_PARAMETER,
+  DB_SYSTEM_NAME_VALUE_ORACLE_DB,
+} from './semconv';
 
 import type * as oracleDBTypes from 'oracledb';
 type TraceHandlerBaseCtor = new () => any;
@@ -43,7 +47,7 @@ const OUT_BIND = 3003; // bindinfo direction value.
 // Local modules.
 import { OracleInstrumentationConfig, SpanConnectionConfig } from './types';
 import { TraceSpanData, SpanCallLevelConfig } from './internal-types';
-import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from './constants';
+import { SpanNames } from './constants';
 
 // It dynamically retrieves the TraceHandlerBase class from the oracledb module
 // (if available) while avoiding direct imports that could cause issues if
@@ -108,7 +112,7 @@ export function getOracleTelemetryTraceHandlerClass(
     // semantic standards and module custom keys.
     private _getConnectionSpanAttributes(config: SpanConnectionConfig) {
       return {
-        [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_ORACLE,
+        [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
         [ATTR_NETWORK_TRANSPORT]: config.protocol,
         [ATTR_DB_USER]: config.user,
         [ATTR_DB_NAMESPACE]: this._getDBNameSpace(

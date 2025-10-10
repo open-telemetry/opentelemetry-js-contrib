@@ -35,7 +35,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { OracleInstrumentation } from '../src';
-import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from '../src/constants';
+import { SpanNames } from '../src/constants';
 
 import {
   ATTR_DB_NAMESPACE,
@@ -50,7 +50,11 @@ import {
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
 
-import { ATTR_DB_OPERATION_PARAMETER, ATTR_DB_USER } from '../src/semconv';
+import {
+  ATTR_DB_OPERATION_PARAMETER,
+  ATTR_DB_USER,
+  DB_SYSTEM_NAME_VALUE_ORACLE_DB,
+} from '../src/semconv';
 
 const memoryExporter = new InMemorySpanExporter();
 let contextManager: AsyncLocalStorageContextManager;
@@ -116,7 +120,7 @@ let poolConnAttrList: Record<string, string | number>[]; // attributes per span 
 let spanNamesList: string[]; // span names for roundtrips and public API spans.
 
 const DEFAULT_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_ORACLE,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
   [ATTR_DB_NAMESPACE]: serviceName,
   [ATTR_SERVER_ADDRESS]: hostname,
   [ATTR_SERVER_PORT]: pno,
@@ -127,18 +131,18 @@ const DEFAULT_ATTRIBUTES = {
 // for thick mode, we don't have support for
 // hostname, port and protocol.
 const DEFAULT_ATTRIBUTES_THICK = {
-  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_ORACLE,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
   [ATTR_DB_NAMESPACE]: serviceName,
   [ATTR_DB_USER]: CONFIG.user,
 };
 
 const POOL_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_ORACLE,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
   [ATTR_DB_USER]: CONFIG.user,
 };
 
 const CONN_FAILED_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_ORACLE,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
   [ATTR_DB_USER]: CONFIG.user,
 };
 
