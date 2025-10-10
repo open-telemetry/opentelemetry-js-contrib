@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`ioredis`](https://github.com/luin/ioredis) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`ioredis`](https://github.com/luin/ioredis) module, supporting both single Redis instances and Redis Clusters (when enabled via configuration). It may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -52,6 +52,7 @@ IORedis instrumentation has few options available to choose from. You can set th
 | `requestHook`           | `RedisRequestCustomAttributeFunction` (function)  | Function for adding custom attributes on db request. Receives params: `span, { moduleVersion, cmdName, cmdArgs }` |
 | `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response                                                              |
 | `requireParentSpan`     | `boolean`                                         | Require parent to create ioredis span, default when unset is true                                                 |
+| `instrumentCluster`     | `boolean`                                         | Instrument `ioredis` `Cluster` class, default when unset is false                                                  |
 
 #### Custom db.statement Serializer
 
@@ -111,6 +112,18 @@ Attributes collected:
 | `db.system`            | An identifier for the database management system (DBMS) product being used. |
 | `net.peer.name`        | Remote hostname or similar.                                                 |
 | `net.peer.port`        | Remote port number.                                                         |
+
+### Cluster Attributes
+
+When `instrumentCluster: true` is enabled, different attributes are collected for Redis Cluster operations:
+
+| Attribute              | Short Description                                                           |
+|------------------------|-----------------------------------------------------------------------------|
+| `db.redis.cluster.nodes` | Array of cluster node addresses in `host:port` format.                   |
+| `db.redis.cluster.startup_nodes` | Array of startup node addresses used to connect to cluster.        |
+| `db.redis.is_cluster`  | Boolean indicating if this is a cluster operation (always `true`).         |
+
+**Note:** These attributes are only present on spans created for cluster operations (e.g., `cluster.hset`, `cluster.connect`) when cluster instrumentation is enabled.
 
 ## Useful links
 
