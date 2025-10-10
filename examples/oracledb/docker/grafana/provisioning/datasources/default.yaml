@@ -1,0 +1,12 @@
+apiVersion: 1
+
+datasources:
+  - name: oracledb-otel
+    type: prometheus
+    url: http://prometheus:9090
+    editable: true
+    
+  - name: zipkin
+    type: zipkin
+    url: http://zipkin-all-in-one:9411
+    editable: true

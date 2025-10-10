@@ -19,9 +19,10 @@ import {
   Histogram,
   UpDownCounter,
 } from '@opentelemetry/api';
-import { OraclePoolExtended, SpanConnectionConfig, PoolConnectionsCounter } from './types';
+import { SpanConnectionConfig, PoolConnectionsCounter } from './types';
 import * as oracleDBTypes from 'oracledb';
 import { ATTR_DB_CLIENT_CONNECTION_POOL_NAME, ATTR_DB_CLIENT_CONNECTION_STATE, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE, DB_CLIENT_CONNECTION_STATE_VALUE_USED } from './semconv';
+import { PoolMetricsInput } from './internal-types';
 
 let _operationDuration: Histogram
 let _connectionsCount: UpDownCounter;
@@ -101,68 +102,61 @@ export function _setMetricInstruments(meter: any) {
   });
 }
 
-export function updateCounter(
-  pool: OraclePoolExtended,
-  poolAlias : string,
-  openConns?: number,
-  inUseConns?: number
-) {
-  let latestCounter : PoolConnectionsCounter;
-  if(poolAlias)
-    latestCounter = _connectionsCounter[poolAlias] || {idle:0, used:0, pending:0, timeouts:0}
-  else 
-    return;
-  
-  if (pool) {
-    const all = (pool.status === oracleDBTypes.POOL_STATUS_OPEN) ? pool.connectionsOpen : 0
-    const pending = (pool.status === oracleDBTypes.POOL_STATUS_OPEN) ? pool.getStatistics()?.currentQueueLength : 0
-    const used = (pool.status === oracleDBTypes.POOL_STATUS_OPEN) ? pool.connectionsInUse : 0
-    const timeouts = (pool.status === oracleDBTypes.POOL_STATUS_OPEN) ? pool.getStatistics()?.requestTimeouts : 0
-    const idle = all - used;
-    _connectionsCount.add(used - latestCounter.used, {
-      [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_USED,
-      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
-    });
+export function updateCounter({ pool, poolAlias, openConns, inUseConns }: 
+  PoolMetricsInput) {
+  if (!poolAlias) return;
 
-    _connectionsCount.add(idle - latestCounter.idle, {
-      [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
-      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
-    });
+  const latest = _connectionsCounter[poolAlias] ||
+    { idle: 0, used: 0, pending: 0, timeouts: 0 };
 
-    _connectionPendingRequests.add(pending - latestCounter.pending, {
-      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
-    });
+  // derive unified values from either pool or numbers
+  // full pool object can not be obtained from thin pool
+  const metrics =
+    pool && pool.status === oracleDBTypes.POOL_STATUS_OPEN
+      ? {
+          used: pool.connectionsInUse,
+          idle: pool.connectionsOpen - pool.connectionsInUse,
+          pending: pool.getStatistics()?.currentQueueLength,
+          timeouts: pool.getStatistics()?.requestTimeouts,
+        }
+      : pool ? { used: 0, idle: 0, pending: 0, timeouts: 0 }
+      : openConns !== undefined && inUseConns !== undefined
+      ? {
+          used: inUseConns,
+          idle: openConns - inUseConns,
+          pending: latest.pending,
+          timeouts: latest.timeouts,
+        }
+      : latest;
 
-    _connectionsTimeouts.add(timeouts - latestCounter.timeouts, {
-      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
-    });
-    _connectionsCounter[poolAlias] = {idle, used, pending, timeouts}
-  }
-  else if((openConns !==undefined) && (inUseConns !==undefined))
-  {
-    _connectionsCounter[poolAlias] = {idle:0, used:0, pending:latestCounter.pending, timeouts:latestCounter.timeouts}
-    _connectionsCount.add(inUseConns - latestCounter.used, {
-      [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_USED,
-      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
-    });
+  // all delta calculation at once
+  const delta = {
+    used: metrics.used - latest.used,
+    idle: metrics.idle - latest.idle,
+    pending: metrics.pending - latest.pending,
+    timeouts: metrics.timeouts - latest.timeouts,
+  };
 
-    _connectionsCount.add(openConns - inUseConns - latestCounter.idle, {
-      [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
-      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
-    });
+  // apply deltas & update counters
+  _connectionsCount.add(delta.used, {
+    [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_USED,
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
+  });
+  _connectionsCount.add(delta.idle, {
+    [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
+  });
+  _connectionPendingRequests.add(delta.pending, {
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
+  });
+  _connectionsTimeouts.add(delta.timeouts, {
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
+  });
 
-    _connectionPendingRequests.add(0, {
-      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
-    });
-
-    _connectionsTimeouts.add(0, {
-      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolAlias,
-    });
-    
-    _connectionsCounter[poolAlias].used = inUseConns;
-    _connectionsCounter[poolAlias].idle = openConns - inUseConns;
-  }
+  _connectionsCounter[poolAlias] = metrics;
+  console.log(`[PoolMetrics] ${poolAlias}`, metrics);
 }
+
 
 export function getLatency(endTime: HrTime) {
   const [seconds, nanoseconds] = endTime;

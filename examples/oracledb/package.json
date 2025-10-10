@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@opentelemetry/exporter-prometheus": "^0.205.0",
+    "@opentelemetry/sdk-metrics": "^2.1.0"
+  }
+}

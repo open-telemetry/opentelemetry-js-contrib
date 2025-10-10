@@ -420,41 +420,74 @@ export function getOracleTelemetryTraceHandlerClass(
       traceContext.userContext.span.end();
     }
 
-    onPoolExpand? = (pool : OraclePoolExtended, poolAlias : string, openConns : number, inUseConns : number):void=> {
-      // console.log('new connection created')
-      metricsUtils.updateCounter(pool, poolAlias,openConns,inUseConns)
+    // These methods are called in the driver whenever a metric
+    // needs to be updated.
+
+    // When a new connection created
+    onPoolExpand = (
+      poolAlias: string,
+      openConns: number,
+      inUseConns: number
+    ): void => {
+      metricsUtils.updateCounter({
+        poolAlias,
+        openConns,
+        inUseConns,
+      });
+    };
+    
+    // Whe a connection is removed/destroyed
+    onPoolShrink = (
+      poolAlias: string,
+      openConns: number,
+      inUseConns: number
+    ): void => {
+      metricsUtils.updateCounter({
+        poolAlias,
+        openConns,
+        inUseConns,
+      });
+    };
+    
+    // When a connection is checked out of pool
+    onAcquire? = (pool:oracleDBTypes.Pool):void=> {
+      metricsUtils.updateCounter({
+        pool,                       
+        poolAlias: pool.poolAlias!, 
+      });
     };
 
-    onAcquire? = (pool:OraclePoolExtended,):void=> {
-      // console.log('a connection is checked out of pool')
-      metricsUtils.updateCounter(pool,pool.poolAlias!!)
+    // When a connection returned to pool
+    onRelease? = (pool:oracleDBTypes.Pool):void=> {
+      metricsUtils.updateCounter({
+        pool,                       
+        poolAlias: pool.poolAlias!, 
+      });
     };
 
-    onPoolShrink? = (pool:OraclePoolExtended, poolAlias : string, openConns : number, inUseConns : number):void=> {
-      // console.log('connection removed/destroyed')
-      metricsUtils.updateCounter(pool, poolAlias,openConns,inUseConns)
+    // When a connection request is waiting
+    onWait? = (pool:oracleDBTypes.Pool):void=> {
+      metricsUtils.updateCounter({
+        pool,                       
+        poolAlias: pool.poolAlias!, 
+      });
     };
-
-    onRelease? = (pool:OraclePoolExtended,):void=> {
-      // console.log('connection returned to pool')
-      metricsUtils.updateCounter(pool,pool.poolAlias!!)
+    
+    // When a connection request has timed-out.
+    onTimeout? = (pool:oracleDBTypes.Pool):void=> {
+      metricsUtils.updateCounter({
+        pool,                       
+        poolAlias: pool.poolAlias!, 
+      });
     };
-
-    onPoolClose? = (pool:OraclePoolExtended,):void=> {
-      // console.log('pool closed')
-      metricsUtils.updateCounter(pool,pool.poolAlias!!)
+    
+    // When pool is closed.
+    onPoolClose? = (pool:oracleDBTypes.Pool):void=> {
+      metricsUtils.updateCounter({
+        pool,                       
+        poolAlias: pool.poolAlias!, 
+      });
     };
-
-    onWait? = (pool:OraclePoolExtended):void=> {
-      // console.log('connection request is waiting')
-      metricsUtils.updateCounter(pool,pool.poolAlias!!)
-    };
-
-    onTimeout? = (pool:OraclePoolExtended):void=> {
-      // console.log('connection request is timed-out')
-      metricsUtils.updateCounter(pool,pool.poolAlias!!)
-    };
-
   }
   return OracleTelemetryTraceMetricHandler;
 }

@@ -51,3 +51,10 @@ export interface SpanCallLevelConfig {
   operation?: string; // SQL op ('SELECT | INSERT ..').
   values?: any[]; // bind values.
 }
+
+export interface PoolMetricsInput {
+  pool?: oracledbTypes.Pool;
+  poolAlias: string;
+  openConns?: number;
+  inUseConns?: number;
+};

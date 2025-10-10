@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base",
+  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noEmit": true,
+  },
+  "include": [
+    "src/**/*.ts",
+  ]
+}
