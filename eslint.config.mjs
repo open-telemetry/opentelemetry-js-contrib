@@ -51,6 +51,7 @@ const licensePattern =
 const baseConfig = tseslint.config(
   {
     ignores: [
+      '**/.nx/**',
       '**/build/**',
       '**/coverage/**',
       '**/dist/**',
