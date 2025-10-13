@@ -38,10 +38,3 @@ export enum SpanNames {
   LOB_MESSAGE = 'oracledb.LobOpMessage',
   LOB_GETDATA = 'oracledb.Lob.getData',
 }
-
-/*
- * The semantic conventions defined DBSYSTEMVALUES_ORACLE as oracle, hence
- * defining the new constant to explicitly mention db.
- *
- */
-export const DB_SYSTEM_VALUE_ORACLE = 'oracle.db';

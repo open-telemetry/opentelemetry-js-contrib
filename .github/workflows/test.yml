@@ -54,6 +54,7 @@ jobs:
 
   unit-test:
     needs: compile
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -64,8 +65,9 @@ jobs:
           - "20"
           - "22"
           - "24"
-    runs-on: ubuntu-latest
-    services:
+    # `&foo` syntax is a YAML anchor. See:
+    # https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations#yaml-anchors-and-aliases
+    services: &test_services
       memcached:
         image: memcached:1.6.39-alpine
         ports:
@@ -147,7 +149,7 @@ jobs:
         env:
           RABBITMQ_DEFAULT_USER: username
           RABBITMQ_DEFAULT_PASS: password
-    env:
+    env: &test_env
       RUN_CASSANDRA_TESTS: 1
       RUN_MEMCACHED_TESTS: 1
       RUN_MONGODB_TESTS: 1
@@ -218,6 +220,45 @@ jobs:
         run: npm run test:browser:ci:affected
       - name: Unit tests (Nodejs - Delta)
         run: npm run test:ci:affected
+
+  test-all-versions:
+    needs: compile
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - "18"
+          - "20"
+          - "22"
+          - "24"
+    services: *test_services
+    env: *test_env
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: compile-cache-${{ github.run_number }}
+          path: .nx
+      # Note: see comment in the compile job
+      - name: Set base and head commits
+        run: |
+          if [ "${{github.event_name}}" == "push" ]; then
+            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
+            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
+          else
+            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
+            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
+          fi
+      - name: Compile (Delta)
+        run: npm run compile:ci:affected
       - name: Test All Versions (Delta)
         run: npm run test-all-versions:ci:affected
       - name: Upload Test Artifacts
@@ -232,9 +273,9 @@ jobs:
             packages/*/.nyc_output/**
             LICENSE
 
-  test-coverage-report:
+  coverage-report:
+    needs: test-all-versions
     runs-on: ubuntu-latest
-    needs: unit-test
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -245,26 +286,16 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci --ignore-scripts
-      # NOTE: keep this in sync with the node versions from `unit-test` job
+      # Note: Keep this in sync with the node versions from `test-all-versions` job.
       - name: Download Test Artifacts (18)
         uses: actions/download-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-18
           path: .
-      - name: Download Test Artifacts (18.19.0)
-        uses: actions/download-artifact@v5
-        with:
-          name: tests-coverage-cache-${{ github.run_number }}-18.19.0
-          path: .
       - name: Download Test Artifacts (20)
         uses: actions/download-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-20
-          path: .
-      - name: Download Test Artifacts (20.6.0)
-        uses: actions/download-artifact@v5
-        with:
-          name: tests-coverage-cache-${{ github.run_number }}-20.6.0
           path: .
       - name: Download Test Artifacts (22)
         uses: actions/download-artifact@v5

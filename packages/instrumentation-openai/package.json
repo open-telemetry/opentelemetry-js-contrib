@@ -11,7 +11,7 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-mongodb",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-openai",
     "compile": "tsc -p .",
     "lint": "eslint . --ext=ts,js,mjs",
     "lint:fix": "eslint . --ext=ts,js,mjs --fix",
@@ -60,7 +60,7 @@
     "expect": "29.2.0",
     "nock": "^14.0.0",
     "nyc": "17.1.0",
-    "openai": "4.104.0",
+    "openai": "^6.2.0",
     "rimraf": "5.0.10",
     "safe-stable-stringify": "^2.4.1",
     "sinon": "15.2.0",
