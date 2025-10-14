@@ -59,7 +59,7 @@ const CONFIG = {
     : 27017,
 };
 
-const DEFAULT_ATTRIBUTES: Attributes = {
+const ATTRIBUTES: Attributes = {
   // Old semconv
   [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MEMCACHED,
   [ATTR_NET_PEER_NAME]: CONFIG.host,
@@ -368,8 +368,8 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       assert.strictEqual(span.kind, SpanKind.CLIENT);
 
       // Verify both old and stable semconv attributes
-      for (const attr in DEFAULT_ATTRIBUTES) {
-        assert.strictEqual(span.attributes[attr], DEFAULT_ATTRIBUTES[attr]);
+      for (const attr in ATTRIBUTES) {
+        assert.strictEqual(span.attributes[attr], ATTRIBUTES[attr]);
       }
 
       // Verify db.operation (old) and db.operation.name (stable)
