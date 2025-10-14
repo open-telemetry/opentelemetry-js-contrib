@@ -47,7 +47,6 @@ export function getDBNameSpace(
 }
 
 export function getPoolName(config: SpanConnectionConfig, pool : any):string{
-  // const dbNameSpace = getDBNameSpace(config.instanceName, config.pdbName, config.serviceName)
    const port = config.port ?? 1521;
   if (pool.poolAlias) return pool.poolAlias;
   if(config.connectString)
@@ -154,7 +153,6 @@ export function updateCounter({ pool, poolAlias, openConns, inUseConns }:
   });
 
   _connectionsCounter[poolAlias] = metrics;
-  console.log(`[PoolMetrics] ${poolAlias}`, metrics);
 }
 
 

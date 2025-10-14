@@ -330,6 +330,48 @@ export function getOracleTelemetryTraceHandlerClass(
       }
     }
 
+    private _handleAfterExecute(
+      traceContext: TraceSpanData,
+      startExecTime: HrTime
+    ) {
+      const { instanceName, pdbName, serviceName, port, hostName } = traceContext.connectLevelConfig;
+      let attributes: Attributes = {
+        [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
+        [ATTR_DB_NAMESPACE]: metricsUtils.getDBNameSpace(instanceName, pdbName, serviceName),
+        [ATTR_SERVER_PORT]: port,
+        [ATTR_SERVER_ADDRESS]: hostName,
+        [ATTR_DB_OPERATION_NAME]: traceContext.callLevelConfig?.statement?.split(' ')[0].toUpperCase() || ''
+      };
+      if (traceContext.error)
+        attributes = { ...attributes, [ATTR_ERROR_TYPE]: traceContext.error.code }
+      this._recordOperationDuration(attributes, startExecTime)
+    }
+
+    private _recordOperationDuration(attributes: Attributes, startExecTime: HrTime) {
+      const metricsAttributes: Attributes = {};
+      const keysToCopy: string[] = [
+        ATTR_DB_NAMESPACE,
+        ATTR_ERROR_TYPE,
+        ATTR_SERVER_PORT,
+        ATTR_SERVER_ADDRESS,
+        ATTR_DB_OPERATION_NAME,
+      ];
+      if (this._semconvStability & SemconvStability.OLD) {
+        keysToCopy.push(ATTR_DB_SYSTEM);
+      }
+      if (this._semconvStability & SemconvStability.STABLE) {
+        keysToCopy.push(ATTR_DB_SYSTEM_NAME);
+      }
+      keysToCopy.forEach(key => {
+        if (key in attributes) {
+          metricsAttributes[key] = attributes[key];
+        }
+      });
+      const endTime: HrTime = process.hrtime(startExecTime);
+      const durationSeconds = metricsUtils.getLatency(endTime)/1000;
+      metricsUtils._operationDuration.record(durationSeconds, metricsAttributes);
+    }
+
     setInstrumentConfig(config: OracleInstrumentationConfig = {}) {
       this._instrumentConfig = config;
     }
