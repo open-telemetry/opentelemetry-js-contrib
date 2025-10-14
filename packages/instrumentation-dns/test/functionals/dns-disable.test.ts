@@ -37,6 +37,7 @@ describe('DnsInstrumentation', () => {
   before(() => {
     instrumentation = new DnsInstrumentation();
     instrumentation.setTracerProvider(provider);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('dns');
     assert.strictEqual(dns.lookup.__wrapped, true);
   });
