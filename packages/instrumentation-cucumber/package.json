@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@cucumber/cucumber": "^12.0.0",
-    "@cucumber/messages": "^28.0.0",
+    "@cucumber/messages": "^30.0.0",
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
