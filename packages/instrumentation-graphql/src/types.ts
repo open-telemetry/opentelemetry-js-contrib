@@ -59,6 +59,13 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
   ignoreTrivialResolveSpans?: boolean;
 
   /**
+   * Place all resolve spans under the same parent instead of producing a nested tree structure.
+   *
+   * @default false
+   */
+  flatResolveSpans?: boolean;
+
+  /**
    * Whether to merge list items into a single element.
    *
    * @example `users.*.name` instead of `users.0.name`, `users.1.name`
