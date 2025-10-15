@@ -81,6 +81,12 @@ export class AWSXRayPropagator implements TextMapPropagator {
     const spanContext = this.getSpanContextFromHeader(carrier, getter);
     if (!isSpanContextValid(spanContext)) return context;
 
+    // If a previous propagator already set the trace state, ensure it's propagated
+    const existingSpan = trace.getSpan(context);
+    const existingTraceState = existingSpan?.spanContext()?.traceState;
+    if (existingTraceState) {
+      spanContext.traceState = existingTraceState
+    }
     return trace.setSpan(context, trace.wrapSpanContext(spanContext));
   }
 
