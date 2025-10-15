@@ -15,13 +15,23 @@
  */
 
 import type * as Memcached from 'memcached';
-import { ATTR_NET_PEER_NAME, ATTR_NET_PEER_PORT } from './semconv';
+import {
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from './semconv';
+import {
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
+import { SemconvStability } from '@opentelemetry/instrumentation';
+import { Attributes } from '@opentelemetry/api';
 
 export const getPeerAttributes = (
   client: any /* Memcached, but the type definitions are lacking */,
   server: string | undefined,
-  query: Memcached.CommandData
-) => {
+  query: Memcached.CommandData,
+  netSemconvStability: SemconvStability
+): Attributes => {
   if (!server) {
     if (client.servers.length === 1) {
       server = client.servers[0];
@@ -47,15 +57,32 @@ export const getPeerAttributes = (
     const [host, port] = server && server.split(':');
     if (host && port) {
       const portNumber = parseInt(port, 10);
-      if (!isNaN(portNumber)) {
-        return {
-          [ATTR_NET_PEER_NAME]: host,
-          [ATTR_NET_PEER_PORT]: portNumber,
-        };
+      const attrs: Attributes = {};
+
+      if (netSemconvStability & SemconvStability.OLD) {
+        attrs[ATTR_NET_PEER_NAME] = host;
+        if (!isNaN(portNumber)) {
+          attrs[ATTR_NET_PEER_PORT] = portNumber;
+        }
       }
-      return {
-        [ATTR_NET_PEER_NAME]: host,
-      };
+      if (netSemconvStability & SemconvStability.STABLE) {
+        attrs[ATTR_SERVER_ADDRESS] = host;
+        if (!isNaN(portNumber)) {
+          attrs[ATTR_SERVER_PORT] = portNumber;
+        }
+      }
+
+      return attrs;
+    }
+    if (host) {
+      const attrs: Attributes = {};
+      if (netSemconvStability & SemconvStability.OLD) {
+        attrs[ATTR_NET_PEER_NAME] = host;
+      }
+      if (netSemconvStability & SemconvStability.STABLE) {
+        attrs[ATTR_SERVER_ADDRESS] = host;
+      }
+      return attrs;
     }
   }
   return {};
