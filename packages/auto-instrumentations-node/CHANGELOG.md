@@ -1,6 +1,31 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.66.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.65.0...auto-instrumentations-node-v0.66.0) (2025-10-15)
+
+
+### Features
+
+* **auto-instrumentations-node:** add OpenAI instrumentation  ([#3164](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3164)) ([d2b090e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2b090e7f28a29ade7309022d52c84672d8be430))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.58.0 to ^0.58.1
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.62.0 to ^0.63.0
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.22.0 to ^0.22.1
+    * @opentelemetry/instrumentation-generic-pool bumped from ^0.50.0 to ^0.50.1
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.54.0 to ^0.54.1
+    * @opentelemetry/instrumentation-koa bumped from ^0.55.0 to ^0.55.1
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.53.0 to ^0.54.0
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.53.0 to ^0.53.1
+    * @opentelemetry/instrumentation-openai bumped from ^0.4.0 to ^0.5.0
+    * @opentelemetry/instrumentation-pino bumped from ^0.53.0 to ^0.54.0
+    * @opentelemetry/instrumentation-restify bumped from ^0.52.0 to ^0.52.1
+    * @opentelemetry/instrumentation-tedious bumped from ^0.25.0 to ^0.25.1
+
 ## [0.65.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.64.6...auto-instrumentations-node-v0.65.0) (2025-10-06)
 
 
