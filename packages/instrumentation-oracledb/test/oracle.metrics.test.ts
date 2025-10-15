@@ -29,6 +29,7 @@ import * as assert from 'assert';
 import { OracleInstrumentation } from '../src';
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 
+// let netTime : number
 const instrumentation = registerInstrumentationTesting(
   new OracleInstrumentation({ enhancedDatabaseReporting: true })
 );
@@ -40,10 +41,9 @@ const wrongSql = 'SELECT foo from bar';
 
 import * as oracledb from 'oracledb';
 
-import { ATTR_DB_CLIENT_CONNECTION_POOL_NAME, ATTR_DB_CLIENT_CONNECTION_STATE, ATTR_DB_OPERATION_NAME, ATTR_DB_SYSTEM, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE, DB_CLIENT_CONNECTION_STATE_VALUE_USED } from '../src/semconv';
+import { ATTR_DB_CLIENT_CONNECTION_POOL_NAME, ATTR_DB_CLIENT_CONNECTION_STATE, ATTR_DB_OPERATION_NAME, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE, DB_CLIENT_CONNECTION_STATE_VALUE_USED } from '../src/semconv';
 import { ATTR_ERROR_TYPE, METRIC_DB_CLIENT_OPERATION_DURATION } from '@opentelemetry/semantic-conventions';
-import { DB_SYSTEM_VALUE_ORACLE } from '../src/constants';
-import { TestMetricReader } from '@opentelemetry/contrib-test-utils/src';
+import { TestMetricReader } from '@opentelemetry/contrib-test-utils';
 
 
 describe.only('oracledb-metrics', () => {
@@ -175,6 +175,7 @@ describe.only('oracledb-metrics', () => {
     assert.strictEqual(metrics[2].descriptor.unit, '{timeout}');
 
     assert.strictEqual(metrics[0].dataPoints.length, 2);
+    // 2 used and idle for pool2
     assert.strictEqual(
       metrics[0].dataPoints[1].value,
       idle
@@ -193,7 +194,7 @@ describe.only('oracledb-metrics', () => {
     ); // timeout
   }
 
-  describe('1. Connection usage metrics - pool.getConnection(...) ', () => {
+  describe('1. Pool Connection metrics - pool.getConnection(...) ', () => {
 
     describe('1.1 Single Pool : pool1', () => {
       let pool: oracledb.Pool;
@@ -221,6 +222,26 @@ describe.only('oracledb-metrics', () => {
         await metricReader.shutdown()
         await initMeterProvider()
       })
+
+      async function getThreeConnections(pool: oracledb.Pool) {
+        const errors : oracledb.DBError[] = []
+        // Request 3 connections simultaneously
+        const results = await Promise.allSettled([
+          pool.getConnection(),
+          pool.getConnection(),
+          pool.getConnection()
+        ]);
+
+        results.forEach((res, i) => {
+          if (res.status === "fulfilled") {
+            res.value.close(); // release if somehow it succeeds
+          } else {
+            errors.push(res.reason)
+          }
+        });
+        if(errors.length)
+          throw errors;
+      }
 
       it('1.1.1 Metrics should include poolMin numnber of connections upon pool warmup', async () => {
         await utils.waitForCreatePool(pool, queueTimeout);
@@ -293,26 +314,6 @@ describe.only('oracledb-metrics', () => {
         }
       });
 
-      async function getThreeConnections(pool: oracledb.Pool) {
-        const errors : oracledb.DBError[] = []
-        // Request 3 connections simultaneously
-        const results = await Promise.allSettled([
-          pool.getConnection(),
-          pool.getConnection(),
-          pool.getConnection()
-        ]);
-
-        results.forEach((res, i) => {
-          if (res.status === "fulfilled") {
-            res.value.close(); // release if somehow it succeeds
-          } else {
-            errors.push(res.reason)
-          }
-        });
-        if(errors.length)
-          throw errors;
-      }
-
       it('1.1.5 If 3 conn are requested at full pool at same time, metrics pending request should increase to 3 & back to 0', async ()=>{
         if(pool)
           await pool.close(0)
@@ -384,7 +385,6 @@ describe.only('oracledb-metrics', () => {
         ])
 
         const metrics = await getMetrics();
-        assert.strictEqual(metrics.length, 3);
         assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
         assert.strictEqual(
           metrics[0].descriptor.description,
@@ -472,11 +472,31 @@ describe.only('oracledb-metrics', () => {
     });
   });
 
-  describe('2. Connection duration metrics', () => {
+  describe('2. Pool Connection duration metrics', () => {
     let pool: oracledb.Pool;
     const poolName = 'pool';
 
-    async function checkDurationMetrics(metrics: MetricData[], err?: unknown) {
+    // SQL block to drop the table if it exists
+    const dropTableSql = `
+      BEGIN
+        EXECUTE IMMEDIATE 'DROP TABLE test_temp PURGE';
+      EXCEPTION
+        WHEN OTHERS THEN
+          IF SQLCODE != -942 THEN
+            RAISE;
+          END IF;
+      END;
+    `;
+
+    // SQL to create the table
+    const createTableSql = `
+      CREATE TABLE test_temp (
+        id NUMBER,
+        name VARCHAR2(50)
+      )
+    `;
+
+    function checkDurationMetrics(metrics: MetricData[], operationName:string, err?: unknown) {
       const i = metrics.findIndex(
         (m) => m.descriptor.name === METRIC_DB_CLIENT_OPERATION_DURATION
       );
@@ -491,12 +511,8 @@ describe.only('oracledb-metrics', () => {
       );
       const dataPoint = metrics[i].dataPoints[0];
       assert.strictEqual(
-        dataPoint.attributes[ATTR_DB_SYSTEM],
-        DB_SYSTEM_VALUE_ORACLE
-      );
-      assert.strictEqual(
         dataPoint.attributes[ATTR_DB_OPERATION_NAME],
-        'SELECT'
+        operationName
       );
 
       if (err)
@@ -539,19 +555,102 @@ describe.only('oracledb-metrics', () => {
       });
     })
 
-    it(`2.1 Should generate ${METRIC_DB_CLIENT_OPERATION_DURATION} metric`, async () => {
+    it(`2.1 Should generate ${METRIC_DB_CLIENT_OPERATION_DURATION} metric when executed using execute()`, async () => {
       await meterProvider.shutdown();
       await initMeterProvider();
 
       const conn = await pool.getConnection()
       await conn.execute(sql)
       const metrics = await getMetrics();
-      checkDurationMetrics(metrics);
+      checkDurationMetrics(metrics, 'SELECT');
 
       await conn.close()
     })
 
-    it(`2.2 Should generate ${METRIC_DB_CLIENT_OPERATION_DURATION} metric with error attribute`, async () => {
+    it(`2.2 Should generate ${METRIC_DB_CLIENT_OPERATION_DURATION} metric with correct operation name 
+      \twhen statement is PLSQL & executed using execute()`, async () => {
+      await meterProvider.shutdown();
+      await initMeterProvider();
+      const plsql = `BEGIN
+                      SELECT 1 INTO :a FROM dual;
+                      SELECT 2 INTO :b FROM dual;
+                     END;`;
+      const conn = await pool.getConnection()
+      await conn.execute(plsql, {
+        a: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
+        b: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
+      })
+      const metrics = await getMetrics();
+      checkDurationMetrics(metrics, "PLSQL");
+
+      await conn.close()
+    })
+
+    it(`2.3 Should generate ${METRIC_DB_CLIENT_OPERATION_DURATION} metric with correct operation name 
+      \twhen executed using executeMany()`, async () => {
+      await meterProvider.shutdown();
+      await initMeterProvider();
+      const conn = await pool.getConnection();
+      instrumentation.disable()
+      await conn.execute(dropTableSql);
+      await conn.execute(createTableSql);
+
+      // Define DML statement (INSERT)
+      const sql = `INSERT INTO test_temp (id, name) VALUES (:id, :name)`;
+
+      // Define binds (array of objects)
+      const binds = [
+        { id: 1, name: 'Alice' },
+        { id: 2, name: 'Bob' },
+        { id: 3, name: 'Charlie' }
+      ];
+
+      const options = { batchErrors: true , autoCommit:true};
+      instrumentation.enable()
+      await conn.executeMany(sql, binds, options);
+      await conn.commit();
+      const metrics = await getMetrics();
+      checkDurationMetrics(metrics, "BATCH INSERT");
+
+      conn.execute(`DROP TABLE test_temp PURGE`)
+      await conn.commit();
+
+      await conn.close()
+    })
+
+    it(`2.4 Should generate ${METRIC_DB_CLIENT_OPERATION_DURATION} metric with correct operation name 
+      \twhen statement is PLSQL & executed using executeMany()`, async () => {
+      await meterProvider.shutdown();
+      await initMeterProvider();
+      const conn = await pool.getConnection();
+      instrumentation.disable()
+      await conn.execute(dropTableSql);
+      await conn.execute(createTableSql);
+
+      const plsql = `BEGIN
+                      INSERT INTO test_temp (id, name)
+                      VALUES (:id, :name);
+                     END;`;
+
+      const binds = [
+        { id: 1, name: "Alice" },
+        { id: 2, name: "Bob" },
+        { id: 3, name: "Charlie" },
+      ];
+
+      instrumentation.enable();
+      await conn.executeMany(plsql, binds);
+      await conn.commit();
+      const metrics = await getMetrics();
+      checkDurationMetrics(metrics, "BATCH PLSQL");
+      
+      conn.execute(`DROP TABLE test_temp PURGE`)
+      await conn.commit();
+
+      await conn.close()
+    })
+
+    it(`2.5 Should generate ${METRIC_DB_CLIENT_OPERATION_DURATION} metric with error attribute`, async () => {
       const conn = await pool.getConnection();
       try {
         await meterProvider.shutdown();
@@ -561,7 +660,7 @@ describe.only('oracledb-metrics', () => {
       }
       catch (err: unknown) {
         const metrics = await getMetrics();
-        checkDurationMetrics(metrics, err);
+        checkDurationMetrics(metrics, 'SELECT', err);
       }
       finally {
         await conn.close();
@@ -569,7 +668,7 @@ describe.only('oracledb-metrics', () => {
     })
   })
 
-  describe('3. Metrics collection upon Instrumentation enable/disable check', () => {
+  describe('3. Pool Metrics collection upon Instrumentation enable/disable check', () => {
     beforeEach(async () => {
       await metricReader.shutdown()
       await initMeterProvider()

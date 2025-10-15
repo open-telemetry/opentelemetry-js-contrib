@@ -13,9 +13,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
+ *
+ * Copyright (c) 2025, Oracle and/or its affiliates.
+ * */
+import { safeExecuteInTheMiddle, semconvStabilityFromStr } from '@opentelemetry/instrumentation';
 import {
   Span,
   SpanStatusCode,
@@ -33,12 +34,16 @@ import {
   ATTR_SERVER_PORT,
   ATTR_SERVER_ADDRESS,
   ATTR_NETWORK_TRANSPORT,
+  ATTR_ERROR_TYPE,
 } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_USER,
   ATTR_DB_OPERATION_PARAMETER,
   DB_SYSTEM_NAME_VALUE_ORACLE_DB,
 } from './semconv';
+import {
+  hrTime
+} from '@opentelemetry/core';
 
 import type * as oracleDBTypes from 'oracledb';
 type TraceHandlerBaseCtor = new () => any;
@@ -46,8 +51,9 @@ const OUT_BIND = 3003; // bindinfo direction value.
 
 // Local modules.
 import { OracleInstrumentationConfig, SpanConnectionConfig } from './types';
-import { TraceSpanData, SpanCallLevelConfig } from './internal-types';
-import { SpanNames } from './constants';
+import { TraceSpanData, SpanCallLevelConfig, PoolConnectConfig } from './internal-types';
+import * as metricsUtils from './metricUtils';
+import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from './constants';
 
 // It dynamically retrieves the TraceHandlerBase class from the oracledb module
 // (if available) while avoiding direct imports that could cause issues if
@@ -330,46 +336,23 @@ export function getOracleTelemetryTraceHandlerClass(
       }
     }
 
-    private _handleAfterExecute(
+    private _updateExecuteDuration(
       traceContext: TraceSpanData,
-      startExecTime: HrTime
+      startExecTime: HrTime | undefined
     ) {
-      const { instanceName, pdbName, serviceName, port, hostName } = traceContext.connectLevelConfig;
+      if(startExecTime === undefined) return;
+      const isBatch = traceContext.operation === SpanNames.EXECUTE_MANY;
+      const connAttrs = this._getConnectionSpanAttributes(traceContext.connectLevelConfig);
       let attributes: Attributes = {
         [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
-        [ATTR_DB_NAMESPACE]: metricsUtils.getDBNameSpace(instanceName, pdbName, serviceName),
-        [ATTR_SERVER_PORT]: port,
-        [ATTR_SERVER_ADDRESS]: hostName,
-        [ATTR_DB_OPERATION_NAME]: traceContext.callLevelConfig?.statement?.split(' ')[0].toUpperCase() || ''
+        [ATTR_DB_NAMESPACE]: connAttrs[ATTR_DB_NAMESPACE],
+        [ATTR_SERVER_PORT]: connAttrs[ATTR_SERVER_PORT],
+        [ATTR_SERVER_ADDRESS]: connAttrs[ATTR_SERVER_ADDRESS],
+        [ATTR_DB_OPERATION_NAME]: metricsUtils.getOperationName(traceContext.callLevelConfig?.statement, isBatch)
       };
       if (traceContext.error)
         attributes = { ...attributes, [ATTR_ERROR_TYPE]: traceContext.error.code }
-      this._recordOperationDuration(attributes, startExecTime)
-    }
-
-    private _recordOperationDuration(attributes: Attributes, startExecTime: HrTime) {
-      const metricsAttributes: Attributes = {};
-      const keysToCopy: string[] = [
-        ATTR_DB_NAMESPACE,
-        ATTR_ERROR_TYPE,
-        ATTR_SERVER_PORT,
-        ATTR_SERVER_ADDRESS,
-        ATTR_DB_OPERATION_NAME,
-      ];
-      if (this._semconvStability & SemconvStability.OLD) {
-        keysToCopy.push(ATTR_DB_SYSTEM);
-      }
-      if (this._semconvStability & SemconvStability.STABLE) {
-        keysToCopy.push(ATTR_DB_SYSTEM_NAME);
-      }
-      keysToCopy.forEach(key => {
-        if (key in attributes) {
-          metricsAttributes[key] = attributes[key];
-        }
-      });
-      const endTime: HrTime = process.hrtime(startExecTime);
-      const durationSeconds = metricsUtils.getLatency(endTime)/1000;
-      metricsUtils._operationDuration.record(durationSeconds, metricsAttributes);
+      metricsUtils.recordOperationDuration(attributes, startExecTime)
     }
 
     setInstrumentConfig(config: OracleInstrumentationConfig = {}) {
@@ -392,7 +375,7 @@ export function getOracleTelemetryTraceHandlerClass(
         span: this._getTracer().startSpan(spanName, {
           kind: SpanKind.CLIENT,
           attributes: spanAttributes,
-        }),
+        })
       };
 
       if (traceContext.fn) {
@@ -403,11 +386,19 @@ export function getOracleTelemetryTraceHandlerClass(
         );
       }
 
-      if (traceContext.operation === SpanNames.EXECUTE) {
-        this._handleExecuteCustomRequest(
-          traceContext.userContext.span,
-          traceContext
-        );
+      switch (traceContext.operation) {
+        case SpanNames.EXECUTE:
+          traceContext.userContext.startTime = hrTime();
+          this._handleExecuteCustomRequest(
+            traceContext.userContext.span,
+            traceContext
+          );
+          break;
+        case SpanNames.EXECUTE_MANY:
+          traceContext.userContext.startTime = hrTime();
+          break;
+        default:
+          break;
       }
     }
 
@@ -420,9 +411,19 @@ export function getOracleTelemetryTraceHandlerClass(
       this._updateFinalSpanAttributes(traceContext);
       switch (traceContext.operation) {
         case SpanNames.EXECUTE:
+          this._updateExecuteDuration(
+            traceContext,
+            traceContext.userContext.startTime
+          );
           this._handleExecuteCustomResult(
             traceContext.userContext.span,
             traceContext
+          );
+          break;
+        case SpanNames.EXECUTE_MANY:
+          this._updateExecuteDuration(
+            traceContext,
+            traceContext.userContext.startTime
           );
           break;
         default:
@@ -444,7 +445,7 @@ export function getOracleTelemetryTraceHandlerClass(
         span: this._getTracer().startSpan(spanName, {
           kind: SpanKind.CLIENT,
           attributes: spanAttrs,
-        }),
+        })
       };
     }
 
@@ -462,72 +463,78 @@ export function getOracleTelemetryTraceHandlerClass(
       traceContext.userContext.span.end();
     }
 
-    // These methods are called in the driver whenever a metric
-    // needs to be updated.
-
-    // When a new connection created
     onPoolExpand = (
-      poolAlias: string,
+      connectConfig: PoolConnectConfig,
       openConns: number,
       inUseConns: number
     ): void => {
       metricsUtils.updateCounter({
-        poolAlias,
+        poolName: metricsUtils.getPoolName(connectConfig),
         openConns,
         inUseConns,
       });
+      
     };
-    
-    // Whe a connection is removed/destroyed
+
     onPoolShrink = (
-      poolAlias: string,
+      connectConfig: PoolConnectConfig,
       openConns: number,
       inUseConns: number
     ): void => {
       metricsUtils.updateCounter({
-        poolAlias,
+        poolName: metricsUtils.getPoolName(connectConfig),
         openConns,
         inUseConns,
       });
     };
-    
-    // When a connection is checked out of pool
-    onAcquire? = (pool:oracleDBTypes.Pool):void=> {
+
+    onAcquire? = (
+      pool:oracleDBTypes.Pool, 
+      connectConfig: PoolConnectConfig
+    ):void=> {
       metricsUtils.updateCounter({
         pool,                       
-        poolAlias: pool.poolAlias!, 
+        poolName: metricsUtils.getPoolName(connectConfig), 
       });
     };
 
-    // When a connection returned to pool
-    onRelease? = (pool:oracleDBTypes.Pool):void=> {
+    onRelease? = (
+      pool:oracleDBTypes.Pool,
+      connectConfig: PoolConnectConfig
+    ):void=> {
       metricsUtils.updateCounter({
         pool,                       
-        poolAlias: pool.poolAlias!, 
+        poolName: metricsUtils.getPoolName(connectConfig), 
       });
     };
 
-    // When a connection request is waiting
-    onWait? = (pool:oracleDBTypes.Pool):void=> {
+    onWait? = (
+      pool:oracleDBTypes.Pool,
+      connectConfig: PoolConnectConfig
+    ):void=> {
       metricsUtils.updateCounter({
         pool,                       
-        poolAlias: pool.poolAlias!, 
+        poolName: metricsUtils.getPoolName(connectConfig), 
       });
     };
-    
-    // When a connection request has timed-out.
-    onTimeout? = (pool:oracleDBTypes.Pool):void=> {
+
+    onTimeout? = (
+      pool:oracleDBTypes.Pool,
+      connectConfig: PoolConnectConfig
+    ):void=> {
       metricsUtils.updateCounter({
         pool,                       
-        poolAlias: pool.poolAlias!, 
+        poolName: metricsUtils.getPoolName(connectConfig), 
       });
     };
-    
-    // When pool is closed.
-    onPoolClose? = (pool:oracleDBTypes.Pool):void=> {
+
+    onPoolClose? = (
+      pool:oracleDBTypes.Pool,
+      connectConfig: PoolConnectConfig
+    ):void=> {
       metricsUtils.updateCounter({
         pool,                       
-        poolAlias: pool.poolAlias!, 
+        poolName: metricsUtils.getPoolName(connectConfig), 
       });
     };
   }
