@@ -62,7 +62,7 @@ export interface PoolMetricsInput {
 };
 
 export interface PoolConnectConfig {
-  poolName: string,
+  poolAlias: string,
   connectString: string,
   user: string,
 }

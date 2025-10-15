@@ -53,9 +53,9 @@ export function getDBNameSpace(
 }
 
 export function getPoolName(config: PoolConnectConfig):string{
-  if (config.poolName) return config.poolName;
+  if (config.poolAlias) return config.poolAlias;
   if(config.connectString)
-    return `${config.connectString}_${config.user}_pool#${Date.now()}`
+    return `${config.connectString}_${config.user}`
   return 'default';
 }  
 
