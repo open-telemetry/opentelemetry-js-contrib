@@ -36,8 +36,8 @@ import {
   StackContextManager,
 } from '@opentelemetry/sdk-trace-web';
 
-// @ts-expect-error: not an export, but we want the prebundled version
-import chai from 'chai/chai.js';
+// @ts-expect-error cjs still works
+import { assert } from 'chai';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
 import {
@@ -45,8 +45,6 @@ import {
   ATTR_HTTP_URL,
 } from '../src/semconv';
 import { EventNames } from '../src/enums/EventNames';
-
-const assert = chai.assert;
 
 const exporter = new InMemorySpanExporter();
 const spanProcessor = new SimpleSpanProcessor(exporter);
