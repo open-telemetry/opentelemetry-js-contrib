@@ -113,6 +113,8 @@ components:
     # Unmaintained
   packages/instrumentation-koa: []
     # Unmaintained
+  packages/instrumentation-mcp:
+    - lukeina2z
   packages/instrumentation-memcached: []
     # Unmaintained
   packages/instrumentation-mongodb:

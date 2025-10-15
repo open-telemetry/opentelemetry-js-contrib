@@ -72,6 +72,7 @@
     "@opentelemetry/instrumentation-kafkajs": "^0.16.0",
     "@opentelemetry/instrumentation-knex": "^0.51.0",
     "@opentelemetry/instrumentation-koa": "^0.55.0",
+    "@opentelemetry/instrumentation-mcp": "^0.0.1",
     "@opentelemetry/instrumentation-lru-memoizer": "^0.51.0",
     "@opentelemetry/instrumentation-memcached": "^0.50.0",
     "@opentelemetry/instrumentation-mongodb": "^0.59.0",
