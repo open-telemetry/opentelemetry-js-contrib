@@ -4,8 +4,6 @@
   "version": "0.1.0",
   "description": "Example of Express integration with OpenTelemetry",
   "scripts": {
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "server": "ts-node src/server.ts",
     "client": "ts-node src/client.ts",
     "compile": "tsc -p ."
