@@ -14,8 +14,6 @@
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/propagator-aws-xray-lambda",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha test/**/*.test.ts",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
@@ -52,7 +50,7 @@
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
-    "babel-loader": "8.3.0",
+    "babel-loader": "10.0.0",
     "babel-plugin-istanbul": "7.0.1",
     "nyc": "17.1.0",
     "sinon": "15.1.2",

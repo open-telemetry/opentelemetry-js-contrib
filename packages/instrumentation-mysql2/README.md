@@ -54,19 +54,30 @@ You can set the following instrumentation options:
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This instrumentation implements Semantic Conventions (semconv) v1.7.0. Since then, networking (in semconv v1.23.1) and database (in semconv v1.33.0) semantic conventions were stabilized. As of `@opentelemetry/instrumentation-mysql2@0.53.0` support has been added for migrating to the stable semantic conventions using the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable as follows:
+
+1. Upgrade to the latest version of this instrumentation package.
+2. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup,database/dup` to emit both old and stable semantic conventions. (The `http` token is used to control the `net.*` attributes, the `database` token to control to `db.*` attributes.)
+3. Modify alerts, dashboards, metrics, and other processes in your Observability system to use the stable semantic conventions.
+4. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http,database` to emit only the stable semantic conventions.
+
+By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` includes neither of the above tokens, the old v1.7.0 semconv is used.
+The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new database and networking semconv, after which a new minor version will use the new semconv by default and drop support for the old semconv.
+See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/) and the [database migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/) for details.
 
 Attributes collected:
 
-| Attribute               | Short Description                                                              |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| `db.connection_string`  | The connection string used to connect to the database.                         |
-| `db.name`               | This attribute is used to report the name of the database being accessed.      |
-| `db.statement`          | The database statement being executed.                                         |
-| `db.system`             | An identifier for the database management system (DBMS) product being used.    |
-| `db.user`               | Username for accessing the database.                                           |
-| `net.peer.name`         | Remote hostname or similar.                                                    |
-| `net.peer.port`         | Remote port number.                                                            |
+| Old semconv            | Stable semconv   | Description |
+| ---------------------- | ---------------- | ----------- |
+| `db.connection_string` | Removed          | The connection string used to connect to the database. |
+| `db.name`              | Removed, integrated into the new `db.namespace` | The name of the database. |
+| `db.system`            | `db.system.name` | 'mysql' |
+| `db.statement`         | `db.query.text`  | The database query being executed. |
+| `db.user`              | Removed          | User used to connect to the database. |
+| (not included)         | `db.namespace`   | The name of the database, fully qualified within the server address and port. |
+| `net.peer.port`        | `server.port`    | Remote port number. |
+| `net.peer.name`        | `server.address` | Remote hostname or similar. |
+
 
 ## Useful links
 

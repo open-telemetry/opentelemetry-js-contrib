@@ -14,8 +14,6 @@
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-nestjs-core",
     "compile:watch": "tsc -w",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "npm run test-required-node-version && nyc --no-clean mocha --timeout 5000 'test/**/*.test.ts' || echo 'Node version is not supported for testing'",
@@ -65,7 +63,7 @@
     "rimraf": "5.0.10",
     "rxjs": "7.8.2",
     "rxjs-compat": "6.6.7",
-    "semver": "7.7.2",
+    "semver": "7.7.3",
     "test-all-versions": "6.1.0",
     "typescript": "5.0.4"
   },

@@ -3,7 +3,9 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`openai`](https://www.npmjs.com/package/openai) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package.
+This module provides automatic instrumentation for the [`openai`](https://www.npmjs.com/package/openai) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -15,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-openai
 
 ## Supported Versions
 
-- openai `>=4.19.0 <6`
+- [`openai`](https://www.npmjs.com/package/openai) versions `>=4.19.0 <7`
 
 ## Usage
 

@@ -14,8 +14,6 @@
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
@@ -60,7 +58,7 @@
     "@types/sinon": "17.0.4",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
-    "semver": "7.7.2",
+    "semver": "7.7.3",
     "sinon": "15.2.0",
     "test-all-versions": "6.1.0",
     "typescript": "5.0.4"
