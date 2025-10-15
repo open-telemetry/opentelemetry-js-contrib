@@ -13,8 +13,6 @@
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-mysql2",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
-    "lint": "eslint . --ext=ts,js,mjs",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
@@ -68,6 +66,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.206.0",
+    "@opentelemetry/semantic-conventions": "^1.33.0",
     "@opentelemetry/sql-common": "^0.41.2"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-mysql2#readme"

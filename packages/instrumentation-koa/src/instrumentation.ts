@@ -108,7 +108,9 @@ export class KoaInstrumentation extends InstrumentationBase<KoaInstrumentationCo
     const routesStack = router?.stack ?? [];
     for (const pathLayer of routesStack) {
       const path = pathLayer.path;
-      const pathStack = pathLayer.stack;
+      // Type cast needed: router.stack comes from @types/koa@2.x but we use @types/koa@3.x
+      // See internal-types.ts for full explanation
+      const pathStack = pathLayer.stack as any;
       for (let j = 0; j < pathStack.length; j++) {
         const routedMiddleware: KoaMiddleware = pathStack[j];
         pathStack[j] = this._patchLayer(routedMiddleware, true, path);
