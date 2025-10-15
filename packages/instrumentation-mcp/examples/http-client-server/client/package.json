@@ -1,0 +1,22 @@
+{
+  "name": "mcp-http-client-example",
+  "version": "1.0.0",
+  "description": "Example MCP HTTP client with OpenTelemetry instrumentation",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "start": "node ./build/client.js",
+    "dev": "tsc && node ./build/client.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.19.1",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "file:../../../auto-instrumentations-node",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  }
+}
