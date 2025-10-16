@@ -101,14 +101,12 @@ describe('fs/promises instrumentation: hooks', () => {
   });
 
   it('should not fail the original successful call when hooks throw', async () => {
-    // eslint-disable-next-line node/no-unsupported-features/node-builtins
     await fsPromises.access('./test/fixtures/readtest', fsConstantsR_OK);
 
     assertSuccessfulCallHooks('access');
   });
 
   it('should not shadow the error from original call when hooks throw', async () => {
-    // eslint-disable-next-line node/no-unsupported-features/node-builtins
     await fsPromises
       .access('./test/fixtures/readtest-404', fsConstantsR_OK)
       .catch(assertNotHookError);

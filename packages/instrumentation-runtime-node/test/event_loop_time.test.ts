@@ -51,7 +51,7 @@ describe('nodejs.eventloop.time', function () {
     assert.strictEqual(scopeMetrics.length, 0);
   });
 
-  it(`should write 'nodejs.eventloop.time'`, async function () {
+  it("should write 'nodejs.eventloop.time'", async function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,

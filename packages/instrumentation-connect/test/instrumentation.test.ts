@@ -151,7 +151,6 @@ describe('connect', () => {
     });
 
     it('should generate span for named middleware', async () => {
-      // eslint-disable-next-line prefer-arrow-callback
       app.use(function middleware1(req, res, next) {
         next();
       });
