@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-tedious",
-  "version": "0.24.3",
+  "version": "0.25.0",
   "description": "OpenTelemetry instrumentation for `tedious` database client for Microsoft SQL Server",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -13,8 +13,6 @@
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-tedious",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
-    "lint": "eslint . --ext=ts,js,mjs",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
@@ -56,20 +54,20 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.52.2",
+    "@opentelemetry/contrib-test-utils": "^0.53.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "cross-env": "7.0.3",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
-    "semver": "7.7.2",
+    "semver": "7.7.3",
     "tedious": "17.0.0",
     "test-all-versions": "6.1.0",
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.205.0",
+    "@opentelemetry/instrumentation": "^0.206.0",
     "@types/tedious": "^4.0.14"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-tedious#readme"

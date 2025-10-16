@@ -1,5 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
+ * Copyright (c) 2025, Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +13,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (c) 2025, Oracle and/or its affiliates.
- * */
+ */
+
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
   Span,
@@ -26,17 +26,18 @@ import {
   diag,
 } from '@opentelemetry/api';
 import {
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_DB_OPERATION_NAME,
   ATTR_SERVER_PORT,
   ATTR_SERVER_ADDRESS,
   ATTR_NETWORK_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
 import {
-  ATTR_DB_SYSTEM,
-  ATTR_DB_NAMESPACE,
-  ATTR_DB_OPERATION_NAME,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_OPERATION_PARAMETER,
   ATTR_DB_USER,
+  ATTR_DB_OPERATION_PARAMETER,
+  DB_SYSTEM_NAME_VALUE_ORACLE_DB,
 } from './semconv';
 
 import type * as oracleDBTypes from 'oracledb';
@@ -46,7 +47,7 @@ const OUT_BIND = 3003; // bindinfo direction value.
 // Local modules.
 import { OracleInstrumentationConfig, SpanConnectionConfig } from './types';
 import { TraceSpanData, SpanCallLevelConfig } from './internal-types';
-import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from './constants';
+import { SpanNames } from './constants';
 
 // It dynamically retrieves the TraceHandlerBase class from the oracledb module
 // (if available) while avoiding direct imports that could cause issues if
@@ -111,7 +112,7 @@ export function getOracleTelemetryTraceHandlerClass(
     // semantic standards and module custom keys.
     private _getConnectionSpanAttributes(config: SpanConnectionConfig) {
       return {
-        [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
+        [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
         [ATTR_NETWORK_TRANSPORT]: config.protocol,
         [ATTR_DB_USER]: config.user,
         [ATTR_DB_NAMESPACE]: this._getDBNameSpace(
@@ -147,16 +148,16 @@ export function getOracleTelemetryTraceHandlerClass(
         if (Array.isArray(values)) {
           // Handle indexed (positional) parameters
           values.forEach((value, index) => {
-            const key = `${ATTR_DB_OPERATION_PARAMETER}.${index}`;
             const extractedValue = this._extractValue(value);
             if (extractedValue !== undefined) {
-              convertedValues[key] = extractedValue;
+              convertedValues[ATTR_DB_OPERATION_PARAMETER(`${index}`)] =
+                extractedValue;
             }
           });
         } else if (values && typeof values === 'object') {
           // Handle named parameters
           for (const [paramName, value] of Object.entries(values)) {
-            const key = `${ATTR_DB_OPERATION_PARAMETER}.${paramName}`;
+            const key = ATTR_DB_OPERATION_PARAMETER(paramName);
             let inVal: any = value;
 
             if (inVal && typeof inVal === 'object') {
@@ -216,7 +217,7 @@ export function getOracleTelemetryTraceHandlerClass(
           this._instrumentConfig.dbStatementDump ||
           this._instrumentConfig.enhancedDatabaseReporting
         ) {
-          span.setAttribute(ATTR_DB_STATEMENT, callConfig.statement);
+          span.setAttribute(ATTR_DB_QUERY_TEXT, callConfig.statement);
           if (this._instrumentConfig.enhancedDatabaseReporting && !roundTrip) {
             const values = this._getValues(callConfig.values);
             if (values) {

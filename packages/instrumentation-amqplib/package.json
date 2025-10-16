@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-amqplib",
-  "version": "0.52.3",
+  "version": "0.53.0",
   "description": "OpenTelemetry instrumentation for the `amqplib` messaging client for RabbitMQ",
   "keywords": [
     "amqplib",
@@ -33,8 +33,6 @@
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-amqplib",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -52,11 +50,11 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.205.0"
+    "@opentelemetry/instrumentation": "^0.206.0"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/contrib-test-utils": "^0.52.2",
+    "@opentelemetry/contrib-test-utils": "^0.53.0",
     "@types/amqplib": "^0.10.7",
     "@types/lodash": "4.14.199",
     "@types/mocha": "10.0.10",

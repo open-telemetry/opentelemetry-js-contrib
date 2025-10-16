@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/baggage-log-record-processor",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "OpenTelemetry Baggage Log Record Processor",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -13,8 +13,6 @@
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/baggage-log-record-processor",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -46,7 +44,7 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "dependencies": {
-    "@opentelemetry/sdk-logs": "^0.205.0"
+    "@opentelemetry/sdk-logs": "^0.206.0"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
