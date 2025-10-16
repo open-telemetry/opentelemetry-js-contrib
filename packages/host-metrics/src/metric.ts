@@ -205,102 +205,130 @@ export class HostMetrics extends BaseMetrics {
    * Creates metrics
    */
   protected _createMetrics(): void {
-    this._cpuTime = this._meter.createObservableCounter(
-      METRIC_SYSTEM_CPU_TIME,
-      {
-        description: 'Cpu time in seconds',
-        unit: 's',
-      }
-    );
-    this._cpuUtilization = this._meter.createObservableGauge(
-      METRIC_SYSTEM_CPU_UTILIZATION,
-      {
-        description: 'Cpu usage time 0-1',
-      }
-    );
+    const observables = [];
 
-    this._memoryUsage = this._meter.createObservableGauge(
-      METRIC_SYSTEM_MEMORY_USAGE,
-      {
-        description: 'Memory usage in bytes',
-      }
-    );
-    this._memoryUtilization = this._meter.createObservableGauge(
-      METRIC_SYSTEM_MEMORY_UTILIZATION,
-      {
-        description: 'Memory usage 0-1',
-      }
-    );
+    const systemCpuGroupEnabled =
+      !this._metricGroups || this._metricGroups.includes('system.cpu');
+    const systemMemoryGroupEnabled =
+      !this._metricGroups || this._metricGroups.includes('system.memory');
+    const systemNetworkGroupEnabled =
+      !this._metricGroups || this._metricGroups.includes('system.network');
+    const processCpuGroupEnabled =
+      !this._metricGroups || this._metricGroups.includes('process.cpu');
+    const processMemoryGroupEnabled =
+      !this._metricGroups || this._metricGroups.includes('process.memory');
 
-    this._networkDropped = this._meter.createObservableCounter(
-      // There is no semconv pkg export for this in v1.37.0 because
-      // https://github.com/open-telemetry/semantic-conventions/issues/2828.
-      // TODO: update to `METRIC_SYSTEM_NETWORK_PACKET_DROPPED` (breaking change)
-      'system.network.dropped',
-      {
-        description: 'Network dropped packets',
-      }
-    );
-    this._networkErrors = this._meter.createObservableCounter(
-      METRIC_SYSTEM_NETWORK_ERRORS,
-      {
-        description: 'Network errors counter',
-      }
-    );
-    this._networkIo = this._meter.createObservableCounter(
-      METRIC_SYSTEM_NETWORK_IO,
-      {
-        description: 'Network transmit and received bytes',
-      }
-    );
+    if (systemCpuGroupEnabled) {
+      this._cpuTime = this._meter.createObservableCounter(
+        METRIC_SYSTEM_CPU_TIME,
+        {
+          description: 'Cpu time in seconds',
+          unit: 's',
+        }
+      );
+      observables.push(this._cpuTime);
+      this._cpuUtilization = this._meter.createObservableGauge(
+        METRIC_SYSTEM_CPU_UTILIZATION,
+        {
+          description: 'Cpu usage time 0-1',
+        }
+      );
+      observables.push(this._cpuUtilization);
+    }
 
-    this._processCpuTime = this._meter.createObservableCounter(
-      METRIC_PROCESS_CPU_TIME,
-      {
-        description: 'Process Cpu time in seconds',
-        unit: 's',
-      }
-    );
-    this._processCpuUtilization = this._meter.createObservableGauge(
-      METRIC_PROCESS_CPU_UTILIZATION,
-      {
-        description: 'Process Cpu usage time 0-1',
-      }
-    );
-    this._processMemoryUsage = this._meter.createObservableGauge(
-      METRIC_PROCESS_MEMORY_USAGE,
-      {
-        description: 'Process Memory usage in bytes',
-      }
-    );
+    if (systemMemoryGroupEnabled) {
+      this._memoryUsage = this._meter.createObservableGauge(
+        METRIC_SYSTEM_MEMORY_USAGE,
+        {
+          description: 'Memory usage in bytes',
+        }
+      );
+      observables.push(this._memoryUsage);
+      this._memoryUtilization = this._meter.createObservableGauge(
+        METRIC_SYSTEM_MEMORY_UTILIZATION,
+        {
+          description: 'Memory usage 0-1',
+        }
+      );
+      observables.push(this._memoryUtilization);
+    }
 
-    this._meter.addBatchObservableCallback(
-      async observableResult => {
+    if (systemNetworkGroupEnabled) {
+      this._networkDropped = this._meter.createObservableCounter(
+        // There is no semconv pkg export for this in v1.37.0 because
+        // https://github.com/open-telemetry/semantic-conventions/issues/2828.
+        // TODO: update to `METRIC_SYSTEM_NETWORK_PACKET_DROPPED` (breaking change)
+        'system.network.dropped',
+        {
+          description: 'Network dropped packets',
+        }
+      );
+      observables.push(this._networkDropped);
+      this._networkErrors = this._meter.createObservableCounter(
+        METRIC_SYSTEM_NETWORK_ERRORS,
+        {
+          description: 'Network errors counter',
+        }
+      );
+      observables.push(this._networkErrors);
+      this._networkIo = this._meter.createObservableCounter(
+        METRIC_SYSTEM_NETWORK_IO,
+        {
+          description: 'Network transmit and received bytes',
+        }
+      );
+      observables.push(this._networkIo);
+    }
+
+    if (processCpuGroupEnabled) {
+      this._processCpuTime = this._meter.createObservableCounter(
+        METRIC_PROCESS_CPU_TIME,
+        {
+          description: 'Process Cpu time in seconds',
+          unit: 's',
+        }
+      );
+      observables.push(this._processCpuTime);
+      this._processCpuUtilization = this._meter.createObservableGauge(
+        METRIC_PROCESS_CPU_UTILIZATION,
+        {
+          description: 'Process Cpu usage time 0-1',
+        }
+      );
+      observables.push(this._processCpuUtilization);
+    }
+    if (processMemoryGroupEnabled) {
+      this._processMemoryUsage = this._meter.createObservableGauge(
+        METRIC_PROCESS_MEMORY_USAGE,
+        {
+          description: 'Process Memory usage in bytes',
+        }
+      );
+      observables.push(this._processMemoryUsage);
+    }
+
+    this._meter.addBatchObservableCallback(async observableResult => {
+      if (systemCpuGroupEnabled) {
         const cpuUsages = getCpuUsageData();
-        const memoryUsages = getMemoryData();
-        const processCpuUsages = getProcessCpuUsageData();
-        const processMemoryUsages = getProcessMemoryData();
-        const networkData = await getNetworkData();
-
         this._batchUpdateCpuUsages(observableResult, cpuUsages);
+      }
+      if (systemMemoryGroupEnabled) {
+        const memoryUsages = getMemoryData();
         this._batchUpdateMemUsages(observableResult, memoryUsages);
+      }
+      if (processCpuGroupEnabled) {
+        const processCpuUsages = getProcessCpuUsageData();
         this._batchUpdateProcessCpuUsages(observableResult, processCpuUsages);
+      }
+      if (processMemoryGroupEnabled) {
+        const processMemoryUsages = getProcessMemoryData();
         this._batchUpdateProcessMemUsage(observableResult, processMemoryUsages);
+      }
+      if (systemNetworkGroupEnabled) {
+        const networkData = await getNetworkData();
         this._batchUpdateNetworkData(observableResult, networkData);
-      },
-      [
-        this._cpuTime,
-        this._cpuUtilization,
-        this._memoryUsage,
-        this._memoryUtilization,
-        this._processCpuTime,
-        this._processCpuUtilization,
-        this._processMemoryUsage,
-        this._networkDropped,
-        this._networkErrors,
-        this._networkIo,
-      ]
-    );
+      }
+    }, observables);
   }
 
   /**
