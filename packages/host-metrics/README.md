@@ -42,9 +42,9 @@ hostMetrics.start();
 
 ## Configuration
 
-| Option         | Type            | Description |
-| -------------- | --------------- | ----------- |
-| `metricGroups` | `Array<string>` | Optionally specify zero or more groups of metrics to collect. This package can collect many metrics. They are grouped by metric name prefix (see the "Semantic Conventions" section below). If this option is specified, only metrics from the named groups will be collected. For example, `metricGroups: ['process.cpu', 'process.memory']` will limit collection to just those 3 metrics. |
+| Option         | Type       | Description |
+| -------------- | ---------- | ----------- |
+| `metricGroups` | `string[]` | Optionally specify zero or more groups of metrics to collect. This package can collect many metrics. They are grouped by metric name prefix (see the "Semantic Conventions" section below). If this option is specified, only metrics from the named groups will be collected. For example, `metricGroups: ['process.cpu', 'process.memory']` will limit collection to just those 3 metrics. |
 
 ## Semantic Conventions
 
