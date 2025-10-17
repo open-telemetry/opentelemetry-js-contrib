@@ -33,9 +33,10 @@ export class EventLoopUtilizationCollector extends BaseCollector {
       .addCallback(async observableResult => {
         if (!this._config.enabled) return;
 
-        const elu = eventLoopUtilizationCollector(this._lastValue);
-        observableResult.observe(elu.utilization);
-        this._lastValue = eventLoopUtilizationCollector();
+        const currentELU = eventLoopUtilizationCollector();
+        const deltaELU = eventLoopUtilizationCollector(currentELU, this._lastValue);
+        this._lastValue = currentELU;
+        observableResult.observe(deltaELU.utilization);
       });
   }
 
