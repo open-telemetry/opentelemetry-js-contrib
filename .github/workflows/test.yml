@@ -197,7 +197,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - name: Install
-        run: npm ci
+        run: npm --loglevel=silly ci
       - name: Download Build Artifacts
         uses: actions/download-artifact@v5
         with:
