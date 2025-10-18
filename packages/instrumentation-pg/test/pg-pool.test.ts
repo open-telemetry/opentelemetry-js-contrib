@@ -530,6 +530,120 @@ describe('pg-pool', () => {
     });
   });
 
+  describe('exception event recording', () => {
+    const queryText = 'SELECT foo FROM nonexistent_table';
+
+    it('should record exceptions as events on spans for a query to a nonexistent table (callback)', done => {
+      const parentSpan = provider
+        .getTracer('test-pg-pool')
+        .startSpan('test span');
+      context.with(trace.setSpan(context.active(), parentSpan), () => {
+        pool.query(queryText, err => {
+          assert.notEqual(err, null, 'Expected query to throw an error');
+
+          const spans = memoryExporter.getFinishedSpans();
+
+          const querySpan = spans.find(
+            s =>
+              s.attributes?.[ATTR_DB_STATEMENT] &&
+              String(s.attributes[ATTR_DB_STATEMENT]).includes(
+                'nonexistent_table'
+              )
+          );
+          assert.ok(
+            querySpan,
+            'Expected a span for the nonexistent table query'
+          );
+
+          const exceptionEvents = querySpan.events.filter(
+            e => e.name === 'exception'
+          );
+          assert.ok(
+            exceptionEvents.length > 0,
+            'Expected at least one exception event'
+          );
+
+          exceptionEvents.forEach(e => {
+            const attrs = e.attributes!;
+            assert.strictEqual(
+              attrs['exception.type'],
+              '42P01',
+              'exception.type should match Postgres error code'
+            );
+            assert.ok(
+              attrs['exception.message'],
+              'exception.message should exist'
+            );
+            assert.ok(
+              attrs['exception.stacktrace'],
+              'exception.stacktrace should exist'
+            );
+          });
+
+          memoryExporter.reset();
+          done();
+        });
+      });
+    });
+
+    it('should record exceptions as events on spans for a query to a nonexistent table (async-await)', async () => {
+      const parentSpan = provider
+        .getTracer('test-pg-pool')
+        .startSpan('test span');
+
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          try {
+            await pool.query(queryText);
+            assert.fail('Expected query to throw an error');
+          } catch {
+            const spans = memoryExporter.getFinishedSpans();
+
+            const querySpan = spans.find(
+              s =>
+                s.attributes?.[ATTR_DB_STATEMENT] &&
+                String(s.attributes[ATTR_DB_STATEMENT]).includes(
+                  'nonexistent_table'
+                )
+            );
+            assert.ok(
+              querySpan,
+              'Expected a span for the nonexistent table query'
+            );
+
+            const exceptionEvents = querySpan.events.filter(
+              e => e.name === 'exception'
+            );
+            assert.ok(
+              exceptionEvents.length > 0,
+              'Expected at least one exception event'
+            );
+
+            exceptionEvents.forEach(e => {
+              const attrs = e.attributes!;
+              assert.strictEqual(
+                attrs['exception.type'],
+                '42P01',
+                'exception.type should match Postgres error code'
+              );
+              assert.ok(
+                attrs['exception.message'],
+                'exception.message should exist'
+              );
+              assert.ok(
+                attrs['exception.stacktrace'],
+                'exception.stacktrace should exist'
+              );
+            });
+
+            memoryExporter.reset();
+          }
+        }
+      );
+    });
+  });
+
   describe('pg metrics', () => {
     let metricReader: testUtils.TestMetricReader;
 
