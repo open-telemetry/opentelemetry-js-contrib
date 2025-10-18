@@ -161,6 +161,8 @@ describe('pg', () => {
   });
 
   beforeEach(() => {
+    memoryExporter.reset();
+
     contextManager = new AsyncLocalStorageContextManager().enable();
     context.setGlobalContextManager(contextManager);
 
@@ -192,47 +194,54 @@ describe('pg', () => {
       return /node_modules[/\\]pg/.test(src);
     };
 
-    assert.throws(
-      () => {
-        (client as any).query();
+    const errorThrowCases = [
+      { fn: () => (client as any).query(), desc: 'no args provided' },
+      { fn: () => (client as any).query(null), desc: 'null as only arg' },
+      {
+        fn: () => (client as any).query(undefined),
+        desc: 'undefined as only arg',
       },
-      assertPgError,
-      'pg should throw when no args provided'
-    );
-    runCallbackTest(null, DEFAULT_ATTRIBUTES, [], errorStatus);
-    memoryExporter.reset();
+    ];
 
-    assert.throws(
-      () => {
-        (client as any).query(null);
-      },
-      assertPgError,
-      'pg should throw when null provided as only arg'
-    );
-    runCallbackTest(null, DEFAULT_ATTRIBUTES, [], errorStatus);
-    memoryExporter.reset();
+    errorThrowCases.forEach(({ fn, desc }) => {
+      assert.throws(fn, assertPgError, `pg should throw when ${desc}`);
+      const spans = memoryExporter.getFinishedSpans();
+      assert.ok(spans.length > 0, 'No spans recorded');
 
-    assert.throws(
-      () => {
-        (client as any).query(undefined);
-      },
-      assertPgError,
-      'pg should throw when undefined provided as only arg'
-    );
-    runCallbackTest(null, DEFAULT_ATTRIBUTES, [], errorStatus);
-    memoryExporter.reset();
+      const exceptionEvents = spans[0].events.filter(
+        e => e.name === 'exception'
+      );
+      assert.strictEqual(
+        exceptionEvents.length,
+        1,
+        'Expected one exception event'
+      );
+
+      const event = exceptionEvents[0];
+      assert.strictEqual(
+        event.attributes!['exception.message'],
+        'Client was passed a null or undefined query'
+      );
+      assert.strictEqual(event.attributes!['exception.type'], 'TypeError');
+      assert.ok(event.time.length === 2, 'Event time should be a HrTime array');
+
+      memoryExporter.reset();
+    });
 
     assert.doesNotThrow(
       () =>
         (client as any).query({ foo: 'bar' }, undefined, () => {
-          runCallbackTest(
-            null,
-            {
-              ...DEFAULT_ATTRIBUTES,
-            },
-            [],
-            errorStatus
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          const exceptionEvents = spans[0].events.filter(
+            e => e.name === 'exception'
           );
+          assert.strictEqual(
+            exceptionEvents.length,
+            1,
+            'Expected 1 exception event'
+          );
+          memoryExporter.reset();
         }),
       'pg should not throw when invalid config args are provided'
     );
@@ -979,6 +988,68 @@ describe('pg', () => {
         assert.strictEqual(spans.length, 0);
         done();
       });
+    });
+  });
+
+  describe('exception event recording', () => {
+    const assertExceptionEvents = (pgSpan: any) => {
+      assert.strictEqual(
+        pgSpan.status.code,
+        SpanStatusCode.ERROR,
+        'Span should have ERROR status'
+      );
+
+      const exceptionEvents = pgSpan.events.filter(
+        (e: { name: string }) => e.name === 'exception'
+      );
+      assert.ok(
+        exceptionEvents.length > 0,
+        'Expected at least one exception event'
+      );
+
+      exceptionEvents.forEach((err: { attributes: any }) => {
+        const attrs = err.attributes!;
+        assert.ok(attrs['exception.message'], 'Expected exception.message');
+        assert.strictEqual(
+          attrs['exception.type'],
+          '42P01',
+          'exception.type should match Postgres error code'
+        );
+        assert.ok(
+          attrs['exception.stacktrace'],
+          'Expected exception.stacktrace'
+        );
+      });
+    };
+
+    it('should record exceptions as events on spans for a query to a nonexistent table (callback)', done => {
+      client.query('SELECT foo FROM nonexistent_table', err => {
+        assert.notEqual(err, null, 'Expected query to throw an error');
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 1, 'Expected one finished span');
+        const pgSpan = spans[0];
+
+        assertExceptionEvents(pgSpan);
+
+        memoryExporter.reset();
+        done();
+      });
+    });
+
+    it('should record exceptions as events on spans for a query to a nonexistent table (promise)', async () => {
+      try {
+        await client.query('SELECT foo FROM nonexistent_table');
+        assert.fail('Expected query to throw an error');
+      } catch {
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 1, 'Expected one finished span');
+        const pgSpan = spans[0];
+
+        assertExceptionEvents(pgSpan);
+
+        memoryExporter.reset();
+      }
     });
   });
 
