@@ -211,6 +211,9 @@ describe('pg', () => {
       const exceptionEvents = spans[0].events.filter(
         e => e.name === 'exception'
       );
+
+      assert.strictEqual(spans[0].status.code, errorStatus.code);
+
       assert.strictEqual(
         exceptionEvents.length,
         1,
