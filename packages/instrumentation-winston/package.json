@@ -49,7 +49,6 @@
     "@opentelemetry/context-async-hooks": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@opentelemetry/winston-transport": "^0.17.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
@@ -64,7 +63,8 @@
   },
   "dependencies": {
     "@opentelemetry/api-logs": "^0.206.0",
-    "@opentelemetry/instrumentation": "^0.206.0"
+    "@opentelemetry/instrumentation": "^0.206.0",
+    "@opentelemetry/winston-transport": "^0.17.0",
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-winston#readme"
 }
