@@ -25,7 +25,6 @@
     "test-services:stop": "docker compose -f ./test/docker-compose.yaml down",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env npm test",
     "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env npm run test-all-versions",
-    "changelog": "lerna-changelog",
     "lint": "nx run-many -t lint && npm run lint:deps && npm run lint:readme && npm run lint:markdown && npm run lint:semconv-deps",
     "lint:fix": "nx run-many -t lint --fix && npm run lint:markdown:fix",
     "lint:deps": "npx --yes knip@5.33.3 --dependencies --production --tags=-knipignore",
@@ -60,7 +59,6 @@
     "glob": "^11.0.3",
     "globals": "^16.3.0",
     "lerna": "9.0.0",
-    "lerna-changelog": "2.2.0",
     "markdownlint-cli2": "0.13.0",
     "minimatch": "^9.0.3",
     "mocha": "^11.0.0",
@@ -72,20 +70,6 @@
     "typescript": "5.0.4",
     "typescript-eslint": "8.41.0",
     "util": "0.12.5"
-  },
-  "changelog": {
-    "labels": {
-      "breaking": ":boom: Breaking Change",
-      "bug": ":bug: Bug Fix",
-      "plugin-request": ":tada: New Plugins",
-      "enhancement": ":rocket: Enhancement",
-      "internal": ":house: Internal",
-      "documentation": ":memo: Documentation"
-    },
-    "ignoreCommitters": [
-      "renovate-bot",
-      "dependabot"
-    ]
   },
   "workspaces": [
     "packages/*"

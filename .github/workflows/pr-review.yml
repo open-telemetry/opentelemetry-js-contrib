@@ -1,0 +1,29 @@
+name: PR review
+# This workflow is triggered when a PR review is submitted. It checks if the review is approved and runs a script to add labels to the PR based on the review.
+on:
+  pull_request_review:
+    types:
+      - submitted
+
+permissions:
+  contents: read
+
+jobs:
+  add-owner-approved-label:
+    if: github.event.review.state == 'approved'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run add-labels-to-reviewed-pr.sh
+        run: |
+          chmod +x ./.github/workflows/scripts/add-labels-to-reviewed-pr.sh
+          ./.github/workflows/scripts/add-labels-to-reviewed-pr.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
