@@ -59,7 +59,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.206.0",
+    "@opentelemetry/instrumentation": "^0.207.0",
     "@opentelemetry/semantic-conventions": "^1.33.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-knex#readme"
