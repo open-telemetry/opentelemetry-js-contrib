@@ -51,6 +51,7 @@
     "@opentelemetry/sdk-metrics": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
+    "@types/aws-lambda": "8.10.155",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "nyc": "17.1.0",
@@ -59,8 +60,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.207.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0",
-    "@types/aws-lambda": "8.10.155"
+    "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-aws-lambda#readme"
 }
