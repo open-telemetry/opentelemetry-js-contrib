@@ -4,19 +4,20 @@
   "description": "OpenTelemetry instrumentation for `sequelize` ORM",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "packages/instrumentation-sequelize"
+  },
   "scripts": {
     "clean": "rimraf build/*",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-sequelize",
     "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-sequelize",
+    "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "tdd": "yarn test -- --watch-extensions ts --watch",
+    "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
-    "test:debug": "mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
@@ -25,13 +26,12 @@
     "instrumentation",
     "nodejs",
     "opentelemetry",
-    "profiling",
     "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=14"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "build/src/**/*.js",
