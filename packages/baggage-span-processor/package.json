@@ -46,13 +46,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "^1.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "expect": "29.2.0",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "typescript": "5.0.4"
+    "@opentelemetry/api": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/baggage-span-processor#readme"
 }

@@ -49,16 +49,8 @@
     "@opentelemetry/context-async-hooks": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
     "@types/restify": "4.3.12",
-    "@types/semver": "7.5.8",
-    "nyc": "17.1.0",
-    "restify": "11.1.0",
-    "rimraf": "5.0.10",
-    "semver": "7.7.3",
-    "test-all-versions": "^6.0.0",
-    "typescript": "5.0.4"
+    "restify": "11.1.0"
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",

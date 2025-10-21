@@ -51,17 +51,7 @@
     "@opentelemetry/sdk-logs": "^0.207.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@types/node": "18.18.14",
-    "cross-env": "7.0.3",
-    "expect": "29.2.0",
-    "nock": "^14.0.0",
-    "nyc": "17.1.0",
-    "openai": "^6.2.0",
-    "rimraf": "5.0.10",
-    "safe-stable-stringify": "^2.4.1",
-    "sinon": "15.2.0",
-    "test-all-versions": "6.1.0",
-    "typescript": "5.0.4"
+    "openai": "^6.2.0"
   },
   "dependencies": {
     "@opentelemetry/api-logs": "^0.207.0",
