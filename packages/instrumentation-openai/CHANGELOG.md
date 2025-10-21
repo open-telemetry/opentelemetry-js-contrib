@@ -1,6 +1,22 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.4.0...instrumentation-openai-v0.5.0) (2025-10-21)
+
+
+### Features
+
+* **auto-instrumentations-node:** add OpenAI instrumentation  ([#3164](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3164)) ([d2b090e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2b090e7f28a29ade7309022d52c84672d8be430))
+* **deps:** update deps matching '@opentelemetry/*' ([#3187](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3187)) ([ab96334](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab9633455794de79964e60775c804791d19259bc))
+* **instrumentation-openai:** add support for instrumenting openai@6 ([#3165](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3165)) ([7ffc32f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7ffc32fca05b9cc555828c73d201537375b96b7a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.53.0 to ^0.54.0
+
 ## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.3.3...instrumentation-openai-v0.4.0) (2025-10-06)
 
 
