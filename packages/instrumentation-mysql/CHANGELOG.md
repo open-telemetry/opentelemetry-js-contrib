@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.52.0...instrumentation-mysql-v0.53.0) (2025-10-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3187](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3187)) ([ab96334](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab9633455794de79964e60775c804791d19259bc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.53.0 to ^0.54.0
+
 ## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.51.3...instrumentation-mysql-v0.52.0) (2025-10-06)
 
 
