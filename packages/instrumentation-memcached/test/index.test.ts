@@ -35,6 +35,7 @@ import { MemcachedInstrumentation } from '../src';
 import { ATTR_EXCEPTION_MESSAGE } from '@opentelemetry/semantic-conventions';
 import {
   DB_SYSTEM_VALUE_MEMCACHED,
+  DB_SYSTEM_NAME_VALUE_MEMCACHED,
   ATTR_DB_SYSTEM,
   ATTR_DB_OPERATION,
   ATTR_NET_PEER_NAME,
@@ -65,7 +66,7 @@ const ATTRIBUTES: Attributes = {
   [ATTR_NET_PEER_NAME]: CONFIG.host,
   [ATTR_NET_PEER_PORT]: CONFIG.port,
   // Stable semconv
-  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_MEMCACHED,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_MEMCACHED,
   [ATTR_SERVER_ADDRESS]: CONFIG.host,
   [ATTR_SERVER_PORT]: CONFIG.port,
 };
@@ -331,7 +332,7 @@ describe('memcached@2.x', () => {
       assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], undefined);
       assert.strictEqual(span.attributes[ATTR_DB_OPERATION], undefined);
       // stable `db.*`
-      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], DB_SYSTEM_VALUE_MEMCACHED);
+      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], DB_SYSTEM_NAME_VALUE_MEMCACHED);
       assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'get');
 
       // old `net.*`

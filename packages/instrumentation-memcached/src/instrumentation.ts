@@ -24,6 +24,7 @@ import {
 } from '@opentelemetry/instrumentation';
 import type * as Memcached from 'memcached';
 import {
+  DB_SYSTEM_NAME_VALUE_MEMCACHED,
   DB_SYSTEM_VALUE_MEMCACHED,
   ATTR_DB_OPERATION,
   ATTR_DB_STATEMENT,
@@ -120,7 +121,7 @@ export class MemcachedInstrumentation extends InstrumentationBase<Instrumentatio
         attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MEMCACHED;
       }
       if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
-        attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_VALUE_MEMCACHED;
+        attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MEMCACHED;
       }
 
       // The name will be overwritten later
