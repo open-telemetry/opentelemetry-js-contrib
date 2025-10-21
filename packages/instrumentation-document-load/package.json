@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-document-load",
-  "version": "0.48.0",
+  "version": "0.53.0",
   "description": "OpenTelemetry instrumentation for document load operations in browser applications",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -13,11 +13,9 @@
   },
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-document-load",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-document-load",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "prepublishOnly": "npm run compile",
     "tdd": "wtr --watch",
@@ -74,9 +72,9 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.203.0",
+    "@opentelemetry/instrumentation": "^0.207.0",
     "@opentelemetry/sdk-trace-web": "^2.0.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/semantic-conventions": "^1.23.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-document-load#readme"
 }

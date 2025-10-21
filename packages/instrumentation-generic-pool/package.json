@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-generic-pool",
-  "version": "0.47.0",
+  "version": "0.51.0",
   "description": "OpenTelemetry instrumentation for `generic-pool` resource pool for managing expensive resources",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -10,16 +10,14 @@
     "directory": "packages/instrumentation-generic-pool"
   },
   "scripts": {
-    "test": "nyc mocha 'test/**/*.ts'",
-    "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../scripts/lint-readme.js",
-    "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-generic-pool",
     "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-generic-pool",
+    "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
+    "tdd": "yarn test -- --watch-extensions ts --watch",
+    "test": "nyc --no-clean mocha 'test/**/*.ts'",
+    "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
   "keywords": [
@@ -57,11 +55,11 @@
     "generic-pool": "3.8.2",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
-    "semver": "7.7.2",
+    "semver": "7.7.3",
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.203.0"
+    "@opentelemetry/instrumentation": "^0.207.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-generic-pool#readme"
 }

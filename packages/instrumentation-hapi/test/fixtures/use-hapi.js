@@ -21,11 +21,8 @@ const { HapiInstrumentation } = require('../../build/src/index.js');
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-hapi',
-  instrumentations: [
-    new HttpInstrumentation(),
-    new HapiInstrumentation()
-  ]
-})
+  instrumentations: [new HttpInstrumentation(), new HapiInstrumentation()],
+});
 sdk.start();
 
 const Hapi = require('@hapi/hapi');
@@ -35,27 +32,30 @@ async function main() {
   // Start a Hapi server.
   const server = new Hapi.Server({
     port: 0,
-    host: 'localhost'
+    host: 'localhost',
   });
 
   server.route({
     method: 'GET',
     path: '/route/{param}',
-    handler: function() {
+    handler: function () {
       return { hello: 'world' };
-    }
+    },
   });
 
   await server.start();
 
   // Make a single request to it.
   await new Promise(resolve => {
-    http.get(`http://${server.info.host}:${server.info.port}/route/test`, (res) => {
-      res.resume();
-      res.on('end', () => {
-        resolve();
-      });
-    });
+    http.get(
+      `http://${server.info.host}:${server.info.port}/route/test`,
+      res => {
+        res.resume();
+        res.on('end', () => {
+          resolve();
+        });
+      }
+    );
   });
 
   await server.stop();

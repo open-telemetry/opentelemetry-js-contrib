@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import * as assert from 'assert';
+
 import {
   SpanKind,
   SpanStatus,
@@ -21,8 +24,17 @@ import {
 } from '@opentelemetry/api';
 import { hrTimeToNanoseconds } from '@opentelemetry/core';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
-import { SemanticAttributes } from '../../src/enums/SemanticAttributes';
+import {
+  ATTR_HTTP_REQUEST_METHOD,
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_NETWORK_PEER_ADDRESS,
+  ATTR_NETWORK_PEER_PORT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_URL_FULL,
+  ATTR_URL_PATH,
+  ATTR_URL_QUERY,
+  ATTR_USER_AGENT_ORIGINAL,
+} from '@opentelemetry/semantic-conventions';
 
 type IncomingHttpHeaders = Record<string, string | string[] | undefined>;
 
@@ -51,33 +63,31 @@ export const assertSpan = (
     'span.name is correct'
   );
   assert.strictEqual(
-    span.attributes[SemanticAttributes.HTTP_REQUEST_METHOD],
+    span.attributes[ATTR_HTTP_REQUEST_METHOD],
     validations.httpMethod,
-    `attributes['${SemanticAttributes.HTTP_REQUEST_METHOD}'] is correct`
+    `attributes['${ATTR_HTTP_REQUEST_METHOD}'] is correct`
   );
 
   if (validations.path) {
     assert.strictEqual(
-      span.attributes[SemanticAttributes.URL_PATH],
+      span.attributes[ATTR_URL_PATH],
       validations.path,
-      `attributes['${SemanticAttributes.URL_PATH}'] is correct`
+      `attributes['${ATTR_URL_PATH}'] is correct`
     );
   }
 
   if (validations.query) {
     assert.strictEqual(
-      span.attributes[SemanticAttributes.URL_QUERY],
+      span.attributes[ATTR_URL_QUERY],
       validations.query,
-      `attributes['${SemanticAttributes.URL_QUERY}'] is correct`
+      `attributes['${ATTR_URL_QUERY}'] is correct`
     );
   }
 
   assert.strictEqual(
-    span.attributes[SemanticAttributes.HTTP_RESPONSE_STATUS_CODE],
+    span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE],
     validations.httpStatusCode,
-    `attributes['${SemanticAttributes.HTTP_RESPONSE_STATUS_CODE}'] is correct ${
-      span.attributes[SemanticAttributes.HTTP_RESPONSE_STATUS_CODE]
-    }`
+    `attributes['${ATTR_HTTP_RESPONSE_STATUS_CODE}'] is correct ${span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]}`
   );
 
   assert.strictEqual(span.links.length, 0, 'there are no links');
@@ -144,25 +154,25 @@ export const assertSpan = (
   }
 
   assert.strictEqual(
-    span.attributes[SemanticAttributes.SERVER_ADDRESS],
+    span.attributes[ATTR_SERVER_ADDRESS],
     validations.hostname,
     'must be consistent (SERVER_ADDRESS and hostname)'
   );
   if (!validations.noNetPeer) {
     assert.ok(
-      span.attributes[SemanticAttributes.NETWORK_PEER_ADDRESS],
-      `must have ${SemanticAttributes.NETWORK_PEER_ADDRESS}`
+      span.attributes[ATTR_NETWORK_PEER_ADDRESS],
+      `must have ${ATTR_NETWORK_PEER_ADDRESS}`
     );
     assert.ok(
-      span.attributes[SemanticAttributes.NETWORK_PEER_PORT],
-      `must have ${SemanticAttributes.NETWORK_PEER_PORT}`
+      span.attributes[ATTR_NETWORK_PEER_PORT],
+      `must have ${ATTR_NETWORK_PEER_PORT}`
     );
   }
   assert.ok(
-    (span.attributes[SemanticAttributes.URL_FULL] as string).indexOf(
-      span.attributes[SemanticAttributes.SERVER_ADDRESS] as string
+    (span.attributes[ATTR_URL_FULL] as string).indexOf(
+      span.attributes[ATTR_SERVER_ADDRESS] as string
     ) > -1,
-    `${SemanticAttributes.URL_FULL} & ${SemanticAttributes.SERVER_ADDRESS} must be consistent`
+    `${ATTR_URL_FULL} & ${ATTR_SERVER_ADDRESS} must be consistent`
   );
 
   if (validations.reqHeaders) {
@@ -170,7 +180,7 @@ export const assertSpan = (
 
     if (userAgent) {
       assert.strictEqual(
-        span.attributes[SemanticAttributes.USER_AGENT_ORIGINAL],
+        span.attributes[ATTR_USER_AGENT_ORIGINAL],
         Array.isArray(userAgent) ? userAgent[userAgent.length - 1] : userAgent
       );
     }

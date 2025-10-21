@@ -25,7 +25,7 @@
  *    ./scripts/npm-run-in-examples.js --if-present lint
  */
 
-const {spawn, spawnSync} = require('child_process');
+const { spawnSync } = require('child_process');
 const path = require('path');
 
 const TOP = path.resolve(__dirname, '..');
@@ -53,12 +53,12 @@ function logError(...args) {
 
 function getExamplesPackageDirs() {
   const p = spawnSync('git', ['ls-files', path.join(TOP, 'examples')], {
-    encoding: 'utf8'
+    encoding: 'utf8',
   });
   return p.stdout
     .split('\n')
     .filter(f => path.basename(f) === 'package.json')
-    .map(path.dirname)
+    .map(path.dirname);
 }
 
 async function npmRunInExamples(args) {
@@ -70,10 +70,14 @@ async function npmRunInExamples(args) {
     const p = spawnSync('npm', ['run'].concat(args), {
       cwd: pkgDir,
       stdio: 'inherit',
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
     if (p.status || p.signal || p.error) {
-      logError(`"npm run ${args.join(' ')}" failed in "${pkgDir}": status=${p.status} signal=${p.signal} error=${p.error}`);
+      logError(
+        `"npm run ${args.join(' ')}" failed in "${pkgDir}": status=${
+          p.status
+        } signal=${p.signal} error=${p.error}`
+      );
       finalRetval = 1;
     }
   }

@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 import { Span, Tracer, SpanKind, Attributes } from '@opentelemetry/api';
+import { ATTR_AWS_SNS_TOPIC_ARN, ATTR_MESSAGING_SYSTEM } from '../semconv';
 import {
-  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
-  SEMATTRS_MESSAGING_DESTINATION,
-  SEMATTRS_MESSAGING_DESTINATION_KIND,
-  SEMATTRS_MESSAGING_SYSTEM,
-} from '@opentelemetry/semantic-conventions';
-import { ATTR_AWS_SNS_TOPIC_ARN } from '../semconv';
+  ATTR_MESSAGING_DESTINATION,
+  ATTR_MESSAGING_DESTINATION_KIND,
+  MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+} from '../semconv-obsolete';
 import {
   NormalizedRequest,
   NormalizedResponse,
@@ -37,25 +36,28 @@ export class SnsServiceExtension implements ServiceExtension {
     let spanKind: SpanKind = SpanKind.CLIENT;
     let spanName = `SNS ${request.commandName}`;
     const spanAttributes: Attributes = {
-      [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sns',
+      [ATTR_MESSAGING_SYSTEM]: 'aws.sns',
     };
 
     if (request.commandName === 'Publish') {
       spanKind = SpanKind.PRODUCER;
 
-      spanAttributes[SEMATTRS_MESSAGING_DESTINATION_KIND] =
-        MESSAGINGDESTINATIONKINDVALUES_TOPIC;
+      spanAttributes[ATTR_MESSAGING_DESTINATION_KIND] =
+        MESSAGING_DESTINATION_KIND_VALUE_TOPIC;
       const { TopicArn, TargetArn, PhoneNumber } = request.commandInput;
-      spanAttributes[SEMATTRS_MESSAGING_DESTINATION] =
-        this.extractDestinationName(TopicArn, TargetArn, PhoneNumber);
-      // ToDO: Use SEMATTRS_MESSAGING_DESTINATION_NAME when implemented
+      spanAttributes[ATTR_MESSAGING_DESTINATION] = this.extractDestinationName(
+        TopicArn,
+        TargetArn,
+        PhoneNumber
+      );
+      // ToDO: Use ATTR_MESSAGING_DESTINATION_NAME when implemented
       spanAttributes['messaging.destination.name'] =
         TopicArn || TargetArn || PhoneNumber || 'unknown';
 
       spanName = `${
         PhoneNumber
           ? 'phone_number'
-          : spanAttributes[SEMATTRS_MESSAGING_DESTINATION]
+          : spanAttributes[ATTR_MESSAGING_DESTINATION]
       } send`;
     }
 

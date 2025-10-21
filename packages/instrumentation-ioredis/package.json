@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-ioredis",
-  "version": "0.51.0",
+  "version": "0.55.0",
   "description": "OpenTelemetry instrumentation for `ioredis` database redis client for Redis",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -10,20 +10,20 @@
     "directory": "packages/instrumentation-ioredis"
   },
   "scripts": {
-    "test": "nyc mocha 'test/**/*.test.ts'",
-    "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
-    "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",
-    "test-all-versions": "tav",
-    "test-all-versions:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test-all-versions",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../scripts/lint-readme.js",
-    "version:update": "node ../../scripts/version-update.js",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-ioredis",
     "compile": "tsc -p .",
-    "prepublishOnly": "npm run compile"
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-ioredis",
+    "lint:readme": "node ../../scripts/lint-readme.js",
+    "prepublishOnly": "npm run compile",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test:debug": "cross-env RUN_REDIS_TESTS=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
+    "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
+    "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "test-services:start": "cd ../.. && npm run test-services:start redis",
+    "test-services:stop": "cd ../.. && npm run test-services:stop redis",
+    "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
     "instrumentation",
@@ -53,15 +53,16 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.49.0",
+    "@opentelemetry/contrib-test-utils": "^0.54.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/ioredis4": "npm:@types/ioredis@4.28.10",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
     "cross-env": "7.0.3",
-    "ioredis": "5.2.2",
+    "ioredis": "5.8.1",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
@@ -69,9 +70,8 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.203.0",
-    "@opentelemetry/redis-common": "^0.38.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/instrumentation": "^0.207.0",
+    "@opentelemetry/redis-common": "^0.38.2"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-ioredis#readme"
 }

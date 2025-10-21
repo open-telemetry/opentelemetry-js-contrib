@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/redis-common",
-  "version": "0.38.0",
+  "version": "0.38.2",
   "description": "Redis utilities for redis instrumentations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -8,10 +8,8 @@
     "access": "public"
   },
   "scripts": {
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/redis-common",
     "compile": "tsc --build tsconfig.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/redis-common",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "watch": "tsc -w"

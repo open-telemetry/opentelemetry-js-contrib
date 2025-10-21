@@ -23,14 +23,14 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  SEMATTRS_NET_HOST_IP,
-  SEMATTRS_NET_HOST_PORT,
-  SEMATTRS_NET_PEER_IP,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-  SEMATTRS_NET_TRANSPORT,
-  NETTRANSPORTVALUES_IP_TCP,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_NET_HOST_IP,
+  ATTR_NET_HOST_PORT,
+  ATTR_NET_PEER_IP,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+  ATTR_NET_TRANSPORT,
+  NET_TRANSPORT_VALUE_IP_TCP,
+} from './semconv';
 import { TLSAttributes } from './types';
 import { NormalizedOptions, SocketEvent } from './internal-types';
 import { getNormalizedArgs, IPC_TRANSPORT } from './utils';
@@ -190,8 +190,8 @@ export class NetInstrumentation extends InstrumentationBase {
   private _startIpcSpan(options: NormalizedOptions, socket: Socket) {
     const span = this.tracer.startSpan('ipc.connect', {
       attributes: {
-        [SEMATTRS_NET_TRANSPORT]: IPC_TRANSPORT,
-        [SEMATTRS_NET_PEER_NAME]: options.path,
+        [ATTR_NET_TRANSPORT]: IPC_TRANSPORT,
+        [ATTR_NET_PEER_NAME]: options.path,
       },
     });
 
@@ -203,9 +203,9 @@ export class NetInstrumentation extends InstrumentationBase {
   private _startTcpSpan(options: NormalizedOptions, socket: Socket) {
     const span = this.tracer.startSpan('tcp.connect', {
       attributes: {
-        [SEMATTRS_NET_TRANSPORT]: NETTRANSPORTVALUES_IP_TCP,
-        [SEMATTRS_NET_PEER_NAME]: options.host,
-        [SEMATTRS_NET_PEER_PORT]: options.port,
+        [ATTR_NET_TRANSPORT]: NET_TRANSPORT_VALUE_IP_TCP,
+        [ATTR_NET_PEER_NAME]: options.host,
+        [ATTR_NET_PEER_PORT]: options.port,
       },
     });
 
@@ -246,9 +246,9 @@ function registerListeners(
 
   const setHostAttributes = () => {
     span.setAttributes({
-      [SEMATTRS_NET_PEER_IP]: socket.remoteAddress,
-      [SEMATTRS_NET_HOST_IP]: socket.localAddress,
-      [SEMATTRS_NET_HOST_PORT]: socket.localPort,
+      [ATTR_NET_PEER_IP]: socket.remoteAddress,
+      [ATTR_NET_HOST_IP]: socket.localAddress,
+      [ATTR_NET_HOST_PORT]: socket.localPort,
     });
   };
 

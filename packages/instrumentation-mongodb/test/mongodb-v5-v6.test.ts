@@ -44,10 +44,7 @@ let instrumentation: MongoDBInstrumentation;
 
 import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
-import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
-
-// We can't use @ts-expect-error because it will fail depending on the used mongodb version on tests
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { ATTR_DB_STATEMENT } from '../src/semconv';
 
 describe('MongoDBInstrumentation-Tracing-v5', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -368,7 +365,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
             );
             const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
             );
             assert.strictEqual(dbStatement[key], '?');
             done();
@@ -403,7 +400,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
             );
             const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
             );
             assert.deepEqual(dbStatement, {
               aggregate: '?',
@@ -456,7 +453,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               );
               const mongoSpan = spans.find(s => s.name === operationName);
               const dbStatement = JSON.parse(
-                mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
+                mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
               );
               assert.strictEqual(dbStatement[key], value);
               done();
@@ -509,18 +506,29 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         create({
           responseHook: (span: Span, result: any) => {
             const { data } = result;
-            if (data.n) {
-              span.setAttribute('mongodb_insert_count', result.data.n);
+
+            // from 6.19.0 insert returns a MongoDBResponse class with a
+            // `toObject()` method instead of the plain { ok: 1, n: [Number] } response
+            let insertCount = data.n;
+            if (!insertCount && typeof data.toObject === 'function') {
+              insertCount = data.toObject().n;
             }
+
+            if (insertCount) {
+              span.setAttribute('mongodb_insert_count', insertCount);
+            }
+
             // from v6.8.0 the cursor property is not an object but an instance of
             // `CursorResponse`. We need to use the `toObject` method to be able to inspect the data
-            const cursorObj = data.cursor.firstBatch
-              ? data.cursor
-              : data.cursor.toObject();
-            span.setAttribute(
-              'mongodb_first_result',
-              JSON.stringify(cursorObj.firstBatch[0])
-            );
+            if (data.cursor) {
+              const cursorObj = data.cursor.firstBatch
+                ? data.cursor
+                : data.cursor.toObject();
+              span.setAttribute(
+                'mongodb_first_result',
+                JSON.stringify(cursorObj.firstBatch[0])
+              );
+            }
           },
         });
       });
@@ -754,5 +762,3 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
     });
   });
 });
-
-/* eslint-enable @typescript-eslint/ban-ts-comment */

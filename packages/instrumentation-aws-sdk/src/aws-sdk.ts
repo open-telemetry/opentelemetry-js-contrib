@@ -40,6 +40,8 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import type {
   MiddlewareStack,
@@ -56,7 +58,8 @@ import {
 } from './utils';
 import { propwrap } from './propwrap';
 import { RequestMetadata } from './services/ServiceExtension';
-import { SEMATTRS_HTTP_STATUS_CODE } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_STATUS_CODE } from './semconv';
+import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 const V3_CLIENT_CONFIG_KEY = Symbol(
   'opentelemetry.instrumentation.aws-sdk.client.config'
@@ -70,8 +73,14 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
   // need declare since initialized in callbacks from super constructor
   private declare servicesExtensions: ServicesExtensions;
 
+  private _semconvStability: SemconvStability;
+
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._semconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   protected init(): InstrumentationModuleDefinition[] {
@@ -233,6 +242,30 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     );
   }
 
+  private _callUserExceptionResponseHook(
+    span: Span,
+    request: NormalizedRequest,
+    err: any
+  ) {
+    const { exceptionHook } = this.getConfig();
+    if (!exceptionHook) return;
+    const requestInfo: AwsSdkRequestHookInformation = {
+      request,
+    };
+
+    safeExecuteInTheMiddle(
+      () => exceptionHook(span, requestInfo, err),
+      (e: Error | undefined) => {
+        if (e)
+          diag.error(
+            `${AwsInstrumentation.component} instrumentation: exceptionHook error`,
+            e
+          );
+      },
+      true
+    );
+  }
+
   private _getV3ConstructStackPatch(
     moduleVersion: string | undefined,
     original: (...args: unknown[]) => MiddlewareStack<any, any>
@@ -382,10 +415,15 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                   const httpStatusCode =
                     response.output?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
-                    span.setAttribute(
-                      SEMATTRS_HTTP_STATUS_CODE,
-                      httpStatusCode
-                    );
+                    if (self._semconvStability & SemconvStability.OLD) {
+                      span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
+                    }
+                    if (self._semconvStability & SemconvStability.STABLE) {
+                      span.setAttribute(
+                        ATTR_HTTP_RESPONSE_STATUS_CODE,
+                        httpStatusCode
+                      );
+                    }
                   }
 
                   const extendedRequestId =
@@ -424,10 +462,15 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
 
                   const httpStatusCode = err?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
-                    span.setAttribute(
-                      SEMATTRS_HTTP_STATUS_CODE,
-                      httpStatusCode
-                    );
+                    if (self._semconvStability & SemconvStability.OLD) {
+                      span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
+                    }
+                    if (self._semconvStability & SemconvStability.STABLE) {
+                      span.setAttribute(
+                        ATTR_HTTP_RESPONSE_STATUS_CODE,
+                        httpStatusCode
+                      );
+                    }
                   }
 
                   const extendedRequestId = err?.extendedRequestId;
@@ -443,6 +486,11 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                     message: err.message,
                   });
                   span.recordException(err);
+                  self._callUserExceptionResponseHook(
+                    span,
+                    normalizedRequest,
+                    err
+                  );
                   throw err;
                 })
                 .finally(() => {

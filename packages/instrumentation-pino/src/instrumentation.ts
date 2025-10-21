@@ -31,7 +31,7 @@ import { PinoInstrumentationConfig } from './types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getTimeConverter, OTelPinoStream } from './log-sending-utils';
 
-const pinoVersions = ['>=5.14.0 <10'];
+const pinoVersions = ['>=5.14.0 <11'];
 
 const DEFAULT_LOG_KEYS = {
   traceId: 'trace_id',
@@ -67,10 +67,14 @@ export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentation
           if (origMixin === undefined) {
             logger[mixinSym] = otelMixin;
           } else {
-            logger[mixinSym] = (ctx: object, level: number) => {
+            logger[mixinSym] = (
+              ctx: object,
+              level: number,
+              ...rest: unknown[]
+            ) => {
               return Object.assign(
                 otelMixin(ctx, level),
-                origMixin(ctx, level)
+                origMixin(ctx, level, ...rest)
               );
             };
           }

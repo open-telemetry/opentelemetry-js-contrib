@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-undici",
-  "version": "0.14.0",
+  "version": "0.18.0",
   "description": "OpenTelemetry instrumentation for `undici` http client and Node.js fetch()",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -10,17 +10,15 @@
     "directory": "packages/instrumentation-undici"
   },
   "scripts": {
-    "prepublishOnly": "npm run compile",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
-    "compile": "tsc -p .",
-    "test": "nyc mocha test/**/*.test.ts",
-    "test-all-versions": "tav",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "watch": "tsc -w",
-    "version:update": "node ../../scripts/version-update.js"
+    "compile": "tsc -p .",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-undici",
+    "prepublishOnly": "npm run compile",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc --no-clean mocha test/**/*.test.ts",
+    "test-all-versions": "tav",
+    "version:update": "node ../../scripts/version-update.js",
+    "watch": "tsc -w"
   },
   "keywords": [
     "opentelemetry",
@@ -62,7 +60,8 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.203.0"
+    "@opentelemetry/instrumentation": "^0.207.0",
+    "@opentelemetry/semantic-conventions": "^1.24.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-undici#readme",
   "sideEffects": false

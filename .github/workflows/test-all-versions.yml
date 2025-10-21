@@ -25,15 +25,15 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       # Use the same Node.js version used for `release-please` workflow.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 18
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Build
         run: npm run compile
       - name: Upload Build Artifacts
@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["18", "20", "22"]
+        node: ["18", "20", "22", "24"]
     runs-on: ubuntu-latest
     services:
       mongo:
@@ -152,6 +152,7 @@ jobs:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       RUN_MONGODB_TESTS: 1
+      RUN_MONGOOSE_TESTS: 1
       RUN_MSSQL_TESTS: 1
       RUN_MYSQL_TESTS: 1
       RUN_ORACLEDB_TESTS: 1
@@ -160,16 +161,18 @@ jobs:
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
       - name: Install
+        # Post install scripts are required for some deps for successful test
+        # runs: sqlite3, better-sqlite3, and possibly esbuild.
         run: npm ci
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: tav-build-cache-${{ github.run_number }}
           path: .nx

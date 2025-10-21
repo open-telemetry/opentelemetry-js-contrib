@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-mysql",
-  "version": "0.49.0",
+  "version": "0.53.0",
   "description": "OpenTelemetry instrumentation for `mysql` database client for MySQL",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,13 +11,15 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-mysql",
     "compile": "tsc -p .",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "lint": "eslint . --ext .ts",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-mysql",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
+    "//todo": "echo \"add test-all-versions\"",
+    "test-services:start": "cd ../.. && npm run test-services:start mysql",
+    "test-services:stop": "cd ../.. && npm run test-services:stop mysql",
     "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
@@ -47,12 +49,13 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.49.0",
+    "@opentelemetry/contrib-test-utils": "^0.54.0",
     "@opentelemetry/sdk-metrics": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
+    "cross-env": "7.0.3",
     "mysql": "2.18.1",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
@@ -60,8 +63,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.203.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0",
+    "@opentelemetry/instrumentation": "^0.207.0",
     "@types/mysql": "2.15.27"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-mysql#readme"

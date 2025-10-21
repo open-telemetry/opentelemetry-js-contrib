@@ -8,81 +8,72 @@ permissions:
 
 name: Run Release Please
 jobs:
+  # creates the release PR, and publishes releases
   release-please:
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # required for pushing changes
-      id-token: write
     steps:
-      # The logic below handles the npm publication:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      # If you update this version make sure to keep in sync:
-      # - `build-and-cache` job of unit-test workflow
-      # - `build-and-cache` job of test-all-versions workflow
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 18
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install packages
         run: |
-          npm ci
+          npm ci --ignore-scripts
+
+      - uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        id: otelbot-token
+        with:
+          app-id: ${{ vars.OTELBOT_JS_CONTRIB_APP_ID }}
+          private-key: ${{ secrets.OTELBOT_JS_CONTRIB_PRIVATE_KEY }}
 
       - uses: googleapis/release-please-action@7987652d64b4581673a76e33ad5e98e3dd56832f # v4.1.3
         id: release
         with:
-          token: ${{secrets.RELEASE_PR_TOKEN}}
+          token: ${{ steps.otelbot-token.outputs.token }}
           target-branch: main
 
       # get release PR as we're currently on main
       - name: Checkout release PR
         # only checkout if a PR has been created, otherwise this will fail
         if: ${{ steps.release.outputs.pr }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: release-please--branches--main
           # use a token so that workflows on the PR run when we push later
-          token: ${{ secrets.RELEASE_PR_TOKEN }}
-
-      # release-please does not do this on its own, so we do it here instead
-      - name: Update package-lock.json in PR
-        # only update if a PR has been created
-        if: ${{ steps.release.outputs.pr }}
-        run: |
-          npm install --ignore-scripts --package-lock-only
-          git add package-lock.json
-          git config user.name opentelemetrybot
-          git config user.email 107717825+opentelemetrybot@users.noreply.github.com
-          git commit -m "chore: sync package-lock.json"
-          git push
-
-      # get main again
-      - name: Checkout Repository
-        # only checkout if a release has been created
-        if: ${{ steps.release.outputs.releases_created }}
-        uses: actions/checkout@v4
-        with:
+          token: ${{ steps.otelbot-token.outputs.token }}
           fetch-depth: 0
 
-      - name: Rebuild Packages
-        # only rebuild if a release has been created
-        if: ${{ steps.release.outputs.releases_created }}
-        run: |
-          npm ci
-          npm run compile
-
+  # If releases have been created, then publish to npm.
+  npm-publish:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    permissions:
+      contents: read
+      id-token: write # needed for OIDC and provenance
+    runs-on: ubuntu-latest
+    environment: npm-publish-environment
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          # Require npm 11.5.1 or later for https://docs.npmjs.com/trusted-publishers.
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci --ignore-scripts
+      - run: npm run compile
       # Release Please has already incremented versions and published tags, so we just
       # need to publish all unpublished versions to npm here
       # See: https://github.com/lerna/lerna/tree/main/libs/commands/publish#bump-from-package
       - name: Publish to npm
-        # only publish if a release has been created
-        if: ${{ steps.release.outputs.releases_created }}
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
           NPM_CONFIG_PROVENANCE: true
         run: npx lerna publish from-package --no-push --no-private --no-git-tag-version --yes

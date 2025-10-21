@@ -1,5 +1,5 @@
 {
-  "name": "opentelemetry-contrib",
+  "name": "opentelemetry-js-contrib",
   "version": "0.1.0",
   "description": "This is a repository for OpenTelemetry JavaScript contributions.",
   "repository": {
@@ -9,29 +9,29 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
   "scripts": {
     "clean": "nx run-many -t clean",
     "version:update": "nx run-many -t version:update",
     "compile": "nx run-many -t compile",
+    "compile:ci:affected": "nx affected -t compile",
+    "list:affected": "nx affected -t test-all-versions --graph=stdout | jq -c '.tasks.tasks[].target.project'",
     "test": "nx run-many -t test",
+    "test:ci:affected": "nx affected -t test",
     "test:browser": "nx run-many -t test:browser",
-    "test:ci:changed": "nx affected -t test --base=origin/main --head=HEAD",
-    "test-all-versions": "nx run-many -t test-all-versions",
+    "test:browser:ci:affected": "nx affected -t test:browser",
+    "test-all-versions": "npm run --if-present test-all-versions --workspaces",
+    "test-all-versions:ci:affected": "npm --loglevel=silent run list:affected | xargs -I {} -t npm run --if-present test-all-versions -w {}",
     "test-services:start": "docker compose -f ./test/docker-compose.yaml up -d --wait",
     "test-services:stop": "docker compose -f ./test/docker-compose.yaml down",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env npm test",
-    "changelog": "lerna-changelog",
-    "lint": "nx run-many -t lint && npm run lint:deps && npm run lint:readme && npm run lint:markdown && npm run lint:semconv-deps && npm run lint:examples",
-    "lint:fix": "nx run-many -t lint:fix && npm run lint:markdown:fix",
+    "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env npm run test-all-versions",
+    "lint": "nx run-many -t lint && npm run lint:deps && npm run lint:readme && npm run lint:markdown && npm run lint:semconv-deps",
+    "lint:fix": "nx run-many -t lint --fix && npm run lint:markdown:fix",
     "lint:deps": "npx --yes knip@5.33.3 --dependencies --production --tags=-knipignore",
-    "lint:examples": "./scripts/npm-run-in-examples.js --if-present lint",
-    "lint:examples:fix": "./scripts/npm-run-in-examples.js --if-present lint:fix",
     "lint:markdown": "markdownlint-cli2 $(git ls-files '*.md')",
     "lint:markdown:fix": "markdownlint-cli2 --fix $(git ls-files '*.md')",
     "lint:readme": "nx run-many -t lint:readme",
-    "lint:semconv-deps": "./scripts/lint-semconv-deps.mjs"
+    "lint:semconv-deps": "./scripts/lint-semconv-deps.mjs -x packages/contrib-test-utils/src/resource-assertions.ts"
   },
   "keywords": [
     "opentelemetry",
@@ -44,41 +44,32 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "5.62.0",
-    "@typescript-eslint/parser": "5.62.0",
+    "@eslint/js": "9.34.0",
+    "@nx/eslint": "20.8.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.17.1",
+    "@types/semver": "^7.7.1",
+    "@types/webpack-env": "^1.18.8",
     "cross-env": "^7.0.3",
-    "eslint": "8.7.0",
-    "eslint-config-airbnb-base": "15.0.0",
-    "eslint-config-prettier": "8.8.0",
+    "eslint": "9.34.0",
     "eslint-plugin-header": "3.1.1",
-    "eslint-plugin-import": "2.27.5",
-    "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-prettier": "4.2.1",
-    "glob": "^10.4.5",
-    "lerna": "8.2.3",
-    "lerna-changelog": "2.2.0",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-n": "17.21.3",
+    "eslint-plugin-yet-another-license-header": "0.2.0",
+    "glob": "^11.0.3",
+    "globals": "^16.3.0",
+    "lerna": "9.0.0",
     "markdownlint-cli2": "0.13.0",
     "minimatch": "^9.0.3",
-    "mocha": "^10.7.3",
-    "prettier": "2.8.8",
+    "mocha": "^11.0.0",
+    "nx": "20.8.2",
+    "prettier": "3.6.2",
     "process": "0.11.10",
     "semver": "^7.6.0",
     "ts-node": "10.9.2",
+    "typescript": "5.0.4",
+    "typescript-eslint": "8.41.0",
     "util": "0.12.5"
-  },
-  "changelog": {
-    "labels": {
-      "breaking": ":boom: Breaking Change",
-      "bug": ":bug: Bug Fix",
-      "plugin-request": ":tada: New Plugins",
-      "enhancement": ":rocket: Enhancement",
-      "internal": ":house: Internal",
-      "documentation": ":memo: Documentation"
-    },
-    "ignoreCommitters": [
-      "renovate-bot",
-      "dependabot"
-    ]
   },
   "workspaces": [
     "packages/*"

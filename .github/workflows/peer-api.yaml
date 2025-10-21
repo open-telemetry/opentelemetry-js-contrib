@@ -16,10 +16,10 @@ jobs:
       image: node:20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install script dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Check API dependency semantics
         run: node ./scripts/peer-api-check.js

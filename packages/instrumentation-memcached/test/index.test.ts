@@ -23,7 +23,6 @@ import {
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -31,13 +30,13 @@ import {
 import type * as Memcached from 'memcached';
 import * as assert from 'assert';
 import { MemcachedInstrumentation } from '../src';
+import { ATTR_EXCEPTION_MESSAGE } from '@opentelemetry/semantic-conventions';
 import {
-  DBSYSTEMVALUES_MEMCACHED,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_EXCEPTION_MESSAGE,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_MEMCACHED,
+  ATTR_DB_SYSTEM,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from '../src/semconv';
 import * as util from 'util';
 
 const instrumentation = new MemcachedInstrumentation();
@@ -51,9 +50,9 @@ const CONFIG = {
 };
 
 const DEFAULT_ATTRIBUTES: Attributes = {
-  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MEMCACHED,
-  [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
-  [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
+  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MEMCACHED,
+  [ATTR_NET_PEER_NAME]: CONFIG.host,
+  [ATTR_NET_PEER_PORT]: CONFIG.port,
 };
 
 interface ExtendedMemcached extends Memcached {
@@ -71,8 +70,7 @@ const getClient = (...args: any[]): ExtendedMemcached => {
 };
 const KEY = 'foo';
 const VALUE = '_test_value_';
-const shouldTestLocal = process.env.RUN_MEMCACHED_TESTS_LOCAL;
-const shouldTest = process.env.RUN_MEMCACHED_TESTS || shouldTestLocal;
+const shouldTest = process.env.RUN_MEMCACHED_TESTS;
 
 describe('memcached@2.x', () => {
   const provider = new NodeTracerProvider({
@@ -102,16 +100,6 @@ describe('memcached@2.x', () => {
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
       this.skip();
-    }
-
-    if (shouldTestLocal) {
-      testUtils.startDocker('memcached');
-    }
-  });
-
-  after(() => {
-    if (shouldTestLocal) {
-      testUtils.cleanUpDocker('memcached');
     }
   });
 
@@ -182,7 +170,7 @@ describe('memcached@2.x', () => {
 
           assertMatch(
             instrumentationSpans?.[0]?.events[0]?.attributes?.[
-              SEMATTRS_EXCEPTION_MESSAGE
+              ATTR_EXCEPTION_MESSAGE
             ] as 'string',
             /not stored/
           );

@@ -123,9 +123,8 @@ describe('pg', () => {
   });
   const tracer = provider.getTracer('external');
 
-  const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
-  const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
-  const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
+  const testPostgres = process.env.RUN_POSTGRES_TESTS;
+  const shouldTest = testPostgres; // Skips these tests if false (default)
 
   function getExecutedQueries() {
     return (client as any).queryQueue.push.args.flat() as (pg.Query & {
@@ -145,10 +144,6 @@ describe('pg', () => {
       skip();
     }
 
-    if (testPostgresLocally) {
-      testUtils.startDocker('postgres');
-    }
-
     instrumentation = new PgInstrumentation();
 
     contextManager = new AsyncLocalStorageContextManager().enable();
@@ -162,10 +157,6 @@ describe('pg', () => {
   });
 
   after(async () => {
-    if (testPostgresLocally) {
-      testUtils.cleanUpDocker('postgres');
-    }
-
     await client.end();
   });
 
@@ -1096,6 +1087,22 @@ describe('pg', () => {
 });
 
 describe('pg (ESM)', () => {
+  const testPostgres = process.env.RUN_POSTGRES_TESTS;
+  const shouldTest = testPostgres; // Skips these tests if false (default)
+
+  before(function () {
+    const skip = () => {
+      // this.skip() workaround
+      // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
+      this.test!.parent!.pending = true;
+      this.skip();
+    };
+
+    if (!shouldTest) {
+      skip();
+    }
+  });
+
   it('should work with ESM usage', async () => {
     await testUtils.runTestFixture({
       cwd: __dirname,

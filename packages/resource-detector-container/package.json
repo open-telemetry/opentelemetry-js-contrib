@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-container",
-  "version": "0.7.3",
+  "version": "0.7.10",
   "description": "Opentelemetry resource detector to get container resource attributes",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -12,10 +12,8 @@
   },
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "setup:dev": "nx run-many -t compile -p @opentelemetry/resource-detector-container",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/resource-detector-container",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -40,13 +38,12 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.49.0",
-    "@opentelemetry/instrumentation-fs": "^0.23.0",
+    "@opentelemetry/contrib-test-utils": "^0.54.0",
+    "@opentelemetry/instrumentation-fs": "^0.27.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
-    "eslint-plugin-header": "^3.1.1",
     "nock": "13.3.3",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
@@ -58,8 +55,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/resources": "^2.0.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/resources": "^2.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/resource-detector-container#readme",
   "sideEffects": false
