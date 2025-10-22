@@ -60,7 +60,7 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.207.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
-    "@types/aws-lambda": "8.10.155"
+    "@types/aws-lambda": "^8.10.155"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-aws-lambda#readme"
 }
