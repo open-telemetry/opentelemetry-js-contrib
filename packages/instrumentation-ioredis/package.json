@@ -62,7 +62,7 @@
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
     "cross-env": "7.0.3",
-    "ioredis": "5.8.1",
+    "ioredis": "5.8.2",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
