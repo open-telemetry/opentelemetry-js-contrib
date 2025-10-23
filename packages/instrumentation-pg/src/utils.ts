@@ -343,7 +343,7 @@ export function patchCallback(
         attributes[ATTR_ERROR_TYPE] = (err as any)['code'];
       }
       if (err instanceof Error) {
-        span.recordException(err);
+        span.recordException(sanitizedErrorMessage(err));
       }
       span.setStatus({
         code: SpanStatusCode.ERROR,
@@ -415,7 +415,7 @@ export function patchCallbackPGPool(
   ) {
     if (err) {
       if (err instanceof Error) {
-        span.recordException(err);
+        span.recordException(sanitizedErrorMessage(err));
       }
       span.setStatus({
         code: SpanStatusCode.ERROR,
@@ -434,7 +434,7 @@ export function patchClientConnectCallback(span: Span, cb: Function): Function {
   ) {
     if (err) {
       if (err instanceof Error) {
-        span.recordException(err);
+        span.recordException(sanitizedErrorMessage(err));
       }
       span.setStatus({
         code: SpanStatusCode.ERROR,
@@ -468,3 +468,14 @@ export type ObjectWithText = {
   text: string;
   [k: string]: unknown;
 };
+
+/**
+ * Generates a sanitized message for the error.
+ * Only includes the error type and PostgreSQL error code, omitting any sensitive details.
+ */
+export function sanitizedErrorMessage(error: unknown): string {
+  const name = (error as any)?.name ?? 'PostgreSQLError';
+  const code = (error as any)?.code ?? 'UNKNOWN';
+
+  return `PostgreSQL error of type '${name}' occurred (code: ${code})`;
+}

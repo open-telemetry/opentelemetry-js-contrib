@@ -470,7 +470,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           result = original.apply(this, args as never);
         } catch (e: unknown) {
           if (e instanceof Error) {
-            span.recordException(e);
+            span.recordException(utils.sanitizedErrorMessage(e));
           }
           span.setStatus({
             code: SpanStatusCode.ERROR,
@@ -495,7 +495,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             .catch((error: Error) => {
               return new Promise((_, reject) => {
                 if (error instanceof Error) {
-                  span.recordException(error);
+                  span.recordException(utils.sanitizedErrorMessage(error));
                 }
                 span.setStatus({
                   code: SpanStatusCode.ERROR,
@@ -619,7 +619,7 @@ function handleConnectResult(span: Span, connectResult: unknown) {
       })
       .catch((error: unknown) => {
         if (error instanceof Error) {
-          span.recordException(error);
+          span.recordException(utils.sanitizedErrorMessage(error));
         }
         span.setStatus({
           code: SpanStatusCode.ERROR,
