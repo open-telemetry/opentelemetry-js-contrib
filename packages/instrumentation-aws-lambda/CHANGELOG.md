@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.59.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.59.0...instrumentation-aws-lambda-v0.59.1) (2025-10-23)
+
+
+### Bug Fixes
+
+* **instrumentation-aws-lambda:** relax `@types/aws-lambda` dependency constraint ([#3168](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3168)) ([310c8ad](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/310c8ad68e64fd64524fdac2c746d4ea05ec651f))
+
 ## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.58.0...instrumentation-aws-lambda-v0.59.0) (2025-10-21)
 
 
