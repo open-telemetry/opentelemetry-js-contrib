@@ -36,7 +36,7 @@ import {
   ATTR_SYSTEM_DEVICE,
   ATTR_SYSTEM_MEMORY_STATE,
 } from '../src/semconv';
-import { HostMetrics } from '../src';
+import { HostMetrics, MetricsCollectorConfig } from '../src';
 
 const cpuJson = require('./mocks/cpu.json');
 const processJson = require('./mocks/process.json');
@@ -450,12 +450,111 @@ describe('Host Metrics', () => {
       ensureValue(metric, {}, 123456);
     });
   });
+
+  describe('metricGroups config option', () => {
+    let sandbox: sinon.SinonSandbox;
+    let hostMetrics: HostMetrics;
+    let reader: TestMetricReader;
+
+    // This "setup" does the same as `beforeEach` above, with the addition of
+    // `hostMetricsConfig`.
+    const setup = async (
+      hostMetricsConfig: Partial<MetricsCollectorConfig>
+    ) => {
+      sandbox = sinon.createSandbox();
+      sandbox.useFakeTimers();
+
+      sandbox.stub(os, 'freemem').callsFake(mockedOS.freemem);
+      sandbox.stub(os, 'totalmem').callsFake(mockedOS.totalmem);
+      sandbox.stub(os, 'cpus').callsFake(() => mockedOS.cpus());
+      sandbox.stub(process, 'uptime').callsFake(mockedProcess.uptime);
+      sandbox
+        .stub(process, 'cpuUsage')
+        .callsFake(() => mockedProcess.cpuUsage());
+      sandbox
+        .stub(process.memoryUsage, 'rss')
+        .callsFake(mockedProcess.memoryUsage.rss);
+      sandbox.stub(Network, 'networkStats').callsFake(mockedSI.networkStats);
+
+      reader = new TestMetricReader();
+
+      meterProvider = new MeterProvider({
+        readers: [reader],
+      });
+
+      hostMetrics = new HostMetrics(
+        Object.assign(
+          {
+            meterProvider,
+            name: '', // to get default instrumentation scope name
+          },
+          hostMetricsConfig
+        )
+      );
+
+      await hostMetrics.start();
+
+      // Drop first frame cpu metrics, see
+      // src/common.ts getCpuUsageData/getProcessCpuUsageData
+      await reader.collect();
+
+      // advance the clock for the next collection
+      sandbox.clock.tick(1000);
+
+      // invalidates throttles
+      countSI = 0;
+    };
+    const teardown = () => {
+      sandbox.restore();
+    };
+
+    const testCaseData = [
+      {
+        metricGroups: ['system.cpu'],
+        expectedMetricNames: ['system.cpu.time', 'system.cpu.utilization'],
+      },
+      {
+        metricGroups: ['system.memory'],
+        expectedMetricNames: [
+          'system.memory.usage',
+          'system.memory.utilization',
+        ],
+      },
+      {
+        metricGroups: ['system.network'],
+        expectedMetricNames: [
+          'system.network.dropped',
+          'system.network.errors',
+          'system.network.io',
+        ],
+      },
+      {
+        metricGroups: ['process.cpu'],
+        expectedMetricNames: ['process.cpu.time', 'process.cpu.utilization'],
+      },
+      {
+        metricGroups: ['process.memory'],
+        expectedMetricNames: ['process.memory.usage'],
+      },
+    ];
+
+    for (const testCaseDatum of testCaseData) {
+      it(`metricGroups: ${JSON.stringify(
+        testCaseDatum.metricGroups
+      )}`, async () => {
+        await setup({ metricGroups: testCaseDatum.metricGroups });
+        const metricData = await getMetricData(reader);
+        const metricNames = metricData.map(md => md.descriptor.name);
+        assert.deepStrictEqual(metricNames, testCaseDatum.expectedMetricNames);
+        teardown();
+      });
+    }
+  });
 });
 
-async function getRecords(
-  metricReader: MetricReader,
-  name: string
-): Promise<MetricData> {
+async function getMetricData(
+  metricReader: MetricReader
+): Promise<MetricData[]> {
   const collectionResult = await metricReader.collect();
   assert(collectionResult != null);
   assert.strictEqual(collectionResult.resourceMetrics.scopeMetrics.length, 1);
@@ -465,7 +564,15 @@ async function getRecords(
     '@opentelemetry/host-metrics',
     'default instrumentation scope name is the package name'
   );
-  const metricDataList = scopeMetrics.metrics.filter(
+  return scopeMetrics.metrics;
+}
+
+async function getRecords(
+  metricReader: MetricReader,
+  name: string
+): Promise<MetricData> {
+  const metricData = await getMetricData(metricReader);
+  const metricDataList = metricData.filter(
     metric => metric.descriptor.name === name
   );
   assert.strictEqual(metricDataList.length, 1);
