@@ -1,6 +1,17 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.66.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.66.0...auto-instrumentations-node-v0.66.1) (2025-10-23)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.59.0 to ^0.59.1
+    * @opentelemetry/instrumentation-memcached bumped from ^0.51.0 to ^0.52.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.60.0 to ^0.61.0
+
 ## [0.66.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.65.0...auto-instrumentations-node-v0.66.0) (2025-10-21)
 
 
