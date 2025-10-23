@@ -19,14 +19,23 @@ import {
   isWrapped,
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import type * as Memcached from 'memcached';
 import {
+  DB_SYSTEM_NAME_VALUE_MEMCACHED,
   DB_SYSTEM_VALUE_MEMCACHED,
   ATTR_DB_OPERATION,
   ATTR_DB_STATEMENT,
   ATTR_DB_SYSTEM,
 } from './semconv';
+import {
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+} from '@opentelemetry/semantic-conventions';
+
 import * as utils from './utils';
 import { InstrumentationConfig } from './types';
 /** @knipignore */
@@ -34,18 +43,31 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export class MemcachedInstrumentation extends InstrumentationBase<InstrumentationConfig> {
   static readonly COMPONENT = 'memcached';
-  static readonly COMMON_ATTRIBUTES = {
-    [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MEMCACHED,
-  };
   static readonly DEFAULT_CONFIG: InstrumentationConfig = {
     enhancedDatabaseReporting: false,
   };
+
+  private _netSemconvStability!: SemconvStability;
+  private _dbSemconvStability!: SemconvStability;
 
   constructor(config: InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, {
       ...MemcachedInstrumentation.DEFAULT_CONFIG,
       ...config,
     });
+    this._setSemconvStabilityFromEnv();
+  }
+
+  // Used for testing.
+  private _setSemconvStabilityFromEnv() {
+    this._netSemconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._dbSemconvStability = semconvStabilityFromStr(
+      'database',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   override setConfig(config: InstrumentationConfig = {}) {
@@ -90,15 +112,24 @@ export class MemcachedInstrumentation extends InstrumentationBase<Instrumentatio
       if (typeof queryCompiler !== 'function') {
         return original.apply(this, arguments as any);
       }
+
+      const attributes: api.Attributes = {
+        'memcached.version': moduleVersion,
+      };
+
+      if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
+        attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MEMCACHED;
+      }
+      if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MEMCACHED;
+      }
+
       // The name will be overwritten later
       const span = instrumentation.tracer.startSpan(
         'unknown memcached command',
         {
           kind: api.SpanKind.CLIENT,
-          attributes: {
-            'memcached.version': moduleVersion,
-            ...MemcachedInstrumentation.COMMON_ATTRIBUTES,
-          },
+          attributes,
         }
       );
       const parentContext = api.context.active();
@@ -134,16 +165,35 @@ export class MemcachedInstrumentation extends InstrumentationBase<Instrumentatio
       const callback = query.callback;
 
       span.updateName(`memcached ${query.type}`);
-      span.setAttributes({
+
+      const attributes: api.Attributes = {
         'db.memcached.key': query.key,
         'db.memcached.lifetime': query.lifetime,
-        [ATTR_DB_OPERATION]: query.type,
-        [ATTR_DB_STATEMENT]: instrumentation.getConfig()
-          .enhancedDatabaseReporting
-          ? query.command
-          : undefined,
-        ...utils.getPeerAttributes(client, server, query),
-      });
+        ...utils.getPeerAttributes(
+          client,
+          server,
+          query,
+          instrumentation._netSemconvStability
+        ),
+      };
+
+      if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
+        attributes[ATTR_DB_OPERATION] = query.type;
+      }
+      if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_DB_OPERATION_NAME] = query.type;
+      }
+
+      if (instrumentation.getConfig().enhancedDatabaseReporting) {
+        if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
+          attributes[ATTR_DB_STATEMENT] = query.command;
+        }
+        if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
+          attributes[ATTR_DB_QUERY_TEXT] = query.command;
+        }
+      }
+
+      span.setAttributes(attributes);
 
       query.callback = api.context.bind(
         callbackContext,
