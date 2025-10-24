@@ -45,12 +45,11 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { expect } from 'expect';
-import { Definition, back as nockBack } from 'nock';
+import { type Definition, back as nockBack } from 'nock';
 import { OpenAI } from 'openai';
-import * as path from 'path';
+import * as path from 'node:path';
 
 import {
-  ATTR_EVENT_NAME,
   ATTR_GEN_AI_SYSTEM,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
@@ -239,14 +238,14 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -386,14 +385,14 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -521,14 +520,14 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(3);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -537,8 +536,8 @@ describe('OpenAI', function () {
         message: {},
       });
       expect(logs[2].spanContext).toEqual(spanCtx);
+      expect(logs[2].eventName).toEqual('gen_ai.choice');
       expect(logs[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[2].body).toEqual({
@@ -687,20 +686,20 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(3);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.system.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.system.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.user.message');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[2].eventName).toEqual('gen_ai.choice');
       expect(logs[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[2].body).toEqual({
@@ -855,20 +854,20 @@ describe('OpenAI', function () {
       const logs1 = logsExporter.getFinishedLogRecords();
       expect(logs1.length).toBe(6);
       expect(logs1[0].spanContext).toEqual(spanCtx1);
+      expect(logs1[0].eventName).toEqual('gen_ai.system.message');
       expect(logs1[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.system.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[0].body).toEqual({});
       expect(logs1[1].spanContext).toEqual(spanCtx1);
+      expect(logs1[1].eventName).toEqual('gen_ai.user.message');
       expect(logs1[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[1].body).toEqual({});
       expect(logs1[2].spanContext).toEqual(spanCtx1);
+      expect(logs1[2].eventName).toEqual('gen_ai.assistant.message');
       expect(logs1[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.assistant.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[2].body).toEqual({
@@ -890,24 +889,25 @@ describe('OpenAI', function () {
         ],
       });
       expect(logs1[3].spanContext).toEqual(spanCtx1);
+      expect(logs1[3].eventName).toEqual('gen_ai.tool.message');
+
       expect(logs1[3].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.tool.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[3].body).toEqual({
         id: toolCalls[0].id,
       });
       expect(logs1[4].spanContext).toEqual(spanCtx1);
+      expect(logs1[4].eventName).toEqual('gen_ai.tool.message');
       expect(logs1[4].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.tool.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[4].body).toEqual({
         id: toolCalls[1].id,
       });
       expect(logs1[5].spanContext).toEqual(spanCtx1);
+      expect(logs1[5].eventName).toEqual('gen_ai.choice');
       expect(logs1[5].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[5].body).toEqual({
@@ -993,8 +993,8 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({});
@@ -1123,16 +1123,16 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({
         content: input,
       });
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -1262,16 +1262,16 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(3);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({
         content: input,
       });
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -1282,8 +1282,8 @@ describe('OpenAI', function () {
         },
       });
       expect(logs[2].spanContext).toEqual(spanCtx);
+      expect(logs[2].eventName).toEqual('gen_ai.choice');
       expect(logs[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[2].body).toEqual({
@@ -1434,24 +1434,24 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(3);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.system.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.system.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({
         content: 'You are a helpful assistant providing weather updates.',
       });
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.user.message');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
         content: 'What is the weather in New York City and London?',
       });
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[2].eventName).toEqual('gen_ai.choice');
       expect(logs[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[2].body).toEqual({
@@ -1608,24 +1608,24 @@ describe('OpenAI', function () {
       const logs1 = logsExporter.getFinishedLogRecords();
       expect(logs1.length).toBe(6);
       expect(logs1[0].spanContext).toEqual(spanCtx1);
+      expect(logs1[0].eventName).toEqual('gen_ai.system.message');
       expect(logs1[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.system.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[0].body).toEqual({
         content: 'You are a helpful assistant providing weather updates.',
       });
       expect(logs1[1].spanContext).toEqual(spanCtx1);
+      expect(logs1[1].eventName).toEqual('gen_ai.user.message');
       expect(logs1[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[1].body).toEqual({
         content: 'What is the weather in New York City and London?',
       });
       expect(logs1[2].spanContext).toEqual(spanCtx1);
+      expect(logs1[2].eventName).toEqual('gen_ai.assistant.message');
       expect(logs1[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.assistant.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[2].body).toEqual({
@@ -1649,8 +1649,8 @@ describe('OpenAI', function () {
         ],
       });
       expect(logs1[3].spanContext).toEqual(spanCtx1);
+      expect(logs1[3].eventName).toEqual('gen_ai.tool.message');
       expect(logs1[3].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.tool.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[3].body).toEqual({
@@ -1658,8 +1658,8 @@ describe('OpenAI', function () {
         content: '25 degrees and sunny',
       });
       expect(logs1[4].spanContext).toEqual(spanCtx1);
+      expect(logs1[4].eventName).toEqual('gen_ai.tool.message');
       expect(logs1[4].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.tool.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[4].body).toEqual({
@@ -1667,8 +1667,8 @@ describe('OpenAI', function () {
         content: '15 degrees and raining',
       });
       expect(logs1[5].spanContext).toEqual(spanCtx1);
+      expect(logs1[5].eventName).toEqual('gen_ai.choice');
       expect(logs1[5].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[5].body).toEqual({
@@ -1767,14 +1767,14 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -1907,14 +1907,14 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -2007,14 +2007,14 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(3);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -2023,8 +2023,8 @@ describe('OpenAI', function () {
         message: {},
       });
       expect(logs[2].spanContext).toEqual(spanCtx);
+      expect(logs[2].eventName).toEqual('gen_ai.choice');
       expect(logs[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[2].body).toEqual({
@@ -2152,20 +2152,20 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(3);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.system.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.system.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.user.message');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[2].eventName).toEqual('gen_ai.choice');
       expect(logs[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[2].body).toEqual({
@@ -2285,20 +2285,20 @@ describe('OpenAI', function () {
       const logs1 = logsExporter.getFinishedLogRecords();
       expect(logs1.length).toBe(6);
       expect(logs1[0].spanContext).toEqual(spanCtx1);
+      expect(logs1[0].eventName).toEqual('gen_ai.system.message');
       expect(logs1[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.system.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[0].body).toEqual({});
       expect(logs1[1].spanContext).toEqual(spanCtx1);
+      expect(logs1[1].eventName).toEqual('gen_ai.user.message');
       expect(logs1[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[1].body).toEqual({});
       expect(logs1[2].spanContext).toEqual(spanCtx1);
+      expect(logs1[2].eventName).toEqual('gen_ai.assistant.message');
       expect(logs1[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.assistant.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[2].body).toEqual({
@@ -2320,24 +2320,24 @@ describe('OpenAI', function () {
         ],
       });
       expect(logs1[3].spanContext).toEqual(spanCtx1);
+      expect(logs1[3].eventName).toEqual('gen_ai.tool.message');
       expect(logs1[3].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.tool.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[3].body).toEqual({
         id: toolCalls[0].id,
       });
       expect(logs1[4].spanContext).toEqual(spanCtx1);
+      expect(logs1[4].eventName).toEqual('gen_ai.tool.message');
       expect(logs1[4].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.tool.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[4].body).toEqual({
         id: toolCalls[1].id,
       });
       expect(logs1[5].spanContext).toEqual(spanCtx1);
+      expect(logs1[5].eventName).toEqual('gen_ai.choice');
       expect(logs1[5].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[5].body).toEqual({
@@ -2429,14 +2429,14 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -2529,14 +2529,14 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({});
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -2632,16 +2632,16 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({
         content: input,
       });
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -2736,16 +2736,16 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(3);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.user.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({
         content: input,
       });
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.choice');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
@@ -2756,8 +2756,8 @@ describe('OpenAI', function () {
         },
       });
       expect(logs[2].spanContext).toEqual(spanCtx);
+      expect(logs[2].eventName).toEqual('gen_ai.choice');
       expect(logs[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[2].body).toEqual({
@@ -2887,24 +2887,24 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(3);
       expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].eventName).toEqual('gen_ai.system.message');
       expect(logs[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.system.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[0].body).toEqual({
         content: 'You are a helpful assistant providing weather updates.',
       });
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].eventName).toEqual('gen_ai.user.message');
       expect(logs[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[1].body).toEqual({
         content: 'What is the weather in New York City and London?',
       });
       expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[2].eventName).toEqual('gen_ai.choice');
       expect(logs[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs[2].body).toEqual({
@@ -3026,24 +3026,24 @@ describe('OpenAI', function () {
       const logs1 = logsExporter.getFinishedLogRecords();
       expect(logs1.length).toBe(6);
       expect(logs1[0].spanContext).toEqual(spanCtx1);
+      expect(logs1[0].eventName).toEqual('gen_ai.system.message');
       expect(logs1[0].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.system.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[0].body).toEqual({
         content: 'You are a helpful assistant providing weather updates.',
       });
       expect(logs1[1].spanContext).toEqual(spanCtx1);
+      expect(logs1[1].eventName).toEqual('gen_ai.user.message');
       expect(logs1[1].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.user.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[1].body).toEqual({
         content: 'What is the weather in New York City and London?',
       });
       expect(logs1[2].spanContext).toEqual(spanCtx1);
+      expect(logs1[2].eventName).toEqual('gen_ai.assistant.message');
       expect(logs1[2].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.assistant.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[2].body).toEqual({
@@ -3067,8 +3067,8 @@ describe('OpenAI', function () {
         ],
       });
       expect(logs1[3].spanContext).toEqual(spanCtx1);
+      expect(logs1[3].eventName).toEqual('gen_ai.tool.message');
       expect(logs1[3].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.tool.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[3].body).toEqual({
@@ -3076,8 +3076,8 @@ describe('OpenAI', function () {
         content: '25 degrees and sunny',
       });
       expect(logs1[4].spanContext).toEqual(spanCtx1);
+      expect(logs1[4].eventName).toEqual('gen_ai.tool.message');
       expect(logs1[4].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.tool.message',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[4].body).toEqual({
@@ -3085,8 +3085,8 @@ describe('OpenAI', function () {
         content: '15 degrees and raining',
       });
       expect(logs1[5].spanContext).toEqual(spanCtx1);
+      expect(logs1[5].eventName).toEqual('gen_ai.choice');
       expect(logs1[5].attributes).toEqual({
-        [ATTR_EVENT_NAME]: 'gen_ai.choice',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
       });
       expect(logs1[5].body).toEqual({

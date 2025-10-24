@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AnyValue } from '@opentelemetry/api-logs';
+import type { AnyValue } from '@opentelemetry/api-logs';
 
 // This mimicks `APIPromise` from `openai` sufficiently for usage in this
 // instrumentation. OpenAI's APIPromise adds some methods, but we don't use
@@ -22,13 +22,13 @@ import { AnyValue } from '@opentelemetry/api-logs';
 export type APIPromise<T> = Promise<T>;
 
 export type GenAIFunction = {
-  name: string;
+  name: string | undefined;
   arguments?: AnyValue;
 };
 
 export type GenAIToolCall = {
   id: string;
-  type: string;
+  type: string | undefined;
   function?: GenAIFunction;
 };
 

@@ -43,7 +43,6 @@ import type {
 import type { Stream } from 'openai/streaming';
 
 import {
-  ATTR_EVENT_NAME,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
@@ -62,12 +61,22 @@ import {
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+  EVENT_GEN_AI_CHOICE,
+  EVENT_GEN_AI_SYSTEM_MESSAGE,
+  EVENT_GEN_AI_USER_MESSAGE,
+  EVENT_GEN_AI_ASSISTANT_MESSAGE,
+  EVENT_GEN_AI_TOOL_MESSAGE,
+  GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+  GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+  GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+  GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
 } from './semconv';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getEnvBool, getAttrsFromBaseURL } from './utils';
-import { OpenAIInstrumentationConfig } from './types';
-import {
+import type { OpenAIInstrumentationConfig } from './types';
+import type {
   APIPromise,
   GenAIMessage,
   GenAIChoiceEventBody,
@@ -77,14 +86,6 @@ import {
   GenAIToolMessageEventBody,
   GenAIToolCall,
 } from './internal-types';
-
-// The JS semconv package doesn't yet emit constants for event names.
-// TODO: otel-js issue for semconv pkg not including event names
-const EVENT_GEN_AI_SYSTEM_MESSAGE = 'gen_ai.system.message';
-const EVENT_GEN_AI_USER_MESSAGE = 'gen_ai.user.message';
-const EVENT_GEN_AI_ASSISTANT_MESSAGE = 'gen_ai.assistant.message';
-const EVENT_GEN_AI_TOOL_MESSAGE = 'gen_ai.tool.message';
-const EVENT_GEN_AI_CHOICE = 'gen_ai.choice';
 
 export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumentationConfig> {
   private _genaiClientOperationDuration!: Histogram;
@@ -169,6 +170,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _getPatchedChatCompletionsCreate(): any {
     const self = this;
     return (original: ChatCompletions['create']) => {
@@ -186,7 +188,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         const config = self.getConfig();
         const startNow = performance.now();
 
-        let startInfo;
+        let startInfo: ReturnType<OpenAIInstrumentation['_startChatCompletionsSpan']>;
         try {
           startInfo = self._startChatCompletionsSpan(
             params,
@@ -258,9 +260,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
   ) {
     // Attributes common to span, metrics, log events.
     const commonAttrs: Attributes = {
-      [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
       [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
-      [ATTR_GEN_AI_SYSTEM]: 'openai',
+      [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
     };
     Object.assign(commonAttrs, getAttrsFromBaseURL(baseURL, this._diag));
 
@@ -271,16 +273,14 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     if (params.frequency_penalty != null) {
       attrs[ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY] = params.frequency_penalty;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((params as any).max_completion_tokens != null) {
+    if (typeof params.max_completion_tokens === 'number') {
       attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] =
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (params as any).max_completion_tokens;
-    } else if (params.max_tokens != null) {
+        params.max_completion_tokens;
+    } else if (typeof params.max_tokens === 'number') {
       // `max_tokens` is deprecated in favour of `max_completion_tokens`.
       attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = params.max_tokens;
     }
-    if (params.presence_penalty != null) {
+    if (typeof params.presence_penalty === 'number') {
       attrs[ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY] = params.presence_penalty;
     }
     if (params.stop != null) {
@@ -323,9 +323,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             timestamp,
             context: ctx,
             severityNumber: SeverityNumber.INFO,
+            eventName: EVENT_GEN_AI_SYSTEM_MESSAGE,
             attributes: {
-              [ATTR_EVENT_NAME]: EVENT_GEN_AI_SYSTEM_MESSAGE,
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
             },
             body,
           });
@@ -347,9 +347,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             timestamp,
             context: ctx,
             severityNumber: SeverityNumber.INFO,
+            eventName: EVENT_GEN_AI_USER_MESSAGE,
             attributes: {
-              [ATTR_EVENT_NAME]: EVENT_GEN_AI_USER_MESSAGE,
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
             },
             body,
           });
@@ -403,9 +403,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             timestamp,
             context: ctx,
             severityNumber: SeverityNumber.INFO,
+            eventName: EVENT_GEN_AI_ASSISTANT_MESSAGE,
             attributes: {
-              [ATTR_EVENT_NAME]: EVENT_GEN_AI_ASSISTANT_MESSAGE,
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
             },
             body,
           });
@@ -426,9 +426,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             timestamp,
             context: ctx,
             severityNumber: SeverityNumber.INFO,
+            eventName: EVENT_GEN_AI_TOOL_MESSAGE,
             attributes: {
-              [ATTR_EVENT_NAME]: EVENT_GEN_AI_TOOL_MESSAGE,
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
             },
             body,
           });
@@ -450,19 +450,19 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * data from those chunks, then end the span.
    */
   async *_onChatCompletionsStreamIterator(
-    streamIter: AsyncIterator<ChatCompletionChunk>,
+    iterator: AsyncIterator<ChatCompletionChunk>,
     span: Span,
     startNow: number,
     config: OpenAIInstrumentationConfig,
     commonAttrs: Attributes,
     ctx: Context
   ) {
-    let id;
-    let model;
+    const iterable = { [Symbol.asyncIterator]: () => iterator };
+    let id: string | undefined;
+    let model: string | undefined;
     const finishReasons: string[] = [];
     const choices = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for await (const chunk of streamIter as any) {
+    for await (const chunk of iterable) {
       yield chunk;
 
       // Gather telemetry from this chunk.
@@ -542,12 +542,12 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         this._genaiClientTokenUsage.record(chunk.usage.prompt_tokens, {
           ...commonAttrs,
           [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
         });
         this._genaiClientTokenUsage.record(chunk.usage.completion_tokens, {
           ...commonAttrs,
           [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
         });
       }
     }
@@ -581,9 +581,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         timestamp: Date.now(),
         context: ctx,
         severityNumber: SeverityNumber.INFO,
+        eventName: EVENT_GEN_AI_CHOICE,
         attributes: {
-          [ATTR_EVENT_NAME]: EVENT_GEN_AI_CHOICE,
-          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
         },
         body: {
           finish_reason: finishReasons[idx],
@@ -660,9 +660,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           timestamp: Date.now(),
           context: ctx,
           severityNumber: SeverityNumber.INFO,
+          eventName: EVENT_GEN_AI_CHOICE,
           attributes: {
-            [ATTR_EVENT_NAME]: EVENT_GEN_AI_CHOICE,
-            [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
           },
           body: {
             finish_reason: choice.finish_reason,
@@ -684,13 +684,13 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         this._genaiClientTokenUsage.record(result.usage.prompt_tokens, {
           ...commonAttrs,
           [ATTR_GEN_AI_RESPONSE_MODEL]: result.model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
         });
 
         this._genaiClientTokenUsage.record(result.usage.completion_tokens, {
           ...commonAttrs,
           [ATTR_GEN_AI_RESPONSE_MODEL]: result.model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
         });
       }
     } catch (err) {
@@ -734,6 +734,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _getPatchedEmbeddingsCreate(): any {
     const self = this;
     return (original: Embeddings['create']) => {
@@ -750,7 +751,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         const params = args[0];
         const startNow = performance.now();
 
-        let startInfo;
+        let startInfo: ReturnType<OpenAIInstrumentation['_startEmbeddingsSpan']>;
         try {
           startInfo = self._startEmbeddingsSpan(params, this?._client?.baseURL);
         } catch (err) {
@@ -784,9 +785,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
   ) {
     // Attributes common to span, metrics, log events.
     const commonAttrs: Attributes = {
-      [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
       [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
-      [ATTR_GEN_AI_SYSTEM]: 'openai',
+      [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
     };
     Object.assign(commonAttrs, getAttrsFromBaseURL(baseURL, this._diag));
 
@@ -835,7 +836,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       this._genaiClientTokenUsage.record(result.usage.prompt_tokens, {
         ...commonAttrs,
         [ATTR_GEN_AI_RESPONSE_MODEL]: result.model,
-        [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
+        [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
       });
     } catch (err) {
       this._diag.error(
