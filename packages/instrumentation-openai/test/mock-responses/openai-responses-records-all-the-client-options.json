@@ -1,0 +1,76 @@
+[
+  {
+    "scope": "https://api.openai.com:443",
+    "method": "POST",
+    "path": "/v1/responses",
+    "body": {
+      "model": "gpt-4o-mini",
+      "input": "Answer in up to 3 words: Which ocean contains Bouvet Island?",
+      "max_output_tokens": 100,
+      "temperature": 1,
+      "top_p": 1
+    },
+    "status": 200,
+    "response": {
+      "id": "resp_67ccd2bed1ec8190b14f964abc0542670bb6a6b452d3795b",
+      "object": "response",
+      "created_at": 1741476542,
+      "status": "completed",
+      "error": null,
+      "incomplete_details": null,
+      "instructions": null,
+      "max_output_tokens": null,
+      "model": "gpt-4o-mini-2024-07-18",
+      "output": [
+        {
+          "type": "message",
+          "id": "msg_67ccd2bf17f0819081ff3bb2cf6508e60bb6a6b452d3795b",
+          "status": "completed",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "output_text",
+              "text": "Southern Ocean.",
+              "annotations": []
+            }
+          ]
+        }
+      ],
+      "parallel_tool_calls": true,
+      "previous_response_id": null,
+      "reasoning": {
+        "effort": null,
+        "summary": null
+      },
+      "store": true,
+      "temperature": 1.0,
+      "text": {
+        "format": {
+          "type": "text"
+        }
+      },
+      "tool_choice": "auto",
+      "tools": [],
+      "top_p": 1.0,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 22,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 3,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 25
+      },
+      "user": null,
+      "metadata": {}
+    },
+    "rawHeaders": {
+      "content-type": "application/json",
+      "date": "Fri, 11 Jul 2025 07:02:38 GMT"
+    },
+    "responseIsBinary": false
+  }
+]
