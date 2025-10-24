@@ -73,6 +73,7 @@
     "@opentelemetry/instrumentation-knex": "^0.52.0",
     "@opentelemetry/instrumentation-koa": "^0.56.0",
     "@opentelemetry/instrumentation-lru-memoizer": "^0.52.0",
+    "@opentelemetry/instrumentation-mcp": "^0.0.1",
     "@opentelemetry/instrumentation-memcached": "^0.51.0",
     "@opentelemetry/instrumentation-mongodb": "^0.60.0",
     "@opentelemetry/instrumentation-mongoose": "^0.54.0",

@@ -39,6 +39,7 @@ import { KafkaJsInstrumentation } from '@opentelemetry/instrumentation-kafkajs';
 import { KnexInstrumentation } from '@opentelemetry/instrumentation-knex';
 import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
 import { LruMemoizerInstrumentation } from '@opentelemetry/instrumentation-lru-memoizer';
+import { McpInstrumentation } from '@opentelemetry/instrumentation-mcp';
 import { MemcachedInstrumentation } from '@opentelemetry/instrumentation-memcached';
 import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
 import { MongooseInstrumentation } from '@opentelemetry/instrumentation-mongoose';
@@ -118,6 +119,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-knex': KnexInstrumentation,
   '@opentelemetry/instrumentation-koa': KoaInstrumentation,
   '@opentelemetry/instrumentation-lru-memoizer': LruMemoizerInstrumentation,
+  '@opentelemetry/instrumentation-mcp': McpInstrumentation,
   '@opentelemetry/instrumentation-memcached': MemcachedInstrumentation,
   '@opentelemetry/instrumentation-mongodb': MongoDBInstrumentation,
   '@opentelemetry/instrumentation-mongoose': MongooseInstrumentation,

@@ -45,6 +45,7 @@
   "packages/instrumentation-ioredis": "0.55.0",
   "packages/instrumentation-knex": "0.52.0",
   "packages/instrumentation-koa": "0.56.0",
+  "packages/instrumentation-mcp": "0.0.1",
   "packages/instrumentation-memcached": "0.51.0",
   "packages/instrumentation-mongodb": "0.60.0",
   "packages/instrumentation-mysql": "0.53.0",
