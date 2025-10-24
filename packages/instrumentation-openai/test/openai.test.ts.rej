@@ -1,0 +1,22 @@
+diff a/packages/instrumentation-openai/test/openai.test.ts b/packages/instrumentation-openai/test/openai.test.ts	(rejected hunks)
+@@ -45,17 +45,17 @@ import {
+   ATTR_SERVER_PORT,
+ } from '@opentelemetry/semantic-conventions';
+ import { expect } from 'expect';
+-import { Definition, back as nockBack } from 'nock';
++import { type Definition, back as nockBack } from 'nock';
+ import { OpenAI } from 'openai';
+-import * as path from 'path';
++import * as path from 'node:path';
+ 
+ import {
+-  ATTR_EVENT_NAME,
+   ATTR_GEN_AI_SYSTEM,
+   ATTR_GEN_AI_OPERATION_NAME,
+   ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
+   ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
+   ATTR_GEN_AI_REQUEST_MODEL,
++  ATTR_GEN_AI_PROVIDER_NAME,
+   ATTR_GEN_AI_REQUEST_MAX_TOKENS,
+   ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
+   ATTR_GEN_AI_REQUEST_TOP_P,
