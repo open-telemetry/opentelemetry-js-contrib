@@ -17,7 +17,7 @@
 import * as assert from 'assert';
 import { promisify } from 'util';
 import type { Connection, Request, TYPES } from 'tedious';
-
+import { INJECTED_CTX } from '../src/instrumentation';
 type Method = keyof Connection & ('execSql' | 'execSqlBatch' | 'prepare');
 export type tedious = {
   Connection: typeof Connection;
@@ -67,7 +67,8 @@ export const makeApi = (tedious: tedious) => {
   const query = (
     connection: Connection,
     params: string,
-    method: Method = 'execSql'
+    method: Method = 'execSql',
+    noTracking?: boolean
   ): Promise<any[]> => {
     return new Promise((resolve, reject) => {
       const result: any[] = [];
@@ -78,7 +79,9 @@ export const makeApi = (tedious: tedious) => {
           resolve(result);
         }
       });
-
+      if (noTracking) {
+        Object.defineProperty(request, INJECTED_CTX, { value: true });
+      }
       // request.on('returnValue', console.log.bind(console, /*request.sqlTextOrProcedure,*/ 'returnValue:'));
       // request.on('error', console.log.bind(console, /*request.sqlTextOrProcedure,*/ 'error:'));
       // request.on('row', console.log.bind(console, /*request.sqlTextOrProcedure,*/ 'row:'));
@@ -314,7 +317,9 @@ export const makeApi = (tedious: tedious) => {
       if exists(SELECT * FROM sysobjects WHERE name='test_transact' AND xtype='U') DROP TABLE ${transaction.tableName};
       if exists(SELECT * FROM sysobjects WHERE name='test_proced' AND xtype='U') DROP PROCEDURE ${storedProcedure.procedureName};
       if exists(SELECT * FROM sys.databases WHERE name = 'temp_otel_db') DROP DATABASE temp_otel_db;
-    `.trim()
+    `.trim(),
+      'execSql',
+      true
     );
   };
 
