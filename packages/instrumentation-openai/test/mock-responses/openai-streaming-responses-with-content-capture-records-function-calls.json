@@ -1,0 +1,67 @@
+[
+	{
+		"scope": "https://api.openai.com:443",
+		"method": "POST",
+		"path": "/v1/responses",
+		"body": {
+			"model": "gpt-4o-mini",
+			"input": [
+				{
+					"role": "system",
+					"content": "You are a helpful assistant providing weather updates."
+				},
+				{
+					"role": "user",
+					"content": "What is the weather in Paris and Bogotá?"
+				}
+			],
+			"tools": [
+				{
+					"type": "function",
+					"name": "get_weather",
+					"description": "Get the current weather in a given location",
+					"parameters": {
+						"type": "object",
+						"properties": {
+							"location": {
+								"type": "string",
+								"description": "The city, e.g. San Francisco"
+							}
+						},
+						"required": ["location"]
+					},
+					"strict": true
+				},
+				{
+					"type": "function",
+					"name": "send_email",
+					"description": "Send an email",
+					"parameters": {
+						"type": "object",
+						"properties": {
+							"to": {
+								"type": "string",
+								"description": "The email address of the recipient"
+							},
+							"body": {
+								"type": "string",
+								"description": "The body of the email"
+							}
+						},
+						"required": ["to", "body"]
+					},
+					"strict": true
+				}
+			],
+			"parallel_tool_calls": true,
+			"stream": true
+		},
+		"status": 200,
+		"response": "data: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_67ca09c5efe0819096d0511c92b8c890096610f474011cc0\",\"object\":\"response\",\"created_at\":1741294021,\"model\":\"gpt-4o-mini-2024-07-18\",\"status\":\"in_progress\",\"output\":[]}}\n\ndata: {\"type\":\"response.output_item.done\",\"output_index\":0,\"item\":{\"id\":\"fc_12345xyz\",\"call_id\":\"call_12345xyz\",\"type\":\"function_call\",\"name\":\"get_weather\",\"arguments\":\"{\\\"location\\\":\\\"Paris, France\\\"}\",\"status\":\"completed\"},\"sequence_number\":1}\n\ndata: {\"type\":\"response.output_item.done\",\"output_index\":1,\"item\":{\"id\":\"fc_67890abc\",\"call_id\":\"call_67890abc\",\"type\":\"function_call\",\"name\":\"get_weather\",\"arguments\":\"{\\\"location\\\":\\\"Bogotá, Colombia\\\"}\",\"status\":\"completed\"},\"sequence_number\":2}\n\ndata: {\"type\":\"response.output_item.done\",\"output_index\":2,\"item\":{\"id\":\"fc_99999def\",\"call_id\":\"call_99999def\",\"type\":\"function_call\",\"name\":\"send_email\",\"arguments\":\"{\\\"to\\\":\\\"bob@email.com\\\",\\\"body\\\":\\\"Hi bob\\\"}\",\"status\":\"completed\"},\"sequence_number\":3}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_67ca09c5efe0819096d0511c92b8c890096610f474011cc0\",\"object\":\"response\",\"created_at\":1741294021,\"status\":\"completed\",\"error\":null,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"model\":\"gpt-4o-mini-2024-07-18\",\"output\":[{\"id\":\"fc_12345xyz\",\"call_id\":\"call_12345xyz\",\"type\":\"function_call\",\"name\":\"get_weather\",\"arguments\":\"{\\\"location\\\":\\\"Paris, France\\\"}\"},{\"id\":\"fc_67890abc\",\"call_id\":\"call_67890abc\",\"type\":\"function_call\",\"name\":\"get_weather\",\"arguments\":\"{\\\"location\\\":\\\"Bogotá, Colombia\\\"}\"},{\"id\":\"fc_99999def\",\"call_id\":\"call_99999def\",\"type\":\"function_call\",\"name\":\"send_email\",\"arguments\":\"{\\\"to\\\":\\\"bob@email.com\\\",\\\"body\\\":\\\"Hi bob\\\"}\"}],\"parallel_tool_calls\":true,\"previous_response_id\":null,\"reasoning\":{\"effort\":null,\"summary\":null},\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"}},\"tool_choice\":\"auto\",\"tools\":[{\"type\":\"function\",\"name\":\"get_weather\",\"description\":\"Get the current weather in a given location\",\"parameters\":{\"type\":\"object\",\"properties\":{\"location\":{\"type\":\"string\",\"description\":\"The city and country, e.g. San Francisco, USA\"}},\"required\":[\"location\"]}},{\"type\":\"function\",\"name\":\"send_email\",\"description\":\"Send an email\",\"parameters\":{\"type\":\"object\",\"properties\":{\"to\":{\"type\":\"string\",\"description\":\"The email address of the recipient\"},\"body\":{\"type\":\"string\",\"description\":\"The body of the email\"}},\"required\":[\"to\",\"body\"]}}],\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":291,\"output_tokens\":23,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":314},\"user\":null,\"metadata\":{}},\"sequence_number\":4}\n\ndata: [DONE]\n\n",
+		"rawHeaders": {
+			"content-type": "text/event-stream; charset=utf-8",
+			"date": "Thu, 17 Jul 2025 07:27:49 GMT"
+		},
+		"responseIsBinary": false
+	}
+]
