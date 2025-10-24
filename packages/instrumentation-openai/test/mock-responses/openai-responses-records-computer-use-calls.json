@@ -1,0 +1,109 @@
+[
+	{
+		"scope": "https://api.openai.com:443",
+		"method": "POST",
+		"path": "/v1/responses",
+		"body": {
+			"model": "computer-use-preview",
+			"tools": [
+				{
+					"type": "computer_use_preview",
+					"display_width": 1024,
+					"display_height": 768,
+					"environment": "browser"
+				}
+			],
+			"input": [
+				{
+					"role": "user",
+					"content": [
+						{
+							"type": "input_text",
+							"text": "Check the latest OpenAI news on bing.com."
+						}
+					]
+				}
+			],
+			"reasoning": {
+				"summary": "concise"
+			},
+			"truncation": "auto"
+		},
+		"status": 200,
+		"response": {
+			"id": "resp_67ca09c5efe0819096d0511c92b8c890096610f474011cc0",
+			"object": "response",
+			"created_at": 1741294021,
+			"status": "completed",
+			"error": null,
+			"incomplete_details": null,
+			"instructions": null,
+			"max_output_tokens": null,
+			"model": "computer-use-preview-2025-04-14",
+			"output": [
+				{
+					"type": "reasoning",
+					"id": "rs_67cc...",
+					"summary": [
+						{
+							"type": "summary_text",
+							"text": "Clicking on the browser address bar."
+						}
+					]
+				},
+				{
+					"type": "computer_call",
+					"id": "cu_67cc...",
+					"call_id": "call_zw3...",
+					"action": {
+						"type": "click",
+						"button": "left",
+						"x": 156,
+						"y": 50
+					},
+					"pending_safety_checks": [],
+					"status": "completed"
+				}
+			],
+			"parallel_tool_calls": true,
+			"previous_response_id": null,
+			"reasoning": {
+				"effort": null,
+				"summary": null
+			},
+			"store": true,
+			"temperature": 1.0,
+			"text": {
+				"format": {
+					"type": "text"
+				}
+			},
+			"tool_choice": "auto",
+			"tools": [
+				{
+					"type": "computer_use_preview",
+					"display_width": 1024,
+					"display_height": 768,
+					"environment": "browser"
+				}
+			],
+			"top_p": 1.0,
+			"truncation": "disabled",
+			"usage": {
+				"input_tokens": 291,
+				"output_tokens": 23,
+				"output_tokens_details": {
+					"reasoning_tokens": 0
+				},
+				"total_tokens": 314
+			},
+			"user": null,
+			"metadata": {}
+		},
+		"rawHeaders": {
+			"content-type": "application/json",
+			"date": "Fri, 11 Jul 2025 07:02:40 GMT"
+		},
+		"responseIsBinary": false
+	}
+]

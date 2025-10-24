@@ -23,7 +23,7 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
-import { SeverityNumber } from '@opentelemetry/api-logs';
+import { type AnyValue, SeverityNumber } from '@opentelemetry/api-logs';
 import type {
   ChatCompletion,
   ChatCompletionMessageToolCall,
@@ -40,10 +40,28 @@ import type {
   Embeddings,
   EmbeddingCreateParams,
 } from 'openai/resources/embeddings';
+import type {
+  Responses,
+  Response,
+  EasyInputMessage,
+  ResponseCodeInterpreterToolCall,
+  ResponseComputerToolCall,
+  ResponseCreateParams,
+  ResponseCustomToolCall,
+  ResponseCustomToolCallOutput,
+  ResponseFileSearchToolCall,
+  ResponseFunctionToolCall,
+  ResponseFunctionWebSearch,
+  ResponseOutputItem,
+  ResponseOutputMessage,
+  ResponseReasoningItem,
+  ResponseStreamEvent,
+  ResponseInputItem,
+} from 'openai/resources/responses/responses';
 import type { Stream } from 'openai/streaming';
-
 import {
   ATTR_EVENT_NAME,
+  ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
@@ -57,11 +75,15 @@ import {
   ATTR_GEN_AI_RESPONSE_ID,
   ATTR_GEN_AI_RESPONSE_MODEL,
   ATTR_GEN_AI_SYSTEM,
+  ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_TOKEN_TYPE,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+  ATTR_GEN_AI_INPUT_MESSAGES,
+  ATTR_GEN_AI_OUTPUT_MESSAGES,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   EVENT_GEN_AI_CHOICE,
   EVENT_GEN_AI_SYSTEM_MESSAGE,
   EVENT_GEN_AI_USER_MESSAGE,
@@ -72,6 +94,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
   GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+  ATTR_GEN_AI_SYSTEM_INSTRUCTIONS
 } from './semconv';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -86,6 +109,14 @@ import type {
   GenAIAssistantMessageEventBody,
   GenAIToolMessageEventBody,
   GenAIToolCall,
+  GenericPart,
+  MessagePart,
+  OutputMessages,
+  TextPart,
+  ToolCallRequestPart,
+  ToolCallResponsePart,
+  ChatMessage,
+  InputMessages,
 } from './internal-types';
 
 export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumentationConfig> {
@@ -119,7 +150,11 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       new InstrumentationNodeModuleDefinition(
         'openai',
         ['>=4.19.0 <7'],
-        modExports => {
+        module => {
+          const modExports =
+            module[Symbol.toStringTag] === 'Module'
+              ? module.default // ESM
+              : module; // CommonJS
           this._wrap(
             modExports.OpenAI.Chat.Completions.prototype,
             'create',
@@ -130,12 +165,22 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             'create',
             this._getPatchedEmbeddingsCreate()
           );
+          this._wrap(
+            modExports.OpenAI.Responses.prototype,
+            'create',
+            this._getPatchedResponsesCreate()
+          );
 
           return modExports;
         },
-        modExports => {
+        module => {
+          const modExports =
+            module[Symbol.toStringTag] === 'Module'
+              ? module.default // ESM
+              : module; // CommonJS
           this._unwrap(modExports.OpenAI.Chat.Completions.prototype, 'create');
           this._unwrap(modExports.OpenAI.Embeddings.prototype, 'create');
+          this._unwrap(modExports.OpenAI.Responses.prototype, 'create');
         }
       ),
     ];
@@ -847,6 +892,938 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     }
     span.end();
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _getPatchedResponsesCreate(): any {
+    const self = this;
+    return (original: Responses['create']) => {
+      // https://platform.openai.com/docs/api-reference/responses/create
+      return function patchedCreate(
+        this: Responses,
+        ...args: Parameters<Responses['create']>
+      ) {
+        if (!self.isEnabled()) {
+          return original.apply(this, args);
+        }
+
+        self._diag.debug('OpenAI.Responses.create args: %O', args);
+        const params = args[0];
+        const config = self.getConfig();
+        const startNow = performance.now();
+
+        let startInfo: ReturnType<OpenAIInstrumentation['_startResponsesSpan']>;
+        try {
+          startInfo = self._startResponsesSpan(
+            params,
+            config,
+            this?._client?.baseURL
+          );
+        } catch (err) {
+          self._diag.error('unexpected error starting span:', err);
+          return original.apply(this, args);
+        }
+        const { span, ctx, commonAttrs } = startInfo;
+
+        const apiPromise = context.with(ctx, () => original.apply(this, args));
+
+        // Streaming.
+        if (isStreamPromise(params, apiPromise)) {
+          return apiPromise.then(stream => {
+            self._wrap(stream as Stream<ResponseStreamEvent>, Symbol.asyncIterator, origIterator => {
+              return () => {
+                return self._onResponsesStreamIterator(
+                  origIterator.call(stream),
+                  span,
+                  startNow,
+                  config,
+                  commonAttrs,
+                  ctx
+                );
+              };
+            });
+            return stream;
+          });
+        }
+
+        // Non-streaming.
+        apiPromise
+          .then(result => {
+            self._onResponsesCreateResult(
+              span,
+              startNow,
+              commonAttrs,
+              result as Response,
+              config,
+              ctx,
+            );
+          })
+          .catch(
+            self._createAPIPromiseRejectionHandler(startNow, span, commonAttrs)
+          );
+
+        return apiPromise;
+      };
+    };
+  }
+
+  _startResponsesSpan(
+    params: ResponseCreateParams,
+    config: OpenAIInstrumentationConfig,
+    baseURL: string | undefined
+  ) {
+    // Common attributes for the span, metrics, and log events.
+    const commonAttrs: Attributes = Object.assign({
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+      [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
+      [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+      [ATTR_GEN_AI_SYSTEM_INSTRUCTIONS]: params.instructions,
+    }, getAttrsFromBaseURL(baseURL, this._diag));
+
+    // Span attributes.
+    const attrs: Attributes = Object.assign({
+      [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: params.max_output_tokens ?? undefined,
+      [ATTR_GEN_AI_REQUEST_TEMPERATURE]: params.temperature ?? undefined,
+      [ATTR_GEN_AI_REQUEST_TOP_P]: params.top_p ?? undefined,
+    }, commonAttrs);
+
+    const span: Span = this.tracer.startSpan(
+      `${attrs[ATTR_GEN_AI_OPERATION_NAME]} ${attrs[ATTR_GEN_AI_REQUEST_MODEL]}`,
+      {
+        kind: SpanKind.CLIENT,
+        attributes: attrs,
+      }
+    );
+    const ctx: Context = trace.setSpan(context.active(), span);
+
+    const inputs: InputMessages = new ConvertResponseInputsToInputMessagesUseCase(
+      config.captureMessageContent
+    ).convert(params);
+
+    // Capture inputs as log events.
+    this.logger.emit({
+      timestamp: Date.now(),
+      context: ctx,
+      severityNumber: SeverityNumber.INFO,
+      eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
+      attributes: {
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined // inputs as AnyValue,
+      },
+      body: inputs as AnyValue,
+    });
+
+    return { span, ctx, commonAttrs };
+  }
+
+  async *_onResponsesStreamIterator(
+    iterator: AsyncIterator<ResponseStreamEvent>,
+    span: Span,
+    startNow: number,
+    config: OpenAIInstrumentationConfig,
+    commonAttrs: Attributes,
+    ctx: Context
+  ) {
+    const iterable = { [Symbol.asyncIterator]: () => iterator };
+    let model: string | undefined;
+    const converter = new ConvertResponseOutputsToOutputMessagesUseCase(config.captureMessageContent);
+
+    for await (const event of iterable) {
+      yield event;
+
+      // Gather telemetry from this chunk.
+      this._diag.debug(
+        'OpenAI.Responses.create stream event: %O',
+        event
+      );
+
+      switch (event.type) {
+        case 'response.created': {
+          const response = event.response;
+          model = response.model;
+          span.setAttributes({
+            [ATTR_GEN_AI_RESPONSE_ID]: response.id,
+            [ATTR_GEN_AI_RESPONSE_MODEL]: model,
+            [ATTR_GEN_AI_CONVERSATION_ID]: response.conversation?.id
+          });
+          break;
+        }
+        case 'response.output_item.done': {
+          const output = converter.convert([event.item]);
+          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [output[0].finish_reason])
+          this.logger.emit({
+            timestamp: Date.now(),
+            context: ctx,
+            severityNumber: SeverityNumber.INFO,
+            eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
+            attributes: {
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined // output as AnyValue,
+            },
+            body: output as AnyValue,
+          });
+          break;
+        }
+        case 'response.completed': {
+          const usage = event.response.usage;
+          span.setAttributes({
+            [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: usage?.input_tokens,
+            [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: usage?.output_tokens,
+          });
+          if (usage?.input_tokens) {
+            this._genaiClientTokenUsage.record(usage?.input_tokens, {
+              ...commonAttrs,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: model,
+              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+            });
+          }
+          if (usage?.output_tokens) {
+            this._genaiClientTokenUsage.record(usage?.output_tokens, {
+              ...commonAttrs,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: model,
+              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+            });
+          }
+          break;
+        }
+      }
+    }
+
+    this._genaiClientOperationDuration.record(
+      (performance.now() - startNow) / 1000,
+      {
+        ...commonAttrs,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: model,
+      }
+    );
+
+    span.end();
+  }
+
+  _onResponsesCreateResult(
+    span: Span,
+    startNow: number,
+    commonAttrs: Attributes,
+    result: Response,
+    config: OpenAIInstrumentationConfig,
+    ctx: Context,
+  ) {
+    this._diag.debug('OpenAI.Responses.create result: %O', result);
+    const { id, model, conversation, output, usage } = result;
+    try {
+      if (conversation) {
+        span.setAttribute(
+          ATTR_GEN_AI_CONVERSATION_ID,
+          conversation.id
+        );
+      }
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_ID, id);
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, model);
+      if (usage) {
+        span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, usage.input_tokens);
+        span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, usage.output_tokens);
+        this._genaiClientTokenUsage.record(usage.input_tokens, {
+          ...commonAttrs,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: model,
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+        });
+
+        this._genaiClientTokenUsage.record(usage.output_tokens, {
+          ...commonAttrs,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: model,
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+        });
+      }
+
+      const outputs = new ConvertResponseOutputsToOutputMessagesUseCase(
+        config.captureMessageContent,
+      ).convert(output);
+
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [outputs[0].finish_reason])
+
+      // Capture outputs as a log event.
+      this.logger.emit({
+        timestamp: Date.now(),
+        context: ctx,
+        severityNumber: SeverityNumber.INFO,
+        eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
+        attributes: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+          [ATTR_GEN_AI_OUTPUT_MESSAGES]: outputs as AnyValue,
+        },
+        body: outputs as AnyValue,
+      });
+
+      this._genaiClientOperationDuration.record(
+        (performance.now() - startNow) / 1000,
+        {
+          ...commonAttrs,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: model,
+        }
+      );
+    } catch (err) {
+      this._diag.error(
+        'unexpected error getting telemetry from chat result:',
+        err
+      );
+    }
+    span.end();
+  }
+}
+
+class ConvertResponseInputsToInputMessagesUseCase {
+  constructor(private readonly captureMessageContent = false) { }
+
+  convert(params: ResponseCreateParams): InputMessages {
+    const messages: Array<ChatMessage> = [];
+
+    if (typeof params.instructions === 'string') {
+      messages.push(this.message({ role: 'system', content: params.instructions }));
+    }
+    if (typeof params.input === 'string') {
+      messages.push(this.message({ role: 'user', content: params.input }));
+    } else if (Array.isArray(params.input)) {
+      messages.push(...params.input.map((input): ChatMessage => this[input.type ?? 'message'](input as never)));
+    }
+
+    return messages;
+  }
+
+  message(
+    item:
+      | EasyInputMessage
+      | ResponseInputItem.Message
+      | Responses.ResponseInputMessageItem
+      | ResponseOutputMessage,
+  ): ChatMessage {
+    const parts: Array<MessagePart> = [];
+    if (typeof item.content === 'string') {
+      if (this.captureMessageContent) {
+        parts.push({
+          type: 'text',
+          content: item.content,
+        } satisfies TextPart);
+      } else {
+        parts.push({
+          type: 'text',
+          content: undefined,
+        } satisfies GenericPart);
+      }
+    } else if (Array.isArray(item.content)) {
+      for (const content of item.content) {
+        switch (content.type) {
+          case 'input_text':
+          case 'output_text':
+            if (this.captureMessageContent) {
+              parts.push({
+                type: 'text',
+                content: content.text,
+              } satisfies TextPart);
+            } else {
+              parts.push({
+                type: 'text',
+                content: undefined,
+              } satisfies GenericPart);
+            }
+            break;
+          case 'refusal':
+            parts.push({
+              type: 'refusal',
+              refusal: content.refusal,
+            } satisfies GenericPart);
+            break;
+          case 'input_image':
+            parts.push({
+              ...(this.captureMessageContent ? content : undefined),
+              type: 'image',
+            } satisfies GenericPart);
+            break;
+          case 'input_file':
+            parts.push({
+              ...(this.captureMessageContent ? content : undefined),
+              type: 'file',
+            } satisfies GenericPart);
+            break;
+          case 'input_audio': {
+            parts.push({
+              ...(this.captureMessageContent ? content : undefined),
+              type: 'audio',
+            } satisfies GenericPart);
+            break;
+          }
+        }
+      }
+    }
+
+    return {
+      role: item.role,
+      parts,
+    } satisfies ChatMessage;
+  }
+
+  function_call(item: ResponseFunctionToolCall): ChatMessage {
+    return {
+      role: 'assistant',
+      parts: [
+        {
+          type: 'tool_call',
+          id: item.id,
+          name: item.name,
+          arguments: this.captureMessageContent ? item.arguments : undefined,
+          call_id: item.call_id,
+        } satisfies ToolCallRequestPart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  custom_tool_call(item: ResponseCustomToolCall): ChatMessage {
+    return {
+      role: 'assistant',
+      parts: [
+        {
+          type: 'tool_call',
+          id: item.id,
+          name: item.name,
+          arguments: this.captureMessageContent ? item.input : undefined,
+          call_id: item.call_id,
+        } satisfies ToolCallRequestPart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  reasoning(item: ResponseReasoningItem): ChatMessage {
+    const parts: Array<MessagePart> = [];
+    for (const summary of item.summary) {
+      parts.push({
+        type: item.type,
+        text: this.captureMessageContent ? summary.text : undefined,
+      });
+    }
+    if (item.content) {
+      for (const content of item.content) {
+        parts.push({
+          type: item.type,
+          text: this.captureMessageContent ? content.text : undefined,
+        });
+      }
+    }
+
+    return {
+      role: 'assistant',
+      parts,
+    } satisfies ChatMessage;
+  }
+
+  file_search_call(item: ResponseFileSearchToolCall): ChatMessage {
+    const parts: Array<MessagePart> = [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: item.type,
+        arguments: this.captureMessageContent ? item.queries : undefined,
+      } satisfies ToolCallRequestPart,
+    ];
+    for (const result of item.results ?? []) {
+      parts.push({
+        type: 'tool_call_response',
+        id: item.id,
+        response: this.captureMessageContent ? result : undefined,
+      } satisfies ToolCallResponsePart);
+    }
+
+    return {
+      role: 'assistant',
+      parts,
+    } satisfies ChatMessage;
+  }
+
+  web_search_call(item: ResponseFunctionWebSearch): ChatMessage {
+    return {
+      role: 'assistant',
+      parts: [
+        {
+          type: 'tool_call',
+          id: item.id,
+          name: item.type,
+          // @ts-expect-error: action is missing on Responses.ResponseFunctionWebSearch type
+          arguments: this.captureMessageContent ? item.action : undefined,
+        } satisfies ToolCallRequestPart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  computer_call(item: ResponseComputerToolCall): ChatMessage {
+    return {
+      role: 'assistant',
+      parts: [
+        {
+          type: 'tool_call',
+          id: item.id,
+          name: item.type,
+          arguments: this.captureMessageContent ? item.action : undefined,
+          call_id: item.call_id,
+        } satisfies ToolCallRequestPart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  computer_call_output(item: ResponseInputItem.ComputerCallOutput): ChatMessage {
+    return {
+      role: 'user',
+      parts: [
+        {
+          type: 'tool_call_response',
+          id: item.id,
+          response: this.captureMessageContent ? item.output : undefined,
+          call_id: item.call_id,
+        } satisfies ToolCallResponsePart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  code_interpreter_call(item: ResponseCodeInterpreterToolCall): ChatMessage {
+    const parts: Array<MessagePart> = [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: item.type,
+        arguments: this.captureMessageContent ? item.code : undefined,
+      } satisfies ToolCallRequestPart,
+    ];
+    for (const output of item.outputs ?? []) {
+      switch (output.type) {
+        case 'image':
+          parts.push({
+            type: 'tool_call_response',
+            id: item.id,
+            response: this.captureMessageContent ? output.url : undefined,
+          } satisfies ToolCallResponsePart);
+          break;
+        case 'logs':
+          parts.push({
+            type: 'tool_call_response',
+            id: item.id,
+            response: this.captureMessageContent ? output.logs : undefined,
+          } satisfies ToolCallResponsePart);
+          break;
+      }
+    }
+
+    return {
+      role: 'assistant',
+      parts,
+    } satisfies ChatMessage;
+  }
+
+  image_generation_call(
+    item:
+      | ResponseInputItem.ImageGenerationCall
+      | ResponseOutputItem.ImageGenerationCall,
+  ): ChatMessage {
+    return {
+      role: 'assistant',
+      parts: [
+        {
+          type: 'tool_call',
+          id: item.id,
+          name: item.type,
+        } satisfies ToolCallRequestPart,
+        {
+          type: 'tool_call_response',
+          id: item.id,
+          response: this.captureMessageContent ? item.result : undefined,
+        } satisfies ToolCallResponsePart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  function_call_output(item: ResponseInputItem.FunctionCallOutput): ChatMessage {
+    return {
+      role: 'user',
+      parts: [
+        {
+          type: 'tool_call_response',
+          id: item.id,
+          response: this.captureMessageContent ? item.output : undefined,
+          call_id: item.call_id,
+        } satisfies ToolCallResponsePart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  local_shell_call(
+    item:
+      | ResponseInputItem.LocalShellCall
+      | ResponseOutputItem.LocalShellCall,
+  ): ChatMessage {
+    return {
+      role: 'assistant',
+      parts: [
+        {
+          type: 'tool_call',
+          id: item.id,
+          name: item.type,
+          arguments: this.captureMessageContent ? item.action : undefined,
+          call_id: item.call_id,
+        } satisfies ToolCallRequestPart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  local_shell_call_output(item: ResponseInputItem.LocalShellCallOutput): ChatMessage {
+    return {
+      role: 'user',
+      parts: [
+        {
+          type: 'tool_call_response',
+          id: item.id,
+          response: this.captureMessageContent ? item.output : undefined,
+        } satisfies ToolCallResponsePart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  mcp_call(
+    item: ResponseInputItem.McpCall | ResponseOutputItem.McpCall,
+  ): ChatMessage {
+    return {
+      role: 'assistant',
+      parts: [
+        {
+          type: 'tool_call',
+          id: item.id,
+          name: item.type,
+          arguments: this.captureMessageContent ? `${item.name}(${item.arguments})` : undefined,
+          server: item.server_label,
+        } satisfies ToolCallRequestPart,
+        {
+          type: 'tool_call_response',
+          id: item.id,
+          response: item.error
+            ? item.error
+            : this.captureMessageContent
+              ? item.output
+              : undefined,
+          server: item.server_label,
+        } satisfies ToolCallResponsePart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  mcp_list_tools(item: ResponseInputItem.McpListTools): ChatMessage {
+    return {
+      role: 'assistant',
+      parts: [
+        {
+          type: 'tool_call_response',
+          id: item.id,
+          response: item.error
+            ? item.error
+            : this.captureMessageContent
+              ? item.tools
+              : undefined,
+          server: item.server_label,
+        } satisfies ToolCallResponsePart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  mcp_approval_request(item: ResponseInputItem.McpApprovalRequest): ChatMessage {
+    return {
+      role: 'assistant',
+      parts: [
+        {
+          type: 'tool_call',
+          id: item.id,
+          name: `${item.type}${this.captureMessageContent ? `: ${item.name}` : ''}`,
+          arguments: this.captureMessageContent ? item.arguments : undefined,
+          server: item.server_label,
+        } satisfies ToolCallRequestPart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  mcp_approval_response(item: ResponseInputItem.McpApprovalResponse): ChatMessage {
+    return {
+      role: 'user',
+      parts: [
+        {
+          type: 'tool_call_response',
+          response: this.captureMessageContent ? item.approve : undefined,
+        } satisfies ToolCallResponsePart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  custom_tool_call_output(item: ResponseCustomToolCallOutput): ChatMessage {
+    return {
+      role: 'user',
+      parts: [
+        {
+          type: 'tool_call_response',
+          id: item.id,
+          response: this.captureMessageContent ? item.output : undefined,
+          call_id: item.call_id,
+        } satisfies ToolCallResponsePart,
+      ],
+    } satisfies ChatMessage;
+  }
+
+  item_reference(item: ResponseInputItem.ItemReference): ChatMessage {
+    return {
+      role: 'assistant',
+      parts: [
+        {
+          type: 'item_reference',
+          id: item.id,
+        } satisfies GenericPart,
+      ],
+    } satisfies ChatMessage;
+  }
+}
+
+class ConvertResponseOutputsToOutputMessagesUseCase {
+  constructor(private readonly captureMessageContent = false) { }
+
+  convert(responseOutput: Array<ResponseOutputItem>): OutputMessages {
+    const parts: Array<MessagePart> = responseOutput.flatMap((item: ResponseOutputItem) => this[item.type](item as never));
+
+    return [
+      {
+        role: 'assistant',
+        parts,
+        finish_reason: parts[parts.length - 1]?.type === 'tool_call' ? 'tool_call' : 'stop',
+      },
+    ];
+
+  }
+
+  message(item: ResponseOutputMessage): Array<MessagePart> {
+    const parts: Array<MessagePart> = [];
+    for (const content of item.content) {
+      switch (content.type) {
+        case 'output_text':
+          if (this.captureMessageContent) {
+            parts.push({
+              type: 'text',
+              content: content.text,
+            } satisfies TextPart);
+          } else {
+            parts.push({
+              type: 'text',
+              content: undefined,
+            } satisfies GenericPart);
+          }
+          break;
+        case 'refusal':
+          parts.push({
+            type: content.type,
+            refusal: content.refusal,
+          } satisfies GenericPart);
+          break;
+      }
+    }
+
+    return parts;
+  }
+
+  function_call(item: ResponseFunctionToolCall): Array<MessagePart> {
+    return [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: item.name,
+        arguments: this.captureMessageContent ? item.arguments : undefined,
+        call_id: item.call_id,
+      } satisfies ToolCallRequestPart
+    ];
+  }
+
+  custom_tool_call(item: ResponseCustomToolCall): Array<MessagePart> {
+    return [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: item.name,
+        arguments: this.captureMessageContent ? item.input : undefined,
+        call_id: item.call_id,
+      } satisfies ToolCallRequestPart
+    ];
+  }
+
+  reasoning(item: ResponseReasoningItem): Array<MessagePart> {
+    const parts: Array<MessagePart> = [];
+    for (const summary of item.summary) {
+      parts.push({
+        type: item.type,
+        text: this.captureMessageContent ? summary.text : undefined,
+      });
+    }
+    if (item.content) {
+      for (const content of item.content) {
+        parts.push({
+          type: item.type,
+          text: this.captureMessageContent ? content.text : undefined,
+        });
+      }
+    }
+
+    return parts;
+  }
+
+  file_search_call(item: ResponseFileSearchToolCall): Array<MessagePart> {
+    const parts: Array<MessagePart> = [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: item.type,
+        arguments: this.captureMessageContent ? item.queries : undefined,
+      } satisfies ToolCallRequestPart
+    ];
+    for (const result of item.results ?? []) {
+      parts.push({
+        type: 'tool_call_response',
+        id: item.id,
+        response: this.captureMessageContent ? result : undefined,
+      } satisfies ToolCallResponsePart);
+    }
+
+    return parts;
+  }
+
+  web_search_call(item: ResponseFunctionWebSearch): Array<MessagePart> {
+    return [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: item.type,
+        // @ts-expect-error: action is missing on Responses.ResponseFunctionWebSearch type
+        arguments: this.captureMessageContent ? item.action : undefined,
+      } satisfies ToolCallRequestPart,
+    ];
+  }
+
+  computer_call(item: ResponseComputerToolCall): Array<MessagePart> {
+    return [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: item.type,
+        arguments: this.captureMessageContent ? item.action : undefined,
+        call_id: item.call_id,
+      } satisfies ToolCallRequestPart,
+    ];
+  }
+
+  code_interpreter_call(item: ResponseCodeInterpreterToolCall): Array<MessagePart> {
+    const parts: Array<MessagePart> = [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: item.type,
+        arguments: this.captureMessageContent ? item.code : undefined,
+      } satisfies ToolCallRequestPart,
+    ];
+    for (const output of item.outputs ?? []) {
+      switch (output.type) {
+        case 'image':
+          parts.push({
+            type: 'tool_call_response',
+            id: item.id,
+            response: this.captureMessageContent ? output.url : undefined,
+          } satisfies ToolCallResponsePart);
+          break;
+        case 'logs':
+          parts.push({
+            type: 'tool_call_response',
+            id: item.id,
+            response: this.captureMessageContent ? output.logs : undefined,
+          } satisfies ToolCallResponsePart);
+          break;
+      }
+    }
+
+    return parts;
+  }
+
+  image_generation_call(
+    item: ResponseOutputItem.ImageGenerationCall,
+  ): Array<MessagePart> {
+    return [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: item.type,
+      } satisfies ToolCallRequestPart,
+      {
+        type: 'tool_call_response',
+        id: item.id,
+        response: this.captureMessageContent ? item.result : undefined,
+      } satisfies ToolCallResponsePart,
+    ];
+  }
+
+  local_shell_call(item: ResponseOutputItem.LocalShellCall): Array<MessagePart> {
+    return [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: item.type,
+        arguments: this.captureMessageContent ? item.action : undefined,
+        call_id: item.call_id,
+      } satisfies ToolCallRequestPart,
+    ];
+  }
+
+  mcp_call(item: ResponseOutputItem.McpCall): Array<MessagePart> {
+    return [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: item.name,
+        arguments: this.captureMessageContent ? `${item.name}(${item.arguments})` : undefined,
+        server: item.server_label,
+      } satisfies ToolCallRequestPart,
+      {
+        type: 'tool_call_response',
+        id: item.id,
+        response: item.error
+          ? item.error
+          : this.captureMessageContent
+            ? item.output
+            : undefined,
+        server: item.server_label,
+      } satisfies ToolCallResponsePart
+    ];
+  }
+
+  mcp_list_tools(item: ResponseOutputItem.McpListTools): Array<MessagePart> {
+    return [
+      {
+        type: 'tool_call_response',
+        id: item.id,
+        response: item.error
+          ? item.error
+          : this.captureMessageContent
+            ? item.tools
+            : undefined,
+        server: item.server_label,
+      } satisfies ToolCallResponsePart,
+    ];
+  }
+
+  mcp_approval_request(
+    item: ResponseOutputItem.McpApprovalRequest,
+  ): Array<MessagePart> {
+    return [
+      {
+        type: 'tool_call',
+        id: item.id,
+        name: `${item.type}${this.captureMessageContent ? `: ${item.name}` : ''}`,
+        arguments: this.captureMessageContent ? item.arguments : undefined,
+        server: item.server_label,
+      } satisfies ToolCallRequestPart,
+    ];
+  }
 }
 
 function isTextContent(
@@ -855,12 +1832,13 @@ function isTextContent(
   return value.type === 'text';
 }
 
-function isStreamPromise(
-  params: ChatCompletionCreateParams | undefined,
-  value: APIPromise<Stream<ChatCompletionChunk> | ChatCompletion>
-): value is APIPromise<Stream<ChatCompletionChunk>> {
-  if (params && params.stream) {
-    return true;
-  }
-  return false;
+function isStreamPromise<
+  Params extends { stream?: boolean | null } | undefined,
+  Chunk,
+  NonStream
+>(
+  params: Params,
+  value: APIPromise<Stream<Chunk> | NonStream>
+): value is APIPromise<Stream<Chunk>> {
+  return Boolean(params?.stream);
 }
