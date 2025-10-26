@@ -177,7 +177,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         this: ChatCompletions,
         ...args: Parameters<ChatCompletions['create']>
       ) {
-        if (!self.isEnabled) {
+        if (!self.isEnabled()) {
           return original.apply(this, args);
         }
 
@@ -742,7 +742,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         this: Embeddings,
         ...args: Parameters<Embeddings['create']>
       ) {
-        if (!self.isEnabled) {
+        if (!self.isEnabled()) {
           return original.apply(this, args);
         }
 
