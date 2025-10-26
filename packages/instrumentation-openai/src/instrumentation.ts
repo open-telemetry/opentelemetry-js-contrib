@@ -148,7 +148,11 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       new InstrumentationNodeModuleDefinition(
         'openai',
         ['>=4.19.0 <7'],
-        modExports => {
+        module => {
+          const modExports =
+            module[Symbol.toStringTag] === 'Module'
+              ? module.default // ESM
+              : module; // CommonJS
           this._wrap(
             modExports.OpenAI.Chat.Completions.prototype,
             'create',
@@ -167,7 +171,11 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
 
           return modExports;
         },
-        modExports => {
+        module => {
+          const modExports =
+            module[Symbol.toStringTag] === 'Module'
+              ? module.default // ESM
+              : module; // CommonJS
           this._unwrap(modExports.OpenAI.Chat.Completions.prototype, 'create');
           this._unwrap(modExports.OpenAI.Embeddings.prototype, 'create');
           this._unwrap(modExports.OpenAI.Responses.prototype, 'create');
