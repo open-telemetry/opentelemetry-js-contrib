@@ -1004,7 +1004,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
       attributes: {
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: inputs as AnyValue,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined // inputs as AnyValue,
       },
       body: inputs as AnyValue,
     });
@@ -1053,7 +1053,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
             attributes: {
               [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OUTPUT_MESSAGES]: output as AnyValue,
+              [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined // output as AnyValue,
             },
             body: output as AnyValue,
           });
