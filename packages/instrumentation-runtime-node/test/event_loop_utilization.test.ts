@@ -120,10 +120,8 @@ describe('nodejs.eventloop.utilization', function () {
       const { resourceMetrics } = await metricReader.collect();
       const scopeMetrics = resourceMetrics.scopeMetrics;
       const utilizationMetric = scopeMetrics[0].metrics.find(
-        x =>
-          x.descriptor.name ===
-          `${ConventionalNamePrefix.NodeJs}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`
-      );
+      x => x.descriptor.name === METRIC_NODEJS_EVENTLOOP_UTILIZATION
+    );
 
       assert.notEqual(utilizationMetric, undefined, 'metric not found');
       assert.strictEqual(
