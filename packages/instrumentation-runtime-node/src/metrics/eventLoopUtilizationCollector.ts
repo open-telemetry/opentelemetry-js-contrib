@@ -22,7 +22,9 @@ import { METRIC_NODEJS_EVENTLOOP_UTILIZATION } from '../semconv';
 const { eventLoopUtilization: eventLoopUtilizationCollector } = performance;
 
 export class EventLoopUtilizationCollector extends BaseCollector {
-  private _lastValue?: EventLoopUtilization;
+  // Value needs to be initialized the first time otherwise the first measurement would be incorrectly small
+  // See https://github.com/open-telemetry/opentelemetry-js-contrib/pull/3118#issuecomment-3429737955
+  private _lastValue: EventLoopUtilization = eventLoopUtilizationCollector();
 
   public updateMetricInstruments(meter: Meter): void {
     meter
@@ -34,7 +36,10 @@ export class EventLoopUtilizationCollector extends BaseCollector {
         if (!this._config.enabled) return;
 
         const currentELU = eventLoopUtilizationCollector();
-        const deltaELU = eventLoopUtilizationCollector(currentELU, this._lastValue);
+        const deltaELU = eventLoopUtilizationCollector(
+          currentELU,
+          this._lastValue
+        );
         this._lastValue = currentELU;
         observableResult.observe(deltaELU.utilization);
       });
