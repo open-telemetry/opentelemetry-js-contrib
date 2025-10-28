@@ -92,7 +92,8 @@ import {
   GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
-  GEN_AI_PROVIDER_NAME_VALUE_OPENAI
+  GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+  ATTR_GEN_AI_SYSTEM_INSTRUCTIONS
 } from './semconv';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -974,6 +975,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
       [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
       [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+      [ATTR_GEN_AI_SYSTEM_INSTRUCTIONS]: params.instructions,
     }, getAttrsFromBaseURL(baseURL, this._diag));
 
     // Span attributes.
