@@ -1040,6 +1040,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           span.setAttributes({
             [ATTR_GEN_AI_RESPONSE_ID]: response.id,
             [ATTR_GEN_AI_RESPONSE_MODEL]: model,
+            [ATTR_GEN_AI_CONVERSATION_ID]: response.conversation?.id
           });
           break;
         }
