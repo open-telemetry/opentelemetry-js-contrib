@@ -53,7 +53,6 @@
     "@opentelemetry/contrib-test-utils": "^0.54.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "cross-env": "7.0.3",
@@ -63,6 +62,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
+    "@opentelemetry/semantic-conventions": "^1.33.0",
     "@opentelemetry/instrumentation": "^0.207.0",
     "@types/memcached": "^2.2.6"
   },
