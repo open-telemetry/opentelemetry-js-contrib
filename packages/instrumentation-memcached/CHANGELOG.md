@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.51.0...instrumentation-memcached-v0.52.0) (2025-10-29)
+
+
+### Features
+
+* **instrumentation-memcached:** support net.* and db.* semconv migra… ([#3169](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3169)) ([622638d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/622638ddf06a8f316b5f13abda84595767244949))
+
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.50.0...instrumentation-memcached-v0.51.0) (2025-10-21)
 
 
