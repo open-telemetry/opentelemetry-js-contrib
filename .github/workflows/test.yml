@@ -40,7 +40,7 @@ jobs:
       - name: Compile packages
         run: npm run compile
       - name: Upload Compile Cache (Push)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: compile-cache-main
           path: .nx
@@ -49,7 +49,7 @@ jobs:
           overwrite: true # we want a new artifact with the same name
           retention-days: 30 # enough to make sure it does not expire
       - name: Upload Compile Cache (PR)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
@@ -269,7 +269,7 @@ jobs:
       - name: Test All Versions (Delta)
         run: npm run test-all-versions:ci:affected
       - name: Upload Test Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-${{ matrix.node }}
           include-hidden-files: true
