@@ -27,23 +27,29 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci --ignore-scripts
-      # Note: when pushing to main we want to test only what changed in
-      # last commit. Otherwise we want to test all changes from origin/main.
-      # So we set the right values for base and head commits depending
-      # on the type of event (PR or push)
-      # ref: https://nx.dev/ci/features/affected#configure-affected-on-ci
-      - name: Set base and head commits
-        run: |
-          if [ "${{github.event_name}}" == "push" ]; then
-            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
-            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
-          else
-            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
-            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
-          fi
-      - name: Compile (Delta)
-        run: npm run compile:ci:affected
-      - name: Upload Build Artifacts
+      # Note: Regardless of the event (push, PR) we should get the
+      # compilation cache from the last commit to main and compile
+      # all packages. Nx will compile only what changed according to the
+      # cache. Then depending if it's a push or a PR we should upload to
+      # the main cache (overwrite) or the job specific one.
+      - name: Download Compile Cache
+        uses: actions/download-artifact@v5
+        with:
+          name: compile-cache-main
+          path: .nx
+      - name: Compile packages
+        run: npm run compile
+      - name: Upload Compile Cache (Push)
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: compile-cache-main
+          path: .nx
+          include-hidden-files: true
+          if-no-files-found: error
+          overwrite: true # we want a new artifact with the same name
+          retention-days: 7 # a week should be okay https://github.com/open-telemetry/opentelemetry-js-contrib/commits/main/
+      - name: Upload Compile Cache (PR)
         uses: actions/upload-artifact@v4
         with:
           name: compile-cache-${{ github.run_number }}
