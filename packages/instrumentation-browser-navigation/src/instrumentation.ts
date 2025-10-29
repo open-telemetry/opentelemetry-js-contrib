@@ -230,22 +230,27 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     try {
       const a = new URL(fromUrl, window.location.origin);
       const b = new URL(toUrl, window.location.origin);
-      // Only consider it a hash change if the base URL (origin + pathname + search) is identical
-      // and only the hash portion differs
-      return (
-        a.origin === b.origin &&
-        a.pathname === b.pathname &&
-        a.search === b.search &&
-        a.hash !== b.hash
-      );
+      // Only consider it a hash change if:
+      // 1. Base URL (origin + pathname + search) is identical
+      // 2. Both URLs have hashes and they're different, OR we're adding a hash
+      const sameBase = a.origin === b.origin && a.pathname === b.pathname && a.search === b.search;
+      const fromHasHash = a.hash !== '';
+      const toHasHash = b.hash !== '';
+      const hashesAreDifferent = a.hash !== b.hash;
+      
+      return sameBase && hashesAreDifferent && (fromHasHash && toHasHash || !fromHasHash && toHasHash);
     } catch {
-      // Fallback: check if base URLs are identical and hash parts differ
+      // Fallback: check if base URLs are identical and we're changing/adding hash (not removing)
       const fromBase = fromUrl.split('#')[0];
       const toBase = toUrl.split('#')[0];
       const fromHash = fromUrl.split('#')[1] || '';
       const toHash = toUrl.split('#')[1] || '';
       
-      return fromBase === toBase && fromHash !== toHash;
+      const sameBase = fromBase === toBase;
+      const hashesAreDifferent = fromHash !== toHash;
+      const notRemovingHash = toHash !== ''; // Only true if we're not removing the hash
+      
+      return sameBase && hashesAreDifferent && notRemovingHash;
     }
   }
 
@@ -266,6 +271,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
         const fromURL = new URL(fromUrl);
         const toURL = new URL(toUrl);
         // Same document if origin is the same (cross-origin navigations are always different documents)
+        // In SPAs, route changes via pushState/replaceState are same-document navigations
         return fromURL.origin === toURL.origin;
       } catch {
         // Fallback: assume same document for relative URLs or parsing errors
@@ -273,12 +279,14 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       }
     }
     
-    // Default to true for soft navigations (pushState, replaceState, popstate, hashchange)
+    // Default: if we can't determine URLs, assume it's a same-document navigation
+    // This handles cases where URL comparison fails
     return true;
   }
 
   /**
-   * Determines if navigation is a hash change according to Navigation API specification
+   * Determines if navigation is a hash change based on URL comparison
+   * A hash change is true if the URLs are the same except for the hash part
    */
   private _determineHashChange(
     changeState?: string | null,
@@ -291,21 +299,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       return navigationEvent.hashChange;
     }
     
-    // For hashchange events, it's always a hash change
-    if (changeState === 'hashchange') {
-      return true;
-    }
-    
-    // For popstate events (back/forward), only consider it a hash change if URLs actually differ by hash
-    // This prevents back navigation from hash to non-hash being incorrectly marked as hash change
-    if (changeState === 'popstate') {
-      if (fromUrl && toUrl) {
-        return this._isHashChange(fromUrl, toUrl);
-      }
-      return false;
-    }
-    
-    // For other navigation types (pushState, replaceState), determine based on URL comparison
+    // For all other cases, determine based on URL comparison
     if (fromUrl && toUrl) {
       return this._isHashChange(fromUrl, toUrl);
     }
@@ -398,7 +392,9 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       case 'replaceState':
         return 'replace';
       case 'popstate':
-        return 'traverse';
+        // For popstate, we need to check if it's a hash change to determine type
+        // This is called after _determineHashChange, so we need to check URLs here too
+        return 'traverse'; // Default to traverse, but hash changes will be handled specially
       case 'hashchange':
         return 'push';
       case 'navigate':

@@ -9,7 +9,7 @@
     "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "docker:start": "cd ./docker && docker-compose down && docker-compose up",
     "docker:startd": "cd ./docker && docker-compose down && docker-compose up -d",
-    "start": "webpack serve --mode development --progress --port 8090 --config webpack.config.js --hot --host 0.0.0.0 --static examples"
+    "start": "webpack serve --mode development --progress --port 8090 --config webpack.config.js --hot --host 0.0.0.0"
   },
   "repository": {
     "type": "git",
