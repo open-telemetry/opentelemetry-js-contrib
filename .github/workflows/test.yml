@@ -32,15 +32,14 @@ jobs:
       # all packages. Nx will compile only what changed according to the
       # cache. Then depending if it's a push or a PR we should upload to
       # the main cache (overwrite) or the job specific one.
-      - name: Download Compile Cache
-        uses: actions/download-artifact@v5
-        with:
-          name: compile-cache-main
-          path: .nx
+      # - name: Download Compile Cache
+      #   uses: actions/download-artifact@v5
+      #   with:
+      #     name: compile-cache-main
+      #     path: .nx
       - name: Compile packages
         run: npm run compile
       - name: Upload Compile Cache (Push)
-        # if: ${{ github.event_name == 'push' }}
         uses: actions/upload-artifact@v4
         with:
           name: compile-cache-main
