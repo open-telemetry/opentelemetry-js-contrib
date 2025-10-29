@@ -134,11 +134,7 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
 
   private _buildTraceparent(span: api.Span): string {
     const sc = span.spanContext();
-    const sampled =
-      (sc.traceFlags & api.TraceFlags.SAMPLED) === api.TraceFlags.SAMPLED
-        ? '01'
-        : '00';
-    return `00-${sc.traceId}-${sc.spanId}-${sampled}`;
+    return `00-${sc.traceId}-${sc.spanId}-0${Number(sc.traceFlags || api.TraceFlags.NONE).toString(16)}`;
   }
 
   /**
@@ -283,11 +279,10 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
         if (!shouldInject) return runUserRequest();
 
         const traceparent = thisPlugin._buildTraceparent(span);
-        thisPlugin
+        
+        void thisPlugin
           ._injectContextInfo(this, tediousModule, traceparent)
           .finally(runUserRequest);
-
-        return;
       }
 
       Object.defineProperty(patchedMethod, 'length', {
