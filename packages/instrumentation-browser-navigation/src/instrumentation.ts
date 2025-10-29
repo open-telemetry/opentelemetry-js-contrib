@@ -171,7 +171,9 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       try {
         const navigationApi = (window as any).navigation as EventTarget;
         navigationApi?.removeEventListener?.('navigate', this._onNavigateHandler);
-      } catch {}
+      } catch {
+        // Ignore errors when removing Navigation API listeners
+      }
       this._onNavigateHandler = undefined;
     }
   }
@@ -314,6 +316,11 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
    * - Preserves fragment when available
    */
   private _sanitizeUrl(url: string): string {
+    const sensitiveParams = [
+      'password', 'passwd', 'secret', 'api_key', 'apikey', 'auth', 'authorization',
+      'token', 'access_token', 'refresh_token', 'jwt', 'session', 'sessionid',
+      'key', 'private_key', 'client_secret', 'client_id', 'signature', 'hash'
+    ];
     try {
       const urlObj = new URL(url);
       
@@ -324,11 +331,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       }
       
       // Redact sensitive query parameters
-      const sensitiveParams = [
-        'password', 'passwd', 'secret', 'api_key', 'apikey', 'auth', 'authorization',
-        'token', 'access_token', 'refresh_token', 'jwt', 'session', 'sessionid',
-        'key', 'private_key', 'client_secret', 'client_id', 'signature', 'hash'
-      ];
+     
       
       for (const param of sensitiveParams) {
         if (urlObj.searchParams.has(param)) {
@@ -340,13 +343,6 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     } catch {
       // If URL parsing fails, redact credentials and sensitive query parameters
       let sanitized = url.replace(/\/\/[^:]+:[^@]+@/, '//REDACTED:REDACTED@');
-      
-      // Redact sensitive query parameters using regex
-      const sensitiveParams = [
-        'password', 'passwd', 'secret', 'api_key', 'apikey', 'auth', 'authorization',
-        'token', 'access_token', 'refresh_token', 'jwt', 'session', 'sessionid',
-        'key', 'private_key', 'client_secret', 'client_id', 'signature', 'hash'
-      ];
       
       for (const param of sensitiveParams) {
         // Match param=value or param%3Dvalue (URL encoded)

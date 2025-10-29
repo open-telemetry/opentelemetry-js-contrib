@@ -391,7 +391,7 @@ describe('Browser Navigation Instrumentation', () => {
             }
           }, 50);
         }
-      } catch (error) {
+      } catch (_error) {
         // Fallback if Navigation API methods fail
         console.log('Navigation API methods not fully supported, using fallback');
         history.pushState({}, '', '?test=fallback');
@@ -484,7 +484,7 @@ describe('Browser Navigation Instrumentation', () => {
             }
           }, 50);
         }
-      } catch (error) {
+      } catch (_error) {
         // Fallback to traditional hash change
         location.hash = '#section1';
         setTimeout(() => {

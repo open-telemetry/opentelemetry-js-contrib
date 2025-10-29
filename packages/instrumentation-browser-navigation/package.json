@@ -9,9 +9,6 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "lint": "eslint  --ext .ts",
-    "lint:fix": "eslint  --ext .ts --fix",
-    "lint:readme": "node ../../scripts/lint-readme.js",
     "prewatch": "npm run version:update",
     "version:update": "node ../../scripts/version-update.js",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
