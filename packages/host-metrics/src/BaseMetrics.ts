@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Meter, MeterProvider, diag, metrics } from '@opentelemetry/api';
+import { Meter, MeterProvider, metrics } from '@opentelemetry/api';
 
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -27,6 +27,7 @@ export interface MetricsCollectorConfig {
   meterProvider?: MeterProvider;
   // Name of component
   name?: string;
+  metricGroups?: string[];
 }
 
 const DEFAULT_NAME = PACKAGE_NAME;
@@ -35,9 +36,9 @@ const DEFAULT_NAME = PACKAGE_NAME;
  * Base Class for metrics
  */
 export abstract class BaseMetrics {
-  protected _logger = diag;
   protected _meter: Meter;
   private _name: string;
+  protected _metricGroups: Array<string> | undefined;
 
   constructor(config?: MetricsCollectorConfig) {
     // Do not use `??` operator to allow falling back to default when the
@@ -45,6 +46,7 @@ export abstract class BaseMetrics {
     this._name = config?.name || DEFAULT_NAME;
     const meterProvider = config?.meterProvider ?? metrics.getMeterProvider();
     this._meter = meterProvider.getMeter(this._name, PACKAGE_VERSION);
+    this._metricGroups = config?.metricGroups;
   }
 
   /**
