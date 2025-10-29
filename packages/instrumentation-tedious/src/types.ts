@@ -15,5 +15,11 @@
  */
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-
-export type TediousInstrumentationConfig = InstrumentationConfig;
+export interface TediousInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * If true, injects the current DB span's W3C traceparent into SQL Server
+   * session state via `SET CONTEXT_INFO @opentelemetry_traceparent` (varbinary).
+   * Off by default to avoid the extra round-trip per request.
+   */
+  enableTraceContextPropagation?: boolean;
+}
