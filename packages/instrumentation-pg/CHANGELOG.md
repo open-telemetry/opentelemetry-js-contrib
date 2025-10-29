@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.60.0...instrumentation-pg-v0.61.0) (2025-10-29)
+
+
+### Features
+
+* **pg-instrumentation:** record exceptions as span events ([#3182](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3182)) ([fb514f7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fb514f7842640fd2e57e6610549acc49f55f6d86))
+
 ## [0.60.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.59.0...instrumentation-pg-v0.60.0) (2025-10-21)
 
 
