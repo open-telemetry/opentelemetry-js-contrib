@@ -1,16 +1,18 @@
 {
   "name": "@opentelemetry/baggage-span-processor",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "description": "OpenTelemetry Baggage Span Processor for Node.js",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "packages/baggage-span-processor"
+  },
   "scripts": {
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/baggage-span-processor",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha test/**/*.test.ts",
@@ -48,7 +50,7 @@
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "expect": "29.2.0",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "typescript": "5.0.4"
   },

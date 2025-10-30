@@ -1,4 +1,75 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
+
+## [0.18.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.17.0...winston-transport-v0.18.0) (2025-10-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3187](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3187)) ([ab96334](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab9633455794de79964e60775c804791d19259bc))
+
+## [0.17.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.16.2...winston-transport-v0.17.0) (2025-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3145](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3145)) ([704c716](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/704c7161f782590d7b644ab607b5f9c29cdfd63f))
+
+## [0.16.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.16.1...winston-transport-v0.16.2) (2025-09-29)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3123](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3123)) ([0dab838](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0dab8383b5349e21a968fe2cedd8a6e2243f86d0))
+
+## [0.16.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.16.0...winston-transport-v0.16.1) (2025-09-25)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
+## [0.16.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.15.0...winston-transport-v0.16.0) (2025-09-10)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3034](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3034)) ([bee0a66](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bee0a66ef825145fb1a9b172c3468ccf0c97a820))
+
+## [0.15.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.14.1...winston-transport-v0.15.0) (2025-09-08)
+
+
+### Features
+
+* **deps:** update otel deps ([#3027](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3027)) ([fd9e262](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd9e262fabf4e8fd8e246b8967892fa26442968a))
+
+## [0.14.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.14.0...winston-transport-v0.14.1) (2025-08-13)
+
+
+### Bug Fixes
+
+* **winston-transport, instrumentation-winston:** get the correct severityText and severityNumber with winston.format.colorize() is used ([#2956](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2956)) ([952abc7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/952abc7ffb677adf0a4be9ca3a46927a6335e355))
+
+## [0.14.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.13.0...winston-transport-v0.14.0) (2025-07-09)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2930](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2930)) ([e4ab2a9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e4ab2a932084016f9750bd09d3f9a469c44628ea))
+
+## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.12.0...winston-transport-v0.13.0) (2025-06-02)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2871](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2871)) ([d33c6f2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d33c6f232a3c5673e618fa62692d2d3bbfe4c0fc))
+
+## [0.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.11.0...winston-transport-v0.12.0) (2025-05-15)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#2828](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2828)) ([59c2a4c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59c2a4c002992518da2d91b4ceb24f8479ad2346))
 
 ## [0.11.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.10.1...winston-transport-v0.11.0) (2025-03-18)
 

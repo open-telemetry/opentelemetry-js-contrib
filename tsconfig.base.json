@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
@@ -8,6 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
     "inlineSources": true,
+    "isolatedModules": true,
     "module": "node16",
     "moduleResolution": "node16",
     "newLine": "LF",
@@ -21,8 +23,5 @@
     "strict": true,
     "strictNullChecks": true,
     "target": "es2022"
-  },
-  "exclude": [
-    "node_modules"
-  ]
+  }
 }
