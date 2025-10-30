@@ -27,11 +27,9 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci --ignore-scripts
-      # Note: Regardless of the event (push, PR) we should get the
-      # compilation cache from the last commit to main and compile
-      # all packages. Nx will compile only what changed according to the
-      # cache. Then depending if it's a push or a PR we should upload to
-      # the main cache (overwrite) or the job specific one.
+      # Note: we restore the last compilation form main branch
+      # so NX will only compile what has changed since then.
+      # Cache action is used because can be restores from dfferen workfow runs
       - name: Compile Cache Lookup
         uses: actions/cache/restore@v4
         with:
@@ -39,11 +37,15 @@ jobs:
           path: .nx
       - name: Compile packages
         run: npm run compile
+      # Note: update the compilation cache for main branch
+      # TODO: add if github.event_name == 'push'
       - name: Compile Cache Update (Push)
         uses: actions/cache/save@v4
         with:
           key: compile-cache-main
           path: .nx
+      # Note: upload cache to be used in this worflow run
+      # by the unit-test and test-all-versions jobs
       - name: Upload Compile Cache (PR)
         uses: actions/upload-artifact@v5
         with:
