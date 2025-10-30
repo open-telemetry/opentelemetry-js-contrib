@@ -452,7 +452,7 @@ describe('redis v4-v5', () => {
       );
       assert.strictEqual(
         multiSetSpan?.attributes[ATTR_DB_OPERATION_NAME],
-        'SET'
+        'MULTI'
       );
 
       assert.ok(multiGetSpan);
@@ -487,7 +487,7 @@ describe('redis v4-v5', () => {
       );
       assert.strictEqual(
         multiGetSpan?.attributes[ATTR_DB_OPERATION_NAME],
-        'GET'
+        'MULTI'
       );
     });
 
@@ -530,7 +530,7 @@ describe('redis v4-v5', () => {
       );
       assert.strictEqual(
         multiSetSpan?.attributes[ATTR_DB_OPERATION_NAME],
-        'SET'
+        'MULTI SET'
       );
     });
 
@@ -821,6 +821,78 @@ describe('redis v4-v5', () => {
       assert.strictEqual(
         setSpan.attributes[ATTR_SERVER_ADDRESS],
         redisTestConfig.host
+      );
+    });
+  });
+  describe('pipeline commands', () => {
+    it('should trace all commands in a pipeline with a mixed set of commands', async () => {
+      await client.set('another-key', 'another-value');
+
+      const [setKeyReply, otherKeyValue] = await client
+        .multi()
+        .set('key', 'value')
+        .get('another-key')
+        .execAsPipeline();
+
+      assert.strictEqual(setKeyReply, 'OK');
+      assert.strictEqual(otherKeyValue, 'another-value');
+
+      const [setSpan, pipelineSetSpan, pipelineGetSpan] = getTestSpans();
+
+      assert.ok(setSpan);
+
+      assert.ok(pipelineSetSpan);
+      assert.strictEqual(pipelineSetSpan.name, 'redis-SET');
+      assert.strictEqual(
+        pipelineSetSpan.attributes[ATTR_DB_STATEMENT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
+        pipelineSetSpan.attributes[ATTR_DB_QUERY_TEXT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
+        pipelineSetSpan.attributes[ATTR_DB_OPERATION_NAME],
+        'PIPELINE'
+      );
+
+      assert.ok(pipelineGetSpan);
+      assert.strictEqual(pipelineGetSpan.name, 'redis-GET');
+      assert.strictEqual(
+        pipelineGetSpan.attributes[ATTR_DB_STATEMENT],
+        'GET another-key'
+      );
+      assert.strictEqual(
+        pipelineGetSpan.attributes[ATTR_DB_QUERY_TEXT],
+        'GET another-key'
+      );
+      assert.strictEqual(
+        pipelineGetSpan.attributes[ATTR_DB_OPERATION_NAME],
+        'PIPELINE'
+      );
+    });
+
+    it('should trace all commands in a pipeline with a same set of commands', async () => {
+      const [setReply] = await client
+        .multi()
+        .addCommand(['SET', 'key', 'value'])
+        .execAsPipeline();
+
+      assert.strictEqual(setReply, 'OK');
+
+      const [pipelineSetSpan] = getTestSpans();
+      assert.ok(pipelineSetSpan);
+      assert.strictEqual(
+        pipelineSetSpan.attributes[ATTR_DB_STATEMENT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
+        pipelineSetSpan.attributes[ATTR_DB_QUERY_TEXT],
+        'SET key [1 other arguments]'
+      );
+      assert.strictEqual(
+        pipelineSetSpan.attributes[ATTR_DB_OPERATION_NAME],
+        'PIPELINE SET'
       );
     });
   });
