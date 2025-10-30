@@ -25,7 +25,7 @@ import {
   SocketIoInstrumentationConfig,
 } from '../src';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import * as expect from 'expect';
+import expect from 'expect';
 import 'mocha';
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 
