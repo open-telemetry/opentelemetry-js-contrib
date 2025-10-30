@@ -37,6 +37,7 @@ jobs:
         with:
           name: compile-cache-main
           path: .nx
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Compile packages
         run: npm run compile
       - name: Upload Compile Cache (Push)
