@@ -27,25 +27,27 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci --ignore-scripts
-        timeout-minutes: 10
-      # Note: when pushing to main we want to test only what changed in
-      # last commit. Otherwise we want to test all changes from origin/main.
-      # So we set the right values for base and head commits depending
-      # on the type of event (PR or push)
-      # ref: https://nx.dev/ci/features/affected#configure-affected-on-ci
-      - name: Set base and head commits
-        run: |
-          if [ "${{github.event_name}}" == "push" ]; then
-            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
-            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
-          else
-            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
-            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
-          fi
-      - name: Compile (Delta)
-        run: npm run compile:ci:affected
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+      # Note: we restore the last compilation form main branch
+      # so NX will only compile what has changed since then.
+      # Cache action is used because can be restores from dfferen workfow runs
+      - name: Compile Cache Lookup
+        uses: actions/cache/restore@v4
+        with:
+          key: compile-cache-main
+          path: .nx
+      - name: Compile packages
+        run: npm run compile
+      # Note: update the compilation cache for main branch
+      - name: Compile Cache Update (Push)
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/cache/save@v4
+        with:
+          key: compile-cache-main
+          path: .nx
+      # Note: upload cache to be used in this worflow run
+      # by the unit-test and test-all-versions jobs
+      - name: Upload Compile Cache (PR)
+        uses: actions/upload-artifact@v5
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
@@ -205,7 +207,11 @@ jobs:
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
-      # Note: see comment in the compile job
+      # Note: when pushing to main we want to test only what changed in
+      # last commit. Otherwise we want to test all changes from origin/main.
+      # So we set the right values for base and head commits depending
+      # on the type of event (PR or push)
+      # ref: https://nx.dev/ci/features/affected#configure-affected-on-ci
       - name: Set base and head commits
         run: |
           if [ "${{github.event_name}}" == "push" ]; then
@@ -220,7 +226,7 @@ jobs:
       - name: Unit tests (Browser - Delta)
         if: ${{ matrix.node == '22' }}
         run: npm run test:browser:ci:affected
-      - name: Unit tests (Nodejs - Delta)
+      - name: Unit tests (Node.js - Delta)
         run: npm run test:ci:affected
 
   test-all-versions:
@@ -250,7 +256,7 @@ jobs:
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
-      # Note: see comment in the compile job
+      # Note: see comment in the unit-test job
       - name: Set base and head commits
         run: |
           if [ "${{github.event_name}}" == "push" ]; then
@@ -265,7 +271,7 @@ jobs:
       - name: Test All Versions (Delta)
         run: npm run test-all-versions:ci:affected
       - name: Upload Test Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-${{ matrix.node }}
           include-hidden-files: true
