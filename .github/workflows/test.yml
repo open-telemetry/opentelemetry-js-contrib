@@ -38,6 +38,7 @@ jobs:
           name: compile-cache-main
           path: .nx
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
       - name: Compile packages
         run: npm run compile
       - name: Upload Compile Cache (Push)
