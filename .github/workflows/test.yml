@@ -38,8 +38,8 @@ jobs:
       - name: Compile packages
         run: npm run compile
       # Note: update the compilation cache for main branch
-      # TODO: add if github.event_name == 'push'
       - name: Compile Cache Update (Push)
+        if: ${{ github.event_name == 'push' }}
         uses: actions/cache/save@v4
         with:
           key: compile-cache-main
@@ -207,7 +207,11 @@ jobs:
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
-      # Note: see comment in the compile job
+      # Note: when pushing to main we want to test only what changed in
+      # last commit. Otherwise we want to test all changes from origin/main.
+      # So we set the right values for base and head commits depending
+      # on the type of event (PR or push)
+      # ref: https://nx.dev/ci/features/affected#configure-affected-on-ci
       - name: Set base and head commits
         run: |
           if [ "${{github.event_name}}" == "push" ]; then
@@ -222,7 +226,7 @@ jobs:
       - name: Unit tests (Browser - Delta)
         if: ${{ matrix.node == '22' }}
         run: npm run test:browser:ci:affected
-      - name: Unit tests (Nodejs - Delta)
+      - name: Unit tests (Node.js - Delta)
         run: npm run test:ci:affected
 
   test-all-versions:
@@ -252,7 +256,7 @@ jobs:
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
-      # Note: see comment in the compile job
+      # Note: see comment in the unit-test job
       - name: Set base and head commits
         run: |
           if [ "${{github.event_name}}" == "push" ]; then
