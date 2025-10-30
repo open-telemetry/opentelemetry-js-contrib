@@ -89,6 +89,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
   // No need to instrument files/modules
   protected override init() {
+    // TODO: remove this after checking the compilatin step in test workflow
+    this._diag.debug('UndiciInstrumentation init');
     return undefined;
   }
 
