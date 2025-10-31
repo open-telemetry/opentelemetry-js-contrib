@@ -3,6 +3,8 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
+[component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @martinkuba @wolfgangcodes
+
 This module provides automatic instrumentation for capturing unhandled exceptions and promise rejections in web applications.
 
 ## Installation
