@@ -62,6 +62,7 @@
   "packages/instrumentation-document-load": "0.53.0",
   "packages/instrumentation-long-task": "0.52.0",
   "packages/instrumentation-user-interaction": "0.52.0",
+  "packages/instrumentation-web-exception": "0.0.1",
   "packages/plugin-react-load": "0.39.0",
   "packages/propagator-instana": "0.4.3",
   "packages/propagator-ot-trace": "0.28.3",
