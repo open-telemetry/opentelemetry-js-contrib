@@ -76,5 +76,5 @@
     "@opentelemetry/instrumentation": "^0.57.2",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-document-load#readme"
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-web-exception#readme"
 }

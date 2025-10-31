@@ -21,7 +21,6 @@ import {
   LoggerProvider,
   SimpleLogRecordProcessor,
   InMemoryLogRecordExporter,
-  type LoggerProviderConfig,
 } from '@opentelemetry/sdk-logs';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import {
@@ -32,9 +31,9 @@ import {
 import { logs } from '@opentelemetry/api-logs';
 const assert = chai.assert;
 
+const STRING_ERROR = "Some error string."
+
 describe('WebExceptionInstrumentation', () => {
-  const config : LoggerProviderConfig = {}
-  config.processors
   const exporter = new InMemoryLogRecordExporter();
   const logRecordProcessor = new SimpleLogRecordProcessor(exporter);
   const loggerProvider = new LoggerProvider({processors:[logRecordProcessor]});
@@ -74,7 +73,7 @@ describe('WebExceptionInstrumentation', () => {
         mochaErrorHandler?.call(window, event, source, lineno, colno, error);
       }
 
-      if (typeof error === 'string' && error !== 'string') {
+      if (typeof error === 'string' && error !== STRING_ERROR) {
         // If we are testing our instrumentation, we want to let the error propagate.
         // If it is any other kind of error, we want Mocha to handle the error as expected.
         mochaErrorHandler?.call(window, event, source, lineno, colno);
@@ -148,14 +147,14 @@ describe('WebExceptionInstrumentation', () => {
 
     it('should handle throwing an error as a string', async () => {
       setTimeout(() => {
-        throw 'string';
+        throw STRING_ERROR;
       });
 
       setTimeout(() => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], 'string');
+        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], STRING_ERROR);
       }, 0);
     });
   });
@@ -202,15 +201,15 @@ describe('WebExceptionInstrumentation', () => {
 
     it('should add custom attributes if the error is a string', async () => {
       setTimeout(() => {
-        throw 'string';
+        throw STRING_ERROR;
       });
 
       setTimeout(() => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], 'string');
-        assert.strictEqual(event.attributes['app.custom.exception'], 'STRING');
+        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], STRING_ERROR);
+        assert.strictEqual(event.attributes['app.custom.exception'], STRING_ERROR.toLocaleUpperCase());
       }, 0);
     });
   });

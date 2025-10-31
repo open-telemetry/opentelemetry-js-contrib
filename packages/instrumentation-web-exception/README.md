@@ -15,14 +15,13 @@ npm install --save @opentelemetry/instrumentation-web-exception
 
 ```typescript
 import { LoggerProvider } from '@opentelemetry/sdk-logs';
-import { EventLoggerProvider, events } from '@opentelemetry/api-events';
+import { logs } from '@opentelemetry/api-logs';
 import { WebExceptionInstrumentation } from '@opentelemetry/instrumentation-web-exception';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
-// Set up the logger provider and event logger
+// Set up the logger provider
 const loggerProvider = new LoggerProvider();
-const eventLoggerProvider = new EventLoggerProvider(loggerProvider);
-events.setGlobalEventLoggerProvider(eventLoggerProvider);
+logs.setGlobalLoggerProvider(loggerProvider);
 
 // Register the instrumentation
 registerInstrumentations({
@@ -30,7 +29,7 @@ registerInstrumentations({
     new WebExceptionInstrumentation({
       // Optional: customize attributes added to error events
       applyCustomAttributes: (error) => ({
-        'app.error.severity': error.name === 'ValidationError' ? 'warning' : 'error',
+        'app.error.severity': error?.name === 'ValidationError' ? 'warning' : 'error',
         'custom.correlation.id': window.correlationId,
       }),
     }),
@@ -45,7 +44,7 @@ The instrumentation can be configured with the following options:
 | Option | Type | Description |
 | ------- | ---- | ----------- |
 | `enabled` | `boolean` | Whether to enable the instrumentation. Default: `true` |
-| `applyCustomAttributes` | `(error: Error) => Attributes` | Optional callback to add custom attributes to error events |
+| `applyCustomAttributes` | `(error: Error \| string) => Attributes` | Optional callback to add custom attributes to error events |
 
 ## Features
 
@@ -53,7 +52,7 @@ The instrumentation can be configured with the following options:
 - Captures unhandled promise rejections
 - Records error name, message, and stack trace using OpenTelemetry semantic conventions
 - Supports custom attributes through configuration
-- Integrates with OpenTelemetry Events API
+- Integrates with OpenTelemetry Logs API
 
 ## Semantic Attributes
 
