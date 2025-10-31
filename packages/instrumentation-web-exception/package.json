@@ -13,13 +13,13 @@
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "lint:readme": "node ../../../scripts/lint-readme.js",
+    "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "prewatch": "npm run precompile",
     "tdd": "wtr --watch",
     "test": "npm run test:browser",
     "test:browser": "wtr --coverage",
-    "version:update": "node ../../../scripts/version-update.js",
+    "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc --build -watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
   },
   "keywords": [
