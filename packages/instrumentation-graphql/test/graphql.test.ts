@@ -872,6 +872,66 @@ describe('graphql', () => {
     });
   });
 
+  describe('when flatResolveSpans is set to true', () => {
+    beforeEach(async () => {
+      create({ flatResolveSpans: true });
+    });
+
+    afterEach(() => {
+      exporter.reset();
+      graphQLInstrumentation.disable();
+    });
+
+    it('should create a flat structure for resolver spans', async () => {
+      await graphql({ schema, source: sourceList1 });
+      const spans = exporter.getFinishedSpans();
+
+      assert.deepStrictEqual(spans.length, 7);
+      const executeSpan = spans[6];
+      const resolveSpan = spans[2];
+      const subResolveSpan1 = spans[3];
+      const subResolveSpan2 = spans[4];
+      const subResolveSpan3 = spans[5];
+
+      const executeSpanId = executeSpan.spanContext().spanId;
+      assertResolveSpan(
+        resolveSpan,
+        'books',
+        'books',
+        '[Book]',
+        'books {\n      name\n    }',
+        executeSpanId
+      );
+
+      assertResolveSpan(
+        subResolveSpan1,
+        'name',
+        'books.0.name',
+        'String',
+        'name',
+        executeSpanId
+      );
+
+      assertResolveSpan(
+        subResolveSpan2,
+        'name',
+        'books.1.name',
+        'String',
+        'name',
+        executeSpanId
+      );
+
+      assertResolveSpan(
+        subResolveSpan3,
+        'name',
+        'books.2.name',
+        'String',
+        'name',
+        executeSpanId
+      );
+    });
+  });
+
   describe('when allowValues is set to true', () => {
     describe('AND source is query with param', () => {
       let spans: ReadableSpan[];
