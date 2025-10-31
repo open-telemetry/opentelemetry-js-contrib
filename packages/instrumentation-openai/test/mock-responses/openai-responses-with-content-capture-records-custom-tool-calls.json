@@ -1,0 +1,84 @@
+[
+	{
+		"scope": "https://api.openai.com:443",
+		"method": "POST",
+		"path": "/v1/responses",
+		"body": {
+			"model": "gpt-4o-mini",
+			"input": "Use the code_exec tool to print hello world to the console.",
+			"tools": [
+				{
+					"type": "custom",
+					"name": "code_exec",
+					"description": "Executes arbitrary Python code."
+				}
+			]
+		},
+		"status": 200,
+		"response": {
+			"id": "resp_67ca09c5efe0819096d0511c92b8c890096610f474011cc0",
+			"object": "response",
+			"created_at": 1741294021,
+			"status": "completed",
+			"error": null,
+			"incomplete_details": null,
+			"instructions": null,
+			"max_output_tokens": null,
+			"model": "gpt-4.1-2025-04-14",
+			"output": [
+				{
+					"id": "rs_6890e972fa7c819ca8bc561526b989170694874912ae0ea6",
+					"type": "reasoning",
+					"content": [],
+					"summary": []
+				},
+				{
+					"id": "ctc_6890e975e86c819c9338825b3e1994810694874912ae0ea6",
+					"type": "custom_tool_call",
+					"status": "completed",
+					"call_id": "call_aGiFQkRWSWAIsMQ19fKqxUgb",
+					"input": "print(\"hello world\")",
+					"name": "code_exec"
+				}
+			],
+			"parallel_tool_calls": true,
+			"previous_response_id": null,
+			"reasoning": {
+				"effort": null,
+				"summary": null
+			},
+			"store": true,
+			"temperature": 1.0,
+			"text": {
+				"format": {
+					"type": "text"
+				}
+			},
+			"tool_choice": "auto",
+			"tools": [
+				{
+					"type": "custom",
+					"name": "code_exec",
+					"description": "Executes arbitrary Python code."
+				}
+			],
+			"top_p": 1.0,
+			"truncation": "disabled",
+			"usage": {
+				"input_tokens": 291,
+				"output_tokens": 23,
+				"output_tokens_details": {
+					"reasoning_tokens": 0
+				},
+				"total_tokens": 314
+			},
+			"user": null,
+			"metadata": {}
+		},
+		"rawHeaders": {
+			"content-type": "application/json",
+			"date": "Fri, 11 Jul 2025 07:02:40 GMT"
+		},
+		"responseIsBinary": false
+	}
+]
