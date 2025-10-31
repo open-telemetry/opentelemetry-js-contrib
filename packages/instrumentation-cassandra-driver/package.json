@@ -61,7 +61,7 @@
     "@types/semver": "7.5.8",
     "@types/sinon": "17.0.4",
     "cassandra-driver": "4.6.4",
-    "cross-env": "7.0.3",
+    "cross-env": "10.1.0",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sinon": "15.2.0",
