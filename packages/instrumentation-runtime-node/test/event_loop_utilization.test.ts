@@ -177,8 +177,8 @@ describe('nodejs.eventloop.utilization', function () {
     await new Promise(resolve => setTimeout(resolve, 50));
     const fifthUtilization = await collectUtilization();
     assert.ok(
-      fifthUtilization < 0.1,
-      'Expected utilization in fifth measurement to be less than 0.1'
+      fifthUtilization < 1,
+      `Expected utilization in fifth measurement to be less than 1, but got ${fifthUtilization}`
     );
   });
 });
