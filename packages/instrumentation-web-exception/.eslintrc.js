@@ -21,5 +21,4 @@ module.exports = {
     browser: true,
     jquery: true,
   },
-  ...require('../../eslint.config.mjs'),
 };

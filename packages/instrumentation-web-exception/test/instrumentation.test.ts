@@ -31,7 +31,7 @@ import {
 import { logs } from '@opentelemetry/api-logs';
 const assert = chai.assert;
 
-const STRING_ERROR = "Some error string."
+const STRING_ERROR = 'Some error string.'
 
 describe('WebExceptionInstrumentation', () => {
   const exporter = new InMemoryLogRecordExporter();
