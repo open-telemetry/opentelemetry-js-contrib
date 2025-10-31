@@ -16,87 +16,80 @@
 
 import {
   InstrumentationBase,
-  InstrumentationConfig,
+  type InstrumentationConfig,
 } from '@opentelemetry/instrumentation';
 import {
   ATTR_EXCEPTION_TYPE,
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
 } from '@opentelemetry/semantic-conventions';
-// TODO: should events be imported or included as part of the instrumentation base class?
-import { events } from '@opentelemetry/api-events';
-import { SeverityNumber } from '@opentelemetry/api-logs';
-import { Attributes } from '@opentelemetry/api';
+import type { Attributes } from '@opentelemetry/api';
+import {
+  SeverityNumber,
+  logs,
+  type LogRecord,
+  type AnyValueMap,
+} from '@opentelemetry/api-logs';
 import { hrTime } from '@opentelemetry/core';
 
 export interface GlobalErrorsInstrumentationConfig
   extends InstrumentationConfig {
   /**
-   * A callback function for adding custom attributes to the span when an error is recorded.
+   * A callback function for adding custom attributes to the log event when an error is recorded.
    *
    * @param {Error} error - The error object that is being recorded.
    * @returns {Attributes} - The attributes to add to the span.
    */
-  applyCustomAttributes?: (error: Error) => Attributes;
+  applyCustomAttributes?: (error: Error | string) => Attributes;
 }
 
 export class WebExceptionInstrumentation extends InstrumentationBase<GlobalErrorsInstrumentationConfig> {
-  readonly applyCustomAttributes?: (error: Error) => Attributes;
   constructor(config: GlobalErrorsInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-web-exception', '0.0.1', config);
-
-    this.applyCustomAttributes = config.applyCustomAttributes;
+    this.onError = this.onError.bind(this);
   }
 
-  init() {}
+  init() { }
 
-  onError(event: ErrorEvent | PromiseRejectionEvent) {
+  onError( event: ErrorEvent | PromiseRejectionEvent) {
     const EXCEPTION_EVENT_NAME = 'exception';
-    const error: Error | undefined =
+    const error: Error | string | undefined =
       'reason' in event ? event.reason : event.error;
 
-    const eventLogger = events.getEventLogger(
-      this.instrumentationName,
-      this.instrumentationVersion
-    );
+    if (error === undefined) {
+      return;
+    }
+
+    const logger = logs
+      .getLoggerProvider()
+      .getLogger(this.instrumentationName, this.instrumentationVersion);
+
+    const config = this.getConfig();
+    const customAttributes = config.applyCustomAttributes
+      ? config.applyCustomAttributes(error)
+      : {};
+
+    let errorAttributes: AnyValueMap = {};
 
     if (typeof error === 'string') {
-      const customAttributes = this.applyCustomAttributes
-        ? this.applyCustomAttributes(error)
-        : {};
-
-      eventLogger.emit({
-        name: EXCEPTION_EVENT_NAME,
-        data: {
-          [ATTR_EXCEPTION_MESSAGE]: error,
-        },
-        attributes: customAttributes,
-        severityNumber: SeverityNumber.ERROR,
-        timestamp: hrTime(),
-      });
-    }
-
-    if (error) {
-      const message = error.message;
-      const type = error.name;
-      const errorAttributes = {
-        [ATTR_EXCEPTION_TYPE]: type,
-        [ATTR_EXCEPTION_MESSAGE]: message,
+      errorAttributes = { [ATTR_EXCEPTION_MESSAGE]: error };
+    } else {
+      errorAttributes = {
+        [ATTR_EXCEPTION_TYPE]: error.name,
+        [ATTR_EXCEPTION_MESSAGE]: error.message,
         [ATTR_EXCEPTION_STACKTRACE]: error.stack,
       };
-
-      const customAttributes = this.applyCustomAttributes
-        ? this.applyCustomAttributes(error)
-        : {};
-
-      eventLogger.emit({
-        name: EXCEPTION_EVENT_NAME,
-        data: errorAttributes,
-        attributes: customAttributes,
-        severityNumber: SeverityNumber.ERROR,
-        timestamp: hrTime(),
-      });
     }
+
+    const errorLog: LogRecord = {
+      eventName: EXCEPTION_EVENT_NAME,
+      severityNumber: SeverityNumber.ERROR,
+      attributes: { ...errorAttributes, ...customAttributes },
+      timestamp: hrTime(),
+      observedTimestamp: hrTime(),
+    };
+
+    logger.emit(errorLog);
   }
 
   override disable(): void {

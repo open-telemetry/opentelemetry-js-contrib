@@ -17,29 +17,28 @@
 import { WebExceptionInstrumentation } from '../src/instrumentation';
 // @ts-expect-error: not an export, but we want the prebundled version
 import chai from 'chai/chai.js';
-import { EventLoggerProvider } from '@opentelemetry/sdk-events';
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,
   InMemoryLogRecordExporter,
+  type LoggerProviderConfig,
 } from '@opentelemetry/sdk-logs';
-import { events } from '@opentelemetry/api-events';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
+import { logs } from '@opentelemetry/api-logs';
 const assert = chai.assert;
 
 describe('WebExceptionInstrumentation', () => {
-  const loggerProvider = new LoggerProvider();
+  const config : LoggerProviderConfig = {}
+  config.processors
   const exporter = new InMemoryLogRecordExporter();
   const logRecordProcessor = new SimpleLogRecordProcessor(exporter);
-  loggerProvider.addLogRecordProcessor(logRecordProcessor);
-
-  const eventLoggerProvider = new EventLoggerProvider(loggerProvider as any);
-  events.setGlobalEventLoggerProvider(eventLoggerProvider);
+  const loggerProvider = new LoggerProvider({processors:[logRecordProcessor]});
+  logs.setGlobalLoggerProvider(loggerProvider);
 
   // Helper function to throw an error of a specific type so that we can allow the error to propagate and test the instrumentation.
   const throwErr = (message: string, stack?: string): void => {
@@ -121,7 +120,7 @@ describe('WebExceptionInstrumentation', () => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        assert.strictEqual(event.attributes['event.name'], 'exception');
+        assert.strictEqual(event.eventName, 'exception');
       }, 0);
     });
 
@@ -141,10 +140,9 @@ describe('WebExceptionInstrumentation', () => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        const body = event.body as Record<string, any>;
-        assert.strictEqual(body[ATTR_EXCEPTION_MESSAGE], 'Something happened!');
-        assert.strictEqual(body[ATTR_EXCEPTION_TYPE], 'ValidationError');
-        assert.strictEqual(body[ATTR_EXCEPTION_STACKTRACE], stack);
+        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], 'Something happened!');
+        assert.strictEqual(event.attributes[ATTR_EXCEPTION_TYPE], 'ValidationError');
+        assert.strictEqual(event.attributes[ATTR_EXCEPTION_STACKTRACE], stack);
       }, 0);
     });
 
@@ -155,10 +153,9 @@ describe('WebExceptionInstrumentation', () => {
 
       setTimeout(() => {
         const events = exporter.getFinishedLogRecords();
-        // assert.ok(events.length > 0, 'Expected at least one log record');
+        assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        const body = event.body as Record<string, any>;
-        assert.strictEqual(body[ATTR_EXCEPTION_MESSAGE], 'string');
+        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], 'string');
       }, 0);
     });
   });
@@ -212,8 +209,7 @@ describe('WebExceptionInstrumentation', () => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        const body = event.body as Record<string, any>;
-        assert.strictEqual(body[ATTR_EXCEPTION_MESSAGE], 'string');
+        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], 'string');
         assert.strictEqual(event.attributes['app.custom.exception'], 'STRING');
       }, 0);
     });
