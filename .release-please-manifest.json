@@ -27,6 +27,7 @@
   "packages/instrumentation-lru-memoizer": "0.52.0",
   "packages/instrumentation-mongoose": "0.54.0",
   "packages/instrumentation-runtime-node": "0.21.0",
+  "packages/instrumentation-sequelize": "0.1.0",
   "packages/instrumentation-socket.io": "0.54.0",
   "packages/instrumentation-tedious": "0.26.0",
   "packages/instrumentation-typeorm": "0.8.0",
