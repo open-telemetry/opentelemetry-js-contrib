@@ -18,7 +18,7 @@ npm install --save @opentelemetry/instrumentation-web-exception
 ```typescript
 import { LoggerProvider, SimpleLogRecordProcessor, ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { logs } from '@opentelemetry/api-logs';
-import { WebExceptionInstrumentation } from '@opentelemetry/instrumentation-web-exception';
+import { ExceptionInstrumentation } from '@opentelemetry/instrumentation-web-exception';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
 // Set up the logger provider with a processor
@@ -30,7 +30,7 @@ logs.setGlobalLoggerProvider(loggerProvider);
 // Register the instrumentation
 registerInstrumentations({
   instrumentations: [
-    new WebExceptionInstrumentation({
+    new ExceptionInstrumentation({
       // Optional: customize attributes added to error events
       applyCustomAttributes: (error) => ({
         'app.error.severity': error?.name === 'ValidationError' ? 'warning' : 'error',
@@ -72,7 +72,7 @@ The following semantic attributes are added to each error event:
 
 ```typescript
 // Initialize the instrumentation
-const exceptionInstrumentation = new WebExceptionInstrumentation({
+const exceptionInstrumentation = new ExceptionInstrumentation({
   applyCustomAttributes: (error) => ({
     'error.category': error instanceof TypeError ? 'type_error' : 'runtime_error',
     'app.version': '1.0.0',

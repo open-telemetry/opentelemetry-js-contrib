@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { WebExceptionInstrumentation } from '../src/instrumentation';
+import { ExceptionInstrumentation } from '../src/instrumentation';
 // @ts-expect-error: not an export, but we want the prebundled version
 import chai from 'chai/chai.js';
 import {
@@ -33,7 +33,7 @@ const assert = chai.assert;
 
 const STRING_ERROR = 'Some error string.'
 
-describe('WebExceptionInstrumentation', () => {
+describe('ExceptionInstrumentation', () => {
   const exporter = new InMemoryLogRecordExporter();
   const logRecordProcessor = new SimpleLogRecordProcessor(exporter);
   const loggerProvider = new LoggerProvider({processors:[logRecordProcessor]});
@@ -88,15 +88,15 @@ describe('WebExceptionInstrumentation', () => {
 
   describe('constructor', () => {
     it('should construct an instance', () => {
-      const instrumentation = new WebExceptionInstrumentation({
+      const instrumentation = new ExceptionInstrumentation({
         enabled: false,
       });
-      assert.ok(instrumentation instanceof WebExceptionInstrumentation);
+      assert.ok(instrumentation instanceof ExceptionInstrumentation);
     });
   });
 
   describe('throwing an error', () => {
-    const instr = new WebExceptionInstrumentation();
+    const instr = new ExceptionInstrumentation();
     beforeEach(() => {
       registerInstrumentations({
         instrumentations: [instr],
@@ -168,7 +168,7 @@ describe('WebExceptionInstrumentation', () => {
         'app.custom.exception': error.message.toLocaleUpperCase(),
       };
     };
-    const instr = new WebExceptionInstrumentation({
+    const instr = new ExceptionInstrumentation({
       applyCustomAttributes: applyCustomAttrs,
     });
     beforeEach(() => {

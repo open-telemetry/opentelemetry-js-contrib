@@ -43,7 +43,7 @@ export interface GlobalErrorsInstrumentationConfig
   applyCustomAttributes?: (error: Error | string) => Attributes;
 }
 
-export class WebExceptionInstrumentation extends InstrumentationBase<GlobalErrorsInstrumentationConfig> {
+export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsInstrumentationConfig> {
   constructor(config: GlobalErrorsInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-web-exception', '0.0.1', config);
     this.onError = this.onError.bind(this);
