@@ -52,7 +52,7 @@ export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsIn
 
   init() { }
 
-  onError( event: ErrorEvent | PromiseRejectionEvent) {
+  onError(event: ErrorEvent | PromiseRejectionEvent) {
     const EXCEPTION_EVENT_NAME = 'exception';
     const error: Error | string | undefined =
       'reason' in event ? event.reason : event.error;
