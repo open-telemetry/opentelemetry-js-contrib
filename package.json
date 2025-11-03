@@ -50,7 +50,7 @@
     "@types/node": "^22.17.1",
     "@types/semver": "^7.7.1",
     "@types/webpack-env": "^1.18.8",
-    "cross-env": "^7.0.3",
+    "cross-env": "^10.0.0",
     "eslint": "9.34.0",
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-import": "2.32.0",

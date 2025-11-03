@@ -62,7 +62,7 @@
     "@types/mocha": "10.0.10",
     "@types/node": "18.18.14",
     "@types/sinon": "17.0.4",
-    "cross-env": "7.0.3",
+    "cross-env": "10.1.0",
     "nyc": "17.1.0",
     "pg": "8.7.1",
     "pg-pool": "3.4.1",
