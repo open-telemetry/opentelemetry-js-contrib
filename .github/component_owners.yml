@@ -72,6 +72,10 @@ components:
     - blumamir
   packages/instrumentation-socket.io:
     - mottibec
+  packages/instrumentation-sequelize:
+    - seemk
+    - t2t2
+    - mhennoch
   packages/instrumentation-tedious: []
     # Unmaintained
   packages/instrumentation-typeorm:
