@@ -84,3 +84,12 @@ export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const DB_SYSTEM_VALUE_MEMCACHED = 'memcached' as const;
+
+/**
+ * Enum value "memcached" for attribute {@link ATTR_DB_SYSTEM_NAME}.
+ *
+ * [Memcached](https://memcached.org/)
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const DB_SYSTEM_NAME_VALUE_MEMCACHED = 'memcached' as const;

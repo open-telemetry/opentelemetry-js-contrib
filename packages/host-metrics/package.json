@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/host-metrics",
-  "version": "0.36.0",
+  "version": "0.36.2",
   "description": "OpenTelemetry Host Metrics for Node.js",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -13,8 +13,6 @@
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/host-metrics",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha test/**/*.test.ts",

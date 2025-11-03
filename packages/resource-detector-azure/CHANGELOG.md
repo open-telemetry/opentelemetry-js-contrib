@@ -1,4 +1,85 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
+
+## [0.15.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.14.0...resource-detector-azure-v0.15.0) (2025-10-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3187](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3187)) ([ab96334](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab9633455794de79964e60775c804791d19259bc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.53.0 to ^0.54.0
+
+## [0.14.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.13.2...resource-detector-azure-v0.14.0) (2025-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3145](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3145)) ([704c716](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/704c7161f782590d7b644ab607b5f9c29cdfd63f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.2 to ^0.53.0
+
+## [0.13.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.13.1...resource-detector-azure-v0.13.2) (2025-09-29)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3123](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3123)) ([0dab838](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0dab8383b5349e21a968fe2cedd8a6e2243f86d0))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.1 to ^0.52.2
+
+## [0.13.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.13.0...resource-detector-azure-v0.13.1) (2025-09-25)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.0 to ^0.52.1
+
+## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.12.0...resource-detector-azure-v0.13.0) (2025-09-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **resource-detector-azure:** This updates the Semantic Conventions of the emitted resource attributes from v1.19.0 to v1.37.0 which involves these breaking changes:
+    * App Service resource detector: `deployment.environment` -> `deployment.environment.name`
+      This changed in semconv v1.27.0 as part of https://github.com/open-telemetry/semantic-conventions/pull/1075
+    * Semconv v1.35.0 naming convention changes (https://github.com/open-telemetry/semantic-conventions/blob/main/CHANGELOG.md#v1350) resulted in a change in the name of some `cloud.platform` values:
+        * `azure_app_service` -> `azure.app_service`
+        * `azure_vm` -> `azure.vm`
+        * `azure_functions` -> `azure.functions`
+
+### Features
+
+* **resource-detector-azure:** update semconv usage to ATTR_ exports, update to semconv v1.37.0 ([#3063](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3063)) ([8e1ca48](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8e1ca48343b07f8fde3527bba727d721208491b1))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.51.0 to ^0.52.0
 
 ## [0.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.11.0...resource-detector-azure-v0.12.0) (2025-09-10)
 

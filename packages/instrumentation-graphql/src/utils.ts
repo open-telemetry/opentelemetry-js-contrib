@@ -55,7 +55,6 @@ function addInputVariableAttribute(span: api.Span, key: string, variable: any) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function addInputVariableAttributes(
   span: api.Span,
   variableValues: { [key: string]: any }

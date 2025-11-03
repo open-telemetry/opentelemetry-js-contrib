@@ -13,19 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
 
-import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
-import { TestMetricReader } from './testMetricsReader';
-import { metricNames } from '../src/metrics/heapSpacesSizeAndUsedCollector';
-import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
-import { ATTR_V8JS_HEAP_SPACE_NAME } from '../src/consts/attributes';
+import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
 import { GaugeMetricData } from '@opentelemetry/sdk-metrics/build/src/export/MetricData';
+import { RuntimeNodeInstrumentation } from '../src';
+import { TestMetricReader } from './testMetricsReader';
+import {
+  ATTR_V8JS_HEAP_SPACE_NAME,
+  METRIC_V8JS_MEMORY_HEAP_LIMIT,
+  METRIC_V8JS_MEMORY_HEAP_USED,
+} from '../src/semconv';
 
 const MEASUREMENT_INTERVAL = 10;
 
-describe('nodejs.heap_space', function () {
+describe('v8js.memory.heap.*', function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -36,8 +38,16 @@ describe('nodejs.heap_space', function () {
     });
   });
 
-  for (const metricName in metricNames) {
-    it(`should write ${ConventionalNamePrefix.V8js}.${metricName} after monitoringPrecision`, async function () {
+  const metricNames = [
+    METRIC_V8JS_MEMORY_HEAP_LIMIT,
+    METRIC_V8JS_MEMORY_HEAP_USED,
+    // TODO: fix to use METRIC_V8JS_HEAP_SPACE_AVAILABLE_SIZE (breaking change)
+    'v8js.memory.heap.space.available_size',
+    // TODO: fix to use METRIC_V8JS_HEAP_SPACE_PHYSICAL_SIZE (breaking change)
+    'v8js.memory.heap.space.physical_size',
+  ];
+  for (const metricName of metricNames) {
+    it(`should write ${metricName} after monitoringPrecision`, async function () {
       // arrange
       const instrumentation = new RuntimeNodeInstrumentation({
         monitoringPrecision: MEASUREMENT_INTERVAL,
@@ -58,15 +68,10 @@ describe('nodejs.heap_space', function () {
       );
       const scopeMetrics = resourceMetrics.scopeMetrics;
       const metric = scopeMetrics[0].metrics.find(
-        x =>
-          x.descriptor.name === `${ConventionalNamePrefix.V8js}.${metricName}`
+        x => x.descriptor.name === metricName
       );
 
-      assert.notEqual(
-        metric,
-        undefined,
-        `${ConventionalNamePrefix.V8js}.${metricName} not found`
-      );
+      assert.notEqual(metric, undefined, `${metricName} not found`);
 
       assert.strictEqual(
         metric!.dataPointType,
@@ -76,18 +81,20 @@ describe('nodejs.heap_space', function () {
 
       assert.strictEqual(
         metric!.descriptor.name,
-        `${ConventionalNamePrefix.V8js}.${metricName}`,
+        metricName,
         'descriptor.name'
       );
     });
 
+    // Hardcoding a minimal set of space names is fine, but v8 does not promise
+    // these are stable. See https://github.com/open-telemetry/semantic-conventions/issues/2832
     for (const space of [
       'new_space',
       'old_space',
       'code_space',
       'large_object_space',
     ]) {
-      it(`should write ${ConventionalNamePrefix.V8js}.${metricName} ${space} attribute`, async function () {
+      it(`should write ${metricName} ${space} attribute`, async function () {
         // arrange
         const instrumentation = new RuntimeNodeInstrumentation({
           monitoringPrecision: MEASUREMENT_INTERVAL,
@@ -110,23 +117,19 @@ describe('nodejs.heap_space', function () {
         const scopeMetrics = resourceMetrics.scopeMetrics;
         let metric: GaugeMetricData | undefined = undefined;
         const foundMetric = scopeMetrics[0].metrics.find(
-          x =>
-            x.descriptor.name === `${ConventionalNamePrefix.V8js}.${metricName}`
+          x => x.descriptor.name === metricName
         );
         if (foundMetric?.dataPointType === DataPointType.GAUGE) {
           metric = foundMetric;
         }
         const spaceAttribute = metric?.dataPoints.find(
-          x =>
-            x.attributes[
-              `${ConventionalNamePrefix.V8js}.${ATTR_V8JS_HEAP_SPACE_NAME}`
-            ] === space
+          x => x.attributes[ATTR_V8JS_HEAP_SPACE_NAME] === space
         );
 
         assert.notEqual(
           spaceAttribute,
           undefined,
-          `${ConventionalNamePrefix.V8js}.${metricName} space: ${space} not found`
+          `${metricName} space "${space}" not found`
         );
       });
     }

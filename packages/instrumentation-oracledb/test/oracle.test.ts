@@ -1,5 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
+ * Copyright (c) 2025, Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +13,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (c) 2025, Oracle and/or its affiliates.
- * */
+ */
+
 import {
   Attributes,
   SpanStatusCode,
@@ -35,9 +35,13 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { OracleInstrumentation } from '../src';
-import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from '../src/constants';
+import { SpanNames } from '../src/constants';
 
 import {
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_OPERATION_NAME,
   ATTR_NETWORK_TRANSPORT,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
@@ -47,12 +51,9 @@ import {
 } from '@opentelemetry/semantic-conventions';
 
 import {
-  ATTR_DB_NAMESPACE,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_STATEMENT,
   ATTR_DB_OPERATION_PARAMETER,
   ATTR_DB_USER,
-  ATTR_DB_OPERATION_NAME,
+  DB_SYSTEM_NAME_VALUE_ORACLE_DB,
 } from '../src/semconv';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -119,7 +120,7 @@ let poolConnAttrList: Record<string, string | number>[]; // attributes per span 
 let spanNamesList: string[]; // span names for roundtrips and public API spans.
 
 const DEFAULT_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
   [ATTR_DB_NAMESPACE]: serviceName,
   [ATTR_SERVER_ADDRESS]: hostname,
   [ATTR_SERVER_PORT]: pno,
@@ -130,18 +131,18 @@ const DEFAULT_ATTRIBUTES = {
 // for thick mode, we don't have support for
 // hostname, port and protocol.
 const DEFAULT_ATTRIBUTES_THICK = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
   [ATTR_DB_NAMESPACE]: serviceName,
   [ATTR_DB_USER]: CONFIG.user,
 };
 
 const POOL_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
   [ATTR_DB_USER]: CONFIG.user,
 };
 
 const CONN_FAILED_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
   [ATTR_DB_USER]: CONFIG.user,
 };
 
@@ -197,10 +198,17 @@ function updateAttrSpanList(connection: oracledb.Connection) {
   if (serverVersion >= VER_23_4) {
     if (oracledb.thin) {
       // for round trips.
-      connAttrList.push({ ...attributes });
-      poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
-      poolConnAttrList.push({ ...connAttributes, ...POOL_ATTRIBUTES });
-      connAttrList.push({ ...connAttributes });
+      connAttrList.push({ ...attributes }); // FastAuth standalone
+      poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES }); // FastAuth pool
+      if (oracledb.version < 61000) {
+        connAttrList.push({ ...connAttributes }); // OAUTH
+        poolConnAttrList.push({ ...connAttributes, ...POOL_ATTRIBUTES }); // OAUTH
+      } else {
+        // From oracledb version 6.10 onwards, the db instance name is not populated
+        // until all validations for connection establishment is done.
+        connAttrList.push({ ...attributes }); // OAUTH
+        poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES }); // OAUTH
+      }
       failedConnAttrList = [...connAttrList];
       failedConnAttrList[2] = { ...CONN_FAILED_ATTRIBUTES };
       failedConnAttrList[1] = { ...attributes };
@@ -216,11 +224,16 @@ function updateAttrSpanList(connection: oracledb.Connection) {
       connAttrList.push({ ...attributes });
       connAttrList.push({ ...attributes });
       connAttrList.push({ ...attributes });
-      connAttrList.push({ ...connAttributes });
       poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
       poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
       poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
-      poolConnAttrList.push({ ...connAttributes, ...POOL_ATTRIBUTES });
+      if (oracledb.version < 61000) {
+        connAttrList.push({ ...attributes });
+        poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
+      } else {
+        connAttrList.push({ ...connAttributes });
+        poolConnAttrList.push({ ...connAttributes, ...POOL_ATTRIBUTES });
+      }
       failedConnAttrList = [...connAttrList];
       failedConnAttrList[4] = { ...CONN_FAILED_ATTRIBUTES };
       failedConnAttrList[3] = { ...attributes };
@@ -235,7 +248,7 @@ function updateAttrSpanList(connection: oracledb.Connection) {
       failedConnAttrList = [{ ...CONN_FAILED_ATTRIBUTES }];
     }
   }
-  // for getConnection
+  // for getConnection public API span
   connAttrList.push({ ...connAttributes });
   poolConnAttrList.push({ ...poolAttributes });
   spanNamesList.push(SpanNames.CONNECT);
@@ -447,25 +460,25 @@ describe('oracledb', () => {
       executeAttributesInternalRoundTripBinds = {
         ...connAttributes,
         [ATTR_DB_OPERATION_NAME]: 'SELECT',
-        [ATTR_DB_STATEMENT]: sqlWithBinds,
+        [ATTR_DB_QUERY_TEXT]: sqlWithBinds,
       };
     }
     attributesWithSensitiveDataNoBinds = {
       ...connAttributes,
       [ATTR_DB_OPERATION_NAME]: 'SELECT',
-      [ATTR_DB_STATEMENT]: sql,
+      [ATTR_DB_QUERY_TEXT]: sql,
     };
     attributesWithSensitiveDataBinds = {
       ...connAttributes,
       [ATTR_DB_OPERATION_NAME]: 'SELECT',
-      [ATTR_DB_STATEMENT]: sqlWithBinds,
-      [`${ATTR_DB_OPERATION_PARAMETER}.0`]: '0',
+      [ATTR_DB_QUERY_TEXT]: sqlWithBinds,
+      [ATTR_DB_OPERATION_PARAMETER('0')]: '0',
     };
     attributesWithSensitiveDataBindsByName = {
       ...connAttributes,
       [ATTR_DB_OPERATION_NAME]: 'SELECT',
-      [ATTR_DB_STATEMENT]: sqlWithBindsByName,
-      [`${ATTR_DB_OPERATION_PARAMETER}.name`]: '0',
+      [ATTR_DB_QUERY_TEXT]: sqlWithBindsByName,
+      [ATTR_DB_OPERATION_PARAMETER('name')]: '0',
     };
     await sqlCreateTable(connection, tableName, sqlCreate);
   }
@@ -973,7 +986,7 @@ describe('oracledb', () => {
 
         // roundtrip span wont have bind values.
         const roundtripAttrs = { ...attributesWithSensitiveDataNoBinds };
-        roundtripAttrs[ATTR_DB_STATEMENT] = sqlWithBindsByName;
+        roundtripAttrs[ATTR_DB_QUERY_TEXT] = sqlWithBindsByName;
 
         try {
           assert.ok(resPromise);
@@ -1002,7 +1015,7 @@ describe('oracledb', () => {
         // update sql stmt, operation.
         const attrs = { ...attributesWithSensitiveDataNoBinds };
         attrs[ATTR_DB_OPERATION_NAME] = 'BEGIN';
-        attrs[ATTR_DB_STATEMENT] = sqlWithOutBinds;
+        attrs[ATTR_DB_QUERY_TEXT] = sqlWithOutBinds;
 
         try {
           assert.ok(resPromise);
@@ -1012,7 +1025,7 @@ describe('oracledb', () => {
               attrs,
               {
                 ...attrs,
-                [`${ATTR_DB_OPERATION_PARAMETER}.n`]: '',
+                [ATTR_DB_OPERATION_PARAMETER('n')]: '',
               },
             ],
             [
@@ -1076,17 +1089,17 @@ describe('oracledb', () => {
         true,
       ];
       const expectedBinds = {
-        [`${ATTR_DB_OPERATION_PARAMETER}.0`]: 'Hello é World',
-        [`${ATTR_DB_OPERATION_PARAMETER}.1`]: '[object Object]',
-        [`${ATTR_DB_OPERATION_PARAMETER}.2`]: '43',
-        [`${ATTR_DB_OPERATION_PARAMETER}.3`]: '43',
-        [`${ATTR_DB_OPERATION_PARAMETER}.4`]: localDateString,
-        [`${ATTR_DB_OPERATION_PARAMETER}.5`]: 'hello',
-        [`${ATTR_DB_OPERATION_PARAMETER}.6`]:
+        [ATTR_DB_OPERATION_PARAMETER('0')]: 'Hello é World',
+        [ATTR_DB_OPERATION_PARAMETER('1')]: '[object Object]',
+        [ATTR_DB_OPERATION_PARAMETER('2')]: '43',
+        [ATTR_DB_OPERATION_PARAMETER('3')]: '43',
+        [ATTR_DB_OPERATION_PARAMETER('4')]: localDateString,
+        [ATTR_DB_OPERATION_PARAMETER('5')]: 'hello',
+        [ATTR_DB_OPERATION_PARAMETER('6')]:
           '["TEST OBJECT","DATA","from","node-oracledb-instrument"]',
-        [`${ATTR_DB_OPERATION_PARAMETER}.7`]: 'null',
-        [`${ATTR_DB_OPERATION_PARAMETER}.8`]: 'null',
-        [`${ATTR_DB_OPERATION_PARAMETER}.9`]: 'true',
+        [ATTR_DB_OPERATION_PARAMETER('7')]: 'null',
+        [ATTR_DB_OPERATION_PARAMETER('8')]: 'null',
+        [ATTR_DB_OPERATION_PARAMETER('9')]: 'true',
       };
       await context.with(trace.setSpan(context.active(), span), async () => {
         instrumentation.setConfig({ enhancedDatabaseReporting: true });
@@ -1099,13 +1112,13 @@ describe('oracledb', () => {
           > = {
             ...connAttributes,
             [ATTR_DB_OPERATION_NAME]: 'SELECT',
-            [ATTR_DB_STATEMENT]: sql,
+            [ATTR_DB_QUERY_TEXT]: sql,
             ...expectedBinds,
           };
 
           // Attributes for roundtrips do not contain bindvalues.
           const attrs = { ...attributesWithSensitiveDataNoBinds };
-          attrs[ATTR_DB_STATEMENT] = sql;
+          attrs[ATTR_DB_QUERY_TEXT] = sql;
 
           assert.ok(resPromise);
 
@@ -1161,17 +1174,17 @@ describe('oracledb', () => {
         b10: true,
       };
       const expectedBinds = {
-        [`${ATTR_DB_OPERATION_PARAMETER}.b1`]: 'Hello é World',
-        [`${ATTR_DB_OPERATION_PARAMETER}.b2`]: '[object Object]',
-        [`${ATTR_DB_OPERATION_PARAMETER}.b3`]: '43',
-        [`${ATTR_DB_OPERATION_PARAMETER}.b4`]: '43',
-        [`${ATTR_DB_OPERATION_PARAMETER}.b5`]: localDateString,
-        [`${ATTR_DB_OPERATION_PARAMETER}.b6`]: 'hello',
-        [`${ATTR_DB_OPERATION_PARAMETER}.b7`]:
+        [ATTR_DB_OPERATION_PARAMETER('b1')]: 'Hello é World',
+        [ATTR_DB_OPERATION_PARAMETER('b2')]: '[object Object]',
+        [ATTR_DB_OPERATION_PARAMETER('b3')]: '43',
+        [ATTR_DB_OPERATION_PARAMETER('b4')]: '43',
+        [ATTR_DB_OPERATION_PARAMETER('b5')]: localDateString,
+        [ATTR_DB_OPERATION_PARAMETER('b6')]: 'hello',
+        [ATTR_DB_OPERATION_PARAMETER('b7')]:
           '["TEST OBJECT","DATA","from","node-oracledb-instrument"]',
-        [`${ATTR_DB_OPERATION_PARAMETER}.b8`]: 'null',
-        [`${ATTR_DB_OPERATION_PARAMETER}.b9`]: 'null',
-        [`${ATTR_DB_OPERATION_PARAMETER}.b10`]: 'true',
+        [ATTR_DB_OPERATION_PARAMETER('b8')]: 'null',
+        [ATTR_DB_OPERATION_PARAMETER('b9')]: 'null',
+        [ATTR_DB_OPERATION_PARAMETER('b10')]: 'true',
       };
       await context.with(trace.setSpan(context.active(), span), async () => {
         instrumentation.setConfig({ enhancedDatabaseReporting: true });
@@ -1184,13 +1197,13 @@ describe('oracledb', () => {
           > = {
             ...connAttributes,
             [ATTR_DB_OPERATION_NAME]: 'SELECT',
-            [ATTR_DB_STATEMENT]: sql,
+            [ATTR_DB_QUERY_TEXT]: sql,
             ...expectedBinds,
           };
 
           // Attributes for roundtrips do not contain bindvalues.
           const attrs = { ...attributesWithSensitiveDataNoBinds };
-          attrs[ATTR_DB_STATEMENT] = sql;
+          attrs[ATTR_DB_QUERY_TEXT] = sql;
 
           assert.ok(resPromise);
           // LOBs will cause an additional round trip for define types...
@@ -1234,7 +1247,7 @@ describe('oracledb', () => {
         try {
           assert.ok(resPromise);
           const attrs = { ...executeAttributes };
-          attrs[ATTR_DB_STATEMENT] = sqlWithBinds;
+          attrs[ATTR_DB_QUERY_TEXT] = sqlWithBinds;
           verifySpans(span, [attrs, attrs]);
         } catch (e: any) {
           assert.ok(false, e.message);

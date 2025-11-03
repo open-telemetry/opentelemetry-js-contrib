@@ -15,7 +15,6 @@
  */
 
 // We access through node_modules to allow it to be patched.
-/* eslint-disable node/no-extraneous-require */
 
 import * as path from 'path';
 
@@ -24,6 +23,10 @@ import {
   AwsLambdaInstrumentationConfig,
   lambdaMaxInitInMilliseconds,
 } from '../../src';
+import {
+  AWS_HANDLER_STREAMING_RESPONSE,
+  AWS_HANDLER_STREAMING_SYMBOL,
+} from '../../src/instrumentation';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
@@ -815,6 +818,422 @@ describe('lambda handler', () => {
         span.attributes[ATTR_URL_FULL],
         'http://www.example.com:1234/lambda/test/path?key=value'
       );
+    });
+  });
+
+  describe('streaming handlers', () => {
+    const createMockResponseStream = () => {
+      const writeCalls: any[] = [];
+
+      return {
+        write: (data: any) => {
+          writeCalls.push(data);
+        },
+        end: () => {},
+        getWriteCalls: () => writeCalls,
+      };
+    };
+
+    describe('async streaming handler success', () => {
+      it('should export a valid span', async () => {
+        initializeHandler('lambda-test/streaming.handler');
+
+        const responseStream = createMockResponseStream();
+        const result = await lambdaRequire('lambda-test/streaming').handler(
+          'arg',
+          responseStream,
+          ctx
+        );
+        assert.strictEqual(result, 'stream-ok');
+
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assert.strictEqual(spans.length, 1);
+        assertSpanSuccess(span);
+        assert.strictEqual(span.parentSpanContext?.spanId, undefined);
+      });
+
+      it('should validate write() receives expected inputs from handler', async () => {
+        initializeHandler('lambda-test/streaming.handler');
+
+        const responseStream = createMockResponseStream();
+        const result = await lambdaRequire('lambda-test/streaming').handler(
+          'arg',
+          responseStream,
+          ctx
+        );
+
+        assert.strictEqual(result, 'stream-ok');
+        const writeCalls = responseStream.getWriteCalls();
+        assert.strictEqual(writeCalls.length, 1);
+        assert.strictEqual(writeCalls[0], '{"message": "ok"}');
+      });
+
+      it('should record coldstart for streaming handlers', async () => {
+        initializeHandler('lambda-test/streaming.handler');
+
+        const handlerModule = lambdaRequire('lambda-test/streaming');
+        const responseStream1 = createMockResponseStream();
+        const responseStream2 = createMockResponseStream();
+
+        const result1 = await handlerModule.handler(
+          'arg',
+          responseStream1,
+          ctx
+        );
+        const result2 = await handlerModule.handler(
+          'arg',
+          responseStream2,
+          ctx
+        );
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 2);
+        const [span1, span2] = spans;
+
+        assert.strictEqual(result1, 'stream-ok');
+        assertSpanSuccess(span1);
+        assert.strictEqual(span1.parentSpanContext?.spanId, undefined);
+        assert.strictEqual(span1.attributes[ATTR_FAAS_COLDSTART], true);
+
+        assert.strictEqual(result2, 'stream-ok');
+        assertSpanSuccess(span2);
+        assert.strictEqual(span2.parentSpanContext?.spanId, undefined);
+        assert.strictEqual(span2.attributes[ATTR_FAAS_COLDSTART], false);
+      });
+
+      it('context should have parent trace', async () => {
+        initializeHandler('lambda-test/streaming.context');
+
+        const responseStream = createMockResponseStream();
+        const result = await lambdaRequire('lambda-test/streaming').context(
+          'arg',
+          responseStream,
+          ctx
+        );
+
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assert.strictEqual(span.spanContext().traceId, result);
+      });
+    });
+
+    describe('streaming handler errors', () => {
+      it('should record error', async () => {
+        initializeHandler('lambda-test/streaming.error');
+
+        let err: Error;
+        try {
+          const responseStream = createMockResponseStream();
+          await lambdaRequire('lambda-test/streaming').error(
+            'arg',
+            responseStream,
+            ctx
+          );
+        } catch (e: any) {
+          err = e;
+        }
+        assert.strictEqual(err!.message, 'handler error');
+
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assert.strictEqual(spans.length, 1);
+        assertSpanFailure(span);
+        assert.strictEqual(span.parentSpanContext?.spanId, undefined);
+      });
+
+      it('should record string error', async () => {
+        initializeHandler('lambda-test/streaming.stringerror');
+
+        let err: string;
+        try {
+          const responseStream = createMockResponseStream();
+          await lambdaRequire('lambda-test/streaming').stringerror(
+            'arg',
+            responseStream,
+            ctx
+          );
+        } catch (e: any) {
+          err = e;
+        }
+        assert.strictEqual(err!, 'handler error');
+
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assertSpanFailure(span);
+        assert.strictEqual(span.parentSpanContext?.spanId, undefined);
+      });
+
+      it('should record error after writing to stream', async () => {
+        initializeHandler('lambda-test/streaming.errorAfterWrite');
+
+        let err: Error;
+        try {
+          const responseStream = createMockResponseStream();
+          await lambdaRequire('lambda-test/streaming').errorAfterWrite(
+            'arg',
+            responseStream,
+            ctx
+          );
+        } catch (e: any) {
+          err = e;
+        }
+        assert.strictEqual(err!.message, 'handler error after write');
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assert.strictEqual(spans.length, 1);
+        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+        assert.strictEqual(span.status.message, 'handler error after write');
+      });
+
+      it('should record promise rejection error', async () => {
+        initializeHandler('lambda-test/streaming.promiseReject');
+
+        let err: Error;
+        try {
+          const responseStream = createMockResponseStream();
+          await lambdaRequire('lambda-test/streaming').promiseReject(
+            'arg',
+            responseStream,
+            ctx
+          );
+        } catch (e: any) {
+          err = e;
+        }
+        assert.strictEqual(err!.message, 'promise rejection error');
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assert.strictEqual(spans.length, 1);
+        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+        assert.strictEqual(span.status.message, 'promise rejection error');
+      });
+    });
+
+    describe('sync streaming handler', () => {
+      it('should export a valid span for sync streaming handler', async () => {
+        initializeHandler('lambda-test/streaming.syncHandler');
+
+        const responseStream = createMockResponseStream();
+        const result = await lambdaRequire('lambda-test/streaming').syncHandler(
+          'arg',
+          responseStream,
+          ctx
+        );
+        assert.strictEqual(result, 'sync-ok');
+
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assert.strictEqual(spans.length, 1);
+        assertSpanSuccess(span);
+        assert.strictEqual(span.parentSpanContext?.spanId, undefined);
+      });
+    });
+
+    describe('streaming handler with remote parent', () => {
+      beforeEach(() => {
+        propagation.disable();
+      });
+
+      it('uses globally registered propagator with streaming handler', async () => {
+        propagation.setGlobalPropagator(new AWSXRayPropagator());
+        initializeHandler('lambda-test/streaming.handler');
+
+        const proxyEvent = {
+          headers: {
+            'x-amzn-trace-id': sampledAwsHeader,
+          },
+        };
+
+        const responseStream = createMockResponseStream();
+        const result = await lambdaRequire('lambda-test/streaming').handler(
+          proxyEvent,
+          responseStream,
+          ctx
+        );
+        assert.strictEqual(result, 'stream-ok');
+
+        const spans = memoryExporter.getFinishedSpans();
+
+        assert.strictEqual(spans.length, 1);
+        assert.equal(
+          spans[0].spanContext().traceId,
+          sampledAwsSpanContext.traceId
+        );
+        assert.equal(
+          spans[0].parentSpanContext?.spanId,
+          sampledAwsSpanContext.spanId
+        );
+      });
+
+      it('uses custom eventContextExtractor with streaming handler', async () => {
+        propagation.setGlobalPropagator(new W3CTraceContextPropagator());
+        const customExtractor = (event: any): OtelContext => {
+          const propagator = new AWSXRayPropagator();
+          return propagator.extract(
+            context.active(),
+            event.contextCarrier,
+            defaultTextMapGetter
+          );
+        };
+
+        initializeHandler('lambda-test/streaming.handler', {
+          eventContextExtractor: customExtractor,
+        });
+
+        const otherEvent = {
+          contextCarrier: {
+            traceparent: sampledGenericSpan,
+            'x-amzn-trace-id': sampledAwsHeader,
+          },
+        };
+
+        const responseStream = createMockResponseStream();
+        const result = await lambdaRequire('lambda-test/streaming').handler(
+          otherEvent,
+          responseStream,
+          ctx
+        );
+
+        assert.strictEqual(result, 'stream-ok');
+
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assert.strictEqual(spans.length, 1);
+        assertSpanSuccess(span);
+        assert.strictEqual(
+          span.spanContext().traceId,
+          sampledAwsSpanContext.traceId
+        );
+        assert.strictEqual(
+          span.parentSpanContext?.spanId,
+          sampledAwsSpanContext.spanId
+        );
+      });
+    });
+
+    describe('streaming handler hooks', () => {
+      describe('requestHook with streaming', () => {
+        it('should apply requestHook to streaming handler', async () => {
+          initializeHandler('lambda-test/streaming.handler', {
+            requestHook: (span, { context }) => {
+              span.setAttribute(ATTR_FAAS_NAME, context.functionName);
+            },
+          });
+
+          const responseStream = createMockResponseStream();
+          await lambdaRequire('lambda-test/streaming').handler(
+            'arg',
+            responseStream,
+            ctx
+          );
+
+          const spans = memoryExporter.getFinishedSpans();
+          const [span] = spans;
+          assert.strictEqual(spans.length, 1);
+          assert.strictEqual(span.attributes[ATTR_FAAS_NAME], ctx.functionName);
+          assertSpanSuccess(span);
+        });
+      });
+
+      describe('responseHook with streaming', () => {
+        const RES_ATTR = 'test.res';
+        const ERR_ATTR = 'test.error';
+
+        const config: AwsLambdaInstrumentationConfig = {
+          responseHook: (span, { err, res }) => {
+            if (err)
+              span.setAttribute(
+                ERR_ATTR,
+                typeof err === 'string' ? err : err.message
+              );
+            if (res)
+              span.setAttribute(
+                RES_ATTR,
+                typeof res === 'string' ? res : JSON.stringify(res)
+              );
+          },
+        };
+
+        it('streaming - success', async () => {
+          initializeHandler('lambda-test/streaming.handler', config);
+
+          const responseStream = createMockResponseStream();
+          const res = await lambdaRequire('lambda-test/streaming').handler(
+            'arg',
+            responseStream,
+            ctx
+          );
+
+          const [span] = memoryExporter.getFinishedSpans();
+          assert.strictEqual(span.attributes[RES_ATTR], res);
+        });
+
+        it('streaming - error', async () => {
+          initializeHandler('lambda-test/streaming.error', config);
+
+          let err: Error;
+          try {
+            const responseStream = createMockResponseStream();
+            await lambdaRequire('lambda-test/streaming').error(
+              'arg',
+              responseStream,
+              ctx
+            );
+          } catch (e: any) {
+            err = e;
+          }
+          const [span] = memoryExporter.getFinishedSpans();
+          assert.strictEqual(span.attributes[ERR_ATTR], err!.message);
+        });
+
+        it('streaming - string error', async () => {
+          initializeHandler('lambda-test/streaming.stringerror', config);
+
+          let err: string;
+          try {
+            const responseStream = createMockResponseStream();
+            await lambdaRequire('lambda-test/streaming').stringerror(
+              'arg',
+              responseStream,
+              ctx
+            );
+          } catch (e: any) {
+            err = e;
+          }
+          const [span] = memoryExporter.getFinishedSpans();
+          assert.strictEqual(span.attributes[ERR_ATTR], err!);
+        });
+      });
+    });
+
+    describe('symbol preservation', () => {
+      it('should preserve AWS_HANDLER_STREAMING_SYMBOL on streaming handlers', async () => {
+        initializeHandler('lambda-test/streaming.handler');
+
+        const handlerModule = lambdaRequire('lambda-test/streaming');
+        const handler = handlerModule.handler;
+
+        assert.strictEqual(
+          handler[AWS_HANDLER_STREAMING_SYMBOL],
+          AWS_HANDLER_STREAMING_RESPONSE,
+          'AWS_HANDLER_STREAMING_SYMBOL should be preserved after instrumentation'
+        );
+      });
+
+      it('should preserve high water mark symbol on streaming handlers', async () => {
+        initializeHandler(
+          'lambda-test/streaming.handlerWithCustomHighWaterMark'
+        );
+
+        const handlerModule = lambdaRequire('lambda-test/streaming');
+        const handler = handlerModule.handlerWithCustomHighWaterMark;
+
+        assert.strictEqual(
+          handler[handlerModule.HIGH_WATER_MARK_SYMBOL],
+          32768,
+          'highWaterMark symbol should be preserved after instrumentation'
+        );
+      });
     });
   });
 });

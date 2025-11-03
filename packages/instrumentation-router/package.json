@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-router",
-  "version": "0.50.0",
+  "version": "0.52.0",
   "description": "OpenTelemetry instrumentation for `router` http middleware router",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -13,8 +13,6 @@
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-router",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm test -- --watch-extensions ts --watch",
@@ -58,7 +56,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.205.0",
+    "@opentelemetry/instrumentation": "^0.207.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-router#readme"

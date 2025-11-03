@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-mysql",
-  "version": "0.51.0",
+  "version": "0.53.0",
   "description": "OpenTelemetry instrumentation for `mysql` database client for MySQL",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -13,8 +13,6 @@
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-mysql",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
-    "lint": "eslint . --ext=ts,js,mjs",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
@@ -51,7 +49,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.51.0",
+    "@opentelemetry/contrib-test-utils": "^0.54.0",
     "@opentelemetry/sdk-metrics": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@types/mocha": "10.0.10",
@@ -65,7 +63,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.205.0",
+    "@opentelemetry/instrumentation": "^0.207.0",
     "@types/mysql": "2.15.27"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-mysql#readme"
