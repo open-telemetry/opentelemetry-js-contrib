@@ -31,6 +31,7 @@ import {
   type AnyValueMap,
 } from '@opentelemetry/api-logs';
 import { hrTime } from '@opentelemetry/core';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export interface GlobalErrorsInstrumentationConfig
   extends InstrumentationConfig {
@@ -45,7 +46,7 @@ export interface GlobalErrorsInstrumentationConfig
 
 export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsInstrumentationConfig> {
   constructor(config: GlobalErrorsInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-web-exception', '0.0.1', config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
     this.onError = this.onError.bind(this);
   }
 
