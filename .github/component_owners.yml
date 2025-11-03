@@ -158,6 +158,7 @@ components:
     - obecny
   packages/instrumentation-web-exception:
     - martinkuba
+    - pkanal
     - wolfgangcodes
   packages/plugin-react-load:
     - martinkuba
