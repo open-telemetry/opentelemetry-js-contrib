@@ -23,6 +23,7 @@ setupTracing('example-express-server');
 import * as express from 'express';
 import * as axios from 'axios';
 import { RequestHandler } from 'express';
+import type { Resource } from '@opentelemetry/resources';
 
 // Setup express
 const app = express();
@@ -30,7 +31,7 @@ const PORT = 8080;
 
 const getCrudController = () => {
   const router = express.Router();
-  const resources: any[] = [];
+  const resources: Resource[] = [];
   router.get('/', (req, res) => res.send(resources));
   router.post('/', (req, res) => {
     resources.push(req.body);
