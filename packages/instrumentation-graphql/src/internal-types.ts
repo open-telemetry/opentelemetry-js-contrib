@@ -80,9 +80,7 @@ export type validateType = (
 ) => ReadonlyArray<graphqlTypes.GraphQLError>;
 
 export interface GraphQLField {
-  parent: api.Span;
   span: api.Span;
-  error: Error | null;
 }
 
 interface OtelGraphQLData {

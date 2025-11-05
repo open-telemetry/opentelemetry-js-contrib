@@ -1,0 +1,6 @@
+[Based on the instrumentation written by Aspecto](https://github.com/aspecto-io/opentelemetry-ext-js/tree/master/packages/instrumentation-sequelize).
+
+The library contains the following changes compared to the original:
+* Removed `moduleVersionAttributeName` configuration option.
+* Various type declaration fixes.
+* Upgraded to latest instrumentation and semantic conventions.
