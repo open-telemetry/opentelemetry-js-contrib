@@ -27,9 +27,8 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci --ignore-scripts
-      # Note: we restore the last compilation form main branch
-      # so NX will only compile what has changed since then.
-      # Cache action is used because can be restores from dfferen workfow runs
+      # Restore the nx compilation cache for the latest commit to main.
+      # The subsequent 'npm run compile' should only need to compile changed packages.
       - name: Compile Cache Lookup
         uses: actions/cache/restore@v4
         with:
