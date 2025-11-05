@@ -91,4 +91,11 @@ export interface OracleInstrumentationConfig extends InstrumentationConfig {
    * @default false
    */
   requireParentSpan?: boolean;
+
+  /**
+   * Automatic propagation of trace context using V$SESSION.ACTION.
+   *
+   * @default false
+   */
+  traceContextPropagation?: boolean;
 }

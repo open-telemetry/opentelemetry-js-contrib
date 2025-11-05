@@ -24,6 +24,7 @@ import {
   SpanKind,
   trace,
   diag,
+  TraceFlags,
 } from '@opentelemetry/api';
 import {
   ATTR_DB_NAMESPACE,
@@ -61,6 +62,12 @@ function getTraceHandlerBaseClass(
     diag.error('Failed to load oracledb module.', err);
     return null;
   }
+}
+
+
+function _buildTraceparent(span: Span): string | undefined {
+  const sc = span.spanContext();
+  return `00-${sc.traceId}-${sc.spanId}-0${Number(sc.traceFlags || TraceFlags.NONE).toString(16)}`;
 }
 
 export function getOracleTelemetryTraceHandlerClass(
@@ -354,6 +361,27 @@ export function getOracleTelemetryTraceHandlerClass(
       };
 
       if (traceContext.fn) {
+        if (
+          this._instrumentConfig.traceContextPropagation &&
+          (traceContext.operation === SpanNames.EXECUTE ||
+            traceContext.operation === SpanNames.EXECUTE_MANY)
+        ) {
+          const connection = traceContext.additionalConfig?.self;
+          const traceparent = _buildTraceparent(
+            traceContext.userContext.span
+          );
+          if (connection && 'action' in connection && traceparent) {
+            try {
+              connection.action = traceparent;
+            } catch (err) {
+              diag.debug(
+                'Failed to set connection.action for trace propagation',
+                err
+              );
+            }
+          }
+        }
+
         // wrap the active span context to the exported function.
         traceContext.fn = context.bind(
           trace.setSpan(context.active(), traceContext.userContext.span),
