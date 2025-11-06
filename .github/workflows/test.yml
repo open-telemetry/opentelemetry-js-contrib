@@ -35,10 +35,14 @@ jobs:
         with:
           key: compile-cache-main
           path: .nx
+      # Cache was build on a different machine so nx will complain.
+      # ref: https://nx.dev/docs/troubleshooting/unknown-local-cache
+      # The cache is only created in this workflow so its okay to skip the check.
       - name: Compile packages
-        run: npm run compile
+        run: NX_REJECT_UNKNOWN_LOCAL_CACHE=0 npm run compile
       # Note: update the compilation cache for main branch
       - name: Compile Cache Update (Push)
+        if: ${{ github.event_name == 'push' }}
         uses: actions/cache/save@v4
         with:
           key: compile-cache-main
