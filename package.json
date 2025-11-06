@@ -12,9 +12,9 @@
   "scripts": {
     "clean": "nx run-many -t clean",
     "version:update": "nx run-many -t version:update",
-    "compile": "nx run-many -t compile",
-    "compile:ci:affected": "nx affected -t compile",
     "list:affected": "nx affected -t test-all-versions --graph=stdout | jq -c '.tasks.tasks[].target.project'",
+    "compile": "nx run-many -t compile",
+    "compile:ci:affected": "npm --loglevel=silent run list:affected | xargs -I {} -t nx run-many -t compile -p {}",
     "test": "nx run-many -t test",
     "test:ci:affected": "nx affected -t test",
     "test:browser": "nx run-many -t test:browser",
