@@ -1,5 +1,5 @@
 /*
- * Copyright The OpenTelemetry Authors
+ * Copyright The OpenTelemetry Authors, Aspecto
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-export interface TediousInstrumentationConfig extends InstrumentationConfig {
-  /**
-   * If true, injects the current DB span's W3C traceparent into SQL Server
-   * session state via `SET CONTEXT_INFO @opentelemetry_traceparent` (varbinary).
-   * Off by default to avoid the extra round-trip per request.
-   */
-  enableTraceContextPropagation?: boolean;
-}
+export { SequelizeInstrumentation } from './instrumentation';
+export type {
+  SequelizeResponseCustomAttributesFunction,
+  SequelizeQueryHook,
+  SequelizeQueryHookParams,
+  SequelizeInstrumentationConfig,
+} from './types';

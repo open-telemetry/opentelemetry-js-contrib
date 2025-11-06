@@ -1,5 +1,5 @@
 /*
- * Copyright The OpenTelemetry Authors
+ * Copyright The OpenTelemetry Authors, Aspecto
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,21 @@
  * limitations under the License.
  */
 
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-export interface TediousInstrumentationConfig extends InstrumentationConfig {
-  /**
-   * If true, injects the current DB span's W3C traceparent into SQL Server
-   * session state via `SET CONTEXT_INFO @opentelemetry_traceparent` (varbinary).
-   * Off by default to avoid the extra round-trip per request.
-   */
-  enableTraceContextPropagation?: boolean;
-}
+export const extractTableFromQuery = (query: string | null | undefined) => {
+  try {
+    const result = query?.match(/(?<=from|join|truncate)\s+"?`?(\w+)"?`?/gi);
+    if (!Array.isArray(result)) return;
+
+    return result
+      .map(table =>
+        table
+          .trim()
+          .replace(/^"(.*)"$/, '$1')
+          .replace(/^`(.*)`$/, '$1')
+      )
+      .sort()
+      .join(',');
+  } catch {
+    return;
+  }
+};

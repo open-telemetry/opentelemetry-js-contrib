@@ -30,10 +30,10 @@ const PORT = 8080;
 
 const getCrudController = () => {
   const router = express.Router();
-  const resources: any[] = [];
-  router.get('/', (req, res) => res.send(resources));
+  const things: unknown[] = [];
+  router.get('/', (req, res) => res.send(things));
   router.post('/', (req, res) => {
-    resources.push(req.body);
+    things.push(req.body);
     return res.status(201).send(req.body);
   });
   return router;
