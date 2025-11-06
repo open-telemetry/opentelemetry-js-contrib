@@ -28,6 +28,8 @@ jobs:
       - name: Install
         run: npm ci --ignore-scripts
         timeout-minutes: 10
+      - name: List affected packages
+        run: npm run list:affected
       # Note: when pushing to main we want to test only what changed in
       # last commit. Otherwise we want to test all changes from origin/main.
       # So we set the right values for base and head commits depending
