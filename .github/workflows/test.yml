@@ -39,7 +39,6 @@ jobs:
         run: npm run compile
       # Note: update the compilation cache for main branch
       - name: Compile Cache Update (Push)
-        if: ${{ github.event_name == 'push' }}
         uses: actions/cache/save@v4
         with:
           key: compile-cache-main
