@@ -42,8 +42,6 @@ jobs:
             echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
             echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
           fi
-      - name: List affected packages
-        run: npm run list:affected
       - name: Compile (Delta)
         run: npm run compile:ci:affected
       - name: Upload Build Artifacts
