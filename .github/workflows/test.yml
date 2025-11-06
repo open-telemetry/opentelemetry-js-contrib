@@ -27,9 +27,10 @@ jobs:
           node-version: 18
       - name: Install
         run: npm ci --ignore-scripts
-      # Restore the nx compilation cache for the latest commit to main.
+      # Note: On PRs restore the nx compilation cache for the latest commit to main.
       # The subsequent 'npm run compile' should only need to compile changed packages.
-      - name: Compile Cache Lookup
+      - name: Compile Cache Lookup (PR)
+        if: ${{ github.event_name == 'pull_request' }}
         uses: actions/cache/restore@v4
         with:
           key: compile-cache-main
@@ -43,8 +44,9 @@ jobs:
         with:
           key: compile-cache-main
           path: .nx
-      # Note: upload cache to be used in this worflow run
-      # by the unit-test and test-all-versions jobs
+      # Note: upload cache to be used in this workflow run
+      # by the unit-test and test-all-versions jobs. Not using
+      # cache action since this is meant to live only for the current run
       - name: Upload Compile Cache (PR)
         uses: actions/upload-artifact@v5
         with:
