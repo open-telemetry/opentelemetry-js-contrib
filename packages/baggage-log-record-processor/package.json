@@ -44,7 +44,7 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "dependencies": {
-    "@opentelemetry/sdk-logs": "^0.207.0"
+    "@opentelemetry/sdk-logs": "^0.208.0"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
