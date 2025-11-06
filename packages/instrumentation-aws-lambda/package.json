@@ -58,7 +58,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.207.0",
+    "@opentelemetry/instrumentation": "^0.208.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/aws-lambda": "^8.10.155"
   },
