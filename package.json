@@ -16,7 +16,7 @@
     "compile": "nx run-many -t compile",
     "compile:ci:affected": "npm --loglevel=silent run list:affected | xargs -I {} -t nx run-many -t compile -p {}",
     "test": "nx run-many -t test",
-    "test:ci:affected": "nx affected -t test",
+    "test:ci:affected": "npm --loglevel=silent run list:affected | xargs -I {} -t nx run-many -t test -p {}",
     "test:browser": "nx run-many -t test:browser",
     "test:browser:ci:affected": "nx affected -t test:browser",
     "test-all-versions": "npm run --if-present test-all-versions --workspaces",
