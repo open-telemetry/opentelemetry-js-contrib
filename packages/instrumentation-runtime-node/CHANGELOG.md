@@ -1,6 +1,18 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.22.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.21.0...instrumentation-runtime-node-v0.22.0) (2025-11-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3210](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3210)) ([2d675d3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2d675d368a1b8df0599bc5f6462db535a225c0b6))
+
+
+### Bug Fixes
+
+* **instrumentation-runtime-node:** use absolute results in eventLoopUtilization computation ([#3118](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3118)) ([06c503c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/06c503c175d57f17c8be552a10d3354b77b2550c))
+
 ## [0.21.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.20.0...instrumentation-runtime-node-v0.21.0) (2025-10-21)
 
 

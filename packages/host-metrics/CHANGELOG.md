@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.36.2...host-metrics-v0.37.0) (2025-11-06)
+
+
+### Features
+
+* **host-metrics:** add 'metricGroups' configuration option to limit which metrics are collected ([#3149](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3149)) ([6fbbd6c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6fbbd6ca90addf5a79fc4a977bcfc66ab7f7dd08))
+
 ## [0.36.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.36.1...host-metrics-v0.36.2) (2025-09-29)
 
 
