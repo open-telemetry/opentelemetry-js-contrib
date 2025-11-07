@@ -47,15 +47,7 @@
     "@opentelemetry/contrib-test-utils": "^0.55.0",
     "@opentelemetry/instrumentation-fs": "^0.28.0",
     "@opentelemetry/instrumentation-http": "^0.208.0",
-    "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "@types/sinon": "17.0.4",
-    "nock": "13.3.3",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "sinon": "15.2.0",
-    "typescript": "5.0.4"
+    "@opentelemetry/sdk-trace-base": "^2.0.0"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.0.0"

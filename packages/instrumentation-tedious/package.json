@@ -56,15 +56,7 @@
     "@opentelemetry/context-async-hooks": "^2.0.0",
     "@opentelemetry/contrib-test-utils": "^0.55.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "cross-env": "7.0.3",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "semver": "7.7.3",
-    "tedious": "17.0.0",
-    "test-all-versions": "6.1.0",
-    "typescript": "5.0.4"
+    "tedious": "17.0.0"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.208.0",
