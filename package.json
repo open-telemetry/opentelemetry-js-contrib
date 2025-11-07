@@ -94,6 +94,9 @@
     "webpack-cli": "6.0.1",
     "webpack-merge": "6.0.1"
   },
+  "overrides": {
+    "rollup":"4.52.5"
+  },
   "workspaces": [
     "packages/*"
   ]
