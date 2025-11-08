@@ -54,4 +54,4 @@ async function makeRequest() {
   );
 }
 
-makeRequest().catch(err => console.log(err));
+makeRequest().catch(err => console.error(err));

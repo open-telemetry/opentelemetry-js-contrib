@@ -14,32 +14,28 @@
  * limitations under the License.
  */
 
-import {
-  trace,
-  SamplingDecision,
-  SpanKind,
-  Attributes,
-} from '@opentelemetry/api';
+import { trace, SpanKind, Attributes } from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
   Sampler,
   AlwaysOnSampler,
   SimpleSpanProcessor,
+  SamplingDecision,
 } from '@opentelemetry/sdk-trace-base';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
-import { Resource } from '@opentelemetry/resources';
 import {
   ATTR_SERVICE_NAME,
   ATTR_HTTP_ROUTE,
 } from '@opentelemetry/semantic-conventions';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 
 export const setupTracing = (serviceName: string) => {
   const exporter = new OTLPTraceExporter({});
   const provider = new NodeTracerProvider({
-    resource: new Resource({
+    resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: serviceName,
     }),
     spanProcessors: [new SimpleSpanProcessor(exporter)],
