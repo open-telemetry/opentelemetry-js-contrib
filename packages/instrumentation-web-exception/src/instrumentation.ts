@@ -31,6 +31,8 @@ import {
   type AnyValueMap,
 } from '@opentelemetry/api-logs';
 import { hrTime } from '@opentelemetry/core';
+
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export interface GlobalErrorsInstrumentationConfig
