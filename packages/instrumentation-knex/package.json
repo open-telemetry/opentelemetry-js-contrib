@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-knex",
-  "version": "0.52.0",
+  "version": "0.53.0",
   "description": "OpenTelemetry instrumentation for `knex` database SQL query builder",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -49,17 +49,12 @@
     "@opentelemetry/context-async-hooks": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
     "better-sqlite3": "^11.10.0",
     "knex": "3.1.0",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "sqlite3": "5.1.7",
-    "typescript": "5.0.4"
+    "sqlite3": "5.1.7"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.207.0",
+    "@opentelemetry/instrumentation": "^0.208.0",
     "@opentelemetry/semantic-conventions": "^1.33.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-knex#readme"

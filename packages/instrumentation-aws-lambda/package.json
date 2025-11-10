@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-lambda",
-  "version": "0.59.0",
+  "version": "0.60.0",
   "description": "OpenTelemetry instrumentation for AWS Lambda function invocations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -50,15 +50,10 @@
     "@opentelemetry/propagator-aws-xray-lambda": "^0.55.3",
     "@opentelemetry/sdk-metrics": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "typescript": "5.0.4"
+    "@opentelemetry/sdk-trace-node": "^2.0.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.207.0",
+    "@opentelemetry/instrumentation": "^0.208.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/aws-lambda": "^8.10.155"
   },

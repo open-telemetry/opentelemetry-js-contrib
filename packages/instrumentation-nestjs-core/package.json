@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-nestjs-core",
-  "version": "0.54.0",
+  "version": "0.55.0",
   "description": "OpenTelemetry instrumentation for NestJS server side applications framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -54,21 +54,12 @@
     "@opentelemetry/context-async-hooks": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "@types/semver": "7.5.8",
-    "cross-env": "7.0.3",
-    "nyc": "17.1.0",
     "reflect-metadata": "0.2.2",
-    "rimraf": "5.0.10",
     "rxjs": "7.8.2",
-    "rxjs-compat": "6.6.7",
-    "semver": "7.7.3",
-    "test-all-versions": "6.1.0",
-    "typescript": "5.0.4"
+    "rxjs-compat": "6.6.7"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.207.0",
+    "@opentelemetry/instrumentation": "^0.208.0",
     "@opentelemetry/semantic-conventions": "^1.30.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs-core#readme"
