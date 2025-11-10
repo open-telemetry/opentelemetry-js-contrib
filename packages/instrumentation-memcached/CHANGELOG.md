@@ -1,6 +1,21 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.51.0...instrumentation-memcached-v0.52.0) (2025-11-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3210](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3210)) ([2d675d3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2d675d368a1b8df0599bc5f6462db535a225c0b6))
+* **instrumentation-memcached:** support 'net.*' and 'db.*' semconv migra… ([#3169](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3169)) ([622638d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/622638ddf06a8f316b5f13abda84595767244949))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.54.0 to ^0.55.0
+
 ## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.50.0...instrumentation-memcached-v0.51.0) (2025-10-21)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-fs",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "description": "OpenTelemetry instrumentation for `node:fs` file system interactions module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -48,18 +48,11 @@
     "@opentelemetry/context-async-hooks": "^2.0.0",
     "@opentelemetry/resources": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "@types/sinon": "^17.0.0",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "sinon": "15.2.0",
-    "typescript": "5.0.4"
+    "@opentelemetry/sdk-trace-node": "^2.0.0"
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.207.0"
+    "@opentelemetry/instrumentation": "^0.208.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-fs#readme"
 }

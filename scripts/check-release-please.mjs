@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import path from 'path';
-import { readFileSync } from 'fs';
-import { globSync } from 'glob';
+import path from 'node:path';
+import { globSync, readFileSync } from 'node:fs';
 
 /*
 	Enumerates through
