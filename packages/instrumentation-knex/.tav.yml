@@ -1,0 +1,10 @@
+knex:
+  - versions:
+      include: '>=2 <4'
+      mode: max-5
+    commands: npm run test
+  - versions:
+      include: '>=0.10.0 <2'
+      mode: max-5
+    peerDependencies: "@vscode/sqlite3@^5.0.7"
+    commands: npm run test

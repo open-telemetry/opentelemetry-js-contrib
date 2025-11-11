@@ -27,8 +27,12 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-
+import * as semver from 'semver';
+import { getPackageVersion } from '@opentelemetry/contrib-test-utils';
 import { KnexInstrumentation } from '../src';
+
+const knexVersion = getPackageVersion('knex');
+
 const plugin = new KnexInstrumentation({
   maxQueryLength: 50,
 });
@@ -197,7 +201,12 @@ describe('Knex instrumentation', () => {
       );
     });
 
-    it('should catch better-sqlite3 errors', async () => {
+    it('should catch better-sqlite3 errors', async function () {
+      // This dialect was added in v1.0.0
+      // ref: https://github.com/knex/knex/releases/tag/1.0.0
+      if (semver.lt(knexVersion, '1.0.0')) {
+        this.skip();
+      }
       client = knex({
         client: 'better-sqlite3',
         connection: {
