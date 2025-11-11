@@ -49,14 +49,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/generic-pool": "^3.1.9",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "@types/semver": "7.5.8",
-    "generic-pool": "3.8.2",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "semver": "7.7.3",
-    "typescript": "5.0.4"
+    "generic-pool": "3.8.2"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.208.0"
