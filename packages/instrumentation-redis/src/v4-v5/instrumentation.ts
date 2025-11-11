@@ -511,7 +511,10 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
         currCommandRes instanceof Error
           ? [null, currCommandRes]
           : [currCommandRes, undefined];
-      span.setAttribute(ATTR_DB_OPERATION_NAME, operationName);
+
+      if (this._semconvStability & SemconvStability.STABLE) {
+        span.setAttribute(ATTR_DB_OPERATION_NAME, operationName);
+      }
 
       this._endSpanWithResponse(span, allCommands[i], commandArgs, res, err);
     }
