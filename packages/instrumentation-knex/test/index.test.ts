@@ -29,7 +29,6 @@ import {
 import * as assert from 'assert';
 
 import { KnexInstrumentation } from '../src';
-
 const plugin = new KnexInstrumentation({
   maxQueryLength: 50,
 });
