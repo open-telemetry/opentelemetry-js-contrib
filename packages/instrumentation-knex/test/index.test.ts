@@ -27,6 +27,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
+
 import { KnexInstrumentation } from '../src';
 
 const plugin = new KnexInstrumentation({
@@ -197,7 +198,7 @@ describe('Knex instrumentation', () => {
       );
     });
 
-    it('should catch better-sqlite3 errors', async function () {
+    it('should catch better-sqlite3 errors', async () => {
       client = knex({
         client: 'better-sqlite3',
         connection: {
