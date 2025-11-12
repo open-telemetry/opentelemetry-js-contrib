@@ -161,7 +161,7 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
 
         if (instrumentation._semconvStability & SemconvStability.OLD) {
           Object.assign(attributes, {
-            [ATTR_DB_SYSTEM]: utils.mapSystem(config.client),
+            [ATTR_DB_SYSTEM]: utils.mapSystem(this.client.driverName),
             [ATTR_DB_SQL_TABLE]: table,
             [ATTR_DB_OPERATION]: operation,
             [ATTR_DB_USER]: config?.connection?.user,
@@ -173,7 +173,7 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
         }
         if (instrumentation._semconvStability & SemconvStability.STABLE) {
           Object.assign(attributes, {
-            [ATTR_DB_SYSTEM_NAME]: utils.mapSystem(config.client),
+            [ATTR_DB_SYSTEM_NAME]: utils.mapSystem(this.client.driverName),
             [ATTR_DB_COLLECTION_NAME]: table,
             [ATTR_DB_OPERATION_NAME]: operation,
             [ATTR_DB_NAMESPACE]: name,
