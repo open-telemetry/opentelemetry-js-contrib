@@ -17,7 +17,7 @@
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.ts'",
-    "//todo": "echo \"add test-all-versions\"",
+    "test-all-versions": "tav",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
