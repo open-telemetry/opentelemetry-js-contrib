@@ -145,7 +145,15 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
         this._wrap(
           redisClientMultiCommandPrototype,
           'exec',
-          this._getPatchMultiCommandsExec()
+          this._getPatchMultiCommandsExec(false)
+        );
+        if (isWrapped(redisClientMultiCommandPrototype?.execAsPipeline)) {
+          this._unwrap(redisClientMultiCommandPrototype, 'execAsPipeline');
+        }
+        this._wrap(
+          redisClientMultiCommandPrototype,
+          'execAsPipeline',
+          this._getPatchMultiCommandsExec(true)
         );
 
         if (isWrapped(redisClientMultiCommandPrototype?.addCommand)) {
@@ -277,14 +285,14 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     };
   }
 
-  private _getPatchMultiCommandsExec() {
+  private _getPatchMultiCommandsExec(isPipeline: boolean) {
     const plugin = this;
     return function execPatchWrapper(original: Function) {
       return function execPatch(this: any) {
         const execRes = original.apply(this, arguments);
         if (typeof execRes?.then !== 'function') {
           plugin._diag.error(
-            'got non promise result when patching RedisClientMultiCommand.exec'
+            'non-promise result when patching exec/execAsPipeline'
           );
           return execRes;
         }
@@ -292,21 +300,21 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
         return execRes
           .then((redisRes: unknown[]) => {
             const openSpans = this[OTEL_OPEN_SPANS];
-            plugin._endSpansWithRedisReplies(openSpans, redisRes);
+            plugin._endSpansWithRedisReplies(openSpans, redisRes, isPipeline);
             return redisRes;
           })
           .catch((err: Error) => {
             const openSpans = this[OTEL_OPEN_SPANS];
             if (!openSpans) {
               plugin._diag.error(
-                'cannot find open spans to end for redis multi command'
+                'cannot find open spans to end for multi/pipeline'
               );
             } else {
               const replies =
                 err.constructor.name === 'MultiErrorReply'
                   ? (err as MultiErrorReply).replies
                   : new Array(openSpans.length).fill(err);
-              plugin._endSpansWithRedisReplies(openSpans, replies);
+              plugin._endSpansWithRedisReplies(openSpans, replies, isPipeline);
             }
             return Promise.reject(err);
           });
@@ -472,11 +480,12 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
 
   private _endSpansWithRedisReplies(
     openSpans: Array<MutliCommandInfo>,
-    replies: unknown[]
+    replies: unknown[],
+    isPipeline = false
   ) {
     if (!openSpans) {
       return this._diag.error(
-        'cannot find open spans to end for redis multi command'
+        'cannot find open spans to end for redis multi/pipeline'
       );
     }
     if (replies.length !== openSpans.length) {
@@ -484,15 +493,30 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
         'number of multi command spans does not match response from redis'
       );
     }
+    // Determine a single operation name for the batch of commands.
+    // If all commands are identical, include the command name (e.g., "MULTI SET").
+    // Otherwise, use a generic "MULTI" or "PIPELINE" label for the span.
+    const allCommands = openSpans.map(s => s.commandName);
+    const allSameCommand = allCommands.every(cmd => cmd === allCommands[0]);
+    const operationName = allSameCommand
+      ? (isPipeline ? 'PIPELINE ' : 'MULTI ') + allCommands[0]
+      : isPipeline
+      ? 'PIPELINE'
+      : 'MULTI';
 
     for (let i = 0; i < openSpans.length; i++) {
-      const { span, commandName, commandArgs } = openSpans[i];
+      const { span, commandArgs } = openSpans[i];
       const currCommandRes = replies[i];
       const [res, err] =
         currCommandRes instanceof Error
           ? [null, currCommandRes]
           : [currCommandRes, undefined];
-      this._endSpanWithResponse(span, commandName, commandArgs, res, err);
+
+      if (this._semconvStability & SemconvStability.STABLE) {
+        span.setAttribute(ATTR_DB_OPERATION_NAME, operationName);
+      }
+
+      this._endSpanWithResponse(span, allCommands[i], commandArgs, res, err);
     }
   }
 
