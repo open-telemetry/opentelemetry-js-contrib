@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-web-exception",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OpenTelemetry instrumentation for web exceptions",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
