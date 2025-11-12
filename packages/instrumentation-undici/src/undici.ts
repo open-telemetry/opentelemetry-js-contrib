@@ -88,7 +88,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
   }
 
   // No need to instrument files/modules
-  protected override init() {
+  override init() {
     return undefined;
   }
 
@@ -135,7 +135,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     this.subscribeToChannel('undici:request:error', this.onError.bind(this));
   }
 
-  protected override _updateMetricInstruments() {
+  override _updateMetricInstruments() {
     this._httpClientDurationHistogram = this.meter.createHistogram(
       METRIC_HTTP_CLIENT_REQUEST_DURATION,
       {
