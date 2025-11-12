@@ -339,7 +339,12 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               values: Array.isArray(args[1]) ? args[1] : undefined,
             }
           : firstArgIsQueryObjectWithText
-            ? (arg0 as utils.ObjectWithText)
+            ? {
+                ...(arg0 as any),
+                values:
+                  (arg0 as any).values ??
+                  (Array.isArray(args[1]) ? args[1] : undefined),
+              }
             : undefined;
 
         const attributes: Attributes = {
