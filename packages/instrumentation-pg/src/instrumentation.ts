@@ -339,7 +339,12 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               values: Array.isArray(args[1]) ? args[1] : undefined,
             }
           : firstArgIsQueryObjectWithText
-            ? (arg0 as utils.ObjectWithText)
+            ? {
+                ...(arg0 as any),
+                values:
+                  (arg0 as any).values ??
+                  (Array.isArray(args[1]) ? args[1] : undefined),
+              }
             : undefined;
 
         const attributes: Attributes = {
@@ -360,21 +365,12 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
         const instrumentationConfig = plugin.getConfig();
 
-        // Normalize the query configuration so that prepared statements with a separate
-        // values array (query(config, values)) are correctly merged into one object.
-        const normalizedQueryConfig =
-          firstArgIsQueryObjectWithText &&
-          Array.isArray(args[1]) &&
-          queryConfig?.text
-            ? { ...queryConfig, values: args[1] }
-            : queryConfig;
-
         const span = utils.handleConfigQuery.call(
           this,
           plugin.tracer,
           instrumentationConfig,
           plugin._semconvStability,
-          normalizedQueryConfig
+          queryConfig
         );
 
         // Modify query text w/ a tracing comment before invoking original for
