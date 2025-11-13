@@ -25,6 +25,7 @@ import {
   trace,
   diag,
   TraceFlags,
+  SpanContext,
 } from '@opentelemetry/api';
 import {
   ATTR_DB_NAMESPACE,
@@ -64,10 +65,12 @@ function getTraceHandlerBaseClass(
   }
 }
 
-
-function _buildTraceparent(span: Span): string | undefined {
-  const sc = span.spanContext();
-  return `00-${sc.traceId}-${sc.spanId}-0${Number(sc.traceFlags || TraceFlags.NONE).toString(16)}`;
+export function buildTraceparent(
+  spanContext: SpanContext
+): string | undefined {
+  return `00-${spanContext.traceId}-${spanContext.spanId}-0${Number(
+    spanContext.traceFlags || TraceFlags.NONE
+  ).toString(16)}`;
 }
 
 export function getOracleTelemetryTraceHandlerClass(
@@ -367,8 +370,8 @@ export function getOracleTelemetryTraceHandlerClass(
             traceContext.operation === SpanNames.EXECUTE_MANY)
         ) {
           const connection = traceContext.additionalConfig?.self;
-          const traceparent = _buildTraceparent(
-            traceContext.userContext.span
+          const traceparent = buildTraceparent(
+            traceContext.userContext.span.spanContext()
           );
           if (connection && 'action' in connection && traceparent) {
             try {
