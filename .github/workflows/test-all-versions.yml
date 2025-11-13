@@ -29,11 +29,12 @@ jobs:
         with:
           fetch-depth: 0
       # Use the same Node.js version used for `release-please` workflow.
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 18
       - name: Install
         run: npm ci --ignore-scripts
+        timeout-minutes: 10
       - name: Build
         run: npm run compile
       - name: Upload Build Artifacts
@@ -57,14 +58,14 @@ jobs:
       mongo:
         image: mongo
         ports:
-        - 27017:27017
+          - 27017:27017
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
           MSSQL_SA_PASSWORD: mssql_passw0rd
           ACCEPT_EULA: Y
         ports:
-        - 1433:1433
+          - 1433:1433
         options: >-
           --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $MSSQL_SA_PASSWORD -C -Q 'select 1' -b -o /dev/null"
           --health-interval 1s
@@ -79,7 +80,7 @@ jobs:
           MYSQL_DATABASE: otel_mysql_database
           MYSQL_ROOT_PASSWORD: rootpw
         ports:
-        - 3306:3306
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping"
           --health-interval 10s
@@ -105,7 +106,7 @@ jobs:
           POSTGRES_DB: otel_pg_database
           POSTGRES_PASSWORD: postgres
         ports:
-        - 5432:5432
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -114,14 +115,14 @@ jobs:
       rabbitmq:
         image: rabbitmq:3
         ports:
-        - 22221:5672
+          - 22221:5672
         env:
           RABBITMQ_DEFAULT_USER: username
           RABBITMQ_DEFAULT_PASS: password
       redis:
         image: redis
         ports:
-        - 6379:6379
+          - 6379:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -164,13 +165,14 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
       - name: Install
         # Post install scripts are required for some deps for successful test
         # runs: sqlite3, better-sqlite3, and possibly esbuild.
         run: npm ci
+        timeout-minutes: 10
       - name: Download Build Artifacts
         uses: actions/download-artifact@v5
         with:

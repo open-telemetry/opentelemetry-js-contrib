@@ -199,10 +199,17 @@ function updateAttrSpanList(connection: oracledb.Connection) {
   if (serverVersion >= VER_23_4) {
     if (oracledb.thin) {
       // for round trips.
-      connAttrList.push({ ...attributes });
-      poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
-      poolConnAttrList.push({ ...connAttributes, ...POOL_ATTRIBUTES });
-      connAttrList.push({ ...connAttributes });
+      connAttrList.push({ ...attributes }); // FastAuth standalone
+      poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES }); // FastAuth pool
+      if (oracledb.version < 61000) {
+        connAttrList.push({ ...connAttributes }); // OAUTH
+        poolConnAttrList.push({ ...connAttributes, ...POOL_ATTRIBUTES }); // OAUTH
+      } else {
+        // From oracledb version 6.10 onwards, the db instance name is not populated
+        // until all validations for connection establishment is done.
+        connAttrList.push({ ...attributes }); // OAUTH
+        poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES }); // OAUTH
+      }
       failedConnAttrList = [...connAttrList];
       failedConnAttrList[2] = { ...CONN_FAILED_ATTRIBUTES };
       failedConnAttrList[1] = { ...attributes };
@@ -218,11 +225,16 @@ function updateAttrSpanList(connection: oracledb.Connection) {
       connAttrList.push({ ...attributes });
       connAttrList.push({ ...attributes });
       connAttrList.push({ ...attributes });
-      connAttrList.push({ ...connAttributes });
       poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
       poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
       poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
-      poolConnAttrList.push({ ...connAttributes, ...POOL_ATTRIBUTES });
+      if (oracledb.version < 61000) {
+        connAttrList.push({ ...attributes });
+        poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
+      } else {
+        connAttrList.push({ ...connAttributes });
+        poolConnAttrList.push({ ...connAttributes, ...POOL_ATTRIBUTES });
+      }
       failedConnAttrList = [...connAttrList];
       failedConnAttrList[4] = { ...CONN_FAILED_ATTRIBUTES };
       failedConnAttrList[3] = { ...attributes };
@@ -237,7 +249,7 @@ function updateAttrSpanList(connection: oracledb.Connection) {
       failedConnAttrList = [{ ...CONN_FAILED_ATTRIBUTES }];
     }
   }
-  // for getConnection
+  // for getConnection public API span
   connAttrList.push({ ...connAttributes });
   poolConnAttrList.push({ ...poolAttributes });
   spanNamesList.push(SpanNames.CONNECT);

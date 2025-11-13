@@ -1,6 +1,36 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [2.8.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v2.7.0...resource-detector-aws-v2.8.0) (2025-11-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3210](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3210)) ([2d675d3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2d675d368a1b8df0599bc5f6462db535a225c0b6))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.54.0 to ^0.55.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.27.0 to ^0.28.0
+
+## [2.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v2.6.0...resource-detector-aws-v2.7.0) (2025-10-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3187](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3187)) ([ab96334](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab9633455794de79964e60775c804791d19259bc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.53.0 to ^0.54.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.26.0 to ^0.27.0
+
 ## [2.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v2.5.3...resource-detector-aws-v2.6.0) (2025-10-06)
 
 

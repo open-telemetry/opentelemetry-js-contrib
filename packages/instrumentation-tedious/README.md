@@ -56,6 +56,13 @@ Attributes collected:
 | `net.peer.name`         | Remote hostname or similar.                                                    |
 | `net.peer.port`         | Remote port number.                                                            |
 
+### Trace Context Propagation
+
+Database trace context propagation can be enabled by setting `enableTraceContextPropagation`to `true`.
+This uses the [SET CONTEXT_INFO](https://learn.microsoft.com/en-us/sql/t-sql/statements/set-context-info-transact-sql?view=sql-server-ver16)
+command to set [traceparent](https://www.w3.org/TR/trace-context/#traceparent-header)information
+for the current connection, which results in **an additional round-trip to the database**.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

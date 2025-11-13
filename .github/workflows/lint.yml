@@ -10,14 +10,14 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 18
-          cache: 'npm'
+          cache: npm
       - run: npm ci --ignore-scripts
       - name: Lint
         run: |
