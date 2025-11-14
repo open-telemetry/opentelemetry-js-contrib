@@ -52,7 +52,7 @@
     "@types/node": "22.17.1",
     "@types/semver": "7.7.1",
     "@types/shimmer": "1.2.0",
-    "@types/sinon": "17.0.4",
+    "@types/sinon": "20.0.0",
     "@types/webpack-env": "1.18.8",
     "assert": "2.1.0",
     "babel-loader": "10.0.0",
