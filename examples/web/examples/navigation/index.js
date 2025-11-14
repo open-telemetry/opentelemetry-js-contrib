@@ -21,12 +21,12 @@ import {
 } from '@opentelemetry/sdk-logs';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
-import { BrowserNavigationInstrumentation } from '@opentelemetry/instrumentation-browser-navigation';
+import { BrowserNavigationInstrumentation } from '../../../../packages/instrumentation-browser-navigation/build/esm/index.js';
 
 const loggerProvider = new LoggerProvider({
-  resource: new Resource({
+  resource: resourceFromAttributes({
     [ATTR_SERVICE_NAME]: 'navigation-example-app',
   }),
 });

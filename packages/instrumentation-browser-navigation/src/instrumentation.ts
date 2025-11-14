@@ -16,7 +16,6 @@
 
 import { InstrumentationBase, isWrapped } from '@opentelemetry/instrumentation';
 import { LogRecord } from '@opentelemetry/api-logs';
-/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   BrowserNavigationInstrumentationConfig,

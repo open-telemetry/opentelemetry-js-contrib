@@ -47,7 +47,6 @@
     "@opentelemetry/instrumentation-user-interaction": "^0.52.0",
     "@opentelemetry/instrumentation-xml-http-request": "^0.207.0",
     "@opentelemetry/instrumentation-document-load": "^0.53.0",
-    "@opentelemetry/instrumentation-browser-navigation": "^0.54.0",
     "@opentelemetry/propagator-b3": "^2.0.0",
     "@opentelemetry/resources": "^2.0.0",
     "@opentelemetry/sdk-logs": "^0.53.0",
