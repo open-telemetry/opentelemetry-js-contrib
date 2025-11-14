@@ -23,7 +23,7 @@ import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
-import { BrowserNavigationInstrumentation } from '../../../../packages/instrumentation-browser-navigation/build/esm/index.js';
+import { BrowserNavigationInstrumentation } from '@opentelemetry/instrumentation-browser-navigation';
 
 const loggerProvider = new LoggerProvider({
   resource: resourceFromAttributes({
