@@ -45,9 +45,9 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { expect } from 'expect';
-import { Definition, back as nockBack } from 'nock';
+import { type Definition, back as nockBack } from 'nock';
 import { OpenAI } from 'openai';
-import * as path from 'path';
+import * as path from 'node:path';
 
 import {
   ATTR_EVENT_NAME,

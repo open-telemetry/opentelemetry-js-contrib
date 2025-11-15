@@ -66,8 +66,8 @@ import {
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getEnvBool, getAttrsFromBaseURL } from './utils';
-import { OpenAIInstrumentationConfig } from './types';
-import {
+import type { OpenAIInstrumentationConfig } from './types';
+import type {
   APIPromise,
   GenAIMessage,
   GenAIChoiceEventBody,
@@ -169,6 +169,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _getPatchedChatCompletionsCreate(): any {
     const self = this;
     return (original: ChatCompletions['create']) => {
@@ -186,7 +187,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         const config = self.getConfig();
         const startNow = performance.now();
 
-        let startInfo;
+        let startInfo: ReturnType<OpenAIInstrumentation['_startChatCompletionsSpan']>;
         try {
           startInfo = self._startChatCompletionsSpan(
             params,
@@ -271,16 +272,14 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     if (params.frequency_penalty != null) {
       attrs[ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY] = params.frequency_penalty;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((params as any).max_completion_tokens != null) {
+    if (typeof params.max_completion_tokens === 'number') {
       attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] =
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (params as any).max_completion_tokens;
-    } else if (params.max_tokens != null) {
+        params.max_completion_tokens;
+    } else if (typeof params.max_tokens === 'number') {
       // `max_tokens` is deprecated in favour of `max_completion_tokens`.
       attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = params.max_tokens;
     }
-    if (params.presence_penalty != null) {
+    if (typeof params.presence_penalty === 'number') {
       attrs[ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY] = params.presence_penalty;
     }
     if (params.stop != null) {
@@ -450,19 +449,19 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * data from those chunks, then end the span.
    */
   async *_onChatCompletionsStreamIterator(
-    streamIter: AsyncIterator<ChatCompletionChunk>,
+    iterator: AsyncIterator<ChatCompletionChunk>,
     span: Span,
     startNow: number,
     config: OpenAIInstrumentationConfig,
     commonAttrs: Attributes,
     ctx: Context
   ) {
-    let id;
-    let model;
+    const iterable = { [Symbol.asyncIterator]: () => iterator };
+    let id: string | undefined;
+    let model: string | undefined;
     const finishReasons: string[] = [];
     const choices = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for await (const chunk of streamIter as any) {
+    for await (const chunk of iterable) {
       yield chunk;
 
       // Gather telemetry from this chunk.
@@ -734,6 +733,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _getPatchedEmbeddingsCreate(): any {
     const self = this;
     return (original: Embeddings['create']) => {
@@ -750,7 +750,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         const params = args[0];
         const startNow = performance.now();
 
-        let startInfo;
+        let startInfo: ReturnType<OpenAIInstrumentation['_startEmbeddingsSpan']>;
         try {
           startInfo = self._startEmbeddingsSpan(params, this?._client?.baseURL);
         } catch (err) {
