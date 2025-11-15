@@ -62,6 +62,16 @@ import {
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+  EVENT_GEN_AI_CHOICE,
+  EVENT_GEN_AI_SYSTEM_MESSAGE,
+  EVENT_GEN_AI_USER_MESSAGE,
+  EVENT_GEN_AI_ASSISTANT_MESSAGE,
+  EVENT_GEN_AI_TOOL_MESSAGE,
+  GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+  GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+  GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+  GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
 } from './semconv';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -77,14 +87,6 @@ import type {
   GenAIToolMessageEventBody,
   GenAIToolCall,
 } from './internal-types';
-
-// The JS semconv package doesn't yet emit constants for event names.
-// TODO: otel-js issue for semconv pkg not including event names
-const EVENT_GEN_AI_SYSTEM_MESSAGE = 'gen_ai.system.message';
-const EVENT_GEN_AI_USER_MESSAGE = 'gen_ai.user.message';
-const EVENT_GEN_AI_ASSISTANT_MESSAGE = 'gen_ai.assistant.message';
-const EVENT_GEN_AI_TOOL_MESSAGE = 'gen_ai.tool.message';
-const EVENT_GEN_AI_CHOICE = 'gen_ai.choice';
 
 export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumentationConfig> {
   private _genaiClientOperationDuration!: Histogram;
@@ -259,9 +261,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
   ) {
     // Attributes common to span, metrics, log events.
     const commonAttrs: Attributes = {
-      [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
       [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
-      [ATTR_GEN_AI_SYSTEM]: 'openai',
+      [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
     };
     Object.assign(commonAttrs, getAttrsFromBaseURL(baseURL, this._diag));
 
@@ -324,7 +326,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             severityNumber: SeverityNumber.INFO,
             attributes: {
               [ATTR_EVENT_NAME]: EVENT_GEN_AI_SYSTEM_MESSAGE,
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
             },
             body,
           });
@@ -348,7 +350,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             severityNumber: SeverityNumber.INFO,
             attributes: {
               [ATTR_EVENT_NAME]: EVENT_GEN_AI_USER_MESSAGE,
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
             },
             body,
           });
@@ -404,7 +406,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             severityNumber: SeverityNumber.INFO,
             attributes: {
               [ATTR_EVENT_NAME]: EVENT_GEN_AI_ASSISTANT_MESSAGE,
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
             },
             body,
           });
@@ -427,7 +429,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             severityNumber: SeverityNumber.INFO,
             attributes: {
               [ATTR_EVENT_NAME]: EVENT_GEN_AI_TOOL_MESSAGE,
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
             },
             body,
           });
@@ -541,12 +543,12 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         this._genaiClientTokenUsage.record(chunk.usage.prompt_tokens, {
           ...commonAttrs,
           [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
         });
         this._genaiClientTokenUsage.record(chunk.usage.completion_tokens, {
           ...commonAttrs,
           [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
         });
       }
     }
@@ -582,7 +584,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         severityNumber: SeverityNumber.INFO,
         attributes: {
           [ATTR_EVENT_NAME]: EVENT_GEN_AI_CHOICE,
-          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
         },
         body: {
           finish_reason: finishReasons[idx],
@@ -661,7 +663,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           severityNumber: SeverityNumber.INFO,
           attributes: {
             [ATTR_EVENT_NAME]: EVENT_GEN_AI_CHOICE,
-            [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
           },
           body: {
             finish_reason: choice.finish_reason,
@@ -683,13 +685,13 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         this._genaiClientTokenUsage.record(result.usage.prompt_tokens, {
           ...commonAttrs,
           [ATTR_GEN_AI_RESPONSE_MODEL]: result.model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
         });
 
         this._genaiClientTokenUsage.record(result.usage.completion_tokens, {
           ...commonAttrs,
           [ATTR_GEN_AI_RESPONSE_MODEL]: result.model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
         });
       }
     } catch (err) {
@@ -784,9 +786,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
   ) {
     // Attributes common to span, metrics, log events.
     const commonAttrs: Attributes = {
-      [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
       [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
-      [ATTR_GEN_AI_SYSTEM]: 'openai',
+      [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
     };
     Object.assign(commonAttrs, getAttrsFromBaseURL(baseURL, this._diag));
 
@@ -835,7 +837,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       this._genaiClientTokenUsage.record(result.usage.prompt_tokens, {
         ...commonAttrs,
         [ATTR_GEN_AI_RESPONSE_MODEL]: result.model,
-        [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
+        [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
       });
     } catch (err) {
       this._diag.error(
