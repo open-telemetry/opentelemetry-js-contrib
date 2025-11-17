@@ -9,7 +9,9 @@
                 "max_new_tokens": 10,
                 "temperature": 0.8,
                 "top_p": 1,
-                "stopSequences": ["|"]
+                "stopSequences": [
+                    "|"
+                ]
             }
         },
         "status": 200,
@@ -36,7 +38,7 @@
             "Content-Type",
             "application/json",
             "Content-Length",
-            "68",
+            "181",
             "Connection",
             "keep-alive",
             "x-amzn-RequestId",

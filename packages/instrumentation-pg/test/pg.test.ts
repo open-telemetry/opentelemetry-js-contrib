@@ -581,6 +581,59 @@ describe('pg', () => {
           });
         });
       });
+
+      it('should record query and values for prepared statements', done => {
+        const queryConfig = {
+          name: 'get_pg_tables',
+          text: 'SELECT * FROM pg_tables WHERE schemaname = $1',
+        };
+        const values = ['public'];
+
+        const expectedAttributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_STATEMENT]: queryConfig.text,
+          [AttributeNames.PG_PLAN]: queryConfig.name,
+          [AttributeNames.PG_VALUES]: values,
+        };
+
+        const events: TimedEvent[] = [];
+        const span = tracer.startSpan('prepared statement span');
+
+        context.with(trace.setSpan(context.active(), span), () => {
+          const resNoPromise = (client.query as any)(
+            queryConfig,
+            values,
+            (err: Error | null, res: any) => {
+              assert.strictEqual(err, null);
+              assert.ok(res);
+              assert.ok(Array.isArray(res.rows));
+
+              const spans = memoryExporter.getFinishedSpans();
+              const pgSpan = spans[spans.length - 1];
+              const recordedAttributes = pgSpan.attributes;
+
+              assert.strictEqual(
+                recordedAttributes[ATTR_DB_STATEMENT],
+                queryConfig.text
+              );
+
+              assert.ok(
+                !recordedAttributes[ATTR_DB_STATEMENT].includes(values[0]),
+                'Query text should NOT contain parameter value'
+              );
+
+              assert.deepStrictEqual(
+                recordedAttributes[AttributeNames.PG_VALUES],
+                ['public']
+              );
+
+              runCallbackTest(span, expectedAttributes, events);
+              done();
+            }
+          );
+          assert.strictEqual(resNoPromise, undefined);
+        });
+      });
     });
 
     describe('when specifying a requestHook configuration', () => {

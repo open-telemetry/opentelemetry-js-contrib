@@ -23,6 +23,8 @@ import {
   ATTR_V8JS_HEAP_SPACE_NAME,
   METRIC_V8JS_MEMORY_HEAP_LIMIT,
   METRIC_V8JS_MEMORY_HEAP_USED,
+  METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
+  METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE,
 } from '../src/semconv';
 
 const MEASUREMENT_INTERVAL = 10;
@@ -41,10 +43,8 @@ describe('v8js.memory.heap.*', function () {
   const metricNames = [
     METRIC_V8JS_MEMORY_HEAP_LIMIT,
     METRIC_V8JS_MEMORY_HEAP_USED,
-    // TODO: fix to use METRIC_V8JS_HEAP_SPACE_AVAILABLE_SIZE (breaking change)
-    'v8js.memory.heap.space.available_size',
-    // TODO: fix to use METRIC_V8JS_HEAP_SPACE_PHYSICAL_SIZE (breaking change)
-    'v8js.memory.heap.space.physical_size',
+    METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
+    METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE,
   ];
   for (const metricName of metricNames) {
     it(`should write ${metricName} after monitoringPrecision`, async function () {
