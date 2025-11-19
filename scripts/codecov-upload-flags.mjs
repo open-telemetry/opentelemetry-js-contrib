@@ -93,7 +93,7 @@ if (existsSync(codecovPath)) {
   );
   execSync(`curl -O "${url}.SHA256SUM"`, execOpts);
   execSync(`curl -O "${url}.SHA256SUM.sig"`, execOpts);
-  execSync('gpg --verify "codecov.SHA256SUM.sig" "codecov.SHA256SUM"', execOpts);
+  execSync('gpg --verify codecov.SHA256SUM.sig codecov.SHA256SUM', execOpts);
 }
 // make sure we have exec perms
 chmodSync(codecovPath, 0o555);
