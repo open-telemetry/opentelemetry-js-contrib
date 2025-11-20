@@ -43,7 +43,7 @@ This package implements Semantic Convention v1.33.1.
 ### Instana Agent Detector
 
 | Resource Attribute           | Description                                                                                                              |
-|------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | process.pid                  | The ID of the process. Value of parameter `pid` from the response to a request to `/com.instana.plugin.nodejs.discovery` |
 | service.instance.id          | The agent UUID. Value of parameter `agentUuid` from the response to a request to `/com.instana.plugin.nodejs.discovery`  |
 
