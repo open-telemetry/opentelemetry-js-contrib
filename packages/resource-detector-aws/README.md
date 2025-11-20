@@ -40,7 +40,7 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 Populates `service` for processes running on [AWS Elastic Beanstalk](https://aws.amazon.com/elasticbeanstalk/)
 
 | Resource Attribute  | Description                                                              |
-|---------------------|--------------------------------------------------------------------------|
+| ------------------- | ------------------------------------------------------------------------ |
 | cloud.platform      | The cloud platform. In this context, it's always "aws_elastic_beanstalk" |
 | cloud.provider      | The cloud provider. In this context, it's always "aws"                   |
 | service.instance.id | Value of `deployment_id` from config file `environment.conf`             |
@@ -53,7 +53,7 @@ Populates `service` for processes running on [AWS Elastic Beanstalk](https://aws
 Populates `cloud` and `host` for processes running on [Amazon EC2](https://aws.amazon.com/ec2/), including abstractions such as ECS on EC2. Notably, it does not populate anything on AWS Fargate.
 
 | Resource Attribute      | Description                                                                           |
-|-------------------------|---------------------------------------------------------------------------------------|
+| ----------------------- | ------------------------------------------------------------------------------------- |
 | cloud.account.id        | Value of `accountId` from `/latest/dynamic/instance-identity/document` request        |
 | cloud.availability_zone | Value of `availabilityZone` from `/latest/dynamic/instance-identity/document` request |
 | cloud.platform          | The cloud platform. In this context, it's always "aws_ec2"                            |
@@ -68,7 +68,7 @@ Populates `cloud` and `host` for processes running on [Amazon EC2](https://aws.a
 Populates `container` for containers running on [Amazon ECS](https://aws.amazon.com/ecs/).
 
 | Resource Attribute      | Description                                                                            |
-|-------------------------|----------------------------------------------------------------------------------------|
+| ----------------------- | -------------------------------------------------------------------------------------- |
 | aws.ecs.container.arn   | Value of `ContainerARN` from the request to the metadata Uri. The Metadata Uri is stored on the Environment Variable `ECS_CONTAINER_METADATA_URI_V4`  |
 | aws.ecs.cluster.arn     | Value in the format `${baseArn}:cluster/${cluster}`, with `baseArn` and `cluster` from a `ECS_CONTAINER_METADATA_URI_V4/task` request, with values from `TaskARN` and `Cluster` respectively |
 | aws.ecs.launchtype      | Value of `LaunchType` from `ECS_CONTAINER_METADATA_URI_V4/task` request                |
@@ -94,7 +94,7 @@ Populates `container` and `k8s.cluster_name` for containers running on [Amazon E
 `k8s.cluster_name` is not always available depending on the configuration of CloudWatch monitoring for the EKS cluster.
 
 | Resource Attribute | Description                                                                                         |
-|--------------------|-----------------------------------------------------------------------------------------------------|
+| ------------------ | --------------------------------------------------------------------------------------------------- |
 | cloud.platform     | The cloud platform. In this context, it's always "aws_eks"                                          |
 | cloud.provider     | The cloud provider. In this context, it's always "aws"                                              |
 | container.id       | Value from config file `/proc/self/cgroup`                                                          |
@@ -106,7 +106,7 @@ Populates `faas` and `cloud` for functions running on [AWS Lambda](https://aws.a
 `faas.id` is currently not populated as it is not provided by the runtime at startup.
 
 | Resource Attribute | Description                                                         |
-|--------------------|---------------------------------------------------------------------|
+| ------------------ | ------------------------------------------------------------------- |
 | cloud.platform     | The cloud platform. In this context, it's always "aws_lambda"       |
 | cloud.provider     | The cloud provider. In this context, it's always "aws"              |
 | cloud.region       | Value of Process Environment Variable `AWS_REGION`                  |

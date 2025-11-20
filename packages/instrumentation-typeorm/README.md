@@ -43,7 +43,7 @@ registerInstrumentations({
 You can set the following:
 
 | Options                      | Type                                   | Description                                                                   |
-| ---------------------------- | -------------------------------------- | ------------------------------------------------------------------------------|
+| ---------------------------- | -------------------------------------- | ----------------------------------------------------------------------------- |
 | `responseHook` | `TypeormResponseCustomAttributesFunction` | Hook called before response is returned, which allows to add custom attributes to span.  |
 | `suppressInternalInstrumentation` | boolean | Typeorm uses mongodb/postgres/mysql/mariadb/etc. under the hood. If, for example, postgres instrumentation is enabled, a postgres operation will also create a postgres span describing the communication. Setting the `suppressInternalInstrumentation` config value to `true` will cause the instrumentation to suppress instrumentation of underlying operations. |
 | `enableInternalInstrumentation` | boolean |  Some methods such as `getManyAndCount` can generate internally multiple spans. To instrument those set this to `true` |
@@ -54,7 +54,7 @@ You can set the following:
 Attributes collected:
 
 | Attribute            | Short Description                                                           |
-| ---------------------| --------------------------------------------------------------------------- |
+| -------------------- | --------------------------------------------------------------------------- |
 | `db.namespace`       | The name of the database being accessed.                                    |
 | `db.operation.name`  | The name of the operation being executed (e.g. the SQL keyword).            |
 | `db.collection.name` | The name of the table being accessed.                                       |
