@@ -118,7 +118,7 @@ See [examples/tracer-web](https://github.com/open-telemetry/opentelemetry-js/tre
 The document load instrumentation plugin has few options available to choose from. You can set the following:
 
 | Options | Type | Description |
-|---------|------|-------------|
+| ------- | ---- | ----------- |
 | `applyCustomAttributesOnSpan.documentLoad`| `DocumentLoadCustomAttributeFunction` | Function for adding custom attributes to `documentLoad` spans.                                                  |
 | `applyCustomAttributesOnSpan.documentFetch`                      | `DocumentLoadCustomAttributeFunction`                     | Function for adding custom attributes to `documentFetch` spans.  |
 | `applyCustomAttributesOnSpan.resourceFetch`                      | `ResourceFetchCustomAttributeFunction`                     | Function for adding custom attributes to `resourceFetch` spans  |

@@ -55,7 +55,7 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 Attributes collected:
 
 | Attribute           | Short Description                                  |
-|---------------------|----------------------------------------------------|
+| ------------------- | -------------------------------------------------- |
 | `component`*        | "@nestjs/core"                                     |
 | `nestjs.version`*   | Version of instrumented `@nestjs/core` package     |
 | `nestjs.type`*      | See [NestType](./src/enums/NestType.ts)            |
