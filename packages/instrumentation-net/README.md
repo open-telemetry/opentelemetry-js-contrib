@@ -46,7 +46,7 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 Attributes added to `connect` spans:
 
 | Attribute                 | Short Description                                                        |
-|---------------------------|--------------------------------------------------------------------------|
+| ------------------------- | ------------------------------------------------------------------------ |
 | `net.transport`           | `IP.TCP`, `pipe` or `Unix`                                               |
 | `net.peer.name`           | Host name or the IPC file path                                           |
 | `net.peer.ip` (for TCP)   | Remote address of the peer (dotted decimal for IPv4 or RFC5952 for IPv6) |

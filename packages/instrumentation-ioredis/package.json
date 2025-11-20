@@ -58,16 +58,7 @@
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/ioredis4": "npm:@types/ioredis@4.28.10",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "@types/sinon": "17.0.4",
-    "cross-env": "7.0.3",
-    "ioredis": "5.8.2",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "sinon": "15.2.0",
-    "test-all-versions": "6.1.0",
-    "typescript": "5.0.4"
+    "ioredis": "5.8.2"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.208.0",

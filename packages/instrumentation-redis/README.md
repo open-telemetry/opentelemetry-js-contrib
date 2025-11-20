@@ -86,7 +86,7 @@ Attributes collected:
 ### Old Semantic Conventions (default)
 
 | Attribute              | Short Description                                            |
-|------------------------|--------------------------------------------------------------|
+| ---------------------- | ------------------------------------------------------------ |
 | `db.connection_string` | URL to Redis server address, of the form `redis://host:port` |
 | `db.statement`         | Executed Redis statement                                     |
 | `db.system`            | Database identifier; always `redis`                          |
@@ -96,7 +96,7 @@ Attributes collected:
 ### Stable Semantic Conventions (v1.33.0)
 
 | Attribute              | Short Description                                            |
-|------------------------|--------------------------------------------------------------|
+| ---------------------- | ------------------------------------------------------------ |
 | `db.operation.name` | Redis command name |
 | `db.operation.batch.size` | Number of commands in a Redis `MULTI/EXEC` transaction |
 | `db.query.text`         | The database query being executed                                     |

@@ -34,6 +34,8 @@ const plugin = new KnexInstrumentation({
 });
 
 import knex from 'knex';
+// @ts-ignore
+import * as BetterSqlite3Dialect from 'knex/lib/dialects/better-sqlite3';
 
 describe('Knex instrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
@@ -152,6 +154,45 @@ describe('Knex instrumentation', () => {
       const limitedStatement = span?.attributes?.['db.statement'] as string;
       assert.strictEqual(limitedStatement.length, 52);
       assert.ok(statement.startsWith(limitedStatement.substring(0, 50)));
+    });
+
+    it("should correctly capture the DB's system name even with custom client implementations", async () => {
+      client = knex({
+        client: BetterSqlite3Dialect,
+        connection: {
+          filename: ':memory:',
+        },
+        useNullAsDefault: true,
+      });
+
+      const parentSpan = tracer.startSpan('parentSpan');
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          assert.deepEqual(await client.select(client.raw('1 as testCol')), [
+            { testCol: 1 },
+          ]);
+
+          parentSpan.end();
+
+          const instrumentationSpans = memoryExporter.getFinishedSpans();
+          const last = instrumentationSpans.pop() as any;
+          assertSpans(
+            instrumentationSpans,
+            [
+              {
+                op: 'select',
+                statement: 'select 1 as testCol',
+                parentSpan,
+              },
+            ],
+            { dbSystem: 'better-sqlite3' }
+          );
+          assert.strictEqual(instrumentationSpans[0].name, 'select :memory:');
+
+          assert(last.name, 'parentSpan');
+        }
+      );
     });
 
     it('should catch errors', async () => {

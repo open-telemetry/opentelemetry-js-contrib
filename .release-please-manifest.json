@@ -61,6 +61,7 @@
   "packages/instrumentation-router": "0.53.0",
   "packages/instrumentation-winston": "0.53.0",
   "packages/instrumentation-document-load": "0.54.0",
+  "packages/instrumentation-web-exception": "0.1.0",
   "packages/instrumentation-long-task": "0.53.0",
   "packages/instrumentation-user-interaction": "0.53.0",
   "packages/plugin-react-load": "0.40.0",

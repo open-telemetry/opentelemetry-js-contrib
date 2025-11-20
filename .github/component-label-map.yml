@@ -245,6 +245,10 @@ pkg:instrumentation-user-interaction:
   - changed-files:
       - any-glob-to-any-file:
           - packages/instrumentation-user-interaction/**
+pkg:instrumentation-web-exception:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/instrumentation-web-exception/**
 pkg:instrumentation-winston:
   - changed-files:
       - any-glob-to-any-file:

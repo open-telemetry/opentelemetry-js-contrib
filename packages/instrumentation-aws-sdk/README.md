@@ -60,6 +60,7 @@ aws-sdk instrumentation has few options available to choose from. You can set th
 ## Span Attributes
 
 The instrumentations are collecting the following attributes:
+
 | Attribute Name | Type | Description | Example |
 | -------------- | ---- | ----------- | ------- |
 | `rpc.system` | string | Always equals "aws-api" | |

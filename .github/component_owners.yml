@@ -160,6 +160,10 @@ components:
     - t2t2
   packages/instrumentation-user-interaction:
     - obecny
+  packages/instrumentation-web-exception:
+    - martinkuba
+    - pkanal
+    - wolfgangcodes
   packages/plugin-react-load:
     - martinkuba
   packages/propagator-instana:

@@ -32,7 +32,7 @@ This package implements Semantic Convention [Version 1.37.0](https://github.com/
 ### App Service Resource Detector
 
 | Resource Attribute      | Description                                                                                                                                                                                               |
-|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | azure.app.service.stamp | The specific "stamp" cluster within Azure where the App Service is running, e.g., "waws-prod-sn1-001". Value of Process Environment Variable `APP_SERVICE_ATTRIBUTE_ENV_VARS`.                            |
 | cloud.platform          | The cloud platform. Here, it's always "azure.app_service".                                                                                                                                                |
 | cloud.provider          | The cloud service provider. In this context, it's always "azure".                                                                                                                                         |
@@ -46,7 +46,7 @@ This package implements Semantic Convention [Version 1.37.0](https://github.com/
 ### VM Resource Detector
 
 | Resource Attribute       | Description                                                                                                                                                                                              |
-|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | azure.vm.scaleset.name   | The name of the Virtual Machine Scale Set if the VM is part of one. Value from `vmScaleSetName` key on `/metadata/instance/compute` request.                                                             |
 | azure.vm.sku             | The SKU of the Azure Virtual Machine's operating system. For instance, for a VM running Windows Server 2019 Datacenter edition, this value would be "2019-Datacenter". Value from `sku` key on `/metadata/instance/compute` request. |
 | cloud.platform           | The cloud platform, which is always set to "azure.vm" in this context.                                                                                                                                   |
@@ -61,7 +61,7 @@ This package implements Semantic Convention [Version 1.37.0](https://github.com/
 ### Azure Functions Resource Detector
 
 | Resource Attribute      | Description                                                                                                                                          |
-|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | cloud.platform          | The cloud platform. Here, it's always "azure.functions".                                                                                             |
 | cloud.provider          | The cloud service provider. In this context, it's always "azure".                                                                                    |
 | cloud.region            | The Azure region where the Azure Function is hosted, e.g., "East US", "West Europe", etc. Value of Process Environment Variable `REGION_NAME`.       |
