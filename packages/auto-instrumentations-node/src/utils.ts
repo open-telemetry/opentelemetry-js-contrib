@@ -168,13 +168,33 @@ export function getNodeAutoInstrumentations(
     // Defaults are defined by the instrumentation itself
     const userConfig: any = inputConfigs[name] ?? {};
 
-    if (
-      userConfig.enabled === false ||
-      !enabledInstrumentationsFromEnv.includes(name) ||
-      disabledInstrumentationsFromEnv.includes(name)
-    ) {
-      diag.debug(`Disabling instrumentation for ${name}`);
+    // Configuration priority: Environment variables > programmatic config
+    // If both OTEL_NODE_ENABLED_INSTRUMENTATIONS and OTEL_NODE_DISABLED_INSTRUMENTATIONS are set, ENABLED is applied first, then DISABLED is applied to that list.
+    // If the same instrumentation is in both lists, it will be disabled.
+    // When env vars are unset, allow programmatic config to override default exclusions
+
+    if (disabledInstrumentationsFromEnv.includes(name)) {
+      diag.debug(`Disabling instrumentation for ${name} - disabled by env var`);
       continue;
+    }
+
+    const isEnabledEnvSet = !!process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
+    if (isEnabledEnvSet) {
+      if (!enabledInstrumentationsFromEnv.includes(name)) {
+        diag.debug(`Disabling instrumentation for ${name} - not in enabled env var list`);
+        continue;
+      }
+    } else {
+      if (userConfig.enabled === false) {
+        diag.debug(`Disabling instrumentation for ${name} - disabled by user config`);
+        continue;
+      }
+
+      const isDefaultExcluded = defaultExcludedInstrumentations.includes(name);
+      if (isDefaultExcluded && userConfig.enabled !== true) {
+        diag.debug(`Disabling instrumentation for ${name} - excluded by default and not explicitly enabled`);
+        continue;
+      }
     }
 
     try {
