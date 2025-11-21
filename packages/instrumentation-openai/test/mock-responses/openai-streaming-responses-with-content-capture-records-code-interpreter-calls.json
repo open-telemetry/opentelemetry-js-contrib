@@ -1,0 +1,26 @@
+[
+	{
+		"scope": "https://api.openai.com:443",
+		"method": "POST",
+		"path": "/v1/responses",
+		"body": {
+			"model": "gpt-4o-mini",
+			"tools": [
+				{
+					"type": "code_interpreter",
+					"container": "cfile_682e0e8a43c88191a7978f477a09bdf5"
+				}
+			],
+			"instructions": null,
+			"input": "Plot and analyse the histogram of the RGB channels for the uploaded image.",
+			"stream": true
+		},
+		"status": 200,
+		"response": "data: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_67ca09c5efe0819096d0511c92b8c890096610f474011cc0\",\"object\":\"response\",\"created_at\":1741294021,\"model\":\"gpt-4.1-2025-04-14\",\"status\":\"in_progress\",\"output\":[]}}\n\ndata: {\"type\":\"response.output_item.done\",\"output_index\":0,\"item\":{\"id\":\"msg_682d514e268c8191a89c38ea318446200f2610a7ec781a4f\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"Here is the histogram of the RGB channels for the uploaded image. Each curve represents the distribution of pixel intensities for the red, green, and blue channels. Peaks toward the high end of the intensity scale (right-hand side) suggest a lot of brightness and strong warm tones, matching the orange and light background in the image. If you want a different style of histogram (e.g., overall intensity, or quantized color groups), let me know!\",\"annotations\":[{\"file_id\":\"cfile_682d514b2e00819184b9b07e13557f82\",\"index\":null,\"type\":\"container_file_citation\",\"container_id\":\"cntr_682d513bb0c48191b10bd4f8b0b3312200e64562acc2e0af\",\"end_index\":0,\"filename\":\"cfile_682d514b2e00819184b9b07e13557f82.png\",\"start_index\":0}]}]},\"sequence_number\":1}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_67ca09c5efe0819096d0511c92b8c890096610f474011cc0\",\"object\":\"response\",\"created_at\":1741294021,\"status\":\"completed\",\"error\":null,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"model\":\"gpt-4.1-2025-04-14\",\"output\":[{\"id\":\"msg_682d514e268c8191a89c38ea318446200f2610a7ec781a4f\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"Here is the histogram of the RGB channels for the uploaded image. Each curve represents the distribution of pixel intensities for the red, green, and blue channels. Peaks toward the high end of the intensity scale (right-hand side) suggest a lot of brightness and strong warm tones, matching the orange and light background in the image. If you want a different style of histogram (e.g., overall intensity, or quantized color groups), let me know!\",\"annotations\":[{\"file_id\":\"cfile_682d514b2e00819184b9b07e13557f82\",\"index\":null,\"type\":\"container_file_citation\",\"container_id\":\"cntr_682d513bb0c48191b10bd4f8b0b3312200e64562acc2e0af\",\"end_index\":0,\"filename\":\"cfile_682d514b2e00819184b9b07e13557f82.png\",\"start_index\":0}]}]}],\"parallel_tool_calls\":true,\"previous_response_id\":null,\"reasoning\":{\"effort\":null,\"summary\":null},\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"}},\"tool_choice\":\"auto\",\"tools\":[{\"type\":\"code_interpreter\",\"container\":\"cfile_682e0e8a43c88191a7978f477a09bdf5\"}],\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":291,\"output_tokens\":23,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":314},\"user\":null,\"metadata\":{}},\"sequence_number\":2}\n\ndata: [DONE]\n\n",
+		"rawHeaders": {
+			"content-type": "text/event-stream; charset=utf-8",
+			"date": "Thu, 17 Jul 2025 07:27:49 GMT"
+		},
+		"responseIsBinary": false
+	}
+]

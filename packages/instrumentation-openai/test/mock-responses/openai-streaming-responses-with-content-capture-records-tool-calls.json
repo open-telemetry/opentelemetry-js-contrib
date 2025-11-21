@@ -1,0 +1,39 @@
+[
+  {
+    "scope": "https://api.openai.com:443",
+    "method": "POST",
+    "path": "/v1/responses",
+    "body": {
+      "model": "gpt-4o-mini",
+      "input": "Answer in up to 3 words: Which ocean contains Bouvet Island?",
+      "stream": true,
+      "tools": [
+        {
+          "type": "function",
+          "name": "get_weather",
+          "description": "Get the current weather in a city.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "location"
+            ]
+          },
+          "strict": true
+        }
+      ],
+      "parallel_tool_calls": true
+    },
+    "status": 200,
+    "response": "data: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_stream_tools\",\"model\":\"gpt-4o-mini-2024-07-18\",\"output\":[]}}\n\ndata: {\"type\":\"response.output_item.added\",\"output_index\":0,\"item\":{\"id\":\"tool_call_1\",\"type\":\"function_call\",\"name\":\"get_weather\",\"arguments\":\"\",\"status\":\"in_progress\"}}\n\ndata: {\"type\":\"response.function_call_arguments.delta\",\"output_index\":0,\"item_id\":\"tool_call_1\",\"delta\":\"{\\\"location\\\":\\\"New York City\\\"}\",\"sequence_number\":2}\n\ndata: {\"type\":\"response.output_item.done\",\"output_index\":0,\"item\":{\"id\":\"tool_call_1\",\"type\":\"function_call\",\"name\":\"get_weather\",\"arguments\":\"{\\\"location\\\":\\\"New York City\\\"}\",\"status\":\"completed\"},\"sequence_number\":3}\n\ndata: {\"type\":\"response.output_item.added\",\"output_index\":1,\"item\":{\"id\":\"tool_call_2\",\"type\":\"function_call\",\"name\":\"get_weather\",\"arguments\":\"\",\"status\":\"in_progress\"}}\n\ndata: {\"type\":\"response.function_call_arguments.delta\",\"output_index\":1,\"item_id\":\"tool_call_2\",\"delta\":\"{\\\"location\\\":\\\"London\\\"}\",\"sequence_number\":4}\n\ndata: {\"type\":\"response.output_item.done\",\"output_index\":1,\"item\":{\"id\":\"tool_call_2\",\"type\":\"function_call\",\"name\":\"get_weather\",\"arguments\":\"{\\\"location\\\":\\\"London\\\"}\",\"status\":\"completed\"},\"sequence_number\":5}\n\ndata: {\"type\":\"response.output_item.added\",\"output_index\":2,\"item\":{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"in_progress\",\"content\":[{\"type\":\"output_text\",\"text\":\"\",\"annotations\":[]}]}}\n\ndata: {\"type\":\"response.output_text.delta\",\"output_index\":2,\"content_index\":0,\"delta\":\"New York City is 25 degrees and sunny, while London is 15 degrees and raining.\",\"item_id\":\"msg_1\",\"sequence_number\":6}\n\ndata: {\"type\":\"response.output_text.done\",\"output_index\":2,\"content_index\":0,\"text\":\"New York City is 25 degrees and sunny, while London is 15 degrees and raining.\",\"item_id\":\"msg_1\",\"sequence_number\":7}\n\ndata: {\"type\":\"response.output_item.done\",\"output_index\":2,\"item\":{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"New York City is 25 degrees and sunny, while London is 15 degrees and raining.\",\"annotations\":[]}]},\"sequence_number\":8}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_stream_tools\",\"model\":\"gpt-4o-mini-2024-07-18\",\"output\":[{\"id\":\"tool_call_1\",\"type\":\"function_call\",\"name\":\"get_weather\",\"arguments\":\"{\\\"location\\\":\\\"New York City\\\"}\",\"status\":\"completed\"},{\"id\":\"tool_call_2\",\"type\":\"function_call\",\"name\":\"get_weather\",\"arguments\":\"{\\\"location\\\":\\\"London\\\"}\",\"status\":\"completed\"},{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"New York City is 25 degrees and sunny, while London is 15 degrees and raining.\",\"annotations\":[]}]}]}}\n\ndata: [DONE]\n\n",
+    "rawHeaders": {
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Thu, 17 Jul 2025 08:20:00 GMT"
+    },
+    "responseIsBinary": false
+  }
+]

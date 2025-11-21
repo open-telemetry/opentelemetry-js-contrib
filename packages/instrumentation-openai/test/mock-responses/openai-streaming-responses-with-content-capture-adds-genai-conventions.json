@@ -1,0 +1,19 @@
+[
+	{
+		"scope": "https://api.openai.com:443",
+		"method": "POST",
+		"path": "/v1/responses",
+		"body": {
+			"model": "gpt-4o-mini",
+			"input": "Answer in up to 3 words: Which ocean contains Bouvet Island?",
+			"stream": true
+		},
+		"status": 200,
+		"response": "data: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_stream_adds\",\"object\":\"response\",\"created_at\":1741476542,\"model\":\"gpt-4o-mini-2024-07-18\",\"status\":\"in_progress\",\"output\":[]}}\n\ndata: {\"type\":\"response.output_item.added\",\"output_index\":0,\"item\":{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"in_progress\",\"content\":[{\"type\":\"output_text\",\"text\":\"\",\"annotations\":[]}]}}\n\ndata: {\"type\":\"response.output_text.delta\",\"output_index\":0,\"content_index\":0,\"delta\":\"Atlantic \",\"item_id\":\"msg_1\",\"sequence_number\":3}\n\ndata: {\"type\":\"response.output_text.delta\",\"output_index\":0,\"content_index\":0,\"delta\":\"Ocean.\",\"item_id\":\"msg_1\",\"sequence_number\":4}\n\ndata: {\"type\":\"response.output_text.done\",\"output_index\":0,\"content_index\":0,\"text\":\"Atlantic Ocean.\",\"item_id\":\"msg_1\",\"sequence_number\":5}\n\ndata: {\"type\":\"response.output_item.done\",\"output_index\":0,\"item\":{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"Atlantic Ocean.\",\"annotations\":[]}]},\"sequence_number\":6}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_stream_adds\",\"object\":\"response\",\"created_at\":1741476542,\"status\":\"completed\",\"error\":null,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"model\":\"gpt-4o-mini-2024-07-18\",\"output\":[{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"Atlantic Ocean.\",\"annotations\":[]}]}],\"parallel_tool_calls\":true,\"previous_response_id\":null,\"reasoning\":{\"effort\":null,\"summary\":null},\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"}},\"tool_choice\":\"auto\",\"tools\":[],\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":22,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":3,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":25},\"user\":null,\"metadata\":{}},\"sequence_number\":7}\n\ndata: [DONE]\n\n",
+		"rawHeaders": {
+			"content-type": "text/event-stream; charset=utf-8",
+			"date": "Thu, 17 Jul 2025 07:27:49 GMT"
+		},
+		"responseIsBinary": false
+	}
+]
