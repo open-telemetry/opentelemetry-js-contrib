@@ -10,7 +10,17 @@
     },
     {
       "matchUpdateTypes": ["minor"],
+      "matchManagers": ["js"],
       "dependencyDashboardApproval": true
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "matchManagers": ["!js"],
+      "schedule": ["before 3am on Monday"]
+    },
+    {
+      "matchManagers": ["ci"],
+      "schedule": ["before 3am on Monday"]
     },
     {
       "matchPackageNames": ["@opentelemetry/api"],
