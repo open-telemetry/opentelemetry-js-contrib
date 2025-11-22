@@ -19,6 +19,12 @@ exports.handler = function (event, context, callback) {
   callback(null, 'ok');
 };
 
+exports.sqshandler = function (event, context, callback) {
+  // Dummy forEach loop, to trigger sqs instrumentation
+  event.Records.forEach(r => {});
+  callback(null, 'ok');
+};
+
 exports.error = function (event, context, callback) {
   throw new Error('handler error');
 };
