@@ -150,6 +150,44 @@ export type InstrumentationConfigMap = {
   >;
 };
 
+function shouldDisableInstrumentation(
+  name: string,
+  userConfig: any,
+  enabledInstrumentationsFromEnv: string[],
+  disabledInstrumentationsFromEnv: string[]
+): boolean {
+  // Priority 1: Programmatic config
+  if (userConfig.enabled === false) {
+    diag.debug(`Disabling instrumentation for ${name} - disabled by user config`);
+    return true;
+  }
+
+  if (userConfig.enabled === true) {
+    diag.debug(`Enabling instrumentation for ${name} - explicitly enabled by user config`);
+    return false;
+  }
+
+  // Priority 2: Environment variables
+  if (disabledInstrumentationsFromEnv.includes(name)) {
+    diag.debug(`Disabling instrumentation for ${name} - disabled by env var`);
+    return true;
+  }
+
+  const isEnabledEnvSet = !!process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
+  if (isEnabledEnvSet && !enabledInstrumentationsFromEnv.includes(name)) {
+    diag.debug(`Disabling instrumentation for ${name} - not in enabled env var list`);
+    return true;
+  }
+
+  // Priority 3: Default exclusions
+  if (!isEnabledEnvSet && defaultExcludedInstrumentations.includes(name)) {
+    diag.debug(`Disabling instrumentation for ${name} - excluded by default`);
+    return true;
+  }
+
+  return false;
+}
+
 export function getNodeAutoInstrumentations(
   inputConfigs: InstrumentationConfigMap = {}
 ): Instrumentation[] {
@@ -165,34 +203,16 @@ export function getNodeAutoInstrumentations(
     const Instance = InstrumentationMap[name];
     // Defaults are defined by the instrumentation itself
     const userConfig: any = inputConfigs[name] ?? {};
+ㄷ
+    const shouldDisable = shouldDisableInstrumentation(
+      name,
+      userConfig,
+      enabledInstrumentationsFromEnv,
+      disabledInstrumentationsFromEnv
+    );
 
-    // Configuration priority: Environment variables > programmatic config
-    // If both OTEL_NODE_ENABLED_INSTRUMENTATIONS and OTEL_NODE_DISABLED_INSTRUMENTATIONS are set, ENABLED is applied first, then DISABLED is applied to that list.
-    // If the same instrumentation is in both lists, it will be disabled.
-    // When env vars are unset, allow programmatic config to override default exclusions
-
-    if (disabledInstrumentationsFromEnv.includes(name)) {
-      diag.debug(`Disabling instrumentation for ${name} - disabled by env var`);
+    if (shouldDisable) {
       continue;
-    }
-
-    const isEnabledEnvSet = !!process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
-    if (isEnabledEnvSet) {
-      if (!enabledInstrumentationsFromEnv.includes(name)) {
-        diag.debug(`Disabling instrumentation for ${name} - not in enabled env var list`);
-        continue;
-      }
-    } else {
-      if (userConfig.enabled === false) {
-        diag.debug(`Disabling instrumentation for ${name} - disabled by user config`);
-        continue;
-      }
-
-      const isDefaultExcluded = defaultExcludedInstrumentations.includes(name);
-      if (isDefaultExcluded && userConfig.enabled !== true) {
-        diag.debug(`Disabling instrumentation for ${name} - excluded by default and not explicitly enabled`);
-        continue;
-      }
     }
 
     try {
