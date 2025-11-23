@@ -203,18 +203,34 @@ describe('utils', () => {
         });
 
         const fsInstrumentation = instrumentations.find(
-          instr => instr.instrumentationName === '@opentelemetry/instrumentation-fs'
+          instr =>
+            instr.instrumentationName === '@opentelemetry/instrumentation-fs'
         );
         const httpInstrumentation = instrumentations.find(
-          instr => instr.instrumentationName === '@opentelemetry/instrumentation-http'
+          instr =>
+            instr.instrumentationName === '@opentelemetry/instrumentation-http'
         );
         const expressInstrumentation = instrumentations.find(
-          instr => instr.instrumentationName === '@opentelemetry/instrumentation-express'
+          instr =>
+            instr.instrumentationName ===
+            '@opentelemetry/instrumentation-express'
         );
 
-        assert.strictEqual(fsInstrumentation, undefined, 'fs should be disabled by user config despite env var');
-        assert.notStrictEqual(httpInstrumentation, undefined, 'http should be enabled by env var (no user override)');
-        assert.notStrictEqual(expressInstrumentation, undefined, 'express should be enabled by user config despite not being in env var list');
+        assert.strictEqual(
+          fsInstrumentation,
+          undefined,
+          'fs should be disabled by user config despite env var'
+        );
+        assert.notStrictEqual(
+          httpInstrumentation,
+          undefined,
+          'http should be enabled by env var (no user override)'
+        );
+        assert.notStrictEqual(
+          expressInstrumentation,
+          undefined,
+          'express should be enabled by user config despite not being in env var list'
+        );
       } finally {
         delete process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
       }

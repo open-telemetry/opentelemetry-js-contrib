@@ -158,12 +158,16 @@ function shouldDisableInstrumentation(
 ): boolean {
   // Priority 1: Programmatic config
   if (userConfig.enabled === false) {
-    diag.debug(`Disabling instrumentation for ${name} - disabled by user config`);
+    diag.debug(
+      `Disabling instrumentation for ${name} - disabled by user config`
+    );
     return true;
   }
 
   if (userConfig.enabled === true) {
-    diag.debug(`Enabling instrumentation for ${name} - explicitly enabled by user config`);
+    diag.debug(
+      `Enabling instrumentation for ${name} - explicitly enabled by user config`
+    );
     return false;
   }
 
@@ -175,7 +179,9 @@ function shouldDisableInstrumentation(
 
   const isEnabledEnvSet = !!process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
   if (isEnabledEnvSet && !enabledInstrumentationsFromEnv.includes(name)) {
-    diag.debug(`Disabling instrumentation for ${name} - not in enabled env var list`);
+    diag.debug(
+      `Disabling instrumentation for ${name} - not in enabled env var list`
+    );
     return true;
   }
 
@@ -203,7 +209,7 @@ export function getNodeAutoInstrumentations(
     const Instance = InstrumentationMap[name];
     // Defaults are defined by the instrumentation itself
     const userConfig: any = inputConfigs[name] ?? {};
-ㄷ
+
     const shouldDisable = shouldDisableInstrumentation(
       name,
       userConfig,
