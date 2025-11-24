@@ -169,7 +169,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     );
   }
 
-  _getPatchedChatCompletionsCreate(): any {
+  private _getPatchedChatCompletionsCreate(): any {
     const self = this;
     return (original: ChatCompletions['create']) => {
       // https://platform.openai.com/docs/api-reference/chat/create
@@ -251,7 +251,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * Start a span for this chat-completion API call. This also emits log events
    * as appropriate for the request params.
    */
-  _startChatCompletionsSpan(
+  private _startChatCompletionsSpan(
     params: ChatCompletionCreateParams,
     config: OpenAIInstrumentationConfig,
     baseURL: string | undefined
@@ -449,7 +449,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * async iterator. It should yield the chunks unchanged, and gather telemetry
    * data from those chunks, then end the span.
    */
-  async *_onChatCompletionsStreamIterator(
+  private async *_onChatCompletionsStreamIterator(
     streamIter: AsyncIterator<ChatCompletionChunk>,
     span: Span,
     startNow: number,
@@ -604,7 +604,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     span.end();
   }
 
-  _onChatCompletionsCreateResult(
+  private _onChatCompletionsCreateResult(
     span: Span,
     startNow: number,
     commonAttrs: Attributes,
@@ -702,7 +702,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     span.end();
   }
 
-  _createAPIPromiseRejectionHandler(
+  private _createAPIPromiseRejectionHandler(
     startNow: number,
     span: Span,
     commonAttrs: Attributes
@@ -734,7 +734,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     };
   }
 
-  _getPatchedEmbeddingsCreate(): any {
+  private _getPatchedEmbeddingsCreate(): any {
     const self = this;
     return (original: Embeddings['create']) => {
       // https://platform.openai.com/docs/api-reference/embeddings/create
@@ -778,7 +778,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * Start a span for this chat-completion API call. This also emits log events
    * as appropriate for the request params.
    */
-  _startEmbeddingsSpan(
+  private _startEmbeddingsSpan(
     params: EmbeddingCreateParams,
     baseURL: string | undefined
   ) {
@@ -810,7 +810,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     return { span, ctx, commonAttrs };
   }
 
-  _onEmbeddingsCreateResult(
+  private _onEmbeddingsCreateResult(
     span: Span,
     startNow: number,
     commonAttrs: Attributes,
