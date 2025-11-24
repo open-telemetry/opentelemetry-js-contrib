@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.57.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.57.0...instrumentation-redis-v0.57.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* **redis:** correct span handling for multi commands ([#3140](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3140)) ([cd37fd4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cd37fd4b32300d18a1dabe475b12af33964ebc36))
+
 ## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.56.0...instrumentation-redis-v0.57.0) (2025-11-06)
 
 

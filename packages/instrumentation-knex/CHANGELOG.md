@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.53.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.53.0...instrumentation-knex-v0.53.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* **knex-instrumentation:** use correct db system attribute ([#3206](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3206)) ([86eef0d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/86eef0d8f9a4d9304531acef1a467bb59b57c6dc))
+
 ## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.52.0...instrumentation-knex-v0.53.0) (2025-11-06)
 
 

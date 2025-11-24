@@ -1,6 +1,17 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.6.0...instrumentation-openai-v0.7.0) (2025-11-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-openai:** add missing access modifiers to private methods ([#3242](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3242))
+
+### Bug Fixes
+
+* **instrumentation-openai:** add missing access modifiers to private methods ([#3242](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3242)) ([29e294a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/29e294ae9e1fa9f498f9cd733b80efdf13f9cd9f))
+
 ## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.5.0...instrumentation-openai-v0.6.0) (2025-11-06)
 
 
