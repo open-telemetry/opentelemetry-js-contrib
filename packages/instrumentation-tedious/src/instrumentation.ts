@@ -22,15 +22,15 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import {
-  DBSYSTEMVALUES_MSSQL,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_SQL_TABLE,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_MSSQL,
+  ATTR_DB_NAME,
+  ATTR_DB_SQL_TABLE,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_USER,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from './semconv';
 import type * as tedious from 'tedious';
 import { TediousInstrumentationConfig } from './types';
 import { getSpanName, once } from './utils';
@@ -40,6 +40,11 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 const CURRENT_DATABASE = Symbol(
   'opentelemetry.instrumentation-tedious.current-database'
 );
+
+export const INJECTED_CTX = Symbol(
+  'opentelemetry.instrumentation-tedious.context-info-injected'
+);
+
 const PATCHED_METHODS = [
   'callProcedure',
   'execSql',
@@ -89,7 +94,7 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
             this._wrap(
               ConnectionPrototype,
               method,
-              this._patchQuery(method) as any
+              this._patchQuery(method, moduleExports) as any
             );
           }
 
@@ -127,11 +132,61 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
     };
   }
 
-  private _patchQuery(operation: string) {
+  private _buildTraceparent(span: api.Span): string {
+    const sc = span.spanContext();
+    return `00-${sc.traceId}-${sc.spanId}-0${Number(sc.traceFlags || api.TraceFlags.NONE).toString(16)}`;
+  }
+
+  /**
+   * Fire a one-off `SET CONTEXT_INFO @opentelemetry_traceparent` on the same
+   * connection. Marks the request with INJECTED_CTX so our patch skips it.
+   */
+  private _injectContextInfo(
+    connection: any,
+    tediousModule: typeof tedious,
+    traceparent: string
+  ): Promise<void> {
+    return new Promise(resolve => {
+      try {
+        const sql = 'set context_info @opentelemetry_traceparent';
+        const req = new tediousModule.Request(sql, (_err: any) => {
+          resolve();
+        });
+        Object.defineProperty(req, INJECTED_CTX, { value: true });
+        const buf = Buffer.from(traceparent, 'utf8');
+        req.addParameter(
+          'opentelemetry_traceparent',
+          (tediousModule as any).TYPES.VarBinary,
+          buf,
+          { length: buf.length }
+        );
+
+        connection.execSql(req);
+      } catch {
+        resolve();
+      }
+    });
+  }
+
+  private _shouldInjectFor(operation: string): boolean {
+    return (
+      operation === 'execSql' ||
+      operation === 'execSqlBatch' ||
+      operation === 'callProcedure' ||
+      operation === 'execute'
+    );
+  }
+
+  private _patchQuery(operation: string, tediousModule: typeof tedious) {
     return (originalMethod: UnknownFunction): UnknownFunction => {
       const thisPlugin = this;
 
       function patchedMethod(this: ApproxConnection, request: ApproxRequest) {
+        // Skip our own injected request
+        if ((request as any)?.[INJECTED_CTX]) {
+          return originalMethod.apply(this, arguments as unknown as any[]);
+        }
+
         if (!(request instanceof EventEmitter)) {
           thisPlugin._diag.warn(
             `Unexpected invocation of patched ${operation} method. Span not recorded`
@@ -159,16 +214,16 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
           {
             kind: api.SpanKind.CLIENT,
             attributes: {
-              [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MSSQL,
-              [SEMATTRS_DB_NAME]: databaseName,
-              [SEMATTRS_NET_PEER_PORT]: this.config?.options?.port,
-              [SEMATTRS_NET_PEER_NAME]: this.config?.server,
+              [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MSSQL,
+              [ATTR_DB_NAME]: databaseName,
+              [ATTR_NET_PEER_PORT]: this.config?.options?.port,
+              [ATTR_NET_PEER_NAME]: this.config?.server,
               // >=4 uses `authentication` object, older versions just userName and password pair
-              [SEMATTRS_DB_USER]:
+              [ATTR_DB_USER]:
                 this.config?.userName ??
                 this.config?.authentication?.options?.userName,
-              [SEMATTRS_DB_STATEMENT]: sql,
-              [SEMATTRS_DB_SQL_TABLE]: request.table,
+              [ATTR_DB_STATEMENT]: sql,
+              [ATTR_DB_SQL_TABLE]: request.table,
             },
           }
         );
@@ -207,12 +262,27 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
           thisPlugin._diag.error('Expected request.callback to be a function');
         }
 
-        return api.context.with(
-          api.trace.setSpan(api.context.active(), span),
-          originalMethod,
-          this,
-          ...arguments
-        );
+        const runUserRequest = () => {
+          return api.context.with(
+            api.trace.setSpan(api.context.active(), span),
+            originalMethod,
+            this,
+            ...arguments
+          );
+        };
+
+        const cfg = thisPlugin.getConfig();
+        const shouldInject =
+          cfg.enableTraceContextPropagation &&
+          thisPlugin._shouldInjectFor(operation);
+
+        if (!shouldInject) return runUserRequest();
+
+        const traceparent = thisPlugin._buildTraceparent(span);
+        
+        void thisPlugin
+          ._injectContextInfo(this, tediousModule, traceparent)
+          .finally(runUserRequest);
       }
 
       Object.defineProperty(patchedMethod, 'length', {

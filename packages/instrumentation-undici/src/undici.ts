@@ -33,6 +33,27 @@ import {
   trace,
   ValueType,
 } from '@opentelemetry/api';
+import {
+  hrTime,
+  hrTimeDuration,
+  hrTimeToMilliseconds,
+} from '@opentelemetry/core';
+import {
+  ATTR_ERROR_TYPE,
+  ATTR_HTTP_REQUEST_METHOD,
+  ATTR_HTTP_REQUEST_METHOD_ORIGINAL,
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_NETWORK_PEER_ADDRESS,
+  ATTR_NETWORK_PEER_PORT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  ATTR_URL_FULL,
+  ATTR_URL_PATH,
+  ATTR_URL_QUERY,
+  ATTR_URL_SCHEME,
+  ATTR_USER_AGENT_ORIGINAL,
+  METRIC_HTTP_CLIENT_REQUEST_DURATION,
+} from '@opentelemetry/semantic-conventions';
 
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -45,12 +66,6 @@ import {
   ResponseHeadersMessage,
 } from './internal-types';
 import { UndiciInstrumentationConfig, UndiciRequest } from './types';
-import { SemanticAttributes } from './enums/SemanticAttributes';
-import {
-  hrTime,
-  hrTimeDuration,
-  hrTimeToMilliseconds,
-} from '@opentelemetry/core';
 
 interface InstrumentationRecord {
   span: Span;
@@ -122,7 +137,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
   protected override _updateMetricInstruments() {
     this._httpClientDurationHistogram = this.meter.createHistogram(
-      'http.client.request.duration',
+      METRIC_HTTP_CLIENT_REQUEST_DURATION,
       {
         description: 'Measures the duration of outbound HTTP requests.',
         unit: 's',
@@ -244,21 +259,21 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     const urlScheme = requestUrl.protocol.replace(':', '');
     const requestMethod = this.getRequestMethod(request.method);
     const attributes: Attributes = {
-      [SemanticAttributes.HTTP_REQUEST_METHOD]: requestMethod,
-      [SemanticAttributes.HTTP_REQUEST_METHOD_ORIGINAL]: request.method,
-      [SemanticAttributes.URL_FULL]: requestUrl.toString(),
-      [SemanticAttributes.URL_PATH]: requestUrl.pathname,
-      [SemanticAttributes.URL_QUERY]: requestUrl.search,
-      [SemanticAttributes.URL_SCHEME]: urlScheme,
+      [ATTR_HTTP_REQUEST_METHOD]: requestMethod,
+      [ATTR_HTTP_REQUEST_METHOD_ORIGINAL]: request.method,
+      [ATTR_URL_FULL]: requestUrl.toString(),
+      [ATTR_URL_PATH]: requestUrl.pathname,
+      [ATTR_URL_QUERY]: requestUrl.search,
+      [ATTR_URL_SCHEME]: urlScheme,
     };
 
     const schemePorts: Record<string, string> = { https: '443', http: '80' };
     const serverAddress = requestUrl.hostname;
     const serverPort = requestUrl.port || schemePorts[urlScheme];
 
-    attributes[SemanticAttributes.SERVER_ADDRESS] = serverAddress;
+    attributes[ATTR_SERVER_ADDRESS] = serverAddress;
     if (serverPort && !isNaN(Number(serverPort))) {
-      attributes[SemanticAttributes.SERVER_PORT] = Number(serverPort);
+      attributes[ATTR_SERVER_PORT] = Number(serverPort);
     }
 
     // Get user agent from headers
@@ -272,7 +287,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       const userAgent = Array.isArray(userAgentValues)
         ? userAgentValues[userAgentValues.length - 1]
         : userAgentValues;
-      attributes[SemanticAttributes.USER_AGENT_ORIGINAL] = userAgent;
+      attributes[ATTR_USER_AGENT_ORIGINAL] = userAgent;
     }
 
     // Get attributes from the hook if present
@@ -355,8 +370,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     const { span } = record;
     const { remoteAddress, remotePort } = socket;
     const spanAttributes: Attributes = {
-      [SemanticAttributes.NETWORK_PEER_ADDRESS]: remoteAddress,
-      [SemanticAttributes.NETWORK_PEER_PORT]: remotePort,
+      [ATTR_NETWORK_PEER_ADDRESS]: remoteAddress,
+      [ATTR_NETWORK_PEER_PORT]: remotePort,
     };
 
     // After hooks have been processed (which may modify request headers)
@@ -393,7 +408,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     const { span, attributes } = record;
     const spanAttributes: Attributes = {
-      [SemanticAttributes.HTTP_RESPONSE_STATUS_CODE]: response.statusCode,
+      [ATTR_HTTP_RESPONSE_STATUS_CODE]: response.statusCode,
     };
 
     const config = this.getConfig();
@@ -487,7 +502,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     this._recordFromReq.delete(request);
 
     // Record metrics (with the error)
-    attributes[SemanticAttributes.ERROR_TYPE] = error.message;
+    attributes[ATTR_ERROR_TYPE] = error.message;
     this.recordRequestDuration(attributes, startTime);
   }
 
@@ -496,12 +511,12 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     const metricsAttributes: Attributes = {};
     // Get the attribs already in span attributes
     const keysToCopy = [
-      SemanticAttributes.HTTP_RESPONSE_STATUS_CODE,
-      SemanticAttributes.HTTP_REQUEST_METHOD,
-      SemanticAttributes.SERVER_ADDRESS,
-      SemanticAttributes.SERVER_PORT,
-      SemanticAttributes.URL_SCHEME,
-      SemanticAttributes.ERROR_TYPE,
+      ATTR_HTTP_RESPONSE_STATUS_CODE,
+      ATTR_HTTP_REQUEST_METHOD,
+      ATTR_SERVER_ADDRESS,
+      ATTR_SERVER_PORT,
+      ATTR_URL_SCHEME,
+      ATTR_ERROR_TYPE,
     ];
     keysToCopy.forEach(key => {
       if (key in attributes) {

@@ -44,10 +44,7 @@ let instrumentation: MongoDBInstrumentation;
 
 import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
-import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
-
-// We can't use @ts-expect-error because it will fail depending on the used mongodb version on tests
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { ATTR_DB_STATEMENT } from '../src/semconv';
 
 describe('MongoDBInstrumentation-Tracing-v5', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -368,7 +365,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
             );
             const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
             );
             assert.strictEqual(dbStatement[key], '?');
             done();
@@ -403,7 +400,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
             );
             const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
             );
             assert.deepEqual(dbStatement, {
               aggregate: '?',
@@ -456,7 +453,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               );
               const mongoSpan = spans.find(s => s.name === operationName);
               const dbStatement = JSON.parse(
-                mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
+                mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
               );
               assert.strictEqual(dbStatement[key], value);
               done();
@@ -765,5 +762,3 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
     });
   });
 });
-
-/* eslint-enable @typescript-eslint/ban-ts-comment */

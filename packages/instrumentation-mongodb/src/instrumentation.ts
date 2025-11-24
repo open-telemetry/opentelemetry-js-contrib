@@ -28,16 +28,17 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  DBSYSTEMVALUES_MONGODB,
-  SEMATTRS_DB_CONNECTION_STRING,
-  SEMATTRS_DB_MONGODB_COLLECTION,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_OPERATION,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_DB_CONNECTION_STRING,
+  ATTR_DB_MONGODB_COLLECTION,
+  ATTR_DB_NAME,
+  ATTR_DB_OPERATION,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+  DB_SYSTEM_VALUE_MONGODB,
+  METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+} from './semconv';
 import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
   CursorState,
@@ -49,6 +50,7 @@ import {
   WireProtocolInternal,
   V4Connection,
   V4ConnectionPool,
+  Replacer,
 } from './internal-types';
 import { V4Connect, V4Session } from './internal-types';
 /** @knipignore */
@@ -74,7 +76,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
   override _updateMetricInstruments() {
     this._connectionsUsage = this.meter.createUpDownCounter(
-      'db.client.connections.usage',
+      METRIC_DB_CLIENT_CONNECTIONS_USAGE,
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',
@@ -913,18 +915,18 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   ) {
     // add database related attributes
     span.setAttributes({
-      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MONGODB,
-      [SEMATTRS_DB_NAME]: dbName,
-      [SEMATTRS_DB_MONGODB_COLLECTION]: dbCollection,
-      [SEMATTRS_DB_OPERATION]: operation,
-      [SEMATTRS_DB_CONNECTION_STRING]: `mongodb://${host}:${port}/${dbName}`,
+      [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MONGODB,
+      [ATTR_DB_NAME]: dbName,
+      [ATTR_DB_MONGODB_COLLECTION]: dbCollection,
+      [ATTR_DB_OPERATION]: operation,
+      [ATTR_DB_CONNECTION_STRING]: `mongodb://${host}:${port}/${dbName}`,
     });
 
     if (host && port) {
-      span.setAttribute(SEMATTRS_NET_PEER_NAME, host);
+      span.setAttribute(ATTR_NET_PEER_NAME, host);
       const portNumber = parseInt(port, 10);
       if (!isNaN(portNumber)) {
-        span.setAttribute(SEMATTRS_NET_PEER_PORT, portNumber);
+        span.setAttribute(ATTR_NET_PEER_PORT, portNumber);
       }
     }
     if (!commandObj) return;
@@ -939,7 +941,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     safeExecuteInTheMiddle(
       () => {
         const query = dbStatementSerializer(commandObj);
-        span.setAttribute(SEMATTRS_DB_STATEMENT, query);
+        span.setAttribute(ATTR_DB_STATEMENT, query);
       },
       err => {
         if (err) {
@@ -950,30 +952,27 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     );
   }
 
-  private _defaultDbStatementSerializer(commandObj: Record<string, unknown>) {
-    const { enhancedDatabaseReporting } = this.getConfig();
-    const resultObj = enhancedDatabaseReporting
-      ? commandObj
-      : this._scrubStatement(commandObj);
-    return JSON.stringify(resultObj);
+  private _getDefaultDbStatementReplacer(): Replacer {
+    const seen = new WeakSet();
+    return (_key, value) => {
+      // undefined, boolean, number, bigint, string, symbol, function || null
+      if (typeof value !== 'object' || !value) return '?';
+
+      // objects (including arrays)
+      if (seen.has(value)) return '[Circular]';
+      seen.add(value);
+      return value;
+    };
   }
 
-  private _scrubStatement(value: unknown): unknown {
-    if (Array.isArray(value)) {
-      return value.map(element => this._scrubStatement(element));
+  private _defaultDbStatementSerializer(commandObj: Record<string, unknown>) {
+    const { enhancedDatabaseReporting } = this.getConfig();
+
+    if (enhancedDatabaseReporting) {
+      return JSON.stringify(commandObj);
     }
 
-    if (typeof value === 'object' && value !== null) {
-      return Object.fromEntries(
-        Object.entries(value).map(([key, element]) => [
-          key,
-          this._scrubStatement(element),
-        ])
-      );
-    }
-
-    // A value like string or number, possible contains PII, scrub it
-    return '?';
+    return JSON.stringify(commandObj, this._getDefaultDbStatementReplacer());
   }
 
   /**

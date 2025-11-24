@@ -37,16 +37,16 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
+import { ATTR_MESSAGING_OPERATION } from './semconv';
 import {
-  SEMATTRS_MESSAGING_DESTINATION,
-  SEMATTRS_MESSAGING_DESTINATION_KIND,
-  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
-  SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY,
-  SEMATTRS_MESSAGING_OPERATION,
-  MESSAGINGOPERATIONVALUES_PROCESS,
-  SEMATTRS_MESSAGING_MESSAGE_ID,
-  SEMATTRS_MESSAGING_CONVERSATION_ID,
-} from '@opentelemetry/semantic-conventions';
+  ATTR_MESSAGING_DESTINATION,
+  ATTR_MESSAGING_DESTINATION_KIND,
+  ATTR_MESSAGING_RABBITMQ_ROUTING_KEY,
+  MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+  MESSAGING_OPERATION_VALUE_PROCESS,
+  OLD_ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_CONVERSATION_ID,
+} from '../src/semconv-obsolete';
 import type {
   Connection,
   ConsumeMessage,
@@ -432,14 +432,13 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
             kind: SpanKind.CONSUMER,
             attributes: {
               ...channel?.connection?.[CONNECTION_ATTRIBUTES],
-              [SEMATTRS_MESSAGING_DESTINATION]: exchange,
-              [SEMATTRS_MESSAGING_DESTINATION_KIND]:
-                MESSAGINGDESTINATIONKINDVALUES_TOPIC,
-              [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: msg.fields?.routingKey,
-              [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
-              [SEMATTRS_MESSAGING_MESSAGE_ID]: msg?.properties.messageId,
-              [SEMATTRS_MESSAGING_CONVERSATION_ID]:
-                msg?.properties.correlationId,
+              [ATTR_MESSAGING_DESTINATION]: exchange,
+              [ATTR_MESSAGING_DESTINATION_KIND]:
+                MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+              [ATTR_MESSAGING_RABBITMQ_ROUTING_KEY]: msg.fields?.routingKey,
+              [ATTR_MESSAGING_OPERATION]: MESSAGING_OPERATION_VALUE_PROCESS,
+              [OLD_ATTR_MESSAGING_MESSAGE_ID]: msg?.properties.messageId,
+              [ATTR_MESSAGING_CONVERSATION_ID]: msg?.properties.correlationId,
             },
             links,
           },
@@ -655,12 +654,13 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
       kind: SpanKind.PRODUCER,
       attributes: {
         ...channel.connection[CONNECTION_ATTRIBUTES],
-        [SEMATTRS_MESSAGING_DESTINATION]: exchange,
-        [SEMATTRS_MESSAGING_DESTINATION_KIND]:
-          MESSAGINGDESTINATIONKINDVALUES_TOPIC,
-        [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
-        [SEMATTRS_MESSAGING_MESSAGE_ID]: options?.messageId,
-        [SEMATTRS_MESSAGING_CONVERSATION_ID]: options?.correlationId,
+        [ATTR_MESSAGING_DESTINATION]: exchange,
+        [ATTR_MESSAGING_DESTINATION_KIND]:
+          MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+
+        [ATTR_MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
+        [OLD_ATTR_MESSAGING_MESSAGE_ID]: options?.messageId,
+        [ATTR_MESSAGING_CONVERSATION_ID]: options?.correlationId,
       },
     });
     const modifiedOptions = options ?? {};

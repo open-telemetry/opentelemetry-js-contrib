@@ -1,11 +1,11 @@
-/*!
+/*
  * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-const webpack = require('webpack')
+const webpack = require('webpack');
 
 // This is the webpack configuration for browser Karma tests with coverage.
 module.exports = {
   mode: 'development',
   target: 'web',
-  output: {filename: 'bundle.js'},
+  output: { filename: 'bundle.js' },
   resolve: {
     extensions: ['.ts', '.js', '.tsx'],
     fallback: {
       // Enable the assert library polyfill because that is used in tests
-      "assert": require.resolve('assert/'),
-      "util": require.resolve('util/'),
+      assert: require.resolve('assert/'),
+      util: require.resolve('util/'),
     },
   },
   devtool: 'eval-source-map',
@@ -36,7 +36,7 @@ module.exports = {
       // because the `util` package expects there to be a global variable named `process`.
       // Thanks to https://stackoverflow.com/a/65018686/14239942
       // NOTE: I wish there was a better way as this pollutes the tests with a defined 'process' global.
-      process: 'process/browser'
+      process: 'process/browser.js'
     })
   ],
   module: {
@@ -55,7 +55,7 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: ['@babel/preset-env'],
-          }
+          },
         },
       },
       {
@@ -66,7 +66,7 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             plugins: ['babel-plugin-istanbul'],
-          }
+          },
         },
       },
     ],

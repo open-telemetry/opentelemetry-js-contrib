@@ -55,7 +55,6 @@ function addInputVariableAttribute(span: api.Span, key: string, variable: any) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function addInputVariableAttributes(
   span: api.Span,
   variableValues: { [key: string]: any }
@@ -83,34 +82,33 @@ function createFieldIfNotExists(
   info: graphqlTypes.GraphQLResolveInfo,
   path: string[]
 ): {
-  field: any;
+  field: GraphQLField;
   spanAdded: boolean;
 } {
   let field = getField(contextValue, path);
-
-  let spanAdded = false;
-
-  if (!field) {
-    spanAdded = true;
-    const parent = getParentField(contextValue, path);
-
-    field = {
-      parent,
-      span: createResolverSpan(
-        tracer,
-        getConfig,
-        contextValue,
-        info,
-        path,
-        parent.span
-      ),
-      error: null,
-    };
-
-    addField(contextValue, path, field);
+  if (field) {
+    return { field, spanAdded: false };
   }
 
-  return { spanAdded, field };
+  const config = getConfig();
+  const parentSpan = config.flatResolveSpans
+    ? getRootSpan(contextValue)
+    : getParentFieldSpan(contextValue, path);
+
+  field = {
+    span: createResolverSpan(
+      tracer,
+      getConfig,
+      contextValue,
+      info,
+      path,
+      parentSpan
+    ),
+  };
+
+  addField(contextValue, path, field);
+
+  return { field, spanAdded: true };
 }
 
 function createResolverSpan(
@@ -188,22 +186,24 @@ function addField(contextValue: any, path: string[], field: GraphQLField) {
     field);
 }
 
-function getField(contextValue: any, path: string[]) {
+function getField(contextValue: any, path: string[]): GraphQLField {
   return contextValue[OTEL_GRAPHQL_DATA_SYMBOL].fields[path.join('.')];
 }
 
-function getParentField(contextValue: any, path: string[]) {
+function getParentFieldSpan(contextValue: any, path: string[]): api.Span {
   for (let i = path.length - 1; i > 0; i--) {
     const field = getField(contextValue, path.slice(0, i));
 
     if (field) {
-      return field;
+      return field.span;
     }
   }
 
-  return {
-    span: contextValue[OTEL_GRAPHQL_DATA_SYMBOL].span,
-  };
+  return getRootSpan(contextValue);
+}
+
+function getRootSpan(contextValue: any): api.Span {
+  return contextValue[OTEL_GRAPHQL_DATA_SYMBOL].span;
 }
 
 function pathToArray(mergeItems: boolean, path: GraphQLPath): string[] {
@@ -305,11 +305,7 @@ export function wrapFields(
   tracer: api.Tracer,
   getConfig: () => GraphQLInstrumentationParsedConfig
 ): void {
-  if (
-    !type ||
-    typeof type.getFields !== 'function' ||
-    type[OTEL_PATCHED_SYMBOL]
-  ) {
+  if (!type || type[OTEL_PATCHED_SYMBOL]) {
     return;
   }
   const fields = type.getFields();
@@ -328,14 +324,45 @@ export function wrapFields(
     }
 
     if (field.type) {
-      let unwrappedType: any = field.type;
-
-      while (unwrappedType.ofType) {
-        unwrappedType = unwrappedType.ofType;
+      const unwrappedTypes = unwrapType(field.type);
+      for (const unwrappedType of unwrappedTypes) {
+        wrapFields(unwrappedType, tracer, getConfig);
       }
-      wrapFields(unwrappedType, tracer, getConfig);
     }
   });
+}
+
+function unwrapType(
+  type: graphqlTypes.GraphQLOutputType
+): readonly graphqlTypes.GraphQLObjectType[] {
+  // unwrap wrapping types (non-nullable and list types)
+  if ('ofType' in type) {
+    return unwrapType(type.ofType);
+  }
+
+  // unwrap union types
+  if (isGraphQLUnionType(type)) {
+    return type.getTypes();
+  }
+
+  // return object types
+  if (isGraphQLObjectType(type)) {
+    return [type];
+  }
+
+  return [];
+}
+
+function isGraphQLUnionType(
+  type: graphqlTypes.GraphQLType
+): type is graphqlTypes.GraphQLUnionType {
+  return 'getTypes' in type && typeof type.getTypes === 'function';
+}
+
+function isGraphQLObjectType(
+  type: graphqlTypes.GraphQLType
+): type is graphqlTypes.GraphQLObjectType {
+  return 'getFields' in type && typeof type.getFields === 'function';
 }
 
 const handleResolveSpanError = (
@@ -417,24 +444,24 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
     const path = pathToArray(config.mergeItems, info && info.path);
     const depth = path.filter((item: any) => typeof item === 'string').length;
 
-    let field: any;
+    let span: api.Span;
     let shouldEndSpan = false;
     if (config.depth >= 0 && config.depth < depth) {
-      field = getParentField(contextValue, path);
+      span = getParentFieldSpan(contextValue, path);
     } else {
-      const newField = createFieldIfNotExists(
+      const { field, spanAdded } = createFieldIfNotExists(
         tracer,
         getConfig,
         contextValue,
         info,
         path
       );
-      field = newField.field;
-      shouldEndSpan = newField.spanAdded;
+      span = field.span;
+      shouldEndSpan = spanAdded;
     }
 
     return api.context.with(
-      api.trace.setSpan(api.context.active(), field.span),
+      api.trace.setSpan(api.context.active(), span),
       () => {
         try {
           const res = fieldResolver.call(
@@ -447,20 +474,20 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
           if (isPromise(res)) {
             return res.then(
               (r: any) => {
-                handleResolveSpanSuccess(field.span, shouldEndSpan);
+                handleResolveSpanSuccess(span, shouldEndSpan);
                 return r;
               },
               (err: Error) => {
-                handleResolveSpanError(field.span, err, shouldEndSpan);
+                handleResolveSpanError(span, err, shouldEndSpan);
                 throw err;
               }
             );
           } else {
-            handleResolveSpanSuccess(field.span, shouldEndSpan);
+            handleResolveSpanSuccess(span, shouldEndSpan);
             return res;
           }
         } catch (err: any) {
-          handleResolveSpanError(field.span, err, shouldEndSpan);
+          handleResolveSpanError(span, err, shouldEndSpan);
           throw err;
         }
       }

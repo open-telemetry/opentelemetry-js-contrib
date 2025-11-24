@@ -40,6 +40,12 @@ const hostMetrics = new HostMetrics({ meterProvider });
 hostMetrics.start();
 ```
 
+## Configuration
+
+| Option         | Type       | Description |
+| -------------- | ---------- | ----------- |
+| `metricGroups` | `string[]` | Optionally specify zero or more groups of metrics to collect. This package can collect many metrics. They are grouped by metric name prefix (see the "Semantic Conventions" section below). If this option is specified, only metrics from the named groups will be collected. For example, `metricGroups: ['process.cpu', 'process.memory']` will limit collection to just those 3 metrics. |
+
 ## Semantic Conventions
 
 This package uses Semantic Conventions [Version 1.25.0](https://github.com/open-telemetry/semantic-conventions/tree/v1.25.0/docs/system).
@@ -48,18 +54,25 @@ Ref: [opentelemetry-js/issues/4235](https://github.com/open-telemetry/openteleme
 
 Metrics collected:
 
-| Metric                      | Short Description                                         |
-| --------------------------- | --------------------------------------------------------- |
-| `system.cpu.time`           | Seconds each logical CPU spent on each mode               |
-| `system.cpu.utilization`    | CPU usage time (0-1)                                      |
-| `system.memory.usage`       | Reports memory in use by state                            |
-| `system.memory.utilization` | Memory usage (0-1)                                        |
-| `system.network.dropped`    | Count of packets that are dropped                         |
-| `system.network.errors`     | Count of network errors detected                          |
-| `system.network.io`         | Network flow direction                                    |
-| `process.cpu.time`          | Total CPU seconds                                         |
-| `process.cpu.utilization`   | Difference in process.cpu.time since the last measurement |
-| `process.memory.usage`      | The amount of physical memory in use                      |
+| Metric                        | Short Description                                         |
+| ----------------------------- | --------------------------------------------------------- |
+| **Group `system.cpu`**        | |
+|   `system.cpu.time`           | Seconds each logical CPU spent on each mode               |
+|   `system.cpu.utilization`    | CPU usage time (0-1)                                      |
+| **Group `system.memory`**     | |
+|   `system.memory.usage`       | Reports memory in use by state                            |
+|   `system.memory.utilization` | Memory usage (0-1)                                        |
+| **Group `system.network`**    | |
+|   `system.network.dropped`    | Count of packets that are dropped                         |
+|   `system.network.errors`     | Count of network errors detected                          |
+|   `system.network.io`         | Network flow direction                                    |
+| **Group `process.cpu`**       | |
+|   `process.cpu.time`          | Total CPU seconds                                         |
+|   `process.cpu.utilization`   | Difference in process.cpu.time since the last measurement |
+| **Group `process.memory`**    | |
+|   `process.memory.usage`      | The amount of physical memory in use                      |
+
+Note: the "Group" names are groupings used by the `metricGroups` configuration option.
 
 Attributes collected:
 

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-nestjs-core",
-  "version": "0.49.0",
+  "version": "0.55.0",
   "description": "OpenTelemetry instrumentation for NestJS server side applications framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -14,14 +14,11 @@
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-nestjs-core",
     "compile:watch": "tsc -w",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "npm run test-required-node-version && nyc --no-clean mocha --timeout 5000 'test/**/*.test.ts' || echo 'Node version is not supported for testing'",
     "test-required-node-version": "node -e \"process.exit(parseInt(process.versions.node.split('.')[0], 10) >= 15 ? 0 : 1)\"",
     "test-all-versions": "tav",
-    "test-merge-coverage": "nyc merge .nyc_output coverage/coverage-final.json",
     "version:update": "node ../../scripts/version-update.js"
   },
   "keywords": [
@@ -57,21 +54,12 @@
     "@opentelemetry/context-async-hooks": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "@types/semver": "7.5.8",
-    "cross-env": "7.0.3",
-    "nyc": "17.1.0",
     "reflect-metadata": "0.2.2",
-    "rimraf": "5.0.10",
     "rxjs": "7.8.2",
-    "rxjs-compat": "6.6.7",
-    "semver": "7.7.2",
-    "test-all-versions": "6.1.0",
-    "typescript": "5.0.4"
+    "rxjs-compat": "6.6.7"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.203.0",
+    "@opentelemetry/instrumentation": "^0.208.0",
     "@opentelemetry/semantic-conventions": "^1.30.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs-core#readme"

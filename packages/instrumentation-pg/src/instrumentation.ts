@@ -339,8 +339,13 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               values: Array.isArray(args[1]) ? args[1] : undefined,
             }
           : firstArgIsQueryObjectWithText
-          ? (arg0 as utils.ObjectWithText)
-          : undefined;
+            ? {
+                ...(arg0 as any),
+                values:
+                  (arg0 as any).values ??
+                  (Array.isArray(args[1]) ? args[1] : undefined),
+              }
+            : undefined;
 
         const attributes: Attributes = {
           [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
@@ -469,6 +474,9 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         try {
           result = original.apply(this, args as never);
         } catch (e: unknown) {
+          if (e instanceof Error) {
+            span.recordException(utils.sanitizedErrorMessage(e));
+          }
           span.setStatus({
             code: SpanStatusCode.ERROR,
             message: utils.getErrorMessage(e),
@@ -491,6 +499,9 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             })
             .catch((error: Error) => {
               return new Promise((_, reject) => {
+                if (error instanceof Error) {
+                  span.recordException(utils.sanitizedErrorMessage(error));
+                }
                 span.setStatus({
                   code: SpanStatusCode.ERROR,
                   message: error.message,
@@ -612,6 +623,9 @@ function handleConnectResult(span: Span, connectResult: unknown) {
         return result;
       })
       .catch((error: unknown) => {
+        if (error instanceof Error) {
+          span.recordException(utils.sanitizedErrorMessage(error));
+        }
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: utils.getErrorMessage(error),

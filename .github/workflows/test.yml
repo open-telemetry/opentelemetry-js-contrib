@@ -18,15 +18,16 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       # Use the same Node.js version used for `release-please` workflow.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 18
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
+        timeout-minutes: 10
       # Note: when pushing to main we want to test only what changed in
       # last commit. Otherwise we want to test all changes from origin/main.
       # So we set the right values for base and head commits depending
@@ -54,6 +55,7 @@ jobs:
 
   unit-test:
     needs: compile
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -64,26 +66,24 @@ jobs:
           - "20"
           - "22"
           - "24"
-        include:
-            - node: 18
-              code-coverage: true
-    runs-on: ubuntu-latest
-    services:
+    # `&foo` syntax is a YAML anchor. See:
+    # https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations#yaml-anchors-and-aliases
+    services: &test_services
       memcached:
         image: memcached:1.6.39-alpine
         ports:
-        - 11211:11211
+          - 11211:11211
       mongo:
         image: mongo
         ports:
-        - 27017:27017
+          - 27017:27017
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
           MSSQL_SA_PASSWORD: mssql_passw0rd
           ACCEPT_EULA: Y
         ports:
-        - 1433:1433
+          - 1433:1433
         options: >-
           --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $MSSQL_SA_PASSWORD -C -Q 'select 1' -b -o /dev/null"
           --health-interval 1s
@@ -98,7 +98,7 @@ jobs:
           MYSQL_DATABASE: otel_mysql_database
           MYSQL_ROOT_PASSWORD: rootpw
         ports:
-        - 3306:3306
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping"
           --health-interval 10s
@@ -124,7 +124,7 @@ jobs:
           POSTGRES_DB: otel_pg_database
           POSTGRES_PASSWORD: postgres
         ports:
-        - 5432:5432
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -133,7 +133,7 @@ jobs:
       redis:
         image: redis
         ports:
-        - 6379:6379
+          - 6379:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -142,18 +142,19 @@ jobs:
       cassandra:
         image: cassandra:3
         ports:
-        - 9042:9042
+          - 9042:9042
       rabbitmq:
         image: rabbitmq:3
         ports:
-        - 22221:5672
+          - 22221:5672
         env:
           RABBITMQ_DEFAULT_USER: username
           RABBITMQ_DEFAULT_PASS: password
-    env:
+    env: &test_env
       RUN_CASSANDRA_TESTS: 1
       RUN_MEMCACHED_TESTS: 1
       RUN_MONGODB_TESTS: 1
+      RUN_MONGOOSE_TESTS: 1
       RUN_MYSQL_TESTS: 1
       RUN_MSSQL_TESTS: 1
       RUN_ORACLEDB_TESTS: 1
@@ -190,14 +191,15 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
       - name: Install
         run: npm ci
+        timeout-minutes: 10
       - name: Download Build Artifacts
         uses: actions/download-artifact@v5
         with:
@@ -220,6 +222,46 @@ jobs:
         run: npm run test:browser:ci:affected
       - name: Unit tests (Nodejs - Delta)
         run: npm run test:ci:affected
+
+  test-all-versions:
+    needs: compile
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - "18"
+          - "20"
+          - "22"
+          - "24"
+    services: *test_services
+    env: *test_env
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+        timeout-minutes: 10
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: compile-cache-${{ github.run_number }}
+          path: .nx
+      # Note: see comment in the compile job
+      - name: Set base and head commits
+        run: |
+          if [ "${{github.event_name}}" == "push" ]; then
+            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
+            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
+          else
+            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
+            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
+          fi
+      - name: Compile (Delta)
+        run: npm run compile:ci:affected
       - name: Test All Versions (Delta)
         run: npm run test-all-versions:ci:affected
       - name: Upload Test Artifacts
@@ -234,57 +276,43 @@ jobs:
             packages/*/.nyc_output/**
             LICENSE
 
-  test-coverage-report:
+  coverage-report:
+    needs: test-all-versions
     runs-on: ubuntu-latest
-    needs: unit-test
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 18
       - name: Install
-        run: npm ci
-      # NOTE: keep this in sync with the node versions from `unit-test` job
+        run: npm ci --ignore-scripts
+        timeout-minutes: 10
+      # Note: Keep this in sync with the node versions from `test-all-versions` job.
       - name: Download Test Artifacts (18)
         uses: actions/download-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-18
-          path: .
-      - name: Download Test Artifacts (18.19.0)
-        uses: actions/download-artifact@v5
-        with:
-          name: tests-coverage-cache-${{ github.run_number }}-18.19.0
           path: .
       - name: Download Test Artifacts (20)
         uses: actions/download-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-20
           path: .
-      - name: Download Test Artifacts (20.6.0)
-        uses: actions/download-artifact@v5
-        with:
-          name: tests-coverage-cache-${{ github.run_number }}-20.6.0
-          path: .
       - name: Download Test Artifacts (22)
         uses: actions/download-artifact@v5
         with:
           name: tests-coverage-cache-${{ github.run_number }}-22
           path: .
-      # Note: see comment in the compile job
-      - name: Set base and head commits
-        run: |
-          if [ "${{github.event_name}}" == "push" ]; then
-            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
-            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
-          else
-            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
-            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
-          fi
-      - name: Merge coverage (Delta)
-        run: npm run test-merge-coverage:ci:affected
+      - name: Download Test Artifacts (24)
+        uses: actions/download-artifact@v5
+        with:
+          name: tests-coverage-cache-${{ github.run_number }}-24
+          path: .
       - name: Report Coverage with Flags
-        run: node ./scripts/codecov-upload-flags.mjs ${{ github.event.pull_request.head.sha }} ${{ github.event.pull_request.head.label }}
-
+        run: node ./scripts/codecov-upload-flags.mjs
+        env:
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BRANCH_NAME: ${{ github.event.pull_request.head.label }}

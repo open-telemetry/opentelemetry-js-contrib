@@ -15,7 +15,6 @@
  */
 
 // We access through node_modules to allow it to be patched.
-/* eslint-disable node/no-extraneous-require */
 
 import * as path from 'path';
 

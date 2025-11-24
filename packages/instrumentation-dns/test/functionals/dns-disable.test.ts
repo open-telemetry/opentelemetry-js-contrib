@@ -37,7 +37,9 @@ describe('DnsInstrumentation', () => {
   before(() => {
     instrumentation = new DnsInstrumentation();
     instrumentation.setTracerProvider(provider);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('dns');
+    // @ts-expect-error __wrapped is injected
     assert.strictEqual(dns.lookup.__wrapped, true);
   });
 
@@ -62,6 +64,7 @@ describe('DnsInstrumentation', () => {
         const spans = memoryExporter.getFinishedSpans();
         assert.strictEqual(spans.length, 0);
 
+        // @ts-expect-error __wrapped is injected
         assert.strictEqual(dns.lookup.__wrapped, undefined);
         assert.strictEqual((context.with as sinon.SinonSpy).called, false);
         done();

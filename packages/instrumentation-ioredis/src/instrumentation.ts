@@ -23,13 +23,13 @@ import {
 import { IORedisInstrumentationConfig } from './types';
 import { IORedisCommand, RedisInterface } from './internal-types';
 import {
-  DBSYSTEMVALUES_REDIS,
-  SEMATTRS_DB_CONNECTION_STRING,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_REDIS,
+  ATTR_DB_CONNECTION_STRING,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from './semconv';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { endSpan } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
@@ -123,8 +123,8 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
       const span = instrumentation.tracer.startSpan(cmd.name, {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
-          [SEMATTRS_DB_STATEMENT]: dbStatementSerializer(cmd.name, cmd.args),
+          [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_REDIS,
+          [ATTR_DB_STATEMENT]: dbStatementSerializer(cmd.name, cmd.args),
         },
       });
 
@@ -149,9 +149,9 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
       const { host, port } = this.options;
 
       span.setAttributes({
-        [SEMATTRS_NET_PEER_NAME]: host,
-        [SEMATTRS_NET_PEER_PORT]: port,
-        [SEMATTRS_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
+        [ATTR_NET_PEER_NAME]: host,
+        [ATTR_NET_PEER_PORT]: port,
+        [ATTR_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
       });
 
       try {
@@ -202,16 +202,16 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
       const span = instrumentation.tracer.startSpan('connect', {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
-          [SEMATTRS_DB_STATEMENT]: 'connect',
+          [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_REDIS,
+          [ATTR_DB_STATEMENT]: 'connect',
         },
       });
       const { host, port } = this.options;
 
       span.setAttributes({
-        [SEMATTRS_NET_PEER_NAME]: host,
-        [SEMATTRS_NET_PEER_PORT]: port,
-        [SEMATTRS_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
+        [ATTR_NET_PEER_NAME]: host,
+        [ATTR_NET_PEER_PORT]: port,
+        [ATTR_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
       });
       try {
         const client = original.apply(this, arguments);

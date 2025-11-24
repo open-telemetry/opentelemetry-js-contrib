@@ -1,0 +1,65 @@
+{
+  "name": "@opentelemetry/sampler-aws-xray",
+  "version": "0.1.2",
+  "description": "OpenTelemetry Remote Sampler for AWS X-Ray",
+  "keywords": [
+    "aws",
+    "sampler",
+    "nodejs",
+    "opentelemetry",
+    "AWS",
+    "X-Ray"
+  ],
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/sampler-aws-xray#readme",
+  "license": "Apache-2.0",
+  "author": "OpenTelemetry Authors",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
+  },
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "files": [
+    "build/esm/**/*.js",
+    "build/esm/**/*.js.map",
+    "build/esm/**/*.d.ts",
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "packages/sampler-aws-xray"
+  },
+  "scripts": {
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/sampler-aws-xray",
+    "prepublishOnly": "npm run compile",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc mocha 'test/**/*.test.ts'",
+    "version:update": "node ../../scripts/version-update.js",
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.1.0"
+  },
+  "dependencies": {
+    "@opentelemetry/core": "^2.0.0",
+    "@opentelemetry/resources": "^2.0.0",
+    "@opentelemetry/sdk-trace-base": "^2.0.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "^1.1.0",
+    "@opentelemetry/sdk-trace-node": "^2.0.0"
+  },
+  "engines": {
+    "node": "^18.19.0 || >=20.6.0"
+  }
+}
