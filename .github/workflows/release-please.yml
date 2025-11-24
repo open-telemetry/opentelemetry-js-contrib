@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -45,7 +45,7 @@ jobs:
       - name: Checkout release PR
         # only checkout if a PR has been created, otherwise this will fail
         if: ${{ steps.release.outputs.pr }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: release-please--branches--main
           # use a token so that workflows on the PR run when we push later
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: npm-publish-environment
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           # Require npm 11.5.1 or later for https://docs.npmjs.com/trusted-publishers.

@@ -24,6 +24,8 @@ import {
   ATTR_V8JS_HEAP_SPACE_NAME,
   METRIC_V8JS_MEMORY_HEAP_LIMIT,
   METRIC_V8JS_MEMORY_HEAP_USED,
+  METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
+  METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE,
 } from '../semconv';
 
 export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
@@ -43,16 +45,14 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
       }
     );
     const heapSpaceAvailable = meter.createObservableGauge(
-      // TODO: Use METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE when available in semconv v1.38.0
-      'v8js.memory.heap.space.available_size',
+      METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
       {
         description: 'Heap space available size.',
         unit: 'By',
       }
     );
     const heapSpacePhysical = meter.createObservableGauge(
-      // TODO: Use METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE when available in semconv v1.38.0
-      'v8js.memory.heap.space.physical_size',
+      METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE,
       {
         description: 'Committed size of a heap space.',
         unit: 'By',

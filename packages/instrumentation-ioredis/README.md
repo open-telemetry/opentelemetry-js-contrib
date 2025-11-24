@@ -47,7 +47,7 @@ registerInstrumentations({
 IORedis instrumentation has few options available to choose from. You can set the following:
 
 | Options                 | Type                                              | Description                                                                                                       |
-|-------------------------|---------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| ----------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `dbStatementSerializer` | `DbStatementSerializer`                           | IORedis instrumentation will serialize db.statement using the specified function.                                 |
 | `requestHook`           | `RedisRequestCustomAttributeFunction` (function)  | Function for adding custom attributes on db request. Receives params: `span, { moduleVersion, cmdName, cmdArgs }` |
 | `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response                                                              |
@@ -105,7 +105,7 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 Attributes collected:
 
 | Attribute              | Short Description                                                           |
-|------------------------|-----------------------------------------------------------------------------|
+| ---------------------- | --------------------------------------------------------------------------- |
 | `db.connection_string` | The connection string used to connect to the database.                      |
 | `db.statement`         | The database statement being executed.                                      |
 | `db.system`            | An identifier for the database management system (DBMS) product being used. |

@@ -61,14 +61,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/bson": "4.0.5",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "cross-env": "7.0.3",
-    "mongodb": "6.19.0",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "test-all-versions": "6.1.0",
-    "typescript": "5.0.4"
+    "mongodb": "6.19.0"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.208.0"
