@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-redis",
-  "version": "0.57.0",
+  "version": "0.57.1",
   "description": "OpenTelemetry instrumentation for `redis` database client for Redis",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
