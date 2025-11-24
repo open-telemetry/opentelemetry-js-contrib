@@ -1,6 +1,16 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.4.5](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-configuration-propagators-v0.4.4...auto-configuration-propagators-v0.4.5) (2025-11-24)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.1.3 to ^2.1.4
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.55.3 to ^0.55.4
+
 ## [0.4.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-configuration-propagators-v0.4.3...auto-configuration-propagators-v0.4.4) (2025-09-29)
 
 

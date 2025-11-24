@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.61.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.61.0...instrumentation-pg-v0.61.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* **pg-instrumentation:** capture query values when passed as second argument for prepared statements ([#3196](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3196)) ([5030825](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/503082529448f3f97595e799fa6408a508a9e08b))
+
 ## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.60.0...instrumentation-pg-v0.61.0) (2025-11-06)
 
 

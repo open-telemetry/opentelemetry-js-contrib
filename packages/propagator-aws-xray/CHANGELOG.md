@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [2.1.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-aws-xray-v2.1.3...propagator-aws-xray-v2.1.4) (2025-11-24)
+
+
+### Bug Fixes
+
+* ensure aws-xray-propagator maintains trace state ([#3092](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3092)) ([ed680dd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ed680dd6eaf547264e58179492ca3a686ff0f783))
+
 ## [2.1.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-aws-xray-v2.1.2...propagator-aws-xray-v2.1.3) (2025-09-29)
 
 
