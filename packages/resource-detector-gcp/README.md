@@ -34,7 +34,7 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 ### GCP Detector
 
 | Resource Attribute      | Description                                                   |
-|-------------------------|---------------------------------------------------------------|
+| ----------------------- | ------------------------------------------------------------- |
 | cloud.account.id        | Value of `project-id` from GCP Metadata project               |
 | cloud.availability_zone | Value of `zone` from GCP Metadata instance                    |
 | cloud.provider          | The cloud provider. In this context, it's always "gcp"        |

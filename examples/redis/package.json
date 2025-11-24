@@ -5,8 +5,6 @@
   "description": "Example of Redis integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "docker:start": "docker run -d -p 6379:6379 --name otel-redis redis:alpine",
     "docker:stop": "docker stop otel-redis && docker rm otel-redis",
     "zipkin:server": "cross-env EXPORTER=zipkin ts-node src/server.ts",

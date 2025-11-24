@@ -143,14 +143,12 @@ describe('fs instrumentation: hooks', () => {
 
   describe('Promise API', () => {
     it('should not fail the original successful call when hooks throw', async () => {
-      // eslint-disable-next-line node/no-unsupported-features/node-builtins
       await fs.promises.access('./test/fixtures/readtest', fs.constants.R_OK);
 
       assertSuccessfulCallHooks('access');
     });
 
     it('should not shadow the error from original call when hooks throw', async () => {
-      // eslint-disable-next-line node/no-unsupported-features/node-builtins
       await fs.promises
         .access('./test/fixtures/readtest-404', fs.constants.R_OK)
         .catch(assertNotHookError);

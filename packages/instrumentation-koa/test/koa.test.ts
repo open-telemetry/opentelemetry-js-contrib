@@ -26,9 +26,8 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import {
-  SEMATTRS_EXCEPTION_MESSAGE,
-  SEMATTRS_HTTP_METHOD,
-  SEMATTRS_HTTP_ROUTE,
+  ATTR_HTTP_ROUTE,
+  ATTR_EXCEPTION_MESSAGE,
 } from '@opentelemetry/semantic-conventions';
 
 type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
@@ -198,7 +197,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/post/:id'
           );
 
@@ -249,7 +248,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/^\\/post/'
           );
 
@@ -296,7 +295,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/post/:id'
           );
 
@@ -345,7 +344,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/:first/post/:id'
           );
 
@@ -392,7 +391,7 @@ describe('Koa Instrumentation', function () {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
             '/:first/post/:id'
           );
 
@@ -502,7 +501,11 @@ describe('Koa Instrumentation', function () {
       );
     });
 
-    it('should not instrument generator middleware functions', async () => {
+    it('should not instrument generator middleware functions', async function () {
+      if (typeof (app as any).createAsyncCtxStorageMiddleware !== 'function') {
+        this.skip();
+      }
+
       const rootSpan = tracer.startSpan('rootSpan');
       app.use((_ctx, next) =>
         context.with(trace.setSpan(context.active(), rootSpan), next)
@@ -593,7 +596,7 @@ describe('Koa Instrumentation', function () {
       assert.ok(exceptionEvent, 'There should be an exception event recorded');
       assert.deepStrictEqual(exceptionEvent.name, 'exception');
       assert.deepStrictEqual(
-        exceptionEvent.attributes![SEMATTRS_EXCEPTION_MESSAGE],
+        exceptionEvent.attributes![ATTR_EXCEPTION_MESSAGE],
         'I failed!'
       );
     });
@@ -621,7 +624,7 @@ describe('Koa Instrumentation', function () {
 
       const requestHook = sinon.spy(
         (span: Span, info: KoaRequestInfo<KoaContext, KoaMiddleware>) => {
-          span.setAttribute(SEMATTRS_HTTP_METHOD, info.context.request.method);
+          span.setAttribute('http.method', info.context.request.method);
 
           throw Error('error thrown in requestHook');
         }

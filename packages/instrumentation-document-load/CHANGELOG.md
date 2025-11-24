@@ -1,4 +1,54 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
+
+## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.53.0...instrumentation-document-load-v0.54.0) (2025-11-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3210](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3210)) ([2d675d3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2d675d368a1b8df0599bc5f6462db535a225c0b6))
+
+## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.52.0...instrumentation-document-load-v0.53.0) (2025-10-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3187](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3187)) ([ab96334](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab9633455794de79964e60775c804791d19259bc))
+
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.51.2...instrumentation-document-load-v0.52.0) (2025-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3145](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3145)) ([704c716](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/704c7161f782590d7b644ab607b5f9c29cdfd63f))
+
+## [0.51.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.51.1...instrumentation-document-load-v0.51.2) (2025-09-29)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3123](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3123)) ([0dab838](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0dab8383b5349e21a968fe2cedd8a6e2243f86d0))
+
+## [0.51.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.51.0...instrumentation-document-load-v0.51.1) (2025-09-25)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
+## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.50.0...instrumentation-document-load-v0.51.0) (2025-09-24)
+
+
+### Features
+
+* **instrumentation-document-load:** support migration to stable HTTP semconv, v1.23.1 ([#3075](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3075)) ([a3a2c78](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a3a2c7860a64de658e9fbffb000e0b1a6ce9a00e))
+
+## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.49.0...instrumentation-document-load-v0.50.0) (2025-09-10)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3034](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3034)) ([bee0a66](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bee0a66ef825145fb1a9b172c3468ccf0c97a820))
 
 ## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.48.0...instrumentation-document-load-v0.49.0) (2025-09-08)
 

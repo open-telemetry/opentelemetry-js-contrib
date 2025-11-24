@@ -102,15 +102,17 @@ const patchArrayFunction = (
           message,
           START_SPAN_FUNCTION
         );
-        startSpanFunction &&
+        if (startSpanFunction) {
           Object.defineProperty(res, START_SPAN_FUNCTION, startSpanFunction);
+        }
 
         const endSpanFunction = Object.getOwnPropertyDescriptor(
           message,
           END_SPAN_FUNCTION
         );
-        endSpanFunction &&
+        if (endSpanFunction) {
           Object.defineProperty(res, END_SPAN_FUNCTION, endSpanFunction);
+        }
       }
       return res;
     };

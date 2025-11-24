@@ -17,11 +17,11 @@ import { strict as assert } from 'assert';
 import * as http from 'http';
 import { AddressInfo } from 'net';
 
-import { SEMATTRS_MESSAGING_SYSTEM } from '@opentelemetry/semantic-conventions';
+import { ATTR_MESSAGING_SYSTEM } from '../src/semconv';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 
-import * as expect from 'expect';
+import expect from 'expect';
 import { Server } from 'socket.io';
 import * as socketIo from 'socket.io';
 import * as ioClient from 'socket.io-client';
@@ -57,7 +57,7 @@ export const createServerInstance = (server?: http.Server) => {
 
 export const getSocketIoSpans = (): ReadableSpan[] =>
   getTestSpans().filter(
-    s => s.attributes[SEMATTRS_MESSAGING_SYSTEM] === 'socket.io'
+    s => s.attributes[ATTR_MESSAGING_SYSTEM] === 'socket.io'
   ) as ReadableSpan[];
 
 export const expectSpan = (

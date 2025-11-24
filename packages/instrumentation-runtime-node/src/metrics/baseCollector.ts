@@ -20,14 +20,8 @@ import { RuntimeNodeInstrumentationConfig } from '../types';
 export abstract class BaseCollector implements MetricCollector {
   protected _config: RuntimeNodeInstrumentationConfig = {};
 
-  protected namePrefix: string;
-
-  protected constructor(
-    config: RuntimeNodeInstrumentationConfig = {},
-    namePrefix: string
-  ) {
+  constructor(config: RuntimeNodeInstrumentationConfig = {}) {
     this._config = config;
-    this.namePrefix = namePrefix;
   }
 
   public disable(): void {

@@ -17,15 +17,15 @@
 import { context, trace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
-  DBSYSTEMVALUES_MSSQL,
-  SEMATTRS_DB_NAME,
-  SEMATTRS_DB_SQL_TABLE,
-  SEMATTRS_DB_STATEMENT,
-  SEMATTRS_DB_SYSTEM,
-  SEMATTRS_DB_USER,
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
-} from '@opentelemetry/semantic-conventions';
+  DB_SYSTEM_VALUE_MSSQL,
+  ATTR_DB_NAME,
+  ATTR_DB_SQL_TABLE,
+  ATTR_DB_STATEMENT,
+  ATTR_DB_SYSTEM,
+  ATTR_DB_USER,
+  ATTR_NET_PEER_NAME,
+  ATTR_NET_PEER_PORT,
+} from '../src/semconv';
 import * as util from 'util';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
@@ -47,8 +47,6 @@ const user = process.env.MSSQL_USER || 'sa';
 const password = process.env.MSSQL_PASSWORD || 'mssql_passw0rd';
 
 const instrumentation = new TediousInstrumentation();
-instrumentation.enable();
-instrumentation.disable();
 
 const config: any = {
   userName: user,
@@ -308,6 +306,68 @@ describe('tedious', () => {
       table: 'test_bulk',
     });
   });
+
+  describe('trace context propagation via CONTEXT_INFO', () => {
+    function traceparentFromSpan(span: ReadableSpan) {
+      const sc = span.spanContext();
+      const flags = sc.traceFlags & 0x01 ? '01' : '00';
+      return `00-${sc.traceId}-${sc.spanId}-${flags}`;
+    }
+
+    beforeEach(() => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+      });
+    });
+
+    after(() => {
+      instrumentation.setConfig({ enableTraceContextPropagation: false });
+    });
+
+    it('injects DB-span traceparent for execSql', async function () {
+      const sql =
+        "SELECT REPLACE(CONVERT(varchar(128), CONTEXT_INFO()), CHAR(0), '') AS traceparent";
+      const result = await tedious.query(connection, sql);
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const expectedTp = traceparentFromSpan(spans[0]);
+      assert.strictEqual(
+        result[0],
+        expectedTp,
+        'CONTEXT_INFO traceparent should match DB span'
+      );
+    });
+
+    it('injects for execSqlBatch', async function () {
+      const batch = `
+          SELECT REPLACE(CONVERT(varchar(128), CONTEXT_INFO()), CHAR(0), '') AS tp;
+          SELECT 42;
+        `;
+      const result = await tedious.query(connection, batch, 'execSqlBatch');
+
+      assert.deepStrictEqual(result, [result[0], 42]);
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const expectedTp = traceparentFromSpan(spans[0]);
+      assert.strictEqual(result[0], expectedTp);
+    });
+
+    it('when disabled, CONTEXT_INFO stays empty', async function () {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: false,
+      });
+
+      const [val] = await tedious.query(
+        connection,
+        "SELECT REPLACE(CONVERT(varchar(128), CONTEXT_INFO()), CHAR(0), '')"
+      );
+      assert.strictEqual(val, null);
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+    });
+  });
 });
 
 const assertMatch = (actual: string | undefined, expected: RegExp) => {
@@ -341,14 +401,14 @@ function assertSpan(span: ReadableSpan, expected: any) {
   assert(span);
   assert.strictEqual(span.name, expected.name);
   assert.strictEqual(span.kind, SpanKind.CLIENT);
-  assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], DBSYSTEMVALUES_MSSQL);
+  assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MSSQL);
   assert.strictEqual(
-    span.attributes[SEMATTRS_DB_NAME],
+    span.attributes[ATTR_DB_NAME],
     expected.database ?? database
   );
-  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_PORT], port);
-  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_NAME], host);
-  assert.strictEqual(span.attributes[SEMATTRS_DB_USER], user);
+  assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], port);
+  assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], host);
+  assert.strictEqual(span.attributes[ATTR_DB_USER], user);
   assert.strictEqual(
     span.attributes['tedious.procedure_count'],
     expected.procCount ?? 1,
@@ -365,18 +425,18 @@ function assertSpan(span: ReadableSpan, expected: any) {
       expected.parentSpan.spanContext().spanId
     );
   }
-  assert.strictEqual(span.attributes[SEMATTRS_DB_SQL_TABLE], expected.table);
+  assert.strictEqual(span.attributes[ATTR_DB_SQL_TABLE], expected.table);
   if (expected.sql) {
     if (expected.sql instanceof RegExp) {
       assertMatch(
-        span.attributes[SEMATTRS_DB_STATEMENT] as string | undefined,
+        span.attributes[ATTR_DB_STATEMENT] as string | undefined,
         expected.sql
       );
     } else {
-      assert.strictEqual(span.attributes[SEMATTRS_DB_STATEMENT], expected.sql);
+      assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], expected.sql);
     }
   } else {
-    assert.strictEqual(span.attributes[SEMATTRS_DB_STATEMENT], undefined);
+    assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], undefined);
   }
   if (expected.error) {
     assert(

@@ -1,15 +1,15 @@
 mongoose:
   - versions:
       include: ">=5.9.7 <7"
-      mode: latest-minors
+      mode: latest-majors
     commands: npm run test-v5-v6
   - versions:
       include: ">=7 <8"
-      mode: latest-minors
+      mode: max-5
     node: '>=14.20.1'
     commands: npm run test-v7-v8
   - versions:
       include: ">=8 <9"
-      mode: latest-minors
+      mode: max-7
     node: '>=16.20.1'
     commands: npm run test-v7-v8

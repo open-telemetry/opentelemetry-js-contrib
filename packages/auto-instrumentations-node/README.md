@@ -129,14 +129,14 @@ const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
 const { resourceFromAttributes } = require('@opentelemetry/resources');
-const { SEMRESATTRS_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
+const { ATTR_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
 const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const exporter = new CollectorTraceExporter();
 const provider = new NodeTracerProvider({
   resource: resourceFromAttributes({
-    [SEMRESATTRS_SERVICE_NAME]: 'basic-service',
+    [ATTR_SERVICE_NAME]: 'basic-service',
   }),
   spanProcessors: [
     new SimpleSpanProcessor(exporter),
@@ -193,6 +193,7 @@ registerInstrumentations({
 - [@opentelemetry/instrumentation-mysql2](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-mysql2)
 - [@opentelemetry/instrumentation-nestjs-core](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs-core)
 - [@opentelemetry/instrumentation-net](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-net)
+- [@opentelemetry/instrumentation-openai](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-openai)
 - [@opentelemetry/instrumentation-oracledb](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-oracledb)
 - [@opentelemetry/instrumentation-pg](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-pg)
 - [@opentelemetry/instrumentation-pino](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-pino)

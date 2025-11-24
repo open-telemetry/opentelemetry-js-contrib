@@ -1,4 +1,55 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
+
+## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.55.0...instrumentation-graphql-v0.56.0) (2025-11-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3210](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3210)) ([2d675d3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2d675d368a1b8df0599bc5f6462db535a225c0b6))
+* **instrumentation-graphql:** Add option to put all resolve spans under the same parent span ([#3085](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3085)) ([4b9e3ad](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4b9e3ad4455285d27490a0214690d3688f3b9a2b))
+
+## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.54.0...instrumentation-graphql-v0.55.0) (2025-10-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3187](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3187)) ([ab96334](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab9633455794de79964e60775c804791d19259bc))
+
+## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.53.3...instrumentation-graphql-v0.54.0) (2025-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3145](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3145)) ([704c716](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/704c7161f782590d7b644ab607b5f9c29cdfd63f))
+
+## [0.53.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.53.2...instrumentation-graphql-v0.53.3) (2025-09-29)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3123](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3123)) ([0dab838](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0dab8383b5349e21a968fe2cedd8a6e2243f86d0))
+
+## [0.53.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.53.1...instrumentation-graphql-v0.53.2) (2025-09-25)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
+## [0.53.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.53.0...instrumentation-graphql-v0.53.1) (2025-09-24)
+
+
+### Bug Fixes
+
+* Enable union type support in @opentelemetry/instrumentation-graphql ([#1506](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1506)) ([#2923](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2923)) ([692cf0a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/692cf0ad9abdb3f7aba070ff45071ecaa26e490e))
+
+## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.52.0...instrumentation-graphql-v0.53.0) (2025-09-10)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3034](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3034)) ([bee0a66](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bee0a66ef825145fb1a9b172c3468ccf0c97a820))
 
 ## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.51.0...instrumentation-graphql-v0.52.0) (2025-09-08)
 

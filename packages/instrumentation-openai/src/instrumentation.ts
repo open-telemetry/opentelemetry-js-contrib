@@ -35,7 +35,6 @@ import type {
   ChatCompletionChunk,
   Completions as ChatCompletions,
 } from 'openai/resources/chat/completions';
-import type { APIPromise } from 'openai/core';
 import type {
   CreateEmbeddingResponse,
   Embeddings,
@@ -69,12 +68,14 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getEnvBool, getAttrsFromBaseURL } from './utils';
 import { OpenAIInstrumentationConfig } from './types';
 import {
+  APIPromise,
   GenAIMessage,
   GenAIChoiceEventBody,
   GenAISystemMessageEventBody,
   GenAIUserMessageEventBody,
   GenAIAssistantMessageEventBody,
   GenAIToolMessageEventBody,
+  GenAIToolCall,
 } from './internal-types';
 
 // The JS semconv package doesn't yet emit constants for event names.
@@ -115,7 +116,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     return [
       new InstrumentationNodeModuleDefinition(
         'openai',
-        ['>=4.19.0 <6'],
+        ['>=4.19.0 <7'],
         modExports => {
           this._wrap(
             modExports.OpenAI.Chat.Completions.prototype,
@@ -168,7 +169,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     );
   }
 
-  _getPatchedChatCompletionsCreate() {
+  private _getPatchedChatCompletionsCreate(): any {
     const self = this;
     return (original: ChatCompletions['create']) => {
       // https://platform.openai.com/docs/api-reference/chat/create
@@ -250,7 +251,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * Start a span for this chat-completion API call. This also emits log events
    * as appropriate for the request params.
    */
-  _startChatCompletionsSpan(
+  private _startChatCompletionsSpan(
     params: ChatCompletionCreateParams,
     config: OpenAIInstrumentationConfig,
     baseURL: string | undefined
@@ -367,23 +368,35 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
                 body.content = msg.content;
               }
             }
+            // As of openai@5.12.1, type ChatCompletionMessageToolCall can
+            // have type="custom" which has no `function` property. As well,
+            // GenAI semconv has since changed how it captures tool calls.
+            // For now we just cope: we could capture
+            // `ChatCompletionMessageCustomToolCall.Custom` properties, but we
+            // don't for now.
             body.tool_calls = msg.tool_calls?.map(tc => {
-              return {
+              const repr: GenAIToolCall = {
                 id: tc.id,
                 type: tc.type,
-                function: {
+              };
+              if (tc.type === 'function') {
+                repr.function = {
                   name: tc.function.name,
                   arguments: tc.function.arguments,
-                },
-              };
+                };
+              }
+              return repr;
             });
           } else {
             body.tool_calls = msg.tool_calls?.map(tc => {
-              return {
+              const repr: GenAIToolCall = {
                 id: tc.id,
                 type: tc.type,
-                function: { name: tc.function.name },
               };
+              if (tc.type === 'function') {
+                repr.function = { name: tc.function.name };
+              }
+              return repr;
             });
           }
           this.logger.emit({
@@ -436,7 +449,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * async iterator. It should yield the chunks unchanged, and gather telemetry
    * data from those chunks, then end the span.
    */
-  async *_onChatCompletionsStreamIterator(
+  private async *_onChatCompletionsStreamIterator(
     streamIter: AsyncIterator<ChatCompletionChunk>,
     span: Span,
     startNow: number,
@@ -479,21 +492,27 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         if (!choices[idx].toolCalls) {
           choices[idx].toolCalls = [];
         }
-        const toolCalls = choices[idx].toolCalls;
+        const toolCalls: GenAIToolCall[] = choices[idx].toolCalls;
         if (toolCallPart.id) {
           // First chunk in a tool call.
-          toolCalls.push({
+          const repr: GenAIToolCall = {
             id: toolCallPart.id,
             type: toolCallPart.type,
-            function: {
+          };
+          if (toolCallPart.type === 'function') {
+            repr.function = {
               name: toolCallPart.function?.name,
               arguments: toolCallPart.function?.arguments ?? '',
-            },
-          });
+            };
+          }
+          toolCalls.push(repr);
         } else if (toolCalls.length > 0) {
           // A tool call chunk with more of the `function.arguments`.
-          toolCalls[toolCalls.length - 1].function.arguments +=
-            toolCallPart.function?.arguments ?? '';
+          const lastPart = toolCalls[toolCalls.length - 1];
+          if (lastPart.function !== undefined) {
+            lastPart.function.arguments +=
+              toolCallPart.function?.arguments ?? '';
+          }
         }
       }
       if (!id && chunk.id) {
@@ -585,7 +604,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     span.end();
   }
 
-  _onChatCompletionsCreateResult(
+  private _onChatCompletionsCreateResult(
     span: Span,
     startNow: number,
     commonAttrs: Attributes,
@@ -626,11 +645,14 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         } else {
           if (choice.message.tool_calls) {
             message.tool_calls = choice.message.tool_calls.map(tc => {
-              return {
+              const repr: GenAIToolCall = {
                 id: tc.id,
                 type: tc.type,
-                function: { name: tc.function.name },
               };
+              if (tc.type === 'function') {
+                repr.function = { name: tc.function.name };
+              }
+              return repr;
             });
           }
         }
@@ -680,7 +702,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     span.end();
   }
 
-  _createAPIPromiseRejectionHandler(
+  private _createAPIPromiseRejectionHandler(
     startNow: number,
     span: Span,
     commonAttrs: Attributes
@@ -712,7 +734,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     };
   }
 
-  _getPatchedEmbeddingsCreate() {
+  private _getPatchedEmbeddingsCreate(): any {
     const self = this;
     return (original: Embeddings['create']) => {
       // https://platform.openai.com/docs/api-reference/embeddings/create
@@ -756,7 +778,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * Start a span for this chat-completion API call. This also emits log events
    * as appropriate for the request params.
    */
-  _startEmbeddingsSpan(
+  private _startEmbeddingsSpan(
     params: EmbeddingCreateParams,
     baseURL: string | undefined
   ) {
@@ -788,7 +810,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     return { span, ctx, commonAttrs };
   }
 
-  _onEmbeddingsCreateResult(
+  private _onEmbeddingsCreateResult(
     span: Span,
     startNow: number,
     commonAttrs: Attributes,

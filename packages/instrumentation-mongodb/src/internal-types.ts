@@ -226,3 +226,8 @@ export type V4Session = {
   acquire: () => ServerSession;
   release: (session: ServerSession) => void;
 };
+
+/**
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#replacer
+ */
+export type Replacer = (key: string, value: unknown) => unknown;

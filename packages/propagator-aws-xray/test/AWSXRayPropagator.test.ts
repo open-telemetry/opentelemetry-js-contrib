@@ -79,9 +79,8 @@ describe('AWSXRayPropagator', () => {
       );
     });
 
-    it('should inject with TraceState', () => {
-      const traceState = new TraceState();
-      traceState.set('foo', 'bar');
+    it('should not inject with TraceState', () => {
+      const traceState = new TraceState().set('foo', 'bar').set('key', 'val');
       const spanContext: SpanContext = {
         traceId: TRACE_ID,
         spanId: SPAN_ID,
@@ -94,7 +93,8 @@ describe('AWSXRayPropagator', () => {
         defaultTextMapSetter
       );
 
-      // TODO: assert trace state when the propagator supports it
+      // Rely on W3CTraceContextPropagator to propagate trace state
+      // As such, it's expected that trace state is not populated here
       assert.deepStrictEqual(
         carrier[AWSXRAY_TRACE_ID_HEADER],
         'Root=1-8a3c60f7-d188f8fa79d48a391a778fa6;Parent=53995c3f42cd8ad8;Sampled=1'
@@ -342,6 +342,36 @@ describe('AWSXRayPropagator', () => {
         spanId: SPAN_ID,
         isRemote: true,
         traceFlags: TraceFlags.SAMPLED,
+      });
+    });
+
+    it('should extract with TraceState previously propagated', () => {
+      carrier[AWSXRAY_TRACE_ID_HEADER] =
+        'Root=1-8a3c60f7-d188f8fa79d48a391a778fa6;Parent=53995c3f42cd8ad8;Sampled=1';
+
+      const spanContextWithTraceState: SpanContext = {
+        traceId: 'existing-trace-id',
+        spanId: 'existing-span-id',
+        traceFlags: TraceFlags.SAMPLED,
+        traceState: new TraceState().set('foo', 'bar').set('from', 'context'),
+      };
+      const incomingContext = trace.setSpan(
+        ROOT_CONTEXT,
+        trace.wrapSpanContext(spanContextWithTraceState)
+      );
+
+      const extractedSpanContext = trace
+        .getSpan(
+          xrayPropagator.extract(incomingContext, carrier, defaultTextMapGetter)
+        )
+        ?.spanContext();
+
+      assert.deepStrictEqual(extractedSpanContext, {
+        traceId: TRACE_ID,
+        spanId: SPAN_ID,
+        isRemote: true,
+        traceFlags: TraceFlags.SAMPLED,
+        traceState: new TraceState().set('foo', 'bar').set('from', 'context'),
       });
     });
 

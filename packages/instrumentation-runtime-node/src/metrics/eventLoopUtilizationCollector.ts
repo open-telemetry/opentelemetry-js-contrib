@@ -13,40 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { EventLoopUtilization, performance } from 'node:perf_hooks';
-import { RuntimeNodeInstrumentationConfig } from '../types';
 import { Meter } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
+import { METRIC_NODEJS_EVENTLOOP_UTILIZATION } from '../semconv';
 
 const { eventLoopUtilization: eventLoopUtilizationCollector } = performance;
 
-export const ATTR_NODEJS_EVENT_LOOP_UTILIZATION = 'eventloop.utilization';
-
 export class EventLoopUtilizationCollector extends BaseCollector {
-  private _lastValue?: EventLoopUtilization;
-
-  constructor(
-    config: RuntimeNodeInstrumentationConfig = {},
-    namePrefix: string
-  ) {
-    super(config, namePrefix);
-  }
+  // Value needs to be initialized the first time otherwise the first measurement would always be 1
+  // See https://github.com/open-telemetry/opentelemetry-js-contrib/pull/3118#issuecomment-3429737955
+  private _lastValue: EventLoopUtilization = eventLoopUtilizationCollector();
 
   public updateMetricInstruments(meter: Meter): void {
     meter
-      .createObservableGauge(
-        `${this.namePrefix}.${ATTR_NODEJS_EVENT_LOOP_UTILIZATION}`,
-        {
-          description: 'Event loop utilization',
-          unit: '1',
-        }
-      )
+      .createObservableGauge(METRIC_NODEJS_EVENTLOOP_UTILIZATION, {
+        description: 'Event loop utilization',
+        unit: '1',
+      })
       .addCallback(async observableResult => {
         if (!this._config.enabled) return;
 
-        const elu = eventLoopUtilizationCollector(this._lastValue);
-        observableResult.observe(elu.utilization);
-        this._lastValue = elu;
+        const currentELU = eventLoopUtilizationCollector();
+        const deltaELU = eventLoopUtilizationCollector(
+          currentELU,
+          this._lastValue
+        );
+        this._lastValue = currentELU;
+        observableResult.observe(deltaELU.utilization);
       });
   }
 

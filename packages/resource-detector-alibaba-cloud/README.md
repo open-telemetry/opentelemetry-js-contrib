@@ -35,7 +35,7 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 Populates `cloud` and `host` for processes running on [Alibaba Cloud ECS](https://www.alibabacloud.com/product/ecs). More info about Alibaba Instance Identities can be found [here](https://www.alibabacloud.com/help/en/ecs/user-guide/use-instance-identities).
 
 | Resource Attribute      |  Description                                                    |
-|-------------------------|-----------------------------------------------------------------|
+| ----------------------- | --------------------------------------------------------------- |
 | cloud.account.id        | Value of `owner-account-id` on Alibaba Cloud                    |
 | cloud.availability_zone | Value of `zone-id` on Alibaba Cloud                             |
 | cloud.platform          | In this context, it's always `alibaba_cloud_ecs`                |

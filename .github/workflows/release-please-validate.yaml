@@ -13,13 +13,10 @@ jobs:
   rp-validate:
     runs-on: ubuntu-latest
     container:
-      image: node:20
+      image: node:22
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Install glob
-        run: npm install glob
+        uses: actions/checkout@v6
 
       - name: Ensure Release Please Config and Manifest are in sync with the repository
         run: node scripts/check-release-please.mjs

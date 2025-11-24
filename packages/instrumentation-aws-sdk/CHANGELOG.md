@@ -1,4 +1,109 @@
+<!-- markdownlint-disable MD007 MD034 -->
 # Changelog
+
+## [0.64.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.63.0...instrumentation-aws-sdk-v0.64.0) (2025-11-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3210](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3210)) ([2d675d3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2d675d368a1b8df0599bc5f6462db535a225c0b6))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.54.0 to ^0.55.0
+
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.62.0...instrumentation-aws-sdk-v0.63.0) (2025-10-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3187](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3187)) ([ab96334](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab9633455794de79964e60775c804791d19259bc))
+* **instrumentation-aws-sdk:** add Bedrock InvokeModelWithResponseStream instrumentation ([#2845](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2845)) ([84e3330](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/84e3330d6d098196fee0ad29d20d5012ba85c65d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.53.0 to ^0.54.0
+
+## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.61.2...instrumentation-aws-sdk-v0.62.0) (2025-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3145](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3145)) ([704c716](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/704c7161f782590d7b644ab607b5f9c29cdfd63f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.2 to ^0.53.0
+
+## [0.61.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.61.1...instrumentation-aws-sdk-v0.61.2) (2025-09-29)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3123](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3123)) ([0dab838](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0dab8383b5349e21a968fe2cedd8a6e2243f86d0))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.1 to ^0.52.2
+
+## [0.61.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.61.0...instrumentation-aws-sdk-v0.61.1) (2025-09-25)
+
+
+### Bug Fixes
+
+* force new release-please PR ([#3098](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3098)) ([13c58e9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/13c58e9ad77b266a03e34ffd4b61ab18c86f9d73))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.0 to ^0.52.1
+
+## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.60.0...instrumentation-aws-sdk-v0.61.0) (2025-09-24)
+
+
+### Features
+
+* **instrumentation-aws-sdk:** support migration to stable HTTP semconv ([#3077](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3077)) ([68989f3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/68989f36e0c6ee32eec95658a3298d8b755e224a))
+
+
+### Bug Fixes
+
+* **instrumentation-aws-sdk:** use `skipLibCheck` option to avoid compilation error ([#3041](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3041)) ([f6e8e1c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f6e8e1caaed84be0e41da2e4a976dfceb2f8d184))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.51.0 to ^0.52.0
+
+## [0.60.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.59.0...instrumentation-aws-sdk-v0.60.0) (2025-09-10)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3034](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3034)) ([bee0a66](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bee0a66ef825145fb1a9b172c3468ccf0c97a820))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.50.0 to ^0.51.0
 
 ## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.58.0...instrumentation-aws-sdk-v0.59.0) (2025-09-08)
 
