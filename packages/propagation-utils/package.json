@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/propagation-utils",
-  "version": "0.31.8",
+  "version": "0.31.11",
   "description": "Propagation utilities for opentelemetry instrumentations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,8 +11,6 @@
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/propagation-utils",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.test.ts'",
@@ -46,13 +44,6 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.52.2",
-    "@types/mocha": "^10.0.0",
-    "@types/node": "18.18.14",
-    "@types/sinon": "^17.0.0",
-    "expect": "29.2.0",
-    "nyc": "17.1.0",
-    "sinon": "15.2.0",
-    "typescript": "5.0.4"
+    "@opentelemetry/contrib-test-utils": "^0.55.0"
   }
 }

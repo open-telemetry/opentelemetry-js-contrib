@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-gcp",
-  "version": "0.40.3",
+  "version": "0.43.0",
   "description": "OpenTelemetry SDK resource detector for GCP",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -14,8 +14,6 @@
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/resource-detector-gcp",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -46,17 +44,10 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.52.2",
-    "@opentelemetry/instrumentation-http": "^0.205.0",
+    "@opentelemetry/contrib-test-utils": "^0.55.0",
+    "@opentelemetry/instrumentation-http": "^0.208.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "@types/semver": "7.5.8",
-    "@types/sinon": "17.0.4",
-    "bignumber.js": "9.3.1",
-    "nyc": "17.1.0",
-    "sinon": "15.2.0",
-    "typescript": "5.0.4"
+    "bignumber.js": "9.3.1"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.0.0"

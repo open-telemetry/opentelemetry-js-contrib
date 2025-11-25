@@ -15,12 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 18
           registry-url: 'https://registry.npmjs.org'
@@ -45,24 +45,12 @@ jobs:
       - name: Checkout release PR
         # only checkout if a PR has been created, otherwise this will fail
         if: ${{ steps.release.outputs.pr }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: release-please--branches--main
           # use a token so that workflows on the PR run when we push later
           token: ${{ steps.otelbot-token.outputs.token }}
           fetch-depth: 0
-
-      # If we've created/updated a PR:
-      # Sync the legacy "dependencies" key in package-lock.json.
-      - name: Update package-lock.json in PR
-        if: ${{ steps.release.outputs.pr }}
-        run: |
-          git config user.name otelbot
-          git config user.email 197425009+otelbot@users.noreply.github.com
-          npm install --ignore-scripts --package-lock-only
-          git add package-lock.json
-          git commit -m "chore: sync package-lock.json 'dependencies' key"
-          git push
 
   # If releases have been created, then publish to npm.
   npm-publish:
@@ -74,8 +62,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: npm-publish-environment
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           # Require npm 11.5.1 or later for https://docs.npmjs.com/trusted-publishers.
           node-version: 24

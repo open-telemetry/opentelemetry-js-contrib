@@ -1,6 +1,27 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.52.0...instrumentation-router-v0.53.0) (2025-11-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3210](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3210)) ([2d675d3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2d675d368a1b8df0599bc5f6462db535a225c0b6))
+
+## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.51.0...instrumentation-router-v0.52.0) (2025-10-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3187](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3187)) ([ab96334](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab9633455794de79964e60775c804791d19259bc))
+
+## [0.51.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.50.2...instrumentation-router-v0.51.0) (2025-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3145](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3145)) ([704c716](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/704c7161f782590d7b644ab607b5f9c29cdfd63f))
+
 ## [0.50.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.50.1...instrumentation-router-v0.50.2) (2025-09-29)
 
 

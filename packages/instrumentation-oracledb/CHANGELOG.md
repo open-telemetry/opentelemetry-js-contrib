@@ -1,6 +1,53 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.33.0...instrumentation-oracledb-v0.34.0) (2025-11-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3210](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3210)) ([2d675d3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2d675d368a1b8df0599bc5f6462db535a225c0b6))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.54.0 to ^0.55.0
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.32.0...instrumentation-oracledb-v0.33.0) (2025-10-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3187](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3187)) ([ab96334](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab9633455794de79964e60775c804791d19259bc))
+
+
+### Bug Fixes
+
+* **instrumentation-oracledb:** Modify checking the db.namespace attribute value for roundtrip span. ([#3185](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3185)) ([9bb6d07](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9bb6d07cb3649768fd27c546ea6f9347c6ce1c3a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.53.0 to ^0.54.0
+
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.31.3...instrumentation-oracledb-v0.32.0) (2025-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3145](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3145)) ([704c716](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/704c7161f782590d7b644ab607b5f9c29cdfd63f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.2 to ^0.53.0
+
 ## [0.31.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.31.2...instrumentation-oracledb-v0.31.3) (2025-09-29)
 
 

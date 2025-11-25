@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-mongodb",
-  "version": "0.58.3",
+  "version": "0.61.0",
   "description": "OpenTelemetry instrumentation for `mongodb` database client for MongoDB",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,8 +11,6 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "version:update": "node ../../scripts/version-update.js",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-mongodb",
@@ -58,22 +56,15 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.52.2",
+    "@opentelemetry/contrib-test-utils": "^0.55.0",
     "@opentelemetry/sdk-metrics": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/bson": "4.0.5",
-    "@types/mocha": "10.0.10",
-    "@types/node": "18.18.14",
-    "cross-env": "7.0.3",
-    "mongodb": "6.19.0",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "test-all-versions": "6.1.0",
-    "typescript": "5.0.4"
+    "mongodb": "6.19.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.205.0"
+    "@opentelemetry/instrumentation": "^0.208.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-mongodb#readme"
 }

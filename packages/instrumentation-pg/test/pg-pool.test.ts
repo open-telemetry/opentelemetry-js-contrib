@@ -530,6 +530,127 @@ describe('pg-pool', () => {
     });
   });
 
+  describe('exception event recording', () => {
+    const queryText = 'SELECT foo FROM nonexistent_table';
+
+    it('should record exceptions as events on spans for a query to a nonexistent table (callback)', done => {
+      const parentSpan = provider
+        .getTracer('test-pg-pool')
+        .startSpan('test span');
+      context.with(trace.setSpan(context.active(), parentSpan), () => {
+        pool.query(queryText, err => {
+          assert.notEqual(err, null, 'Expected query to throw an error');
+
+          const spans = memoryExporter.getFinishedSpans();
+
+          const querySpan = spans.find(
+            s =>
+              s.attributes?.[ATTR_DB_STATEMENT] &&
+              String(s.attributes[ATTR_DB_STATEMENT]).includes(
+                'nonexistent_table'
+              )
+          );
+          assert.ok(
+            querySpan,
+            'Expected a span for the nonexistent table query'
+          );
+
+          const exceptionEvents = querySpan.events.filter(
+            e => e.name === 'exception'
+          );
+          assert.ok(
+            exceptionEvents.length > 0,
+            'Expected at least one exception event'
+          );
+
+          exceptionEvents.forEach(e => {
+            const attrs = e.attributes!;
+            const code = '42P01';
+
+            const message = attrs['exception.message'];
+            console.log('exception message:', message);
+            assert.ok(message, 'exception.message should exist');
+            assert.strictEqual(
+              typeof message,
+              'string',
+              'exception.message should be a string'
+            );
+
+            if (typeof message === 'string') {
+              assert.ok(
+                message.includes(code),
+                `exception.message should include the Postgres error code ${code}`
+              );
+            }
+          });
+
+          memoryExporter.reset();
+          done();
+        });
+      });
+    });
+
+    it('should record exceptions as events on spans for a query to a nonexistent table (async-await)', async () => {
+      const parentSpan = provider
+        .getTracer('test-pg-pool')
+        .startSpan('test span');
+
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          try {
+            await pool.query(queryText);
+            assert.fail('Expected query to throw an error');
+          } catch {
+            const spans = memoryExporter.getFinishedSpans();
+
+            const querySpan = spans.find(
+              s =>
+                s.attributes?.[ATTR_DB_STATEMENT] &&
+                String(s.attributes[ATTR_DB_STATEMENT]).includes(
+                  'nonexistent_table'
+                )
+            );
+            assert.ok(
+              querySpan,
+              'Expected a span for the nonexistent table query'
+            );
+
+            const exceptionEvents = querySpan.events.filter(
+              e => e.name === 'exception'
+            );
+            assert.ok(
+              exceptionEvents.length > 0,
+              'Expected at least one exception event'
+            );
+
+            exceptionEvents.forEach(e => {
+              const attrs = e.attributes!;
+              const code = '42P01';
+
+              const message = attrs['exception.message'];
+              assert.ok(message, 'exception.message should exist');
+              assert.strictEqual(
+                typeof message,
+                'string',
+                'exception.message should be a string'
+              );
+
+              if (typeof message === 'string') {
+                assert.ok(
+                  message.includes(code),
+                  `exception.message should include the Postgres error code ${code}`
+                );
+              }
+            });
+
+            memoryExporter.reset();
+          }
+        }
+      );
+    });
+  });
+
   describe('pg metrics', () => {
     let metricReader: testUtils.TestMetricReader;
 

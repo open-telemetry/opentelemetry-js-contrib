@@ -1,6 +1,48 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.27.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.26.0...resource-detector-instana-v0.27.0) (2025-11-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3210](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3210)) ([2d675d3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2d675d368a1b8df0599bc5f6462db535a225c0b6))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.54.0 to ^0.55.0
+
+## [0.26.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.25.0...resource-detector-instana-v0.26.0) (2025-10-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3187](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3187)) ([ab96334](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab9633455794de79964e60775c804791d19259bc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.53.0 to ^0.54.0
+
+## [0.25.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.24.3...resource-detector-instana-v0.25.0) (2025-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3145](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3145)) ([704c716](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/704c7161f782590d7b644ab607b5f9c29cdfd63f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.52.2 to ^0.53.0
+
 ## [0.24.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.24.2...resource-detector-instana-v0.24.3) (2025-09-29)
 
 

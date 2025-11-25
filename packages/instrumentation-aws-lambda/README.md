@@ -50,12 +50,12 @@ In your Lambda function configuration, add or update the `NODE_OPTIONS` environm
 
 ## AWS Lambda Instrumentation Options
 
-| Options | Type  | Description |
-| --- | --- | --- |
-| `requestHook` | `RequestHook` (function) | Hook for adding custom attributes before lambda starts handling the request. Receives params: `span, { event, context }` |
-| `responseHook` | `ResponseHook` (function) | Hook for adding custom attributes before lambda returns the response. Receives params: `span, { err?, res? }` |
-| `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway). |
-| `lambdaHandler` | `string` | By default, this instrumentation automatically determines the Lambda handler function to instrument. This option is used to override that behavior by explicitly specifying the Lambda handler to instrument. See [Specifying the Lambda Handler](#specifying-the-lambda-handler) for additional information. |
+| Options                 | Type                               | Description                                                                                                                                                                                                                                                                                                   |
+|-------------------------|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `requestHook`           | `RequestHook` (function)           | Hook for adding custom attributes before lambda starts handling the request. Receives params: `span, { event, context }`                                                                                                                                                                                      |
+| `responseHook`          | `ResponseHook` (function)          | Hook for adding custom attributes before lambda returns the response. Receives params: `span, { err?, res? }`                                                                                                                                                                                                 |
+| `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway).                                                                                                                                       |
+| `lambdaHandler`         | `string`                           | By default, this instrumentation automatically determines the Lambda handler function to instrument. This option is used to override that behavior by explicitly specifying the Lambda handler to instrument. See [Specifying the Lambda Handler](#specifying-the-lambda-handler) for additional information. |
 
 ### Hooks Usage Example
 
@@ -148,7 +148,7 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 Attributes collected:
 
 | Attribute          | Short Description                                                         |
-| ------------------ | ------------------------------------------------------------------------- |
+|--------------------|---------------------------------------------------------------------------|
 | `cloud.account.id` | The cloud account ID the resource is assigned to.                         |
 | `faas.execution`   | The execution ID of the current function execution.                       |
 | `faas.id`          | The unique ID of the single function that this runtime instance executes. |

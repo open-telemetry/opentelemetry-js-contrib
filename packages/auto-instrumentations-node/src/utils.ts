@@ -46,6 +46,7 @@ import { MySQL2Instrumentation } from '@opentelemetry/instrumentation-mysql2';
 import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 import { NetInstrumentation } from '@opentelemetry/instrumentation-net';
+import { OpenAIInstrumentation } from '@opentelemetry/instrumentation-openai';
 import { OracleInstrumentation } from '@opentelemetry/instrumentation-oracledb';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
@@ -124,6 +125,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
   '@opentelemetry/instrumentation-nestjs-core': NestInstrumentation,
   '@opentelemetry/instrumentation-net': NetInstrumentation,
+  '@opentelemetry/instrumentation-openai': OpenAIInstrumentation,
   '@opentelemetry/instrumentation-oracledb': OracleInstrumentation,
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
   '@opentelemetry/instrumentation-pino': PinoInstrumentation,
@@ -150,6 +152,50 @@ export type InstrumentationConfigMap = {
   >;
 };
 
+function shouldDisableInstrumentation(
+  name: string,
+  userConfig: any,
+  enabledInstrumentationsFromEnv: string[],
+  disabledInstrumentationsFromEnv: string[]
+): boolean {
+  // Priority 1: Programmatic config
+  if (userConfig.enabled === false) {
+    diag.debug(
+      `Disabling instrumentation for ${name} - disabled by user config`
+    );
+    return true;
+  }
+
+  if (userConfig.enabled === true) {
+    diag.debug(
+      `Enabling instrumentation for ${name} - explicitly enabled by user config`
+    );
+    return false;
+  }
+
+  // Priority 2: Environment variables
+  if (disabledInstrumentationsFromEnv.includes(name)) {
+    diag.debug(`Disabling instrumentation for ${name} - disabled by env var`);
+    return true;
+  }
+
+  const isEnabledEnvSet = !!process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
+  if (isEnabledEnvSet && !enabledInstrumentationsFromEnv.includes(name)) {
+    diag.debug(
+      `Disabling instrumentation for ${name} - not in enabled env var list`
+    );
+    return true;
+  }
+
+  // Priority 3: Default exclusions
+  if (!isEnabledEnvSet && defaultExcludedInstrumentations.includes(name)) {
+    diag.debug(`Disabling instrumentation for ${name} - excluded by default`);
+    return true;
+  }
+
+  return false;
+}
+
 export function getNodeAutoInstrumentations(
   inputConfigs: InstrumentationConfigMap = {}
 ): Instrumentation[] {
@@ -166,12 +212,14 @@ export function getNodeAutoInstrumentations(
     // Defaults are defined by the instrumentation itself
     const userConfig: any = inputConfigs[name] ?? {};
 
-    if (
-      userConfig.enabled === false ||
-      !enabledInstrumentationsFromEnv.includes(name) ||
-      disabledInstrumentationsFromEnv.includes(name)
-    ) {
-      diag.debug(`Disabling instrumentation for ${name}`);
+    const shouldDisable = shouldDisableInstrumentation(
+      name,
+      userConfig,
+      enabledInstrumentationsFromEnv,
+      disabledInstrumentationsFromEnv
+    );
+
+    if (shouldDisable) {
       continue;
     }
 
