@@ -62,12 +62,12 @@ logger.info('foobar');
 
 ### Winston instrumentation options
 
-| Option                  | Type              | Description |
-| ----------------------- | ----------------- | ----------- |
-| `disableLogSending`      | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
+| Option                  | Type              | Description                                                                                                                                                |
+|-------------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`.                                                                                           |
 | `logSeverity`           | `SeverityNumber`  | Control severity level for [log sending](#log-sending). Default `SeverityNumber.UNSPECIFIED`, it will use Winston Logger's current level when unspecified. |
-| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
-| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |  
+| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`.                                                                                   |
+| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false.         |
 
 ### Log sending
 
