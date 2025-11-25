@@ -42,7 +42,7 @@ registerInstrumentations({
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `captureMessageContent` | `boolean` | `false` | Capture prompt and completion content. Can also be set via `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` environment variable. |
+| `captureMessageContent` | `boolean` | `false` | Capture prompt and completion content. |
 
 ## Semantic Conventions
 
