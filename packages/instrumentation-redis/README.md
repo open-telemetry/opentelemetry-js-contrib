@@ -47,7 +47,7 @@ See [examples/redis](https://github.com/open-telemetry/opentelemetry-js-contrib/
 Redis instrumentation has a few options available to choose from. You can set the following:
 
 | Options                 | Type                                              | Description                                                                                                    |
-| ----------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+|-------------------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
 | `dbStatementSerializer` | `DbStatementSerializer` (function)                | Redis instrumentation will serialize the command to the `db.statement` attribute using the specified function. |
 | `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response. Receives params: `span, moduleVersion, cmdName, cmdArgs` |
 | `requireParentSpan`     | `boolean`                                         | Require parent to create redis span, default when unset is false.                                              |
@@ -86,7 +86,7 @@ Attributes collected:
 ### Old Semantic Conventions (default)
 
 | Attribute              | Short Description                                            |
-| ---------------------- | ------------------------------------------------------------ |
+|------------------------|--------------------------------------------------------------|
 | `db.connection_string` | URL to Redis server address, of the form `redis://host:port` |
 | `db.statement`         | Executed Redis statement                                     |
 | `db.system`            | Database identifier; always `redis`                          |
@@ -95,14 +95,14 @@ Attributes collected:
 
 ### Stable Semantic Conventions (v1.33.0)
 
-| Attribute              | Short Description                                            |
-| ---------------------- | ------------------------------------------------------------ |
-| `db.operation.name` | Redis command name |
+| Attribute                 | Short Description                                      |
+|---------------------------|--------------------------------------------------------|
+| `db.operation.name`       | Redis command name                                     |
 | `db.operation.batch.size` | Number of commands in a Redis `MULTI/EXEC` transaction |
-| `db.query.text`         | The database query being executed                                     |
-| `db.system.name`            | Database identifier; always `redis`                          |
-| `server.address`        | Hostname or IP of the connected Redis server                 |
-| `server.port`        | Port of the connected Redis server                           |
+| `db.query.text`           | The database query being executed                      |
+| `db.system.name`          | Database identifier; always `redis`                    |
+| `server.address`          | Hostname or IP of the connected Redis server           |
+| `server.port`             | Port of the connected Redis server                     |
 
 ## Useful links
 

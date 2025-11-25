@@ -117,14 +117,14 @@ See [examples/tracer-web](https://github.com/open-telemetry/opentelemetry-js/tre
 
 The document load instrumentation plugin has few options available to choose from. You can set the following:
 
-| Options | Type | Description |
-| ------- | ---- | ----------- |
-| `applyCustomAttributesOnSpan.documentLoad`| `DocumentLoadCustomAttributeFunction` | Function for adding custom attributes to `documentLoad` spans.                                                  |
-| `applyCustomAttributesOnSpan.documentFetch`                      | `DocumentLoadCustomAttributeFunction`                     | Function for adding custom attributes to `documentFetch` spans.  |
-| `applyCustomAttributesOnSpan.resourceFetch`                      | `ResourceFetchCustomAttributeFunction`                     | Function for adding custom attributes to `resourceFetch` spans  |
-| `ignoreNetworkEvents`                      | `boolean`                     | Ignore adding [network events as span events](https://github.com/open-telemetry/opentelemetry-js/blob/e49c4c7f42c6c444da3f802687cfa4f2d6983f46/packages/opentelemetry-sdk-trace-web/src/enums/PerformanceTimingNames.ts#L17) for document fetch and resource fetch spans.  |
-| `ignorePerformancePaintEvents`                      | `boolean`                     | Ignore adding performance resource paint span events to document load spans.  |
-| `semconvStabilityOptIn` | string | A comma-separated string of tokens as described for `OTEL_SEMCONV_STABILITY_OPT_IN` in the [HTTP semantic convention stability migration](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/http-migration.md) guide. See the "Semantic Conventions" section below. |
+| Options                                     | Type                                   | Description                                                                                                                                                                                                                                                                                           |
+|---------------------------------------------|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `applyCustomAttributesOnSpan.documentLoad`  | `DocumentLoadCustomAttributeFunction`  | Function for adding custom attributes to `documentLoad` spans.                                                                                                                                                                                                                                        |
+| `applyCustomAttributesOnSpan.documentFetch` | `DocumentLoadCustomAttributeFunction`  | Function for adding custom attributes to `documentFetch` spans.                                                                                                                                                                                                                                       |
+| `applyCustomAttributesOnSpan.resourceFetch` | `ResourceFetchCustomAttributeFunction` | Function for adding custom attributes to `resourceFetch` spans                                                                                                                                                                                                                                        |
+| `ignoreNetworkEvents`                       | `boolean`                              | Ignore adding [network events as span events](https://github.com/open-telemetry/opentelemetry-js/blob/e49c4c7f42c6c444da3f802687cfa4f2d6983f46/packages/opentelemetry-sdk-trace-web/src/enums/PerformanceTimingNames.ts#L17) for document fetch and resource fetch spans.                             |
+| `ignorePerformancePaintEvents`              | `boolean`                              | Ignore adding performance resource paint span events to document load spans.                                                                                                                                                                                                                          |
+| `semconvStabilityOptIn`                     | string                                 | A comma-separated string of tokens as described for `OTEL_SEMCONV_STABILITY_OPT_IN` in the [HTTP semantic convention stability migration](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/http-migration.md) guide. See the "Semantic Conventions" section below. |
 
 ## Semantic Conventions
 
@@ -139,9 +139,9 @@ To select which semconv version(s) is emitted from this instrumentation, use the
 - `http/dup`: emit **both** the old and the new (stable) v1.23.0 semantics
 - By default, if `semconvStabilityOptIn` includes neither of the above tokens, the old semconv is used.
 
-| v1.7.0 semconv    | v1.23.0 semconv       | Notes |
-| ----------------- | --------------------- | ----- |
-| `http.url`        | `url.full`            | Full HTTP request URL |
+| v1.7.0 semconv    | v1.23.0 semconv       | Notes                                                                                                                   |
+|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------|
+| `http.url`        | `url.full`            | Full HTTP request URL                                                                                                   |
 | `http.user_agent` | `user_agent.original` | Value of the [HTTP User-Agent](https://www.rfc-editor.org/rfc/rfc9110.html#field.user-agent) header sent by the client. |
 
 

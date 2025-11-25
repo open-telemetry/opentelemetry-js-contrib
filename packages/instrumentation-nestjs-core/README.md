@@ -42,11 +42,11 @@ registerInstrumentations({
 
 ## Emitted Spans
 
-| Name | `nestjs.type` | Description | Included attributes |
-| ---- | ---- | ---- | ---- |
-| `Create Nest App` | `app_creation` | Traces the bootup for the Nest App. The `NestFactory(Static).create` call. | `nestjs.module` |
-| `<ControllerName>.<memberName>` | `request_context` | Traces the whole request context. | `http.*`, `nestjs.callback` |
-| `<memberName>` | `handler` | Traces the work of a specific controller member function. | `nestjs.callback` |
+| Name                            | `nestjs.type`     | Description                                                                | Included attributes         |
+|---------------------------------|-------------------|----------------------------------------------------------------------------|-----------------------------|
+| `Create Nest App`               | `app_creation`    | Traces the bootup for the Nest App. The `NestFactory(Static).create` call. | `nestjs.module`             |
+| `<ControllerName>.<memberName>` | `request_context` | Traces the whole request context.                                          | `http.*`, `nestjs.callback` |
+| `<memberName>`                  | `handler`         | Traces the work of a specific controller member function.                  | `nestjs.callback`           |
 
 ## Semantic Conventions
 
@@ -54,17 +54,17 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 
 Attributes collected:
 
-| Attribute           | Short Description                                  |
-| ------------------- | -------------------------------------------------- |
-| `component`*        | "@nestjs/core"                                     |
-| `nestjs.version`*   | Version of instrumented `@nestjs/core` package     |
-| `nestjs.type`*      | See [NestType](./src/enums/NestType.ts)            |
-| `nestjs.module`     | Nest module class name                             |
-| `nestjs.controller` | Nest controller class name                         |
-| `nestjs.callback`   | The function name of the member in the controller  |
-| `http.route`        | Route assigned to handler. Ex: `/users/:id`        |
-| `http.method` / `http.request.method` | HTTP method. See "HTTP Semantic Convention migration" note below. |
-| `http.url` / `url.full` | Full request URL. See "HTTP Semantic Convention migration" note below. |
+| Attribute                             | Short Description                                                      |
+|---------------------------------------|------------------------------------------------------------------------|
+| `component`*                          | "@nestjs/core"                                                         |
+| `nestjs.version`*                     | Version of instrumented `@nestjs/core` package                         |
+| `nestjs.type`*                        | See [NestType](./src/enums/NestType.ts)                                |
+| `nestjs.module`                       | Nest module class name                                                 |
+| `nestjs.controller`                   | Nest controller class name                                             |
+| `nestjs.callback`                     | The function name of the member in the controller                      |
+| `http.route`                          | Route assigned to handler. Ex: `/users/:id`                            |
+| `http.method` / `http.request.method` | HTTP method. See "HTTP Semantic Convention migration" note below.      |
+| `http.url` / `url.full`               | Full request URL. See "HTTP Semantic Convention migration" note below. |
 
 \* included in all of the spans.
 
@@ -87,7 +87,7 @@ To select which semconv version(s) is emitted from this instrumentation, use the
 For this instrumentation, the only impacted attributes are as follows:
 
 | v1.7.0 semconv | v1.23.0 semconv       |
-| -------------- | --------------------- |
+|----------------|-----------------------|
 | `http.method`  | `http.request.method` |
 | `http.url`     | `url.full`            |
 
