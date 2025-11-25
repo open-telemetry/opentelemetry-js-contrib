@@ -55,12 +55,12 @@ Because of the way express works, it's hard to correctly compute the time taken 
 
 Express instrumentation has few options available to choose from. You can set the following:
 
-| Options | Type | Example | Description |
-| ------- | ---- | ------- | ----------- |
-| `ignoreLayers` | `IgnoreMatcher[]` | `[/^\/_internal\//]` | Ignore layers that by match. |
-| `ignoreLayersType`| `ExpressLayerType[]` | `['request_handler']` | Ignore layers of specified type. |
-| `spanNameHook` | `SpanNameHook` | `() => 'my-span-name'` | Can be used to customize span names by returning a new name from the hook. |
-| `requestHook` | `ExpressRequestCustomAttributeFunction (function)` | `(span, info) => {}` | Function for adding custom attributes on Express request. Receives params: `Span, ExpressRequestInfo`. |
+| Options            | Type                                               | Example                | Description                                                                                            |
+|--------------------|----------------------------------------------------|------------------------|--------------------------------------------------------------------------------------------------------|
+| `ignoreLayers`     | `IgnoreMatcher[]`                                  | `[/^\/_internal\//]`   | Ignore layers that by match.                                                                           |
+| `ignoreLayersType` | `ExpressLayerType[]`                               | `['request_handler']`  | Ignore layers of specified type.                                                                       |
+| `spanNameHook`     | `SpanNameHook`                                     | `() => 'my-span-name'` | Can be used to customize span names by returning a new name from the hook.                             |
+| `requestHook`      | `ExpressRequestCustomAttributeFunction (function)` | `(span, info) => {}`   | Function for adding custom attributes on Express request. Receives params: `Span, ExpressRequestInfo`. |
 
 `ignoreLayers` accepts an array of elements of types:
 
