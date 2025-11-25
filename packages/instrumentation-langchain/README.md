@@ -46,7 +46,7 @@ registerInstrumentations({
 
 ## Semantic Conventions
 
-This package uses OpenTelemetry Semantic Conventions for GenAI operations.
+This package implements Semantic Convention [Version 1.38.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.38.0/docs/README.md).
 
 ## Useful links
 
