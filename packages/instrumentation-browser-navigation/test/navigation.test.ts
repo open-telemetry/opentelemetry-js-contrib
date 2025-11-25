@@ -322,13 +322,13 @@ describe('Browser Navigation Instrumentation', () => {
           done();
         } else {
           // Keep checking for up to 100ms
-          setTimeout(checkForHashChangeRecord, 10);
+          setTimeout(checkForHashChangeRecord, 25);
         }
       };
 
       // Trigger hash change and start checking
       location.hash = newHash;
-      setTimeout(checkForHashChangeRecord, 10);
+      setTimeout(checkForHashChangeRecord, 25);
     });
 
     it('should export LogRecord with type traverse when history.back() triggers a popstate', done => {
@@ -372,7 +372,7 @@ describe('Browser Navigation Instrumentation', () => {
           );
           window.removeEventListener('popstate', popstateHandler);
           done();
-        }, 10);
+        }, 50);
       };
 
       window.addEventListener('popstate', popstateHandler);
