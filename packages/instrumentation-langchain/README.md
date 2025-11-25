@@ -40,8 +40,8 @@ registerInstrumentations({
 
 ## Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| Option                  | Type      | Default | Description                            |
+|-------------------------|-----------|---------|----------------------------------------|
 | `captureMessageContent` | `boolean` | `false` | Capture prompt and completion content. |
 
 ## Semantic Conventions
