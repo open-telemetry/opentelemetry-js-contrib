@@ -60,7 +60,7 @@ registerInstrumentations({
 The instrumentation accepts the following configuration options:
 
 | Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| ------ | ---- | ------- | ----------- |
 | `enabled` | `boolean` | `true` | Enable/disable the instrumentation |
 | `useNavigationApiIfAvailable` | `boolean` | `true` | Use the Navigation API when available for better accuracy |
 | `applyCustomLogRecordData` | `function` | `undefined` | Callback to add custom attributes to log records |
