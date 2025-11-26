@@ -583,10 +583,15 @@ describe('pg', () => {
       });
 
       it('should record query and values for prepared statements', done => {
-        const queryConfig = {
-          name: 'get_pg_tables',
-          text: 'SELECT * FROM pg_tables WHERE schemaname = $1',
-        };
+        class Statement {
+          get name() {
+            return 'get_pg_tables';
+          }
+          get text() {
+            return 'SELECT * FROM pg_tables WHERE schemaname = $1';
+          }
+        }
+        const queryConfig = new Statement();
         const values = ['public'];
 
         const expectedAttributes = {
