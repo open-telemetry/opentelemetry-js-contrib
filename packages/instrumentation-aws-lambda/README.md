@@ -25,22 +25,29 @@ npm install --save @opentelemetry/instrumentation-aws-lambda
 
 ## Important Notes
 
-### Callback-Based Handlers Deprecated
+### Handler Types Supported
 
-As of AWS Lambda Node.js 24 runtime, callback-based handlers are deprecated. This instrumentation now only supports Promise-based handlers (async/await or functions returning Promises). If you're using callback-based handlers, you must migrate to Promise-based handlers before upgrading to Node.js 24 runtime.
+This instrumentation automatically detects the Node.js runtime version and supports handlers accordingly:
 
-Example migration:
+- **Node.js 24+**: Only Promise-based handlers are supported (callbacks are deprecated by AWS Lambda)
+- **Node.js 22 and lower**: Both callback-based and Promise-based handlers are supported for backward compatibility
+
+The instrumentation detects the runtime version from the `AWS_EXECUTION_ENV` environment variable and adapts the handler signature accordingly. For Node.js 24+, the handler signature is `(event, context)`, while for Node.js 22 and lower, it supports both `(event, context, callback)` and `(event, context)`.
+
+Example handlers:
 ```js
-// ❌ Deprecated callback-based handler
+// Callback-based handler (Node.js 22 and lower only)
 exports.handler = function(event, context, callback) {
   callback(null, 'ok');
 };
 
-// ✅ Promise-based handler
+// Promise-based handler (all Node.js versions)
 exports.handler = async function(event, context) {
   return 'ok';
 };
 ```
+
+**Note**: AWS Lambda has deprecated callback-based handlers in Node.js 24 runtime. It's recommended to migrate to Promise-based handlers when upgrading to Node.js 24+.
 
 ## Usage
 

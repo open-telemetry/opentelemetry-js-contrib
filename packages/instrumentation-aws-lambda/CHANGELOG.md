@@ -3,9 +3,12 @@
 
 ## [Unreleased]
 
-### Breaking Changes
+### Features
 
-* **instrumentation-aws-lambda:** Removed support for callback-based Lambda handlers. Only Promise-based handlers (async/await or functions returning Promises) are now supported. This aligns with AWS Lambda's deprecation of callbacks in Node.js 24 runtime. Users must migrate their handlers to Promise-based format before upgrading.
+* **instrumentation-aws-lambda:** Added runtime-aware handler support. The instrumentation automatically detects the Node.js runtime version from `AWS_EXECUTION_ENV` and adapts handler signatures accordingly:
+  - **Node.js 24+**: Only Promise-based handlers are supported (callbacks deprecated by AWS Lambda)
+  - **Node.js 22 and lower**: Both callback-based and Promise-based handlers are supported for backward compatibility
+  This ensures seamless operation across different Node.js runtime versions while respecting AWS Lambda's deprecation of callbacks in Node.js 24+.
 
 ## [0.60.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.60.0...instrumentation-aws-lambda-v0.60.1) (2025-11-24)
 

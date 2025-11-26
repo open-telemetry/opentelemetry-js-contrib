@@ -392,6 +392,91 @@ describe('lambda handler', () => {
     assert.strictEqual(span.parentSpanContext?.spanId, undefined);
   });
 
+  describe('callback-based handler (Node.js 22 and lower)', () => {
+    beforeEach(() => {
+      // Simulate Node.js 22 runtime for backward compatibility testing
+      process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
+    });
+
+    afterEach(() => {
+      delete process.env.AWS_EXECUTION_ENV;
+    });
+
+    it('should export a valid span with callback handler', async () => {
+      initializeHandler('lambda-test/sync.callbackHandler');
+
+      const result = await new Promise((resolve, reject) => {
+        lambdaRequire('lambda-test/sync').callbackHandler(
+          'arg',
+          ctx,
+          (err: Error, res: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res);
+            }
+          }
+        );
+      });
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
+    });
+
+    it('should record error with callback handler', async () => {
+      initializeHandler('lambda-test/sync.callbackError');
+
+      let err: Error;
+      try {
+        await new Promise((resolve, reject) => {
+          lambdaRequire('lambda-test/sync').callbackError(
+            'arg',
+            ctx,
+            (error: Error, _res: any) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve({});
+              }
+            }
+          );
+        });
+      } catch (e: any) {
+        err = e;
+      }
+      assert.strictEqual(err!.message, 'handler error');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanFailure(span);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
+    });
+
+    it('context should have parent trace with callback handler', async () => {
+      initializeHandler('lambda-test/sync.callbackContext');
+
+      const result = await new Promise((resolve, reject) => {
+        lambdaRequire('lambda-test/sync').callbackContext(
+          'arg',
+          ctx,
+          (err: Error, res: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res);
+            }
+          }
+        );
+      });
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(span.spanContext().traceId, result);
+    });
+  });
+
   describe('with remote parent', () => {
     beforeEach(() => {
       propagation.disable();

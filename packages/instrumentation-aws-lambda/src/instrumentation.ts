@@ -45,6 +45,7 @@ import { ATTR_FAAS_EXECUTION, ATTR_FAAS_ID } from './semconv-obsolete';
 
 import {
   APIGatewayProxyEventHeaders,
+  Callback,
   Context,
   Handler,
   StreamifyHandler,
@@ -69,6 +70,25 @@ export const AWS_HANDLER_STREAMING_SYMBOL = Symbol.for(
   'aws.lambda.runtime.handler.streaming'
 );
 export const AWS_HANDLER_STREAMING_RESPONSE = 'response';
+
+/**
+ * Detects the Node.js runtime version from AWS_EXECUTION_ENV environment variable.
+ * Returns the major version number (e.g., 24, 22, 20) or null if not detected.
+ */
+function getNodeRuntimeVersion(): number | null {
+  const executionEnv = process.env.AWS_EXECUTION_ENV;
+  if (!executionEnv) {
+    return null;
+  }
+
+  // AWS_EXECUTION_ENV format: AWS_Lambda_nodejs24.x, AWS_Lambda_nodejs22.x, etc.
+  const match = executionEnv.match(/AWS_Lambda_nodejs(\d+)\./);
+  if (match && match[1]) {
+    return parseInt(match[1], 10);
+  }
+
+  return null;
+}
 
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
   private declare _traceForceFlusher?: () => Promise<void>;
@@ -271,43 +291,105 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       };
     }
 
-    return function patchedHandler(
-      this: never,
-      // The event can be a user type, it truly is any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      event: any,
-      context: Context
-    ) {
-      _onRequest();
+    // Determine runtime version to decide whether to support callbacks
+    const nodeVersion = getNodeRuntimeVersion();
+    const supportsCallbacks = nodeVersion === null || nodeVersion < 24;
 
-      const parent = plugin._determineParent(event, context);
+    if (supportsCallbacks) {
+      // Node.js 22 and lower: Support callback-based handlers for backward compatibility
+      return function patchedHandlerWithCallback(
+        this: never,
+        // The event can be a user type, it truly is any.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        event: any,
+        context: Context,
+        callback?: Callback
+      ) {
+        _onRequest();
 
-      const span = plugin._createSpanForRequest(
-        event,
-        context,
-        requestIsColdStart,
-        parent
-      );
+        const parent = plugin._determineParent(event, context);
 
-      plugin._applyRequestHook(span, event, context);
+        const span = plugin._createSpanForRequest(
+          event,
+          context,
+          requestIsColdStart,
+          parent
+        );
 
-      return otelContext.with(trace.setSpan(parent, span), () => {
-        // Type assertion: Handler type from aws-lambda still includes callback parameter,
-        // but we only support Promise-based handlers now (Node.js 24+)
-        const maybePromise = safeExecuteInTheMiddle(
-          () => (original as (event: any, context: Context) => Promise<any> | any).apply(this, [event, context]),
-          error => {
-            if (error != null) {
-              // Exception thrown synchronously before resolving promise.
-              plugin._applyResponseHook(span, error);
-              plugin._endSpan(span, error, () => {});
-            }
+        plugin._applyRequestHook(span, event, context);
+
+        return otelContext.with(trace.setSpan(parent, span), () => {
+          // Support both callback-based and Promise-based handlers for backward compatibility
+          if (callback) {
+            const wrappedCallback = plugin._wrapCallback(callback, span);
+            const maybePromise = safeExecuteInTheMiddle(
+              () => original.apply(this, [event, context, wrappedCallback]),
+              error => {
+                if (error != null) {
+                  // Exception thrown synchronously before resolving callback / promise.
+                  plugin._applyResponseHook(span, error);
+                  plugin._endSpan(span, error, () => {});
+                }
+              }
+            ) as Promise<{}> | undefined;
+
+            return plugin._handlePromiseResult(span, maybePromise);
+          } else {
+            // Promise-based handler
+            const maybePromise = safeExecuteInTheMiddle(
+              () => (original as (event: any, context: Context) => Promise<any> | any).apply(this, [event, context]),
+              error => {
+                if (error != null) {
+                  // Exception thrown synchronously before resolving promise.
+                  plugin._applyResponseHook(span, error);
+                  plugin._endSpan(span, error, () => {});
+                }
+              }
+            ) as Promise<{}> | undefined;
+
+            return plugin._handlePromiseResult(span, maybePromise);
           }
-        ) as Promise<{}> | undefined;
+        });
+      };
+    } else {
+      // Node.js 24+: Only Promise-based handlers (callbacks deprecated)
+      return function patchedHandler(
+        this: never,
+        // The event can be a user type, it truly is any.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        event: any,
+        context: Context
+      ) {
+        _onRequest();
 
-        return plugin._handlePromiseResult(span, maybePromise);
-      });
-    };
+        const parent = plugin._determineParent(event, context);
+
+        const span = plugin._createSpanForRequest(
+          event,
+          context,
+          requestIsColdStart,
+          parent
+        );
+
+        plugin._applyRequestHook(span, event, context);
+
+        return otelContext.with(trace.setSpan(parent, span), () => {
+          // Promise-based handler only (Node.js 24+)
+          const maybePromise = safeExecuteInTheMiddle(
+            () => (original as (event: any, context: Context) => Promise<any> | any).apply(this, [event, context]),
+            error => {
+              if (error != null) {
+                // Exception thrown synchronously before resolving promise.
+                plugin._applyResponseHook(span, error);
+                plugin._endSpan(span, error, () => {});
+              }
+            }
+          ) as Promise<{}> | undefined;
+
+          return plugin._handlePromiseResult(span, maybePromise);
+        });
+      };
+    }
   }
 
   private _createSpanForRequest(
@@ -433,6 +515,19 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     }
 
     return undefined;
+  }
+
+  private _wrapCallback(original: Callback, span: Span): Callback {
+    const plugin = this;
+    return function wrappedCallback(this: never, err, res) {
+      diag.debug('AWS Lambda instrumentation: Executing wrapped callback function');
+      plugin._applyResponseHook(span, err, res);
+
+      plugin._endSpan(span, err, () => {
+        diag.debug('AWS Lambda instrumentation: Executing original callback function');
+        return original.apply(this, [err, res]);
+      });
+    };
   }
 
   private _endSpan(
