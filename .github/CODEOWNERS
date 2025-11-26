@@ -12,4 +12,16 @@
 #  https://help.github.com/en/articles/about-code-owners
 #
 
-*               @open-telemetry/javascript-approvers
+# Only maintainers can approve changes in .github/ - including this file here, workflows and issue templates
+.github/ @open-telemetry/javascript-maintainers
+
+# Any browser-specific code is co-owned by Browser SIG and JS SIG (list more packages here as needed):
+packages/instrumentation-document-load/ @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
+packages/instrumentation-long-task/ @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
+packages/instrumentation-user-interaction/ @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
+packages/instrumentation-web-exception/ @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
+packages/plugin-react-load/ @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
+packages/auto-instrumentations-web @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
+
+# All other files
+* @open-telemetry/javascript-approvers

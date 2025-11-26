@@ -37,7 +37,7 @@ run()
 ### GitHub Detector
 
 | Resource Attribute | Description                                               |
-|--------------------|-----------------------------------------------------------|
+| ------------------ | --------------------------------------------------------- |
 | github.actor       | Value of Process Environment Variable `GITHUB_ACTOR`      |
 | github.base_ref    | Value of Process Environment Variable `GITHUB_BASE_REF`   |
 | github.head_ref    | Value of Process Environment Variable `GITHUB_HEAD_REF`   |

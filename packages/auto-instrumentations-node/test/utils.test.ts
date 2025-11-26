@@ -172,6 +172,92 @@ describe('utils', () => {
 
       spy.restore();
     });
+
+    it('should enable fs instrumentation when explicitly enabled and OTEL_NODE_ENABLED_INSTRUMENTATIONS is not set', () => {
+      const instrumentations = getNodeAutoInstrumentations({
+        '@opentelemetry/instrumentation-fs': {
+          enabled: true,
+        },
+      });
+      const fsInstrumentation = instrumentations.find(
+        instr =>
+          instr.instrumentationName === '@opentelemetry/instrumentation-fs'
+      );
+      assert.notStrictEqual(
+        fsInstrumentation,
+        undefined,
+        'fs instrumentation should be included when explicitly enabled in config and env var is not set'
+      );
+    });
+
+    it('should respect programmatic config over OTEL_NODE_ENABLED_INSTRUMENTATIONS - user config overrides env var', () => {
+      process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS = 'fs,http';
+      try {
+        const instrumentations = getNodeAutoInstrumentations({
+          '@opentelemetry/instrumentation-fs': {
+            enabled: false, // User explicitly disables - should override env var
+          },
+          '@opentelemetry/instrumentation-express': {
+            enabled: true, // User explicitly enables - should override env var
+          },
+        });
+
+        const fsInstrumentation = instrumentations.find(
+          instr =>
+            instr.instrumentationName === '@opentelemetry/instrumentation-fs'
+        );
+        const httpInstrumentation = instrumentations.find(
+          instr =>
+            instr.instrumentationName === '@opentelemetry/instrumentation-http'
+        );
+        const expressInstrumentation = instrumentations.find(
+          instr =>
+            instr.instrumentationName ===
+            '@opentelemetry/instrumentation-express'
+        );
+
+        assert.strictEqual(
+          fsInstrumentation,
+          undefined,
+          'fs should be disabled by user config despite env var'
+        );
+        assert.notStrictEqual(
+          httpInstrumentation,
+          undefined,
+          'http should be enabled by env var (no user override)'
+        );
+        assert.notStrictEqual(
+          expressInstrumentation,
+          undefined,
+          'express should be enabled by user config despite not being in env var list'
+        );
+      } finally {
+        delete process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
+      }
+    });
+
+    it('should respect programmatic config over OTEL_NODE_DISABLED_INSTRUMENTATIONS - user config overrides env var', () => {
+      process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS = 'http';
+      try {
+        const instrumentations = getNodeAutoInstrumentations({
+          '@opentelemetry/instrumentation-http': {
+            enabled: true, // User explicitly enables - should override env var
+          },
+        });
+        const httpInstrumentation = instrumentations.find(
+          instr =>
+            instr.instrumentationName === '@opentelemetry/instrumentation-http'
+        );
+
+        assert.notStrictEqual(
+          httpInstrumentation,
+          undefined,
+          'http instrumentation should be enabled by user config despite OTEL_NODE_DISABLED_INSTRUMENTATIONS'
+        );
+      } finally {
+        delete process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS;
+      }
+    });
   });
 
   describe('getResourceDetectorsFromEnv', () => {

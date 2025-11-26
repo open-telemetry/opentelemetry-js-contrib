@@ -17,7 +17,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Run add-labels-to-reviewed-pr.sh
         run: |

@@ -60,8 +60,8 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 
 `RuntimeNodeInstrumentation`'s constructor accepts the following options:
 
-| name | type | unit | default | description |
-|---|---|---|---------|---|
+| name                                        | type  | unit        | default | description                                                                                                                                                                                                                                                                                     |
+|---------------------------------------------|-------|-------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [`monitoringPrecision`](./src/types.ts#L25) | `int` | millisecond | `10`    | The approximate number of milliseconds for which to calculate event loop utilization averages. A larger value will result in more accurate averages at the expense of less granular data. Should be set to below the scrape interval of your metrics collector to avoid duplicated data points. |
 
 ## Useful links

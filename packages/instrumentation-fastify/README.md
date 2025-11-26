@@ -5,7 +5,7 @@
 
 > [!IMPORTANT]
 > This component is **deprecated** in favor of the official instrumentation package [`@fastify/otel`](https://www.npmjs.com/package/@fastify/otel), maintained by the Fastify authors.
-> Please see [here](https://github.com/fastify/otel?tab=readme-ov-file#usage) for instructions on how to use `@fastify/otel`.
+> Please check [the offical Fastify plugin's README.md](https://github.com/fastify/otel?tab=readme-ov-file#usage) for instructions on how to use `@fastify/otel`.
 >
 > We will stop publishing new versions of `@opentelemetry/instrumentation-fastify` on June 30, 2025.
 
@@ -53,9 +53,9 @@ See [examples/fastify](https://github.com/open-telemetry/opentelemetry-js-contri
 
 ## Fastify Instrumentation Options
 
-| Options        | Type                         | Example                          | Description                                                                    |
-| -------------- | ---------------------------- | -------------------------------- | ------------------------------------------------------------------------------ |
-| `requestHook`  | `FastifyCustomAttributeFunction` | `(span, requestInfo) => {}`       | Function for adding custom attributes to Fastify requests. Receives parameters: `Span, FastifyRequestInfo`. |
+| Options       | Type                             | Example                     | Description                                                                                                 |
+|---------------|----------------------------------|-----------------------------|-------------------------------------------------------------------------------------------------------------|
+| `requestHook` | `FastifyCustomAttributeFunction` | `(span, requestInfo) => {}` | Function for adding custom attributes to Fastify requests. Receives parameters: `Span, FastifyRequestInfo`. |
 
 ### Using `requestHook`
 
@@ -81,7 +81,7 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 Attributes collected:
 
 | Attribute    | Short Description                  |
-| ------------ | ---------------------------------- |
+|--------------|------------------------------------|
 | `http.route` | The matched route (path template). |
 
 ## Useful links

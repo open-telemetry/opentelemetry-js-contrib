@@ -16,7 +16,7 @@ jobs:
       image: node:20
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install script dependencies
         run: npm ci --ignore-scripts

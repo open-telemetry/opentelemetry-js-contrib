@@ -93,11 +93,11 @@ Log injection can be disabled with the `disableLogCorrelation: true` option.
 
 ### Pino instrumentation options
 
-| Option                  | Type              | Description |
-| ----------------------- | ----------------- | ----------- |
-| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
-| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
-| `logKeys`               | record            | A record with keys `traceId`, `spanId`, and `traceFlags` string fields giving the field names to use for log-correlation span data. |
+| Option                  | Type              | Description                                                                                                                                        |
+|-------------------------|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`.                                                                                   |
+| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`.                                                                           |
+| `logKeys`               | record            | A record with keys `traceId`, `spanId`, and `traceFlags` string fields giving the field names to use for log-correlation span data.                |
 | `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |
 
 ## Semantic Conventions
