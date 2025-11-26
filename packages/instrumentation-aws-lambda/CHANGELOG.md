@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.60.1...instrumentation-aws-lambda-v0.61.0) (2025-11-26)
+
+
+### Features
+
+* **instrumentation-aws-lambda:** add runtime-aware handler support for Node.js 24 compatibility ([#3255](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3255)) ([bddcd78](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bddcd78648a91ceabe1ecba4fb06367db541c966)), closes [#3251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3251)
+
 ## [Unreleased]
 
 ### Features
