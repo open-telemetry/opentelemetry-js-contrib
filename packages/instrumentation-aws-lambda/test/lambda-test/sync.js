@@ -32,10 +32,6 @@ exports.stringerror = async function (event, context) {
   throw 'handler error';
 };
 
-exports.callbackstringerror = async function (event, context) {
-  throw 'handler error';
-};
-
 exports.context = async function (event, context) {
   return api.trace.getSpan(api.context.active()).spanContext().traceId;
 };

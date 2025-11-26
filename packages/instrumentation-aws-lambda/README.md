@@ -47,7 +47,7 @@ export const handler = async (event, context) => {
 };
 ```
 
-**Note**: AWS Lambda has deprecated callback-based handlers in Node.js 24 runtime. It's recommended to migrate to Promise-based handlers when upgrading to Node.js 24+.
+**Note**: AWS Lambda has removed callback-based handlers in Node.js 24 runtime. It's required to migrate to Promise-based handlers when upgrading to Node.js 24+.
 
 ## Usage
 

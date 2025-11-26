@@ -376,11 +376,11 @@ describe('lambda handler', () => {
   });
 
   it('should record string error in promise rejection', async () => {
-    initializeHandler('lambda-test/sync.callbackstringerror');
+    initializeHandler('lambda-test/sync.stringerror');
 
     let err: string;
     try {
-      await lambdaRequire('lambda-test/sync').callbackstringerror('arg', ctx);
+      await lambdaRequire('lambda-test/sync').stringerror('arg', ctx);
     } catch (e: any) {
       err = e;
     }

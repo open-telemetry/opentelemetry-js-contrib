@@ -520,11 +520,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
   private _wrapCallback(original: Callback, span: Span): Callback {
     const plugin = this;
     return function wrappedCallback(this: never, err, res) {
-      diag.debug('AWS Lambda instrumentation: Executing wrapped callback function');
+      plugin._diag.debug('executing wrapped callback function');
       plugin._applyResponseHook(span, err, res);
 
       plugin._endSpan(span, err, () => {
-        diag.debug('AWS Lambda instrumentation: Executing original callback function');
+        plugin._diag.debug('executing original callback function');
         return original.apply(this, [err, res]);
       });
     };

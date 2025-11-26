@@ -8,7 +8,7 @@
 * **instrumentation-aws-lambda:** Added runtime-aware handler support. The instrumentation automatically detects the Node.js runtime version from `AWS_EXECUTION_ENV` and adapts handler signatures accordingly:
   - **Node.js 24+**: Only Promise-based handlers are supported (callbacks deprecated by AWS Lambda)
   - **Node.js 22 and lower**: Both callback-based and Promise-based handlers are supported for backward compatibility
-  This ensures seamless operation across different Node.js runtime versions while respecting AWS Lambda's deprecation of callbacks in Node.js 24+.
+  This ensures seamless operation across different Node.js runtime versions while respecting AWS Lambda's removal of callbacks in Node.js 24+.
 
 ## [0.60.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.60.0...instrumentation-aws-lambda-v0.60.1) (2025-11-24)
 
