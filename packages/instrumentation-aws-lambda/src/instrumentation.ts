@@ -72,22 +72,23 @@ export const AWS_HANDLER_STREAMING_SYMBOL = Symbol.for(
 export const AWS_HANDLER_STREAMING_RESPONSE = 'response';
 
 /**
- * Detects the Node.js runtime version from AWS_EXECUTION_ENV environment variable.
- * Returns the major version number (e.g., 24, 22, 20) or null if not detected.
+ * Determines if callback-based handlers are supported based on the Node.js runtime version.
+ * Returns true if callbacks are supported (Node.js < 24).
+ * Returns false if AWS_EXECUTION_ENV is not set or doesn't match the expected format.
  */
-function getNodeRuntimeVersion(): number | null {
+function isSupportingCallbacks(): boolean {
   const executionEnv = process.env.AWS_EXECUTION_ENV;
   if (!executionEnv) {
-    return null;
+    return false;
   }
 
   // AWS_EXECUTION_ENV format: AWS_Lambda_nodejs24.x, AWS_Lambda_nodejs22.x, etc.
   const match = executionEnv.match(/AWS_Lambda_nodejs(\d+)\./);
   if (match && match[1]) {
-    return parseInt(match[1], 10);
+    return parseInt(match[1], 10) < 24;
   }
 
-  return null;
+  return false;
 }
 
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
@@ -291,9 +292,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       };
     }
 
-    // Determine runtime version to decide whether to support callbacks
-    const nodeVersion = getNodeRuntimeVersion();
-    const supportsCallbacks = nodeVersion === null || nodeVersion < 24;
+    // Determine whether to support callbacks based on runtime version
+    const supportsCallbacks = isSupportingCallbacks();
 
     if (supportsCallbacks) {
       // Node.js 22 and lower: Support callback-based handlers for backward compatibility

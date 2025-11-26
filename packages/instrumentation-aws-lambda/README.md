@@ -42,7 +42,7 @@ exports.handler = function(event, context, callback) {
 };
 
 // Promise-based handler (all Node.js versions)
-exports.handler = async function(event, context) {
+export const handler = async (event, context) => {
   return 'ok';
 };
 ```
