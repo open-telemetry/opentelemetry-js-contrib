@@ -25,10 +25,10 @@ import { ATTR_PROCESS_PID, ATTR_SERVICE_INSTANCE_ID } from '../semconv';
 import * as http from 'http';
 
 class InstanaAgentDetector implements ResourceDetector {
-  readonly INSTANA_AGENT_DEFAULT_HOST = 'localhost';
-  readonly INSTANA_AGENT_DEFAULT_PORT = 42699;
+  private readonly INSTANA_AGENT_DEFAULT_HOST = 'localhost';
+  private readonly INSTANA_AGENT_DEFAULT_PORT = 42699;
 
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     const dataPromise = context.with(suppressTracing(context.active()), () =>
       this._gatherData()
     );

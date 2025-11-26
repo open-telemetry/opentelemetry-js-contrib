@@ -45,16 +45,16 @@ class AwsEc2Detector implements ResourceDetector {
    * for documentation about the AWS instance identity document
    * and standard of IMDSv2.
    */
-  readonly AWS_IDMS_ENDPOINT = '169.254.169.254';
-  readonly AWS_INSTANCE_TOKEN_DOCUMENT_PATH = '/latest/api/token';
-  readonly AWS_INSTANCE_IDENTITY_DOCUMENT_PATH =
+  public readonly AWS_IDMS_ENDPOINT = '169.254.169.254';
+  public readonly AWS_INSTANCE_TOKEN_DOCUMENT_PATH = '/latest/api/token';
+  public readonly AWS_INSTANCE_IDENTITY_DOCUMENT_PATH =
     '/latest/dynamic/instance-identity/document';
-  readonly AWS_INSTANCE_HOST_DOCUMENT_PATH = '/latest/meta-data/hostname';
-  readonly AWS_METADATA_TTL_HEADER = 'X-aws-ec2-metadata-token-ttl-seconds';
-  readonly AWS_METADATA_TOKEN_HEADER = 'X-aws-ec2-metadata-token';
-  readonly MILLISECOND_TIME_OUT = 5000;
+  public readonly AWS_INSTANCE_HOST_DOCUMENT_PATH = '/latest/meta-data/hostname';
+  public readonly AWS_METADATA_TTL_HEADER = 'X-aws-ec2-metadata-token-ttl-seconds';
+  public readonly AWS_METADATA_TOKEN_HEADER = 'X-aws-ec2-metadata-token';
+  public readonly MILLISECOND_TIME_OUT = 5000;
 
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     const dataPromise = context.with(suppressTracing(context.active()), () =>
       this._gatherData()
     );
@@ -82,7 +82,7 @@ class AwsEc2Detector implements ResourceDetector {
   /**
    * Attempts to connect and obtain an AWS instance Identity document.
    */
-  async _gatherData(): Promise<DetectedResourceAttributes> {
+  private async _gatherData(): Promise<DetectedResourceAttributes> {
     try {
       const token = await this._fetchToken();
       const { accountId, instanceId, instanceType, region, availabilityZone } =

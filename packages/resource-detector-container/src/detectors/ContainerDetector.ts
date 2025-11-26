@@ -24,20 +24,16 @@ import { extractContainerIdFromLine } from './utils';
 import { ATTR_CONTAINER_ID } from '../semconv';
 
 export class ContainerDetector implements ResourceDetector {
-  readonly CONTAINER_ID_LENGTH = 64;
-  readonly DEFAULT_CGROUP_V1_PATH = '/proc/self/cgroup';
-  readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
-  readonly UTF8_UNICODE = 'utf8';
-  readonly HOSTNAME = 'hostname';
-  readonly MARKING_PREFIX = ['containers', 'overlay-containers'];
-  readonly CRIO = 'crio-';
-  readonly CRI_CONTAINERD = 'cri-containerd-';
-  readonly DOCKER = 'docker-';
-  readonly HEX_STRING_REGEX: RegExp = /^[a-f0-9]+$/i;
+  private readonly CONTAINER_ID_LENGTH = 64;
+  private readonly DEFAULT_CGROUP_V1_PATH = '/proc/self/cgroup';
+  private readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
+  private readonly UTF8_UNICODE = 'utf8';
+  private readonly HOSTNAME = 'hostname';
+  private readonly MARKING_PREFIX = ['containers', 'overlay-containers'];
 
   private static readFileAsync = util.promisify(fs.readFile);
 
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     const attributes = {
       [ATTR_CONTAINER_ID]: this._getContainerIdWithSuppressedTracing(),
     };

@@ -57,7 +57,7 @@ export class BaggageSpanProcessor implements SpanProcessor {
   /**
    * Forces to export all finished spans
    */
-  forceFlush(): Promise<void> {
+  public forceFlush(): Promise<void> {
     // no-op
     return Promise.resolve();
   }
@@ -67,7 +67,7 @@ export class BaggageSpanProcessor implements SpanProcessor {
    * returns true.
    * @param span the Span that just started.
    */
-  onStart(span: Span, parentContext: Context): void {
+  public onStart(span: Span, parentContext: Context): void {
     (propagation.getBaggage(parentContext)?.getAllEntries() ?? [])
       .filter(entry => this._keyPredicate(entry[0]))
       .forEach(entry => span.setAttribute(entry[0], entry[1].value));
@@ -78,7 +78,7 @@ export class BaggageSpanProcessor implements SpanProcessor {
    * returns true.
    * @param span the Span that just ended.
    */
-  onEnd(_: ReadableSpan): void {
+  public onEnd(_: ReadableSpan): void {
     // no-op
   }
 
@@ -86,7 +86,7 @@ export class BaggageSpanProcessor implements SpanProcessor {
    * Shuts down the processor. Called when SDK is shut down. This is an
    * opportunity for processor to do any cleanup required.
    */
-  shutdown(): Promise<void> {
+  public shutdown(): Promise<void> {
     // no-op
     return Promise.resolve();
   }
