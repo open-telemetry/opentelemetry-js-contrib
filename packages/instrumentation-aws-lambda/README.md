@@ -35,6 +35,7 @@ This instrumentation automatically detects the Node.js runtime version and suppo
 The instrumentation detects the runtime version from the `AWS_EXECUTION_ENV` environment variable and adapts the handler signature accordingly. For Node.js 24+, the handler signature is `(event, context)`, while for Node.js 22 and lower, it supports both `(event, context, callback)` and `(event, context)`.
 
 Example handlers:
+
 ```js
 // Callback-based handler (Node.js 22 and lower only)
 exports.handler = function(event, context, callback) {
