@@ -45,7 +45,6 @@ import { ATTR_FAAS_EXECUTION, ATTR_FAAS_ID } from './semconv-obsolete';
 
 import {
   APIGatewayProxyEventHeaders,
-  Callback,
   Context,
   Handler,
   StreamifyHandler,
@@ -277,8 +276,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       // The event can be a user type, it truly is any.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       event: any,
-      context: Context,
-      callback: Callback
+      context: Context
     ) {
       _onRequest();
 
@@ -294,16 +292,13 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       plugin._applyRequestHook(span, event, context);
 
       return otelContext.with(trace.setSpan(parent, span), () => {
-        // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
-        // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
-        // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
-        // win and the latter will be ignored.
-        const wrappedCallback = plugin._wrapCallback(callback, span);
+        // Type assertion: Handler type from aws-lambda still includes callback parameter,
+        // but we only support Promise-based handlers now (Node.js 24+)
         const maybePromise = safeExecuteInTheMiddle(
-          () => original.apply(this, [event, context, wrappedCallback]),
+          () => (original as (event: any, context: Context) => Promise<any> | any).apply(this, [event, context]),
           error => {
             if (error != null) {
-              // Exception thrown synchronously before resolving callback / promise.
+              // Exception thrown synchronously before resolving promise.
               plugin._applyResponseHook(span, error);
               plugin._endSpan(span, error, () => {});
             }
@@ -440,19 +435,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     return undefined;
   }
 
-  private _wrapCallback(original: Callback, span: Span): Callback {
-    const plugin = this;
-    return function wrappedCallback(this: never, err, res) {
-      diag.debug('executing wrapped lookup callback function');
-      plugin._applyResponseHook(span, err, res);
-
-      plugin._endSpan(span, err, () => {
-        diag.debug('executing original lookup callback function');
-        return original.apply(this, [err, res]);
-      });
-    };
-  }
-
   private _endSpan(
     span: Span,
     err: string | Error | null | undefined,
@@ -482,14 +464,14 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       flushers.push(this._traceForceFlusher());
     } else {
       diag.debug(
-        'Spans may not be exported for the lambda function because we are not force flushing before callback.'
+        'Spans may not be exported for the lambda function because we are not force flushing before handler completion.'
       );
     }
     if (this._metricForceFlusher) {
       flushers.push(this._metricForceFlusher());
     } else {
       diag.debug(
-        'Metrics may not be exported for the lambda function because we are not force flushing before callback.'
+        'Metrics may not be exported for the lambda function because we are not force flushing before handler completion.'
       );
     }
 

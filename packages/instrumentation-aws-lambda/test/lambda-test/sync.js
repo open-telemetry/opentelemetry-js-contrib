@@ -15,26 +15,26 @@
  */
 const api = require('@opentelemetry/api');
 
-exports.handler = function (event, context, callback) {
-  callback(null, 'ok');
+exports.handler = async function (event, context) {
+  return 'ok';
 };
 
-exports.error = function (event, context, callback) {
+exports.error = async function (event, context) {
   throw new Error('handler error');
 };
 
-exports.callbackerror = function (event, context, callback) {
-  callback(new Error('handler error'));
+exports.callbackerror = async function (event, context) {
+  throw new Error('handler error');
 };
 
-exports.stringerror = function (event, context, callback) {
+exports.stringerror = async function (event, context) {
   throw 'handler error';
 };
 
-exports.callbackstringerror = function (event, context, callback) {
-  callback('handler error');
+exports.callbackstringerror = async function (event, context) {
+  throw 'handler error';
 };
 
-exports.context = function (event, context, callback) {
-  callback(null, api.trace.getSpan(api.context.active()).spanContext().traceId);
+exports.context = async function (event, context) {
+  return api.trace.getSpan(api.context.active()).spanContext().traceId;
 };
