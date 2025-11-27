@@ -58,7 +58,7 @@ const NOT_SAMPLED = '0';
  * X-Amzn-Trace-Id: Root=1-5759e988-bd862e3fe1be46a994272793;Parent=53995c3f42cd8ad8;Sampled=1
  */
 export class AWSXRayPropagator implements TextMapPropagator {
-  inject(context: Context, carrier: unknown, setter: TextMapSetter) {
+  public inject(context: Context, carrier: unknown, setter: TextMapSetter) {
     const spanContext = trace.getSpan(context)?.spanContext();
     if (!spanContext || !isSpanContextValid(spanContext)) return;
 
@@ -77,7 +77,7 @@ export class AWSXRayPropagator implements TextMapPropagator {
     setter.set(carrier, AWSXRAY_TRACE_ID_HEADER, traceHeader);
   }
 
-  extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
+  public extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
     const spanContext = this.getSpanContextFromHeader(carrier, getter);
     if (!isSpanContextValid(spanContext)) return context;
 
@@ -90,7 +90,7 @@ export class AWSXRayPropagator implements TextMapPropagator {
     return trace.setSpan(context, trace.wrapSpanContext(spanContext));
   }
 
-  fields(): string[] {
+  public fields(): string[] {
     return [AWSXRAY_TRACE_ID_HEADER];
   }
 

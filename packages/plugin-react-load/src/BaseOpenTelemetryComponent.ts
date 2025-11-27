@@ -36,8 +36,8 @@ import {
  * This class is the base component for a React component with lifecycle instrumentation
  */
 export class BaseOpenTelemetryComponent extends React.Component {
-  readonly component: string = 'react-load';
-  moduleName = this.component;
+  private readonly component: string = 'react-load';
+  private moduleName = this.component;
   private _parentSpanMap: WeakMap<React.Component, api.Span>;
   private static _tracer: api.Tracer;
   private static _logger: api.DiagLogger = api.diag;
@@ -56,7 +56,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * @param name Name of tracer
    * @param version Version of tracer, this is optional. When not provided it will use the latest.
    */
-  static setTracer(name: string, version?: string): void {
+  public static setTracer(name: string, version?: string): void {
     BaseOpenTelemetryComponent._tracer = api.trace.getTracer(
       name,
       version ? version : PACKAGE_VERSION
@@ -67,7 +67,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * Sets the logger for all components being instrumented
    * @param logger
    */
-  static setLogger(logger: api.DiagLogger): void {
+  public static setLogger(logger: api.DiagLogger): void {
     api.diag.setLogger(logger);
     BaseOpenTelemetryComponent._logger = logger;
   }

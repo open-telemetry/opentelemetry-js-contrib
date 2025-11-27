@@ -63,7 +63,7 @@ function isValidHeaderValue(value: string): boolean {
  * Propagator for the ot-trace HTTP format from OpenTracing.
  */
 export class OTTracePropagator implements TextMapPropagator {
-  inject(context: Context, carrier: unknown, setter: TextMapSetter) {
+  public inject(context: Context, carrier: unknown, setter: TextMapSetter) {
     const spanContext = trace.getSpan(context)?.spanContext();
     if (!spanContext || !isSpanContextValid(spanContext)) return;
 
@@ -85,7 +85,7 @@ export class OTTracePropagator implements TextMapPropagator {
     });
   }
 
-  extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
+  public extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
     let traceId = readHeader(carrier, getter, OT_TRACE_ID_HEADER);
     if (traceId.length === 16) traceId = `${PADDING}${traceId}`;
     const spanId = readHeader(carrier, getter, OT_SPAN_ID_HEADER);
@@ -128,7 +128,7 @@ export class OTTracePropagator implements TextMapPropagator {
    * carrier instance. Attempting to reuse a carrier by clearing fields could
    * result in a memory leak.
    */
-  fields(): string[] {
+  public fields(): string[] {
     return FIELDS.slice();
   }
 }

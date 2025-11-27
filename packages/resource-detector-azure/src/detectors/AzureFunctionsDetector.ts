@@ -46,7 +46,7 @@ const AZURE_FUNCTIONS_ATTRIBUTE_ENV_VARS = {
  * @returns a {@link Resource} populated with data about the environment or an empty Resource if detection fails.
  */
 class AzureFunctionsDetector implements ResourceDetector {
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     let attributes = {};
     const serviceName = process.env[WEBSITE_SITE_NAME];
 
