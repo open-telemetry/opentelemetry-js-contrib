@@ -1,0 +1,5 @@
+langchain:
+  versions:
+    include: '>=0.1.0'
+    mode: max-5
+  commands: npm test
