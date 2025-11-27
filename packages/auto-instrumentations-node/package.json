@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-node",
-  "version": "0.67.1",
+  "version": "0.67.2",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/auto-instrumentations-node#readme",
@@ -45,7 +45,7 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.208.0",
     "@opentelemetry/instrumentation-amqplib": "^0.55.0",
-    "@opentelemetry/instrumentation-aws-lambda": "^0.60.1",
+    "@opentelemetry/instrumentation-aws-lambda": "^0.61.0",
     "@opentelemetry/instrumentation-aws-sdk": "^0.64.0",
     "@opentelemetry/instrumentation-bunyan": "^0.54.0",
     "@opentelemetry/instrumentation-cassandra-driver": "^0.54.0",

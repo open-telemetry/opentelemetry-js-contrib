@@ -242,19 +242,7 @@ describe('lambda handler', () => {
     it('should export a valid span', async () => {
       initializeHandler('lambda-test/sync.handler');
 
-      const result = await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').handler(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
-          }
-        );
-      });
+      const result = await lambdaRequire('lambda-test/sync').handler('arg', ctx);
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
@@ -268,25 +256,9 @@ describe('lambda handler', () => {
 
       const handlerModule = lambdaRequire('lambda-test/sync');
 
-      const result1 = await new Promise((resolve, reject) => {
-        handlerModule.handler('arg', ctx, (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        });
-      });
+      const result1 = await handlerModule.handler('arg', ctx);
 
-      const result2 = await new Promise((resolve, reject) => {
-        handlerModule.handler('arg', ctx, (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        });
-      });
+      const result2 = await handlerModule.handler('arg', ctx);
 
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
@@ -308,19 +280,7 @@ describe('lambda handler', () => {
 
       initializeHandler('lambda-test/sync.handler');
 
-      const result = await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').handler(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
-          }
-        );
-      });
+      const result = await lambdaRequire('lambda-test/sync').handler('arg', ctx);
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
@@ -335,19 +295,7 @@ describe('lambda handler', () => {
         lambdaStartTime: Date.now() - 2 * lambdaMaxInitInMilliseconds,
       });
 
-      const result = await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').handler(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
-          }
-        );
-      });
+      const result = await lambdaRequire('lambda-test/sync').handler('arg', ctx);
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
@@ -362,11 +310,7 @@ describe('lambda handler', () => {
 
       let err: Error;
       try {
-        lambdaRequire('lambda-test/sync').error(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {}
-        );
+        await lambdaRequire('lambda-test/sync').error('arg', ctx);
       } catch (e: any) {
         err = e;
       }
@@ -378,24 +322,12 @@ describe('lambda handler', () => {
       assert.strictEqual(span.parentSpanContext?.spanId, undefined);
     });
 
-    it('should record error in callback', async () => {
+    it('should record error in promise rejection', async () => {
       initializeHandler('lambda-test/sync.callbackerror');
 
       let err: Error;
       try {
-        await new Promise((resolve, reject) => {
-          lambdaRequire('lambda-test/sync').callbackerror(
-            'arg',
-            ctx,
-            (err: Error, res: any) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve(res);
-              }
-            }
-          );
-        });
+        await lambdaRequire('lambda-test/sync').callbackerror('arg', ctx);
       } catch (e: any) {
         err = e;
       }
@@ -412,11 +344,7 @@ describe('lambda handler', () => {
 
       let err: string;
       try {
-        lambdaRequire('lambda-test/sync').stringerror(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {}
-        );
+        await lambdaRequire('lambda-test/sync').stringerror('arg', ctx);
       } catch (e: any) {
         err = e;
       }
@@ -431,19 +359,7 @@ describe('lambda handler', () => {
     it('context should have parent trace', async () => {
       initializeHandler('lambda-test/sync.context');
 
-      const result = await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').context(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
-          }
-        );
-      });
+      const result = await lambdaRequire('lambda-test/sync').context('arg', ctx);
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
       assert.strictEqual(span.spanContext().traceId, result);
@@ -452,43 +368,19 @@ describe('lambda handler', () => {
     it('context should have parent trace', async () => {
       initializeHandler('lambda-test/sync.context');
 
-      const result = await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').context(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
-          }
-        );
-      });
+      const result = await lambdaRequire('lambda-test/sync').context('arg', ctx);
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
       assert.strictEqual(span.spanContext().traceId, result);
     });
   });
 
-  it('should record string error in callback', async () => {
-    initializeHandler('lambda-test/sync.callbackstringerror');
+  it('should record string error in promise rejection', async () => {
+    initializeHandler('lambda-test/sync.stringerror');
 
     let err: string;
     try {
-      await new Promise((resolve, reject) => {
-        lambdaRequire('lambda-test/sync').callbackstringerror(
-          'arg',
-          ctx,
-          (err: Error, res: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res);
-            }
-          }
-        );
-      });
+      await lambdaRequire('lambda-test/sync').stringerror('arg', ctx);
     } catch (e: any) {
       err = e;
     }
@@ -498,6 +390,91 @@ describe('lambda handler', () => {
     assert.strictEqual(spans.length, 1);
     assertSpanFailure(span);
     assert.strictEqual(span.parentSpanContext?.spanId, undefined);
+  });
+
+  describe('callback-based handler (Node.js 22 and lower)', () => {
+    beforeEach(() => {
+      // Simulate Node.js 22 runtime for backward compatibility testing
+      process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
+    });
+
+    afterEach(() => {
+      delete process.env.AWS_EXECUTION_ENV;
+    });
+
+    it('should export a valid span with callback handler', async () => {
+      initializeHandler('lambda-test/sync.callbackHandler');
+
+      const result = await new Promise((resolve, reject) => {
+        lambdaRequire('lambda-test/sync').callbackHandler(
+          'arg',
+          ctx,
+          (err: Error, res: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res);
+            }
+          }
+        );
+      });
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
+    });
+
+    it('should record error with callback handler', async () => {
+      initializeHandler('lambda-test/sync.callbackError');
+
+      let err: Error;
+      try {
+        await new Promise((resolve, reject) => {
+          lambdaRequire('lambda-test/sync').callbackError(
+            'arg',
+            ctx,
+            (error: Error, _res: any) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve({});
+              }
+            }
+          );
+        });
+      } catch (e: any) {
+        err = e;
+      }
+      assert.strictEqual(err!.message, 'handler error');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanFailure(span);
+      assert.strictEqual(span.parentSpanContext?.spanId, undefined);
+    });
+
+    it('context should have parent trace with callback handler', async () => {
+      initializeHandler('lambda-test/sync.callbackContext');
+
+      const result = await new Promise((resolve, reject) => {
+        lambdaRequire('lambda-test/sync').callbackContext(
+          'arg',
+          ctx,
+          (err: Error, res: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res);
+            }
+          }
+        );
+      });
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(span.spanContext().traceId, result);
+    });
   });
 
   describe('with remote parent', () => {
@@ -692,13 +669,7 @@ describe('lambda handler', () => {
       it('sync - success', async () => {
         initializeHandler('lambda-test/sync.handler', config);
 
-        const result = await new Promise((resolve, _reject) => {
-          lambdaRequire('lambda-test/sync').handler(
-            'arg',
-            ctx,
-            (_err: Error, res: any) => resolve(res)
-          );
-        });
+        const result = await lambdaRequire('lambda-test/sync').handler('arg', ctx);
         const [span] = memoryExporter.getFinishedSpans();
         assert.strictEqual(span.attributes[RES_ATTR], result);
       });
@@ -708,7 +679,7 @@ describe('lambda handler', () => {
 
         let err: Error;
         try {
-          lambdaRequire('lambda-test/sync').error('arg', ctx, () => {});
+          await lambdaRequire('lambda-test/sync').error('arg', ctx);
         } catch (e: any) {
           err = e;
         }
@@ -716,20 +687,15 @@ describe('lambda handler', () => {
         assert.strictEqual(span.attributes[ERR_ATTR], err!.message);
       });
 
-      it('sync - error with callback', async () => {
+      it('sync - error with promise rejection', async () => {
         initializeHandler('lambda-test/sync.callbackerror', config);
 
         let error: Error;
-        await new Promise((resolve, _reject) => {
-          lambdaRequire('lambda-test/sync').callbackerror(
-            'arg',
-            ctx,
-            (err: Error, _res: any) => {
-              error = err;
-              resolve({});
-            }
-          );
-        });
+        try {
+          await lambdaRequire('lambda-test/sync').callbackerror('arg', ctx);
+        } catch (e: any) {
+          error = e;
+        }
         const [span] = memoryExporter.getFinishedSpans();
         assert.strictEqual(span.attributes[ERR_ATTR], error!.message);
       });
@@ -789,13 +755,13 @@ describe('lambda handler', () => {
         },
       };
 
-      await lambdaRequire('lambda-test/sync').handler(event, ctx, () => {});
+      await lambdaRequire('lambda-test/sync').handler(event, ctx);
       const [span] = memoryExporter.getFinishedSpans();
       assert.ok(
         span.attributes[ATTR_URL_FULL] ===
           'http://www.example.com:1234/lambda/test/path?key=value&key2=value2' ||
-          span.attributes[ATTR_URL_FULL] ===
-            'http://www.example.com:1234/lambda/test/path?key2=value2&key=value'
+        span.attributes[ATTR_URL_FULL] ===
+          'http://www.example.com:1234/lambda/test/path?key2=value2&key=value'
       );
     });
     it('pulls url from api gateway http events', async () => {
@@ -812,7 +778,7 @@ describe('lambda handler', () => {
         },
       };
 
-      await lambdaRequire('lambda-test/sync').handler(event, ctx, () => {});
+      await lambdaRequire('lambda-test/sync').handler(event, ctx);
       const [span] = memoryExporter.getFinishedSpans();
       assert.strictEqual(
         span.attributes[ATTR_URL_FULL],

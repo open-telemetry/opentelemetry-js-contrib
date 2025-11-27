@@ -23,6 +23,33 @@ npm install --save @opentelemetry/instrumentation-aws-lambda
 
 - This package will instrument the lambda execution regardless of versions.
 
+## Important Notes
+
+### Handler Types Supported
+
+This instrumentation automatically detects the Node.js runtime version and supports handlers accordingly:
+
+- **Node.js 24+**: Only Promise-based handlers are supported (callbacks are deprecated by AWS Lambda)
+- **Node.js 22 and lower**: Both callback-based and Promise-based handlers are supported for backward compatibility
+
+The instrumentation detects the runtime version from the `AWS_EXECUTION_ENV` environment variable and adapts the handler signature accordingly. For Node.js 24+, the handler signature is `(event, context)`, while for Node.js 22 and lower, it supports both `(event, context, callback)` and `(event, context)`.
+
+Example handlers:
+
+```js
+// Callback-based handler (Node.js 22 and lower only)
+exports.handler = function(event, context, callback) {
+  callback(null, 'ok');
+};
+
+// Promise-based handler (all Node.js versions)
+export const handler = async (event, context) => {
+  return 'ok';
+};
+```
+
+**Note**: AWS Lambda has removed callback-based handlers in Node.js 24 runtime. It's required to migrate to Promise-based handlers when upgrading to Node.js 24+.
+
 ## Usage
 
 Create a file to initialize the instrumentation, such as `lambda-wrapper.js`.
