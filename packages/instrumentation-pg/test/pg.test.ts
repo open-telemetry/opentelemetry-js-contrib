@@ -583,15 +583,10 @@ describe('pg', () => {
       });
 
       it('should record query and values for prepared statements', done => {
-        class Statement {
-          get name() {
-            return 'get_pg_tables';
-          }
-          get text() {
-            return 'SELECT * FROM pg_tables WHERE schemaname = $1';
-          }
-        }
-        const queryConfig = new Statement();
+        const queryConfig = {
+          name: 'get_pg_tables',
+          text: 'SELECT * FROM pg_tables WHERE schemaname = $1',
+        };
         const values = ['public'];
 
         const expectedAttributes = {
@@ -637,6 +632,40 @@ describe('pg', () => {
             }
           );
           assert.strictEqual(resNoPromise, undefined);
+        });
+      });
+
+      it('should record class-instance query', done => {
+        class Statement {
+          get name() {
+            return 'get_pg_tables';
+          }
+          get text() {
+            return 'SELECT * FROM pg_tables WHERE schemaname = $1';
+          }
+        }
+        const queryConfig = new Statement();
+        const values = ['public'];
+
+        const expectedAttributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_STATEMENT]: queryConfig.text,
+          [AttributeNames.PG_PLAN]: queryConfig.name,
+          [AttributeNames.PG_VALUES]: values,
+        };
+
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          (client.query as any)(
+            queryConfig,
+            values,
+            (err: Error | null, res: any) => {
+              assert.strictEqual(err, null);
+              assert.ok(res);
+              runCallbackTest(span, expectedAttributes, events);
+              done();
+            }
+          );
         });
       });
     });
