@@ -341,6 +341,8 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           : firstArgIsQueryObjectWithText
             ? {
                 ...(arg0 as any),
+                name: arg0.name,
+                text: arg0.text,
                 values:
                   (arg0 as any).values ??
                   (Array.isArray(args[1]) ? args[1] : undefined),
