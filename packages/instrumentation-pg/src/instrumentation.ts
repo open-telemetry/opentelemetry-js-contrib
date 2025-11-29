@@ -339,13 +339,15 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
               values: Array.isArray(args[1]) ? args[1] : undefined,
             }
           : firstArgIsQueryObjectWithText
-            ? {
-                ...(arg0 as any),
-                values:
-                  (arg0 as any).values ??
-                  (Array.isArray(args[1]) ? args[1] : undefined),
+          ? (() => {
+              const query = arg0 as any;
+              // If the query object has no values yet, use the second argument as values
+              if (query.values === undefined && Array.isArray(args[1])) {
+                query.values = args[1];
               }
-            : undefined;
+              return query;
+            })()
+          : undefined;
 
         const attributes: Attributes = {
           [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
