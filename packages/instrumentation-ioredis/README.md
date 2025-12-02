@@ -113,13 +113,13 @@ See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-n
 
 Attributes collected:
 
-| Old semconv            | Stable semconv   | Description |
-| ---------------------- | ---------------- | ----------- |
-| `db.connection_string` | Removed          | The connection string used to connect to the database. |
-| `db.system`            | `db.system.name` | 'redis' |
+| Old semconv            | Stable semconv   | Description                        |
+| ---------------------- | ---------------- | ---------------------------------- |
+| `db.connection_string` | Removed          |                                    |
+| `db.system`            | `db.system.name` | 'redis'                            |
 | `db.statement`         | `db.query.text`  | The database query being executed. |
-| `net.peer.port`        | `server.port`    | Remote port number. |
-| `net.peer.name`        | `server.address` | Remote hostname or similar. |
+| `net.peer.port`        | `server.port`    | Remote port number.                |
+| `net.peer.name`        | `server.address` | Remote hostname or similar.        |
 
 
 ## Useful links
