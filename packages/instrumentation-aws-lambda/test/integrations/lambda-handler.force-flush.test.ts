@@ -100,19 +100,7 @@ describe('force flush', () => {
     provider.forceFlush = forceFlush;
     initializeHandlerTracing('lambda-test/sync.handler', provider);
 
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(forceFlushed, true);
   });
@@ -133,19 +121,7 @@ describe('force flush', () => {
     nodeTracerProvider.forceFlush = forceFlush;
     initializeHandlerTracing('lambda-test/sync.handler', provider);
 
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(forceFlushed, true);
   });
@@ -165,24 +141,12 @@ describe('force flush', () => {
     provider.forceFlush = forceFlush;
     initializeHandlerMetrics('lambda-test/sync.handler', provider);
 
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(forceFlushed, true);
   });
 
-  it('should callback once after force flush providers', async () => {
+  it('should complete handler after force flush providers', async () => {
     const nodeTracerProvider = new NodeTracerProvider({
       spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
     });
@@ -216,24 +180,9 @@ describe('force flush', () => {
     instrumentation.setTracerProvider(tracerProvider);
     instrumentation.setMeterProvider(meterProvider);
 
-    let callbackCount = 0;
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          callbackCount++;
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(tracerForceFlushed, true);
     assert.strictEqual(meterForceFlushed, true);
-    assert.strictEqual(callbackCount, 1);
   });
 });

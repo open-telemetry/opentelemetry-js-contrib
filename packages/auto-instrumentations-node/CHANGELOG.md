@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.67.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.67.1...auto-instrumentations-node-v0.67.2) (2025-11-26)
+
+
+### Bug Fixes
+
+* enable programmatic config when environment variables are unset ([#2947](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2947)) ([cf80246](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cf80246bfa75adbc2c97ba5a2e6f83204ae0ee8b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.60.1 to ^0.61.0
+
 ## [0.67.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.67.0...auto-instrumentations-node-v0.67.1) (2025-11-24)
 
 

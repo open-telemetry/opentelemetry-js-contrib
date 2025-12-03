@@ -333,19 +333,24 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         // TODO: remove the `as ...` casts below when the TS version is upgraded.
         // Newer TS versions will use the result of firstArgIsQueryObjectWithText
         // to properly narrow arg0, but TS 4.3.5 does not.
-        const queryConfig = firstArgIsString
-          ? {
-              text: arg0 as string,
-              values: Array.isArray(args[1]) ? args[1] : undefined,
-            }
-          : firstArgIsQueryObjectWithText
-            ? {
-                ...(arg0 as any),
-                values:
-                  (arg0 as any).values ??
-                  (Array.isArray(args[1]) ? args[1] : undefined),
-              }
-            : undefined;
+        let queryConfig: any;
+
+        if (firstArgIsString) {
+          queryConfig = {
+            text: arg0 as string,
+            values: Array.isArray(args[1]) ? args[1] : undefined,
+          };
+        } else if (firstArgIsQueryObjectWithText) {
+          const q = arg0 as any;
+
+          if (q.values === undefined && Array.isArray(args[1])) {
+            q.values = args[1];
+          }
+
+          queryConfig = q;
+        } else {
+          queryConfig = undefined;
+        }
 
         const attributes: Attributes = {
           [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
