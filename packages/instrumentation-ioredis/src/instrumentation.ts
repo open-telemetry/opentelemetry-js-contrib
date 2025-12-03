@@ -23,7 +23,11 @@ import {
   semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import { IORedisInstrumentationConfig } from './types';
-import { IORedisCommand, RedisInterface } from './internal-types';
+import {
+  ClusterInterface,
+  IORedisCommand,
+  RedisInterface,
+} from './internal-types';
 import {
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_SYSTEM_NAME,
@@ -40,13 +44,14 @@ import {
   ATTR_NET_PEER_PORT,
 } from './semconv';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
-import { endSpan } from './utils';
+import { endSpan, parseStartupNodes } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
+  instrumentCluster: false,
 };
 
 export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumentationConfig> {
@@ -84,6 +89,7 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
             module[Symbol.toStringTag] === 'Module'
               ? module.default // ESM
               : module; // CommonJS
+
           if (isWrapped(moduleExports.prototype.sendCommand)) {
             this._unwrap(moduleExports.prototype, 'sendCommand');
           }
@@ -100,6 +106,31 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
             'connect',
             this._patchConnection()
           );
+
+          if (this.getConfig().instrumentCluster) {
+            const ClusterConstructor = moduleExports.Cluster;
+
+            if (ClusterConstructor?.prototype) {
+              if (isWrapped(ClusterConstructor.prototype.sendCommand)) {
+                this._unwrap(ClusterConstructor.prototype, 'sendCommand');
+              }
+              this._wrap(
+                ClusterConstructor.prototype,
+                'sendCommand',
+                this._patchClusterSendCommand(moduleVersion)
+              );
+
+              if (isWrapped(ClusterConstructor.prototype.connect)) {
+                this._unwrap(ClusterConstructor.prototype, 'connect');
+              }
+              this._wrap(
+                ClusterConstructor.prototype,
+                'connect',
+                this._patchClusterConnect()
+              );
+            }
+          }
+
           return module;
         },
         module => {
@@ -108,8 +139,18 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
             module[Symbol.toStringTag] === 'Module'
               ? module.default // ESM
               : module; // CommonJS
+
           this._unwrap(moduleExports.prototype, 'sendCommand');
           this._unwrap(moduleExports.prototype, 'connect');
+
+          if (this.getConfig().instrumentCluster) {
+            const ClusterConstructor = moduleExports.Cluster;
+
+            if (ClusterConstructor?.prototype) {
+              this._unwrap(ClusterConstructor.prototype, 'sendCommand');
+              this._unwrap(ClusterConstructor.prototype, 'connect');
+            }
+          }
         }
       ),
     ];
@@ -127,6 +168,18 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
   private _patchConnection() {
     return (original: Function) => {
       return this._traceConnection(original);
+    };
+  }
+
+  private _patchClusterSendCommand(moduleVersion?: string) {
+    return (original: Function) => {
+      return this._traceClusterSendCommand(original, moduleVersion);
+    };
+  }
+
+  private _patchClusterConnect() {
+    return (original: Function) => {
+      return this._traceClusterConnection(original);
     };
   }
 
@@ -262,6 +315,157 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
         const client = original.apply(this, arguments);
         endSpan(span, null);
         return client;
+      } catch (error: any) {
+        endSpan(span, error);
+        throw error;
+      }
+    };
+  }
+
+  private _traceClusterSendCommand(original: Function, moduleVersion?: string) {
+    const instrumentation = this;
+    return function (this: ClusterInterface, cmd?: IORedisCommand) {
+      if (arguments.length < 1 || typeof cmd !== 'object') {
+        return original.apply(this, arguments);
+      }
+
+      const config = instrumentation.getConfig();
+      const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
+
+      // Skip if requireParentSpan is true and no parent exists
+      if (config.requireParentSpan === true && hasNoParentSpan) {
+        return original.apply(this, arguments);
+      }
+
+      const dbStatementSerializer =
+        config.dbStatementSerializer || defaultDbStatementSerializer;
+
+      const startupNodes =
+        'startupNodes' in this ? parseStartupNodes(this['startupNodes']) : [];
+      const nodes = this.nodes().map(
+        node => `${node.options.host}:${node.options.port}`
+      );
+
+      // Create cluster-level parent span
+      const span = instrumentation.tracer.startSpan(`cluster.${cmd.name}`, {
+        kind: SpanKind.CLIENT,
+        attributes: {
+          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+          [SEMATTRS_DB_STATEMENT]: dbStatementSerializer(cmd.name, cmd.args),
+          'db.redis.cluster.startup_nodes': startupNodes,
+          'db.redis.cluster.nodes': nodes,
+          'db.redis.is_cluster': true,
+        },
+      });
+
+      // Execute request hook if configured
+      const { requestHook } = config;
+      if (requestHook) {
+        safeExecuteInTheMiddle(
+          () =>
+            requestHook(span, {
+              moduleVersion,
+              cmdName: cmd.name,
+              cmdArgs: cmd.args,
+            }),
+          e => {
+            if (e) {
+              diag.error(
+                'ioredis cluster instrumentation: request hook failed',
+                e
+              );
+            }
+          },
+          true
+        );
+      }
+
+      // Execute the original command with the cluster span as active context
+      return context.with(trace.setSpan(context.active(), span), () => {
+        try {
+          const result = original.apply(this, arguments);
+
+          // Patch resolve/reject to end the cluster span
+          const origResolve = cmd.resolve;
+          const origReject = cmd.reject;
+
+          cmd.resolve = function (result: any) {
+            safeExecuteInTheMiddle(
+              () => config.responseHook?.(span, cmd.name, cmd.args, result),
+              e => {
+                if (e) {
+                  diag.error(
+                    'ioredis cluster instrumentation: response hook failed',
+                    e
+                  );
+                }
+              },
+              true
+            );
+            endSpan(span, null);
+            origResolve(result);
+          };
+
+          cmd.reject = function (err: Error) {
+            endSpan(span, err);
+            origReject(err);
+          };
+
+          return result;
+        } catch (error: any) {
+          endSpan(span, error);
+          throw error;
+        }
+      });
+    };
+  }
+
+  private _traceClusterConnection(original: Function) {
+    const instrumentation = this;
+    return function (this: ClusterInterface) {
+      const config = instrumentation.getConfig();
+      const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
+
+      if (config.requireParentSpan === true && hasNoParentSpan) {
+        return original.apply(this, arguments);
+      }
+
+      const startupNodes =
+        'startupNodes' in this ? parseStartupNodes(this['startupNodes']) : [];
+      const nodes = this.nodes().map(
+        node => `${node.options.host}:${node.options.port}`
+      );
+
+      const span = instrumentation.tracer.startSpan('cluster.connect', {
+        kind: SpanKind.CLIENT,
+        attributes: {
+          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+          [SEMATTRS_DB_STATEMENT]: 'connect',
+          'db.redis.cluster.startup_nodes': startupNodes,
+          'db.redis.cluster.nodes': nodes,
+          'db.redis.is_cluster': true,
+        },
+      });
+
+      try {
+        const result = original.apply(this, arguments);
+
+        // Handle promise-based connect
+        if (result && typeof result.then === 'function') {
+          return result.then(
+            (value: any) => {
+              endSpan(span, null);
+              return value;
+            },
+            (error: Error) => {
+              endSpan(span, error);
+              throw error;
+            }
+          );
+        }
+
+        endSpan(span, null);
+        return result;
       } catch (error: any) {
         endSpan(span, error);
         throw error;

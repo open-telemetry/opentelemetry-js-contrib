@@ -69,4 +69,7 @@ export interface IORedisInstrumentationConfig extends InstrumentationConfig {
 
   /** Require parent to create ioredis span, default when unset is true */
   requireParentSpan?: boolean;
+
+  /** Whether to capture `Cluster` commands */
+  instrumentCluster?: boolean;
 }

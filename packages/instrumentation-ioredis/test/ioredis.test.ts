@@ -48,6 +48,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import { parseStartupNodes } from '../src/utils';
 import {
   DB_SYSTEM_VALUE_REDIS,
   ATTR_DB_CONNECTION_STRING,
@@ -1140,6 +1141,483 @@ describe('ioredis', () => {
         assert.strictEqual(spans[2].name, 'get');
         assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
       },
+    });
+  });
+
+  describe('ioredis cluster', () => {
+    const REDIS_CLUSTER_HOST = 'localhost';
+    const REDIS_CLUSTER_PORTS = [3000, 3001, 3002, 3003, 3004, 3005];
+    const REDIS_STARTUP_NODES = REDIS_CLUSTER_PORTS.map(
+      port => `${REDIS_CLUSTER_HOST}:${port}`
+    );
+    const REDIS_CLUSTER_NODES = REDIS_CLUSTER_PORTS.map(
+      port => `127.0.0.1:${port}`
+    );
+
+    const CLUSTER_DEFAULT_ATTRIBUTES = {
+      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+      ['db.redis.cluster.nodes']: REDIS_CLUSTER_NODES,
+      ['db.redis.cluster.startup_nodes']: REDIS_STARTUP_NODES,
+      ['db.redis.is_cluster']: true,
+    };
+
+    let cluster: ioredisTypes.Cluster;
+
+    const defaultConfig: IORedisInstrumentationConfig = {
+      instrumentCluster: true,
+    };
+
+    before(done => {
+      cluster = new ioredisTypes.Cluster(
+        REDIS_CLUSTER_PORTS.map(port => ({
+          host: REDIS_CLUSTER_HOST,
+          port,
+        }))
+      );
+
+      instrumentation.disable();
+      instrumentation = new IORedisInstrumentation(defaultConfig);
+      instrumentation.setTracerProvider(provider);
+
+      cluster.on('ready', () => {
+        done();
+      });
+
+      require('ioredis');
+    });
+
+    beforeEach(() => {
+      memoryExporter.reset();
+    });
+
+    after(done => {
+      cluster.quit(done);
+    });
+
+    describe('Instrumenting query operations - active parent span', () => {
+      it('should create at least 2 child spans for hset promise', async () => {
+        const hashKeyName = `hash-{test321}`;
+
+        const attributes = {
+          ...CLUSTER_DEFAULT_ATTRIBUTES,
+          [SEMATTRS_DB_STATEMENT]: `hset ${hashKeyName} random [1 other arguments]`,
+        };
+
+        const span = provider
+          .getTracer('ioredis-cluster-test')
+          .startSpan('test span');
+
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          try {
+            await cluster.hset(hashKeyName, 'random', 'random');
+
+            // Make sure there are at least 2 spans: test span -> cluster.hset
+            assert.ok(memoryExporter.getFinishedSpans().length >= 2);
+            span.end();
+            const endedSpans = memoryExporter.getFinishedSpans();
+            // Make sure there are at least 3 spans: test span -> cluster.hset -> hset
+            assert.ok(endedSpans.length >= 3);
+
+            const clientSpan = endedSpans.find(s => s.name === 'hset');
+            const clusterSpan = endedSpans.find(s => s.name === 'cluster.hset');
+
+            assert.ok(clientSpan);
+            assert.ok(clusterSpan);
+
+            testUtils.assertSpan(
+              clusterSpan,
+              SpanKind.CLIENT,
+              attributes,
+              [],
+              unsetStatus
+            );
+            testUtils.assertPropagation(clusterSpan, span);
+          } catch (error) {
+            assert.ifError(error);
+          }
+        });
+      });
+
+      it('should set span with error when redis return reject', async () => {
+        const span = provider
+          .getTracer('ioredis-cluster-test')
+          .startSpan('test span');
+
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          await cluster.set('non-int-key', 'non-int-value');
+          try {
+            // should throw 'ReplyError: ERR value is not an integer or out of range'
+            // because the value im the key is not numeric and we try to increment it
+            await cluster.incr('non-int-key');
+          } catch (ex: any) {
+            const endedSpans = memoryExporter.getFinishedSpans();
+
+            // Make sure there are at least 3 spans: test span -> cluster.incr -> incr
+            assert.ok(memoryExporter.getFinishedSpans().length >= 3);
+            const clusterSpan = endedSpans.find(s => s.name === 'cluster.incr');
+            assert.ok(clusterSpan);
+
+            // redis 'incr' operation failed with exception, so span should indicate it
+            assert.strictEqual(clusterSpan.status.code, SpanStatusCode.ERROR);
+            const exceptionEvent = clusterSpan.events[0];
+            assert.strictEqual(exceptionEvent.name, 'exception');
+            assert.strictEqual(
+              exceptionEvent.attributes?.[SEMATTRS_EXCEPTION_MESSAGE],
+              ex.message
+            );
+            assert.strictEqual(
+              exceptionEvent.attributes?.[SEMATTRS_EXCEPTION_STACKTRACE],
+              ex.stack
+            );
+            assert.strictEqual(
+              exceptionEvent.attributes?.[SEMATTRS_EXCEPTION_TYPE],
+              ex.name
+            );
+          }
+        });
+      });
+    });
+
+    describe('Instrumenting connect operation - active parent span', () => {
+      it('should create at least 2 child spans for connect promise', async () => {
+        const attributes = {
+          ...CLUSTER_DEFAULT_ATTRIBUTES,
+          // There are no nodes yet, so we don't have their addresses
+          ['db.redis.cluster.nodes']: [],
+          [SEMATTRS_DB_STATEMENT]: 'connect',
+        };
+
+        const span = provider
+          .getTracer('ioredis-cluster-test')
+          .startSpan('test span');
+
+        const lazyCluster = new ioredis.Cluster(
+          REDIS_CLUSTER_PORTS.map(port => ({
+            host: REDIS_CLUSTER_HOST,
+            port,
+          })),
+          {
+            lazyConnect: true,
+          }
+        );
+
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          try {
+            await lazyCluster.connect();
+            await lazyCluster.quit();
+
+            // Make sure there are at least 2 spans: test span -> cluster.hset
+            assert.ok(memoryExporter.getFinishedSpans().length >= 2);
+            span.end();
+            const endedSpans = memoryExporter.getFinishedSpans();
+            // Make sure there are at least 3 spans: test span -> cluster.hset -> hset
+            assert.ok(endedSpans.length >= 3);
+
+            const clientSpan = endedSpans.find(s => s.name === 'connect');
+            const clusterSpan = endedSpans.find(
+              s => s.name === 'cluster.connect'
+            );
+
+            assert.ok(clientSpan);
+            assert.ok(clusterSpan);
+
+            testUtils.assertSpan(
+              clusterSpan,
+              SpanKind.CLIENT,
+              attributes,
+              [],
+              unsetStatus
+            );
+            testUtils.assertPropagation(clusterSpan, span);
+          } catch (error) {
+            assert.ifError(error);
+          }
+        });
+      });
+    });
+
+    describe('Instrumenting without parent span', () => {
+      const testKeyName = 'test-123';
+
+      before(() => {
+        instrumentation.disable();
+        const config: IORedisInstrumentationConfig = {
+          requireParentSpan: true,
+          instrumentCluster: true,
+        };
+        instrumentation.setConfig(config);
+        instrumentation.enable();
+      });
+
+      it('should not create child span for query', async () => {
+        await cluster.set(testKeyName, 'data');
+        const result = await cluster.del(testKeyName);
+        assert.strictEqual(result, 1);
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      });
+
+      it('should not create child span for connect', async () => {
+        const lazyCluster = new ioredis.Cluster(
+          REDIS_CLUSTER_PORTS.map(port => ({
+            host: REDIS_CLUSTER_HOST,
+            port,
+          })),
+          {
+            lazyConnect: true,
+          }
+        );
+        await lazyCluster.connect();
+        const spans = memoryExporter.getFinishedSpans();
+        await lazyCluster.quit();
+        assert.strictEqual(spans.length, 0);
+      });
+    });
+
+    describe('Instrumenting without instrumentCluster: true', () => {
+      before(() => {
+        instrumentation.disable();
+        instrumentation.setConfig({
+          instrumentCluster: false,
+          requireParentSpan: false,
+        });
+        instrumentation.enable();
+      });
+
+      it('should not create cluster span for query', async () => {
+        await cluster.set('test-key-123', 'test-value-123');
+
+        const spans = memoryExporter.getFinishedSpans();
+
+        const clusterSpan = spans.find(s => s.name === 'cluster.set');
+        const setSpan = spans.find(s => s.name === 'set');
+
+        // Make sure there is at least one span for stand alone client
+        assert.ok(setSpan);
+        assert.strictEqual(spans.length > 0, true);
+        // There should be no cluster span
+        assert.strictEqual(clusterSpan, undefined);
+      });
+
+      it('should not create cluster span for connect', async () => {
+        const lazyCluster = new ioredis.Cluster(
+          REDIS_CLUSTER_PORTS.map(port => ({
+            host: REDIS_CLUSTER_HOST,
+            port,
+          })),
+          {
+            lazyConnect: true,
+          }
+        );
+
+        await lazyCluster.connect();
+
+        const spans = memoryExporter.getFinishedSpans();
+
+        const clusterSpan = spans.find(s => s.name === 'cluster.connect');
+        const setSpan = spans.find(s => s.name === 'connect');
+
+        await lazyCluster.quit();
+
+        // Make sure there is at least one span for stand alone client
+        assert.ok(setSpan);
+        assert.strictEqual(spans.length > 0, true);
+        // There should be no cluster span
+        assert.strictEqual(clusterSpan, undefined);
+      });
+    });
+
+    describe('Instrumenting with a custom hooks', () => {
+      before(() => {
+        instrumentation.disable();
+        instrumentation.setConfig(defaultConfig);
+        instrumentation.enable();
+      });
+
+      it('should call requestHook when set in config', async () => {
+        const requestHook = sinon.spy(
+          (span: Span, requestInfo: IORedisRequestHookInformation) => {
+            span.setAttribute(
+              'attribute key from request hook',
+              'custom value from request hook'
+            );
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          requestHook,
+          ...defaultConfig,
+        });
+
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          await cluster.incr('request-hook-test');
+          const endedSpans = memoryExporter.getFinishedSpans();
+
+          const clusterSpan = endedSpans.find(s => s.name === 'cluster.incr');
+
+          assert.ok(clusterSpan);
+          assert.strictEqual(
+            clusterSpan.attributes['attribute key from request hook'],
+            'custom value from request hook'
+          );
+        });
+
+        // Each child span calls requestHook, hence cluster.incr -> incr >= 2
+        assert.ok(requestHook.callCount >= 2);
+        const [, requestInfo] = requestHook.firstCall.args;
+        assert.ok(
+          /\d{1,4}\.\d{1,4}\.\d{1,5}.*/.test(
+            requestInfo.moduleVersion as string
+          )
+        );
+        assert.strictEqual(requestInfo.cmdName, 'incr');
+        assert.deepStrictEqual(requestInfo.cmdArgs, ['request-hook-test']);
+      });
+
+      it('should ignore requestHook which throws exception', async () => {
+        const requestHook = sinon.spy(
+          (span: Span, _requestInfo: IORedisRequestHookInformation) => {
+            span.setAttribute(
+              'attribute key BEFORE exception',
+              'this attribute is added to span BEFORE exception is thrown thus we can expect it'
+            );
+            throw Error('error thrown in requestHook');
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          requestHook,
+          ...defaultConfig,
+        });
+
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          await cluster.incr('request-hook-throw-test');
+          const endedSpans = memoryExporter.getFinishedSpans();
+
+          const clusterSpan = endedSpans.find(s => s.name === 'cluster.incr');
+          const incrSpan = endedSpans.find(s => s.name === 'incr');
+
+          assert.ok(incrSpan);
+
+          // Make sure there are at least 2 spans: cluster.incr -> incr
+          assert.strictEqual(endedSpans.length, 2);
+          assert.ok(clusterSpan);
+          assert.strictEqual(
+            clusterSpan.attributes['attribute key BEFORE exception'],
+            'this attribute is added to span BEFORE exception is thrown thus we can expect it'
+          );
+        });
+
+        sinon.assert.threw(requestHook);
+      });
+
+      it('should call responseHook when set in config', async () => {
+        const responseHook = sinon.spy(
+          (
+            span: Span,
+            cmdName: string,
+            _cmdArgs: Array<string | Buffer | number>,
+            response: unknown
+          ) => {
+            span.setAttribute(
+              'attribute key from hook',
+              'custom value from hook'
+            );
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          responseHook,
+          ...defaultConfig,
+        });
+
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          await cluster.set('response-hook-test', 'test-value');
+          const endedSpans = memoryExporter.getFinishedSpans();
+
+          const clusterSpan = endedSpans.find(s => s.name === 'cluster.set');
+
+          // Make sure there are at least 2 spans: cluster.set -> set
+          assert.ok(endedSpans.length >= 2);
+          assert.ok(clusterSpan);
+          assert.strictEqual(
+            clusterSpan.attributes['attribute key from hook'],
+            'custom value from hook'
+          );
+        });
+
+        assert.ok(responseHook.callCount >= 2);
+        const [, cmdName, , response] = responseHook.firstCall.args as [
+          Span,
+          string,
+          unknown,
+          Buffer
+        ];
+        assert.strictEqual(cmdName, 'set');
+        assert.strictEqual(response.toString(), 'OK');
+      });
+
+      it('should ignore responseHook which throws exception', async () => {
+        const responseHook = sinon.spy(
+          (
+            _span: Span,
+            _cmdName: string,
+            _cmdArgs: Array<string | Buffer | number>,
+            _response: unknown
+          ) => {
+            throw Error('error thrown in responseHook');
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          responseHook,
+          ...defaultConfig,
+        });
+
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          await cluster.incr('response-hook-throw-test');
+          const endedSpans = memoryExporter.getFinishedSpans();
+
+          const clusterSpan = endedSpans.find(s => s.name === 'cluster.incr');
+          assert.ok(clusterSpan);
+
+          // Make sure there are at least 2 spans: cluster.set -> set
+          assert.ok(endedSpans.length >= 2);
+        });
+
+        sinon.assert.threw(responseHook);
+      });
+    });
+
+    describe('Parse startup nodes', () => {
+      it('should parse cluster startup nodes', () => {
+        const combinedStartupNodes = parseStartupNodes([
+          '127.0.0.1:3000',
+          3001,
+          { host: 'localhost', port: 3002 },
+        ]);
+
+        assert.deepStrictEqual(combinedStartupNodes, [
+          '127.0.0.1:3000',
+          'localhost:3001',
+          'localhost:3002',
+        ]);
+
+        const invalidStartupNodes = parseStartupNodes({} as any);
+
+        assert.deepStrictEqual(invalidStartupNodes, []);
+
+        const combinedStartupNodes2 = parseStartupNodes([
+          'test.domain.com:123',
+          { host: 'other.test.domain.com', port: 345 },
+          { host: 'test.domain.com', port: 678 },
+        ]);
+
+        assert.deepStrictEqual(combinedStartupNodes2, [
+          'test.domain.com:123',
+          'other.test.domain.com:345',
+          'test.domain.com:678',
+        ]);
+      });
     });
   });
 });

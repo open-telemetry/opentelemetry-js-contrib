@@ -29,3 +29,21 @@ export const endSpan = (
   }
   span.end();
 };
+
+export const parseStartupNodes = (
+  startupNodes?: Array<string | number | { host: string; port: number }>
+): Array<string> => {
+  if (!Array.isArray(startupNodes)) {
+    return [];
+  }
+
+  return startupNodes.map(node => {
+    if (typeof node === 'string') {
+      return node;
+    } else if (typeof node === 'number') {
+      return `localhost:${node}`;
+    } else {
+      return `${node.host}:${node.port}`;
+    }
+  });
+};
