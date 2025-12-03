@@ -14,16 +14,25 @@
  * limitations under the License.
  */
 
-import { diag, trace, context, SpanKind } from '@opentelemetry/api';
+import { diag, trace, context, SpanKind, type Attributes } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import { IORedisInstrumentationConfig } from './types';
 import { IORedisCommand, RedisInterface } from './internal-types';
 import {
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
+import {
   DB_SYSTEM_VALUE_REDIS,
+  DB_SYSTEM_NAME_VALUE_REDIS,
   ATTR_DB_CONNECTION_STRING,
   ATTR_DB_STATEMENT,
   ATTR_DB_SYSTEM,
@@ -41,8 +50,24 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
 };
 
 export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumentationConfig> {
+  private _netSemconvStability!: SemconvStability;
+  private _dbSemconvStability!: SemconvStability;
+
   constructor(config: IORedisInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+    this._setSemconvStabilityFromEnv();
+  }
+
+  // Used for testing.
+  private _setSemconvStabilityFromEnv() {
+    this._netSemconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._dbSemconvStability = semconvStabilityFromStr(
+      'database',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   override setConfig(config: IORedisInstrumentationConfig = {}) {
@@ -120,12 +145,29 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
         return original.apply(this, arguments);
       }
 
+      const attributes: Attributes = {};
+      const { host, port } = this.options;
+      const dbQueryText = dbStatementSerializer(cmd.name, cmd.args);
+      if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
+        attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_REDIS;
+        attributes[ATTR_DB_STATEMENT] = dbQueryText;
+        attributes[ATTR_DB_CONNECTION_STRING] = `redis://${host}:${port}`;
+      }
+      if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_REDIS;
+        attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
+      }
+      if (instrumentation._netSemconvStability & SemconvStability.OLD) {
+        attributes[ATTR_NET_PEER_NAME] = host;
+        attributes[ATTR_NET_PEER_PORT] = port;
+      }
+      if (instrumentation._netSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_SERVER_ADDRESS] = host;
+        attributes[ATTR_SERVER_PORT] = port;
+      }
       const span = instrumentation.tracer.startSpan(cmd.name, {
         kind: SpanKind.CLIENT,
-        attributes: {
-          [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_REDIS,
-          [ATTR_DB_STATEMENT]: dbStatementSerializer(cmd.name, cmd.args),
-        },
+        attributes,
       });
 
       const { requestHook } = config;
@@ -146,13 +188,6 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
         );
       }
 
-      const { host, port } = this.options;
-
-      span.setAttributes({
-        [ATTR_NET_PEER_NAME]: host,
-        [ATTR_NET_PEER_PORT]: port,
-        [ATTR_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
-      });
 
       try {
         const result = original.apply(this, arguments);
@@ -199,20 +234,30 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
         return original.apply(this, arguments);
       }
 
+      const attributes: Attributes = {};
+      const { host, port } = this.options;
+      if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
+        attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_REDIS;
+        attributes[ATTR_DB_STATEMENT] = 'connect';
+        attributes[ATTR_DB_CONNECTION_STRING] = `redis://${host}:${port}`;
+      }
+      if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_REDIS;
+        attributes[ATTR_DB_QUERY_TEXT] = 'connect';
+      }
+      if (instrumentation._netSemconvStability & SemconvStability.OLD) {
+        attributes[ATTR_NET_PEER_NAME] = host;
+        attributes[ATTR_NET_PEER_PORT] = port;
+      }
+      if (instrumentation._netSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_SERVER_ADDRESS] = host;
+        attributes[ATTR_SERVER_PORT] = port;
+      }
       const span = instrumentation.tracer.startSpan('connect', {
         kind: SpanKind.CLIENT,
-        attributes: {
-          [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_REDIS,
-          [ATTR_DB_STATEMENT]: 'connect',
-        },
+        attributes,
       });
-      const { host, port } = this.options;
 
-      span.setAttributes({
-        [ATTR_NET_PEER_NAME]: host,
-        [ATTR_NET_PEER_PORT]: port,
-        [ATTR_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
-      });
       try {
         const client = original.apply(this, arguments);
         endSpan(span, null);

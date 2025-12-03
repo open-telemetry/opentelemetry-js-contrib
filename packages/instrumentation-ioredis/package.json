@@ -56,13 +56,13 @@
     "@opentelemetry/contrib-test-utils": "^0.55.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/ioredis4": "npm:@types/ioredis@4.28.10",
     "ioredis": "5.8.2"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.208.0",
-    "@opentelemetry/redis-common": "^0.38.2"
+    "@opentelemetry/redis-common": "^0.38.2",
+    "@opentelemetry/semantic-conventions": "^1.33.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-ioredis#readme"
 }
