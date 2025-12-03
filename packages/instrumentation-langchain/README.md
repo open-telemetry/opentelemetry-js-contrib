@@ -15,7 +15,7 @@ npm install --save @opentelemetry/instrumentation-langchain
 
 ## Supported Versions
 
-- [`langchain`](https://www.npmjs.com/package/langchain) versions >= `0.1.0`
+- [`langchain`](https://www.npmjs.com/package/langchain) versions >= `1.0.0`
 
 ## Usage
 

@@ -39,7 +39,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     return [
       new InstrumentationNodeModuleDefinition(
         'langchain',
-        ['>=0.1.0'],
+        ['>=1.0.0'],
         /* istanbul ignore next */
         modExports => {
           this._diag.debug('Applying LangChain instrumentation');

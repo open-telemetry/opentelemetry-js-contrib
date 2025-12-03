@@ -57,7 +57,7 @@
     "@typescript-eslint/parser": "5.8.1",
     "cross-env": "7.0.3",
     "expect": "29.2.0",
-    "langchain": "^0.3.0",
+    "langchain": "^1.0.0",
     "nock": "^14.0.0",
     "nyc": "17.1.0",
     "rimraf": "5.0.10",
