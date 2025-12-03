@@ -366,7 +366,7 @@ export function getOracleTelemetryTraceHandlerClass(
       return metricsAttributes;
     }
 
-    private _updateExecuteDuration(
+    private _recordExecuteDuration(
       traceContext: TraceSpanData,
       startExecTime: HrTime | undefined
     ) {
@@ -428,7 +428,7 @@ export function getOracleTelemetryTraceHandlerClass(
       this._updateFinalSpanAttributes(traceContext);
       switch (traceContext.operation) {
         case SpanNames.EXECUTE:
-          this._updateExecuteDuration(
+          this._recordExecuteDuration(
             traceContext,
             traceContext.userContext.startTime
           );
@@ -438,7 +438,7 @@ export function getOracleTelemetryTraceHandlerClass(
           );
           break;
         case SpanNames.EXECUTE_MANY:
-          this._updateExecuteDuration(
+          this._recordExecuteDuration(
             traceContext,
             traceContext.userContext.startTime
           );
