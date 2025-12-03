@@ -12,8 +12,6 @@
   "scripts": {
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -52,18 +50,7 @@
     "@opentelemetry/sdk-logs": "^0.208.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@types/node": "18.18.14",
-    "@typescript-eslint/eslint-plugin": "5.8.1",
-    "@typescript-eslint/parser": "5.8.1",
-    "cross-env": "7.0.3",
-    "expect": "29.2.0",
-    "langchain": "^1.0.0",
-    "nock": "^14.0.0",
-    "nyc": "17.1.0",
-    "rimraf": "5.0.10",
-    "sinon": "15.2.0",
-    "test-all-versions": "6.1.0",
-    "typescript": "5.0.4"
+    "langchain": "^1.0.0"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.205.0"
