@@ -1,6 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-langchain",
   "version": "0.1.0",
+  "private": true,
   "description": "OpenTelemetry instrumentation for the `langchain` LangChain.js library",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
