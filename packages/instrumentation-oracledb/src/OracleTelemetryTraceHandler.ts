@@ -16,7 +16,7 @@
  *
  * Copyright (c) 2025, Oracle and/or its affiliates.
  * */
-import { safeExecuteInTheMiddle, semconvStabilityFromStr } from '@opentelemetry/instrumentation';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
   Span,
   SpanStatusCode,
