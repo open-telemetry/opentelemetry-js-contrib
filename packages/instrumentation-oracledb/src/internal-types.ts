@@ -22,9 +22,9 @@ import { SpanConnectionConfig } from './types';
 // onEnterFn returns this Context(contains only span for now) and it is
 // received in onExitFn to end the span.
 export interface InstrumentationContext {
-  startTime?: api.HrTime;
   connectionsOpen?: number;
   span: api.Span;
+  startTime?:api.HrTime;
 }
 
 // Captures the entire span data.
@@ -52,17 +52,4 @@ export interface SpanCallLevelConfig {
   statement?: string; // SQL stmt.
   operation?: string; // SQL op ('SELECT | INSERT ..').
   values?: any[]; // bind values.
-}
-
-export interface PoolMetricsInput {
-  pool?: oracledbTypes.Pool;
-  poolName: string;
-  openConns?: number;
-  inUseConns?: number;
-};
-
-export interface PoolConnectConfig {
-  poolAlias: string,
-  connectString: string,
-  user: string,
 }

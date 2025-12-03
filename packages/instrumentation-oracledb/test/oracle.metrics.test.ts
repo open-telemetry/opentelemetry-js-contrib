@@ -1,20 +1,21 @@
+/* eslint-disable prettier/prettier */
 /*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright (c) 2025, Oracle and/or its affiliates.
- * */
+* Copyright The OpenTelemetry Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+* Copyright (c) 2025, Oracle and/or its affiliates.
+* */
 import {
   AggregationTemporality,
   DataPoint,
@@ -89,7 +90,7 @@ describe.only('oracledb-metrics', () => {
     const d1 = Date.now();
     await pool.getConnection();
     const d2 = Date.now();
-    queueTimeout = Number(d2 - d1) + 1500;
+    queueTimeout = Number(d2 - d1) + 100;
     await pool.close(0)
     await initMeterProvider();
   });
@@ -356,7 +357,120 @@ describe.only('oracledb-metrics', () => {
 
     });
 
-    describe('1.2 Multiple pools : all of them should be instrumented', () => {
+    describe('1.2 Checking Pool connection hits/misses : pool2', ()=>{
+      let pool:oracledb.Pool
+      const poolName = 'pool2'
+      beforeEach(async()=>{
+        pool = await oracledb.createPool({...utils.POOL_CONFIG, poolIncrement:2 ,poolAlias:poolName})
+        await initMeterProvider();
+      })
+
+      afterEach(async()=>{
+        if(pool) await pool.close(0)
+      })
+
+      function checkConnHitsMisses(metrics: MetricData[], hits: number, misses: number){
+        const i = metrics.findIndex(
+          (m) => m.descriptor.name === 'db.client.connection.hits'
+        );
+        if(hits === 0)
+          assert.strictEqual(i, -1)
+        else
+        {
+          assert.notEqual(i, -1)     
+          assert.strictEqual(metrics[i].dataPointType, DataPointType.SUM);
+          assert.strictEqual(metrics[i].dataPoints.length, 1);
+          assert.strictEqual(
+            metrics[i].dataPoints[0].attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME],
+            poolName
+          );
+          assert.strictEqual(
+            metrics[i].dataPoints[0].value,
+            hits
+          );
+        }
+        
+        const j = metrics.findIndex(
+          (m) => m.descriptor.name === 'db.client.connection.misses'
+        );
+        if(misses === 0)
+          assert.strictEqual(j, -1)
+        else{
+          assert.notEqual(j, -1)
+          assert.strictEqual(metrics[j].dataPointType, DataPointType.SUM);
+          assert.strictEqual(metrics[j].dataPoints.length, 1);
+          assert.strictEqual(
+            metrics[j].dataPoints[0].attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME],
+            poolName
+          );
+          assert.strictEqual(
+            metrics[j].dataPoints[0].value,
+            misses
+          );
+        }
+      }
+
+      it('1.2.1 No hits/miss on pool warmup', async()=>{
+        await utils.waitForCreatePool(pool, queueTimeout)
+        const metrics = await getMetrics();
+        checkConnHitsMisses(metrics,0,0)
+      })
+
+      it('1.2.2 Should be connection miss on getting connection with no pool warmup', async()=>{
+        await pool.getConnection();
+        const metrics = await getMetrics();
+        checkConnHitsMisses(metrics,0,1)
+      })
+
+      it('1.2.3 Should be atmost poolMin connection hits & subsequent misses when getting connections after pool warmup', async()=>{
+        await utils.waitForCreatePool(pool, queueTimeout)
+        for(let i=0; i<pool.poolMin; i++)
+          await pool.getConnection();
+        let metrics = await getMetrics();
+        checkConnHitsMisses(metrics,pool.poolMin,0)
+        await pool.getConnection();
+        metrics = await getMetrics();
+        checkConnHitsMisses(metrics,pool.poolMin,1)
+      })
+      
+      it('1.2.4 Should be Connection miss on getting connection from pool with no free connections', async()=>{
+        instrumentation.disable();
+        for(let i=0; i<pool.poolMin; i++)
+          await pool.getConnection();
+        instrumentation.enable();
+        await pool.getConnection();
+        const metrics = await getMetrics();
+        checkConnHitsMisses(metrics,0,1)
+      })
+      
+      it('1.2.5 Should be multiple connection misses on getting multiple connections from pool with no free connections', async()=>{
+        for(let i=0; i<pool.poolMin; i++)
+          await pool.getConnection();
+        const metrics = await getMetrics();
+        checkConnHitsMisses(metrics,0,pool.poolMin)
+      })
+
+      it('1.2.6 Should be a connection hit when there are extra free connections according due to pool increment', async()=>{
+        for(let i=0; i<pool.poolMin; i++)
+          await pool.getConnection();
+        await pool.getConnection();
+        await new Promise((resolve) => setTimeout(resolve, queueTimeout*pool.poolIncrement));
+        await pool.getConnection();
+        let metrics = await getMetrics();
+        checkConnHitsMisses(metrics,1,pool.poolMin+1);
+      })
+
+      it('1.2.7 Should be a connection hit if a connection is got after some connection is closed', async()=>{
+        const conn = await pool.getConnection();
+        await conn.close()
+        await pool.getConnection();
+        let metrics = await getMetrics();
+        checkConnHitsMisses(metrics,1,1);
+      })
+
+    } )
+
+    describe('1.3 Multiple pools : all of them should be instrumented', () => {
 
       after(async () => {
         if (newPool1)
@@ -375,7 +489,7 @@ describe.only('oracledb-metrics', () => {
       let poolName1 = 'newPool1';
       let poolName2 = 'newPool2';
 
-      it('1.2.1 Creating 2 pools...', async () => {
+      it('1.3.1 Creating 2 pools...', async () => {
 
         newPool1 = await oracledb.createPool({ ...utils.POOL_CONFIG, poolAlias: poolName1, enableStatistics: true })
         newPool2 = await oracledb.createPool({ ...utils.POOL_CONFIG, poolAlias: poolName2, enableStatistics: true })
@@ -473,7 +587,7 @@ describe.only('oracledb-metrics', () => {
     });
   });
 
-  describe('2. Pool Connection duration metrics', () => {
+  describe('2. Connection duration metrics', () => {
     let pool: oracledb.Pool;
     const poolName = 'pool';
 
@@ -569,7 +683,7 @@ describe.only('oracledb-metrics', () => {
     })
 
     it(`2.2 Should generate ${METRIC_DB_CLIENT_OPERATION_DURATION} metric with correct operation name 
-      \twhen statement is PLSQL & executed using execute()`, async () => {
+      \twhen statement is PLSQL containing outBinds binds & executed using execute()`, async () => {
       await meterProvider.shutdown();
       await initMeterProvider();
       const plsql = `BEGIN
@@ -588,7 +702,7 @@ describe.only('oracledb-metrics', () => {
     })
 
     it(`2.3 Should generate ${METRIC_DB_CLIENT_OPERATION_DURATION} metric with correct operation name 
-      \twhen executed using executeMany()`, async () => {
+      \twhen executed using executeMany() containing inputBinds`, async () => {
       await meterProvider.shutdown();
       await initMeterProvider();
       const conn = await pool.getConnection();
@@ -620,7 +734,7 @@ describe.only('oracledb-metrics', () => {
     })
 
     it(`2.4 Should generate ${METRIC_DB_CLIENT_OPERATION_DURATION} metric with correct operation name 
-      \twhen statement is PLSQL & executed using executeMany()`, async () => {
+      \twhen statement is PLSQL & executed using executeMany() containing inputBinds`, async () => {
       await meterProvider.shutdown();
       await initMeterProvider();
       const conn = await pool.getConnection();

@@ -25,18 +25,21 @@ import {
 import {
   hrTime,
   hrTimeDuration,
-  hrTimeToMilliseconds
+  hrTimeToMilliseconds,
 } from '@opentelemetry/core'
 import { PoolConnectionsCounter } from './types';
 import * as oracleDBTypes from 'oracledb';
-import { ATTR_DB_CLIENT_CONNECTION_POOL_NAME, ATTR_DB_CLIENT_CONNECTION_STATE, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE, DB_CLIENT_CONNECTION_STATE_VALUE_USED } from './semconv';
-import { PoolConnectConfig, PoolMetricsInput } from './internal-types';
-import { ATTR_DB_NAMESPACE, ATTR_DB_OPERATION_NAME, ATTR_ERROR_TYPE, ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT } from '@opentelemetry/semantic-conventions';
+import { ATTR_DB_CLIENT_CONNECTION_POOL_NAME, 
+  ATTR_DB_CLIENT_CONNECTION_STATE, 
+  DB_CLIENT_CONNECTION_STATE_VALUE_IDLE, 
+  DB_CLIENT_CONNECTION_STATE_VALUE_USED } from './semconv';
 
 let _operationDuration: Histogram
 let _connectionsCount: UpDownCounter;
 let _connectionPendingRequests: UpDownCounter;
 let _connectionsTimeouts!: Counter;
+let _connectionHits!: Counter;
+let _connectionMisses!: Counter;
 let _connectionsCounter: Record<string, PoolConnectionsCounter> = {};
 
 // It returns db.namespace as mentioned in semantic conventions
@@ -52,30 +55,25 @@ export function getDBNameSpace(
   return `${instanceName ?? ''}|${pdbName ?? ''}|${serviceName ?? ''}`;
 }
 
-export function getPoolName(config: PoolConnectConfig):string{
-  if (config.poolAlias) return config.poolAlias;
-  if(config.connectString)
-    return `${config.connectString}_${config.user}`
+// To be discussed
+export function getPoolName(pool: any):string{
+  if (pool.poolAlias) return pool.poolAlias;
+  if(pool.connectString)
+    return `${pool.connectString}_${pool.user}`
   return 'default';
 }  
 
+// TO be discussed
 export function getOperationName(statement: string | undefined, isBatch: boolean):string{
   if (!statement || typeof statement !== "string") return "UNKNOWN";
 
-  // Trim and normalize spaces
   const normalized = statement.trim().replace(/\s+/g, " ");
-
-  // Detect PL/SQL block (anonymous block)
   if (/^(BEGIN|DECLARE)\b/i.test(normalized)) {
     return isBatch ? "BATCH PLSQL" : "PLSQL";
   }
-  // Extract the first SQL keyword
   const firstWord = normalized.split(" ")[0].replace(/;$/, "").toUpperCase();
-
-  // For consistency, uppercase the operation name
   const opName = firstWord || "UNKNOWN";
 
-  // Handle batch prefix
   return isBatch ? `BATCH ${opName}` : opName;
 }
 
@@ -99,11 +97,29 @@ export function _setMetricInstruments(meter: any) {
   );
 
   _connectionsTimeouts = meter.createCounter(
-    'db.client.connection.timeouts', //TODO:: use semantic convention
+    'db.client.connection.timeouts',
     {
       description:
         'The number of connection timeouts that have occurred trying to obtain a connection from the pool.',
       unit: '{timeout}',
+    }
+  );
+
+  _connectionHits = meter.createCounter(
+    'db.client.connection.hits', //TODO:: to be added in semantic convention
+    {
+      description:
+        'The number of requests that got a connection from the already available free connections from the pool.',
+      unit: '{request}',
+    }
+  );
+
+  _connectionMisses = meter.createCounter(
+    'db.client.connection.misses', //TODO:: to be added in semantic convention
+    {
+      description:
+        'The number of requests that got a connection from newly created open connections from the pool.',
+      unit: '{request}',
     }
   );
 
@@ -126,32 +142,23 @@ export function _setMetricInstruments(meter: any) {
   });
 }
 
-export function updateCounter({ pool, poolName, openConns, inUseConns }: 
-  PoolMetricsInput) {
-  if (!poolName) return;
+export function updateCounter(pool:oracleDBTypes.Pool) {
+  if (!pool) return;
+  const poolName = getPoolName(pool)
 
   const latest = _connectionsCounter[poolName] ||
     { idle: 0, used: 0, pending: 0, timeouts: 0 };
 
-  // derive unified values from either pool or numbers
-  // full pool object can not be obtained from thin pool
+  // fetch stats values from pool
   const metrics =
-    pool && pool.status === oracleDBTypes.POOL_STATUS_OPEN
+    pool.status === oracleDBTypes.POOL_STATUS_OPEN
       ? {
           used: pool.connectionsInUse,
           idle: pool.connectionsOpen - pool.connectionsInUse,
           pending: pool.getStatistics()?.currentQueueLength,
           timeouts: pool.getStatistics()?.requestTimeouts,
         }
-      : pool ? { used: 0, idle: 0, pending: 0, timeouts: 0 }
-      : openConns !== undefined && inUseConns !== undefined
-      ? {
-          used: inUseConns,
-          idle: openConns - inUseConns,
-          pending: latest.pending,
-          timeouts: latest.timeouts,
-        }
-      : latest;
+      : { used: 0, idle: 0, pending: 0, timeouts: 0 };
 
   // all delta calculation at once
   const delta = {
@@ -180,20 +187,25 @@ export function updateCounter({ pool, poolName, openConns, inUseConns }:
   _connectionsCounter[poolName] = metrics;
 }
 
-export function recordOperationDuration(attributes: Attributes, startExecTime: HrTime) {
-  const metricsAttributes: Attributes = {};
-  const keysToCopy: string[] = [
-    ATTR_DB_NAMESPACE,
-    ATTR_ERROR_TYPE,
-    ATTR_SERVER_PORT,
-    ATTR_SERVER_ADDRESS,
-    ATTR_DB_OPERATION_NAME,
-  ];
-  keysToCopy.forEach(key => {
-    if (key in attributes) {
-      metricsAttributes[key] = attributes[key];
-    }
-  });
+export function updateConnHits(pool:oracleDBTypes.Pool){
+  if(!pool) return;
+  const poolName = getPoolName(pool);
+  const attributes  = {
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
+  }
+  _connectionHits.add(1, attributes);
+}
+
+export function updateConnMisses(pool:oracleDBTypes.Pool){
+  if(!pool) return;
+  const poolName = getPoolName(pool);
+  const attributes  = {
+    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
+  }
+  _connectionMisses.add(1, attributes);
+}
+
+export function recordOperationDuration(metricsAttributes: Attributes, startExecTime: HrTime) {
   const durationSeconds =
    hrTimeToMilliseconds(hrTimeDuration(startExecTime, hrTime())) / 1000;
   _operationDuration.record(durationSeconds, metricsAttributes);

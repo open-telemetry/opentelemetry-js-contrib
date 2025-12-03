@@ -51,7 +51,7 @@ const OUT_BIND = 3003; // bindinfo direction value.
 
 // Local modules.
 import { OracleInstrumentationConfig, SpanConnectionConfig } from './types';
-import { TraceSpanData, SpanCallLevelConfig, PoolConnectConfig } from './internal-types';
+import { TraceSpanData, SpanCallLevelConfig } from './internal-types';
 import * as metricsUtils from './metricUtils';
 import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from './constants';
 
@@ -336,11 +336,9 @@ export function getOracleTelemetryTraceHandlerClass(
       }
     }
 
-    private _updateExecuteDuration(
-      traceContext: TraceSpanData,
-      startExecTime: HrTime | undefined
+    private _getExecOperationAttributes(
+      traceContext: TraceSpanData
     ) {
-      if(startExecTime === undefined) return;
       const isBatch = traceContext.operation === SpanNames.EXECUTE_MANY;
       const connAttrs = this._getConnectionSpanAttributes(traceContext.connectLevelConfig);
       let attributes: Attributes = {
@@ -352,6 +350,28 @@ export function getOracleTelemetryTraceHandlerClass(
       };
       if (traceContext.error)
         attributes = { ...attributes, [ATTR_ERROR_TYPE]: traceContext.error.code }
+      const metricsAttributes: Attributes = {};
+      const keysToCopy: string[] = [
+        ATTR_DB_NAMESPACE,
+        ATTR_ERROR_TYPE,
+        ATTR_SERVER_PORT,
+        ATTR_SERVER_ADDRESS,
+        ATTR_DB_OPERATION_NAME,
+      ];
+      keysToCopy.forEach(key => {
+        if (key in attributes) {
+          metricsAttributes[key] = attributes[key];
+        }
+      });
+      return metricsAttributes;
+    }
+
+    private _updateExecuteDuration(
+      traceContext: TraceSpanData,
+      startExecTime: HrTime | undefined
+    ) {
+      if(startExecTime === undefined) return;
+      const attributes = this._getExecOperationAttributes(traceContext);
       metricsUtils.recordOperationDuration(attributes, startExecTime)
     }
 
@@ -375,7 +395,8 @@ export function getOracleTelemetryTraceHandlerClass(
         span: this._getTracer().startSpan(spanName, {
           kind: SpanKind.CLIENT,
           attributes: spanAttributes,
-        })
+        }), 
+        startTime: hrTime()
       };
 
       if (traceContext.fn) {
@@ -388,14 +409,10 @@ export function getOracleTelemetryTraceHandlerClass(
 
       switch (traceContext.operation) {
         case SpanNames.EXECUTE:
-          traceContext.userContext.startTime = hrTime();
           this._handleExecuteCustomRequest(
             traceContext.userContext.span,
             traceContext
           );
-          break;
-        case SpanNames.EXECUTE_MANY:
-          traceContext.userContext.startTime = hrTime();
           break;
         default:
           break;
@@ -463,79 +480,45 @@ export function getOracleTelemetryTraceHandlerClass(
       traceContext.userContext.span.end();
     }
 
-    onPoolExpand = (
-      connectConfig: PoolConnectConfig,
-      openConns: number,
-      inUseConns: number
-    ): void => {
-      metricsUtils.updateCounter({
-        poolName: metricsUtils.getPoolName(connectConfig),
-        openConns,
-        inUseConns,
-      });
-      
+    onPoolExpand(pool: oracleDBTypes.Pool) {
+      metricsUtils.updateCounter(pool);
     };
 
-    onPoolShrink = (
-      connectConfig: PoolConnectConfig,
-      openConns: number,
-      inUseConns: number
-    ): void => {
-      metricsUtils.updateCounter({
-        poolName: metricsUtils.getPoolName(connectConfig),
-        openConns,
-        inUseConns,
-      });
+    onPoolShrink(pool: oracleDBTypes.Pool) {
+      metricsUtils.updateCounter(pool);
     };
 
-    onAcquire? = (
-      pool:oracleDBTypes.Pool, 
-      connectConfig: PoolConnectConfig
-    ):void=> {
-      metricsUtils.updateCounter({
-        pool,                       
-        poolName: metricsUtils.getPoolName(connectConfig), 
-      });
+    onAcquire(pool:oracleDBTypes.Pool) {
+      metricsUtils.updateCounter(pool);
+    }
+
+    onRelease(pool: oracleDBTypes.Pool) {
+      metricsUtils.updateCounter(pool);
     };
 
-    onRelease? = (
-      pool:oracleDBTypes.Pool,
-      connectConfig: PoolConnectConfig
-    ):void=> {
-      metricsUtils.updateCounter({
-        pool,                       
-        poolName: metricsUtils.getPoolName(connectConfig), 
-      });
+    onWait(pool: oracleDBTypes.Pool) {
+      metricsUtils.updateCounter(pool);
     };
 
-    onWait? = (
-      pool:oracleDBTypes.Pool,
-      connectConfig: PoolConnectConfig
-    ):void=> {
-      metricsUtils.updateCounter({
-        pool,                       
-        poolName: metricsUtils.getPoolName(connectConfig), 
-      });
+    onTimeout(pool: oracleDBTypes.Pool) {
+      metricsUtils.updateCounter(pool);
+    };
+    
+    // When a connection request has got a connection from
+    // the already available free connections from the pool.
+    onConnectionHit(pool:oracleDBTypes.Pool) {
+      metricsUtils.updateConnHits(pool);
     };
 
-    onTimeout? = (
-      pool:oracleDBTypes.Pool,
-      connectConfig: PoolConnectConfig
-    ):void=> {
-      metricsUtils.updateCounter({
-        pool,                       
-        poolName: metricsUtils.getPoolName(connectConfig), 
-      });
+    // When a connection request has got a connection by
+    // creating a new connection as there was no free connection
+    // available in the pool.
+    onConnectionMiss(pool:oracleDBTypes.Pool) {
+      metricsUtils.updateConnMisses(pool);
     };
 
-    onPoolClose? = (
-      pool:oracleDBTypes.Pool,
-      connectConfig: PoolConnectConfig
-    ):void=> {
-      metricsUtils.updateCounter({
-        pool,                       
-        poolName: metricsUtils.getPoolName(connectConfig), 
-      });
+    onPoolClose(pool: oracleDBTypes.Pool) {
+      metricsUtils.updateCounter(pool);
     };
   }
   return OracleTelemetryTraceMetricHandler;

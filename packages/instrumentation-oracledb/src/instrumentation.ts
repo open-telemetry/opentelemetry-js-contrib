@@ -35,7 +35,7 @@ export class OracleInstrumentation extends InstrumentationBase {
   protected init() {
     const moduleOracleDB = new InstrumentationNodeModuleDefinition(
       'oracledb',
-      ['>= 6.7 < 7', '7.0.0-dev'],
+      [">=6.0.0 <7", "7.0.0-dev"], // TODO: "7.0.0-dev" to be removed in final commit
       (moduleExports: typeof oracleDBTypes) => {
         if (!moduleExports) {
           return;
