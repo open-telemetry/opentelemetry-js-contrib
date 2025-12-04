@@ -24,12 +24,12 @@ import { extractContainerIdFromLine } from './utils';
 import { ATTR_CONTAINER_ID } from '../semconv';
 
 export class ContainerDetector implements ResourceDetector {
-  private readonly CONTAINER_ID_LENGTH = 64;
-  private readonly DEFAULT_CGROUP_V1_PATH = '/proc/self/cgroup';
-  private readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
-  private readonly UTF8_UNICODE = 'utf8';
-  private readonly HOSTNAME = 'hostname';
-  private readonly MARKING_PREFIX = ['containers', 'overlay-containers'];
+  public readonly CONTAINER_ID_LENGTH = 64;
+  public readonly DEFAULT_CGROUP_V1_PATH = '/proc/self/cgroup';
+  public readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
+  public readonly UTF8_UNICODE = 'utf8';
+  public readonly HOSTNAME = 'hostname';
+  public readonly MARKING_PREFIX = ['containers', 'overlay-containers'];
 
   private static readFileAsync = util.promisify(fs.readFile);
 

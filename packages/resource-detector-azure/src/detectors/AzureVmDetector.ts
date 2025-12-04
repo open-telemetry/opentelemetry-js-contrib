@@ -75,7 +75,7 @@ class AzureVmResourceDetector implements ResourceDetector {
     return { attributes };
   }
 
-  private async getAzureVmMetadata(): Promise<DetectedResourceAttributes> {
+  public async getAzureVmMetadata(): Promise<DetectedResourceAttributes> {
     try {
       const options = {
         host: AZURE_VM_METADATA_HOST,

@@ -36,8 +36,8 @@ import {
  * This class is the base component for a React component with lifecycle instrumentation
  */
 export class BaseOpenTelemetryComponent extends React.Component {
-  private readonly component: string = 'react-load';
-  private moduleName = this.component;
+  public readonly component: string = 'react-load';
+  public moduleName = this.component;
   private _parentSpanMap: WeakMap<React.Component, api.Span>;
   private static _tracer: api.Tracer;
   private static _logger: api.DiagLogger = api.diag;

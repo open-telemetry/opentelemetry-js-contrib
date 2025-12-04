@@ -52,7 +52,7 @@ const WIN_OS_BEANSTALK_CONF_PATH =
   'C:\\Program Files\\Amazon\\XRay\\environment.conf';
 
 export class AwsBeanstalkDetector implements ResourceDetector {
-  private BEANSTALK_CONF_PATH: string;
+  public BEANSTALK_CONF_PATH: string;
   private static readFileAsync = util.promisify(fs.readFile);
   private static fileAccessAsync = util.promisify(fs.access);
 
