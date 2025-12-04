@@ -55,16 +55,16 @@ See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-n
 
 Attributes collected:
 
-| Old semconv            | Stable semconv   | Description                        |
-| ---------------------- | ---------------- | ---------------------------------- |
-| `db.system`            | `db.system.name` | 'mssql' (old), 'microsoft.sql_server' (stable)                            |
-| `db.statement`         | `db.query.text`  | The database query being executed. |
-| `db.user`              | Removed | Username for accessing the database. |
-| `db.name`              | Removed | Integrated into new `db.namespace`. |
-| (not included)         | `db.namespace` | The database associated with the connection, qualified by the instance name.  |
-| `db.sql.table`         | `db.collection.name` | The name of a collection (table, container) within the database.   |
-| `net.peer.name`        | `server.address` | Remote hostname or similar.        |
-| `net.peer.port`        | `server.port`    | Remote port number.                |
+| Old semconv     | Stable semconv       | Description                        |
+| --------------- | -------------------- | ---------------------------------- |
+| `db.system`     | `db.system.name`     | 'mssql' (old), 'microsoft.sql_server' (stable) |
+| `db.statement`  | `db.query.text`      | The database query being executed. |
+| `db.user`       | Removed              | Username for accessing the database. |
+| `db.name`       | Removed              | Integrated into new `db.namespace`. |
+| (not included)  | `db.namespace`       | The database associated with the connection, qualified by the instance name. |
+| `db.sql.table`  | `db.collection.name` | The name of a collection (table, container) within the database. |
+| `net.peer.name` | `server.address`     | Remote hostname or similar.        |
+| `net.peer.port` | `server.port`        | Remote port number.                |
 
 ### Trace Context Propagation
 
