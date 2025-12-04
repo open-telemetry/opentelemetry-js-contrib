@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, trace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
+import { context, trace, SpanStatusCode, SpanKind, type Attributes } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   DB_SYSTEM_VALUE_MSSQL,
@@ -26,7 +26,7 @@ import {
   ATTR_NET_PEER_NAME,
   ATTR_NET_PEER_PORT,
 } from '../src/semconv';
-import * as util from 'util';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   BasicTracerProvider,
@@ -39,6 +39,13 @@ import { TediousInstrumentation } from '../src';
 import makeApi from './api';
 import type { Connection } from 'tedious';
 import * as semver from 'semver';
+// XXX has prettier config stopped working in linting?
+import { ATTR_DB_COLLECTION_NAME, ATTR_DB_NAMESPACE, ATTR_DB_QUERY_TEXT, ATTR_DB_SYSTEM_NAME, ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT, DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER } from '@opentelemetry/semantic-conventions';
+
+// By default tests run with both old and stable semconv. Some test cases
+// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
+const DEFAULT_NET_SEMCONV_STABILITY = SemconvStability.DUPLICATE;
 
 const port = Number(process.env.MSSQL_PORT) || 1433;
 const database = process.env.MSSQL_DATABASE || 'master';
@@ -307,6 +314,65 @@ describe('tedious', () => {
     });
   });
 
+  describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
+    const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
+    after(() => {
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
+      (instrumentation as any)._setSemconvStabilityFromEnv();
+    });
+
+    it('OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
+      (instrumentation as any)._setSemconvStabilityFromEnv();
+      memoryExporter.reset();
+
+      const queryString = "SELECT 42, 'hello world'";
+      const PARENT_NAME = 'parentSpan';
+      const parentSpan = provider.getTracer('default').startSpan(PARENT_NAME);
+      assert.deepStrictEqual(
+        await context.with(trace.setSpan(context.active(), parentSpan), () =>
+          tedious.query(connection, queryString)
+        ),
+        [42, 'hello world']
+      );
+      parentSpan.end();
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
+      assertSpan(spans[0], {
+        name: 'execSql master',
+        sql: queryString,
+        parentSpan,
+      }, SemconvStability.OLD);
+      assert.strictEqual(spans[1].name, PARENT_NAME);
+    });
+
+    it('OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
+      (instrumentation as any)._setSemconvStabilityFromEnv();
+      memoryExporter.reset();
+
+      const queryString = "SELECT 42, 'hello world'";
+      const PARENT_NAME = 'parentSpan';
+      const parentSpan = provider.getTracer('default').startSpan(PARENT_NAME);
+      assert.deepStrictEqual(
+        await context.with(trace.setSpan(context.active(), parentSpan), () =>
+          tedious.query(connection, queryString)
+        ),
+        [42, 'hello world']
+      );
+      parentSpan.end();
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
+      assertSpan(spans[0], {
+        name: 'execSql master',
+        sql: queryString,
+        parentSpan,
+      }, SemconvStability.STABLE);
+      assert.strictEqual(spans[1].name, PARENT_NAME);
+    });
+  });
+
+
   describe('trace context propagation via CONTEXT_INFO', () => {
     function traceparentFromSpan(span: ReadableSpan) {
       const sc = span.spanContext();
@@ -370,13 +436,6 @@ describe('tedious', () => {
   });
 });
 
-const assertMatch = (actual: string | undefined, expected: RegExp) => {
-  assert(
-    actual && expected.test(actual),
-    `Expected ${util.inspect(actual)} to match ${expected}`
-  );
-};
-
 const assertRejects = (
   asyncFn: () => Promise<unknown>,
   expectedMessageRegexp: RegExp | undefined
@@ -392,52 +451,75 @@ const assertRejects = (
         throw error;
       }
       if (expectedMessageRegexp) {
-        assertMatch(err?.message || err, expectedMessageRegexp);
+        assert.match(err?.message || err, expectedMessageRegexp);
       }
     });
 };
 
-function assertSpan(span: ReadableSpan, expected: any) {
-  assert(span);
+function assertSpan(
+  span: ReadableSpan, expected: any, semconvStability: SemconvStability = DEFAULT_NET_SEMCONV_STABILITY)
+{
+  assert.ok(span);
   assert.strictEqual(span.name, expected.name);
   assert.strictEqual(span.kind, SpanKind.CLIENT);
-  assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MSSQL);
-  assert.strictEqual(
-    span.attributes[ATTR_DB_NAME],
-    expected.database ?? database
-  );
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], port);
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], host);
-  assert.strictEqual(span.attributes[ATTR_DB_USER], user);
-  assert.strictEqual(
-    span.attributes['tedious.procedure_count'],
-    expected.procCount ?? 1,
-    'Invalid procedure_count'
-  );
-  assert.strictEqual(
-    span.attributes['tedious.statement_count'],
-    expected.statementCount ?? 1,
-    'Invalid statement_count'
-  );
+
+  // Attributes
+  const actualAttrs = {...span.attributes};
+  const expectedAttrs: Attributes = {
+    'tedious.procedure_count': expected.procCount ?? 1,
+    'tedious.statement_count': expected.statementCount ?? 1,
+  };
+  if (semconvStability & SemconvStability.OLD) {
+    expectedAttrs[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MSSQL;
+    expectedAttrs[ATTR_DB_NAME] = expected.database ?? database;
+    expectedAttrs[ATTR_DB_USER] = user;
+    expectedAttrs[ATTR_NET_PEER_NAME] = host;
+    expectedAttrs[ATTR_NET_PEER_PORT] = port;
+    if (expected.table) {
+      expectedAttrs[ATTR_DB_SQL_TABLE] = expected.table;
+    }
+    // "db.statement"
+    if (expected.sql) {
+      if (expected.sql instanceof RegExp) {
+        assert.match(span.attributes[ATTR_DB_STATEMENT] as string, expected.sql);
+      } else {
+        assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], expected.sql, ATTR_DB_STATEMENT);
+      }
+    } else {
+      assert.strictEqual(actualAttrs[ATTR_DB_STATEMENT], undefined);
+    }
+    delete actualAttrs[ATTR_DB_STATEMENT];
+  }
+  if (semconvStability & SemconvStability.STABLE) {
+    expectedAttrs[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
+    expectedAttrs[ATTR_DB_NAMESPACE] = expected.database ?? database;
+    expectedAttrs[ATTR_SERVER_ADDRESS] = host;
+    expectedAttrs[ATTR_SERVER_PORT] = port;
+    if (expected.table) {
+      expectedAttrs[ATTR_DB_COLLECTION_NAME] = expected.table;
+    }
+    // "db.statement"
+    if (expected.sql) {
+      if (expected.sql instanceof RegExp) {
+        assert.match(span.attributes[ATTR_DB_QUERY_TEXT] as string, expected.sql);
+      } else {
+        assert.strictEqual(span.attributes[ATTR_DB_QUERY_TEXT], expected.sql, ATTR_DB_QUERY_TEXT);
+      }
+    } else {
+      assert.strictEqual(actualAttrs[ATTR_DB_QUERY_TEXT], undefined);
+    }
+    delete actualAttrs[ATTR_DB_QUERY_TEXT];
+  }
+  assert.deepEqual(actualAttrs, expectedAttrs);
+
+
   if (expected.parentSpan) {
     assert.strictEqual(
       span.parentSpanContext?.spanId,
       expected.parentSpan.spanContext().spanId
     );
   }
-  assert.strictEqual(span.attributes[ATTR_DB_SQL_TABLE], expected.table);
-  if (expected.sql) {
-    if (expected.sql instanceof RegExp) {
-      assertMatch(
-        span.attributes[ATTR_DB_STATEMENT] as string | undefined,
-        expected.sql
-      );
-    } else {
-      assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], expected.sql);
-    }
-  } else {
-    assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], undefined);
-  }
+
   if (expected.error) {
     assert(
       expected.error.test(span.status.message),
