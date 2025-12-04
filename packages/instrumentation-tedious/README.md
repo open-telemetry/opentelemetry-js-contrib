@@ -66,9 +66,6 @@ Attributes collected:
 | `net.peer.name`        | `server.address` | Remote hostname or similar.        |
 | `net.peer.port`        | `server.port`    | Remote port number.                |
 
-XXX Get review from owner on db.namespace and lengthy rec from https://opentelemetry.io/docs/specs/semconv/database/sql-server/ note `[1]`.
-
-
 ### Trace Context Propagation
 
 Database trace context propagation can be enabled by setting `enableTraceContextPropagation`to `true`.

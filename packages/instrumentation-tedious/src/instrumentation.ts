@@ -247,6 +247,9 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
           attributes[ATTR_DB_SQL_TABLE] = request.table;
         }
         if (thisPlugin._dbSemconvStability & SemconvStability.STABLE) {
+          // The OTel spec for "db.namespace" discusses handling for connection
+          // to MSSQL "named instances". This isn't currently supported.
+          //    https://opentelemetry.io/docs/specs/semconv/database/sql-server/#:~:text=%5B1%5D%20db%2Enamespace
           attributes[ATTR_DB_NAMESPACE] = databaseName;
           attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
           attributes[ATTR_DB_QUERY_TEXT] = sql;
