@@ -46,12 +46,12 @@ registerInstrumentations({
 
 IORedis instrumentation has few options available to choose from. You can set the following:
 
-| Options                 | Type                                              | Description                                                                                                       |
-| ----------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `dbStatementSerializer` | `DbStatementSerializer`                           | IORedis instrumentation will serialize db.statement using the specified function.                                 |
+| Options                 | Type                                              | Description |
+| ----------------------- | ------------------------------------------------- | ----------- |
+| `dbStatementSerializer` | `DbStatementSerializer`                           | IORedis instrumentation will serialize db.statement using the specified function. |
 | `requestHook`           | `RedisRequestCustomAttributeFunction` (function)  | Function for adding custom attributes on db request. Receives params: `span, { moduleVersion, cmdName, cmdArgs }` |
-| `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response                                                              |
-| `requireParentSpan`     | `boolean`                                         | Require parent to create ioredis span, default when unset is true                                                 |
+| `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response |
+| `requireParentSpan`     | `boolean`                                         | Require parent to create ioredis span, default when unset is true |
 
 #### Custom db.statement Serializer
 
@@ -113,13 +113,13 @@ See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-n
 
 Attributes collected:
 
-| Old semconv            | Stable semconv   | Description                        |
-| ---------------------- | ---------------- | ---------------------------------- |
-| `db.connection_string` | Removed          |                                    |
-| `db.system`            | `db.system.name` | 'redis'                            |
+| Old semconv            | Stable semconv   | Description |
+| ---------------------- | ---------------- | ----------- |
+| `db.connection_string` | Removed          |             |
+| `db.system`            | `db.system.name` | 'redis'     |
 | `db.statement`         | `db.query.text`  | The database query being executed. |
-| `net.peer.port`        | `server.port`    | Remote port number.                |
-| `net.peer.name`        | `server.address` | Remote hostname or similar.        |
+| `net.peer.port`        | `server.port`    | Remote port number. |
+| `net.peer.name`        | `server.address` | Remote hostname or similar. |
 
 
 ## Useful links
