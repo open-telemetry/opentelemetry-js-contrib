@@ -39,7 +39,6 @@ import { TediousInstrumentation } from '../src';
 import makeApi from './api';
 import type { Connection } from 'tedious';
 import * as semver from 'semver';
-// XXX has prettier config stopped working in linting?
 import { ATTR_DB_COLLECTION_NAME, ATTR_DB_NAMESPACE, ATTR_DB_QUERY_TEXT, ATTR_DB_SYSTEM_NAME, ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT, DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER } from '@opentelemetry/semantic-conventions';
 
 // By default tests run with both old and stable semconv. Some test cases
