@@ -46,7 +46,7 @@
   "devDependencies": {
     "@babel/core": "7.28.5",
     "@babel/preset-env": "7.28.5",
-    "@eslint/js": "9.34.0",
+    "@eslint/js": "9.39.1",
     "@nx/eslint": "20.8.3",
     "@types/mocha": "10.0.10",
     "@types/node": "22.17.1",
@@ -58,7 +58,7 @@
     "babel-loader": "10.0.0",
     "babel-plugin-istanbul": "7.0.1",
     "cross-env": "10.1.0",
-    "eslint": "9.34.0",
+    "eslint": "9.39.1",
     "eslint-plugin-baseline-js": "0.4.0",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-n": "17.21.3",
