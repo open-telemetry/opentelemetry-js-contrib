@@ -242,7 +242,10 @@ describe('lambda handler', () => {
     it('should export a valid span', async () => {
       initializeHandler('lambda-test/sync.handler');
 
-      const result = await lambdaRequire('lambda-test/sync').handler('arg', ctx);
+      const result = await lambdaRequire('lambda-test/sync').handler(
+        'arg',
+        ctx
+      );
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
@@ -280,7 +283,10 @@ describe('lambda handler', () => {
 
       initializeHandler('lambda-test/sync.handler');
 
-      const result = await lambdaRequire('lambda-test/sync').handler('arg', ctx);
+      const result = await lambdaRequire('lambda-test/sync').handler(
+        'arg',
+        ctx
+      );
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
@@ -295,7 +301,10 @@ describe('lambda handler', () => {
         lambdaStartTime: Date.now() - 2 * lambdaMaxInitInMilliseconds,
       });
 
-      const result = await lambdaRequire('lambda-test/sync').handler('arg', ctx);
+      const result = await lambdaRequire('lambda-test/sync').handler(
+        'arg',
+        ctx
+      );
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
@@ -359,7 +368,10 @@ describe('lambda handler', () => {
     it('context should have parent trace', async () => {
       initializeHandler('lambda-test/sync.context');
 
-      const result = await lambdaRequire('lambda-test/sync').context('arg', ctx);
+      const result = await lambdaRequire('lambda-test/sync').context(
+        'arg',
+        ctx
+      );
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
       assert.strictEqual(span.spanContext().traceId, result);
@@ -368,7 +380,10 @@ describe('lambda handler', () => {
     it('context should have parent trace', async () => {
       initializeHandler('lambda-test/sync.context');
 
-      const result = await lambdaRequire('lambda-test/sync').context('arg', ctx);
+      const result = await lambdaRequire('lambda-test/sync').context(
+        'arg',
+        ctx
+      );
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
       assert.strictEqual(span.spanContext().traceId, result);
@@ -669,7 +684,10 @@ describe('lambda handler', () => {
       it('sync - success', async () => {
         initializeHandler('lambda-test/sync.handler', config);
 
-        const result = await lambdaRequire('lambda-test/sync').handler('arg', ctx);
+        const result = await lambdaRequire('lambda-test/sync').handler(
+          'arg',
+          ctx
+        );
         const [span] = memoryExporter.getFinishedSpans();
         assert.strictEqual(span.attributes[RES_ATTR], result);
       });
@@ -760,8 +778,8 @@ describe('lambda handler', () => {
       assert.ok(
         span.attributes[ATTR_URL_FULL] ===
           'http://www.example.com:1234/lambda/test/path?key=value&key2=value2' ||
-        span.attributes[ATTR_URL_FULL] ===
-          'http://www.example.com:1234/lambda/test/path?key2=value2&key=value'
+          span.attributes[ATTR_URL_FULL] ===
+            'http://www.example.com:1234/lambda/test/path?key2=value2&key=value'
       );
     });
     it('pulls url from api gateway http events', async () => {

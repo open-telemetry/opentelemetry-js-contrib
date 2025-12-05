@@ -71,7 +71,7 @@ type V3PluginCommand = AwsV3Command<any, any, any, any, any> & {
 export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentationConfig> {
   static readonly component = 'aws-sdk';
   // need declare since initialized in callbacks from super constructor
-  private declare servicesExtensions: ServicesExtensions;
+  declare private servicesExtensions: ServicesExtensions;
 
   private _semconvStability: SemconvStability;
 

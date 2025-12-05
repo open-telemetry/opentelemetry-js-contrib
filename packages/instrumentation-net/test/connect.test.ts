@@ -221,7 +221,7 @@ describe('NetInstrumentation', () => {
       (instrumentation as any)._setSemconvStabilityFromEnv();
     });
 
-    it('tcp with OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', (done) => {
+    it('tcp with OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', done => {
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
       (instrumentation as any)._setSemconvStabilityFromEnv();
       memoryExporter.reset();
@@ -232,7 +232,7 @@ describe('NetInstrumentation', () => {
       });
     });
 
-    it('tcp with OTEL_SEMCONV_STABILITY_OPT_IN=http', (done) => {
+    it('tcp with OTEL_SEMCONV_STABILITY_OPT_IN=http', done => {
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http';
       (instrumentation as any)._setSemconvStabilityFromEnv();
       memoryExporter.reset();
@@ -243,7 +243,7 @@ describe('NetInstrumentation', () => {
       });
     });
 
-    it('ipc with OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', (done) => {
+    it('ipc with OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', done => {
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
       (instrumentation as any)._setSemconvStabilityFromEnv();
       memoryExporter.reset();
@@ -254,7 +254,7 @@ describe('NetInstrumentation', () => {
       });
     });
 
-    it('ipc with OTEL_SEMCONV_STABILITY_OPT_IN=http', (done) => {
+    it('ipc with OTEL_SEMCONV_STABILITY_OPT_IN=http', done => {
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http';
       (instrumentation as any)._setSemconvStabilityFromEnv();
       memoryExporter.reset();

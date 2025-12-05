@@ -47,7 +47,7 @@ type FSPromises = (typeof fs)['promises'];
  * when patching the 1st-level.
  */
 function patchedFunctionWithOriginalProperties<
-  T extends (...args: any[]) => ReturnType<T>
+  T extends (...args: any[]) => ReturnType<T>,
 >(patchedFunction: T, original: T): T {
   return Object.assign(patchedFunction, original);
 }
@@ -296,7 +296,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
   }
 
   protected _patchExistsCallbackFunction<
-    T extends (...args: any[]) => ReturnType<T>
+    T extends (...args: any[]) => ReturnType<T>,
   >(functionName: 'exists', original: T): T {
     const instrumentation = this;
     const patchedFunction = <any>function (this: any, ...args: any[]) {

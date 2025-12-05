@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { diag, trace, context, SpanKind, type Attributes } from '@opentelemetry/api';
+import {
+  diag,
+  trace,
+  context,
+  SpanKind,
+  type Attributes,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -187,7 +193,6 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
           true
         );
       }
-
 
       try {
         const result = original.apply(this, arguments);

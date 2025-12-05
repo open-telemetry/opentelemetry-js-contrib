@@ -6,12 +6,12 @@ class Home extends BaseOpenTelemetryComponent {
   render() {
     return (
       <div>
-        <h1>
-          React Plugin Demo App
-        </h1>
-        <Link to='/test'><button>Enter</button></Link>
+        <h1>React Plugin Demo App</h1>
+        <Link to="/test">
+          <button>Enter</button>
+        </Link>
       </div>
-    )
+    );
   }
 }
 

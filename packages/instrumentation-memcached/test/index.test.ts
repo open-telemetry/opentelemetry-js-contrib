@@ -299,7 +299,10 @@ describe('memcached@2.x', () => {
 
       const span = instrumentationSpans[1]; // get operation
       // old `db.*`
-      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MEMCACHED);
+      assert.strictEqual(
+        span.attributes[ATTR_DB_SYSTEM],
+        DB_SYSTEM_VALUE_MEMCACHED
+      );
       assert.strictEqual(span.attributes[ATTR_DB_OPERATION], 'get');
       // stable `db.*`
       assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], undefined);
@@ -332,7 +335,10 @@ describe('memcached@2.x', () => {
       assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], undefined);
       assert.strictEqual(span.attributes[ATTR_DB_OPERATION], undefined);
       // stable `db.*`
-      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], DB_SYSTEM_NAME_VALUE_MEMCACHED);
+      assert.strictEqual(
+        span.attributes[ATTR_DB_SYSTEM_NAME],
+        DB_SYSTEM_NAME_VALUE_MEMCACHED
+      );
       assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'get');
 
       // old `net.*`

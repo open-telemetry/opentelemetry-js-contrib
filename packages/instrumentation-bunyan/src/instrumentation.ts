@@ -16,7 +16,11 @@
 
 import { inherits } from 'util';
 import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
-import { InstrumentationBase, InstrumentationNodeModuleDefinition, safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
+import {
+  InstrumentationBase,
+  InstrumentationNodeModuleDefinition,
+  safeExecuteInTheMiddle,
+} from '@opentelemetry/instrumentation';
 import { BunyanInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';

@@ -131,10 +131,10 @@ interface OTelPinoStreamOptions {
  *   The event arguments are: `logLine: string`, `err: string | Error`.
  */
 export class OTelPinoStream extends Writable {
-  private declare _otelLogger: Logger;
-  private declare _messageKey: string;
-  private declare _levels;
-  private declare _otelTimestampFromTime;
+  declare private _otelLogger: Logger;
+  declare private _messageKey: string;
+  declare private _levels;
+  declare private _otelTimestampFromTime;
 
   constructor(options: OTelPinoStreamOptions) {
     super();
