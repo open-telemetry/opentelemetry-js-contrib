@@ -40,11 +40,11 @@ export const AWSXRAY_TRACE_ID_ENV_VAR = '_X_AMZN_TRACE_ID';
 export class AWSXRayLambdaPropagator implements TextMapPropagator {
   private _awsXrayPropagator = new AWSXRayPropagator();
 
-  inject(context: Context, carrier: unknown, setter: TextMapSetter) {
+  public inject(context: Context, carrier: unknown, setter: TextMapSetter) {
     this._awsXrayPropagator.inject(context, carrier, setter);
   }
 
-  extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
+  public extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
     const xrayContext = this._awsXrayPropagator.extract(
       context,
       carrier,
@@ -68,7 +68,7 @@ export class AWSXRayLambdaPropagator implements TextMapPropagator {
     );
   }
 
-  fields(): string[] {
+  public fields(): string[] {
     return this._awsXrayPropagator.fields();
   }
 }
