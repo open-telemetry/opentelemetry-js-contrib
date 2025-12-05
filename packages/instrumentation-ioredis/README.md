@@ -105,6 +105,7 @@ Attributes collected:
 | ---------------- | ----------- |
 | `db.system.name` | 'redis'     |
 | `db.query.text`  | The database query being executed. |
+| Not included           | `db.operation.name` | The database operation name.       |
 | `server.port`    | Remote port number. |
 | `server.address` | Remote hostname or similar. |
 
