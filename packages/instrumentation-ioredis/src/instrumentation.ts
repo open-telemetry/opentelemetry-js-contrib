@@ -164,6 +164,7 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
        *
        * Control commands ('multi'/'exec') are not prefixed.
        * These flags are used to prefix operation names so spans reflect transactional or pipelined commands.
+       * Older ioredis versions (<=4.12.x) do not support prefixed operation names for multi/pipeline commands.
        */
       if (
         command.inTransaction &&
@@ -184,7 +185,7 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
       }
 
       const { host, port } = this.options;
-      
+
       const dbQueryText = dbStatementSerializer(cmd.name, cmd.args);
       if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
         attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_REDIS;
