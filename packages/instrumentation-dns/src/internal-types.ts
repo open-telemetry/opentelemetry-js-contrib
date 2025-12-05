@@ -49,7 +49,7 @@ export type LookupSimpleArgs = [number, LookupSimpleCallback];
 export type LookupOneArgs = [dns.LookupOneOptions, LookupSimpleCallback];
 export type LookupAllArgs = [
   dns.LookupAllOptions,
-  (err: NodeJS.ErrnoException | null, addresses: dns.LookupAddress[]) => void
+  (err: NodeJS.ErrnoException | null, addresses: dns.LookupAddress[]) => void,
 ];
 export type LookupArgs = [
   dns.LookupOptions,
@@ -57,7 +57,7 @@ export type LookupArgs = [
     err: NodeJS.ErrnoException | null,
     address: string | dns.LookupAddress[],
     family: number
-  ) => void
+  ) => void,
 ];
 export type LookupArgSignature = LookupSimpleArgs &
   LookupSimpleCallback &

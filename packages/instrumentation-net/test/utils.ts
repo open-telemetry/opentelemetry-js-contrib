@@ -17,7 +17,15 @@
 import { SpanKind, type Attributes } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { SemconvStability } from '@opentelemetry/instrumentation';
-import { ATTR_NETWORK_LOCAL_ADDRESS, ATTR_NETWORK_LOCAL_PORT, ATTR_NETWORK_PEER_ADDRESS, ATTR_NETWORK_TRANSPORT, ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT, NETWORK_TRANSPORT_VALUE_TCP } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_NETWORK_LOCAL_ADDRESS,
+  ATTR_NETWORK_LOCAL_PORT,
+  ATTR_NETWORK_PEER_ADDRESS,
+  ATTR_NETWORK_TRANSPORT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  NETWORK_TRANSPORT_VALUE_TCP,
+} from '@opentelemetry/semantic-conventions';
 import {
   ATTR_NET_HOST_IP,
   ATTR_NET_HOST_PORT,
@@ -31,7 +39,10 @@ import * as assert from 'assert';
 import * as path from 'path';
 import * as os from 'os';
 import { Socket } from 'net';
-import { OLD_IPC_TRANSPORT_VALUE, STABLE_IPC_TRANSPORT_VALUE } from '../src/utils';
+import {
+  OLD_IPC_TRANSPORT_VALUE,
+  STABLE_IPC_TRANSPORT_VALUE,
+} from '../src/utils';
 import { TLSAttributes } from '../src/types';
 import * as fs from 'fs';
 
@@ -42,7 +53,11 @@ export const IPC_PATH =
     ? path.join(os.tmpdir(), 'otel-js-net-test-ipc')
     : '\\\\.\\pipe\\otel-js-net-test-ipc';
 
-export function assertTcpSpan(span: ReadableSpan, socket: Socket, netSemconvStability: SemconvStability) {
+export function assertTcpSpan(
+  span: ReadableSpan,
+  socket: Socket,
+  netSemconvStability: SemconvStability
+) {
   assertSpanKind(span);
 
   const attributes: Attributes = {};
@@ -65,7 +80,10 @@ export function assertTcpSpan(span: ReadableSpan, socket: Socket, netSemconvStab
   assert.deepEqual(span.attributes, attributes);
 }
 
-export function assertIpcSpan(span: ReadableSpan, netSemconvStability: SemconvStability) {
+export function assertIpcSpan(
+  span: ReadableSpan,
+  netSemconvStability: SemconvStability
+) {
   assertSpanKind(span);
   const attributes: Attributes = {};
   if (netSemconvStability & SemconvStability.OLD) {
@@ -82,7 +100,7 @@ export function assertIpcSpan(span: ReadableSpan, netSemconvStability: SemconvSt
 export function assertTLSSpan(
   { netSpan, tlsSpan }: { netSpan: ReadableSpan; tlsSpan: ReadableSpan },
   _socket: Socket,
-  netSemconvStability: SemconvStability,
+  netSemconvStability: SemconvStability
 ) {
   assertParentChild(tlsSpan, netSpan);
   assertSpanKind(netSpan);

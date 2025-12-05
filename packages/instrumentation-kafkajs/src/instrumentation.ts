@@ -163,10 +163,10 @@ const HISTOGRAM_BUCKET_BOUNDARIES = [
   0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10,
 ];
 export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumentationConfig> {
-  private declare _clientDuration: Histogram<ClientDurationAttributes>;
-  private declare _sentMessages: Counter<SentMessagesAttributes>;
-  private declare _consumedMessages: Counter<ConsumedMessagesAttributes>;
-  private declare _processDuration: Histogram<MessageProcessDurationAttributes>;
+  declare private _clientDuration: Histogram<ClientDurationAttributes>;
+  declare private _sentMessages: Counter<SentMessagesAttributes>;
+  declare private _consumedMessages: Counter<ConsumedMessagesAttributes>;
+  declare private _processDuration: Histogram<MessageProcessDurationAttributes>;
 
   constructor(config: KafkaJsInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);

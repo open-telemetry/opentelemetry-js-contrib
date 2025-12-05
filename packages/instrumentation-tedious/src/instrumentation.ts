@@ -279,7 +279,7 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
         if (!shouldInject) return runUserRequest();
 
         const traceparent = thisPlugin._buildTraceparent(span);
-        
+
         void thisPlugin
           ._injectContextInfo(this, tediousModule, traceparent)
           .finally(runUserRequest);

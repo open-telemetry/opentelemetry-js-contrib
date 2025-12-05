@@ -41,9 +41,12 @@ const __decorate = function (
         return (d && d(o)) || o;
       }, target);
     case 3:
-      return decorators.reduceRight((o: any, d: Function) => {
-        return (d && d(target, key)) || o;
-      }, void 0);
+      return decorators.reduceRight(
+        (o: any, d: Function) => {
+          return (d && d(target, key)) || o;
+        },
+        void 0
+      );
     case 4:
       return decorators.reduceRight((o: any, d: Function) => {
         return (d && d(target, key, o)) || o;
