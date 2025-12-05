@@ -31,6 +31,7 @@ import {
 import { IORedisInstrumentationConfig } from './types';
 import { IORedisCommand, RedisInterface } from './internal-types';
 import {
+  ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_SYSTEM_NAME,
   ATTR_SERVER_ADDRESS,
@@ -152,7 +153,38 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
       }
 
       const attributes: Attributes = {};
+
+      let operationName = cmd.name;
+      const command = cmd as any;
+
+      /**
+       * ioredis sets metadata differently for MULTI/EXEC vs pipelines:
+       * - MULTI/EXEC: queued commands have inTransaction = true; pipelineIndex tracks order in the transaction.
+       * - Pipeline: commands have inTransaction = false; pipelineIndex increments per command (0, 1, 2…).
+       *
+       * Control commands ('multi'/'exec') are not prefixed.
+       * These flags are used to prefix operation names so spans reflect transactional or pipelined commands.
+       */
+      if (
+        command.inTransaction &&
+        cmd.name !== 'multi' &&
+        cmd.name !== 'exec'
+      ) {
+        operationName = `MULTI ${cmd.name}`;
+      } else if (
+        command.pipelineIndex != null &&
+        cmd.name !== 'multi' &&
+        cmd.name !== 'exec'
+      ) {
+        operationName = `PIPELINE ${cmd.name}`;
+      }
+
+      if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_DB_OPERATION_NAME] = operationName;
+      }
+
       const { host, port } = this.options;
+      
       const dbQueryText = dbStatementSerializer(cmd.name, cmd.args);
       if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
         attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_REDIS;
