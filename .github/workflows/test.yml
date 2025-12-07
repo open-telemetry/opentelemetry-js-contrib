@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: write # this permission is needed to delete cache
 
 jobs:
   compile:
