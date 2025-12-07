@@ -39,6 +39,18 @@ registerInstrumentations({
 
 PgInstrumentation contains both pg and [`pg.Pool`](https://node-postgres.com/api/pool) so it will be instrumented automatically.
 
+### Span Types Created
+
+This instrumentation creates the following span types:
+
+| Span Name | Description | When Created |
+| --------- | ----------- | ------------ |
+| `pg.query:<OPERATION> <database>` | Database query execution | When `client.query()` is called |
+| `pg.connect` | Client connection to database | When `new Client().connect()` is called directly |
+| `pg-pool.connect` | Pool connection acquisition wait time | When acquiring a connection from `pg-pool` |
+
+The `pg-pool.connect` spans measure the time spent waiting to acquire a connection from the pool. This can be valuable for identifying connection pool exhaustion or sizing issues. However, in high-throughput scenarios where connections are readily available, these spans may add noise with minimal diagnostic value. Consider using the `requireParentSpan` option or sampling strategies if pool connect spans become excessive.
+
 ### PostgreSQL Instrumentation Options
 
 PostgreSQL instrumentation has few options available to choose from. You can set the following:
