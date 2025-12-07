@@ -70,6 +70,7 @@ docs
 #lerna
 .changelog
 .nx
+.nx-server-cache
 
 # OS generated files
 .DS_Store

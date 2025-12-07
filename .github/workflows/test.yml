@@ -28,22 +28,36 @@ jobs:
       - name: Install
         run: npm ci --ignore-scripts
         timeout-minutes: 10
-      # Note: when pushing to main we want to test only what changed in
-      # last commit. Otherwise we want to test all changes from origin/main.
-      # So we set the right values for base and head commits depending
-      # on the type of event (PR or push)
-      # ref: https://nx.dev/ci/features/affected#configure-affected-on-ci
-      - name: Set base and head commits
+
+      # Get the compilation cache. Decide later what to do
+      - name: Compile Cache Lookup
+        # if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/cache/restore@v4
+        with:
+          key: compile-cache-main
+          path: .nx-server-cache
+
+      - name: Compile
         run: |
-          if [ "${{github.event_name}}" == "push" ]; then
-            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
-            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
-          else
-            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
-            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
-          fi
-      - name: Compile (Delta)
-        run: npm run compile:ci:affected
+          node ./scripts/nx-cache-server.mjs &
+          npm run compile
+        env:
+          NX_CACHE_SERVER_PATH: .nx-server-cache
+          NX_CACHE_SERVER_PORT: 3333
+          NX_SELF_HOSTED_REMOTE_CACHE_SERVER: http://localhost:3333
+
+      # For main branch delete cache and save new compilation result
+      - name: Delete Cache (Push)
+        # if: ${{ github.event_name == 'push' }}
+        run: gh cache delete compile-cache-main
+      - name: Update Cache (Push)
+        # if: ${{ github.event_name == 'push' }}
+        uses: actions/cache/save@v4
+        with:
+          key: compile-cache-main
+          path: .nx-server-cache
+
+      # Uplad the file cache for the follwing tasks
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
