@@ -7,10 +7,11 @@ on:
 
 permissions:
   contents: read
-  actions: write # this permission is needed to delete cache
 
 jobs:
   compile:
+    permissions:
+      actions: write # this permission is needed to delete cache
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
@@ -50,9 +51,15 @@ jobs:
       # For main branch delete cache and save new compilation result
       - name: Delete Cache (Push)
         # if: ${{ github.event_name == 'push' }}
-        run: gh cache delete compile-cache-main
+        # run: gh cache delete compile-cache-main
+        run: |
+          gh api \
+          --method DELETE \
+          -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          /repos/open-telemetry/opentelemetry-js-contrib/actions/caches/compile-cache-main
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Update Cache (Push)
         # if: ${{ github.event_name == 'push' }}
         uses: actions/cache/save@v4
