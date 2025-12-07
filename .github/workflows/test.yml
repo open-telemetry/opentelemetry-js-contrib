@@ -10,8 +10,9 @@ permissions:
 
 jobs:
   compile:
-    permissions:
-      actions: write # this permission is needed to delete cache
+    # permissions:
+    #   actions: write # this permission is needed to delete cache
+    permissions: write-all
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
