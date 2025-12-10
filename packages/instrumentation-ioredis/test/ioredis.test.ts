@@ -962,7 +962,7 @@ describe('ioredis', () => {
           Span,
           string,
           unknown,
-          Buffer
+          Buffer,
         ];
         assert.strictEqual(cmdName, 'set');
         assert.strictEqual(response.toString(), 'OK');
@@ -1063,7 +1063,7 @@ describe('ioredis', () => {
       try {
         // Act
         const tracer = provider.getTracer('ioredis-test');
-        await tracer.startActiveSpan('parent', async (parentSpan) => {
+        await tracer.startActiveSpan('parent', async parentSpan => {
           await client.set(testKeyName, 'aValue');
           parentSpan.end();
         });
@@ -1096,7 +1096,7 @@ describe('ioredis', () => {
       try {
         // Act
         const tracer = provider.getTracer('ioredis-test');
-        await tracer.startActiveSpan('parent', async (parentSpan) => {
+        await tracer.startActiveSpan('parent', async parentSpan => {
           await client.set(testKeyName, 'aValue');
           parentSpan.end();
         });

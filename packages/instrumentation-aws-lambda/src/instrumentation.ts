@@ -92,8 +92,8 @@ function isSupportingCallbacks(): boolean {
 }
 
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
-  private declare _traceForceFlusher?: () => Promise<void>;
-  private declare _metricForceFlusher?: () => Promise<void>;
+  declare private _traceForceFlusher?: () => Promise<void>;
+  declare private _metricForceFlusher?: () => Promise<void>;
 
   constructor(config: AwsLambdaInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -337,7 +337,13 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
           } else {
             // Promise-based handler
             const maybePromise = safeExecuteInTheMiddle(
-              () => (original as (event: any, context: Context) => Promise<any> | any).apply(this, [event, context]),
+              () =>
+                (
+                  original as (
+                    event: any,
+                    context: Context
+                  ) => Promise<any> | any
+                ).apply(this, [event, context]),
               error => {
                 if (error != null) {
                   // Exception thrown synchronously before resolving promise.
@@ -376,7 +382,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         return otelContext.with(trace.setSpan(parent, span), () => {
           // Promise-based handler only (Node.js 24+)
           const maybePromise = safeExecuteInTheMiddle(
-            () => (original as (event: any, context: Context) => Promise<any> | any).apply(this, [event, context]),
+            () =>
+              (
+                original as (event: any, context: Context) => Promise<any> | any
+              ).apply(this, [event, context]),
             error => {
               if (error != null) {
                 // Exception thrown synchronously before resolving promise.

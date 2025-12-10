@@ -78,8 +78,8 @@ type getConnectionCallbackType = (
 export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentationConfig> {
   private _netSemconvStability!: SemconvStability;
   private _dbSemconvStability!: SemconvStability;
-  private declare _connectionsUsageOld: UpDownCounter;
-  private declare _connectionCount: UpDownCounter;
+  declare private _connectionsUsageOld: UpDownCounter;
+  declare private _connectionCount: UpDownCounter;
 
   constructor(config: MySQLInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);

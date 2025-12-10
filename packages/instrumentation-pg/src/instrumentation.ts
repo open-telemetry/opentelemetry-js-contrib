@@ -78,9 +78,9 @@ function extractModuleExports(module: any) {
 }
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
-  private declare _operationDuration: Histogram;
-  private declare _connectionsCount: UpDownCounter;
-  private declare _connectionPendingRequests: UpDownCounter;
+  declare private _operationDuration: Histogram;
+  declare private _connectionsCount: UpDownCounter;
+  declare private _connectionPendingRequests: UpDownCounter;
   // Pool events connect, acquire, release and remove can be called
   // multiple times without changing the values of total, idle and waiting
   // connections. The _connectionsCounter is used to keep track of latest
@@ -333,24 +333,21 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         // TODO: remove the `as ...` casts below when the TS version is upgraded.
         // Newer TS versions will use the result of firstArgIsQueryObjectWithText
         // to properly narrow arg0, but TS 4.3.5 does not.
-        let queryConfig: any;
-
-        if (firstArgIsString) {
-          queryConfig = {
-            text: arg0 as string,
-            values: Array.isArray(args[1]) ? args[1] : undefined,
-          };
-        } else if (firstArgIsQueryObjectWithText) {
-          const q = arg0 as any;
-
-          if (q.values === undefined && Array.isArray(args[1])) {
-            q.values = args[1];
-          }
-
-          queryConfig = q;
-        } else {
-          queryConfig = undefined;
-        }
+        const queryConfig = firstArgIsString
+          ? {
+              text: arg0 as string,
+              values: Array.isArray(args[1]) ? args[1] : undefined,
+            }
+          : firstArgIsQueryObjectWithText
+            ? {
+                ...(arg0 as any),
+                name: arg0.name,
+                text: arg0.text,
+                values:
+                  (arg0 as any).values ??
+                  (Array.isArray(args[1]) ? args[1] : undefined),
+              }
+            : undefined;
 
         const attributes: Attributes = {
           [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,

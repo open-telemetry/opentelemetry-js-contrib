@@ -82,7 +82,7 @@ export interface AzureVmMetadata {
     {
       keyData?: string;
       path?: string;
-    }
+    },
   ];
   publisher?: string;
   resourceGroupName?: string;
@@ -118,7 +118,7 @@ export interface AzureVmMetadata {
           uri?: string;
         };
         writeAcceleratorEnabled?: string;
-      }
+      },
     ];
     imageReference?: {
       id?: string;
