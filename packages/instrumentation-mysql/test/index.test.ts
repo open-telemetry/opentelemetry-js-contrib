@@ -16,6 +16,16 @@
 
 import { context, Context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import { SemconvStability } from '@opentelemetry/instrumentation';
+import {
+  BasicTracerProvider,
+  InMemorySpanExporter,
+  ReadableSpan,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace-base';
+import * as assert from 'assert';
+import * as sinon from 'sinon';
+
 import {
   DB_SYSTEM_VALUE_MYSQL,
   ATTR_DB_NAME,
@@ -25,15 +35,13 @@ import {
   ATTR_NET_PEER_NAME,
   ATTR_NET_PEER_PORT,
 } from '../src/semconv';
-import {
-  BasicTracerProvider,
-  InMemorySpanExporter,
-  ReadableSpan,
-  SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
 import { MySQLInstrumentation, MySQLInstrumentationConfig } from '../src';
-import * as sinon from 'sinon';
+import { AttributeNames } from '../src/AttributeNames';
+
+// By default tests run with both old and stable semconv. Some test cases
+// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
+const DEFAULT_SEMCONV_STABILITY = SemconvStability.DUPLICATE;
 
 const port = Number(process.env.MYSQL_PORT) || 33306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
@@ -46,7 +54,7 @@ instrumentation.enable();
 instrumentation.disable();
 
 import * as mysqlTypes from 'mysql';
-import { AttributeNames } from '../src/AttributeNames';
+import { ATTR_DB_NAMESPACE, ATTR_DB_QUERY_TEXT, ATTR_DB_SYSTEM_NAME, ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT, DB_SYSTEM_NAME_VALUE_MYSQL } from '@opentelemetry/semantic-conventions';
 
 describe('mysql@2.x-Tracing', () => {
   let contextManager: AsyncLocalStorageContextManager;
@@ -852,20 +860,95 @@ describe('mysql@2.x-Tracing', () => {
       });
     });
   });
+
+  describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
+    const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
+    after(() => {
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
+      (instrumentation as any)._setSemconvStabilityFromEnv();
+    });
+
+    it('OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', done => {
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
+      (instrumentation as any)._setSemconvStabilityFromEnv();
+      memoryExporter.reset();
+
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+1 as solution';
+        const query = connection.query(sql);
+        let rows = 0;
+
+        query.on('result', row => {
+          assert.strictEqual(row.solution, 2);
+          rows += 1;
+        });
+
+        query.on('end', () => {
+          assert.strictEqual(rows, 1);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql, undefined, undefined, SemconvStability.OLD);
+          done();
+        });
+      });
+    });
+
+    it('OTEL_SEMCONV_STABILITY_OPT_IN=http,database', done => {
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
+      (instrumentation as any)._setSemconvStabilityFromEnv();
+      memoryExporter.reset();
+
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+1 as solution';
+        const query = connection.query(sql);
+        let rows = 0;
+
+        query.on('result', row => {
+          assert.strictEqual(row.solution, 2);
+          rows += 1;
+        });
+
+        query.on('end', () => {
+          assert.strictEqual(rows, 1);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql, undefined, undefined, SemconvStability.STABLE);
+          done();
+        });
+      });
+    });
+  });
+
 });
 
 function assertSpan(
   span: ReadableSpan,
   sql: string,
   values?: any,
-  errorMessage?: string
+  errorMessage?: string,
+  semconvStability: SemconvStability = DEFAULT_SEMCONV_STABILITY,
 ) {
-  assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MYSQL);
-  assert.strictEqual(span.attributes[ATTR_DB_NAME], database);
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], port);
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], host);
-  assert.strictEqual(span.attributes[ATTR_DB_USER], user);
-  assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], sql);
+  if (semconvStability & SemconvStability.OLD) {
+    assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MYSQL);
+    assert.strictEqual(span.attributes[ATTR_DB_NAME], database);
+    assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], port);
+    assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], host);
+    assert.strictEqual(span.attributes[ATTR_DB_USER], user);
+    assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], sql);
+  } else {
+    assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], undefined);
+  }
+  if (semconvStability & SemconvStability.STABLE) {
+    assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], DB_SYSTEM_NAME_VALUE_MYSQL);
+    assert.strictEqual(span.attributes[ATTR_DB_NAMESPACE], database);
+    assert.strictEqual(span.attributes[ATTR_DB_QUERY_TEXT], sql);
+    assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], host);
+    assert.strictEqual(span.attributes[ATTR_SERVER_PORT], port);
+  } else {
+    assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], undefined);
+  }
   if (errorMessage) {
     assert.strictEqual(span.status.message, errorMessage);
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);

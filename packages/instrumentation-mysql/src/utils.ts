@@ -14,56 +14,15 @@
  * limitations under the License.
  */
 
-import { Attributes } from '@opentelemetry/api';
-import {
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_DB_NAME,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from './semconv';
-import type {
-  ConnectionConfig,
-  PoolActualConfig,
-  Query,
-  QueryOptions,
-} from 'mysql';
-import type * as mysqlTypes from 'mysql';
+import type { Pool, Query, QueryOptions } from 'mysql';
 
-/**
- * Get an Attributes map from a mysql connection config object
- *
- * @param config ConnectionConfig
- */
-export function getConnectionAttributes(
-  config: ConnectionConfig | PoolActualConfig
-): Attributes {
-  const { host, port, database, user } = getConfig(config);
-  const portNumber = parseInt(port, 10);
-  if (!isNaN(portNumber)) {
-    return {
-      [ATTR_NET_PEER_NAME]: host,
-      [ATTR_NET_PEER_PORT]: portNumber,
-      [ATTR_DB_CONNECTION_STRING]: getJDBCString(host, port, database),
-      [ATTR_DB_NAME]: database,
-      [ATTR_DB_USER]: user,
-    };
-  }
-  return {
-    [ATTR_NET_PEER_NAME]: host,
-    [ATTR_DB_CONNECTION_STRING]: getJDBCString(host, port, database),
-    [ATTR_DB_NAME]: database,
-    [ATTR_DB_USER]: user,
-  };
-}
-
-function getConfig(config: any) {
+export function getConfig(config: any) {
   const { host, port, database, user } =
     (config && config.connectionConfig) || config || {};
   return { host, port, database, user };
 }
 
-function getJDBCString(
+export function getJDBCString(
   host: string | undefined,
   port: number | undefined,
   database: string | undefined
@@ -82,9 +41,9 @@ function getJDBCString(
 }
 
 /**
- * @returns the database statement being executed.
+ * @returns the database query being executed.
  */
-export function getDbStatement(query: string | Query | QueryOptions): string {
+export function getDbQueryText(query: string | Query | QueryOptions): string {
   if (typeof query === 'string') {
     return query;
   } else {
@@ -109,6 +68,8 @@ export function getDbValues(
  * The span name SHOULD be set to a low cardinality value
  * representing the statement executed on the database.
  *
+ * TODO: revisit span name based on https://github.com/open-telemetry/semantic-conventions/blob/v1.33.0/docs/database/database-spans.md#name
+ *
  * @returns SQL statement without variable arguments or SQL verb
  */
 export function getSpanName(query: string | Query | QueryOptions): string {
@@ -126,7 +87,7 @@ export function arrayStringifyHelper(arr: Array<unknown> | undefined): string {
   return '';
 }
 
-export function getPoolName(pool: mysqlTypes.Pool): string {
+export function getPoolNameOld(pool: Pool): string {
   const c = pool.config.connectionConfig;
   let poolName = '';
   poolName += c.host ? `host: '${c.host}', ` : '';
@@ -137,4 +98,13 @@ export function getPoolName(pool: mysqlTypes.Pool): string {
     poolName = poolName.substring(0, poolName.length - 2); //omit last comma
   }
   return poolName.trim();
+}
+
+/**
+ * Return a `db.client.connection.pool.name` string per
+ * https://opentelemetry.io/docs/specs/semconv/registry/attributes/db/#db-client-connection-pool-name
+ */
+export function getPoolName(pool: Pool): string {
+  const c = pool.config.connectionConfig;
+  return `${c.host}:${c.port}/${c.database}`;
 }
