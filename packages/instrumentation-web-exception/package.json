@@ -59,7 +59,7 @@
     "@web/dev-server-esbuild": "^1.0.1",
     "@web/dev-server-rollup": "^0.6.1",
     "@web/test-runner": "^0.20.0",
-    "chai": "^4.3.10"
+    "chai": "^6.2.1"
   },
   "dependencies": {
     "@opentelemetry/api-logs": "^0.211.0",
