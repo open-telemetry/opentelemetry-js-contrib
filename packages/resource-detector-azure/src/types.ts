@@ -36,6 +36,14 @@ export const AZURE_VM_METADATA_PATH =
 export const AZURE_VM_SCALE_SET_NAME_ATTRIBUTE = 'azure.vm.scaleset.name';
 export const AZURE_VM_SKU_ATTRIBUTE = 'azure.vm.sku';
 
+export const AZURE_CONTAINER_APPS_REVISION = 'azure.container_apps.revision';
+export const CONTAINER_APP_NAME = 'CONTAINER_APP_NAME';
+export const CONTAINER_APP_REVISION = 'CONTAINER_APP_REVISION';
+export const CONTAINER_APP_HOSTNAME = 'CONTAINER_APP_HOSTNAME';
+export const CONTAINER_APP_ENV_DNS_SUFFIX = 'CONTAINER_APP_ENV_DNS_SUFFIX';
+export const CONTAINER_APP_REPLICA_NAME = 'CONTAINER_APP_REPLICA_NAME';
+export const CONTAINER_APP_PORT = 'CONTAINER_APP_PORT';
+
 export interface AzureVmMetadata {
   azEnvironment?: string;
   additionalCapabilities?: {
