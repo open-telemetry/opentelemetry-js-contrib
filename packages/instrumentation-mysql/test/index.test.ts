@@ -54,7 +54,14 @@ instrumentation.enable();
 instrumentation.disable();
 
 import * as mysqlTypes from 'mysql';
-import { ATTR_DB_NAMESPACE, ATTR_DB_QUERY_TEXT, ATTR_DB_SYSTEM_NAME, ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT, DB_SYSTEM_NAME_VALUE_MYSQL } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  DB_SYSTEM_NAME_VALUE_MYSQL,
+} from '@opentelemetry/semantic-conventions';
 
 describe('mysql@2.x-Tracing', () => {
   let contextManager: AsyncLocalStorageContextManager;
@@ -914,13 +921,18 @@ describe('mysql@2.x-Tracing', () => {
           assert.strictEqual(rows, 1);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], sql, undefined, undefined, SemconvStability.STABLE);
+          assertSpan(
+            spans[0],
+            sql,
+            undefined,
+            undefined,
+            SemconvStability.STABLE
+          );
           done();
         });
       });
     });
   });
-
 });
 
 function assertSpan(
@@ -928,7 +940,7 @@ function assertSpan(
   sql: string,
   values?: any,
   errorMessage?: string,
-  semconvStability: SemconvStability = DEFAULT_SEMCONV_STABILITY,
+  semconvStability: SemconvStability = DEFAULT_SEMCONV_STABILITY
 ) {
   if (semconvStability & SemconvStability.OLD) {
     assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MYSQL);
@@ -941,7 +953,10 @@ function assertSpan(
     assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], undefined);
   }
   if (semconvStability & SemconvStability.STABLE) {
-    assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], DB_SYSTEM_NAME_VALUE_MYSQL);
+    assert.strictEqual(
+      span.attributes[ATTR_DB_SYSTEM_NAME],
+      DB_SYSTEM_NAME_VALUE_MYSQL
+    );
     assert.strictEqual(span.attributes[ATTR_DB_NAMESPACE], database);
     assert.strictEqual(span.attributes[ATTR_DB_QUERY_TEXT], sql);
     assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], host);

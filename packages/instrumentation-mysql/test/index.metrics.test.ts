@@ -26,7 +26,12 @@ import {
   MetricData,
 } from '@opentelemetry/sdk-metrics';
 import { SemconvStability } from '@opentelemetry/instrumentation';
-import { ATTR_DB_CLIENT_CONNECTION_POOL_NAME, ATTR_DB_CLIENT_CONNECTION_STATE, METRIC_DB_CLIENT_CONNECTION_COUNT, METRIC_DB_CLIENT_CONNECTIONS_USAGE } from '../src/semconv';
+import {
+  ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
+  ATTR_DB_CLIENT_CONNECTION_STATE,
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
+  METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+} from '../src/semconv';
 import { MySQLInstrumentation } from '../src';
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 
@@ -142,7 +147,7 @@ describe('mysql@2.x-Metrics', () => {
       assertMetrics(exportedMetrics[1].scopeMetrics[0].metrics, {
         expectedConnCountIdle: 1,
         expectedConnCountUsed: 0,
-      })
+      });
     });
 
     it('Pool - Create 2 connection, release only 1', async () => {
@@ -166,7 +171,7 @@ describe('mysql@2.x-Metrics', () => {
       assertMetrics(exportedMetrics[1].scopeMetrics[0].metrics, {
         expectedConnCountIdle: 1,
         expectedConnCountUsed: 1,
-      })
+      });
     });
 
     it('Pool - use pool.query', async () => {
@@ -212,7 +217,9 @@ describe('mysql@2.x-Metrics', () => {
     });
 
     it('PoolCluster - Should add connection usage metrics', async () => {
-      const conn = await promisify(poolCluster.getConnection)() as PoolConnection;
+      const conn = (await promisify(
+        poolCluster.getConnection
+      )()) as PoolConnection;
       assert.ok(conn);
 
       const sql = 'SELECT 1+1 as solution';
@@ -236,14 +243,13 @@ describe('mysql@2.x-Metrics', () => {
   });
 });
 
-
 function assertMetrics(
   metrics: MetricData[],
   opts: {
-    expectedConnCountIdle: number,
-    expectedConnCountUsed: number,
-    poolName?: string,
-    semconvStability?: SemconvStability,
+    expectedConnCountIdle: number;
+    expectedConnCountUsed: number;
+    poolName?: string;
+    semconvStability?: SemconvStability;
   }
 ) {
   const semconvStability = opts.semconvStability ?? DEFAULT_SEMCONV_STABILITY;
@@ -252,7 +258,9 @@ function assertMetrics(
 
   if (semconvStability & SemconvStability.OLD) {
     // db.client.connections.usage
-    const md = metrics.filter(md => md.descriptor.name === METRIC_DB_CLIENT_CONNECTIONS_USAGE)[0];
+    const md = metrics.filter(
+      md => md.descriptor.name === METRIC_DB_CLIENT_CONNECTIONS_USAGE
+    )[0];
     assert.ok(md);
     assert.strictEqual(md.dataPointType, DataPointType.SUM);
     assert.strictEqual(
@@ -261,7 +269,8 @@ function assertMetrics(
     );
     assert.strictEqual(md.descriptor.unit, '{connection}');
     assert.strictEqual(md.dataPoints.length, 2);
-    const poolNameOld = opts.poolName ??
+    const poolNameOld =
+      opts.poolName ??
       `host: '${host}', port: ${port}, database: '${database}', user: '${user}'`;
 
     assert.strictEqual(md.dataPoints[0].attributes['state'], 'idle');
@@ -275,7 +284,9 @@ function assertMetrics(
 
   if (semconvStability & SemconvStability.STABLE) {
     // db.client.connection.count
-    const md = metrics.filter(md => md.descriptor.name === METRIC_DB_CLIENT_CONNECTION_COUNT)[0];
+    const md = metrics.filter(
+      md => md.descriptor.name === METRIC_DB_CLIENT_CONNECTION_COUNT
+    )[0];
     assert.ok(md);
     assert.strictEqual(md.dataPointType, DataPointType.SUM);
     assert.strictEqual(
@@ -293,7 +304,7 @@ function assertMetrics(
     assert.strictEqual(md.dataPoints[0].value, expectedConnCountIdle);
     assert.strictEqual(
       md.dataPoints[0].attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME],
-      poolName,
+      poolName
     );
 
     assert.strictEqual(
@@ -303,7 +314,7 @@ function assertMetrics(
     assert.strictEqual(md.dataPoints[1].value, expectedConnCountUsed);
     assert.strictEqual(
       md.dataPoints[1].attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME],
-      poolName,
+      poolName
     );
   }
 }

@@ -27,7 +27,8 @@
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_DB_CLIENT_CONNECTION_POOL_NAME = 'db.client.connection.pool.name' as const;
+export const ATTR_DB_CLIENT_CONNECTION_POOL_NAME =
+  'db.client.connection.pool.name' as const;
 
 /**
  * The state of a connection in the pool
@@ -36,7 +37,8 @@ export const ATTR_DB_CLIENT_CONNECTION_POOL_NAME = 'db.client.connection.pool.na
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_DB_CLIENT_CONNECTION_STATE = 'db.client.connection.state' as const;
+export const ATTR_DB_CLIENT_CONNECTION_STATE =
+  'db.client.connection.state' as const;
 
 /**
  * Deprecated, use `server.address`, `server.port` attributes instead.
@@ -146,11 +148,13 @@ export const DB_SYSTEM_VALUE_MYSQL = 'mysql' as const;
  *
  * @deprecated Replaced by `db.client.connection.count`.
  */
-export const METRIC_DB_CLIENT_CONNECTIONS_USAGE = 'db.client.connections.usage' as const;
+export const METRIC_DB_CLIENT_CONNECTIONS_USAGE =
+  'db.client.connections.usage' as const;
 
 /**
  * The number of connections that are currently in state described by the `state` attribute.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_DB_CLIENT_CONNECTION_COUNT = 'db.client.connection.count' as const;
+export const METRIC_DB_CLIENT_CONNECTION_COUNT =
+  'db.client.connection.count' as const;

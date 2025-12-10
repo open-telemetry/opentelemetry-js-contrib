@@ -124,7 +124,12 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
     }
   }
 
-  private _connCountAdd(n: number, poolName: string, poolNameOld: string, state: string) {
+  private _connCountAdd(
+    n: number,
+    poolName: string,
+    poolNameOld: string,
+    state: string
+  ) {
     this._connectionsUsageOld?.add(n, { state, name: poolNameOld });
     this._connectionCount?.add(n, {
       [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
@@ -229,8 +234,18 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const nUsed = nAll - nFree;
         const poolNameOld = getPoolNameOld(pool);
         const poolName = getPoolName(pool);
-        thisPlugin._connCountAdd(-nUsed, poolName, poolNameOld, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
-        thisPlugin._connCountAdd(-nFree, poolName, poolNameOld, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
+        thisPlugin._connCountAdd(
+          -nUsed,
+          poolName,
+          poolNameOld,
+          DB_CLIENT_CONNECTION_STATE_VALUE_USED
+        );
+        thisPlugin._connCountAdd(
+          -nFree,
+          poolName,
+          poolNameOld,
+          DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+        );
         originalPoolEnd.apply(pool, arguments);
       };
     };
@@ -364,7 +379,11 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const dbQueryText = getDbQueryText(query);
         if (thisPlugin._dbSemconvStability & SemconvStability.OLD) {
           attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MYSQL;
-          attributes[ATTR_DB_CONNECTION_STRING] = getJDBCString(host, port, database);
+          attributes[ATTR_DB_CONNECTION_STRING] = getJDBCString(
+            host,
+            port,
+            database
+          );
           attributes[ATTR_DB_NAME] = database;
           attributes[ATTR_DB_USER] = user;
           attributes[ATTR_DB_STATEMENT] = dbQueryText;
@@ -467,25 +486,47 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
     };
   }
 
-  private _setPoolCallbacks(
-    pool: mysqlTypes.Pool,
-    id: string
-  ) {
+  private _setPoolCallbacks(pool: mysqlTypes.Pool, id: string) {
     const poolNameOld = id || getPoolNameOld(pool);
     const poolName = id || getPoolName(pool);
 
     pool.on('connection', _connection => {
-      this._connCountAdd(1, poolName, poolNameOld, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
+      this._connCountAdd(
+        1,
+        poolName,
+        poolNameOld,
+        DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+      );
     });
 
     pool.on('acquire', _connection => {
-      this._connCountAdd(-1, poolName, poolNameOld, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
-      this._connCountAdd(1, poolName, poolNameOld, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
+      this._connCountAdd(
+        -1,
+        poolName,
+        poolNameOld,
+        DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+      );
+      this._connCountAdd(
+        1,
+        poolName,
+        poolNameOld,
+        DB_CLIENT_CONNECTION_STATE_VALUE_USED
+      );
     });
 
     pool.on('release', _connection => {
-      this._connCountAdd(1, poolName, poolNameOld, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
-      this._connCountAdd(-1, poolName, poolNameOld, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
+      this._connCountAdd(
+        1,
+        poolName,
+        poolNameOld,
+        DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+      );
+      this._connCountAdd(
+        -1,
+        poolName,
+        poolNameOld,
+        DB_CLIENT_CONNECTION_STATE_VALUE_USED
+      );
     });
   }
 }
