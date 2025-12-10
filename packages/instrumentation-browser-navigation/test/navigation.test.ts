@@ -32,7 +32,7 @@ import {
 } from '../src/instrumentation';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import { logs } from '@opentelemetry/api-logs';
-// @ts-expect-error cjs still works
+// @ts-expect-error chai v4 ships CJS only; named imports work at runtime via interop
 import { assert } from 'chai';
 // registerInstrumentations removed - using plugin.enable() directly
 
