@@ -21,26 +21,6 @@
  */
 
 /**
- * The name of the connection pool; unique within the instrumented application. In case the connection pool implementation doesn't provide a name, instrumentation **SHOULD** use a combination of parameters that would make the name unique, for example, combining attributes `server.address`, `server.port`, and `db.namespace`, formatted as `server.address:server.port/db.namespace`. Instrumentations that generate connection pool name following different patterns **SHOULD** document it.
- *
- * @example myDataSource
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const ATTR_DB_CLIENT_CONNECTION_POOL_NAME =
-  'db.client.connection.pool.name' as const;
-
-/**
- * The state of a connection in the pool
- *
- * @example idle
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const ATTR_DB_CLIENT_CONNECTION_STATE =
-  'db.client.connection.state' as const;
-
-/**
  * Deprecated, use `server.address`, `server.port` attributes instead.
  *
  * @example "Server=(localdb)\\v11.0;Integrated Security=true;"

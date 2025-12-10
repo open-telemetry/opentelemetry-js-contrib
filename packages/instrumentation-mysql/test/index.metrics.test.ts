@@ -26,11 +26,7 @@ import {
   MetricData,
 } from '@opentelemetry/sdk-metrics';
 import { SemconvStability } from '@opentelemetry/instrumentation';
-import {
-  ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
-  ATTR_DB_CLIENT_CONNECTION_STATE,
-  METRIC_DB_CLIENT_CONNECTIONS_USAGE,
-} from '../src/semconv';
+import { METRIC_DB_CLIENT_CONNECTIONS_USAGE } from '../src/semconv';
 import { MySQLInstrumentation } from '../src';
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 

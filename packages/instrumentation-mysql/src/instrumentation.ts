@@ -48,8 +48,6 @@ import {
   ATTR_NET_PEER_PORT,
   DB_SYSTEM_VALUE_MYSQL,
   METRIC_DB_CLIENT_CONNECTIONS_USAGE,
-  ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
-  ATTR_DB_CLIENT_CONNECTION_STATE,
 } from './semconv';
 import type * as mysqlTypes from 'mysql';
 import { AttributeNames } from './AttributeNames';
