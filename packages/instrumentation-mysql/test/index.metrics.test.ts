@@ -29,7 +29,6 @@ import { SemconvStability } from '@opentelemetry/instrumentation';
 import {
   ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
   ATTR_DB_CLIENT_CONNECTION_STATE,
-  METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTIONS_USAGE,
 } from '../src/semconv';
 import { MySQLInstrumentation } from '../src';
@@ -283,8 +282,11 @@ function assertMetrics(
   } else {
     // Assert that the non-stable `db.client.connections.usage` metric
     // is *not* generated if only stable semconv is selected.
-    assert.strictEqual(metrics.filter(
-      md => md.descriptor.name === METRIC_DB_CLIENT_CONNECTIONS_USAGE
-    ).length, 0);
+    assert.strictEqual(
+      metrics.filter(
+        md => md.descriptor.name === METRIC_DB_CLIENT_CONNECTIONS_USAGE
+      ).length,
+      0
+    );
   }
 }

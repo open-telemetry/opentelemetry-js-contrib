@@ -119,20 +119,6 @@ export const ATTR_NET_PEER_NAME = 'net.peer.name' as const;
 export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
 
 /**
- * Enum value "idle" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
- *
- * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const DB_CLIENT_CONNECTION_STATE_VALUE_IDLE = 'idle' as const;
-
-/**
- * Enum value "used" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
- *
- * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const DB_CLIENT_CONNECTION_STATE_VALUE_USED = 'used' as const;
-
-/**
  * Enum value "mysql" for attribute {@link ATTR_DB_SYSTEM}.
  *
  * MySQL

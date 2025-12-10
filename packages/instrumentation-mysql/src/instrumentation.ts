@@ -48,11 +48,8 @@ import {
   ATTR_NET_PEER_PORT,
   DB_SYSTEM_VALUE_MYSQL,
   METRIC_DB_CLIENT_CONNECTIONS_USAGE,
-  METRIC_DB_CLIENT_CONNECTION_COUNT,
   ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
   ATTR_DB_CLIENT_CONNECTION_STATE,
-  DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
-  DB_CLIENT_CONNECTION_STATE_VALUE_USED,
 } from './semconv';
 import type * as mysqlTypes from 'mysql';
 import { AttributeNames } from './AttributeNames';
@@ -215,16 +212,8 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const nFree = (pool as any)._freeConnections.length;
         const nUsed = nAll - nFree;
         const poolNameOld = getPoolNameOld(pool);
-        thisPlugin._connCountAdd(
-          -nUsed,
-          poolNameOld,
-          DB_CLIENT_CONNECTION_STATE_VALUE_USED
-        );
-        thisPlugin._connCountAdd(
-          -nFree,
-          poolNameOld,
-          DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
-        );
+        thisPlugin._connCountAdd(-nUsed, poolNameOld, 'used');
+        thisPlugin._connCountAdd(-nFree, poolNameOld, 'idle');
         originalPoolEnd.apply(pool, arguments);
       };
     };
@@ -469,37 +458,17 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
     const poolNameOld = id || getPoolNameOld(pool);
 
     pool.on('connection', _connection => {
-      this._connCountAdd(
-        1,
-        poolNameOld,
-        DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
-      );
+      this._connCountAdd(1, poolNameOld, 'idle');
     });
 
     pool.on('acquire', _connection => {
-      this._connCountAdd(
-        -1,
-        poolNameOld,
-        DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
-      );
-      this._connCountAdd(
-        1,
-        poolNameOld,
-        DB_CLIENT_CONNECTION_STATE_VALUE_USED
-      );
+      this._connCountAdd(-1, poolNameOld, 'idle');
+      this._connCountAdd(1, poolNameOld, 'used');
     });
 
     pool.on('release', _connection => {
-      this._connCountAdd(
-        1,
-        poolNameOld,
-        DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
-      );
-      this._connCountAdd(
-        -1,
-        poolNameOld,
-        DB_CLIENT_CONNECTION_STATE_VALUE_USED
-      );
+      this._connCountAdd(1, poolNameOld, 'idle');
+      this._connCountAdd(-1, poolNameOld, 'used');
     });
   }
 }
