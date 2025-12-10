@@ -251,7 +251,8 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
           // to MSSQL "named instances". This isn't currently supported.
           //    https://opentelemetry.io/docs/specs/semconv/database/sql-server/#:~:text=%5B1%5D%20db%2Enamespace
           attributes[ATTR_DB_NAMESPACE] = databaseName;
-          attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
+          attributes[ATTR_DB_SYSTEM_NAME] =
+            DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
           attributes[ATTR_DB_QUERY_TEXT] = sql;
           attributes[ATTR_DB_COLLECTION_NAME] = request.table;
           // See https://opentelemetry.io/docs/specs/semconv/database/sql-server/#spans

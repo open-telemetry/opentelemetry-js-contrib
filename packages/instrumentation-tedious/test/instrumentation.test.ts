@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { context, trace, SpanStatusCode, SpanKind, type Attributes } from '@opentelemetry/api';
+import {
+  context,
+  trace,
+  SpanStatusCode,
+  SpanKind,
+  type Attributes,
+} from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   DB_SYSTEM_VALUE_MSSQL,
@@ -39,7 +45,15 @@ import { TediousInstrumentation } from '../src';
 import makeApi from './api';
 import type { Connection } from 'tedious';
 import * as semver from 'semver';
-import { ATTR_DB_COLLECTION_NAME, ATTR_DB_NAMESPACE, ATTR_DB_QUERY_TEXT, ATTR_DB_SYSTEM_NAME, ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT, DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER,
+} from '@opentelemetry/semantic-conventions';
 
 // By default tests run with both old and stable semconv. Some test cases
 // specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
@@ -337,11 +351,15 @@ describe('tedious', () => {
       parentSpan.end();
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
-      assertSpan(spans[0], {
-        name: 'execSql master',
-        sql: queryString,
-        parentSpan,
-      }, SemconvStability.OLD);
+      assertSpan(
+        spans[0],
+        {
+          name: 'execSql master',
+          sql: queryString,
+          parentSpan,
+        },
+        SemconvStability.OLD
+      );
       assert.strictEqual(spans[1].name, PARENT_NAME);
     });
 
@@ -362,15 +380,18 @@ describe('tedious', () => {
       parentSpan.end();
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
-      assertSpan(spans[0], {
-        name: 'execSql master',
-        sql: queryString,
-        parentSpan,
-      }, SemconvStability.STABLE);
+      assertSpan(
+        spans[0],
+        {
+          name: 'execSql master',
+          sql: queryString,
+          parentSpan,
+        },
+        SemconvStability.STABLE
+      );
       assert.strictEqual(spans[1].name, PARENT_NAME);
     });
   });
-
 
   describe('trace context propagation via CONTEXT_INFO', () => {
     function traceparentFromSpan(span: ReadableSpan) {
@@ -456,14 +477,16 @@ const assertRejects = (
 };
 
 function assertSpan(
-  span: ReadableSpan, expected: any, semconvStability: SemconvStability = DEFAULT_NET_SEMCONV_STABILITY)
-{
+  span: ReadableSpan,
+  expected: any,
+  semconvStability: SemconvStability = DEFAULT_NET_SEMCONV_STABILITY
+) {
   assert.ok(span);
   assert.strictEqual(span.name, expected.name);
   assert.strictEqual(span.kind, SpanKind.CLIENT);
 
   // Attributes
-  const actualAttrs = {...span.attributes};
+  const actualAttrs = { ...span.attributes };
   const expectedAttrs: Attributes = {
     'tedious.procedure_count': expected.procCount ?? 1,
     'tedious.statement_count': expected.statementCount ?? 1,
@@ -480,9 +503,16 @@ function assertSpan(
     // "db.statement"
     if (expected.sql) {
       if (expected.sql instanceof RegExp) {
-        assert.match(span.attributes[ATTR_DB_STATEMENT] as string, expected.sql);
+        assert.match(
+          span.attributes[ATTR_DB_STATEMENT] as string,
+          expected.sql
+        );
       } else {
-        assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], expected.sql, ATTR_DB_STATEMENT);
+        assert.strictEqual(
+          span.attributes[ATTR_DB_STATEMENT],
+          expected.sql,
+          ATTR_DB_STATEMENT
+        );
       }
     } else {
       assert.strictEqual(actualAttrs[ATTR_DB_STATEMENT], undefined);
@@ -490,7 +520,8 @@ function assertSpan(
     delete actualAttrs[ATTR_DB_STATEMENT];
   }
   if (semconvStability & SemconvStability.STABLE) {
-    expectedAttrs[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
+    expectedAttrs[ATTR_DB_SYSTEM_NAME] =
+      DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
     expectedAttrs[ATTR_DB_NAMESPACE] = expected.database ?? database;
     expectedAttrs[ATTR_SERVER_ADDRESS] = host;
     expectedAttrs[ATTR_SERVER_PORT] = port;
@@ -500,9 +531,16 @@ function assertSpan(
     // "db.statement"
     if (expected.sql) {
       if (expected.sql instanceof RegExp) {
-        assert.match(span.attributes[ATTR_DB_QUERY_TEXT] as string, expected.sql);
+        assert.match(
+          span.attributes[ATTR_DB_QUERY_TEXT] as string,
+          expected.sql
+        );
       } else {
-        assert.strictEqual(span.attributes[ATTR_DB_QUERY_TEXT], expected.sql, ATTR_DB_QUERY_TEXT);
+        assert.strictEqual(
+          span.attributes[ATTR_DB_QUERY_TEXT],
+          expected.sql,
+          ATTR_DB_QUERY_TEXT
+        );
       }
     } else {
       assert.strictEqual(actualAttrs[ATTR_DB_QUERY_TEXT], undefined);
@@ -510,7 +548,6 @@ function assertSpan(
     delete actualAttrs[ATTR_DB_QUERY_TEXT];
   }
   assert.deepEqual(actualAttrs, expectedAttrs);
-
 
   if (expected.parentSpan) {
     assert.strictEqual(
