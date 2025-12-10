@@ -256,10 +256,10 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
           attributes[ATTR_DB_QUERY_TEXT] = sql;
           attributes[ATTR_DB_COLLECTION_NAME] = request.table;
           // See https://opentelemetry.io/docs/specs/semconv/database/sql-server/#spans
-          // TODO: can `db.response.status_code` be added?
-          // TODO: is `operation` correct for `db.operation.name`
-          // TODO: can `db.query.summary` reliably be calculated?
-          // TODO: `db.stored_procedure.name`
+          // TODO(3290): can `db.response.status_code` be added?
+          // TODO(3290): is `operation` correct for `db.operation.name`
+          // TODO(3290): can `db.query.summary` reliably be calculated?
+          // TODO(3290): `db.stored_procedure.name`
         }
         if (thisPlugin._netSemconvStability & SemconvStability.OLD) {
           attributes[ATTR_NET_PEER_NAME] = this.config?.server;
@@ -291,7 +291,7 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
               code: api.SpanStatusCode.ERROR,
               message: err.message,
             });
-            // TODO: set `error.type` attribute?
+            // TODO(3290): set `error.type` attribute?
           }
           span.end();
         });
