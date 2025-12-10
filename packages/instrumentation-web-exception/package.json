@@ -56,11 +56,11 @@
     "@opentelemetry/sdk-logs": "^0.208.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@rollup/plugin-commonjs": "^29.0.0",
-    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@web/dev-server-esbuild": "^1.0.1",
     "@web/dev-server-rollup": "^0.6.1",
     "@web/test-runner": "^0.18.0",
-    "chai": "^4.3.10"
+    "chai": "^6.2.1"
   },
   "dependencies": {
     "@opentelemetry/api-logs": "^0.208.0",
