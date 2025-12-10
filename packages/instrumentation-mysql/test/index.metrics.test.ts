@@ -280,41 +280,11 @@ function assertMetrics(
     assert.strictEqual(md.dataPoints[1].attributes['state'], 'used');
     assert.strictEqual(md.dataPoints[1].value, expectedConnCountUsed);
     assert.strictEqual(md.dataPoints[1].attributes['name'], poolNameOld);
-  }
-
-  if (semconvStability & SemconvStability.STABLE) {
-    // db.client.connection.count
-    const md = metrics.filter(
-      md => md.descriptor.name === METRIC_DB_CLIENT_CONNECTION_COUNT
-    )[0];
-    assert.ok(md);
-    assert.strictEqual(md.dataPointType, DataPointType.SUM);
-    assert.strictEqual(
-      md.descriptor.description,
-      'The number of connections that are currently in state described by the `db.client.connection.state` attribute.'
-    );
-    assert.strictEqual(md.descriptor.unit, '{connection}');
-    assert.strictEqual(md.dataPoints.length, 2);
-    const poolName = opts.poolName ?? `${host}:${port}/${database}`;
-
-    assert.strictEqual(
-      md.dataPoints[0].attributes[ATTR_DB_CLIENT_CONNECTION_STATE],
-      'idle'
-    );
-    assert.strictEqual(md.dataPoints[0].value, expectedConnCountIdle);
-    assert.strictEqual(
-      md.dataPoints[0].attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME],
-      poolName
-    );
-
-    assert.strictEqual(
-      md.dataPoints[1].attributes[ATTR_DB_CLIENT_CONNECTION_STATE],
-      'used'
-    );
-    assert.strictEqual(md.dataPoints[1].value, expectedConnCountUsed);
-    assert.strictEqual(
-      md.dataPoints[1].attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME],
-      poolName
-    );
+  } else {
+    // Assert that the non-stable `db.client.connections.usage` metric
+    // is *not* generated if only stable semconv is selected.
+    assert.strictEqual(metrics.filter(
+      md => md.descriptor.name === METRIC_DB_CLIENT_CONNECTIONS_USAGE
+    ).length, 0);
   }
 }

@@ -99,12 +99,3 @@ export function getPoolNameOld(pool: Pool): string {
   }
   return poolName.trim();
 }
-
-/**
- * Return a `db.client.connection.pool.name` string per
- * https://opentelemetry.io/docs/specs/semconv/registry/attributes/db/#db-client-connection-pool-name
- */
-export function getPoolName(pool: Pool): string {
-  const c = pool.config.connectionConfig;
-  return `${c.host}:${c.port}/${c.database}`;
-}

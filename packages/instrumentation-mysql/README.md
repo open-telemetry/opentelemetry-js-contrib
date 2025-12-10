@@ -76,9 +76,11 @@ Attributes collected:
 
 Metrics collected:
 
-| Old semconv                   | Stable semconv               | Description                        |
-| ----------------------------- | ---------------------------- | ---------------------------------- |
-| `db.client.connections.usage` | `db.client.connection.count` | The number of connections currently in a given state. See [spec description](https://opentelemetry.io/docs/specs/semconv/database/database-metrics/#metric-dbclientconnectioncount). |
+| Old semconv                   | Stable semconv | Description |
+| ----------------------------- | -------------- | ----------- |
+| `db.client.connections.usage` | (removed)      | The number of connections currently in a given state. See note below. |
+
+Note: While `db.client.connections.usage` was replaced with `db.client.connection.count` in the [semconv database migration](https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/#database-client-connection-count), the replacement metric is still unstable, so cannot be enabled via `OTEL_SEMCONV_STABILITY_OPT_IN=database`.
 
 ## Useful links
 
