@@ -95,6 +95,7 @@ registerInstrumentations({
 ```
 
 The default sanitizer redacts:
+
 - **Credentials**: `https://user:pass@example.com` → `https://REDACTED:REDACTED@example.com`
 - **Sensitive parameters**: `password`, `token`, `api_key`, `secret`, `auth`, etc.
 

@@ -62,7 +62,8 @@ export function defaultSanitizeUrl(url: string): string {
     return urlObj.toString();
   } catch {
     // If URL parsing fails, redact credentials and sensitive query parameters
-    let sanitized = url.replace(/\/\/[^:]+:[^@]+@/, '//REDACTED:REDACTED@');
+    // Use a more specific regex to avoid polynomial time complexity
+    let sanitized = url.replace(/\/\/[^:/@]+:[^/@]+@/, '//REDACTED:REDACTED@');
 
     for (const param of sensitiveParams) {
       // Match param=value or param%3Dvalue (URL encoded)
