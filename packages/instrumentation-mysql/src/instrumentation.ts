@@ -56,7 +56,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
   static readonly COMMON_ATTRIBUTES = {
     [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MYSQL,
   };
-  private declare _connectionsUsage: UpDownCounter;
+  declare private _connectionsUsage: UpDownCounter;
 
   constructor(config: MySQLInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);

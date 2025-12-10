@@ -61,12 +61,15 @@ export function assertMetricCollection(
       values.forEach(({ buckets }, i) => {
         if (buckets) {
           const { boundaries, counts } = match.dataPoints[i].value.buckets;
-          const actualBuckets = counts.reduce((acc, n, j) => {
-            if (n > 0) {
-              acc[boundaries[j]] = n;
-            }
-            return acc;
-          }, {} as Record<number, number>);
+          const actualBuckets = counts.reduce(
+            (acc, n, j) => {
+              if (n > 0) {
+                acc[boundaries[j]] = n;
+              }
+              return acc;
+            },
+            {} as Record<number, number>
+          );
           assert.deepStrictEqual(actualBuckets, buckets);
         }
       });

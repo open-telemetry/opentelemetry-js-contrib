@@ -54,7 +54,7 @@ export type PatchableExtMethod = Hapi.Lifecycle.Method & {
 export type ServerExtDirectInput = [
   Hapi.ServerRequestExtType,
   Hapi.Lifecycle.Method,
-  (Hapi.ServerExtOptions | undefined)?
+  (Hapi.ServerExtOptions | undefined)?,
 ];
 
 export const HapiLayerType = {

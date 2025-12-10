@@ -100,7 +100,11 @@ describe('NetInstrumentation', () => {
           },
         },
         () => {
-          assertTLSSpan(getTLSSpans(), tlsSocket, DEFAULT_NET_SEMCONV_STABILITY);
+          assertTLSSpan(
+            getTLSSpans(),
+            tlsSocket,
+            DEFAULT_NET_SEMCONV_STABILITY
+          );
           done();
         }
       );
@@ -133,7 +137,11 @@ describe('NetInstrumentation', () => {
           },
         },
         () => {
-          assertTLSSpan(getTLSSpans(), tlsSocket, DEFAULT_NET_SEMCONV_STABILITY);
+          assertTLSSpan(
+            getTLSSpans(),
+            tlsSocket,
+            DEFAULT_NET_SEMCONV_STABILITY
+          );
           done();
         }
       );

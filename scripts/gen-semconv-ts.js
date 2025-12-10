@@ -72,10 +72,9 @@ function genSemconvTs(wsDir) {
     paths: [path.join(wsDir, 'node_modules')],
   });
   const semconvStable = require(semconvPath);
-  const semconvVer = require(path.resolve(
-    semconvPath,
-    '../../../package.json'
-  )).version;
+  const semconvVer = require(
+    path.resolve(semconvPath, '../../../package.json')
+  ).version;
 
   // Gather unstable semconv imports. Consider any imports from
   // '@opentelemetry/semantic-conventions/incubating' or from an existing local

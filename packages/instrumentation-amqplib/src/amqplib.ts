@@ -692,8 +692,8 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
                 requeue === true
                   ? ' with requeue'
                   : requeue === false
-                  ? ' without requeue'
-                  : ''
+                    ? ' without requeue'
+                    : ''
               }`
             : operation,
       });
