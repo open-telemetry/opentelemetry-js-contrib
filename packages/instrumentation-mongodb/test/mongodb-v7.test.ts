@@ -30,6 +30,8 @@ import {
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
 
+import * as semver from 'semver';
+
 // Get instrumentation (singleton)
 let instrumentation: MongoDBInstrumentation;
 {
@@ -56,6 +58,13 @@ describe('MongoDBInstrumentation-Tracing-v7', () => {
   let shouldTest = true;
   if (!RUN_MONGODB_TESTS) {
     console.log('Skipping test-mongodb. Run MongoDB to test');
+    shouldTest = false;
+  }
+
+  if (!semver.satisfies(process.version, '>=20.19.0')) {
+    console.log(
+      `Skipping mongodb v7 tests. Node.js ${process.version} does not meet minimum requirement of >=20.19.0`
+    );
     shouldTest = false;
   }
 

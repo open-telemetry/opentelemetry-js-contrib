@@ -40,22 +40,10 @@ const otelTestingMeterProvider = new MeterProvider({
   readers: [metricReader],
 });
 
-import {
-  getInstrumentation,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-
-// Get instrumentation (singleton)
-let instrumentation: MongoDBInstrumentation;
-{
-  const instance: MongoDBInstrumentation | undefined = getInstrumentation();
-  if (!instance) {
-    instrumentation = new MongoDBInstrumentation();
-    registerInstrumentationTesting(instrumentation);
-  } else {
-    instrumentation = instance;
-  }
-}
+import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
+const instrumentation = registerInstrumentationTesting(
+  new MongoDBInstrumentation()
+);
 
 import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import type { MongoClient, Collection } from 'mongodb';
