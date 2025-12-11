@@ -359,7 +359,10 @@ describe('_patchEnd', () => {
       assert.strictEqual(mockSpan.getSetStatusCallCount(), 1);
       assert.strictEqual(mockSpan.getEndCallCount(), 1);
       assert.strictEqual(mockSpan.getLastStatus().code, 2);
-      assert.strictEqual(mockSpan.getLastStatus().message, 'Connection timeout');
+      assert.strictEqual(
+        mockSpan.getLastStatus().message,
+        'Connection timeout'
+      );
     });
 
     it('should handle undefined span gracefully on multiple invocations', () => {
