@@ -278,3 +278,159 @@ describe('DbStatementSerializer', () => {
     });
   });
 });
+
+describe('_patchEnd', () => {
+  let instrumentation: MongoDBInstrumentation;
+
+  beforeEach(() => {
+    instrumentation = new MongoDBInstrumentation();
+  });
+
+  afterEach(() => {
+    instrumentation.disable();
+  });
+
+  function createMockSpan() {
+    let endCallCount = 0;
+    let setStatusCallCount = 0;
+    let lastStatus: any = null;
+
+    return {
+      end: () => {
+        endCallCount++;
+      },
+      setStatus: (status: any) => {
+        setStatusCallCount++;
+        lastStatus = status;
+      },
+      recordException: () => {},
+      setAttribute: () => {},
+      setAttributes: () => {},
+      addEvent: () => {},
+      isRecording: () => endCallCount === 0,
+      getEndCallCount: () => endCallCount,
+      getSetStatusCallCount: () => setStatusCallCount,
+      getLastStatus: () => lastStatus,
+    };
+  }
+
+  // https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2788
+  describe('double callback invocation guard', () => {
+    it('should only call span.end() once even when callback is invoked multiple times', () => {
+      const mockSpan = createMockSpan();
+      let resultHandlerCallCount = 0;
+
+      const resultHandler = () => {
+        resultHandlerCallCount++;
+        return 'result';
+      };
+
+      const patchedEnd = (instrumentation as any)._patchEnd(
+        mockSpan,
+        resultHandler,
+        123,
+        'find'
+      );
+
+      patchedEnd(null, { ok: 1 });
+      patchedEnd(null, { ok: 1 });
+      patchedEnd(null, { ok: 1 });
+
+      assert.strictEqual(mockSpan.getEndCallCount(), 1);
+      assert.strictEqual(resultHandlerCallCount, 3);
+    });
+
+    it('should only set error status once when callback is invoked multiple times with error', () => {
+      const mockSpan = createMockSpan();
+      const resultHandler = () => 'result';
+
+      const patchedEnd = (instrumentation as any)._patchEnd(
+        mockSpan,
+        resultHandler,
+        123,
+        'find'
+      );
+
+      const testError = new Error('Connection timeout');
+      patchedEnd(testError);
+      patchedEnd(testError);
+      patchedEnd(testError);
+
+      assert.strictEqual(mockSpan.getSetStatusCallCount(), 1);
+      assert.strictEqual(mockSpan.getEndCallCount(), 1);
+      assert.strictEqual(mockSpan.getLastStatus().code, 2);
+      assert.strictEqual(mockSpan.getLastStatus().message, 'Connection timeout');
+    });
+
+    it('should handle undefined span gracefully on multiple invocations', () => {
+      let resultHandlerCallCount = 0;
+      const resultHandler = () => {
+        resultHandlerCallCount++;
+        return 'result';
+      };
+
+      const patchedEnd = (instrumentation as any)._patchEnd(
+        undefined,
+        resultHandler,
+        123,
+        'find'
+      );
+
+      assert.doesNotThrow(() => {
+        patchedEnd(null, { ok: 1 });
+        patchedEnd(null, { ok: 1 });
+        patchedEnd(null, { ok: 1 });
+      });
+      assert.strictEqual(resultHandlerCallCount, 3);
+    });
+
+    it('should only update metrics once for endSessions command', () => {
+      const mockSpan = createMockSpan();
+      let metricsAddCallCount = 0;
+
+      (instrumentation as any)._connectionsUsage = {
+        add: () => {
+          metricsAddCallCount++;
+        },
+      };
+      (instrumentation as any)._poolName = 'mongodb://localhost:27017/test';
+
+      const patchedEnd = (instrumentation as any)._patchEnd(
+        mockSpan,
+        () => 'result',
+        123,
+        'endSessions'
+      );
+
+      patchedEnd(null, { ok: 1 });
+      patchedEnd(null, { ok: 1 });
+      patchedEnd(null, { ok: 1 });
+
+      assert.strictEqual(metricsAddCallCount, 1);
+      assert.strictEqual(mockSpan.getEndCallCount(), 1);
+    });
+
+    it('should handle mixed success and error calls correctly', () => {
+      const mockSpan = createMockSpan();
+      let resultHandlerCallCount = 0;
+      const resultHandler = () => {
+        resultHandlerCallCount++;
+      };
+
+      const patchedEnd = (instrumentation as any)._patchEnd(
+        mockSpan,
+        resultHandler,
+        123,
+        'find'
+      );
+
+      patchedEnd(null, { ok: 1 });
+      patchedEnd(new Error('Late error 1'));
+      patchedEnd(new Error('Late error 2'));
+
+      assert.strictEqual(mockSpan.getEndCallCount(), 1);
+      assert.strictEqual(mockSpan.getSetStatusCallCount(), 0);
+      assert.strictEqual(resultHandlerCallCount, 3);
+    });
+  });
+});
