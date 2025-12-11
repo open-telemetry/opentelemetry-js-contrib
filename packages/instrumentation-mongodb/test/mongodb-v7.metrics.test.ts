@@ -68,7 +68,7 @@ async function waitForNumberOfExports(
   return exporter.getMetrics();
 }
 
-describe('MongoDBInstrumentation-Metrics', () => {
+describe('MongoDBInstrumentation-Metrics-v4', () => {
   // For these tests, mongo must be running. Add RUN_MONGODB_TESTS to run
   // these tests.
   const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
