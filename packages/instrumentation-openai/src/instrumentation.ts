@@ -226,7 +226,11 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
               return stream;
             })
             .catch(
-              self._createAPIPromiseRejectionHandler(startNow, span, commonAttrs)
+              self._createAPIPromiseRejectionHandler(
+                startNow,
+                span,
+                commonAttrs
+              )
             );
           // We have to return the original `APIPromise` instance, because it is
           // a customized subclass of `Promise`.
