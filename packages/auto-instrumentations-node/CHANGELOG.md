@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.67.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.67.2...auto-instrumentations-node-v0.67.3) (2025-12-12)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.56.0 to ^0.57.0
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.61.0 to ^0.61.1
+    * @opentelemetry/instrumentation-net bumped from ^0.52.0 to ^0.53.0
+    * @opentelemetry/instrumentation-openai bumped from ^0.7.0 to ^0.7.1
+    * @opentelemetry/instrumentation-pg bumped from ^0.61.1 to ^0.61.2
+    * @opentelemetry/instrumentation-tedious bumped from ^0.27.0 to ^0.28.0
+
 ## [0.67.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.67.1...auto-instrumentations-node-v0.67.2) (2025-11-26)
 
 

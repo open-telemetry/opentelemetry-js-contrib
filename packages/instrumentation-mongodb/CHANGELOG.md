@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.61.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.61.0...instrumentation-mongodb-v0.61.1) (2025-12-12)
+
+
+### Bug Fixes
+
+* **instrumentation-mongodb:** Guard against multiple callback invocations ([#3293](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3293)) ([1673711](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1673711bd1b5360dbb28dbbd65c3d5422e0ba9e4))
+
 ## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.60.0...instrumentation-mongodb-v0.61.0) (2025-11-06)
 
 
