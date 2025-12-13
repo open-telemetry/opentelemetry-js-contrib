@@ -28,22 +28,27 @@ jobs:
       - name: Install
         run: npm ci --ignore-scripts
         timeout-minutes: 10
-      # Note: when pushing to main we want to test only what changed in
-      # last commit. Otherwise we want to test all changes from origin/main.
-      # So we set the right values for base and head commits depending
-      # on the type of event (PR or push)
-      # ref: https://nx.dev/ci/features/affected#configure-affected-on-ci
-      - name: Set base and head commits
-        run: |
-          if [ "${{github.event_name}}" == "push" ]; then
-            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
-            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
-          else
-            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
-            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
-          fi
-      - name: Compile (Delta)
-        run: npm run compile:ci:affected
+
+      # Setting a global cache which key changes every day
+      - name: Set Cache Key
+        run: echo "CACHE_KEY=compile-cache-main-$(date +%Y-%m-%d)" >> "$GITHUB_ENV"
+      - name: Compile Cache Lookup
+        # if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/cache/restore@v4
+        with:
+          key: ${{ env.CACHE_KEY }}
+          path: .nx
+      - name: Compile
+        run: npm run compile
+      - name: Update Cache (Push)
+        # if: ${{ github.event_name == 'push' }}
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ env.CACHE_KEY }}
+          path: .nx
+
+      # Upload the compilation results as an artifact thta will be available
+      # only for this runa dn will be deleted in one day.
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
