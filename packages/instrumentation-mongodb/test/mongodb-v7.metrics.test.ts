@@ -48,6 +48,7 @@ const instrumentation = registerInstrumentationTesting(
 import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import type { MongoClient, Collection } from 'mongodb';
 import * as assert from 'assert';
+import * as semver from 'semver';
 
 async function waitForNumberOfExports(
   exporter: InMemoryMetricExporter,
@@ -67,13 +68,21 @@ async function waitForNumberOfExports(
   return exporter.getMetrics();
 }
 
-describe('MongoDBInstrumentation-Metrics-v4-v5-v6', () => {
+describe('MongoDBInstrumentation-Metrics-v4', () => {
   // For these tests, mongo must be running. Add RUN_MONGODB_TESTS to run
   // these tests.
   const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
   let shouldTest = true;
   if (!RUN_MONGODB_TESTS) {
     console.log('Skipping test-mongodb. Run MongoDB to test');
+    shouldTest = false;
+  }
+
+  // MongoDB v7 requires Node.js >= 20.19.0
+  if (!semver.satisfies(process.version, '>=20.19.0')) {
+    console.log(
+      `Skipping mongodb v7 tests. Node.js ${process.version} does not meet minimum requirement of >=20.19.0`
+    );
     shouldTest = false;
   }
 
