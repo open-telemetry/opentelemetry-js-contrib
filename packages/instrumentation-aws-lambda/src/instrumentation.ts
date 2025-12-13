@@ -32,6 +32,7 @@ import {
   propagation,
   MeterProvider,
   Span,
+  SpanContext,
   SpanKind,
   SpanStatusCode,
   TextMapGetter,
@@ -39,14 +40,8 @@ import {
   ROOT_CONTEXT,
   Attributes,
 } from '@opentelemetry/api';
-import { pubsubPropagation } from '@opentelemetry/propagation-utils';
 import {
   ATTR_URL_FULL,
-  MESSAGINGOPERATIONVALUES_PROCESS,
-  SEMATTRS_MESSAGING_DESTINATION,
-  SEMATTRS_MESSAGING_MESSAGE_ID,
-  SEMATTRS_MESSAGING_OPERATION,
-  SEMATTRS_MESSAGING_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import { ATTR_CLOUD_ACCOUNT_ID, ATTR_FAAS_COLDSTART } from './semconv';
 import { ATTR_FAAS_EXECUTION, ATTR_FAAS_ID } from './semconv-obsolete';
@@ -56,7 +51,6 @@ import {
   Callback,
   Context,
   Handler,
-  SQSRecord,
   StreamifyHandler,
 } from 'aws-lambda';
 
@@ -297,18 +291,24 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         plugin._applyRequestHook(span, event, context);
 
         return otelContext.with(trace.setSpan(parent, span), () => {
-          const maybePromise = safeExecuteInTheMiddle(
+          const additionalSpans = plugin._startEventSourceSpans(event);
+
+          const handlerResult = safeExecuteInTheMiddle(
             () => original.apply(this, [event, responseStream, context]),
             error => {
               if (error != null) {
                 // Exception thrown synchronously before resolving promise.
                 plugin._applyResponseHook(span, error);
-                plugin._endSpan(span, error, () => {});
+                plugin._endInvocationSpanAndFlush(span, error, () => {}, additionalSpans);
               }
             }
-          ) as Promise<{}> | undefined;
+          );
 
-          return plugin._handlePromiseResult(span, maybePromise);
+          return plugin._handlePromiseResult(
+            span,
+            handlerResult,
+            additionalSpans
+          ) as Promise<{}> | undefined;
         });
       };
     }
@@ -340,56 +340,47 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         plugin._applyRequestHook(span, event, context);
 
         return otelContext.with(trace.setSpan(parent, span), () => {
-          if (event.Records && event.Records[0].eventSource === 'aws:sqs') {
-            const messages = event.Records;
-            const queueArn = messages[0]?.eventSourceARN;
-            const queueName = queueArn?.split(':').pop() ?? 'unknown';
-            pubsubPropagation.patchMessagesArrayToStartProcessSpans({
-              messages,
-              parentContext: trace.setSpan(otelContext.active(), span),
-              tracer: plugin.tracer,
-              messageToSpanDetails: (message: SQSRecord) => ({
-                name: queueName,
-                parentContext: propagation.extract(
-                  ROOT_CONTEXT,
-                  message.messageAttributes || {},
-                  sqsContextGetter
-                ),
-                attributes: {
-                  [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sqs',
-                  [SEMATTRS_MESSAGING_DESTINATION]: queueName,
-                  [SEMATTRS_MESSAGING_MESSAGE_ID]: message.messageId,
-                  [SEMATTRS_MESSAGING_OPERATION]:
-                    MESSAGINGOPERATIONVALUES_PROCESS,
-                },
-              }),
-            });
-
-            pubsubPropagation.patchArrayForProcessSpans(
-              messages,
-              plugin.tracer,
-              otelContext.active()
-            );
-          }
+          const additionalSpans = plugin._startEventSourceSpans(event);
 
           // Support both callback-based and Promise-based handlers for backward compatibility
           if (callback) {
-            const wrappedCallback = plugin._wrapCallback(callback, span);
-            const maybePromise = safeExecuteInTheMiddle(
+            const wrappedCallback = plugin._wrapCallback(
+              callback,
+              span,
+              additionalSpans
+            );
+            const handlerResult = safeExecuteInTheMiddle(
               () => original.apply(this, [event, context, wrappedCallback]),
               error => {
                 if (error != null) {
                   // Exception thrown synchronously before resolving callback / promise.
                   plugin._applyResponseHook(span, error);
-                  plugin._endSpan(span, error, () => {});
+                  plugin._endInvocationSpanAndFlush(span, error, () => {}, additionalSpans);
                 }
               }
-            ) as Promise<{}> | undefined;
+            );
 
-            return plugin._handlePromiseResult(span, maybePromise);
+            if (typeof (handlerResult as Promise<unknown>)?.then === 'function') {
+              return plugin._handlePromiseResult(
+                span,
+                handlerResult,
+                additionalSpans
+              ) as Promise<{}> | undefined;
+            }
+
+            // Callback-based handler that does not return a promise: span will be ended by the wrapped callback.
+            if (handlerResult !== undefined) {
+              return plugin._handlePromiseResult(
+                span,
+                handlerResult,
+                additionalSpans
+              ) as Promise<{}> | undefined;
+            }
+
+            return undefined;
           } else {
             // Promise-based handler
-            const maybePromise = safeExecuteInTheMiddle(
+            const handlerResult = safeExecuteInTheMiddle(
               () =>
                 (
                   original as (
@@ -401,12 +392,16 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
                 if (error != null) {
                   // Exception thrown synchronously before resolving promise.
                   plugin._applyResponseHook(span, error);
-                  plugin._endSpan(span, error, () => {});
+                  plugin._endInvocationSpanAndFlush(span, error, () => {}, additionalSpans);
                 }
               }
-            ) as Promise<{}> | undefined;
+            );
 
-            return plugin._handlePromiseResult(span, maybePromise);
+            return plugin._handlePromiseResult(
+              span,
+              handlerResult,
+              additionalSpans
+            ) as Promise<{}> | undefined;
           }
         });
       };
@@ -433,8 +428,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         plugin._applyRequestHook(span, event, context);
 
         return otelContext.with(trace.setSpan(parent, span), () => {
+          const additionalSpans = plugin._startEventSourceSpans(event);
+
           // Promise-based handler only (Node.js 24+)
-          const maybePromise = safeExecuteInTheMiddle(
+          const handlerResult = safeExecuteInTheMiddle(
             () =>
               (
                 original as (event: any, context: Context) => Promise<any> | any
@@ -443,12 +440,16 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
               if (error != null) {
                 // Exception thrown synchronously before resolving promise.
                 plugin._applyResponseHook(span, error);
-                plugin._endSpan(span, error, () => {});
+                plugin._endInvocationSpanAndFlush(span, error, () => {}, additionalSpans);
               }
             }
-          ) as Promise<{}> | undefined;
+          );
 
-          return plugin._handlePromiseResult(span, maybePromise);
+          return plugin._handlePromiseResult(
+            span,
+            handlerResult,
+            additionalSpans
+          ) as Promise<{}> | undefined;
         });
       };
     }
@@ -494,29 +495,66 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
 
   private _handlePromiseResult(
     span: Span,
-    maybePromise: Promise<{}> | undefined
-  ): Promise<{}> | undefined {
-    if (typeof maybePromise?.then === 'function') {
-      return maybePromise.then(
+    handlerResult: unknown,
+    additionalSpans?: Span[]
+  ): Promise<unknown> | unknown {
+    if (typeof (handlerResult as Promise<unknown>)?.then === 'function') {
+      return (handlerResult as Promise<unknown>).then(
         value => {
           this._applyResponseHook(span, null, value);
           return new Promise(resolve =>
-            this._endSpan(span, undefined, () => resolve(value))
+            this._endInvocationSpanAndFlush(span, undefined, () => resolve(value), additionalSpans)
           );
         },
         (err: Error | string) => {
           this._applyResponseHook(span, err);
           return new Promise((resolve, reject) =>
-            this._endSpan(span, err, () => reject(err))
+            this._endInvocationSpanAndFlush(span, err, () => reject(err), additionalSpans)
           );
         }
       );
     }
 
     // Handle synchronous return values by ending the span and applying response hook
-    this._applyResponseHook(span, null, maybePromise);
-    this._endSpan(span, undefined, () => {});
-    return maybePromise;
+    this._applyResponseHook(span, null, handlerResult);
+    this._endInvocationSpanAndFlush(span, undefined, () => {}, additionalSpans);
+    return handlerResult;
+  }
+
+  private _startEventSourceSpans(event: any): Span[] {
+    const spans: Span[] = [];
+    switch (event) {
+      case this._isSqsEvent(event):
+        spans.push(this._startSqsProcessSpan(event));
+        break;
+      // TODO implement other event sources
+      default:
+        break;
+    }
+    return spans;
+  }
+
+  private _isSqsEvent(event: any): boolean {
+    return Boolean(
+      event?.Records && event.Records[0]?.eventSource === 'aws:sqs'
+    );
+  }
+
+  private _startSqsProcessSpan(event: any): Span {
+    const queueArn = event?.Records?.[0]?.eventSourceARN;
+    const queueName = queueArn?.split(':').pop() ?? 'unknown';
+
+    const links = this._extractSqsSpanLinks(event);
+
+    return this.tracer.startSpan(`${queueName} process`, {
+      kind: SpanKind.CONSUMER,
+      links,
+    });
+  }
+
+  private _extractSqsSpanLinks(event: any): { context: SpanContext }[] {
+    // TODO: implement span link extraction, same way as sqs instrumentation in aws-sdk instrumentation package
+    return []
   }
 
   private _determineParent(event: any, context: Context): OtelContext {
@@ -579,24 +617,29 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     return undefined;
   }
 
-  private _wrapCallback(original: Callback, span: Span): Callback {
+  private _wrapCallback(
+    original: Callback,
+    span: Span,
+    additionalSpans?: Span[]
+  ): Callback {
     const plugin = this;
     return function wrappedCallback(this: never, err, res) {
       plugin._diag.debug('executing wrapped callback function');
       plugin._applyResponseHook(span, err, res);
 
-      plugin._endSpan(span, err, () => {
-        plugin._diag.debug('executing original callback function');
-        return original.apply(this, [err, res]);
-      });
+      plugin._endInvocationSpanAndFlush(
+        span,
+        err,
+        () => {
+          plugin._diag.debug('executing original callback function');
+          return original.apply(this, [err, res]);
+        },
+        additionalSpans
+      );
     };
   }
 
-  private _endSpan(
-    span: Span,
-    err: string | Error | null | undefined,
-    callback: () => void
-  ) {
+  private _endSpan(span: Span, err?: Error | string | null): void {
     if (err) {
       span.recordException(err);
     }
@@ -615,6 +658,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     }
 
     span.end();
+  }
+
+  private _endInvocationSpanAndFlush(
+    invocationSpan: Span,
+    err: string | Error | null | undefined,
+    callback: () => void,
+    additionalSpans?: Span[]
+  ): void {
+    additionalSpans?.forEach(s => this._endSpan(s, err ?? null));
+
+    this._endSpan(invocationSpan, err ?? null);
 
     const flushers = [];
     if (this._traceForceFlusher) {
