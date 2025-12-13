@@ -15,8 +15,8 @@
  */
 
 import { ExceptionInstrumentation } from '../src/instrumentation';
-// @ts-expect-error: not an export, but we want the prebundled version
-import chai from 'chai/chai.js';
+// @ts-expect-error cjs still works
+import { assert } from 'chai';
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,
@@ -29,7 +29,6 @@ import {
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
 import { logs } from '@opentelemetry/api-logs';
-const assert = chai.assert;
 
 const STRING_ERROR = 'Some error string.';
 
