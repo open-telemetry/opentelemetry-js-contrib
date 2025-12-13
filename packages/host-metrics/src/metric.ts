@@ -334,7 +334,7 @@ export class HostMetrics extends BaseMetrics {
   /**
    * Starts collecting metrics
    */
-  start() {
+  public start() {
     this._createMetrics();
   }
 

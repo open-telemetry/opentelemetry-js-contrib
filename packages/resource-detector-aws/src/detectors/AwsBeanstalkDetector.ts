@@ -52,7 +52,7 @@ const WIN_OS_BEANSTALK_CONF_PATH =
   'C:\\Program Files\\Amazon\\XRay\\environment.conf';
 
 export class AwsBeanstalkDetector implements ResourceDetector {
-  BEANSTALK_CONF_PATH: string;
+  public BEANSTALK_CONF_PATH: string;
   private static readFileAsync = util.promisify(fs.readFile);
   private static fileAccessAsync = util.promisify(fs.access);
 
@@ -64,7 +64,7 @@ export class AwsBeanstalkDetector implements ResourceDetector {
     }
   }
 
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     const dataPromise = context.with(suppressTracing(context.active()), () =>
       this._gatherData()
     );
@@ -89,7 +89,7 @@ export class AwsBeanstalkDetector implements ResourceDetector {
   /**
    * Async resource attributes for AWS Beanstalk configuration read from file.
    */
-  async _gatherData(): Promise<DetectedResourceAttributes> {
+  private async _gatherData(): Promise<DetectedResourceAttributes> {
     try {
       await AwsBeanstalkDetector.fileAccessAsync(
         this.BEANSTALK_CONF_PATH,
