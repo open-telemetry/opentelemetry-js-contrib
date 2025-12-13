@@ -51,7 +51,7 @@
     "@opentelemetry/contrib-test-utils": "^0.55.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "joi": "17.12.2"
+    "joi": "18.0.2"
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
