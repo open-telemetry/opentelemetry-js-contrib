@@ -75,6 +75,7 @@
     "packages/propagator-instana": {},
     "packages/propagator-ot-trace": {},
     "packages/propagator-aws-xray": {},
-    "packages/propagator-aws-xray-lambda": {}
+    "packages/propagator-aws-xray-lambda": {},
+    "packages/instrumentation-browser-navigation": {}
   }
 }

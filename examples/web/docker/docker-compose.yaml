@@ -1,6 +1,6 @@
 services:
   collector:
-    image: otel/opentelemetry-collector:0.118.0
+    image: otel/opentelemetry-collector:nightly
     command: ["--config=/conf/collector-config.yaml"]
     volumes:
       - ./collector-config.yaml:/conf/collector-config.yaml
