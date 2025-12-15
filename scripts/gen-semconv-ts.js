@@ -231,7 +231,9 @@ ${chunks.join('\n\n')}
   );
   console.log(`Generated "${semconvTsPath}".`);
 
-  console.log('Running "npx prettier --write src/semconv.ts" to fix formatting.');
+  console.log(
+    'Running "npx prettier --write src/semconv.ts" to fix formatting.'
+  );
   execSync('npx prettier --write src/semconv.ts', { cwd: wsDir });
 }
 
