@@ -16,7 +16,7 @@
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-mongodb",
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm run test-v5-v6 -- --watch-extensions ts --watch",
+    "tdd": "npm run test-v5-v6-run -- --watch-extensions ts --watch",
     "test": "npm run test-v5-v6 && npm run test-unit",
     "test-unit": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/unit/*.test.ts'",
     "test-v3": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/mongodb-v3.test.ts'",
@@ -62,7 +62,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/bson": "4.0.5",
-    "mongodb": "7.0.0"
+    "mongodb": "6.19.0"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.208.0"
