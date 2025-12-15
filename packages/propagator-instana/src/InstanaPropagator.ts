@@ -78,7 +78,11 @@ export class InstanaPropagator implements TextMapPropagator {
    * Extracts the span context from Instana's vendor specific trace correlation headers (X-INSTANA-T, X-INSTANA-S
    * and X-INSTANA-L).
    */
-  public extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
+  public extract(
+    context: Context,
+    carrier: unknown,
+    getter: TextMapGetter
+  ): Context {
     let traceId = readHeader(carrier, getter, INSTANA_TRACE_ID_HEADER);
     if (traceId && traceId.length < 32) {
       traceId = traceId.padStart(32, '0');
