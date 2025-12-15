@@ -48,7 +48,7 @@ import {
  * @returns a {@link Resource} populated with data about the environment or an empty Resource if detection fails.
  */
 class AzureVmResourceDetector implements ResourceDetector {
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     const dataPromise = context.with(suppressTracing(context.active()), () =>
       this.getAzureVmMetadata()
     );
@@ -75,7 +75,7 @@ class AzureVmResourceDetector implements ResourceDetector {
     return { attributes };
   }
 
-  async getAzureVmMetadata(): Promise<DetectedResourceAttributes> {
+  public async getAzureVmMetadata(): Promise<DetectedResourceAttributes> {
     try {
       const options = {
         host: AZURE_VM_METADATA_HOST,
