@@ -74,12 +74,18 @@ const cassandraContactPoint = process.env.CASSANDRA_HOST
 const DEFAULT_OLD_ATTRIBUTES = {
   [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_CASSANDRA,
   [ATTR_DB_USER]: 'cassandra',
-  [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-  [ATTR_NET_PEER_PORT]: 9042,
 };
 
 const DEFAULT_STABLE_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_CASSANDRA,
+};
+
+const ADDRESS_OLD_ATTRIBUTES = {
+  [ATTR_NET_PEER_NAME]: cassandraContactPoint,
+  [ATTR_NET_PEER_PORT]: 9042,
+};
+
+const ADDRESS_STABLE_ATTRIBUTES = {
   [ATTR_SERVER_ADDRESS]: cassandraContactPoint,
   [ATTR_SERVER_PORT]: 9042,
 };
@@ -89,11 +95,14 @@ function assertSpan(
   name: string,
   query?: string,
   status?: SpanStatus,
-  customAttributes?: Attributes
+  customAttributes?: Attributes,
+  includeAddressAttrs = true
 ) {
   const attributes: Attributes = {
     ...DEFAULT_OLD_ATTRIBUTES,
     ...DEFAULT_STABLE_ATTRIBUTES,
+    ...(includeAddressAttrs ? ADDRESS_OLD_ATTRIBUTES : {}),
+    ...(includeAddressAttrs ? ADDRESS_STABLE_ATTRIBUTES : {}),
     ...customAttributes,
   };
 
@@ -111,26 +120,32 @@ function assertSingleSpan(
   name: string,
   query?: string,
   status?: SpanStatus,
-  customAttributes?: Attributes
+  customAttributes?: Attributes,
+  includeAddressAttrs = true
 ) {
   const spans = memoryExporter.getFinishedSpans();
   assert.strictEqual(spans.length, 1);
   const [span] = spans;
-  assertSpan(span, name, query, status, customAttributes);
+  assertSpan(span, name, query, status, customAttributes, includeAddressAttrs);
 }
 
-function assertAttributeInSingleSpan(name: string, attributes?: Attributes) {
+function assertAttributeInSingleSpan(
+  name: string,
+  attributes?: Attributes,
+  includeAddressAttrs = true
+) {
   const spans = memoryExporter.getFinishedSpans();
   assert.strictEqual(spans.length, 1);
   const [span] = spans;
-  assertSpan(span, name, undefined, undefined, attributes);
+  assertSpan(span, name, undefined, undefined, attributes, includeAddressAttrs);
 }
 
 function assertErrorSpan(
   name: string,
   error: Error & { code?: number },
   query?: string,
-  customAttributes?: Attributes
+  customAttributes?: Attributes,
+  includeAddressAttrs = true
 ) {
   const spans = memoryExporter.getFinishedSpans();
   assert.strictEqual(spans.length, 1);
@@ -139,6 +154,8 @@ function assertErrorSpan(
   const attributes: Attributes = {
     ...DEFAULT_OLD_ATTRIBUTES,
     ...DEFAULT_STABLE_ATTRIBUTES,
+    ...(includeAddressAttrs ? ADDRESS_OLD_ATTRIBUTES : {}),
+    ...(includeAddressAttrs ? ADDRESS_STABLE_ATTRIBUTES : {}),
     ...customAttributes,
   };
 
@@ -391,7 +408,14 @@ describe('CassandraDriverInstrumentation', () => {
       // stream internally uses execute
       assert.strictEqual(spans.length, 2);
       assertSpan(spans[0], 'cassandra-driver.execute');
-      assertSpan(spans[1], 'cassandra-driver.stream');
+      assertSpan(
+        spans[1],
+        'cassandra-driver.stream',
+        undefined,
+        undefined,
+        undefined,
+        false
+      );
     }
 
     it('creates a span for a stream call', done => {
@@ -436,6 +460,7 @@ describe('CassandraDriverInstrumentation', () => {
         SpanKind.CLIENT,
         {
           ...DEFAULT_OLD_ATTRIBUTES,
+          ...ADDRESS_OLD_ATTRIBUTES,
         },
         [],
         { code: SpanStatusCode.UNSET }
@@ -456,6 +481,7 @@ describe('CassandraDriverInstrumentation', () => {
         SpanKind.CLIENT,
         {
           ...DEFAULT_STABLE_ATTRIBUTES,
+          ...ADDRESS_STABLE_ATTRIBUTES,
         },
         [],
         { code: SpanStatusCode.UNSET }
