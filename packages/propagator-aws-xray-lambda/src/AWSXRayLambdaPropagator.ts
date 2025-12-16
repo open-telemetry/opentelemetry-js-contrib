@@ -44,7 +44,11 @@ export class AWSXRayLambdaPropagator implements TextMapPropagator {
     this._awsXrayPropagator.inject(context, carrier, setter);
   }
 
-  public extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
+  public extract(
+    context: Context,
+    carrier: unknown,
+    getter: TextMapGetter
+  ): Context {
     const xrayContext = this._awsXrayPropagator.extract(
       context,
       carrier,

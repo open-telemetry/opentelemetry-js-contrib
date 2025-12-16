@@ -77,7 +77,11 @@ export class AWSXRayPropagator implements TextMapPropagator {
     setter.set(carrier, AWSXRAY_TRACE_ID_HEADER, traceHeader);
   }
 
-  public extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
+  public extract(
+    context: Context,
+    carrier: unknown,
+    getter: TextMapGetter
+  ): Context {
     const spanContext = this.getSpanContextFromHeader(carrier, getter);
     if (!isSpanContextValid(spanContext)) return context;
 
