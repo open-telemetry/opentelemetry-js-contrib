@@ -75,7 +75,7 @@ This package implements Semantic Convention [Version 1.37.0](https://github.com/
 
 | Resource Attribute            | Description                                                                                                                                     |
 |-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| azure.container_apps.revision | The revision of the Azure Container App. Value of Process Environment Variable `CONTAINER_APP_REVISION`.                                       |
+| azure.container_app.version | The revision of the Azure Container App. Value of Process Environment Variable `CONTAINER_APP_REVISION`.                                       |
 | cloud.platform                | The cloud platform. Here, it's always "azure.container_apps".                                                                                  |
 | cloud.provider                | The cloud service provider. In this context, it's always "azure".                                                                              |
 | container.name                | The name of the Azure Container App. Value of Process Environment Variable `CONTAINER_APP_NAME`.                                               |
