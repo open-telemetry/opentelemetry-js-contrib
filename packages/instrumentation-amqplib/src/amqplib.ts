@@ -36,6 +36,8 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import { ATTR_MESSAGING_OPERATION } from './semconv';
 import {
@@ -82,8 +84,19 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 const supportedVersions = ['>=0.5.5 <1'];
 
 export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumentationConfig> {
+  private _netSemconvStability!: SemconvStability;
+
   constructor(config: AmqplibInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+    this._setSemconvStabilityFromEnv();
+  }
+
+  // Used for testing.
+  private _setSemconvStabilityFromEnv() {
+    this._netSemconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   override setConfig(config: AmqplibInstrumentationConfig = {}) {
@@ -245,6 +258,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
       openCallback: (err: any, connection: Connection) => void
     ) => Connection
   ) {
+    const self = this;
     return function patchedConnect(
       this: unknown,
       url: string | Options.Connect,
@@ -257,7 +271,10 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
         socketOptions,
         function (this: unknown, err, conn: InstrumentationConnection) {
           if (err == null) {
-            const urlAttributes = getConnectionAttributesFromUrl(url);
+            const urlAttributes = getConnectionAttributesFromUrl(
+              url,
+              self._netSemconvStability
+            );
             const serverAttributes = getConnectionAttributesFromServer(conn);
             conn[CONNECTION_ATTRIBUTES] = {
               ...urlAttributes,
