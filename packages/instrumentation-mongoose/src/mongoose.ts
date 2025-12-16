@@ -26,6 +26,8 @@ import {
   InstrumentationBase,
   InstrumentationModuleDefinition,
   InstrumentationNodeModuleDefinition,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -34,6 +36,11 @@ import {
   ATTR_DB_STATEMENT,
   ATTR_DB_SYSTEM,
 } from './semconv';
+import {
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+} from '@opentelemetry/semantic-conventions';
 
 const contextCaptureFunctionsCommon = [
   'deleteOne',
@@ -92,8 +99,24 @@ function instrumentRemove(moduleVersion: string | undefined): boolean {
 export const _STORED_PARENT_SPAN: unique symbol = Symbol('stored-parent-span');
 
 export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrumentationConfig> {
+  private _netSemconvStability!: SemconvStability;
+  private _dbSemconvStability!: SemconvStability;
+
   constructor(config: MongooseInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._setSemconvStabilityFromEnv();
+  }
+
+  // Used for testing.
+  private _setSemconvStabilityFromEnv() {
+    this._netSemconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._dbSemconvStability = semconvStabilityFromStr(
+      'database',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   protected init(): InstrumentationModuleDefinition {
@@ -210,10 +233,16 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer('aggregate', {
+          const statement = dbStatementSerializer('aggregate', {
             options: this.options,
             aggregatePipeline: this._pipeline,
           });
+          if (self._dbSemconvStability & SemconvStability.OLD) {
+            attributes[ATTR_DB_STATEMENT] = statement;
+          }
+          if (self._dbSemconvStability & SemconvStability.STABLE) {
+            attributes[ATTR_DB_QUERY_TEXT] = statement;
+          }
         }
 
         const span = self._startSpan(
@@ -251,12 +280,18 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer(this.op, {
+          const statement = dbStatementSerializer(this.op, {
             condition: this._conditions,
             updates: this._update,
             options: this.options,
             fields: this._fields,
           });
+          if (self._dbSemconvStability & SemconvStability.OLD) {
+            attributes[ATTR_DB_STATEMENT] = statement;
+          }
+          if (self._dbSemconvStability & SemconvStability.STABLE) {
+            attributes[ATTR_DB_QUERY_TEXT] = statement;
+          }
         }
         const span = self._startSpan(
           this.mongooseCollection,
@@ -296,10 +331,13 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer(
-            op,
-            serializePayload
-          );
+          const statement = dbStatementSerializer(op, serializePayload);
+          if (self._dbSemconvStability & SemconvStability.OLD) {
+            attributes[ATTR_DB_STATEMENT] = statement;
+          }
+          if (self._dbSemconvStability & SemconvStability.STABLE) {
+            attributes[ATTR_DB_QUERY_TEXT] = statement;
+          }
         }
         const span = self._startSpan(
           this.constructor.collection,
@@ -364,10 +402,13 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer(
-            op,
-            serializePayload
-          );
+          const statement = dbStatementSerializer(op, serializePayload);
+          if (self._dbSemconvStability & SemconvStability.OLD) {
+            attributes[ATTR_DB_STATEMENT] = statement;
+          }
+          if (self._dbSemconvStability & SemconvStability.STABLE) {
+            attributes[ATTR_DB_QUERY_TEXT] = statement;
+          }
         }
 
         const span = self._startSpan(
@@ -426,16 +467,29 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     attributes: Attributes,
     parentSpan?: Span
   ): Span {
+    const finalAttributes: Attributes = {
+      ...attributes,
+      ...getAttributesFromCollection(
+        collection,
+        this._dbSemconvStability,
+        this._netSemconvStability
+      ),
+    };
+
+    if (this._dbSemconvStability & SemconvStability.OLD) {
+      finalAttributes[ATTR_DB_OPERATION] = operation;
+      finalAttributes[ATTR_DB_SYSTEM] = 'mongoose';
+    }
+    if (this._dbSemconvStability & SemconvStability.STABLE) {
+      finalAttributes[ATTR_DB_OPERATION_NAME] = operation;
+      finalAttributes[ATTR_DB_SYSTEM_NAME] = 'mongoose';
+    }
+
     return this.tracer.startSpan(
       `mongoose.${modelName}.${operation}`,
       {
         kind: SpanKind.CLIENT,
-        attributes: {
-          ...attributes,
-          ...getAttributesFromCollection(collection),
-          [ATTR_DB_OPERATION]: operation,
-          [ATTR_DB_SYSTEM]: 'mongoose',
-        },
+        attributes: finalAttributes,
       },
       parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined
     );
