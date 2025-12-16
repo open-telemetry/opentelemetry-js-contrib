@@ -157,6 +157,15 @@ const baseConfig = tseslint.config(
       '@typescript-eslint/no-empty-function': ['off'],
       '@typescript-eslint/no-shadow': ['warn'],
       'prefer-rest-params': 'off',
+      '@typescript-eslint/explicit-member-accessibility': [
+        'error',
+        {
+          overrides: {
+            // `constructor` is public by default.
+            constructors: 'no-public',
+          },
+        },
+      ],
     },
   },
 
@@ -185,6 +194,7 @@ const baseConfig = tseslint.config(
         'warn',
         { argsIgnorePattern: '^_' },
       ],
+      '@typescript-eslint/explicit-member-accessibility': 'off',
       'no-empty': 'off',
     },
   },
@@ -222,6 +232,14 @@ const baseConfig = tseslint.config(
         Zone: 'readonly',
         Task: 'readonly',
       },
+    },
+  },
+
+  // Gradual adoption of explicit-member-accessibility
+  {
+    files: ['**/packages/instrumentation-*/**'],
+    rules: {
+      '@typescript-eslint/explicit-member-accessibility': 'off',
     },
   }
 );

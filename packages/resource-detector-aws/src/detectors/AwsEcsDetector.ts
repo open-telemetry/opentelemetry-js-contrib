@@ -62,13 +62,13 @@ interface AwsLogOptions {
  * plugins of AWS X-Ray. Returns an empty Resource if detection fails.
  */
 export class AwsEcsDetector implements ResourceDetector {
-  static readonly CONTAINER_ID_LENGTH = 64;
-  static readonly CONTAINER_ID_LENGTH_MIN = 32;
-  static readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
+  public static readonly CONTAINER_ID_LENGTH = 64;
+  public static readonly CONTAINER_ID_LENGTH_MIN = 32;
+  public static readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
 
   private static readFileAsync = util.promisify(fs.readFile);
 
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     const attributes = context.with(suppressTracing(context.active()), () =>
       this._getAttributes()
     );

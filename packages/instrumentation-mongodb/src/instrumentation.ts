@@ -1013,28 +1013,34 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     // in final callback (resultHandler) is lost
     const activeContext = context.active();
     const instrumentation = this;
-    return function patchedEnd(this: {}, ...args: unknown[]) {
-      const error = args[0];
-      if (span) {
-        if (error instanceof Error) {
-          span?.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: error.message,
-          });
-        } else {
-          const result = args[1] as CommandResult;
-          instrumentation._handleExecutionResult(span, result);
-        }
-        span.end();
-      }
+    let spanEnded = false;
 
-      return context.with(activeContext, () => {
+    return function patchedEnd(this: {}, ...args: unknown[]) {
+      if (!spanEnded) {
+        spanEnded = true;
+        const error = args[0];
+        if (span) {
+          if (error instanceof Error) {
+            span.setStatus({
+              code: SpanStatusCode.ERROR,
+              message: error.message,
+            });
+          } else {
+            const result = args[1] as CommandResult;
+            instrumentation._handleExecutionResult(span, result);
+          }
+          span.end();
+        }
+
         if (commandType === 'endSessions') {
           instrumentation._connectionsUsage.add(-1, {
             state: 'idle',
             'pool.name': instrumentation._poolName,
           });
         }
+      }
+
+      return context.with(activeContext, () => {
         return resultHandler.apply(this, args);
       });
     };

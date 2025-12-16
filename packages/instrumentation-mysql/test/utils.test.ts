@@ -18,7 +18,7 @@ import * as assert from 'assert';
 import * as mysqlTypes from 'mysql';
 
 describe('utils.ts', () => {
-  describe('getPoolName()', () => {
+  describe('getPoolNameOld()', () => {
     let pool: mysqlTypes.Pool;
 
     it('return the pool name', () => {
@@ -31,7 +31,7 @@ describe('utils.ts', () => {
       });
 
       assert.strictEqual(
-        utils.getPoolName(pool),
+        utils.getPoolNameOld(pool),
         "host: '127.0.0.1', port: 33306, database: 'test_db', user: 'otel'"
       );
     });
@@ -45,7 +45,7 @@ describe('utils.ts', () => {
       });
 
       assert.strictEqual(
-        utils.getPoolName(pool),
+        utils.getPoolNameOld(pool),
         "host: '127.0.0.1', port: 33306, database: 'test_db'"
       );
     });

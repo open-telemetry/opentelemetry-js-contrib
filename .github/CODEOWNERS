@@ -16,12 +16,14 @@
 .github/ @open-telemetry/javascript-maintainers
 
 # Any browser-specific code is co-owned by Browser SIG and JS SIG (list more packages here as needed):
+examples/web/ @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
+packages/auto-instrumentations-web @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
+packages/instrumentation-browser-navigation @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
 packages/instrumentation-document-load/ @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
 packages/instrumentation-long-task/ @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
 packages/instrumentation-user-interaction/ @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
 packages/instrumentation-web-exception/ @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
 packages/plugin-react-load/ @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
-packages/auto-instrumentations-web @open-telemetry/browser-maintainers @open-telemetry/javascript-approvers
 
 # All other files
 * @open-telemetry/javascript-approvers
