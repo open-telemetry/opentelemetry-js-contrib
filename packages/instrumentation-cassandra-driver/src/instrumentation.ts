@@ -266,10 +266,12 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
 
         const batchPromise = safeExecuteInTheMiddle(
           () => {
-            return original.apply(
-              this,
-              args
-            ) as Promise<CassandraDriver.types.ResultSet>;
+            return context.with(batchContext, () => {
+              return original.apply(
+                this,
+                args
+              ) as Promise<CassandraDriver.types.ResultSet>;
+            });
           },
           error => {
             if (error) {
@@ -317,10 +319,12 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
           };
           args[3] = wrappedCallback;
         }
-
+        const streamContext = trace.setSpan(context.active(), span);
         return safeExecuteInTheMiddle(
           () => {
-            return original.apply(this, args);
+            return context.with(streamContext, () => {
+              return original.apply(this, args);
+            });
           },
           error => {
             if (error) {
