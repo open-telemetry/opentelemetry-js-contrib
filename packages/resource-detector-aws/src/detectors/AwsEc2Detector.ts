@@ -49,8 +49,10 @@ class AwsEc2Detector implements ResourceDetector {
   public readonly AWS_INSTANCE_TOKEN_DOCUMENT_PATH = '/latest/api/token';
   public readonly AWS_INSTANCE_IDENTITY_DOCUMENT_PATH =
     '/latest/dynamic/instance-identity/document';
-  public readonly AWS_INSTANCE_HOST_DOCUMENT_PATH = '/latest/meta-data/hostname';
-  public readonly AWS_METADATA_TTL_HEADER = 'X-aws-ec2-metadata-token-ttl-seconds';
+  public readonly AWS_INSTANCE_HOST_DOCUMENT_PATH =
+    '/latest/meta-data/hostname';
+  public readonly AWS_METADATA_TTL_HEADER =
+    'X-aws-ec2-metadata-token-ttl-seconds';
   public readonly AWS_METADATA_TOKEN_HEADER = 'X-aws-ec2-metadata-token';
   public readonly MILLISECOND_TIME_OUT = 5000;
 
