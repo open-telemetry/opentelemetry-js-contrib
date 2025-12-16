@@ -245,6 +245,111 @@ describe('mysql@2.x-Tracing', () => {
     });
   });
 
+  describe('maskStatement:true config, should mask db.statement', () => {
+    before(() => {
+      instrumentation.disable();
+      const config: MySQLInstrumentationConfig = {
+        maskStatement: true,
+      };
+      instrumentation.setConfig(config);
+      instrumentation.enable();
+    });
+
+    after(() => {
+      instrumentation.disable();
+      instrumentation.setConfig({});
+      instrumentation.enable();
+    });
+
+    it('should mask string literals in query', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = "SELECT * FROM `books` WHERE `author` = 'David'";
+        const query = connection.query(sql);
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[ATTR_DB_STATEMENT],
+            'SELECT * FROM `books` WHERE `author` = ?'
+          );
+          assert.strictEqual(
+            spans[0].attributes[ATTR_DB_QUERY_TEXT],
+            'SELECT * FROM `books` WHERE `author` = ?'
+          );
+          done();
+        });
+      });
+    });
+
+    it('should mask numeric literals in query', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+1 as solution';
+        const query = connection.query(sql);
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[ATTR_DB_STATEMENT],
+            'SELECT ?+? as solution'
+          );
+          done();
+        });
+      });
+    });
+
+    it('should mask multiple values', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql =
+          "INSERT INTO `books` (`id`, `author`) VALUES (123, 'John Doe')";
+        connection.query(sql, err => {
+          // Query will fail but we just need to check the span
+          assert.ok(err);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[ATTR_DB_STATEMENT],
+            'INSERT INTO `books` (`id`, `author`) VALUES (?, ?)'
+          );
+          done();
+        });
+      });
+    });
+  });
+
+  describe('maskStatementHook config, should use custom masking', () => {
+    before(() => {
+      instrumentation.disable();
+      const config: MySQLInstrumentationConfig = {
+        maskStatement: true,
+        maskStatementHook: (query: string) => query.replace(/\d+/g, 'REDACTED'),
+      };
+      instrumentation.setConfig(config);
+      instrumentation.enable();
+    });
+
+    after(() => {
+      instrumentation.disable();
+      instrumentation.setConfig({});
+      instrumentation.enable();
+    });
+
+    it('should use custom maskStatementHook', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+1 as solution';
+        const query = connection.query(sql);
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[ATTR_DB_STATEMENT],
+            'SELECT REDACTED+REDACTED as solution'
+          );
+          done();
+        });
+      });
+    });
+  });
+
   describe('#Connection', () => {
     it('should intercept connection.query(text: string)', done => {
       const span = provider.getTracer('default').startSpan('test span');

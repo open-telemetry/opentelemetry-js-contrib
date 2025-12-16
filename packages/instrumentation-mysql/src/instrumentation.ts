@@ -342,7 +342,12 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const attributes: Attributes = {};
         const { host, port, database, user } = getConfig(connection.config);
         const portNumber = parseInt(port, 10);
-        const dbQueryText = getDbQueryText(query);
+        const { maskStatement, maskStatementHook } = thisPlugin.getConfig();
+        const dbQueryText = getDbQueryText(
+          query,
+          maskStatement,
+          maskStatementHook
+        );
         if (thisPlugin._dbSemconvStability & SemconvStability.OLD) {
           attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MYSQL;
           attributes[ATTR_DB_CONNECTION_STRING] = getJDBCString(
