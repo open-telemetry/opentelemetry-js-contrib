@@ -30,9 +30,13 @@ import {
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
   DB_SYSTEM_VALUE_CASSANDRA,
@@ -51,6 +55,10 @@ import {
 } from '../src';
 import { ResponseHookInfo } from '../src/types';
 
+// By default tests run with both old and stable semconv. Some test cases
+// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
+
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider({
   spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
@@ -63,6 +71,19 @@ const cassandraContactPoint = process.env.CASSANDRA_HOST
   ? '127.0.0.1'
   : 'cassandra';
 
+const DEFAULT_OLD_ATTRIBUTES = {
+  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_CASSANDRA,
+  [ATTR_DB_USER]: 'cassandra',
+  [ATTR_NET_PEER_NAME]: cassandraContactPoint,
+  [ATTR_NET_PEER_PORT]: 9042,
+};
+
+const DEFAULT_STABLE_ATTRIBUTES = {
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_CASSANDRA,
+  [ATTR_SERVER_ADDRESS]: cassandraContactPoint,
+  [ATTR_SERVER_PORT]: 9042,
+};
+
 function assertSpan(
   span: ReadableSpan,
   name: string,
@@ -71,13 +92,14 @@ function assertSpan(
   customAttributes?: Attributes
 ) {
   const attributes: Attributes = {
-    [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_CASSANDRA,
-    [ATTR_DB_USER]: 'cassandra',
+    ...DEFAULT_OLD_ATTRIBUTES,
+    ...DEFAULT_STABLE_ATTRIBUTES,
     ...customAttributes,
   };
 
   if (query !== undefined) {
     attributes[ATTR_DB_STATEMENT] = query;
+    attributes[ATTR_DB_QUERY_TEXT] = query;
   }
 
   const spanStatus =
@@ -115,13 +137,14 @@ function assertErrorSpan(
   const [span] = spans;
 
   const attributes: Attributes = {
-    [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_CASSANDRA,
-    [ATTR_DB_USER]: 'cassandra',
+    ...DEFAULT_OLD_ATTRIBUTES,
+    ...DEFAULT_STABLE_ATTRIBUTES,
     ...customAttributes,
   };
 
   if (query !== undefined) {
     attributes[ATTR_DB_STATEMENT] = query;
+    attributes[ATTR_DB_QUERY_TEXT] = query;
   }
 
   const events = [
@@ -194,18 +217,12 @@ describe('CassandraDriverInstrumentation', () => {
 
     it('creates a span for promise based execute', async () => {
       await client.execute('select * from ot.test');
-      assertSingleSpan('cassandra-driver.execute', undefined, undefined, {
-        [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-        [ATTR_NET_PEER_PORT]: 9042,
-      });
+      assertSingleSpan('cassandra-driver.execute');
     });
 
     it('creates a span for callback based execute', done => {
       client.execute('select * from ot.test', () => {
-        assertSingleSpan('cassandra-driver.execute', undefined, undefined, {
-          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-          [ATTR_NET_PEER_PORT]: 9042,
-        });
+        assertSingleSpan('cassandra-driver.execute');
         done();
       });
     });
@@ -214,10 +231,7 @@ describe('CassandraDriverInstrumentation', () => {
       try {
         await client.execute('selec * from');
       } catch (e: any) {
-        assertErrorSpan('cassandra-driver.execute', e, undefined, {
-          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-          [ATTR_NET_PEER_PORT]: 9042,
-        });
+        assertErrorSpan('cassandra-driver.execute', e);
         return;
       }
 
@@ -244,31 +258,14 @@ describe('CassandraDriverInstrumentation', () => {
       it('retains statements', async () => {
         const query = 'select * from ot.test';
         await client.execute(query);
-        assertSingleSpan('cassandra-driver.execute', query, undefined, {
-          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-          [ATTR_NET_PEER_PORT]: 9042,
-        });
+        assertSingleSpan('cassandra-driver.execute', query);
       });
 
       it('truncates long queries', async () => {
         const query = 'select userid, count from ot.test';
         await client.execute(query);
-        const customAttributes = {
-          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-          [ATTR_NET_PEER_PORT]: 9042,
-        };
-        assertSingleSpan(
-          'cassandra-driver.execute',
-          query.substring(0, 25),
-          undefined,
-          customAttributes
-        );
-        assertSingleSpan(
-          'cassandra-driver.execute',
-          query.substring(0, 25),
-          undefined,
-          customAttributes
-        );
+        assertSingleSpan('cassandra-driver.execute', query.substring(0, 25));
+        assertSingleSpan('cassandra-driver.execute', query.substring(0, 25));
       });
     });
 
@@ -301,8 +298,6 @@ describe('CassandraDriverInstrumentation', () => {
         assertAttributeInSingleSpan('cassandra-driver.execute', {
           [customAttributeName]: customAttributeValue,
           [responseAttributeName]: 2,
-          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-          [ATTR_NET_PEER_PORT]: 9042,
         });
       });
 
@@ -324,8 +319,6 @@ describe('CassandraDriverInstrumentation', () => {
 
         assertAttributeInSingleSpan('cassandra-driver.execute', {
           [hookAttributeName]: hookAttributeValue,
-          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-          [ATTR_NET_PEER_PORT]: 9042,
         });
       });
     });
@@ -347,10 +340,7 @@ describe('CassandraDriverInstrumentation', () => {
 
     it('creates a span for callback based batch', done => {
       client.batch([q1, q2], () => {
-        assertSingleSpan('cassandra-driver.batch', undefined, undefined, {
-          [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-          [ATTR_NET_PEER_PORT]: 9042,
-        });
+        assertSingleSpan('cassandra-driver.batch');
         done();
       });
     });
@@ -400,10 +390,7 @@ describe('CassandraDriverInstrumentation', () => {
       const spans = memoryExporter.getFinishedSpans();
       // stream internally uses execute
       assert.strictEqual(spans.length, 2);
-      assertSpan(spans[0], 'cassandra-driver.execute', undefined, undefined, {
-        [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-        [ATTR_NET_PEER_PORT]: 9042,
-      });
+      assertSpan(spans[0], 'cassandra-driver.execute');
       assertSpan(spans[1], 'cassandra-driver.stream');
     }
 
@@ -424,6 +411,55 @@ describe('CassandraDriverInstrumentation', () => {
         assertStreamSpans();
         done();
       });
+    });
+  });
+
+  describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
+    const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
+
+    after(() => {
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
+      (instrumentation as any)._setSemconvStabilityFromEnv();
+    });
+
+    it('uses old attributes when OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
+      (instrumentation as any)._setSemconvStabilityFromEnv();
+      memoryExporter.reset();
+
+      await client.execute('select * from ot.test');
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      testUtils.assertSpan(
+        spans[0],
+        SpanKind.CLIENT,
+        {
+          ...DEFAULT_OLD_ATTRIBUTES,
+        },
+        [],
+        { code: SpanStatusCode.UNSET }
+      );
+    });
+
+    it('uses stable attributes when OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
+      (instrumentation as any)._setSemconvStabilityFromEnv();
+      memoryExporter.reset();
+
+      await client.execute('select * from ot.test');
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      testUtils.assertSpan(
+        spans[0],
+        SpanKind.CLIENT,
+        {
+          ...DEFAULT_STABLE_ATTRIBUTES,
+        },
+        [],
+        { code: SpanStatusCode.UNSET }
+      );
     });
   });
 });
