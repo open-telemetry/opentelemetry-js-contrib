@@ -886,7 +886,7 @@ describe('mongoose instrumentation [common]', () => {
       const user = new User({
         firstName: 'John',
         lastName: 'Doe',
-        email: 'john.doe@example.com',
+        email: 'john.doe+semconv@example.com',
       });
       await user.save();
       const spans = getTestSpans();
