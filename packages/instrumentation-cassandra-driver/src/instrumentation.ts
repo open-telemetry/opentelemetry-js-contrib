@@ -40,6 +40,7 @@ import {
   ATTR_DB_USER,
   ATTR_NET_PEER_NAME,
   ATTR_NET_PEER_PORT,
+  DB_SYSTEM_NAME_VALUE_CASSANDRA,
 } from './semconv';
 import {
   ATTR_DB_NAMESPACE,
@@ -346,7 +347,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
       attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_CASSANDRA;
     }
     if (this._dbSemconvStability & SemconvStability.STABLE) {
-      attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_VALUE_CASSANDRA;
+      attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_CASSANDRA;
     }
 
     if (this._shouldIncludeDbStatement() && query !== undefined) {

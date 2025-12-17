@@ -45,6 +45,7 @@ import {
   ATTR_DB_USER,
   ATTR_NET_PEER_NAME,
   ATTR_NET_PEER_PORT,
+  DB_SYSTEM_NAME_VALUE_CASSANDRA,
 } from '../src/semconv';
 import * as assert from 'assert';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
@@ -77,7 +78,7 @@ const DEFAULT_OLD_ATTRIBUTES = {
 };
 
 const DEFAULT_STABLE_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_CASSANDRA,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_CASSANDRA,
 };
 
 const ADDRESS_OLD_ATTRIBUTES = {
