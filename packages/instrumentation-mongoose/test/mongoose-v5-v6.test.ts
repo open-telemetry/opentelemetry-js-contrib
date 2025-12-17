@@ -302,10 +302,10 @@ describe('mongoose instrumentation [v5/v6]', () => {
           const spans = getTestSpans();
           expect(spans.length).toBe(2);
           assertSpan(
-        spans[1] as ReadableSpan,
-        SemconvStability.OLD | SemconvStability.STABLE,
-        SemconvStability.OLD | SemconvStability.STABLE
-      );
+            spans[1] as ReadableSpan,
+            SemconvStability.OLD | SemconvStability.STABLE,
+            SemconvStability.OLD | SemconvStability.STABLE
+          );
           expect(spans[1].attributes[ATTR_DB_OPERATION]).toBe('remove');
           expect(
             getStatement(
@@ -513,10 +513,10 @@ describe('mongoose instrumentation [v5/v6]', () => {
           const spans = getTestSpans();
           expect(spans.length).toBe(1);
           assertSpan(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+            spans[0] as ReadableSpan,
+            SemconvStability.OLD | SemconvStability.STABLE,
+            SemconvStability.OLD | SemconvStability.STABLE
+          );
           expect(JSON.parse(spans[0].attributes[RESPONSE] as string)).toEqual([
             { _id: 'John', total: 0 },
           ]);
