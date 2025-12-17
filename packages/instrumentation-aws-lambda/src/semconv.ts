@@ -63,3 +63,92 @@ export const ATTR_FAAS_COLDSTART = 'faas.coldstart' as const;
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_FAAS_NAME = 'faas.name' as const;
+
+/**
+ * Type of the trigger which caused this function invocation.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_FAAS_TRIGGER = 'faas.trigger' as const;
+
+/**
+ * Enum value "pubsub" for attribute {@link ATTR_FAAS_TRIGGER}.
+ *
+ * A function is set to be executed when messages are sent to a messaging system
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const FAAS_TRIGGER_VALUE_PUBSUB = 'pubsub' as const;
+
+/**
+ * A string identifying the type of the messaging operation.
+ *
+ * @note If a custom value is used, it **MUST** be of low cardinality.
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_OPERATION_TYPE =
+  'messaging.operation.type' as const;
+
+/**
+ * Enum value "process" for attribute {@link ATTR_MESSAGING_OPERATION_TYPE}.
+ *
+ * One or more messages are processed by a consumer.
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const MESSAGING_OPERATION_TYPE_VALUE_PROCESS = 'process' as const;
+
+/**
+ * The messaging system as identified by the client instrumentation.
+ *
+ * @note The actual messaging system may differ from the one known by the client. For example, when using Kafka client libraries to communicate with Azure Event Hubs, the `messaging.system` is set to `kafka` based on the instrumentation's best knowledge.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_SYSTEM = 'messaging.system' as const;
+
+/**
+ * Enum value "aws_sqs" for attribute {@link ATTR_MESSAGING_SYSTEM}.
+ *
+ * Amazon Simple Queue Service (SQS)
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const MESSAGING_SYSTEM_VALUE_AWS_SQS = 'aws_sqs' as const;
+
+/**
+ * The message destination name
+ *
+ * @example MyQueue
+ * @example MyTopic
+ *
+ * @note Destination name **SHOULD** uniquely identify a specific queue, topic or other entity within the broker. If
+ * the broker doesn't have such notion, the destination name **SHOULD** uniquely identify the broker.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_DESTINATION_NAME =
+  'messaging.destination.name' as const;
+
+/**
+ * The identifier of the message, typically provided by the messaging system.
+ *
+ * @example "152f0a59-3c58-4a97-a0b9-1f3d9b35f5b3"
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_MESSAGE_ID = 'messaging.message.id' as const;
+
+/**
+ * The number of messages sent, received, or processed in the scope of the batching operation.
+ *
+ * @example 0
+ * @example 1
+ * @example 2
+ *
+ * @note Instrumentations **SHOULD NOT** set `messaging.batch.message_count` on spans that operate with a single message. When a messaging client library supports both batch and single-message API for the same operation, instrumentations **SHOULD** use `messaging.batch.message_count` for batching APIs and **SHOULD NOT** use it for single-message APIs.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_BATCH_MESSAGE_COUNT =
+  'messaging.batch.message_count' as const;
