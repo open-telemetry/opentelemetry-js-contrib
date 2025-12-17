@@ -118,7 +118,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       ),
       new InstrumentationNodeModuleDefinition(
         'mongodb',
-        ['>=4.0.0 <7'],
+        ['>=4.0.0 <8'],
         undefined,
         undefined,
         [
@@ -130,7 +130,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection.js',
-            ['>=6.4.0 <7'],
+            ['>=6.4.0 <8'],
             v4PatchConnectionPromise,
             v4UnpatchConnection
           ),
@@ -142,13 +142,13 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connect.js',
-            ['>=4.0.0 <7'],
+            ['>=4.0.0 <8'],
             v4PatchConnect,
             v4UnpatchConnect
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/sessions.js',
-            ['>=4.0.0 <7'],
+            ['>=4.0.0 <8'],
             v4PatchSessions,
             v4UnpatchSessions
           ),
