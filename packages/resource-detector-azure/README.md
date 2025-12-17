@@ -79,7 +79,6 @@ This package implements Semantic Convention [Version 1.37.0](https://github.com/
 | cloud.platform                | The cloud platform. Here, it's always "azure.container_apps".                                                                                  |
 | cloud.provider                | The cloud service provider. In this context, it's always "azure".                                                                              |
 | azure.container_app.name                | The name of the Azure Container App. Value of Process Environment Variable `CONTAINER_APP_NAME`.                                               |
-| host.id                       | The hostname of the container. Value of Process Environment Variable `CONTAINER_APP_HOSTNAME`.                                                 |
 | host.name                     | The hostname of the container. Value of Process Environment Variable `CONTAINER_APP_HOSTNAME.                             |
 | azure.container_app.instance.id           | The replica name of the Azure Container App instance. Value of Process Environment Variable `CONTAINER_APP_REPLICA_NAME`.                      |
 

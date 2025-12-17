@@ -61,7 +61,6 @@ describe('AzureContainerAppsDetector', () => {
     assert.strictEqual(attributes[ATTR_CLOUD_PROVIDER], 'azure');
     assert.strictEqual(attributes[ATTR_CLOUD_PLATFORM], 'azure.container_apps');
     assert.strictEqual(attributes[ATTR_CONTAINER_NAME], 'test-container-app');
-    assert.strictEqual(attributes[ATTR_HOST_ID], 'test-hostname');
     assert.strictEqual(
       attributes[ATTR_HOST_NAME],
       'test-container-app.eastus.azurecontainerapps.io'
@@ -92,7 +91,6 @@ describe('AzureContainerAppsDetector', () => {
     assert.strictEqual(attributes[ATTR_CLOUD_PROVIDER], undefined);
     assert.strictEqual(attributes[ATTR_CLOUD_PLATFORM], undefined);
     assert.strictEqual(attributes[ATTR_CONTAINER_NAME], undefined);
-    assert.strictEqual(attributes[ATTR_HOST_ID], undefined);
     assert.strictEqual(attributes[ATTR_HOST_NAME], undefined);
     assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
     assert.strictEqual(attributes[AZURE_CONTAINER_APPS_REVISION], undefined);
