@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-mongodb
 
 ### Supported Versions
 
-- [`mongodb`](https://www.npmjs.com/package/mongodb) version `>=3.3.0 <7`
+- [`mongodb`](https://www.npmjs.com/package/mongodb) version `>=3.3.0 <8`
 
 ## Usage
 
