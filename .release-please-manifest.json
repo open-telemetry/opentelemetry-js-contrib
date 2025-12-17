@@ -68,5 +68,6 @@
   "packages/propagator-instana": "0.4.3",
   "packages/propagator-ot-trace": "0.28.3",
   "packages/propagator-aws-xray": "2.1.4",
-  "packages/propagator-aws-xray-lambda": "0.55.4"
+  "packages/propagator-aws-xray-lambda": "0.55.4",
+  "packages/instrumentation-browser-navigation": "0.1.0"
 }

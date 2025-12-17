@@ -187,7 +187,7 @@ export class SamplingRuleApplier {
     );
   }
 
-  shouldSample(
+  public shouldSample(
     context: Context,
     traceId: string,
     spanName: string,
