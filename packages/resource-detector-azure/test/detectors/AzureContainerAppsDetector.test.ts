@@ -20,12 +20,9 @@ import { detectResources } from '@opentelemetry/resources';
 import {
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_PROVIDER,
-  ATTR_CONTAINER_NAME,
-  ATTR_HOST_ID,
-  ATTR_HOST_NAME,
-  ATTR_SERVICE_INSTANCE_ID,
+  ATTR_HOST_NAME
 } from '../../src/semconv';
-import { AZURE_CONTAINER_APPS_REVISION } from '../../src/types';
+import { AZURE_CONTAINER_APP_INSTANCE_ID, AZURE_CONTAINER_APP_NAME, AZURE_CONTAINER_APP_VERSION } from '../../src/types';
 
 describe('AzureContainerAppsDetector', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -60,17 +57,17 @@ describe('AzureContainerAppsDetector', () => {
     const attributes = resource.attributes;
     assert.strictEqual(attributes[ATTR_CLOUD_PROVIDER], 'azure');
     assert.strictEqual(attributes[ATTR_CLOUD_PLATFORM], 'azure.container_apps');
-    assert.strictEqual(attributes[ATTR_CONTAINER_NAME], 'test-container-app');
+    assert.strictEqual(attributes[AZURE_CONTAINER_APP_NAME], 'test-container-app');
     assert.strictEqual(
       attributes[ATTR_HOST_NAME],
-      'test-container-app.eastus.azurecontainerapps.io'
+      'test-hostname'
     );
     assert.strictEqual(
-      attributes[ATTR_SERVICE_INSTANCE_ID],
+      attributes[AZURE_CONTAINER_APP_INSTANCE_ID],
       'test-replica-name'
     );
     assert.strictEqual(
-      attributes[AZURE_CONTAINER_APPS_REVISION],
+      attributes[AZURE_CONTAINER_APP_VERSION],
       'test-revision'
     );
   });
@@ -90,10 +87,10 @@ describe('AzureContainerAppsDetector', () => {
     const attributes = resource.attributes;
     assert.strictEqual(attributes[ATTR_CLOUD_PROVIDER], undefined);
     assert.strictEqual(attributes[ATTR_CLOUD_PLATFORM], undefined);
-    assert.strictEqual(attributes[ATTR_CONTAINER_NAME], undefined);
+    assert.strictEqual(attributes[AZURE_CONTAINER_APP_NAME], undefined);
     assert.strictEqual(attributes[ATTR_HOST_NAME], undefined);
-    assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
-    assert.strictEqual(attributes[AZURE_CONTAINER_APPS_REVISION], undefined);
+    assert.strictEqual(attributes[AZURE_CONTAINER_APP_INSTANCE_ID], undefined);
+    assert.strictEqual(attributes[AZURE_CONTAINER_APP_VERSION], undefined);
   });
 
   it('should return empty attributes when only some env vars are set', () => {
