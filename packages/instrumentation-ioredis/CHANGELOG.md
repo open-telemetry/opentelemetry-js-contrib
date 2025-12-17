@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.56.0...instrumentation-ioredis-v0.57.0) (2025-12-17)
+
+
+### Features
+
+* **instrumentations-ioredis:** support `net.*` and database semconv migration ([#3266](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3266)) ([9f92c8b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9f92c8b5b1660ff83ae27a733d13ac9f71695484))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.55.0 to ^0.56.0
+
 ## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.55.0...instrumentation-ioredis-v0.56.0) (2025-11-06)
 
 
