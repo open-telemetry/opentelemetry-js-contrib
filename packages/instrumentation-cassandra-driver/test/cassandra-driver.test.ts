@@ -81,12 +81,12 @@ const DEFAULT_STABLE_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_CASSANDRA,
 };
 
-const ADDRESS_OLD_ATTRIBUTES = {
+const NET_OLD_ATTRIBUTES = {
   [ATTR_NET_PEER_NAME]: cassandraContactPoint,
   [ATTR_NET_PEER_PORT]: 9042,
 };
 
-const ADDRESS_STABLE_ATTRIBUTES = {
+const NET_STABLE_ATTRIBUTES = {
   [ATTR_SERVER_ADDRESS]: cassandraContactPoint,
   [ATTR_SERVER_PORT]: 9042,
 };
@@ -102,8 +102,8 @@ function assertSpan(
   const attributes: Attributes = {
     ...DEFAULT_OLD_ATTRIBUTES,
     ...DEFAULT_STABLE_ATTRIBUTES,
-    ...(includeAddressAttrs ? ADDRESS_OLD_ATTRIBUTES : {}),
-    ...(includeAddressAttrs ? ADDRESS_STABLE_ATTRIBUTES : {}),
+    ...(includeAddressAttrs ? NET_OLD_ATTRIBUTES : {}),
+    ...(includeAddressAttrs ? NET_STABLE_ATTRIBUTES : {}),
     ...customAttributes,
   };
 
@@ -155,8 +155,8 @@ function assertErrorSpan(
   const attributes: Attributes = {
     ...DEFAULT_OLD_ATTRIBUTES,
     ...DEFAULT_STABLE_ATTRIBUTES,
-    ...(includeAddressAttrs ? ADDRESS_OLD_ATTRIBUTES : {}),
-    ...(includeAddressAttrs ? ADDRESS_STABLE_ATTRIBUTES : {}),
+    ...(includeAddressAttrs ? NET_OLD_ATTRIBUTES : {}),
+    ...(includeAddressAttrs ? NET_STABLE_ATTRIBUTES : {}),
     ...customAttributes,
   };
 
@@ -461,7 +461,7 @@ describe('CassandraDriverInstrumentation', () => {
         SpanKind.CLIENT,
         {
           ...DEFAULT_OLD_ATTRIBUTES,
-          ...ADDRESS_OLD_ATTRIBUTES,
+          ...NET_OLD_ATTRIBUTES,
         },
         [],
         { code: SpanStatusCode.UNSET }
@@ -482,7 +482,7 @@ describe('CassandraDriverInstrumentation', () => {
         SpanKind.CLIENT,
         {
           ...DEFAULT_STABLE_ATTRIBUTES,
-          ...ADDRESS_STABLE_ATTRIBUTES,
+          ...NET_STABLE_ATTRIBUTES,
         },
         [],
         { code: SpanStatusCode.UNSET }
