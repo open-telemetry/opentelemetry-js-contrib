@@ -899,8 +899,9 @@ describe('mongoose instrumentation [common]', () => {
       (instrumentation as any)._setSemconvStabilityFromEnv();
 
       const span = await saveUserAndGetSpan();
-      const { attributes } = span;
+      const { attributes, name } = span;
 
+      assert.strictEqual(name, 'mongoose.User.save');
       assert.strictEqual(attributes[ATTR_DB_SYSTEM], 'mongoose');
       assert.strictEqual(
         attributes[ATTR_DB_MONGODB_COLLECTION],
@@ -924,8 +925,9 @@ describe('mongoose instrumentation [common]', () => {
       (instrumentation as any)._setSemconvStabilityFromEnv();
 
       const span = await saveUserAndGetSpan();
-      const { attributes } = span;
+      const { attributes, name } = span;
 
+      assert.strictEqual(name, `save ${User.collection.name}`);
       assert.strictEqual(attributes[ATTR_DB_SYSTEM], undefined);
       assert.strictEqual(attributes[ATTR_DB_MONGODB_COLLECTION], undefined);
       assert.strictEqual(attributes[ATTR_DB_NAME], undefined);
@@ -948,7 +950,9 @@ describe('mongoose instrumentation [common]', () => {
       (instrumentation as any)._setSemconvStabilityFromEnv();
 
       const span = await saveUserAndGetSpan();
-      const { attributes } = span;
+      const { attributes, name } = span;
+
+      assert.strictEqual(name, `save ${User.collection.name}`);
       assert.strictEqual(attributes[ATTR_DB_SYSTEM], 'mongoose');
       assert.strictEqual(
         attributes[ATTR_DB_MONGODB_COLLECTION],
