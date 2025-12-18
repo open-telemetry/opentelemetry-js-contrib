@@ -54,7 +54,6 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.208.0",
-    "@opentelemetry/propagation-utils": "^0.31.3",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/aws-lambda": "^8.10.155"
   },
