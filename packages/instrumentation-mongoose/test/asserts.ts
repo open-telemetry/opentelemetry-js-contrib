@@ -56,7 +56,7 @@ export const assertSpan = (
     expect(span.attributes[ATTR_DB_NAME]).toBeUndefined();
   }
   if (dbSemconvStability & SemconvStability.STABLE) {
-    expect(span.attributes[ATTR_DB_SYSTEM_NAME]).toEqual('mongoose');
+    expect(span.attributes[ATTR_DB_SYSTEM_NAME]).toEqual('mongodb');
     expect(span.attributes[ATTR_DB_COLLECTION_NAME]).toEqual(
       User.collection.name
     );

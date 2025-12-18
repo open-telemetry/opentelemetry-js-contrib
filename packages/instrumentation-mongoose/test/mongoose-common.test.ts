@@ -930,7 +930,7 @@ describe('mongoose instrumentation [common]', () => {
       assert.strictEqual(attributes[ATTR_DB_MONGODB_COLLECTION], undefined);
       assert.strictEqual(attributes[ATTR_DB_NAME], undefined);
       assert.strictEqual(attributes[ATTR_DB_OPERATION], undefined);
-      assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], 'mongoose');
+      assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], 'mongodb');
       assert.strictEqual(
         attributes[ATTR_DB_COLLECTION_NAME],
         User.collection.name
@@ -956,7 +956,7 @@ describe('mongoose instrumentation [common]', () => {
       );
       assert.strictEqual(attributes[ATTR_DB_NAME], DB_NAME);
       assert.strictEqual(attributes[ATTR_DB_OPERATION], 'save');
-      assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], 'mongoose');
+      assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], 'mongodb');
       assert.strictEqual(
         attributes[ATTR_DB_COLLECTION_NAME],
         User.collection.name

@@ -35,6 +35,7 @@ import {
   ATTR_DB_OPERATION,
   ATTR_DB_STATEMENT,
   ATTR_DB_SYSTEM,
+  DB_SYSTEM_NAME_VALUE_MONGODB,
 } from './semconv';
 import {
   ATTR_DB_OPERATION_NAME,
@@ -478,11 +479,11 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
 
     if (this._dbSemconvStability & SemconvStability.OLD) {
       finalAttributes[ATTR_DB_OPERATION] = operation;
-      finalAttributes[ATTR_DB_SYSTEM] = 'mongoose';
+      finalAttributes[ATTR_DB_SYSTEM] = 'mongoose'; // keep for backwards compatibility
     }
     if (this._dbSemconvStability & SemconvStability.STABLE) {
       finalAttributes[ATTR_DB_OPERATION_NAME] = operation;
-      finalAttributes[ATTR_DB_SYSTEM_NAME] = 'mongoose';
+      finalAttributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MONGODB; // actual db system name
     }
 
     return this.tracer.startSpan(

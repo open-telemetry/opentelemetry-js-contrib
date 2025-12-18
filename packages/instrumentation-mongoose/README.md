@@ -53,16 +53,16 @@ See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-n
 
 Attributes collected:
 
-| Old semconv             | Stable semconv        | Description                                                                 |
-| ----------------------- | --------------------- | --------------------------------------------------------------------------- |
-| `db.system`             | `db.system.name`      | An identifier for the database management system (DBMS) product being used. Value: 'mongoose' |
-| `db.mongodb.collection` | `db.collection.name`  | The collection being accessed within the database stated in `db.name`.      |
-| `db.name`               | `db.namespace`        | This attribute is used to report the name of the database being accessed.   |
-| `db.operation`          | `db.operation.name`   | The name of the operation being executed.                                   |
-| `db.statement`          | `db.query.text`       | The database statement being executed.                                      |
-| `db.user`               | Removed               | Username for accessing the database.                                        |
-| `net.peer.name`         | `server.address`      | Remote hostname or similar.                                                 |
-| `net.peer.port`         | `server.port`         | Remote port number.                                                         |
+| Old semconv             | Stable semconv       | Description                                                                                  |
+| ----------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
+| `db.system`             | `db.system.name`     | An identifier for the database management system (DBMS) product being used. Value: 'mongodb' |
+| `db.mongodb.collection` | `db.collection.name` | The collection being accessed within the database stated in `db.name`.                       |
+| `db.name`               | `db.namespace`       | This attribute is used to report the name of the database being accessed.                    |
+| `db.operation`          | `db.operation.name`  | The name of the operation being executed.                                                    |
+| `db.statement`          | `db.query.text`      | The database statement being executed.                                                       |
+| `db.user`               | Removed              | Username for accessing the database.                                                         |
+| `net.peer.name`         | `server.address`     | Remote hostname or similar.                                                                  |
+| `net.peer.port`         | `server.port`        | Remote port number.                                                                          |
 
 ## Useful links
 
