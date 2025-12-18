@@ -302,8 +302,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         plugin._applyRequestHook(span, event, context);
 
         return otelContext.with(trace.setSpan(parent, span), () => {
-          const additionalSpans = plugin._startEventSourceSpans(event);
-
           const maybePromise = safeExecuteInTheMiddle(
             () => original.apply(this, [event, responseStream, context]),
             error => {
@@ -314,7 +312,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
                   span,
                   error,
                   () => {},
-                  additionalSpans
                 );
               }
             }
@@ -322,8 +319,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
 
           return plugin._handlePromiseResult(
             span,
-            maybePromise,
-            additionalSpans
+            maybePromise
           );
         });
       };
