@@ -1,6 +1,15 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.34.0...instrumentation-oracledb-v0.34.1) (2025-12-17)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.55.0 to ^0.56.0
+
 ## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.33.0...instrumentation-oracledb-v0.34.0) (2025-11-06)
 
 

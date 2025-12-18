@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.54.0...instrumentation-mysql-v0.55.0) (2025-12-17)
+
+
+### Features
+
+* **instrumentations-mysql:** support `net.*` and database semconv migration ([#3288](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3288)) ([b6a46aa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b6a46aa486f6d26aa726e5c5ffedadba83fb7949))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.55.0 to ^0.56.0
+
 ## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.53.0...instrumentation-mysql-v0.54.0) (2025-11-06)
 
 

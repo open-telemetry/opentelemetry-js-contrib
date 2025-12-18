@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.31.2...resource-detector-github-v0.32.0) (2025-12-17)
+
+
+### Features
+
+* apply rule @typescript-eslint/explicit-member-accessibility ([#3250](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3250)) ([d0f9491](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d0f94913cfd7fccc29053a0dc6f6aef6572235cc))
+
 ## [0.31.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.31.1...resource-detector-github-v0.31.2) (2025-09-29)
 
 

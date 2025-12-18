@@ -1,6 +1,16 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.61.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.61.0...instrumentation-aws-lambda-v0.61.1) (2025-12-17)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.1.4 to ^2.2.0
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.55.4 to ^0.56.0
+
 ## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.60.1...instrumentation-aws-lambda-v0.61.0) (2025-11-26)
 
 

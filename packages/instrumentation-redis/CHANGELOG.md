@@ -1,6 +1,15 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.57.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.57.1...instrumentation-redis-v0.57.2) (2025-12-17)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.55.0 to ^0.56.0
+
 ## [0.57.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.57.0...instrumentation-redis-v0.57.1) (2025-11-24)
 
 

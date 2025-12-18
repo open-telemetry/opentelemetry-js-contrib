@@ -46,7 +46,7 @@ import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { ATTR_DB_STATEMENT } from '../src/semconv';
 
-describe('MongoDBInstrumentation-Tracing-v5', () => {
+describe('MongoDBInstrumentation-Tracing-v5+', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
   }

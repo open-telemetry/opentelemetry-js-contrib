@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.7.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.7.0...instrumentation-openai-v0.7.1) (2025-12-17)
+
+
+### Bug Fixes
+
+* **instrumentation-openai:** fix crash when user uses .withResponse() with streaming chat completion ([#3295](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3295)) ([bd70c2b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd70c2b7bd167f114470d98191d091d3a42e6ad3)), closes [#3286](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3286)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.55.0 to ^0.56.0
+
 ## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.6.0...instrumentation-openai-v0.7.0) (2025-11-24)
 
 

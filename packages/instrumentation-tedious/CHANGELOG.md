@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.27.0...instrumentation-tedious-v0.28.0) (2025-12-17)
+
+
+### Features
+
+* **instrumentations-tedious:** support `net.*` and database semconv migration ([#3273](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3273)) ([78df9f5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/78df9f5c9e45968a5167e875d67cbbcaddaabbbb))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.55.0 to ^0.56.0
+
 ## [0.27.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.26.0...instrumentation-tedious-v0.27.0) (2025-11-06)
 
 

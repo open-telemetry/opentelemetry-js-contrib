@@ -20,6 +20,7 @@
       "groupName": "OTel Core experimental",
       "matchPackageNames": [
         "@opentelemetry/api-logs",
+        "@opentelemetry/configuration",
         "@opentelemetry/exporter-logs-otlp-grpc",
         "@opentelemetry/exporter-logs-otlp-http",
         "@opentelemetry/exporter-logs-otlp-proto",

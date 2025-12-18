@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.55.0...instrumentation-amqplib-v0.56.0) (2025-12-17)
+
+
+### Features
+
+* **instrumentation-amqplib:** support net.* semconv migration ([#3306](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3306)) ([168309a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/168309a16ce8cc88ffd70909e220618af172c795))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.55.0 to ^0.56.0
+
 ## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.54.0...instrumentation-amqplib-v0.55.0) (2025-11-06)
 
 
