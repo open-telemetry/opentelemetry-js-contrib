@@ -486,8 +486,13 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
       finalAttributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MONGODB; // actual db system name
     }
 
+    const spanName =
+      this._dbSemconvStability & SemconvStability.STABLE
+        ? `${operation} ${collection.name}`
+        : `mongoose.${modelName}.${operation}`;
+
     return this.tracer.startSpan(
-      `mongoose.${modelName}.${operation}`,
+      spanName,
       {
         kind: SpanKind.CLIENT,
         attributes: finalAttributes,

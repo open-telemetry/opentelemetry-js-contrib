@@ -64,6 +64,11 @@ Attributes collected:
 | `net.peer.name`         | `server.address`     | Remote hostname or similar.                                                                  |
 | `net.peer.port`         | `server.port`        | Remote port number.                                                                          |
 
+Span name format:
+
+- Old: `mongoose.{modelName}.{operation}` (e.g., `mongoose.User.save`)
+- Stable: `{operation} {collection}` (e.g., `save users`)
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
