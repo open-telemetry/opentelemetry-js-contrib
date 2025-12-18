@@ -16,6 +16,8 @@
     "compile:ci:affected": "nx affected -t compile",
     "list:affected": "nx affected -t test-all-versions --graph=stdout | jq -c '.tasks.tasks[].target.project'",
     "test": "nx run-many -t test",
+    "test-services:start:ci:affected": "nx affected -t test-services:start",
+    "test-services:stop:ci:affected": "nx affected -t test-services:stop",
     "test:ci:affected": "nx affected -t test",
     "test:browser": "nx run-many -t test:browser",
     "test:browser:ci:affected": "nx affected -t test:browser",
