@@ -19,6 +19,8 @@ import {
   Span,
   SpanKind,
   SpanStatusCode,
+  UpDownCounter,
+  type Attributes,
 } from '@opentelemetry/api';
 import {
   InstrumentationBase,
@@ -26,7 +28,18 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
+import {
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_CONNECTION_STRING,
   ATTR_DB_MONGODB_COLLECTION,
@@ -36,6 +49,7 @@ import {
   ATTR_DB_SYSTEM,
   ATTR_NET_PEER_NAME,
   ATTR_NET_PEER_PORT,
+  DB_SYSTEM_NAME_VALUE_MONGODB,
   DB_SYSTEM_VALUE_MONGODB,
   METRIC_DB_CLIENT_CONNECTIONS_USAGE,
 } from './semconv';
@@ -55,7 +69,6 @@ import {
 import { V4Connect, V4Session } from './internal-types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { UpDownCounter } from '@opentelemetry/api';
 
 const DEFAULT_CONFIG: MongoDBInstrumentationConfig = {
   requireParentSpan: true,
@@ -63,11 +76,27 @@ const DEFAULT_CONFIG: MongoDBInstrumentationConfig = {
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumentationConfig> {
+  private _netSemconvStability!: SemconvStability;
+  private _dbSemconvStability!: SemconvStability;
   declare private _connectionsUsage: UpDownCounter;
   declare private _poolName: string;
 
   constructor(config: MongoDBInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+    this._setSemconvStabilityFromEnv();
+  }
+
+  // Used for testing.
+  private _setSemconvStabilityFromEnv() {
+    this._netSemconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._dbSemconvStability = semconvStabilityFromStr(
+      'database',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._updateMetricInstruments();
   }
 
   override setConfig(config: MongoDBInstrumentationConfig = {}) {
@@ -75,14 +104,25 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   }
 
   override _updateMetricInstruments() {
-    this._connectionsUsage = this.meter.createUpDownCounter(
-      METRIC_DB_CLIENT_CONNECTIONS_USAGE,
-      {
-        description:
-          'The number of connections that are currently in state described by the state attribute.',
-        unit: '{connection}',
-      }
-    );
+    if (this._dbSemconvStability & SemconvStability.OLD) {
+      this._connectionsUsage = this.meter.createUpDownCounter(
+        METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+        {
+          description:
+            'The number of connections that are currently in state described by the state attribute.',
+          unit: '{connection}',
+        }
+      );
+    }
+  }
+
+  /**
+   * Convenience function for updating the `db.client.connections.usage` metric.
+   * The name "count" comes from the eventual replacement for this metric per
+   * https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/#database-client-connection-count
+   */
+  private _connCountAdd(n: number, poolName: string, state: string) {
+    this._connectionsUsage?.add(n, { 'pool.name': poolName, state });
   }
 
   init() {
@@ -260,20 +300,11 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
         if (nSessionsBeforeAcquire === nSessionsAfterAcquire) {
           //no session in the pool. a new session was created and used
-          instrumentation._connectionsUsage.add(1, {
-            state: 'used',
-            'pool.name': instrumentation._poolName,
-          });
+          instrumentation._connCountAdd(1, instrumentation._poolName, 'used');
         } else if (nSessionsBeforeAcquire - 1 === nSessionsAfterAcquire) {
           //a session was already in the pool. remove it from the pool and use it.
-          instrumentation._connectionsUsage.add(-1, {
-            state: 'idle',
-            'pool.name': instrumentation._poolName,
-          });
-          instrumentation._connectionsUsage.add(1, {
-            state: 'used',
-            'pool.name': instrumentation._poolName,
-          });
+          instrumentation._connCountAdd(-1, instrumentation._poolName, 'idle');
+          instrumentation._connCountAdd(1, instrumentation._poolName, 'used');
         }
         return session;
       };
@@ -286,14 +317,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       return function patchRelease(this: any, session: ServerSession) {
         const cmdPromise = original.call(this, session);
 
-        instrumentation._connectionsUsage.add(-1, {
-          state: 'used',
-          'pool.name': instrumentation._poolName,
-        });
-        instrumentation._connectionsUsage.add(1, {
-          state: 'idle',
-          'pool.name': instrumentation._poolName,
-        });
+        instrumentation._connCountAdd(-1, instrumentation._poolName, 'used');
+        instrumentation._connCountAdd(1, instrumentation._poolName, 'idle');
         return cmdPromise;
       };
     };
@@ -465,21 +490,19 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
           }
         }
 
-        const span = instrumentation.tracer.startSpan(
-          `mongodb.${operationName}`,
-          {
-            kind: SpanKind.CLIENT,
-          }
-        );
-
-        instrumentation._populateV3Attributes(
-          span,
+        const attributes = instrumentation._getV3SpanAttributes(
           ns,
           server,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ops[0] as any,
           operationName
         );
+        const spanName = instrumentation._spanNameFromAttrs(attributes);
+        const span = instrumentation.tracer.startSpan(spanName, {
+          kind: SpanKind.CLIENT,
+          attributes,
+        });
+
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
         if (typeof options === 'function') {
@@ -523,14 +546,20 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         }
 
         const commandType = MongoDBInstrumentation._getCommandType(cmd);
-        const type =
-          commandType === MongodbCommandType.UNKNOWN ? 'command' : commandType;
-        const span = instrumentation.tracer.startSpan(`mongodb.${type}`, {
-          kind: SpanKind.CLIENT,
-        });
-        const operation =
+        const operationName =
           commandType === MongodbCommandType.UNKNOWN ? undefined : commandType;
-        instrumentation._populateV3Attributes(span, ns, server, cmd, operation);
+        const attributes = instrumentation._getV3SpanAttributes(
+          ns,
+          server,
+          cmd,
+          operationName
+        );
+        const spanName = instrumentation._spanNameFromAttrs(attributes);
+        const span = instrumentation.tracer.startSpan(spanName, {
+          kind: SpanKind.CLIENT,
+          attributes,
+        });
+
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
         if (typeof options === 'function') {
@@ -565,16 +594,17 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
         let span = undefined;
         if (!skipInstrumentation) {
-          span = instrumentation.tracer.startSpan(`mongodb.${commandType}`, {
-            kind: SpanKind.CLIENT,
-          });
-          instrumentation._populateV4Attributes(
-            span,
+          const attributes = instrumentation._getV4SpanAttributes(
             this,
             ns,
             cmd,
             commandType
           );
+          const spanName = instrumentation._spanNameFromAttrs(attributes);
+          span = instrumentation.tracer.startSpan(spanName, {
+            kind: SpanKind.CLIENT,
+            attributes,
+          });
         }
         const patchedCallback = instrumentation._patchEnd(
           span,
@@ -609,16 +639,17 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
         let span = undefined;
         if (!skipInstrumentation) {
-          span = instrumentation.tracer.startSpan(`mongodb.${commandType}`, {
-            kind: SpanKind.CLIENT,
-          });
-          instrumentation._populateV4Attributes(
-            span,
+          const attributes = instrumentation._getV4SpanAttributes(
             this,
             ns,
             cmd,
             commandType
           );
+          const spanName = instrumentation._spanNameFromAttrs(attributes);
+          span = instrumentation.tracer.startSpan(spanName, {
+            kind: SpanKind.CLIENT,
+            attributes,
+          });
         }
 
         const patchedCallback = instrumentation._patchEnd(
@@ -678,10 +709,18 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
           }
         }
 
-        const span = instrumentation.tracer.startSpan('mongodb.find', {
+        const attributes = instrumentation._getV3SpanAttributes(
+          ns,
+          server,
+          cmd,
+          'find'
+        );
+        const spanName = instrumentation._spanNameFromAttrs(attributes);
+        const span = instrumentation.tracer.startSpan(spanName, {
           kind: SpanKind.CLIENT,
+          attributes,
         });
-        instrumentation._populateV3Attributes(span, ns, server, cmd, 'find');
+
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
         if (typeof options === 'function') {
@@ -751,16 +790,18 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
           }
         }
 
-        const span = instrumentation.tracer.startSpan('mongodb.getMore', {
-          kind: SpanKind.CLIENT,
-        });
-        instrumentation._populateV3Attributes(
-          span,
+        const attributes = instrumentation._getV3SpanAttributes(
           ns,
           server,
           cursorState.cmd,
           'getMore'
         );
+        const spanName = instrumentation._spanNameFromAttrs(attributes);
+        const span = instrumentation.tracer.startSpan(spanName, {
+          kind: SpanKind.CLIENT,
+          attributes,
+        });
+
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
         if (typeof options === 'function') {
@@ -810,19 +851,17 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   }
 
   /**
-   * Populate span's attributes by fetching related metadata from the context
-   * @param span span to add attributes to
+   * Determine a span's attributes by fetching related metadata from the context
    * @param connectionCtx mongodb internal connection context
    * @param ns mongodb namespace
    * @param command mongodb internal representation of a command
    */
-  private _populateV4Attributes(
-    span: Span,
+  private _getV4SpanAttributes(
     connectionCtx: any,
     ns: MongodbNamespace,
     command?: any,
     operation?: string
-  ) {
+  ): Attributes {
     let host, port: undefined | string;
     if (connectionCtx) {
       const hostParts =
@@ -844,8 +883,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       commandObj = command;
     }
 
-    this._addAllSpanAttributes(
-      span,
+    return this._getSpanAttributes(
       ns.db,
       ns.collection,
       host,
@@ -856,20 +894,18 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   }
 
   /**
-   * Populate span's attributes by fetching related metadata from the context
-   * @param span span to add attributes to
+   * Determine a span's attributes by fetching related metadata from the context
    * @param ns mongodb namespace
    * @param topology mongodb internal representation of the network topology
    * @param command mongodb internal representation of a command
    */
-  private _populateV3Attributes(
-    span: Span,
+  private _getV3SpanAttributes(
     ns: string,
     topology: MongoInternalTopology,
     command?: MongoInternalCommand,
     operation?: string | undefined
-  ) {
-    // add network attributes to determine the remote server
+  ): Attributes {
+    // Extract host/port info.
     let host: undefined | string;
     let port: undefined | string;
     if (topology && topology.s) {
@@ -893,8 +929,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
     const commandObj = command?.query ?? command?.q ?? command;
 
-    this._addAllSpanAttributes(
-      span,
+    return this._getSpanAttributes(
       dbName,
       dbCollection,
       host,
@@ -904,52 +939,94 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     );
   }
 
-  private _addAllSpanAttributes(
-    span: Span,
+  private _getSpanAttributes(
     dbName?: string,
     dbCollection?: string,
     host?: undefined | string,
     port?: undefined | string,
     commandObj?: any,
     operation?: string | undefined
-  ) {
-    // add database related attributes
-    span.setAttributes({
-      [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MONGODB,
-      [ATTR_DB_NAME]: dbName,
-      [ATTR_DB_MONGODB_COLLECTION]: dbCollection,
-      [ATTR_DB_OPERATION]: operation,
-      [ATTR_DB_CONNECTION_STRING]: `mongodb://${host}:${port}/${dbName}`,
-    });
+  ): Attributes {
+    const attributes: Attributes = {};
+
+    if (this._dbSemconvStability & SemconvStability.OLD) {
+      attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MONGODB;
+      attributes[ATTR_DB_NAME] = dbName;
+      attributes[ATTR_DB_MONGODB_COLLECTION] = dbCollection;
+      attributes[ATTR_DB_OPERATION] = operation;
+      attributes[ATTR_DB_CONNECTION_STRING] =
+        `mongodb://${host}:${port}/${dbName}`;
+    }
+    if (this._dbSemconvStability & SemconvStability.STABLE) {
+      attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MONGODB;
+      attributes[ATTR_DB_NAMESPACE] = dbName;
+      attributes[ATTR_DB_OPERATION_NAME] = operation;
+      attributes[ATTR_DB_COLLECTION_NAME] = dbCollection;
+    }
 
     if (host && port) {
-      span.setAttribute(ATTR_NET_PEER_NAME, host);
+      if (this._netSemconvStability & SemconvStability.OLD) {
+        attributes[ATTR_NET_PEER_NAME] = host;
+      }
+      if (this._netSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_SERVER_ADDRESS] = host;
+      }
       const portNumber = parseInt(port, 10);
       if (!isNaN(portNumber)) {
-        span.setAttribute(ATTR_NET_PEER_PORT, portNumber);
+        if (this._netSemconvStability & SemconvStability.OLD) {
+          attributes[ATTR_NET_PEER_PORT] = portNumber;
+        }
+        if (this._netSemconvStability & SemconvStability.STABLE) {
+          attributes[ATTR_SERVER_PORT] = portNumber;
+        }
       }
     }
-    if (!commandObj) return;
 
-    const { dbStatementSerializer: configDbStatementSerializer } =
-      this.getConfig();
-    const dbStatementSerializer =
-      typeof configDbStatementSerializer === 'function'
-        ? configDbStatementSerializer
-        : this._defaultDbStatementSerializer.bind(this);
+    if (commandObj) {
+      const { dbStatementSerializer: configDbStatementSerializer } =
+        this.getConfig();
+      const dbStatementSerializer =
+        typeof configDbStatementSerializer === 'function'
+          ? configDbStatementSerializer
+          : this._defaultDbStatementSerializer.bind(this);
 
-    safeExecuteInTheMiddle(
-      () => {
-        const query = dbStatementSerializer(commandObj);
-        span.setAttribute(ATTR_DB_STATEMENT, query);
-      },
-      err => {
-        if (err) {
-          this._diag.error('Error running dbStatementSerializer hook', err);
-        }
-      },
-      true
-    );
+      safeExecuteInTheMiddle(
+        () => {
+          const query = dbStatementSerializer(commandObj);
+          if (this._dbSemconvStability & SemconvStability.OLD) {
+            attributes[ATTR_DB_STATEMENT] = query;
+          }
+          if (this._dbSemconvStability & SemconvStability.STABLE) {
+            attributes[ATTR_DB_QUERY_TEXT] = query;
+          }
+        },
+        err => {
+          if (err) {
+            this._diag.error('Error running dbStatementSerializer hook', err);
+          }
+        },
+        true
+      );
+    }
+
+    return attributes;
+  }
+
+  private _spanNameFromAttrs(attributes: Attributes): string {
+    let spanName;
+    if (this._dbSemconvStability & SemconvStability.STABLE) {
+      // https://opentelemetry.io/docs/specs/semconv/database/database-spans/#name
+      spanName =
+        [
+          attributes[ATTR_DB_OPERATION_NAME],
+          attributes[ATTR_DB_COLLECTION_NAME],
+        ]
+          .filter(attr => attr)
+          .join(' ') || DB_SYSTEM_NAME_VALUE_MONGODB;
+    } else {
+      spanName = `mongodb.${attributes[ATTR_DB_OPERATION] || 'command'}`;
+    }
+    return spanName;
   }
 
   private _getDefaultDbStatementReplacer(): Replacer {
@@ -1033,10 +1110,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         }
 
         if (commandType === 'endSessions') {
-          instrumentation._connectionsUsage.add(-1, {
-            state: 'idle',
-            'pool.name': instrumentation._poolName,
-          });
+          instrumentation._connCountAdd(-1, instrumentation._poolName, 'idle');
         }
       }
 
