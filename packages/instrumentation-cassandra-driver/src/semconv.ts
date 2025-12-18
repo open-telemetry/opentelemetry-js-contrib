@@ -95,3 +95,12 @@ export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const DB_SYSTEM_VALUE_CASSANDRA = 'cassandra' as const;
+
+/**
+ * Enum value "cassandra" for attribute {@link ATTR_DB_SYSTEM_NAME}.
+ *
+ * [Apache Cassandra](https://cassandra.apache.org/)
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const DB_SYSTEM_NAME_VALUE_CASSANDRA = 'cassandra' as const;

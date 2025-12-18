@@ -1,6 +1,44 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.67.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.67.2...auto-instrumentations-node-v0.67.3) (2025-12-17)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-amqplib bumped from ^0.55.0 to ^0.56.0
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.61.0 to ^0.61.1
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.64.0 to ^0.64.1
+    * @opentelemetry/instrumentation-cassandra-driver bumped from ^0.54.0 to ^0.54.1
+    * @opentelemetry/instrumentation-dataloader bumped from ^0.26.0 to ^0.26.1
+    * @opentelemetry/instrumentation-express bumped from ^0.57.0 to ^0.57.1
+    * @opentelemetry/instrumentation-fastify bumped from ^0.53.0 to ^0.53.1
+    * @opentelemetry/instrumentation-hapi bumped from ^0.55.0 to ^0.55.1
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.56.0 to ^0.57.0
+    * @opentelemetry/instrumentation-kafkajs bumped from ^0.18.0 to ^0.18.1
+    * @opentelemetry/instrumentation-koa bumped from ^0.57.0 to ^0.57.1
+    * @opentelemetry/instrumentation-lru-memoizer bumped from ^0.53.0 to ^0.53.1
+    * @opentelemetry/instrumentation-memcached bumped from ^0.52.0 to ^0.52.1
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.61.0 to ^0.62.0
+    * @opentelemetry/instrumentation-mongoose bumped from ^0.55.0 to ^0.55.1
+    * @opentelemetry/instrumentation-mysql bumped from ^0.54.0 to ^0.55.0
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.55.0 to ^0.55.1
+    * @opentelemetry/instrumentation-net bumped from ^0.52.0 to ^0.53.0
+    * @opentelemetry/instrumentation-openai bumped from ^0.7.0 to ^0.7.1
+    * @opentelemetry/instrumentation-oracledb bumped from ^0.34.0 to ^0.34.1
+    * @opentelemetry/instrumentation-pg bumped from ^0.61.1 to ^0.61.2
+    * @opentelemetry/instrumentation-pino bumped from ^0.55.0 to ^0.55.1
+    * @opentelemetry/instrumentation-redis bumped from ^0.57.1 to ^0.57.2
+    * @opentelemetry/instrumentation-socket.io bumped from ^0.55.0 to ^0.55.1
+    * @opentelemetry/instrumentation-tedious bumped from ^0.27.0 to ^0.28.0
+    * @opentelemetry/resource-detector-alibaba-cloud bumped from ^0.31.11 to ^0.32.0
+    * @opentelemetry/resource-detector-aws bumped from ^2.8.0 to ^2.9.0
+    * @opentelemetry/resource-detector-azure bumped from ^0.16.0 to ^0.17.0
+    * @opentelemetry/resource-detector-container bumped from ^0.7.11 to ^0.8.0
+    * @opentelemetry/resource-detector-gcp bumped from ^0.43.0 to ^0.44.0
+
 ## [0.67.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.67.1...auto-instrumentations-node-v0.67.2) (2025-11-26)
 
 
