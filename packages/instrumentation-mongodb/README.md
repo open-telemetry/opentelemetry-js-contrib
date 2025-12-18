@@ -84,11 +84,9 @@ Span attributes:
 
 Metrics collected:
 
-| Old semconv                   | Stable semconv | Description |
-| ----------------------------- | -------------- | ----------- |
-| `db.client.connections.usage` | (removed)      | The number of connections currently in a given state. See note below. |
+- [`db.client.connections.usage`](https://github.com/open-telemetry/semantic-conventions/blob/v1.24.0/docs/database/database-metrics.md#metric-dbclientconnectionsusage) - The number of connections currently in a given state.
 
-Note: While `db.client.connections.usage` was replaced with `db.client.connection.count` in the [semconv database migration](https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/#database-client-connection-count), the replacement metric is still unstable, so cannot be enabled via `OTEL_SEMCONV_STABILITY_OPT_IN=database`.
+  Note: While `db.client.connections.usage` has been deprecated in favor of `db.client.connection.count` in the [semconv database migration](https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/#database-client-connection-count), the new metric is still unstable, so cannot be enabled via `OTEL_SEMCONV_STABILITY_OPT_IN=database`. There is ongoing work to provide an opt-in setting to select the latest experimental semconv.
 
 ## Useful links
 
