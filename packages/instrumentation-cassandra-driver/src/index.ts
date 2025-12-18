@@ -22,4 +22,3 @@ export type {
   ResultSet,
   Row,
 } from './types';
-

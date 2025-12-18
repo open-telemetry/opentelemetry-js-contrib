@@ -97,13 +97,13 @@ jobs:
       - name: Unit tests (Browser - Delta)
         if: ${{ matrix.node == '22' }}
         run: npm run test:browser:ci:affected
-      - name: Start Services
-        run: npm run test-services:start:ci:affected
+      - name: Start Test Services (Delta)
+        run: npm run test-services:start:ci
       - name: Unit tests (Nodejs - Delta)
         run: npm run test:ci:affected
-      - name: Stop Services
+      - name: Stop Test Services (Delta)
         if: always()
-        run: npm run test-services:stop:ci:affected
+        run: npm run test-services:stop:ci
 
   test-all-versions:
     needs: compile
@@ -142,13 +142,13 @@ jobs:
           fi
       - name: Compile (Delta)
         run: npm run compile:ci:affected
-      - name: Start Services
-        run: npm run test-services:start:ci:affected
+      - name: Start Test Services (Delta)
+        run: npm run test-services:start:ci
       - name: Test All Versions (Delta)
         run: npm run test-all-versions:ci:affected
-      - name: Stop Services
+      - name: Stop Test Services (Delta)
         if: always()
-        run: npm run test-services:stop:ci:affected
+        run: npm run test-services:stop:ci
       - name: Upload Test Artifacts
         uses: actions/upload-artifact@v4
         with:
