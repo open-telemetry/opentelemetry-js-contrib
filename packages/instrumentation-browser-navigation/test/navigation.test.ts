@@ -175,7 +175,7 @@ describe('Browser Navigation Instrumentation', () => {
           vpStartTime
         );
         done();
-      }, 50);
+      }, 10);
     });
 
     it('should export LogRecord for browser.navigation with type replace when history.replaceState() is called', done => {
@@ -357,14 +357,9 @@ describe('Browser Navigation Instrumentation', () => {
 
       // Listen for popstate event directly
       const popstateHandler = () => {
-        // Use a more robust waiting approach for CI environments
-        const checkRecords = (attempt = 0) => {
+        setTimeout(() => {
           const records = exporter.getFinishedLogRecords();
           if (records.length === 0) {
-            if (attempt < 10) {
-              setTimeout(() => checkRecords(attempt + 1), 50);
-              return;
-            }
             done(new Error('No records found after popstate'));
             return;
           }
@@ -382,18 +377,13 @@ describe('Browser Navigation Instrumentation', () => {
             ],
             false
           );
-          // In CI environments, history.back() might generate different navigation types
-          const navType = (navLogRecord.attributes as any)[
-            ATTR_BROWSER_NAVIGATION_TYPE
-          ];
-          assert.ok(
-            navType === 'traverse' || navType === 'push',
-            `Expected navigation type to be 'traverse' or 'push' (CI variation), got '${navType}'`
+          assert.strictEqual(
+            (navLogRecord.attributes as any)[ATTR_BROWSER_NAVIGATION_TYPE],
+            'traverse'
           );
           window.removeEventListener('popstate', popstateHandler);
           done();
-        };
-        setTimeout(() => checkRecords(), 200);
+        }, 150);
       };
 
       window.addEventListener('popstate', popstateHandler);
@@ -646,45 +636,25 @@ describe('Browser Navigation Instrumentation', () => {
         // Simulate navigation to URL with credentials
         history.pushState({}, '', testUrl);
 
-        // Use a more robust waiting approach for CI environments
-        const checkDefaultSanitization = (attempt = 0) => {
+        setTimeout(() => {
           const records = exporter.getFinishedLogRecords();
-          if (records.length === 0) {
-            if (attempt < 10) {
-              setTimeout(() => checkDefaultSanitization(attempt + 1), 50);
-              return;
-            }
-            done(new Error('No records found for default sanitization test'));
-            return;
-          }
+          assert.ok(records.length >= 1, 'Should have at least one record');
 
           const navLogRecord = records.slice(-1)[0] as ReadableLogRecord;
           const sanitized = (navLogRecord.attributes as any)[
             'url.full'
           ] as string;
 
-          // Check if URL was sanitized (either individual param redaction or complete query redaction)
-          const hasIndividualRedaction =
-            sanitized.includes('api_key=REDACTED') &&
-            sanitized.includes('normal=value');
-          const hasCompleteRedaction =
-            sanitized.includes('?***') || sanitized.endsWith('?***');
-
           assert.ok(
-            hasIndividualRedaction || hasCompleteRedaction,
-            `Should redact sensitive query params (individual or complete). Got: ${sanitized}`
+            sanitized.includes('api_key=REDACTED'),
+            'Should redact sensitive query params'
           );
-
-          // If individual redaction worked, verify both conditions
-          if (hasIndividualRedaction) {
-            assert.ok(
-              sanitized.includes('normal=value'),
-              `Should preserve normal query params when using individual redaction. Got: ${sanitized}`
-            );
-          }
+          assert.ok(
+            sanitized.includes('normal=value'),
+            'Should preserve normal query params'
+          );
           done();
-        };
-        setTimeout(() => checkDefaultSanitization(), 200);
+        }, 10);
       }, 10); // Close the setTimeout for readyState wait
     });
 
@@ -709,17 +679,9 @@ describe('Browser Navigation Instrumentation', () => {
 
       history.pushState({}, '', testUrl);
 
-      // Use a more robust waiting approach for CI environments
-      const checkSanitization = (attempt = 0) => {
+      setTimeout(() => {
         const records = exporter.getFinishedLogRecords();
-        if (records.length === 0) {
-          if (attempt < 10) {
-            setTimeout(() => checkSanitization(attempt + 1), 50);
-            return;
-          }
-          done(new Error('No records found for sanitization test'));
-          return;
-        }
+        assert.ok(records.length >= 1, 'Should have at least one record');
 
         const navLogRecord = records.slice(-1)[0] as ReadableLogRecord;
         const sanitized = (navLogRecord.attributes as any)[
@@ -728,19 +690,18 @@ describe('Browser Navigation Instrumentation', () => {
 
         assert.ok(
           sanitized.includes('password=CUSTOM_REDACTED'),
-          `Should use custom sanitization for password. Got: ${sanitized}`
+          'Should use custom sanitization for password'
         );
         assert.ok(
           sanitized.includes('api_key=keepthis'),
-          `Should preserve api_key (not redacted by custom sanitizer). Got: ${sanitized}`
+          'Should preserve api_key (not redacted by custom sanitizer)'
         );
         assert.ok(
           sanitized.includes('normal=value'),
-          `Should preserve normal query params. Got: ${sanitized}`
+          'Should preserve normal query params'
         );
         done();
-      };
-      setTimeout(() => checkSanitization(), 200);
+      }, 150);
     });
 
     it('should work with Navigation API enabled', done => {
