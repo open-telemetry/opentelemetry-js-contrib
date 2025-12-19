@@ -989,9 +989,9 @@ describe('mongoose instrumentation [common]', () => {
       checkCollector: (collector: testUtils.TestCollector) => {
         const spans = collector.sortedSpans;
         assert.strictEqual(spans[0].name, 'manual');
-        assert.strictEqual(spans[1].name, 'mongoose.Test.save');
+        assert.strictEqual(spans[1].name, 'save tests');
         assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
-        assert.strictEqual(spans[2].name, 'mongoose.Test.findOne');
+        assert.strictEqual(spans[2].name, 'findOne tests');
         assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
       },
     });
