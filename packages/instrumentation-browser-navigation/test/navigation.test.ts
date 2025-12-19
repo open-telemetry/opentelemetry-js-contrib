@@ -373,6 +373,7 @@ describe('Browser Navigation Instrumentation', () => {
     });
 
     it('should export LogRecord with type traverse when history.back() triggers a popstate', done => {
+      // Test robustness: This test uses retry logic to handle CI timing variations
       instrumentation = new BrowserNavigationInstrumentation({
         enabled: true,
       });
@@ -666,6 +667,7 @@ describe('Browser Navigation Instrumentation', () => {
     });
 
     it('should sanitize URLs with credentials using default sanitizer', done => {
+      // Test robustness: Uses retry logic and flexible sanitization checks for CI stability
       instrumentation = new BrowserNavigationInstrumentation({
         enabled: true,
         useNavigationApiIfAvailable: false, // Test history API path
