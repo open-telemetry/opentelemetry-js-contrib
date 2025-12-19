@@ -49,7 +49,6 @@ export interface GlobalErrorsInstrumentationConfig
 export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsInstrumentationConfig> {
   constructor(config: GlobalErrorsInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this.onError = this.onError.bind(this);
   }
 
   init() {}
@@ -101,6 +100,7 @@ export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsIn
   }
 
   override enable(): void {
+    this.onError = this.onError.bind(this);
     window.addEventListener('error', this.onError);
     window.addEventListener('unhandledrejection', this.onError);
   }
