@@ -482,44 +482,45 @@ export function getOracleTelemetryTraceHandlerClass(
 
     onPoolExpand(pool: oracleDBTypes.Pool) {
       metricsUtils.updateCounter(pool);
-    };
+    }
 
     onPoolShrink(pool: oracleDBTypes.Pool) {
       metricsUtils.updateCounter(pool);
-    };
+    }
 
-    onAcquire(pool:oracleDBTypes.Pool) {
+    onPoolAcquire(pool: oracleDBTypes.Pool) {
       metricsUtils.updateCounter(pool);
     }
 
-    onRelease(pool: oracleDBTypes.Pool) {
+    onPoolRelease(pool: oracleDBTypes.Pool) {
       metricsUtils.updateCounter(pool);
-    };
+    }
 
-    onWait(pool: oracleDBTypes.Pool) {
+    onPoolWait(pool: oracleDBTypes.Pool) {
       metricsUtils.updateCounter(pool);
-    };
+    }
 
-    onTimeout(pool: oracleDBTypes.Pool) {
+    onPoolRequestTimeout(pool: oracleDBTypes.Pool) {
       metricsUtils.updateCounter(pool);
-    };
-    
+    }
+
     // When a connection request has got a connection from
     // the already available free connections from the pool.
-    onConnectionHit(pool:oracleDBTypes.Pool) {
+    onPoolConnectionHit(pool: oracleDBTypes.Pool) {
       metricsUtils.updateConnHits(pool);
-    };
+    }
 
     // When a connection request has got a connection by
     // creating a new connection as there was no free connection
     // available in the pool.
-    onConnectionMiss(pool:oracleDBTypes.Pool) {
+    onPoolConnectionMiss(pool: oracleDBTypes.Pool) {
       metricsUtils.updateConnMisses(pool);
-    };
+    }
 
     onPoolClose(pool: oracleDBTypes.Pool) {
       metricsUtils.updateCounter(pool);
-    };
+    }
+
   }
   return OracleTelemetryTraceMetricHandler;
 }

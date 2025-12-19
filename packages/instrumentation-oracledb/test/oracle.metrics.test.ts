@@ -47,7 +47,7 @@ import { ATTR_ERROR_TYPE, METRIC_DB_CLIENT_OPERATION_DURATION } from '@opentelem
 import { TestMetricReader } from '@opentelemetry/contrib-test-utils';
 
 
-describe.only('oracledb-metrics', () => {
+describe('oracledb-metrics', () => {
   let metricReader: MetricReader
   let meterProvider: MeterProvider;
   let metricsExporter: InMemoryMetricExporter;
