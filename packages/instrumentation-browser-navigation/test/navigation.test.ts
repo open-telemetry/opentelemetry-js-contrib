@@ -400,6 +400,8 @@ describe('Browser Navigation Instrumentation', () => {
             return;
           }
           const navLogRecord = records.slice(-1)[0] as ReadableLogRecord;
+
+          console.log('navLogRecord', navLogRecord);
           assert.strictEqual(navLogRecord.eventName, EVENT_NAME);
 
           // Check attributes with better error messages
