@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.2.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.2.0...instrumentation-browser-navigation-v0.2.1) (2025-12-20)
+
+
+### Bug Fixes
+
+* **instrumentation-browser-navigation:** improve test stability with … ([#3323](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3323)) ([b59b196](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b59b196eefb4888d0cba1f19be651eb3f01e530a))
+
 ## [0.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.1.0...instrumentation-browser-navigation-v0.2.0) (2025-12-17)
 
 

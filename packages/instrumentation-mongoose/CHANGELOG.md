@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.55.1...instrumentation-mongoose-v0.56.0) (2025-12-20)
+
+
+### Features
+
+* **instr-mongoose:** support net.* and db semconv migration ([#3307](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3307)) ([d4e729d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d4e729dcd3c14a9dea007f5cc3f8bcf990ce4466))
+
 ## [0.55.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.55.0...instrumentation-mongoose-v0.55.1) (2025-12-17)
 
 

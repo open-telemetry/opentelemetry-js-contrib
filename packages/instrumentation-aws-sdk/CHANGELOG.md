@@ -1,6 +1,18 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.65.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.64.1...instrumentation-aws-sdk-v0.65.0) (2025-12-20)
+
+
+### Features
+
+* **instr-aws-sdk:** support db semconv migration for dynamodb ([#3312](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3312)) ([fe477e8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fe477e8210d3f8f6cd5ae6a70a7a4c52e7b95c0e))
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#3282](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3282)) ([062fb29](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/062fb29c3fb7c99c03096fe61dcf41743f17ca64))
+
 ## [0.64.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.64.0...instrumentation-aws-sdk-v0.64.1) (2025-12-17)
 
 

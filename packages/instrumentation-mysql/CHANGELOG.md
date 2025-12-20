@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.55.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.55.0...instrumentation-mysql-v0.55.1) (2025-12-20)
+
+
+### Bug Fixes
+
+* **instrumentation-mysql:** restore 'db.client.connections.usage' when opting-in to stable database semconv ([#3320](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3320)) ([4ad2964](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4ad2964ddb290c761a5fdef21b293a42adba6f92)), closes [#3288](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3288)
+
 ## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.54.0...instrumentation-mysql-v0.55.0) (2025-12-17)
 
 

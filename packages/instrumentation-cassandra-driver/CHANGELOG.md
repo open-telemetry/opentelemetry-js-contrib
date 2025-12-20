@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cassandra-driver-v0.54.1...instrumentation-cassandra-driver-v0.55.0) (2025-12-20)
+
+
+### Features
+
+* **instr-cassandra-driver:** support net.* and db semconv migration ([#3302](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3302)) ([ba03a94](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ba03a94694db465e4d0e13aa1c9baa75d1633983))
+
 ## [0.54.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cassandra-driver-v0.54.0...instrumentation-cassandra-driver-v0.54.1) (2025-12-17)
 
 

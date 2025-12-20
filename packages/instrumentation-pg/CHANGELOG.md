@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.61.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.61.2...instrumentation-pg-v0.61.3) (2025-12-20)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#3282](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3282)) ([062fb29](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/062fb29c3fb7c99c03096fe61dcf41743f17ca64))
+
 ## [0.61.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.61.1...instrumentation-pg-v0.61.2) (2025-12-17)
 
 
