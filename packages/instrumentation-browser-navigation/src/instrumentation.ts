@@ -47,6 +47,11 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
   private _lastUrl: string = location.href;
   private _hasProcessedInitialLoad: boolean = false;
 
+  // Note: Intentionally *not* using `_enabled` as the field name to avoid
+  // any possible confusion with the `_enabled` field used on the *Node.js*
+  // InstrumentationBase class.
+  declare private _isEnabled: boolean;
+
   /**
    *
    * @param config
@@ -63,6 +68,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
    * callback to be executed when using hard navigation
    */
   private _onHardNavigation() {
+    console.log('XXX _onHardNavigation', )
     const navLogRecord: LogRecord = {
       eventName: EVENT_NAME,
       attributes: {
@@ -94,6 +100,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     if (referrerUrl === currentUrl) {
       return;
     }
+    console.log('XXX _onSoftNavigation: %s -> %s', referrerUrl, currentUrl)
 
     const navType = this._mapChangeStateToType(changeState, navigationEvent);
     const sameDocument = this._determineSameDocument(
@@ -155,6 +162,11 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
    * implements enable function
    */
   override enable() {
+    if (this._isEnabled) {
+      return;
+    }
+    this._isEnabled = true;
+
     const cfg = this.getConfig() as BrowserNavigationInstrumentationConfig;
     const useNavigationApiIfAvailable = !!cfg.useNavigationApiIfAvailable;
     const navigationApi =
@@ -200,6 +212,11 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
    * implements disable function
    */
   override disable() {
+    if (!this._isEnabled) {
+      return;
+    }
+    this._isEnabled = false;
+
     this._unpatchHistoryApi();
     if (this._onLoadHandler) {
       document.removeEventListener('DOMContentLoaded', this._onLoadHandler);
@@ -243,6 +260,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
   }
 
   private _patchHistoryApi(): void {
+    console.log('XXX _patchHistoryApi', )
     // unpatching here disables other instrumentation that use the same api to wrap history, commenting it out
     // this._unpatchHistoryApi();
     this._wrap(

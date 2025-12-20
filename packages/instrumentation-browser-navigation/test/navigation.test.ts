@@ -343,7 +343,7 @@ describe('Browser Navigation Instrumentation', () => {
     });
 
     // XXX HERE
-    it('should export LogRecord with type traverse when history.back() triggers a popstate', done => {
+    it.only('should export LogRecord with type traverse when history.back() triggers a popstate', done => {
       instrumentation = new BrowserNavigationInstrumentation({
         enabled: true,
       });
@@ -354,6 +354,7 @@ describe('Browser Navigation Instrumentation', () => {
       history.pushState({}, '', '/nav-traverse-2');
 
       // Clear records and set up state
+      console.log('XXX exporter.reset()', )
       exporter.reset();
 
       // Listen for popstate event directly
