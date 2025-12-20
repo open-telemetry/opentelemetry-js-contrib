@@ -360,7 +360,7 @@ describe('Browser Navigation Instrumentation', () => {
       const popstateHandler = () => {
         setTimeout(() => {
           const records = exporter.getFinishedLogRecords();
-          console.log('XXX records:'); console.dir(records, { depth: 50 })
+          console.log('XXX records: ', records)
           if (records.length === 0) {
             done(new Error('No records found after popstate'));
             return;
