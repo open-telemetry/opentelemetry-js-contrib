@@ -68,7 +68,6 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
    * callback to be executed when using hard navigation
    */
   private _onHardNavigation() {
-    console.log('XXX _onHardNavigation', )
     const navLogRecord: LogRecord = {
       eventName: EVENT_NAME,
       attributes: {
@@ -100,7 +99,6 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     if (referrerUrl === currentUrl) {
       return;
     }
-    console.log('XXX _onSoftNavigation: %s -> %s', referrerUrl, currentUrl)
 
     const navType = this._mapChangeStateToType(changeState, navigationEvent);
     const sameDocument = this._determineSameDocument(
@@ -140,8 +138,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     // Check if document has already loaded completely
     if (document.readyState === 'complete' && !this._hasProcessedInitialLoad) {
       this._hasProcessedInitialLoad = true;
-      // Use setTimeout to allow tests to reset exporter before this fires
-      setTimeout(() => this._onHardNavigation(), 0);
+      this._onHardNavigation();
       return;
     }
 
@@ -260,9 +257,10 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
   }
 
   private _patchHistoryApi(): void {
-    console.log('XXX _patchHistoryApi', )
-    // unpatching here disables other instrumentation that use the same api to wrap history, commenting it out
-    // this._unpatchHistoryApi();
+    // Unpatching here disables other instrumentation that use the same api to
+    // wrap history, commenting it out.
+    //    this._unpatchHistoryApi();
+    // TODO: For example, instrumentation-user-interaction also patches `history`. Do the two instrumentations work at the same time?
     this._wrap(
       history,
       'replaceState',
