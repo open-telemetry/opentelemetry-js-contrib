@@ -342,6 +342,7 @@ describe('Browser Navigation Instrumentation', () => {
       setTimeout(checkForHashChangeRecord, 25);
     });
 
+    // XXX HERE
     it('should export LogRecord with type traverse when history.back() triggers a popstate', done => {
       instrumentation = new BrowserNavigationInstrumentation({
         enabled: true,
@@ -359,6 +360,7 @@ describe('Browser Navigation Instrumentation', () => {
       const popstateHandler = () => {
         setTimeout(() => {
           const records = exporter.getFinishedLogRecords();
+          console.log('XXX records:'); console.dir(records, { depth: 50 })
           if (records.length === 0) {
             done(new Error('No records found after popstate'));
             return;
