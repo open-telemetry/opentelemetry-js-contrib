@@ -193,7 +193,7 @@ describe('Browser Navigation Instrumentation', () => {
 
       history.replaceState({}, '', '/dummy2.html');
 
-      const recs = exporter.getFinishedLogRecords()
+      const recs = exporter.getFinishedLogRecords();
       assert.strictEqual(recs.length, 2);
 
       const navLogRecord = recs[1] as ReadableLogRecord;
@@ -370,9 +370,7 @@ describe('Browser Navigation Instrumentation', () => {
           true
         );
         assert.strictEqual(
-          (navLogRecord.attributes as any)[
-            ATTR_BROWSER_NAVIGATION_HASH_CHANGE
-          ],
+          (navLogRecord.attributes as any)[ATTR_BROWSER_NAVIGATION_HASH_CHANGE],
           false
         );
         assert.strictEqual(
