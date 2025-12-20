@@ -40,10 +40,10 @@ export const ATTR_BROWSER_NAVIGATION_TYPE = 'browser.navigation.type';
 export class BrowserNavigationInstrumentation extends InstrumentationBase<BrowserNavigationInstrumentationConfig> {
   applyCustomLogRecordData: ApplyCustomLogRecordDataFunction | undefined =
     undefined;
-  sanitizeUrl?: SanitizeUrlFunction; // No default sanitization
-  private _onLoadHandler?: () => void;
-  private _onPopStateHandler?: (ev: PopStateEvent) => void;
-  private _onNavigateHandler?: (ev: Event) => void;
+  declare sanitizeUrl?: SanitizeUrlFunction; // No default sanitization
+  declare private _onLoadHandler?: () => void;
+  declare private _onPopStateHandler?: (ev: PopStateEvent) => void;
+  declare private _onNavigateHandler?: (ev: Event) => void;
   private _lastUrl: string = location.href;
   private _hasProcessedInitialLoad: boolean = false;
 
