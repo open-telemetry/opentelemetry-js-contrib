@@ -16,10 +16,31 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
+export interface MySQLInstrumentationQueryMaskingHook {
+  (query: string): string;
+}
+
 export interface MySQLInstrumentationConfig extends InstrumentationConfig {
   /**
    * If true, an attribute containing the query's parameters will be attached
    * the spans generated to represent the query.
    */
   enhancedDatabaseReporting?: boolean;
+
+  /**
+   * If true, the query will be masked before setting it as a span attribute,
+   * using the {@link maskStatementHook}.
+   *
+   * @default false
+   * @see maskStatementHook
+   */
+  maskStatement?: boolean;
+
+  /**
+   * Hook that allows masking the query string before setting it as span attribute.
+   * Only called when {@link maskStatement} is `true`.
+   *
+   * @default (query: string) => query.replace(/\b\d+\b/g, '?').replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, '?')
+   */
+  maskStatementHook?: MySQLInstrumentationQueryMaskingHook;
 }

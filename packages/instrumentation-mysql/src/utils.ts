@@ -15,6 +15,7 @@
  */
 
 import type { Pool, Query, QueryOptions } from 'mysql';
+import { MySQLInstrumentationQueryMaskingHook } from './types';
 
 export function getConfig(config: any) {
   const { host, port, database, user } =
@@ -41,14 +42,44 @@ export function getJDBCString(
 }
 
 /**
- * @returns the database query being executed.
+ * Conjures up the value for the db.query.text attribute.
+ *
+ * @returns the database query being executed, optionally masked.
  */
-export function getDbQueryText(query: string | Query | QueryOptions): string {
-  if (typeof query === 'string') {
-    return query;
-  } else {
-    return query.sql;
+export function getDbQueryText(
+  query: string | Query | QueryOptions,
+  maskStatement = false,
+  maskStatementHook: MySQLInstrumentationQueryMaskingHook = defaultMaskingHook
+): string {
+  const querySql = typeof query === 'string' ? query : query.sql;
+
+  try {
+    if (maskStatement) {
+      return maskStatementHook(querySql);
+    }
+    return querySql;
+  } catch (e) {
+    return 'Could not determine the query due to an error in masking';
   }
+}
+
+/**
+ * Replaces numeric values and quoted strings in the query with placeholders ('?').
+ *
+ * - `\b\d+\b`: Matches whole numbers (integers) and replaces them with '?'.
+ * - `(["'])(?:(?=(\\?))\2.)*?\1`:
+ *   - Matches quoted strings (both single `'` and double `"` quotes).
+ *   - Uses a lookahead `(?=(\\?))` to detect an optional backslash without consuming it immediately.
+ *   - Captures the optional backslash `\2` and ensures escaped quotes inside the string are handled correctly.
+ *   - Ensures that only complete quoted strings are replaced with '?'.
+ *
+ * This prevents accidental replacement of escaped quotes within strings and ensures that the
+ * query structure remains intact while masking sensitive data.
+ */
+function defaultMaskingHook(query: string): string {
+  return query
+    .replace(/\b\d+\b/g, '?')
+    .replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, '?');
 }
 
 export function getDbValues(

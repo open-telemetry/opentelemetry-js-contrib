@@ -44,9 +44,11 @@ See [examples/mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/
 
 ### MySQL instrumentation Options
 
-| Options                                           | Type      | Default | Description |
-| ------------------------------------------------- | --------- | ------- | ----------- |
-| [`enhancedDatabaseReporting`](./src/types.ts#L24) | `boolean` | `false` | If true, a `db.mysql.values` attribute containing the query's parameters will be add to database spans. Note that this is not an attribute defined in [Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/database/mysql/). |
+| Options                                           | Type       | Default     | Description |
+| ------------------------------------------------- | ---------- | ----------- | ----------- |
+| [`enhancedDatabaseReporting`](./src/types.ts#L28) | `boolean`  | `false`     | If true, a `db.mysql.values` attribute containing the query's parameters will be added to database spans. Note that this is not an attribute defined in [Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/database/mysql/). |
+| `maskStatement`                                   | `boolean`  | `false`     | If true, masks the `db.statement` and `db.query.text` attributes in spans using the `maskStatementHook`. This replaces sensitive values (strings, numbers) with `?` placeholders to prevent PII exposure. |
+| `maskStatementHook`                               | `function` | See below   | Function for masking the query string before setting it as span attribute. Only called when `maskStatement` is `true`. Default: `(query) => query.replace(/\b\d+\b/g, '?').replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, '?')` |
 
 ## Semantic Conventions
 
