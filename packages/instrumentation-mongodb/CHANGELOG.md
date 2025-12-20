@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.62.0...instrumentation-mongodb-v0.63.0) (2025-12-20)
+
+
+### Features
+
+* **instrumentation-mongodb:** support `net.*` and database semconv migration ([#3313](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3313)) ([930de4e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/930de4eb3b87879a56536ae186413915fab9f03d))
+
 ## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.61.0...instrumentation-mongodb-v0.62.0) (2025-12-17)
 
 

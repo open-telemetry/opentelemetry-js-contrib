@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.38.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.38.0...host-metrics-v0.38.1) (2025-12-20)
+
+
+### Bug Fixes
+
+* **deps:** update dependency systeminformation to v5.27.14 [security] ([#3308](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3308)) ([c2d0bc5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c2d0bc5b1928e2147fe44c1a5a8b826f30b8f7de))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.37.0...host-metrics-v0.38.0) (2025-12-17)
 
 

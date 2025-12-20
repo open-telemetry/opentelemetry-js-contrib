@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.67.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.67.3...auto-instrumentations-node-v0.67.4) (2025-12-20)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.64.1 to ^0.65.0
+    * @opentelemetry/instrumentation-cassandra-driver bumped from ^0.54.1 to ^0.55.0
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.62.0 to ^0.63.0
+    * @opentelemetry/instrumentation-mongoose bumped from ^0.55.1 to ^0.56.0
+    * @opentelemetry/instrumentation-mysql bumped from ^0.55.0 to ^0.55.1
+    * @opentelemetry/instrumentation-pg bumped from ^0.61.2 to ^0.61.3
+
 ## [0.67.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.67.2...auto-instrumentations-node-v0.67.3) (2025-12-17)
 
 
