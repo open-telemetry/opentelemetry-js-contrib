@@ -15,7 +15,6 @@
  */
 
 import * as assert from 'assert';
-import { azureContainerAppsDetector } from '../../src/detectors/AzureContainerAppsDetector';
 import { detectResources } from '@opentelemetry/resources';
 import {
   ATTR_CLOUD_PLATFORM,
@@ -23,6 +22,11 @@ import {
   ATTR_HOST_NAME
 } from '../../src/semconv';
 import { AZURE_CONTAINER_APP_INSTANCE_ID, AZURE_CONTAINER_APP_NAME, AZURE_CONTAINER_APP_VERSION } from '../../src/types';
+import {
+  azureAppServiceDetector,
+  azureContainerAppsDetector,
+  azureFunctionsDetector
+} from '../../src';
 
 describe('AzureContainerAppsDetector', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -51,7 +55,7 @@ describe('AzureContainerAppsDetector', () => {
     process.env.CONTAINER_APP_REPLICA_NAME = 'test-replica-name';
 
     const resource = detectResources({
-      detectors: [azureContainerAppsDetector],
+      detectors: [azureContainerAppsDetector, azureFunctionsDetector, azureAppServiceDetector],
     });
     assert.ok(resource);
     const attributes = resource.attributes;

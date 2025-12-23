@@ -36,7 +36,7 @@ import {
   ATTR_CLOUD_PLATFORM,
   CLOUD_PLATFORM_VALUE_AZURE_APP_SERVICE,
 } from '../semconv';
-import { getAzureResourceUri, isAzureFunction } from '../utils';
+import { getAzureResourceUri, isAzureContainerApps, isAzureFunction } from '../utils';
 
 const APP_SERVICE_ATTRIBUTE_ENV_VARS = {
   [ATTR_CLOUD_REGION]: REGION_NAME,
@@ -54,7 +54,7 @@ class AzureAppServiceDetector implements ResourceDetector {
   detect(): DetectedResource {
     let attributes = {};
     const websiteSiteName = process.env[WEBSITE_SITE_NAME];
-    if (websiteSiteName && !isAzureFunction()) {
+    if (websiteSiteName && !isAzureFunction() && !isAzureContainerApps()) {
       attributes = {
         ...attributes,
         [ATTR_SERVICE_NAME]: websiteSiteName,
