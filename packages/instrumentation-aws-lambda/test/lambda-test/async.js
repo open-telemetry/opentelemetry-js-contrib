@@ -9,7 +9,6 @@ exports.handler = async function (event, context) {
 };
 
 exports.sqshandler = async function (event, context) {
-  event.Records.forEach(r => {});
   return 'ok';
 };
 

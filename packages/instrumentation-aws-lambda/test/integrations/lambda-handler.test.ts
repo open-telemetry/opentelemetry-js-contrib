@@ -1213,7 +1213,7 @@ describe('lambda handler', () => {
 
   describe('sync handler sqs propagation', () => {
     it('creates process span for sqs record, with lambda invocation span as parent and span link to the producer traceId and spanId', async () => {
-      initializeHandler('lambda-test/sync.sqshandler');
+      initializeHandler('lambda-test/sync.handler');
       const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
       const producerSpanId = '83b7424a259945cb';
       const sqsEvent = {
@@ -1232,11 +1232,7 @@ describe('lambda handler', () => {
         ],
       };
 
-      await lambdaRequire('lambda-test/sync').sqshandler(
-        sqsEvent,
-        ctx,
-        () => {}
-      );
+      await lambdaRequire('lambda-test/sync').handler(sqsEvent, ctx);
       const spans = memoryExporter.getFinishedSpans();
 
       assert.strictEqual(spans.length, 2);
@@ -1255,7 +1251,7 @@ describe('lambda handler', () => {
 
   describe('async handler sqs propagation', () => {
     it('creates process span for sqs record, with lambda invocation span as parent and span link to the producer traceId and spanId', async () => {
-      initializeHandler('lambda-test/async.sqshandler');
+      initializeHandler('lambda-test/async.handler');
       const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
       const producerSpanId = '83b7424a259945cb';
       const sqsEvent = {
@@ -1274,7 +1270,7 @@ describe('lambda handler', () => {
         ],
       };
 
-      await lambdaRequire('lambda-test/async').sqshandler(sqsEvent, ctx);
+      await lambdaRequire('lambda-test/async').handler(sqsEvent, ctx);
       const spans = memoryExporter.getFinishedSpans();
 
       assert.strictEqual(spans.length, 2);
