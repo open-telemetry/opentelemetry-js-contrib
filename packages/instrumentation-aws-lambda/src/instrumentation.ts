@@ -308,19 +308,12 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
               if (error != null) {
                 // Exception thrown synchronously before resolving promise.
                 plugin._applyResponseHook(span, error);
-                plugin._endInvocationSpanAndFlush(
-                  span,
-                  error,
-                  () => {},
-                );
+                plugin._endInvocationSpanAndFlush(span, error, () => {});
               }
             }
           ) as Promise<{}> | undefined;
 
-          return plugin._handlePromiseResult(
-            span,
-            maybePromise
-          );
+          return plugin._handlePromiseResult(span, maybePromise);
         });
       };
     }

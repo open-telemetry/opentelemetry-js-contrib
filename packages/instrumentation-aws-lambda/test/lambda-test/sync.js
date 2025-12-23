@@ -48,9 +48,3 @@ exports.callbackError = function (event, context, callback) {
 exports.callbackContext = function (event, context, callback) {
   callback(null, api.trace.getSpan(api.context.active()).spanContext().traceId);
 };
-
-exports.sqshandler = function (event, context, callback) {
-  // Dummy forEach loop, to trigger sqs instrumentation
-  event.Records.forEach(r => {});
-  callback(null, 'ok');
-};
