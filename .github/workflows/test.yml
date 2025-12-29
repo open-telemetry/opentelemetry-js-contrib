@@ -70,7 +70,7 @@ jobs:
     # https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations#yaml-anchors-and-aliases
     services: &test_services
       memcached:
-        image: memcached:1.6.39-alpine
+        image: memcached:1.6.40-alpine
         ports:
           - 11211:11211
       mongo:

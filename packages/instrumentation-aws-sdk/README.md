@@ -49,7 +49,7 @@ registerInstrumentations({
 aws-sdk instrumentation has few options available to choose from. You can set the following:
 
 | Options                                   | Type                                     | Description                                                                                                                                                                     |
-|-------------------------------------------|------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ----------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `preRequestHook`                          | `AwsSdkRequestCustomAttributeFunction`   | Hook called before request send, which allow to add custom attributes to span.                                                                                                  |
 | `responseHook`                            | `AwsSdkResponseCustomAttributeFunction`  | Hook for adding custom attributes when response is received from aws.                                                                                                           |
 | `exceptionHook`                           | `AwsSdkExceptionCustomAttributeFunction` | Hook for adding custom attributes when exception is received from aws.                                                                                                          |
@@ -62,7 +62,7 @@ aws-sdk instrumentation has few options available to choose from. You can set th
 The instrumentations are collecting the following attributes:
 
 | Attribute Name | Type   | Description                                                                                                                                                                                                                                                                                         | Example                     |
-|----------------|--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------|
+| -------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
 | `rpc.system`   | string | Always equals "aws-api"                                                                                                                                                                                                                                                                             |                             |
 | `rpc.method`   | string | The name of the operation corresponding to the request, as returned by the AWS SDK. If the SDK does not provide a way to retrieve a name, the name of the command SHOULD be used, removing the suffix `Command` if present, resulting in a PascalCase name with no spaces.                          | `PutObject`                 |
 | `rpc.service`  | string | The name of the service to which a request is made, as returned by the AWS SDK. If the SDK does not provide a away to retrieve a name, the name of the SDK's client interface for a service SHOULD be used, removing the suffix `Client` if present, resulting in a PascalCase name with no spaces. | `S3`, `DynamoDB`, `Route53` |
@@ -111,7 +111,7 @@ This package emits telemetry using a mix of Semantic Convention versions. While 
 Attributes collected (this list is currently not exhaustive):
 
 | Attribute                                        | Short Description                                                                              | Service  |
-|--------------------------------------------------|------------------------------------------------------------------------------------------------|----------|
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- | -------- |
 | `http.status_code` / `http.response.status_code` | (aws-sdk) HTTP response status code. See "HTTP Semantic Convention migration" note below.      |          |
 | `rpc.method`                                     | The name of the (logical) method being called.                                                 |          |
 | `rpc.service`                                    | The full (logical) name of the service being called.                                           |          |
@@ -138,10 +138,10 @@ Attributes collected (this list is currently not exhaustive):
 | `aws.dynamodb.table_count`                       | The number of items in the `TableNames` response parameter.                                    | dynamodb |
 | `aws.dynamodb.table_names`                       | The keys in the `RequestItems` object field.                                                   | dynamodb |
 | `aws.dynamodb.total_segments`                    | The value of the `TotalSegments` request parameter.                                            | dynamodb |
-| `db.name`                                        | The name of the database being accessed.                                                       | dynamodb |
-| `db.operation`                                   | The name of the operation being executed.                                                      | dynamodb |
-| `db.statement`                                   | The database statement being executed.                                                         | dynamodb |
-| `db.system`                                      | An identifier for the database management system (DBMS) product being used.                    | dynamodb |
+| `db.name` / `db.namespace`                       | The name of the database (TableName). See "Database Semantic Convention migration" note below. | dynamodb |
+| `db.operation` / `db.operation.name`             | The name of the operation. See "Database Semantic Convention migration" note below.            | dynamodb |
+| `db.statement` / `db.query.text`                 | The database statement. See "Database Semantic Convention migration" note below.               | dynamodb |
+| `db.system` / `db.system.name`                   | Database system identifier. See "Database Semantic Convention migration" note below.           | dynamodb |
 | `faas.execution`                                 | The execution ID of the current function execution.                                            | lambda   |
 | `faas.invoked_name`                              | The name of the invoked function.                                                              | lambda   |
 | `faas.invoked_provider`                          | The cloud provider of the invoked function.                                                    | lambda   |
@@ -177,6 +177,30 @@ For this instrumentation, the only impacted attributes are as follows:
 
 See the [HTTP semconv migration plan for OpenTelemetry JS instrumentations](https://github.com/open-telemetry/opentelemetry-js/issues/5646) for more details.
 
+### Database Semantic Convention migration
+
+Database semantic conventions (semconv) were stabilized in v1.33.0, and a [migration process](https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/)
+was defined. For DynamoDB operations, `instrumentation-aws-sdk` emits database-related
+attributes. The `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable can be used to
+customize which database semantic conventions are used.
+
+To select which semconv version(s) is emitted from this instrumentation, use the
+`OTEL_SEMCONV_STABILITY_OPT_IN` environment variable.
+
+- `database`: emit the new (stable) v1.33.0+ semantics
+- `database/dup`: emit **both** the old v1.7.0 and the new (stable) v1.33.0+ semantics
+- By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` includes neither of the above tokens, the old v1.7.0 semconv is used.
+
+For DynamoDB instrumentation, the impacted attributes are as follows:
+
+| v1.7.0 semconv | v1.33.0 semconv     | Short Description                                 |
+| -------------- | ------------------- | ------------------------------------------------- |
+| `db.system`    | `db.system.name`    | Database system identifier                        |
+| `db.name`      | `db.namespace`      | The database name (TableName for DynamoDB)        |
+| `db.operation` | `db.operation.name` | The name of the operation being executed          |
+| `db.statement` | `db.query.text`     | The database statement (if serializer configured) |
+
+See the [database migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/) for details.
 
 ## Useful links
 

@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-// for testing locally "npm run docker:start"
+// By default tests run with both old and stable semconv. Some test cases
+// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
 
 import { MongoDBInstrumentation } from '../src';
 
