@@ -60,9 +60,10 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 
 `RuntimeNodeInstrumentation`'s constructor accepts the following options:
 
-| name                                        | type  | unit        | default | description                                                                                                                                                                                                                                                                                     |
-|---------------------------------------------|-------|-------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`monitoringPrecision`](./src/types.ts#L25) | `int` | millisecond | `10`    | The approximate number of milliseconds for which to calculate event loop utilization averages. A larger value will result in more accurate averages at the expense of less granular data. Should be set to below the scrape interval of your metrics collector to avoid duplicated data points. |
+| name                                        | type       | unit        | default              | description                                                                                                                                                                                                                                                                                     |
+|---------------------------------------------|------------|-------------|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`monitoringPrecision`](./src/types.ts#L20) | `int`      | millisecond | `10`                 | The approximate number of milliseconds for which to calculate event loop utilization averages. A larger value will result in more accurate averages at the expense of less granular data. Should be set to below the scrape interval of your metrics collector to avoid duplicated data points. |
+| [`gcDurationBuckets`](./src/types.ts#L21)   | `number[]` | second      | `[0.01, 0.1, 1, 10]` | The histogram bucket boundaries to use for the GC duration histogram (`v8js.gc.duration`). |
 
 ## Useful links
 
