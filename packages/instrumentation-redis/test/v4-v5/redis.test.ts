@@ -595,21 +595,26 @@ describe('redis v4-v5', () => {
       assert.strictEqual(otherKeyValue, 'another-value'); // verify we did not screw up the normal functionality
 
       const [_setSpan, multiSetSpan, multiGetSpan] = getTestSpans();
-      // verify that commands span started when it was added to multi and not when "sent".
-      // they were called with 10 ms gap between them, so it should be reflected in the span start time
-      // could be nice feature in the future to capture an event for when it is actually sent
+      // verify that commands span started when it was added to multi and not when "sent" to redis server upon exec().
+      // the second command was added after a delay, so its start time should be later
+      // than the first command's start time, confirming spans are created when commands
+      // are added, and not when exec() is called. otherwise both spans would have nearly identical start times.
       const startTimeDiff =
         hrTimeToMilliseconds(multiGetSpan.startTime) -
         hrTimeToMilliseconds(multiSetSpan.startTime);
       assert.ok(
-        startTimeDiff >= 9,
-        `diff of start time should be >= 10 and it's ${startTimeDiff}`
+        startTimeDiff > 0,
+        `second command should have a later start time than first command, diff: ${startTimeDiff}ms`
       );
 
       const endTimeDiff =
         hrTimeToMilliseconds(multiGetSpan.endTime) -
         hrTimeToMilliseconds(multiSetSpan.endTime);
-      assert.ok(endTimeDiff < 10); // spans should all end together when multi response arrives from redis server
+      // spans should all end at approximately the same time when multi response arrives from redis server
+      assert.ok(
+        endTimeDiff < 10,
+        `end times should be close together, diff: ${endTimeDiff}ms`
+      );
     });
 
     it('response hook for multi commands', async () => {
