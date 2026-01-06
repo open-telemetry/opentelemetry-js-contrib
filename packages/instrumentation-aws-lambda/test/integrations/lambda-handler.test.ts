@@ -56,6 +56,7 @@ import {
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { AWSXRayLambdaPropagator } from '@opentelemetry/propagator-aws-xray-lambda';
+import { sqsContextGetter } from '../../src/instrumentation';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -1218,6 +1219,111 @@ describe('lambda handler', () => {
           'highWaterMark symbol should be preserved after instrumentation'
         );
       });
+    });
+  });
+
+  describe('sync handler sqs propagation', () => {
+    it('creates process span for sqs record, with lambda invocation span as parent and span link to the producer traceId and spanId', async () => {
+      initializeHandler('lambda-test/sync.handler');
+      const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
+      const producerSpanId = '83b7424a259945cb';
+      const sqsEvent = {
+        Records: [
+          {
+            messageAttributes: {
+              traceparent: {
+                stringValue: `00-${producerTraceId}-${producerSpanId}-01`,
+                dataType: 'String',
+              },
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN:
+              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/sync').handler(sqsEvent, ctx);
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+      assert.equal(
+        spans[0].parentSpanContext?.traceId,
+        spans[1].spanContext().traceId
+      );
+      assert.equal(
+        spans[0].parentSpanContext?.spanId,
+        spans[1].spanContext().spanId
+      );
+      assert.equal(spans[0].links[0]?.context.traceId, producerTraceId);
+      assert.equal(spans[0].links[0].context.spanId, producerSpanId);
+    });
+  });
+
+  describe('async handler sqs propagation', () => {
+    it('creates process span for sqs record, with lambda invocation span as parent and span link to the producer traceId and spanId', async () => {
+      initializeHandler('lambda-test/async.handler');
+      const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
+      const producerSpanId = '83b7424a259945cb';
+      const sqsEvent = {
+        Records: [
+          {
+            messageAttributes: {
+              traceparent: {
+                stringValue: `00-${producerTraceId}-${producerSpanId}-01`,
+                dataType: 'String',
+              },
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN:
+              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/async').handler(sqsEvent, ctx);
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+      assert.equal(
+        spans[0].parentSpanContext?.traceId,
+        spans[1].spanContext().traceId
+      );
+      assert.equal(
+        spans[0].parentSpanContext?.spanId,
+        spans[1].spanContext().spanId
+      );
+      assert.equal(spans[0].links[0]?.context.traceId, producerTraceId);
+      assert.equal(spans[0].links[0].context.spanId, producerSpanId);
+    });
+  });
+
+  describe('sqsContextGetter', () => {
+    it('returns the keys for a given message attributes carrier', () => {
+      const carrier = {
+        'x-amzn-trace-id': {
+          stringValue: 'dummy',
+          stringListValues: [],
+          binaryListValues: [],
+          dataType: 'String',
+        },
+        traceparent: {
+          stringValue: 'dummy',
+          stringListValues: [],
+          binaryListValues: [],
+          dataType: 'String',
+        },
+      };
+
+      const keys = sqsContextGetter.keys(carrier);
+      assert.deepEqual(keys, ['x-amzn-trace-id', 'traceparent']);
+    });
+
+    it('returns empty array for null or undefined carrier', () => {
+      const keysNull = sqsContextGetter.keys(null);
+      const keysUndefined = sqsContextGetter.keys(undefined);
+      assert.deepEqual(keysNull, []);
+      assert.deepEqual(keysUndefined, []);
     });
   });
 });

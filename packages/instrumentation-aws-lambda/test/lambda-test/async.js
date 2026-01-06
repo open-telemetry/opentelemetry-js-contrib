@@ -19,6 +19,10 @@ exports.handler = async function (event, context) {
   return 'ok';
 };
 
+exports.sqshandler = async function (event, context) {
+  return 'ok';
+};
+
 exports.error = async function (event, context) {
   throw new Error('handler error');
 };
