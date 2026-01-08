@@ -50,6 +50,7 @@
     "@opentelemetry/contrib-test-utils": "^0.56.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
+    "@opentelemetry/sdk-logs": "^0.209.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "pino": "^8.21.0"
   },
