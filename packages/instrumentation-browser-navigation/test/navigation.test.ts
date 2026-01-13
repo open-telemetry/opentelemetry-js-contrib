@@ -74,7 +74,6 @@ describe('Browser Navigation Instrumentation', () => {
       });
 
       const spy = sandbox.spy(document, 'addEventListener');
-      // instrumentation.enable();
       instrumentation.enable();
 
       setTimeout(() => {
@@ -194,10 +193,10 @@ describe('Browser Navigation Instrumentation', () => {
 
       history.replaceState({}, '', '/dummy2.html');
 
-      assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
+      const recs = exporter.getFinishedLogRecords();
+      assert.strictEqual(recs.length, 2);
 
-      const navLogRecord =
-        exporter.getFinishedLogRecords()[0] as ReadableLogRecord;
+      const navLogRecord = recs[1] as ReadableLogRecord;
       assert.strictEqual(navLogRecord.eventName, EVENT_NAME);
       // URL should be sanitized - check it matches current location
       const actualUrl = (navLogRecord.attributes as any)[ATTR_URL_FULL];
@@ -238,12 +237,14 @@ describe('Browser Navigation Instrumentation', () => {
         },
       });
 
-      // previously captured referrer is no longer asserted
       history.pushState({}, '', '/dummy3.html');
-      assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
 
-      const navLogRecord =
-        exporter.getFinishedLogRecords()[0] as any as ReadableLogRecord;
+      // We expect the hard page load navigation & the soft pushState
+      // navigation.
+      const recs = exporter.getFinishedLogRecords();
+      assert.strictEqual(recs.length, 2);
+
+      const navLogRecord = recs[1] as any as ReadableLogRecord;
       assert.strictEqual(navLogRecord.eventName, EVENT_NAME);
       // URL should be sanitized - check it matches current location
       const actualUrl = (navLogRecord.attributes as any)[ATTR_URL_FULL];
@@ -262,10 +263,11 @@ describe('Browser Navigation Instrumentation', () => {
 
       // previously captured second referrer is no longer asserted
       history.pushState({}, '', '/dummy3.html');
-      assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
 
-      const navLogRecord2 =
-        exporter.getFinishedLogRecords()[0] as any as ReadableLogRecord;
+      const recs2 = exporter.getFinishedLogRecords();
+      assert.strictEqual(recs2.length, 2);
+
+      const navLogRecord2 = recs2[1] as any as ReadableLogRecord;
       assert.strictEqual(navLogRecord2.eventName, EVENT_NAME);
       // URL should be sanitized - check it matches current location
       const actualUrl2 = (navLogRecord2.attributes as any)[ATTR_URL_FULL];
@@ -291,7 +293,6 @@ describe('Browser Navigation Instrumentation', () => {
       instrumentation = new BrowserNavigationInstrumentation({
         enabled: true,
       });
-      instrumentation.enable();
 
       // Clear any existing records and set up initial state
       exporter.reset();
@@ -343,10 +344,7 @@ describe('Browser Navigation Instrumentation', () => {
     });
 
     it('should export LogRecord with type traverse when history.back() triggers a popstate', done => {
-      instrumentation = new BrowserNavigationInstrumentation({
-        enabled: true,
-      });
-      instrumentation.enable();
+      instrumentation = new BrowserNavigationInstrumentation({ enabled: true });
 
       // Setup history stack
       history.pushState({}, '', '/nav-traverse-1');
@@ -355,35 +353,32 @@ describe('Browser Navigation Instrumentation', () => {
       // Clear records and set up state
       exporter.reset();
 
-      // Listen for popstate event directly
+      // Use popstate event to know when the instrumentation (also using
+      // this event) has exported the LogEvents.
       const popstateHandler = () => {
-        setTimeout(() => {
-          const records = exporter.getFinishedLogRecords();
-          if (records.length === 0) {
-            done(new Error('No records found after popstate'));
-            return;
-          }
-          const navLogRecord = records.slice(-1)[0] as ReadableLogRecord;
-          assert.strictEqual(navLogRecord.eventName, EVENT_NAME);
-          assert.strictEqual(
-            (navLogRecord.attributes as any)[
-              ATTR_BROWSER_NAVIGATION_SAME_DOCUMENT
-            ],
-            true
-          );
-          assert.strictEqual(
-            (navLogRecord.attributes as any)[
-              ATTR_BROWSER_NAVIGATION_HASH_CHANGE
-            ],
-            false
-          );
-          assert.strictEqual(
-            (navLogRecord.attributes as any)[ATTR_BROWSER_NAVIGATION_TYPE],
-            'traverse'
-          );
-          window.removeEventListener('popstate', popstateHandler);
-          done();
-        }, 150);
+        const records = exporter.getFinishedLogRecords();
+        if (records.length === 0) {
+          done(new Error('No records found after popstate'));
+          return;
+        }
+        const navLogRecord = records.slice(-1)[0] as ReadableLogRecord;
+        assert.strictEqual(navLogRecord.eventName, EVENT_NAME);
+        assert.strictEqual(
+          (navLogRecord.attributes as any)[
+            ATTR_BROWSER_NAVIGATION_SAME_DOCUMENT
+          ],
+          true
+        );
+        assert.strictEqual(
+          (navLogRecord.attributes as any)[ATTR_BROWSER_NAVIGATION_HASH_CHANGE],
+          false
+        );
+        assert.strictEqual(
+          (navLogRecord.attributes as any)[ATTR_BROWSER_NAVIGATION_TYPE],
+          'traverse'
+        );
+        window.removeEventListener('popstate', popstateHandler);
+        done();
       };
 
       window.addEventListener('popstate', popstateHandler);
@@ -412,8 +407,6 @@ describe('Browser Navigation Instrumentation', () => {
         enabled: true,
         useNavigationApiIfAvailable: true,
       });
-
-      instrumentation.enable();
 
       // Wait for any readyState-triggered events, then clear records
       setTimeout(() => {
@@ -542,7 +535,6 @@ describe('Browser Navigation Instrumentation', () => {
         enabled: true,
         useNavigationApiIfAvailable: true,
       });
-      instrumentation.enable();
 
       // Wait for any readyState-triggered events, then clear records
       setTimeout(() => {
@@ -624,7 +616,6 @@ describe('Browser Navigation Instrumentation', () => {
         useNavigationApiIfAvailable: false, // Test history API path
         sanitizeUrl: defaultSanitizeUrl,
       });
-      instrumentation.enable();
 
       // Wait for any readyState-triggered events, then clear records
       setTimeout(() => {
@@ -669,7 +660,6 @@ describe('Browser Navigation Instrumentation', () => {
         useNavigationApiIfAvailable: false, // Test history API path
         sanitizeUrl: customSanitizer,
       });
-      instrumentation.enable();
 
       // Clear any existing records
       exporter.reset();
@@ -709,7 +699,6 @@ describe('Browser Navigation Instrumentation', () => {
         enabled: true,
         useNavigationApiIfAvailable: true,
       });
-      instrumentation.enable();
 
       // Clear any existing records and set baseline
       exporter.reset();
@@ -762,7 +751,6 @@ describe('Browser Navigation Instrumentation', () => {
         enabled: true,
         useNavigationApiIfAvailable: false,
       });
-      instrumentation.enable();
 
       // Verify Navigation API addEventListener was not called for 'navigate' events
       const navigateListenerCalls = navigationSpy

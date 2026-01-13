@@ -17,6 +17,7 @@
 import { InstrumentationBase, isWrapped } from '@opentelemetry/instrumentation';
 import type { LogRecord } from '@opentelemetry/api-logs';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
+/** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   BrowserNavigationInstrumentationConfig,
@@ -39,12 +40,17 @@ export const ATTR_BROWSER_NAVIGATION_TYPE = 'browser.navigation.type';
 export class BrowserNavigationInstrumentation extends InstrumentationBase<BrowserNavigationInstrumentationConfig> {
   applyCustomLogRecordData: ApplyCustomLogRecordDataFunction | undefined =
     undefined;
-  sanitizeUrl?: SanitizeUrlFunction; // No default sanitization
-  private _onLoadHandler?: () => void;
-  private _onPopStateHandler?: (ev: PopStateEvent) => void;
-  private _onNavigateHandler?: (ev: Event) => void;
+  declare sanitizeUrl?: SanitizeUrlFunction; // No default sanitization
+  declare private _onLoadHandler?: () => void;
+  declare private _onPopStateHandler?: (ev: PopStateEvent) => void;
+  declare private _onNavigateHandler?: (ev: Event) => void;
   private _lastUrl: string = location.href;
   private _hasProcessedInitialLoad: boolean = false;
+
+  // Note: Intentionally *not* using `_enabled` as the field name to avoid
+  // any possible confusion with the `_enabled` field used on the *Node.js*
+  // InstrumentationBase class.
+  declare private _isEnabled: boolean;
 
   /**
    *
@@ -132,8 +138,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     // Check if document has already loaded completely
     if (document.readyState === 'complete' && !this._hasProcessedInitialLoad) {
       this._hasProcessedInitialLoad = true;
-      // Use setTimeout to allow tests to reset exporter before this fires
-      setTimeout(() => this._onHardNavigation(), 0);
+      this._onHardNavigation();
       return;
     }
 
@@ -154,6 +159,11 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
    * implements enable function
    */
   override enable() {
+    if (this._isEnabled) {
+      return;
+    }
+    this._isEnabled = true;
+
     const cfg = this.getConfig() as BrowserNavigationInstrumentationConfig;
     const useNavigationApiIfAvailable = !!cfg.useNavigationApiIfAvailable;
     const navigationApi =
@@ -199,6 +209,11 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
    * implements disable function
    */
   override disable() {
+    if (!this._isEnabled) {
+      return;
+    }
+    this._isEnabled = false;
+
     this._unpatchHistoryApi();
     if (this._onLoadHandler) {
       document.removeEventListener('DOMContentLoaded', this._onLoadHandler);
@@ -242,8 +257,10 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
   }
 
   private _patchHistoryApi(): void {
-    // unpatching here disables other instrumentation that use the same api to wrap history, commenting it out
-    // this._unpatchHistoryApi();
+    // Unpatching here disables other instrumentation that use the same api to
+    // wrap history, commenting it out.
+    //    this._unpatchHistoryApi();
+    // TODO: For example, instrumentation-user-interaction also patches `history`. Do the two instrumentations work at the same time?
     this._wrap(
       history,
       'replaceState',

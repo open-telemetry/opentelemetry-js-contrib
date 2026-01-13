@@ -111,6 +111,15 @@ export const ATTR_NET_PEER_NAME = 'net.peer.name' as const;
 export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
 
 /**
+ * Enum value "mongodb" for attribute {@link ATTR_DB_SYSTEM_NAME}.
+ *
+ * [MongoDB](https://www.mongodb.com/)
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const DB_SYSTEM_NAME_VALUE_MONGODB = 'mongodb' as const;
+
+/**
  * Enum value "mongodb" for attribute {@link ATTR_DB_SYSTEM}.
  *
  * MongoDB

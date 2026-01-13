@@ -16,7 +16,10 @@
 import { Attributes, SpanStatusCode, diag, Span } from '@opentelemetry/api';
 import type { Collection } from 'mongoose';
 import { MongooseResponseCustomAttributesFunction } from './types';
-import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
+import {
+  safeExecuteInTheMiddle,
+  SemconvStability,
+} from '@opentelemetry/instrumentation';
 import {
   ATTR_DB_MONGODB_COLLECTION,
   ATTR_DB_NAME,
@@ -24,17 +27,41 @@ import {
   ATTR_NET_PEER_NAME,
   ATTR_NET_PEER_PORT,
 } from './semconv';
+import {
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
 export function getAttributesFromCollection(
-  collection: Collection
+  collection: Collection,
+  dbSemconvStability: SemconvStability,
+  netSemconvStability: SemconvStability
 ): Attributes {
-  return {
-    [ATTR_DB_MONGODB_COLLECTION]: collection.name,
-    [ATTR_DB_NAME]: collection.conn.name,
-    [ATTR_DB_USER]: collection.conn.user,
-    [ATTR_NET_PEER_NAME]: collection.conn.host,
-    [ATTR_NET_PEER_PORT]: collection.conn.port,
-  };
+  const attrs: Attributes = {};
+
+  if (dbSemconvStability & SemconvStability.OLD) {
+    attrs[ATTR_DB_MONGODB_COLLECTION] = collection.name;
+    attrs[ATTR_DB_NAME] = collection.conn.name;
+    attrs[ATTR_DB_USER] = collection.conn.user;
+  }
+  if (dbSemconvStability & SemconvStability.STABLE) {
+    attrs[ATTR_DB_COLLECTION_NAME] = collection.name;
+    attrs[ATTR_DB_NAMESPACE] = collection.conn.name;
+    // db.user has no stable replacement
+  }
+
+  if (netSemconvStability & SemconvStability.OLD) {
+    attrs[ATTR_NET_PEER_NAME] = collection.conn.host;
+    attrs[ATTR_NET_PEER_PORT] = collection.conn.port;
+  }
+  if (netSemconvStability & SemconvStability.STABLE) {
+    attrs[ATTR_SERVER_ADDRESS] = collection.conn.host;
+    attrs[ATTR_SERVER_PORT] = collection.conn.port;
+  }
+
+  return attrs;
 }
 
 function setErrorStatus(span: Span, error: any = {}) {
