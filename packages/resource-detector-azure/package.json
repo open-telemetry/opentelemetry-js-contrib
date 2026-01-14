@@ -38,7 +38,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/contrib-test-utils": "^0.56.0",
-    "@opentelemetry/instrumentation-http": "^0.209.0",
+    "@opentelemetry/instrumentation-http": "^0.210.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0"
   },
   "peerDependencies": {
