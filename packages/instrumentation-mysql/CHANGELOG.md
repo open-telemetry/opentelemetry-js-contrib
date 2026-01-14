@@ -1,6 +1,26 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.55.0...instrumentation-mysql-v0.56.0) (2026-01-14)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3332](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3332)) ([925a150](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/925a1501ce0d082c6845d36e7c964e625ee3de0c))
+* **deps:** update deps matching '@opentelemetry/*' ([#3340](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3340)) ([2954943](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/29549434e7204b03d58635eb20352efee0e797d4))
+
+
+### Bug Fixes
+
+* **instrumentation-mysql:** restore 'db.client.connections.usage' when opting-in to stable database semconv ([#3320](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3320)) ([4ad2964](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4ad2964ddb290c761a5fdef21b293a42adba6f92)), closes [#3288](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3288)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.56.0 to ^0.57.0
+
 ## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.54.0...instrumentation-mysql-v0.55.0) (2025-12-17)
 
 

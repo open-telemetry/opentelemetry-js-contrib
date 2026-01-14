@@ -1,6 +1,27 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.61.2...instrumentation-pg-v0.62.0) (2026-01-14)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3332](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3332)) ([925a150](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/925a1501ce0d082c6845d36e7c964e625ee3de0c))
+* **deps:** update deps matching '@opentelemetry/*' ([#3340](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3340)) ([2954943](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/29549434e7204b03d58635eb20352efee0e797d4))
+* **instrumentation-pg:** add skipConnectSpans option ([#3280](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3280)) ([bb0334b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bb0334b91e110aad50e4a5bda14e8da232f07d55))
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#3282](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3282)) ([062fb29](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/062fb29c3fb7c99c03096fe61dcf41743f17ca64))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.56.0 to ^0.57.0
+
 ## [0.61.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.61.1...instrumentation-pg-v0.61.2) (2025-12-17)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-web",
-  "version": "0.54.0",
+  "version": "0.55.0",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/auto-instrumentations-web#readme",
@@ -40,9 +40,9 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.210.0",
-    "@opentelemetry/instrumentation-document-load": "^0.54.0",
+    "@opentelemetry/instrumentation-document-load": "^0.55.0",
     "@opentelemetry/instrumentation-fetch": "^0.210.0",
-    "@opentelemetry/instrumentation-user-interaction": "^0.53.0",
+    "@opentelemetry/instrumentation-user-interaction": "^0.54.0",
     "@opentelemetry/instrumentation-xml-http-request": "^0.210.0"
   },
   "files": [
