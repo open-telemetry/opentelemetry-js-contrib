@@ -45,10 +45,10 @@
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/exporter-jaeger": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.209.0",
+    "@opentelemetry/instrumentation": "^0.210.0",
     "@opentelemetry/resources": "^2.0.0",
     "@opentelemetry/sdk-metrics": "^2.0.0",
-    "@opentelemetry/sdk-node": "^0.209.0",
+    "@opentelemetry/sdk-node": "^0.210.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.37.0"

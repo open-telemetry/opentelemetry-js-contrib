@@ -59,7 +59,7 @@
     "tedious": "17.0.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.209.0",
+    "@opentelemetry/instrumentation": "^0.210.0",
     "@opentelemetry/semantic-conventions": "^1.33.0",
     "@types/tedious": "^4.0.14"
   },
