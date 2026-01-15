@@ -49,6 +49,15 @@ export const ATTR_CLOUD_PROVIDER = 'cloud.provider' as const;
 export const ATTR_CLOUD_REGION = 'cloud.region' as const;
 
 /**
+ * Container name used by container runtime.
+ *
+ * @example opentelemetry-autoconf
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_CONTAINER_NAME = 'container.name' as const;
+
+/**
  * Name of the [deployment environment](https://wikipedia.org/wiki/Deployment_environment) (aka deployment tier).
  *
  * @example staging
@@ -182,6 +191,15 @@ export const CLOUD_PLATFORM_VALUE_AZURE_APP_SERVICE =
   'azure.app_service' as const;
 
 /**
+ * Enum value "azure.container_apps" for attribute {@link ATTR_CLOUD_PLATFORM}.
+ *
+ * Azure Container Apps
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const CLOUD_PLATFORM_VALUE_AZURE_CONTAINER_APPS = "azure.container_apps" as const;
+
+/**
  * Enum value "azure.functions" for attribute {@link ATTR_CLOUD_PLATFORM}.
  *
  * Azure Functions
@@ -207,3 +225,4 @@ export const CLOUD_PLATFORM_VALUE_AZURE_VM = 'azure.vm' as const;
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const CLOUD_PROVIDER_VALUE_AZURE = 'azure' as const;
+
