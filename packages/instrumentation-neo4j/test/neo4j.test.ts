@@ -37,6 +37,7 @@ import {
 import { map, mergeMap } from 'rxjs/operators';
 // eslint-disable-next-line n/no-extraneous-import
 import { concat } from 'rxjs';
+import { gt as semverGt } from 'semver';
 
 const port = Number(process.env.NEO4J_PORT) || 7687;
 const host = process.env.NEO4J_HOST || '127.0.0.1';
@@ -332,8 +333,12 @@ describe('neo4j instrumentation', () => {
   });
 
   describe('transaction', async () => {
-    it('instruments session readTransaction', async () => {
-      await driver.session().readTransaction((txc) => {
+    it('instruments session executeRead/readTransaction', async () => {
+      // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
+      const version = require('neo4j-driver/package.json').version;
+      const method = semverGt(version, '6.0.0') ? 'executeRead' : 'readTransaction';
+
+      await driver.session()[method as 'executeRead']((txc) => {
         return txc.run('MATCH (person:Person) RETURN person.name AS name');
       });
       const span = getSingleSpan();
@@ -345,8 +350,12 @@ describe('neo4j instrumentation', () => {
       );
     });
 
-    it('instruments session writeTransaction', async () => {
-      await driver.session().writeTransaction((txc) => {
+    it('instruments session executeWrite/writeTransaction', async () => {
+      // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
+      const version = require('neo4j-driver/package.json').version;
+      const method = semverGt(version, '6.0.0') ? 'executeWrite' : 'writeTransaction';
+
+      await driver.session()[method as 'executeWrite']((txc) => {
         return txc.run('MATCH (person:Person) RETURN person.name AS name');
       });
       const span = getSingleSpan();
@@ -438,10 +447,14 @@ describe('neo4j instrumentation', () => {
   });
 
   describe('reactive transaction', () => {
-    it('instruments rx session readTransaction', (done) => {
+    it('instruments rx session executeRead/readTransaction', (done) => {
+      // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
+      const version = require('neo4j-driver/package.json').version;
+      const method = semverGt(version, '6.0.0') ? 'executeRead' : 'readTransaction';
+
       driver
         .rxSession()
-        .readTransaction((txc) =>
+        [method as 'executeRead']((txc) =>
           txc
             .run('MATCH (person:Person) RETURN person.name AS name')
             .records()
@@ -461,10 +474,14 @@ describe('neo4j instrumentation', () => {
         });
     });
 
-    it('instruments rx session writeTransaction', (done) => {
+    it('instruments rx session executeWrite/writeTransaction', (done) => {
+      // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
+      const version = require('neo4j-driver/package.json').version;
+      const method = semverGt(version, '6.0.0') ? 'executeWrite' : 'writeTransaction';
+
       driver
         .rxSession()
-        .writeTransaction((txc) =>
+        [method as 'executeWrite']((txc) =>
           txc
             .run('MATCH (person:Person) RETURN person.name AS name')
             .records()

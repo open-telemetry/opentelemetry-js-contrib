@@ -50,16 +50,12 @@
     "@opentelemetry/contrib-test-utils": "^0.54.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@types/node": "18.18.14",
-    "neo4j-driver": "5.28.1",
-    "nyc": "15.1.0",
-    "rimraf": "5.0.10",
-    "sequelize": "^6.37.3",
-    "typescript": "5.0.4"
+    "neo4j-driver": "6.0.1"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.207.0",
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0"
+    "@opentelemetry/semantic-conventions": "^1.38.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-neo4j#readme"
 }

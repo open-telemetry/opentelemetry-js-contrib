@@ -1,4 +1,5 @@
 [Based on the instrumentation written by Aspecto](https://github.com/aspecto-io/opentelemetry-ext-js/tree/master/packages/instrumentation-neo4j).
 
 The library contains the following changes compared to the original:
-* Added support for neo4j v5
+* Removed `moduleVersionAttributeName` configuration option.
+* Added support for neo4j v5 and v6
