@@ -501,8 +501,8 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     const operationName = allSameCommand
       ? (isPipeline ? 'PIPELINE ' : 'MULTI ') + allCommands[0]
       : isPipeline
-      ? 'PIPELINE'
-      : 'MULTI';
+        ? 'PIPELINE'
+        : 'MULTI';
 
     for (let i = 0; i < openSpans.length; i++) {
       const { span, commandArgs } = openSpans[i];

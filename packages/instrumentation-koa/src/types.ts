@@ -55,7 +55,7 @@ export type KoaRequestInfo<KoaContextType = any, KoaMiddlewareType = any> = {
  */
 export interface KoaRequestCustomAttributeFunction<
   KoaContextType = any,
-  KoaMiddlewareType = any
+  KoaMiddlewareType = any,
 > {
   (span: Span, info: KoaRequestInfo<KoaContextType, KoaMiddlewareType>): void;
 }
@@ -65,7 +65,7 @@ export interface KoaRequestCustomAttributeFunction<
  */
 export interface KoaInstrumentationConfig<
   KoaContextType = any,
-  KoaMiddlewareType = any
+  KoaMiddlewareType = any,
 > extends InstrumentationConfig {
   /** Ignore specific layers based on their type */
   ignoreLayersType?: KoaLayerType[];

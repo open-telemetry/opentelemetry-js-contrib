@@ -71,14 +71,19 @@ type V3PluginCommand = AwsV3Command<any, any, any, any, any> & {
 export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentationConfig> {
   static readonly component = 'aws-sdk';
   // need declare since initialized in callbacks from super constructor
-  private declare servicesExtensions: ServicesExtensions;
+  declare private servicesExtensions: ServicesExtensions;
 
-  private _semconvStability: SemconvStability;
+  private _httpSemconvStability: SemconvStability;
+  private _dbSemconvStability: SemconvStability;
 
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._semconvStability = semconvStabilityFromStr(
+    this._httpSemconvStability = semconvStabilityFromStr(
       'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._dbSemconvStability = semconvStabilityFromStr(
+      'database',
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN
     );
   }
@@ -373,7 +378,8 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
         const requestMetadata = self.servicesExtensions.requestPreSpanHook(
           normalizedRequest,
           self.getConfig(),
-          self._diag
+          self._diag,
+          self._dbSemconvStability
         );
         const startTime = hrTime();
         const span = self._startAwsV3Span(normalizedRequest, requestMetadata);
@@ -415,10 +421,10 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                   const httpStatusCode =
                     response.output?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
-                    if (self._semconvStability & SemconvStability.OLD) {
+                    if (self._httpSemconvStability & SemconvStability.OLD) {
                       span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
                     }
-                    if (self._semconvStability & SemconvStability.STABLE) {
+                    if (self._httpSemconvStability & SemconvStability.STABLE) {
                       span.setAttribute(
                         ATTR_HTTP_RESPONSE_STATUS_CODE,
                         httpStatusCode
@@ -462,10 +468,10 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
 
                   const httpStatusCode = err?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
-                    if (self._semconvStability & SemconvStability.OLD) {
+                    if (self._httpSemconvStability & SemconvStability.OLD) {
                       span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
                     }
-                    if (self._semconvStability & SemconvStability.STABLE) {
+                    if (self._httpSemconvStability & SemconvStability.STABLE) {
                       span.setAttribute(
                         ATTR_HTTP_RESPONSE_STATUS_CODE,
                         httpStatusCode

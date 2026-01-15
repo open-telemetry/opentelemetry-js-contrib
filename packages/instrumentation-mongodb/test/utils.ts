@@ -17,6 +17,7 @@
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import {
   ATTR_DB_CONNECTION_STRING,
+  ATTR_DB_MONGODB_COLLECTION,
   ATTR_DB_OPERATION,
   ATTR_DB_STATEMENT,
   ATTR_DB_SYSTEM,
@@ -25,6 +26,14 @@ import {
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import type { MongoClient, MongoClientOptions, Collection } from 'mongodb';
+import { SemconvStability } from '@opentelemetry/instrumentation';
+import {
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+} from '@opentelemetry/semantic-conventions';
 
 export const DEFAULT_MONGO_HOST = '127.0.0.1';
 
@@ -70,19 +79,11 @@ export function accessCollection(
   });
 }
 
-/**
- * Asserts root spans attributes.
- * @param spans Readable spans that we need to assert.
- * @param expectedName The expected name of the first root span.
- * @param expectedKind The expected kind of the first root span.
- * @param log Whether should debug print the expected spans.
- * @param isEnhancedDatabaseReportingEnabled Is enhanced database reporting enabled: boolean.
- */
 export function assertSpans(
   spans: ReadableSpan[],
-  expectedName: string,
-  expectedKind: SpanKind,
+  semconvStability: SemconvStability,
   expectedOperation: string,
+  expectedCollection: string,
   expectedConnString: string | undefined,
   log = false,
   isEnhancedDatabaseReportingEnabled = false
@@ -96,29 +97,65 @@ export function assertSpans(
     assert(span.endTime.length === 2);
   });
   const [mongoSpan] = spans;
-  assert.strictEqual(mongoSpan.name, expectedName);
-  assert.strictEqual(mongoSpan.kind, expectedKind);
-  assert.strictEqual(
-    mongoSpan.attributes[ATTR_DB_OPERATION],
-    expectedOperation
-  );
-  assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM], 'mongodb');
-  assert.strictEqual(
-    mongoSpan.attributes[ATTR_NET_PEER_NAME],
-    process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
-  );
+  assert.strictEqual(mongoSpan.kind, SpanKind.CLIENT);
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
-  if (expectedConnString) {
+
+  if (semconvStability & SemconvStability.STABLE) {
     assert.strictEqual(
-      mongoSpan.attributes[ATTR_DB_CONNECTION_STRING],
-      expectedConnString
+      mongoSpan.name,
+      `${expectedOperation} ${expectedCollection}`
     );
+  } else {
+    assert.strictEqual(mongoSpan.name, `mongodb.${expectedOperation}`);
+  }
+
+  if (semconvStability & SemconvStability.OLD) {
+    assert.strictEqual(
+      mongoSpan.attributes[ATTR_DB_OPERATION],
+      expectedOperation
+    );
+    assert.strictEqual(
+      mongoSpan.attributes[ATTR_DB_MONGODB_COLLECTION],
+      expectedCollection
+    );
+    assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM], 'mongodb');
+    assert.strictEqual(
+      mongoSpan.attributes[ATTR_NET_PEER_NAME],
+      process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
+    );
+    if (expectedConnString) {
+      assert.strictEqual(
+        mongoSpan.attributes[ATTR_DB_CONNECTION_STRING],
+        expectedConnString
+      );
+    }
+  } else {
+    assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM], undefined);
+  }
+
+  if (semconvStability & SemconvStability.STABLE) {
+    assert.strictEqual(
+      mongoSpan.attributes[ATTR_DB_OPERATION_NAME],
+      expectedOperation
+    );
+    assert.strictEqual(
+      mongoSpan.attributes[ATTR_DB_COLLECTION_NAME],
+      expectedCollection
+    );
+    assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM_NAME], 'mongodb');
+    assert.strictEqual(
+      mongoSpan.attributes[ATTR_SERVER_ADDRESS],
+      process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
+    );
+  } else {
+    assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM_NAME], undefined);
   }
 
   if (isEnhancedDatabaseReportingEnabled) {
-    const dbStatement = JSON.parse(
-      mongoSpan.attributes[ATTR_DB_STATEMENT] as string
-    );
+    const dbQueryText =
+      mongoSpan.attributes[ATTR_DB_QUERY_TEXT] ||
+      mongoSpan.attributes[ATTR_DB_STATEMENT];
+    const dbStatement = JSON.parse(dbQueryText as string);
     for (const key in dbStatement) {
       assert.notStrictEqual(dbStatement[key], '?');
     }

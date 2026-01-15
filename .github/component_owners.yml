@@ -169,6 +169,9 @@ components:
     - wolfgangcodes
   packages/plugin-react-load:
     - martinkuba
+  packages/instrumentation-browser-navigation:
+    - Abinet18
+    - martinkuba
   packages/propagator-instana:
     - kirrg001
   packages/propagator-ot-trace: []
@@ -177,6 +180,5 @@ components:
     - jj22ee
   packages/propagator-aws-xray-lambda: [ ]
   # Unmaintained
-
 ignored-authors:
   - renovate-bot

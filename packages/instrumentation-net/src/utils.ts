@@ -28,7 +28,9 @@ import { NET_TRANSPORT_VALUE_PIPE } from './semconv';
 export const OLD_IPC_TRANSPORT_VALUE =
   platform() === 'win32' ? NET_TRANSPORT_VALUE_PIPE : 'unix';
 export const STABLE_IPC_TRANSPORT_VALUE =
-  platform() === 'win32' ? NETWORK_TRANSPORT_VALUE_PIPE : NETWORK_TRANSPORT_VALUE_UNIX;
+  platform() === 'win32'
+    ? NETWORK_TRANSPORT_VALUE_PIPE
+    : NETWORK_TRANSPORT_VALUE_UNIX;
 
 function getHost(args: unknown[]) {
   return typeof args[1] === 'string' ? args[1] : 'localhost';

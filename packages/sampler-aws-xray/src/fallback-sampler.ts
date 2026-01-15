@@ -37,7 +37,7 @@ export class FallbackSampler implements Sampler {
     this.rateLimitingSampler = new RateLimitingSampler(quota);
   }
 
-  shouldSample(
+  public shouldSample(
     context: Context,
     traceId: string,
     spanName: string,

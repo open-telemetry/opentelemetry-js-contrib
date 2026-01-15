@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { Span, SpanStatusCode, context, trace, type Attributes } from '@opentelemetry/api';
+import {
+  Span,
+  SpanStatusCode,
+  context,
+  trace,
+  type Attributes,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationConfig,
@@ -44,7 +50,11 @@ import {
 } from './semconv';
 import { TLSAttributes } from './types';
 import { NormalizedOptions, SocketEvent } from './internal-types';
-import { getNormalizedArgs, OLD_IPC_TRANSPORT_VALUE, STABLE_IPC_TRANSPORT_VALUE } from './utils';
+import {
+  getNormalizedArgs,
+  OLD_IPC_TRANSPORT_VALUE,
+  STABLE_IPC_TRANSPORT_VALUE,
+} from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { Socket } from 'net';
@@ -271,7 +281,7 @@ function registerListeners(
   socket: Socket,
   span: Span,
   hostAttributes: boolean,
-  netSemconvStability: SemconvStability,
+  netSemconvStability: SemconvStability
 ) {
   const setSpanError = spanErrorHandler(span);
   const setSpanEnd = spanEndHandler(span);
