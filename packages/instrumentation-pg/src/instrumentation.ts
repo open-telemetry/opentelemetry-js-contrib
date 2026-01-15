@@ -249,7 +249,12 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     const plugin = this;
     return (original: PgClientConnect) => {
       return function connect(this: pgTypes.Client, callback?: Function) {
-        if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
+        const config = plugin.getConfig();
+
+        if (
+          utils.shouldSkipInstrumentation(config) ||
+          config.ignoreConnectSpans
+        ) {
           return original.call(this, callback);
         }
 
@@ -333,24 +338,21 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         // TODO: remove the `as ...` casts below when the TS version is upgraded.
         // Newer TS versions will use the result of firstArgIsQueryObjectWithText
         // to properly narrow arg0, but TS 4.3.5 does not.
-        let queryConfig: any;
-
-        if (firstArgIsString) {
-          queryConfig = {
-            text: arg0 as string,
-            values: Array.isArray(args[1]) ? args[1] : undefined,
-          };
-        } else if (firstArgIsQueryObjectWithText) {
-          const q = arg0 as any;
-
-          if (q.values === undefined && Array.isArray(args[1])) {
-            q.values = args[1];
-          }
-
-          queryConfig = q;
-        } else {
-          queryConfig = undefined;
-        }
+        const queryConfig = firstArgIsString
+          ? {
+              text: arg0 as string,
+              values: Array.isArray(args[1]) ? args[1] : undefined,
+            }
+          : firstArgIsQueryObjectWithText
+            ? {
+                ...(arg0 as any),
+                name: arg0.name,
+                text: arg0.text,
+                values:
+                  (arg0 as any).values ??
+                  (Array.isArray(args[1]) ? args[1] : undefined),
+              }
+            : undefined;
 
         const attributes: Attributes = {
           [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
@@ -574,7 +576,16 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
-        if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
+        const config = plugin.getConfig();
+
+        if (utils.shouldSkipInstrumentation(config)) {
+          return originalConnect.call(this, callback as any);
+        }
+
+        // Still set up event listeners for metrics even when skipping spans
+        plugin._setPoolConnectEventListeners(this);
+
+        if (config.ignoreConnectSpans) {
           return originalConnect.call(this, callback as any);
         }
 
@@ -586,8 +597,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             plugin._semconvStability
           ),
         });
-
-        plugin._setPoolConnectEventListeners(this);
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());

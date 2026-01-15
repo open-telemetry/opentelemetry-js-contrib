@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
+
 import 'mocha';
 import { expect } from 'expect';
 import { ATTR_DB_OPERATION } from '../src/semconv';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 import { MongooseInstrumentation } from '../src';
 import {
   getTestSpans,
@@ -119,9 +122,16 @@ describe('mongoose instrumentation [v7/v8]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(spans[0] as ReadableSpan);
+    assertSpan(
+      spans[0] as ReadableSpan,
+      SemconvStability.OLD | SemconvStability.STABLE,
+      SemconvStability.OLD | SemconvStability.STABLE
+    );
     expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('findOneAndUpdate');
-    const statement = getStatement(spans[0] as ReadableSpan);
+    const statement = getStatement(
+      spans[0] as ReadableSpan,
+      SemconvStability.OLD | SemconvStability.STABLE
+    );
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
     expect(statement.updates).toEqual({ isUpdated: true });

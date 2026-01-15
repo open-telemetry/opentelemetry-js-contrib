@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-// for testing locally "npm run docker:start"
+// By default tests run with both old and stable semconv. Some test cases
+// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
 
-import { context, trace, SpanKind, Span } from '@opentelemetry/api';
+import { context, trace, Span } from '@opentelemetry/api';
 import * as assert from 'assert';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 import { MongoDBInstrumentation, MongoDBInstrumentationConfig } from '../src';
 import { MongoResponseHookInformation } from '../src';
 import {
@@ -120,9 +123,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              'mongodb.insert',
-              SpanKind.CLIENT,
+              SemconvStability.DUPLICATE,
               'insert',
+              COLLECTION_NAME,
               undefined
             );
             done();
@@ -142,9 +145,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              'mongodb.update',
-              SpanKind.CLIENT,
+              SemconvStability.DUPLICATE,
               'update',
+              COLLECTION_NAME,
               undefined
             );
             done();
@@ -164,9 +167,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              'mongodb.remove',
-              SpanKind.CLIENT,
+              SemconvStability.DUPLICATE,
               'remove',
+              COLLECTION_NAME,
               undefined
             );
             done();
@@ -190,9 +193,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              'mongodb.find',
-              SpanKind.CLIENT,
+              SemconvStability.DUPLICATE,
               'find',
+              COLLECTION_NAME,
               undefined
             );
             done();
@@ -217,21 +220,21 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
               // assert that we correctly got the first as a find
               assertSpans(
                 getTestSpans().filter(
-                  span => !span.name.includes('mongodb.getMore')
+                  span => !span.name.includes(`getMore ${COLLECTION_NAME}`)
                 ),
-                'mongodb.find',
-                SpanKind.CLIENT,
+                SemconvStability.DUPLICATE,
                 'find',
+                COLLECTION_NAME,
                 undefined
               );
               // assert that we correctly got the first as a find
               assertSpans(
                 getTestSpans().filter(
-                  span => !span.name.includes('mongodb.find')
+                  span => !span.name.includes(`find ${COLLECTION_NAME}`)
                 ),
-                'mongodb.getMore',
-                SpanKind.CLIENT,
+                SemconvStability.DUPLICATE,
                 'getMore',
+                COLLECTION_NAME,
                 undefined
               );
               done();
@@ -255,9 +258,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              'mongodb.createIndexes',
-              SpanKind.CLIENT,
+              SemconvStability.DUPLICATE,
               'createIndexes',
+              '$cmd',
               undefined
             );
             done();
@@ -281,9 +284,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              'mongodb.aggregate',
-              SpanKind.CLIENT,
+              SemconvStability.DUPLICATE,
               'aggregate',
+              '$cmd',
               undefined
             );
             done();
@@ -314,17 +317,20 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .then(() => {
             span.end();
             const spans = getTestSpans();
-            const operationName = 'mongodb.insert';
             assertSpans(
               spans,
-              operationName,
-              SpanKind.CLIENT,
+              SemconvStability.DUPLICATE,
               'insert',
+              COLLECTION_NAME,
               undefined,
               false,
               false
             );
-            const mongoSpan = spans.find(s => s.name === operationName);
+            const mongoSpan = spans.find(
+              s =>
+                s.instrumentationScope.name ===
+                '@opentelemetry/instrumentation-mongodb'
+            );
             const dbStatement = JSON.parse(
               mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
             );
@@ -349,17 +355,20 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .then(() => {
             span.end();
             const spans = getTestSpans();
-            const operationName = 'mongodb.aggregate';
             assertSpans(
               spans,
-              operationName,
-              SpanKind.CLIENT,
+              SemconvStability.DUPLICATE,
               'aggregate',
+              '$cmd',
               undefined,
               false,
               false
             );
-            const mongoSpan = spans.find(s => s.name === operationName);
+            const mongoSpan = spans.find(
+              s =>
+                s.instrumentationScope.name ===
+                '@opentelemetry/instrumentation-mongodb'
+            );
             const dbStatement = JSON.parse(
               mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
             );
@@ -402,17 +411,20 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              const operationName = 'mongodb.insert';
               assertSpans(
                 spans,
-                operationName,
-                SpanKind.CLIENT,
+                SemconvStability.DUPLICATE,
                 'insert',
+                COLLECTION_NAME,
                 undefined,
                 false,
                 true
               );
-              const mongoSpan = spans.find(s => s.name === operationName);
+              const mongoSpan = spans.find(
+                s =>
+                  s.instrumentationScope.name ===
+                  '@opentelemetry/instrumentation-mongodb'
+              );
               const dbStatement = JSON.parse(
                 mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
               );
@@ -446,9 +458,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
               const spans = getTestSpans();
               assertSpans(
                 spans,
-                'mongodb.insert',
-                SpanKind.CLIENT,
+                SemconvStability.DUPLICATE,
                 'insert',
+                COLLECTION_NAME,
                 undefined
               );
               done();
@@ -549,9 +561,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
               const spans = getTestSpans();
               assertSpans(
                 spans,
-                'mongodb.find',
-                SpanKind.CLIENT,
+                SemconvStability.DUPLICATE,
                 'find',
+                COLLECTION_NAME,
                 undefined
               );
               done();
@@ -577,9 +589,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             const mainSpan = spans[spans.length - 1];
             assertSpans(
               spans,
-              'mongodb.insert',
-              SpanKind.CLIENT,
+              SemconvStability.DUPLICATE,
               'insert',
+              COLLECTION_NAME,
               undefined
             );
             resetMemoryExporter();
@@ -593,9 +605,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
 
                 assertSpans(
                   spans2,
-                  'mongodb.find',
-                  SpanKind.CLIENT,
+                  SemconvStability.DUPLICATE,
                   'find',
+                  COLLECTION_NAME,
                   undefined
                 );
                 assert.strictEqual(
