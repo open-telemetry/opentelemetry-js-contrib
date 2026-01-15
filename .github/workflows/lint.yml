@@ -19,6 +19,4 @@ jobs:
           node-version: 18
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Lint
-        run: |
-          npm run lint
+      - run: npm run lint
