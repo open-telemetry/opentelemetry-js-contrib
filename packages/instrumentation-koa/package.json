@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-koa",
-  "version": "0.57.1",
+  "version": "0.58.0",
   "description": "OpenTelemetry instrumentation for `koa` http web application framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -50,7 +50,7 @@
     "@koa/router": "14.0.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/context-async-hooks": "^2.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.56.0",
+    "@opentelemetry/contrib-test-utils": "^0.57.0",
     "@opentelemetry/instrumentation-http": "^0.210.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
