@@ -104,6 +104,12 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      neo4j:
+        image: 'neo4j:4.4.46'
+        ports:
+          - 7687:7687
+        env:
+          NEO4J_AUTH: neo4j/secret
       oracledb:
         image: gvenzl/oracle-free:slim
         env:
@@ -157,6 +163,7 @@ jobs:
       RUN_MONGOOSE_TESTS: 1
       RUN_MYSQL_TESTS: 1
       RUN_MSSQL_TESTS: 1
+      RUN_NEO4J_TESTS: 1
       RUN_ORACLEDB_TESTS: 1
       RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
@@ -172,6 +179,10 @@ jobs:
       MYSQL_ROOT_PASSWORD: rootpw
       MYSQL_PORT: 3306
       MYSQL_USER: otel
+      NEO4J_HOST: 127.0.0.1
+      NEO4J_PASSWORD: secret
+      NEO4J_PORT: 7687
+      NEO4J_USER: neo4j
       OPENTELEMETRY_MEMCACHED_HOST: localhost
       OPENTELEMETRY_MEMCACHED_PORT: 11211
       OPENTELEMETRY_REDIS_HOST: localhost
