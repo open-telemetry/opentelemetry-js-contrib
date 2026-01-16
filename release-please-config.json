@@ -53,6 +53,9 @@
     "packages/instrumentation-ioredis": {},
     "packages/instrumentation-knex": {},
     "packages/instrumentation-koa": {},
+    "packages/instrumentation-langchain": {
+      "skip-github-release": true
+    },
     "packages/instrumentation-memcached": {},
     "packages/instrumentation-mongodb": {},
     "packages/instrumentation-mysql": {},
