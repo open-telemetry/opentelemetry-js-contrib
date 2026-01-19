@@ -525,7 +525,7 @@ describe('oracledb', () => {
     instrumentation.setConfig({
       enhancedDatabaseReporting: false,
       dbStatementDump: false,
-      traceContextPropagation: false,
+      propagateTraceContextToSessionAction: false,
     });
   });
 
@@ -978,7 +978,7 @@ describe('oracledb', () => {
     });
 
     it('should propagate trace context via connection.action when enabled', async () => {
-      instrumentation.setConfig({ traceContextPropagation: true });
+      instrumentation.setConfig({ propagateTraceContextToSessionAction: true });
       const result = await connection.execute(
         "select sys_context('USERENV', 'ACTION') as action from dual",
         [],

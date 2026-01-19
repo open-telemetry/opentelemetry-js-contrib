@@ -365,7 +365,7 @@ export function getOracleTelemetryTraceHandlerClass(
 
       if (traceContext.fn) {
         if (
-          this._instrumentConfig.traceContextPropagation &&
+          this._instrumentConfig.propagateTraceContextToSessionAction &&
           (traceContext.operation === SpanNames.EXECUTE ||
             traceContext.operation === SpanNames.EXECUTE_MANY)
         ) {

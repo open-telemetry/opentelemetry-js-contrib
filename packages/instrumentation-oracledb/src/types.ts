@@ -97,5 +97,5 @@ export interface OracleInstrumentationConfig extends InstrumentationConfig {
    *
    * @default false
    */
-  traceContextPropagation?: boolean;
+  propagateTraceContextToSessionAction?: boolean;
 }
