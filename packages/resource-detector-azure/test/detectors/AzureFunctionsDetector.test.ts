@@ -15,8 +15,11 @@
  */
 
 import * as assert from 'assert';
-import { azureFunctionsDetector } from '../../src/detectors/AzureFunctionsDetector';
-import { azureAppServiceDetector } from '../../src/detectors/AzureAppServiceDetector';
+import {
+  azureAppServiceDetector,
+  azureContainerAppsDetector,
+  azureFunctionsDetector,
+} from '../../src';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_CLOUD_PLATFORM,
@@ -50,7 +53,7 @@ describe('AzureFunctionsDetector', () => {
     process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
 
     const resource = detectResources({
-      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+      detectors: [azureFunctionsDetector, azureAppServiceDetector, azureContainerAppsDetector],
     });
     assert.ok(resource);
     const attributes = resource.attributes;
@@ -86,7 +89,7 @@ describe('AzureFunctionsDetector', () => {
 
     const expectedWebsiteOwnerName = 'test-owner-name';
     const resource = detectResources({
-      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+      detectors: [azureFunctionsDetector, azureAppServiceDetector, azureContainerAppsDetector],
     });
     assert.ok(resource);
     const attributes = resource.attributes;
@@ -108,7 +111,7 @@ it('should detect azure functions if websiteSku is defined as FlexConsumption', 
   process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
 
   const resource = detectResources({
-    detectors: [azureFunctionsDetector, azureAppServiceDetector],
+    detectors: [azureFunctionsDetector, azureAppServiceDetector, azureContainerAppsDetector],
   });
   assert.ok(resource);
   const attributes = resource.attributes;
