@@ -25,7 +25,6 @@ export const natsHeadersGetter: TextMapGetter<MsgHdrs | undefined> = {
       return undefined;
     }
 
-    // MsgHdrs.get() returns the header value as a string directly
     return carrier.get(key);
   },
 

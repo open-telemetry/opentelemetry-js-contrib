@@ -18,12 +18,12 @@ import { Span } from '@opentelemetry/api';
 import type { Msg } from 'nats';
 
 /**
- * Hook function called after a message is published.
+ * Hook function called before a message is published.
  */
 export type PublishHook = (span: Span, info: PublishInfo) => void;
 
 /**
- * Hook function called after a message is received/processed.
+ * Hook function called before a message is received/processed.
  */
 export type ConsumeHook = (span: Span, info: ConsumeInfo) => void;
 
@@ -37,8 +37,13 @@ export interface ConsumeInfo {
 }
 
 export interface NatsInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * Hook function called before a message is published.
+   */
   publishHook?: PublishHook;
-
+  /**
+   * Hook function called before a message is received/processed.
+   */
   consumeHook?: ConsumeHook;
   /**
    * Whether to include message body size in span attributes.

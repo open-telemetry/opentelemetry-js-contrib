@@ -62,9 +62,6 @@ interface SentMessagesAttributes extends Attributes {
   [ATTR_MESSAGING_OPERATION_NAME]: string;
 }
 
-/**
- * Attributes for received messages metric.
- */
 interface ReceivedMessagesAttributes extends Attributes {
   [ATTR_MESSAGING_SYSTEM]: string;
   [ATTR_MESSAGING_DESTINATION_NAME]: string;
