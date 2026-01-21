@@ -65,9 +65,7 @@ function getTraceHandlerBaseClass(
   }
 }
 
-export function buildTraceparent(
-  spanContext: SpanContext
-): string | undefined {
+export function buildTraceparent(spanContext: SpanContext): string | undefined {
   return `00-${spanContext.traceId}-${spanContext.spanId}-0${Number(
     spanContext.traceFlags || TraceFlags.NONE
   ).toString(16)}`;

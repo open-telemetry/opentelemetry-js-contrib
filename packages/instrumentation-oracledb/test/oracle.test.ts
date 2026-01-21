@@ -36,7 +36,7 @@ import {
 import * as assert from 'assert';
 import { OracleInstrumentation } from '../src';
 import { SpanNames } from '../src/constants';
-import { buildTraceparent} from '../src/OracleTelemetryTraceHandler';
+import { buildTraceparent } from '../src/OracleTelemetryTraceHandler';
 
 import {
   ATTR_DB_NAMESPACE,
@@ -985,7 +985,7 @@ describe('oracledb', () => {
         { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
       const row = result.rows?.[0] as Record<string, string> | undefined;
-      const actionValue = row?.ACTION;        
+      const actionValue = row?.ACTION;
       const spans = memoryExporter.getFinishedSpans();
       const executeSpan = spans[spans.length - 1];
       assert.ok(executeSpan, 'expected span to verify trace propagation');
@@ -993,9 +993,7 @@ describe('oracledb', () => {
         executeSpan.name.startsWith(SpanNames.EXECUTE),
         `expected execute span, got ${executeSpan.name}`
       );
-      const expectedTraceparent = buildTraceparent(
-        executeSpan.spanContext()
-      );
+      const expectedTraceparent = buildTraceparent(executeSpan.spanContext());
       assert.strictEqual(actionValue, expectedTraceparent);
     });
 
