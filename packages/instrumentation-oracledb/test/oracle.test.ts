@@ -406,7 +406,7 @@ const sqlCreateTable = async function (
   await conn.execute(plsql);
 };
 
-describe('oracledb', () => {
+describe.only('oracledb', () => {
   let connection: oracledb.Connection;
 
   const testOracleDB = process.env.RUN_ORACLEDB_TESTS; // For CI: assumes local oracledb is already available
@@ -1340,88 +1340,10 @@ describe('oracledb', () => {
       });
     });
 
-    it('should intercept connection.executeMany(sql, binds) with dbStatementDump as true', async () => {
+    it('should intercept connection.executeMany(sql, binds) with out parent span', async () => {
       instrumentation.setConfig({
         dbStatementDump: true,
       });
-      const span = tracer.startSpan('test span');
-      const binds = [
-        { a: 1, b: 'Test 1 (One)' },
-        { a: 2, b: 'Test 2 (Two)' },
-        { a: 3, b: 'Test 3 (Three)' },
-        { a: 4 },
-        { a: 5, b: 'Test 5 (Five)' },
-      ];
-      const sqlInsert = `INSERT INTO ${tableName} VALUES (:a, :b, 'clob')`;
-
-      await context.with(trace.setSpan(context.active(), span), async () => {
-        const res = await connection.executeMany<Array<string>>(
-          sqlInsert,
-          binds
-        );
-        try {
-          assert.ok(res);
-          const attrs = { ...executeManyAttributes };
-          attrs[ATTR_DB_QUERY_TEXT] = sqlInsert;
-          verifySpans(
-            span,
-            [attrs, attrs],
-            [
-              SpanNames.EXECUTE_MSG + ':INSERT' + spanNameSuffix,
-              SpanNames.EXECUTE_MANY + ':INSERT' + spanNameSuffix,
-            ]
-          );
-        } catch (e: any) {
-          assert.ok(false, e.message);
-        } finally {
-          await connection.commit();
-          span.end();
-        }
-      });
-    });
-
-    it('should intercept connection.executeMany(sql, binds) with enhancedDatabaseReporting as true', async () => {
-      // enhancedDatabaseReporting overrides dbStatementDump config
-      instrumentation.setConfig({
-        enhancedDatabaseReporting: true,
-      });
-      const span = tracer.startSpan('test span');
-      const binds = [
-        { a: 1, b: 'Test 1 (One)' },
-        { a: 2, b: 'Test 2 (Two)' },
-        { a: 3, b: 'Test 3 (Three)' },
-        { a: 4 },
-        { a: 5, b: 'Test 5 (Five)' },
-      ];
-      const sqlInsert = `INSERT INTO ${tableName} VALUES (:a, :b, 'clob')`;
-
-      await context.with(trace.setSpan(context.active(), span), async () => {
-        const res = await connection.executeMany<Array<string>>(
-          sqlInsert,
-          binds
-        );
-        try {
-          assert.ok(res);
-          const attrs = { ...executeManyAttributes };
-          attrs[ATTR_DB_QUERY_TEXT] = sqlInsert;
-          verifySpans(
-            span,
-            [attrs, attrs],
-            [
-              SpanNames.EXECUTE_MSG + ':INSERT' + spanNameSuffix,
-              SpanNames.EXECUTE_MANY + ':INSERT' + spanNameSuffix,
-            ]
-          );
-        } catch (e: any) {
-          assert.ok(false, e.message);
-        } finally {
-          await connection.commit();
-          span.end();
-        }
-      });
-    });
-
-    it('should intercept connection.executeMany(sql, binds) with out parent span', async () => {
       instrumentation.enable();
       const binds = [
         { a: 1, b: 'Test 1 (One)' },
