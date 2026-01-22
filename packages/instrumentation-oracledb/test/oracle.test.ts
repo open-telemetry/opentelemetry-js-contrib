@@ -406,7 +406,7 @@ const sqlCreateTable = async function (
   await conn.execute(plsql);
 };
 
-describe.only('oracledb', () => {
+describe('oracledb', () => {
   let connection: oracledb.Connection;
 
   const testOracleDB = process.env.RUN_ORACLEDB_TESTS; // For CI: assumes local oracledb is already available
