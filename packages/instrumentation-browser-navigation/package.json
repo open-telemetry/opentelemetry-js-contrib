@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-browser-navigation",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "OpenTelemetry instrumentation for browser navigation events (page load and same-document navigations)",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
