@@ -46,6 +46,7 @@
   "packages/instrumentation-ioredis": "0.58.0",
   "packages/instrumentation-knex": "0.54.0",
   "packages/instrumentation-koa": "0.58.0",
+  "packages/instrumentation-langchain": "0.1.0",
   "packages/instrumentation-memcached": "0.53.0",
   "packages/instrumentation-mongodb": "0.63.0",
   "packages/instrumentation-mysql": "0.56.0",
@@ -69,5 +70,5 @@
   "packages/propagator-ot-trace": "0.29.0",
   "packages/propagator-aws-xray": "2.2.0",
   "packages/propagator-aws-xray-lambda": "0.56.0",
-  "packages/instrumentation-browser-navigation": "0.3.0"
+  "packages/instrumentation-browser-navigation": "0.3.0"in
 }

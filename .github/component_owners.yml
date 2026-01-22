@@ -117,6 +117,9 @@ components:
     # Unmaintained
   packages/instrumentation-koa: []
     # Unmaintained
+  packages/instrumentation-langchain:
+    - yiyuan-he
+    - mxiamxia
   packages/instrumentation-memcached: []
     # Unmaintained
   packages/instrumentation-mongodb:
