@@ -97,17 +97,15 @@ describe('ExceptionInstrumentation', () => {
   });
 
   describe('throwing an error', () => {
-    const instr = new ExceptionInstrumentation();
+    let disableInstrumentations: () => void;
     beforeEach(() => {
-      registerInstrumentations({
-        instrumentations: [instr],
+      disableInstrumentations = registerInstrumentations({
+        instrumentations: [new ExceptionInstrumentation()],
       });
-
-      instr.enable();
     });
 
     afterEach(() => {
-      instr.disable();
+      disableInstrumentations();
       exporter.reset();
     });
 
@@ -178,21 +176,24 @@ describe('ExceptionInstrumentation', () => {
         'app.custom.exception': error.message.toLocaleUpperCase(),
       };
     };
-    const instr = new ExceptionInstrumentation({
-      applyCustomAttributes: applyCustomAttrs,
-    });
-    beforeEach(() => {
-      registerInstrumentations({
-        instrumentations: [instr],
-      });
 
-      instr.enable();
+    let disableInstrumentations: () => void;
+
+    beforeEach(() => {
+      disableInstrumentations = registerInstrumentations({
+        instrumentations: [
+          new ExceptionInstrumentation({
+            applyCustomAttributes: applyCustomAttrs,
+          }),
+        ],
+      });
     });
 
     afterEach(() => {
-      instr.disable();
+      disableInstrumentations();
       exporter.reset();
     });
+
     it('should add custom attributes to the event', async () => {
       setTimeout(() => {
         throwErr('Something happened!');

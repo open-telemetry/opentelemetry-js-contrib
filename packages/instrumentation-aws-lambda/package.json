@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-lambda",
-  "version": "0.61.1",
+  "version": "0.63.0",
   "description": "OpenTelemetry instrumentation for AWS Lambda function invocations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -53,7 +53,7 @@
     "@opentelemetry/sdk-trace-node": "^2.0.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.208.0",
+    "@opentelemetry/instrumentation": "^0.211.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/aws-lambda": "^8.10.155"
   },

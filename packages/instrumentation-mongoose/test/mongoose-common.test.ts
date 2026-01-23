@@ -298,6 +298,7 @@ describe('mongoose instrumentation [common]', () => {
     await User.updateOne(
       { email: 'john.doe@example.com' },
       { $inc: { age: 1 } },
+      // @ts-ignore this is not allowed in all versions of mongoose.
       { skip: 0 }
     );
 

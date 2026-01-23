@@ -34,6 +34,7 @@ function runWithRegister(path: string): PromiseWithChild<{
       killSignal: 'SIGKILL', // SIGTERM is not sufficient to terminate some hangs
       env: Object.assign({}, process.env, {
         OTEL_TRACES_EXPORTER: 'console',
+        OTEL_METRICS_EXPORTER: 'none',
         OTEL_LOG_LEVEL: 'debug',
         // nx (used by lerna run) defaults `FORCE_COLOR=true`, which in
         // node v18.17.0, v20.3.0 and later results in ANSI color escapes
