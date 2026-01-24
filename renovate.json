@@ -10,16 +10,16 @@
     },
     {
       "matchUpdateTypes": ["minor"],
-      "matchManagers": ["js"],
+      "matchCategories": ["js"],
       "dependencyDashboardApproval": true
     },
     {
       "matchUpdateTypes": ["minor"],
-      "matchManagers": ["!js"],
+      "matchCategories": ["!js"],
       "schedule": ["before 3am on Monday"]
     },
     {
-      "matchManagers": ["ci"],
+      "matchCategories": ["ci"],
       "schedule": ["before 3am on Monday"]
     },
     {
