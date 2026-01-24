@@ -42,8 +42,8 @@ const wrongSql = 'SELECT foo from bar';
 
 import * as oracledb from 'oracledb';
 
-import { ATTR_DB_CLIENT_CONNECTION_POOL_NAME, ATTR_DB_CLIENT_CONNECTION_STATE, ATTR_DB_OPERATION_NAME, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE, DB_CLIENT_CONNECTION_STATE_VALUE_USED } from '../src/semconv';
-import { ATTR_ERROR_TYPE, METRIC_DB_CLIENT_OPERATION_DURATION } from '@opentelemetry/semantic-conventions';
+import { ATTR_DB_CLIENT_CONNECTION_POOL_NAME, ATTR_DB_CLIENT_CONNECTION_STATE, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE, DB_CLIENT_CONNECTION_STATE_VALUE_USED } from '../src/semconv';
+import { ATTR_ERROR_TYPE, METRIC_DB_CLIENT_OPERATION_DURATION, ATTR_DB_OPERATION_NAME } from '@opentelemetry/semantic-conventions';
 import { TestMetricReader } from '@opentelemetry/contrib-test-utils';
 
 

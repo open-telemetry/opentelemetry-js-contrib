@@ -53,7 +53,7 @@ const OUT_BIND = 3003; // bindinfo direction value.
 import { OracleInstrumentationConfig, SpanConnectionConfig } from './types';
 import { TraceSpanData, SpanCallLevelConfig } from './internal-types';
 import * as metricsUtils from './metricUtils';
-import { SpanNames, DB_SYSTEM_VALUE_ORACLE } from './constants';
+import { SpanNames } from './constants';
 
 // It dynamically retrieves the TraceHandlerBase class from the oracledb module
 // (if available) while avoiding direct imports that could cause issues if
@@ -342,7 +342,7 @@ export function getOracleTelemetryTraceHandlerClass(
       const isBatch = traceContext.operation === SpanNames.EXECUTE_MANY;
       const connAttrs = this._getConnectionSpanAttributes(traceContext.connectLevelConfig);
       let attributes: Attributes = {
-        [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_ORACLE,
+        [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
         [ATTR_DB_NAMESPACE]: connAttrs[ATTR_DB_NAMESPACE],
         [ATTR_SERVER_PORT]: connAttrs[ATTR_SERVER_PORT],
         [ATTR_SERVER_ADDRESS]: connAttrs[ATTR_SERVER_ADDRESS],
