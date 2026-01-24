@@ -1,0 +1,16 @@
+pino:
+  - versions:
+      include: '>=10.0.0 <11'
+      mode: latest-minors
+    node: ">=20"
+    commands: npm run test
+  - versions:
+      include: '>=9.0.0 <10'
+      mode: max-5
+    node: ">=18"
+    commands: npm run test
+  - versions:
+      include: '>=5.14.0 <9'
+      mode: max-3
+    node: ">=14"
+    commands: npm run test

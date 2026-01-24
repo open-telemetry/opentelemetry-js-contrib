@@ -1,0 +1,70 @@
+[
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/amazon.titan-text-lite-v1/invoke-with-response-stream",
+        "body": {
+            "inputText": "\n\nHuman: Hello, How are you today? \n\nAssistant:",
+            "textGenerationConfig": {
+                "maxTokenCount": 10,
+                "temperature": 0.8,
+                "topP": 1,
+                "stopSequences": [
+                    "|"
+                ]
+            }
+        },
+        "status": 403,
+        "response": {
+            "message": "Signature expired: 20250325T235114Z is now earlier than 20250521T072228Z (20250521T072728Z - 5 min.)"
+        },
+        "rawHeaders": [
+            "Date",
+            "Wed, 21 May 2025 07:27:28 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "114",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "f23a7276-5fad-4471-9faa-18da8cf88f0a",
+            "x-amzn-ErrorType",
+            "InvalidSignatureException:http://internal.amazon.com/coral/com.amazon.coral.service/"
+        ],
+        "responseIsBinary": false
+    },
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/amazon.titan-text-lite-v1/invoke-with-response-stream",
+        "body": {
+            "inputText": "\n\nHuman: Hello, How are you today? \n\nAssistant:",
+            "textGenerationConfig": {
+                "maxTokenCount": 10,
+                "temperature": 0.8,
+                "topP": 1,
+                "stopSequences": [
+                    "|"
+                ]
+            }
+        },
+        "status": 200,
+        "response": "0000020f0000004b4bb471ab0b3a6576656e742d747970650700056368756e6b0d3a636f6e74656e742d747970650700106170706c69636174696f6e2f6a736f6e0d3a6d6573736167652d747970650700056576656e747b226279746573223a2265794a7664585277645852555a586830496a6f694945686c624778764948526f5a584a6c4953424a4a3230675a473970626d6367643256736243346756476868626d736765573931496977696157356b5a5867694f6a4173496e527664474673543356306348563056475634644652766132567551323931626e51694f6a45774c434a6a623231776247563061573975556d566863323975496a6f695445564f523152494969776961573577645852555a586830564739725a57354462335675644349364d544d73496d467459587076626931695a57527962324e724c576c75646d396a595852706232354e5a58527961574e7a496a7037496d6c7563485630564739725a57354462335675644349364d544d73496d393164484231644652766132567551323931626e51694f6a45774c434a70626e5a765932463061573975544746305a57356a655349364e6a63344c434a6d61584a7a64454a356447564d5958526c626d4e35496a6f324e7a683966513d3d222c2270223a226162636465666768696a6b6c6d6e6f707172737475767778797a4142434445464748494a4b4c4d4e4f50515253227d0b0a144b",
+        "rawHeaders": [
+            "Date",
+            "Wed, 21 May 2025 07:27:29 GMT",
+            "Content-Type",
+            "application/vnd.amazon.eventstream",
+            "Transfer-Encoding",
+            "chunked",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "fd539077-2d10-428c-8dba-f3b397e3f67b",
+            "X-Amzn-Bedrock-Content-Type",
+            "application/json"
+        ],
+        "responseIsBinary": true
+    }
+]

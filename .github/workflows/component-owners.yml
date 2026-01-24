@@ -2,8 +2,13 @@ name: 'Component Owners'
 on:
   pull_request_target:
 
+permissions:
+  contents: read
+
 jobs:
   run_self:
+    permissions:
+      pull-requests: write # required for assigning reviewers to PRs
     runs-on: ubuntu-latest
     name: Auto Assign Owners
     steps:

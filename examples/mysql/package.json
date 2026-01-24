@@ -35,6 +35,8 @@
     "@opentelemetry/instrumentation": "^0.48.0",
     "@opentelemetry/instrumentation-http": "^0.48.0",
     "@opentelemetry/instrumentation-mysql": "^0.31.0",
+    "@opentelemetry/resources": "^1.0.0",
+    "@opentelemetry/sdk-metrics": "^1.0.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@opentelemetry/sdk-trace-node": "^1.0.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
@@ -46,6 +48,6 @@
     "@types/mysql": "^2.15.21",
     "cross-env": "^7.0.0",
     "ts-node": "^10.6.0",
-    "typescript": "4.4.4"
+    "typescript": "5.0.4"
   }
 }

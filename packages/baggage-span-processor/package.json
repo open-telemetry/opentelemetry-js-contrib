@@ -1,16 +1,18 @@
 {
   "name": "@opentelemetry/baggage-span-processor",
-  "version": "0.3.1",
+  "version": "0.5.0",
   "description": "OpenTelemetry Baggage Span Processor for Node.js",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "packages/baggage-span-processor"
+  },
   "scripts": {
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "prewatch": "npm run precompile",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/baggage-span-processor",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha test/**/*.test.ts",
@@ -27,7 +29,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=14"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "build/src/**/*.js",
@@ -41,16 +43,10 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "dependencies": {
-    "@opentelemetry/sdk-trace-base": "^1.0.0"
+    "@opentelemetry/sdk-trace-base": "^2.0.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "^1.0.0",
-    "@types/mocha": "8.2.3",
-    "@types/node": "18.18.14",
-    "expect": "29.2.0",
-    "nyc": "15.1.0",
-    "rimraf": "5.0.10",
-    "typescript": "4.4.4"
+    "@opentelemetry/api": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/baggage-span-processor#readme"
 }

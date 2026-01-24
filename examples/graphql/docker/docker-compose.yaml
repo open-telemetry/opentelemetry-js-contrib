@@ -3,7 +3,7 @@ services:
   # Collector
   collector:
     #    image: otel/opentelemetry-collector:latest
-    image: otel/opentelemetry-collector:0.38.0
+    image: otel/opentelemetry-collector:0.118.0
     command: ["--config=/conf/collector-config.yaml"]
     volumes:
       - ./collector-config.yaml:/conf/collector-config.yaml

@@ -60,19 +60,23 @@ function getSeverityNumber(level: string): SeverityNumber | undefined {
 }
 
 export function emitLogRecord(
-  record: Record<string, any>,
+  record: Record<string | symbol, any>,
   logger: Logger
 ): void {
   const { message, level, ...splat } = record;
   const attributes: LogAttributes = {};
+  // Ensures the log level is read from a symbol property, avoiding any
+  // accidental inclusion of ANSI color codes that may be present in the string
+  // property.
+  const levelSym = record[Symbol.for('level')];
   for (const key in splat) {
     if (Object.prototype.hasOwnProperty.call(splat, key)) {
       attributes[key] = splat[key];
     }
   }
   const logRecord: LogRecord = {
-    severityNumber: getSeverityNumber(level),
-    severityText: level,
+    severityNumber: getSeverityNumber(levelSym),
+    severityText: levelSym,
     body: message,
     attributes: attributes,
   };

@@ -1,9 +1,24 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 const api = require('@opentelemetry/api');
 require('./tracer')('example-hapi-server');
 
-// eslint-disable-next-line
 const Hapi = require('@hapi/hapi');
 
 const PORT = 8081;
@@ -28,27 +43,26 @@ const BlogPostPlugin = {
         method: 'GET',
         path: '/post/{id}',
         handler: showNewPost,
-      }]);
+      },
+    ]);
   },
 };
 
 async function setUp() {
-  await server.register(
-    { plugin: BlogPostPlugin },
-  );
+  await server.register({ plugin: BlogPostPlugin });
 
-  server.route(
-    {
-      method: 'GET',
-      path: '/run_test',
-      handler: runTest,
-    },
-  );
+  server.route({
+    method: 'GET',
+    path: '/run_test',
+    handler: runTest,
+  });
 
   server.ext('onRequest', async (request, h) => {
     console.log('No-op Hapi lifecycle extension method');
     const syntheticDelay = 50;
-    await new Promise((r) => setTimeout(r, syntheticDelay));
+    await new Promise(r => {
+      setTimeout(r, syntheticDelay);
+    });
     return h.continue;
   });
 
@@ -59,7 +73,7 @@ async function setUp() {
 
 /**
  *  Blog Post functions: list, add, or show posts
-*/
+ */
 const posts = ['post 0', 'post 1', 'post 2'];
 
 function addPost(_, h) {
@@ -77,7 +91,9 @@ async function showNewPost(request) {
   const post = posts[id];
   if (!post) throw new Error('Invalid post id');
   const syntheticDelay = 200;
-  await new Promise((r) => setTimeout(r, syntheticDelay));
+  await new Promise(r => {
+    setTimeout(r, syntheticDelay);
+  });
   return post;
 }
 
@@ -91,7 +107,7 @@ function runTest(_, h) {
 }
 
 setUp();
-process.on('unhandledRejection', (err) => {
+process.on('unhandledRejection', err => {
   console.log(err);
   process.exit(1);
 });

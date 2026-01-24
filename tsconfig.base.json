@@ -1,12 +1,18 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "declaration": true,
     "declarationMap": true,
+    "esModuleInterop": false,
     "forceConsistentCasingInFileNames": true,
+    "incremental": true,
     "inlineSources": true,
-    "module": "commonjs",
+    "isolatedModules": true,
+    "module": "node16",
+    "moduleResolution": "node16",
+    "newLine": "LF",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
@@ -16,11 +22,6 @@
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
-    "target": "es2017",
-    "incremental": true,
-    "newLine": "LF"
-  },
-  "exclude": [
-    "node_modules"
-  ]
+    "target": "es2022"
+  }
 }

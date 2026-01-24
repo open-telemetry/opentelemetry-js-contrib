@@ -1,0 +1,24 @@
+{
+    "NextToken": null,
+    "SamplingRuleRecords": [
+        {
+            "CreatedAt": 0.0,
+            "ModifiedAt": 1.611564245E9,
+            "SamplingRule": {
+                "Attributes": {},
+                "FixedRate": 1.00,
+                "HTTPMethod": "*",
+                "Host": "*",
+                "Priority": 10000,
+                "ReservoirSize": 1,
+                "ResourceARN": "*",
+                "RuleARN": "arn:aws:xray:us-west-2:123456789000:sampling-rule/Default",
+                "RuleName": "Default",
+                "ServiceName": "*",
+                "ServiceType": "*",
+                "URLPath": "*",
+                "Version": 1
+            }
+        }
+    ]
+}

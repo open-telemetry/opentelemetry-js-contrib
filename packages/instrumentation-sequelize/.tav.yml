@@ -1,0 +1,5 @@
+sequelize:
+  versions:
+    include: '>=6 <7'
+    mode: max-7
+  commands: npm run test

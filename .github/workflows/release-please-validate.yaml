@@ -6,17 +6,17 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   rp-validate:
     runs-on: ubuntu-latest
     container:
-      image: node:20
+      image: node:22
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install lerna
-        run: npm install -g lerna@6.6.2
+        uses: actions/checkout@v6
 
       - name: Ensure Release Please Config and Manifest are in sync with the repository
         run: node scripts/check-release-please.mjs

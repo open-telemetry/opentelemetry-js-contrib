@@ -6,6 +6,9 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   peer-api-check:
     runs-on: ubuntu-latest
@@ -13,10 +16,10 @@ jobs:
       image: node:20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install script dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Check API dependency semantics
-        run: npx lerna exec "node \$LERNA_ROOT_PATH/scripts/peer-api-check.js"
+        run: node ./scripts/peer-api-check.js

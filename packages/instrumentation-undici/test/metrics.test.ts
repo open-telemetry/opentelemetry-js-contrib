@@ -1,0 +1,181 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import * as assert from 'assert';
+
+import { context, propagation } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import {
+  AggregationTemporality,
+  DataPointType,
+  InMemoryMetricExporter,
+  MeterProvider,
+} from '@opentelemetry/sdk-metrics';
+import {
+  ATTR_ERROR_TYPE,
+  ATTR_HTTP_REQUEST_METHOD,
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  ATTR_URL_SCHEME,
+} from '@opentelemetry/semantic-conventions';
+
+import { UndiciInstrumentation } from '../src/undici';
+
+import { MockServer } from './utils/mock-server';
+import { MockMetricsReader } from './utils/mock-metrics-reader';
+
+describe('UndiciInstrumentation metrics tests', function () {
+  let instrumentation: UndiciInstrumentation;
+  const protocol = 'http';
+  const hostname = 'localhost';
+  const mockServer = new MockServer();
+  const provider = new NodeTracerProvider();
+  const metricsMemoryExporter = new InMemoryMetricExporter(
+    AggregationTemporality.DELTA
+  );
+  const metricReader = new MockMetricsReader(metricsMemoryExporter);
+  const meterProvider = new MeterProvider({
+    readers: [metricReader],
+  });
+
+  before(function (done) {
+    // Do not test if the `fetch` global API is not available
+    // This applies to nodejs < v18 or nodejs < v16.15 without the flag
+    // `--experimental-global-fetch` set
+    // https://nodejs.org/api/globals.html#fetch
+    if (typeof globalThis.fetch !== 'function') {
+      this.skip();
+    }
+
+    instrumentation = new UndiciInstrumentation();
+    instrumentation.setTracerProvider(provider);
+    instrumentation.setMeterProvider(meterProvider);
+
+    context.setGlobalContextManager(
+      new AsyncLocalStorageContextManager().enable()
+    );
+    mockServer.start(done);
+    mockServer.mockListener((req, res) => {
+      if (req.url === '/error') {
+        // Simulate an error
+        res.destroy();
+        return;
+      }
+      // Return a valid response always
+      res.statusCode = 200;
+      res.setHeader('content-type', 'application/json');
+      res.write(JSON.stringify({ success: true }));
+      res.end();
+    });
+  });
+
+  after(function (done) {
+    instrumentation?.disable();
+    context.disable();
+    propagation.disable();
+    mockServer.mockListener(undefined);
+    mockServer.stop(done);
+  });
+
+  beforeEach(function () {
+    metricsMemoryExporter.reset();
+  });
+
+  describe('with fetch API', function () {
+    before(function (done) {
+      // Do not test if the `fetch` global API is not available
+      // This applies to nodejs < v18 or nodejs < v16.15 without the flag
+      // `--experimental-global-fetch` set
+      // https://nodejs.org/api/globals.html#fetch
+      if (typeof globalThis.fetch !== 'function') {
+        this.skip();
+      }
+
+      done();
+    });
+
+    it('should report "http.client.request.duration" metric', async () => {
+      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+      await fetch(fetchUrl);
+
+      await metricReader.collectAndExport();
+      const resourceMetrics = metricsMemoryExporter.getMetrics();
+      const scopeMetrics = resourceMetrics[0].scopeMetrics;
+      const metrics = scopeMetrics[0].metrics;
+
+      assert.strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
+      assert.strictEqual(metrics.length, 1, 'metrics count');
+      assert.strictEqual(
+        metrics[0].descriptor.name,
+        'http.client.request.duration'
+      );
+      assert.strictEqual(
+        metrics[0].descriptor.description,
+        'Measures the duration of outbound HTTP requests.'
+      );
+      assert.strictEqual(metrics[0].descriptor.unit, 's');
+      assert.strictEqual(metrics[0].dataPointType, DataPointType.HISTOGRAM);
+      assert.strictEqual(metrics[0].dataPoints.length, 1);
+
+      const metricAttributes = metrics[0].dataPoints[0].attributes;
+      assert.strictEqual(metricAttributes[ATTR_URL_SCHEME], 'http');
+      assert.strictEqual(metricAttributes[ATTR_HTTP_REQUEST_METHOD], 'GET');
+      assert.strictEqual(metricAttributes[ATTR_SERVER_ADDRESS], 'localhost');
+      assert.strictEqual(metricAttributes[ATTR_SERVER_PORT], mockServer.port);
+      assert.strictEqual(metricAttributes[ATTR_HTTP_RESPONSE_STATUS_CODE], 200);
+    });
+
+    it('should have error.type in "http.client.request.duration" metric', async () => {
+      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/error`;
+
+      try {
+        await fetch(fetchUrl);
+      } catch (err) {
+        // Expected error, do nothing
+      }
+
+      await metricReader.collectAndExport();
+      const resourceMetrics = metricsMemoryExporter.getMetrics();
+      const scopeMetrics = resourceMetrics[0].scopeMetrics;
+      const metrics = scopeMetrics[0].metrics;
+
+      assert.strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
+      assert.strictEqual(metrics.length, 1, 'metrics count');
+      assert.strictEqual(
+        metrics[0].descriptor.name,
+        'http.client.request.duration'
+      );
+      assert.strictEqual(
+        metrics[0].descriptor.description,
+        'Measures the duration of outbound HTTP requests.'
+      );
+      assert.strictEqual(metrics[0].descriptor.unit, 's');
+      assert.strictEqual(metrics[0].dataPointType, DataPointType.HISTOGRAM);
+      assert.strictEqual(metrics[0].dataPoints.length, 1);
+
+      const metricAttributes = metrics[0].dataPoints[0].attributes;
+      assert.strictEqual(metricAttributes[ATTR_URL_SCHEME], 'http');
+      assert.strictEqual(metricAttributes[ATTR_HTTP_REQUEST_METHOD], 'GET');
+      assert.strictEqual(metricAttributes[ATTR_SERVER_ADDRESS], hostname);
+      assert.strictEqual(metricAttributes[ATTR_SERVER_PORT], mockServer.port);
+      assert.ok(
+        metricAttributes[ATTR_ERROR_TYPE],
+        `the metric contains "${ATTR_ERROR_TYPE}" attribute if request failed`
+      );
+    });
+  });
+});

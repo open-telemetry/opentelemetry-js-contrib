@@ -1,0 +1,33 @@
+[
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/meta.llama2-13b-chat-v1/invoke",
+        "body": {
+            "prompt": "Say this is a test",
+            "max_gen_len": 10,
+            "temperature": 0.8,
+            "top_p": 1
+        },
+        "status": 200,
+        "response": {
+            "generation": "\nHello! I am a computer program designed to",
+            "prompt_token_count": 8,
+            "generation_token_count": 10,
+            "stop_reason": "max_tokens"
+        },
+        "rawHeaders": [
+            "Date",
+            "Tue, 25 Mar 2025 23:50:27 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "139",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "c4a2516b-accc-4717-878b-8c9a9ff2fd3f"
+        ],
+        "responseIsBinary": false
+    }
+]

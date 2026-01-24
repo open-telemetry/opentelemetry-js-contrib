@@ -12,6 +12,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   build-and-cache:
     strategy:
@@ -22,22 +25,25 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       # Use the same Node.js version used for `release-please` workflow.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 18
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
+        timeout-minutes: 10
       - name: Build
         run: npm run compile
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: tav-build-cache-${{ github.run_number }}
-          path: node_modules/.cache/nx
+          path: .nx
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 1
 
   tav:
@@ -46,20 +52,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14", "16", "18", "20", "22"]
+        node: ["18", "20", "22", "24"]
     runs-on: ubuntu-latest
     services:
       mongo:
         image: mongo
         ports:
-        - 27017:27017
+          - 27017:27017
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
           MSSQL_SA_PASSWORD: mssql_passw0rd
           ACCEPT_EULA: Y
         ports:
-        - 1433:1433
+          - 1433:1433
         options: >-
           --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $MSSQL_SA_PASSWORD -C -Q 'select 1' -b -o /dev/null"
           --health-interval 1s
@@ -74,9 +80,22 @@ jobs:
           MYSQL_DATABASE: otel_mysql_database
           MYSQL_ROOT_PASSWORD: rootpw
         ports:
-        - 3306:3306
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      oracledb:
+        image: gvenzl/oracle-free:slim
+        env:
+          APP_USER: otel
+          APP_USER_PASSWORD: secret
+          ORACLE_PASSWORD: oracle
+        ports:
+          - 1521:1521
+        options: >-
+          --health-cmd "sqlplus system/oracle@//localhost/FREEPDB1"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -87,7 +106,7 @@ jobs:
           POSTGRES_DB: otel_pg_database
           POSTGRES_PASSWORD: postgres
         ports:
-        - 5432:5432
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -96,14 +115,14 @@ jobs:
       rabbitmq:
         image: rabbitmq:3
         ports:
-        - 22221:5672
+          - 22221:5672
         env:
           RABBITMQ_DEFAULT_USER: username
           RABBITMQ_DEFAULT_PASS: password
       redis:
         image: redis
         ports:
-        - 6379:6379
+          - 6379:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -122,37 +141,43 @@ jobs:
       MYSQL_USER: otel
       OPENTELEMETRY_REDIS_HOST: localhost
       OPENTELEMETRY_REDIS_PORT: 6379
+      ORACLE_HOSTNAME: localhost
+      ORACLE_PORT: 1521
+      ORACLE_CONNECTSTRING: localhost:1521/freepdb1
+      ORACLE_USER: otel
+      ORACLE_PASSWORD: secret
+      ORACLE_SERVICENAME: FREEPDB1
       POSTGRES_DB: otel_pg_database
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       RUN_MONGODB_TESTS: 1
+      RUN_MONGOOSE_TESTS: 1
       RUN_MSSQL_TESTS: 1
       RUN_MYSQL_TESTS: 1
+      RUN_ORACLEDB_TESTS: 1
       RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
-      - name: Set MySQL variables
-        run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
-      - name: Update npm to a version that supports workspaces (v7 or later)
-        if: ${{ matrix.node < 16 }}
-        run: npm install -g npm@9 # npm@9 supports node >=14.17.0
       - name: Install
+        # Post install scripts are required for some deps for successful test
+        # runs: sqlite3, better-sqlite3, and possibly esbuild.
         run: npm ci
+        timeout-minutes: 10
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: tav-build-cache-${{ github.run_number }}
-          path: node_modules/.cache/nx
+          path: .nx
       - name: Build
         run: npm run compile
       - name: Run test-all-versions

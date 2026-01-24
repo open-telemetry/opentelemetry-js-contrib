@@ -32,7 +32,10 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+
+# Build directories
 build/
+dist/
 
 # TypeScript v1 declaration files
 typings/
@@ -69,7 +72,7 @@ docs
 
 #lerna
 .changelog
-package.json.lerna_backup
+.nx
 
 # OS generated files
 .DS_Store
@@ -83,3 +86,5 @@ package.json.lerna_backup
 # version.ts file is automatically generated at compile time
 version.ts
 /.vs
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md

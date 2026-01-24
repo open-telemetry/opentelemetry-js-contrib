@@ -1,0 +1,55 @@
+[
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/chat/completions",
+        "body": {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "Answer in up to 3 words: Which ocean contains Bouvet Island?"
+                }
+            ],
+            "frequency_penalty": 0,
+            "max_tokens": 100,
+            "presence_penalty": 0,
+            "temperature": 1,
+            "top_p": 1,
+            "stop": "foo",
+            "seed": 100,
+            "response_format": {
+                "type": "text"
+            }
+        },
+        "status": 200,
+        "response": [
+            "1f8b0800000000000003000000ffff8c924f4fe33010c5eff914d69c1bd486565d7a2c7be0040758045aa1c8b5a789771d8fb1272b10ea7747764b13fe497bf1c1bf79e3f7c6f352080146c34a806a25abcedb72ddaf2f7eaaf3eee2f16cb33e9f56b7cbf6f6f2897edd991b7f0f93a4a0cd1f54fca63a51d4798b6cc8edb10a281953d7d972512dabb3f96c9141471a6d92359ecb39959d71a6aca6d5bc9c2ecbd98f83ba25a330c24afc2e8410e2259fc9a7d3f8042b319dbcdd7418a36c1056c7222120904d3720633491a563980c50916374d9fa35f5dc6270e24aa17427e3aa80db3ecae4d4f5d68e80748e58a6a4d9dfc381ec8e8e2c353ed0267e90c2d63813db3aa08ce4d2eb91c943a6bb4288879cbc7f17067ca0ce73cdf417f37355b56f07c3bc07787a604c2ced48b3987cd1acd6c8d2d8381a1c28a95ad4837298b2ecb5a1112846913f7bf9aaf73eb671cdffb41f8052e81975ed036aa3dee71dca02a665fcaeec38e26c1822867f4661cd0643fa068d5bd9dbfd8a407c8e8c5dbd35aec1e083c97b92beb1d815af000000ffff03002e1e6b642a030000"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "9607451c6e66d79b-NRT",
+            "connection": "close",
+            "content-encoding": "gzip",
+            "content-type": "application/json",
+            "date": "Thu, 17 Jul 2025 05:16:56 GMT",
+            "openai-processing-ms": "206",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-envoy-upstream-service-time": "208",
+            "x-ratelimit-limit-requests": "5000",
+            "x-ratelimit-limit-tokens": "4000000",
+            "x-ratelimit-remaining-requests": "4999",
+            "x-ratelimit-remaining-tokens": "3999982",
+            "x-ratelimit-reset-requests": "12ms",
+            "x-ratelimit-reset-tokens": "0s",
+            "x-request-id": "req_5dd31d8f9aa5eb13a6e7903923492d90"
+        },
+        "responseIsBinary": false
+    }
+]

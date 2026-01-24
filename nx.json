@@ -1,43 +1,27 @@
 {
-  "tasksRunnerOptions": {
-    "default": {
-      "runner": "nx/tasks-runners/default",
-      "options": {
-        "cacheableOperations": [
-          "compile",
-          "lint",
-          "version:update"
-        ]
-      }
-    }
-  },
   "targetDefaults": {
     "compile": {
-      "dependsOn": [
-        "version:update",
-        "^compile"
-      ],
-      "inputs": [
-        "{projectRoot}/src",
-        "{projectRoot}/test"
-      ],
-      "outputs": [
-        "{projectRoot}/build"
-      ]
+      "dependsOn": ["version:update", "^compile"],
+      "inputs": ["{projectRoot}/src/**/*.ts", "{projectRoot}/test/**/*.ts"],
+      "outputs": ["{projectRoot}/build"],
+      "cache": true
     },
-    "lint": {
-      "inputs": [
-        "{projectRoot}/src",
-        "{projectRoot}/test"
-      ]
+    "watch": {
+      "dependsOn": ["compile"]
     },
     "version:update": {
-      "inputs": [
-        "{projectRoot}/package.json"
-      ],
-      "outputs": [
-        "{projectRoot}/src/version.ts"
-      ]
+      "inputs": ["{projectRoot}/package.json"],
+      "outputs": ["{projectRoot}/src/version.ts"],
+      "cache": true
     }
-  }
+  },
+  "plugins": [
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint",
+        "cache": true
+      }
+    }
+  ]
 }

@@ -1,11 +1,11 @@
-/*!
+/*
  * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,14 +20,14 @@ module.exports = {
   browsers: ['ChromeHeadless'],
   frameworks: ['mocha'],
   coverageReporter: {
-    type : 'json',
+    type: 'json',
     subdir: '.',
-    dir : '.nyc_output/'
+    dir: '.nyc_output/',
   },
   reporters: ['spec', 'coverage'],
   files: ['test/index-webpack.ts'],
   preprocessors: {
-    'test/index-webpack*.ts': ['webpack']
+    'test/index-webpack*.ts': ['webpack'],
   },
-  webpackMiddleware: { noInfo: true }
+  webpackMiddleware: { noInfo: true },
 };
