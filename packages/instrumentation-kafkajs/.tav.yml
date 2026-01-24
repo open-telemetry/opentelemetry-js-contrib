@@ -1,5 +1,0 @@
-kafkajs:
-  - versions:
-      include: ">=0.3.0 <3"
-      mode: latest-minors
-    commands: npm run test

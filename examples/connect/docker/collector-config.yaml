@@ -3,10 +3,9 @@ receivers:
     protocols:
       grpc:
       http:
-        cors:
-          allowed_origins:
-          - http://*
-          - https://*
+        cors_allowed_origins:
+        - http://*
+        - https://*
 
 exporters:
   zipkin:
@@ -18,9 +17,6 @@ processors:
   batch:
 
 service:
-  telemetry:
-    logs:
-      level: debug
   pipelines:
     traces:
       receivers: [otlp]

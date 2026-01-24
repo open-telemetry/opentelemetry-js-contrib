@@ -1,5 +1,0 @@
-express:
-  - versions:
-      include: ">=4.16.2 <6"
-      mode: latest-minors
-    commands: npm test

@@ -18,22 +18,17 @@
         "^compile"
       ],
       "inputs": [
-        "{projectRoot}/src/**/*.ts",
-        "{projectRoot}/test/**/*.ts"
+        "{projectRoot}/src",
+        "{projectRoot}/test"
       ],
       "outputs": [
         "{projectRoot}/build"
       ]
     },
-    "watch": {
-      "dependsOn": [
-        "compile"
-      ]
-    },
     "lint": {
       "inputs": [
-        "{projectRoot}/src/**/*.ts",
-        "{projectRoot}/test/**/*.ts"
+        "{projectRoot}/src",
+        "{projectRoot}/test"
       ]
     },
     "version:update": {

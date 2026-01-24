@@ -4,11 +4,8 @@ const path = require('path');
 const packageRoot = process.cwd();
 const monorepoRoot = path.resolve(__dirname, '..');
 
-const autoInstrumentationNodeDeps = require(`${monorepoRoot}/packages/auto-instrumentations-node/package.json`).dependencies;
-const autoInstrumentationWebDeps = require(`${monorepoRoot}/packages/auto-instrumentations-web/package.json`).dependencies;
-
-// remove exempt instrumentations
-delete autoInstrumentationNodeDeps['@opentelemetry/instrumentation-fastify'];
+const autoInstrumentationNodeDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-node/package.json`).dependencies;
+const autoInstrumentationWebDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-web/package.json`).dependencies;
 
 // extract info from package.json
 const packageJsonUrl = path.resolve(`${packageRoot}/package.json`);
@@ -41,7 +38,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/${instrumentationPackageName}
-[npm-img]: https://img.shields.io/npm/v/${encodeURIComponent(instrumentationPackageName)}.svg
+[npm-img]: https://badge.fury.io/js/${encodeURIComponent(instrumentationPackageName)}.svg
 `;
 
 if (!currentReadmeContent.includes(footerToVerify)) {
@@ -62,11 +59,22 @@ if (!currentReadmeContent.includes(badgesToVerify)) {
   );
 }
 
-if (isWeb) {
+if (isNode) {
+  const distText = `If total installation size is not constrained, it is recommended to use the [\`@opentelemetry/auto-instrumentations-node\`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](\`https://www.npmjs.com/package/@opentelemetry/sdk-node\`) for the most seamless instrumentation experience.
+
+Compatible with OpenTelemetry JS API and SDK \`1.0+\`.
+`
+
+  if (!currentReadmeContent.includes(distText)) {
+    throw new Error(
+      `README.md dist text is not valid. Please add the following text to the README.md file:\n\n${distText}`
+    );
+  }
+} else if (isWeb) {
   const distText = `If total installation size is not constrained, it is recommended to use the [\`@opentelemetry/auto-instrumentations-web\`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-web) bundle with [\`@opentelemetry/sdk-trace-web\`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK \`1.0+\`.
-`;
+`;  
 
   if (!currentReadmeContent.includes(distText)) {
     throw new Error(

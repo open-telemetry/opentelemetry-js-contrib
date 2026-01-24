@@ -1,7 +1,7 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "./tsconfig.base.es5.json",
   "compilerOptions": {
-    "module": "es2022",
-    "moduleResolution": "node16"
+    "module": "ES6",
+    "moduleResolution": "node"
   }
 }

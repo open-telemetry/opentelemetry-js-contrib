@@ -1,12 +1,14 @@
 {
-  "extends": ["config:recommended"],
+  "extends": [
+    "config:base"
+  ],
   "packageRules": [
     {
       "groupName": "all patch versions",
       "groupSlug": "all-patch",
       "matchUpdateTypes": ["patch"],
-      "schedule": ["before 3am on Monday"],
-      "matchPackageNames": ["!prettier"]
+      "excludePackageNames": ["prettier"],
+      "schedule": ["before 3am on Monday"]
     },
     {
       "matchUpdateTypes": ["minor"],
@@ -53,10 +55,12 @@
     "enabled": true,
     "schedule": ["before 3am on Monday"]
   },
-  "ignoreDeps": ["lerna-changelog", "@types/node"],
+  "ignoreDeps": ["lerna", "lerna-changelog", "@types/node"],
   "ignorePaths": ["archive/**", "examples/**"],
-  "assignees": ["@dyladan", "@legendecas", "@pichlermarc", "@trentm"],
-  "schedule": ["before 3am on Friday"],
+  "assignees": ["@blumamir", "@dyladan", "@legendecas", "@pichlermarc" ],
+  "schedule": [
+    "before 3am on Friday"
+  ],
   "labels": ["dependencies"],
   "semanticCommitType": "feat"
 }

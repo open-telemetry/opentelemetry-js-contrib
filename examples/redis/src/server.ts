@@ -1,28 +1,13 @@
-/*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+'use strict';
+
+import { setupTracing } from './tracer'
+const tracer = setupTracing('example-redis-server');
 
 // Require in rest of modules
 import * as express from 'express';
-import * as axios from 'axios';
-import { randomBytes } from 'crypto';
-import { setupTracing } from './tracer';
+import axios from 'axios';
 import * as tracerHandlers from './express-tracer-handlers';
-
-const tracer = setupTracing('example-redis-server');
-const { redisPromise } = require('./setup-redis');
+const redisPromise = require('./setup-redis').redis;
 
 // Setup express
 const app = express();
@@ -35,7 +20,12 @@ async function setupRoutes() {
   const redis = await redisPromise;
 
   app.get('/run_test', async (req: express.Request, res: express.Response) => {
-    const uuid = randomBytes(16).toString('hex');
+    const uuid = Math.random()
+      .toString(36)
+      .substring(2, 15)
+      + Math.random()
+        .toString(36)
+        .substring(2, 15);
     await axios.get(`http://localhost:${PORT}/set?args=uuid,${uuid}`);
     const body = await axios.get(`http://localhost:${PORT}/get?args=uuid`);
 
@@ -46,7 +36,7 @@ async function setupRoutes() {
     }
   });
 
-  app.get('/:cmd', (req: any, res: any) => {
+  app.get('/:cmd', (req: any , res: any) => {
     if (!req.query.args) {
       res.status(400).send('No args provided');
       return;
@@ -68,10 +58,8 @@ async function setupRoutes() {
 
 // Setup express routes & middleware
 app.use(tracerHandlers.getMiddlewareTracer(tracer));
-setupRoutes()
-  .then(() => {
-    app.use(tracerHandlers.getErrorTracer(tracer));
-    app.listen(PORT);
-    console.log(`Listening on http://localhost:${PORT}`);
-  })
-  .catch(err => console.log(err));
+setupRoutes().then(() => {
+  app.use(tracerHandlers.getErrorTracer(tracer));
+  app.listen(PORT);
+  console.log(`Listening on http://localhost:${PORT}`);
+});

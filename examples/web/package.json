@@ -5,11 +5,9 @@
   "description": "Example of using web plugins in browser",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint . --ext=ts,js,mjs",
-    "lint:fix": "eslint . --ext=ts,js,mjs --fix",
-    "docker:start": "cd ./docker && docker compose down && docker compose up",
-    "docker:startd": "cd ./docker && docker compose down && docker compose up -d",
-    "start": "webpack-dev-server --progress --color --port 8090 --config ./webpack.config.js --hot --host 0.0.0.0"
+    "docker:start": "cd ./docker && docker-compose down && docker-compose up",
+    "docker:startd": "cd ./docker && docker-compose down && docker-compose up -d",
+    "start": "webpack-dev-server -d --progress --colors --port 8090 --config webpack.config.js --hot --inline --host 0.0.0.0 --content-base examples"
   },
   "repository": {
     "type": "git",
@@ -33,23 +31,20 @@
     "babel-loader": "^8.3.0",
     "ts-loader": "^6.2.2",
     "webpack": "5.89.0",
-    "webpack-cli": "^5.0.0",
-    "webpack-dev-server": "^4.0.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.3",
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.4.1",
     "@opentelemetry/auto-instrumentations-web": "^0.32.2",
     "@opentelemetry/context-zone": "^1.13.0",
-    "@opentelemetry/core": "^1.13.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.39.1",
     "@opentelemetry/instrumentation": "^0.39.1",
     "@opentelemetry/instrumentation-document-load": "^0.32.2",
     "@opentelemetry/instrumentation-user-interaction": "^0.32.3",
     "@opentelemetry/instrumentation-xml-http-request": "^0.39.1",
     "@opentelemetry/propagator-b3": "^1.13.0",
-    "@opentelemetry/resources": "^1.13.0",
-    "@opentelemetry/sdk-trace-base": "^1.13.0",
     "@opentelemetry/sdk-trace-web": "^1.13.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },

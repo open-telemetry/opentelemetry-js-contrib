@@ -1,0 +1,5 @@
+redis:
+  versions:
+    include: '>=2.6.0 <4'
+    mode: latest-minors
+  commands: npm run test

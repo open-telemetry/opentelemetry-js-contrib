@@ -1,11 +1,12 @@
+import { strict as assert } from 'assert';
+import * as childProcess from 'child_process';
 import path from 'path';
 import { readFileSync } from 'fs';
-import { globSync } from 'glob';
 
 /*
 	Enumerates through
 
-	- workspace packages,
+	- lerna packages,
 	- release please's manifest, and
 	- release please's config, and
 
@@ -22,32 +23,28 @@ const PROJECT_ROOT = process.cwd();
 const readJson = (filePath) => {
 	return JSON.parse(readFileSync(filePath));
 };
-
-const getPackages = () => {
-	const TOP = process.cwd();
-	const pj = readJson(path.join(TOP, 'package.json'));
-	return pj.workspaces
-		.map((wsGlob) => globSync(path.join(wsGlob, 'package.json')))
-		.flat()
-		.map((p) => {
-			const pkgInfo = readJson(p);
-			pkgInfo.location = path.dirname(p);
-			pkgInfo.relativeLocation = path.relative(PROJECT_ROOT, pkgInfo.location);
-			return pkgInfo;
-		});
+const getProcessOutput = (cmd, args) => {
+	const result = childProcess.spawnSync(cmd, args);
+	assert(!result.error, result.error);
+	return result.stdout.toString('utf8');
 }
 
-const pkgList = getPackages();
+const lernaList = JSON
+	.parse(getProcessOutput('npx', ['lerna', 'list', '--json', '-a']))
+	.map((pkgInfo) => {
+		pkgInfo.relativeLocation = path.relative(PROJECT_ROOT, pkgInfo.location);
+		return pkgInfo;
+	});
 const manifest = readJson('.release-please-manifest.json');
 const config = readJson('release-please-config.json');
 
-const packageLocations = new Set(
-  pkgList.map((pkgInfo) => pkgInfo.relativeLocation)
+const lernaPackages = new Set(
+  lernaList.map((pkgInfo) => pkgInfo.relativeLocation)
 );
 const manifestPackages = new Set(Object.keys(manifest));
 const configPackages = new Set(Object.keys(config.packages));
 
-pkgList.forEach((pkgInfo) => {
+lernaList.forEach((pkgInfo) => {
   const relativeLocation = pkgInfo.relativeLocation
   if (pkgInfo.private) {
     // Should be in config, with `skip-github-release` option.
@@ -74,14 +71,14 @@ pkgList.forEach((pkgInfo) => {
 
 manifestPackages.forEach((relativeLocation) => {
 	logErrorIf(
-		!packageLocations.has(relativeLocation),
+		!lernaPackages.has(relativeLocation),
 		`Extraneous path ${relativeLocation} in .release-please-manifest.json`
 	);
 });
 
 configPackages.forEach((relativeLocation) => {
 	logErrorIf(
-		!packageLocations.has(relativeLocation),
+		!lernaPackages.has(relativeLocation),
 		`Extraneous path ${relativeLocation} in release-please-config.json`
 	);
 });

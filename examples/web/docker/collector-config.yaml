@@ -3,10 +3,9 @@ receivers:
     protocols:
       grpc:
       http:
-        cors:
-          allowed_origins:
-            - http://*
-            - https://*
+        cors_allowed_origins:
+          - http://*
+          - https://*
 
 exporters:
   zipkin:

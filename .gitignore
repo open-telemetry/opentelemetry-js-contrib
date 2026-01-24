@@ -69,7 +69,7 @@ docs
 
 #lerna
 .changelog
-.nx
+package.json.lerna_backup
 
 # OS generated files
 .DS_Store
