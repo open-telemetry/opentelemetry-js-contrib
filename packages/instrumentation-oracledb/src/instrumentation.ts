@@ -1,6 +1,5 @@
 /*
  * Copyright The OpenTelemetry Authors
- * Copyright (c) 2025, Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +12,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
+ *
+ * Copyright (c) 2025, Oracle and/or its affiliates.
+ * */
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
-import type * as oracleDBTypes from 'oracledb';
-import { OracleInstrumentationConfig } from './types';
-import { getOracleTelemetryTraceHandlerClass } from './OracleTelemetryTraceHandler';
+import * as oracleDBTypes from 'oracledb';
+import { OracleInstrumentationConfig} from './types';
+import * as metrics from './metricUtils';
+import { MeterProvider } from '@opentelemetry/api';
+import { getOracleTelemetryTraceMetricHandlerClass } from './OracleTelemetryTraceHandler';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -30,9 +32,19 @@ export class OracleInstrumentation extends InstrumentationBase {
 
   constructor(config: OracleInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    metrics._setMetricInstruments(this.meter);
+  }
+
+  override setMeterProvider(meterProvider: MeterProvider) {
+    super.setMeterProvider(meterProvider);
+  }
+
+  protected override _updateMetricInstruments(): void {
+    metrics._setMetricInstruments(this.meter)
   }
 
   protected init() {
+
     const moduleOracleDB = new InstrumentationNodeModuleDefinition(
       'oracledb',
       [">=6.0.0 <7", "7.0.0-dev"], // TODO: "7.0.0-dev" to be removed in final commit
@@ -46,11 +58,10 @@ export class OracleInstrumentation extends InstrumentationBase {
           this._tmHandler = null;
         }
         const config = this.getConfig();
-        const thClass = getOracleTelemetryTraceHandlerClass(moduleExports);
+        const thClass = getOracleTelemetryTraceMetricHandlerClass(moduleExports);
         if (thClass) {
           const obj = new thClass(() => this.tracer, config);
           obj.enable();
-
           // Register the instance with oracledb.
           (moduleExports as any).traceHandler.setTraceInstance(obj);
           this._tmHandler = obj;
@@ -59,7 +70,7 @@ export class OracleInstrumentation extends InstrumentationBase {
       },
       moduleExports => {
         if (this._tmHandler) {
-          (moduleExports as any).traceHandler.setTraceInstance();
+          (moduleExports as any).traceHandler.setTraceInstance();          
           this._tmHandler = null;
         }
       }

@@ -1422,9 +1422,6 @@ describe('oracledb', () => {
     });
 
     it('should intercept connection.executeMany(sql, binds) with out parent span', async () => {
-      instrumentation.setConfig({
-        dbStatementDump: true,
-      });
       instrumentation.enable();
       const binds = [
         { a: 1, b: 'Test 1 (One)' },

@@ -14,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright (c) 2025, Oracle and/or its affiliates.
- * */
+ */
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
   Span,
@@ -25,6 +24,8 @@ import {
   SpanKind,
   trace,
   diag,
+  HrTime,
+  Attributes,
 } from '@opentelemetry/api';
 import {
   ATTR_DB_NAMESPACE,
@@ -69,7 +70,7 @@ function getTraceHandlerBaseClass(
   }
 }
 
-export function getOracleTelemetryTraceHandlerClass(
+export function getOracleTelemetryTraceMetricHandlerClass(
   obj: typeof oracleDBTypes
 ): any {
   const traceHandlerBase = getTraceHandlerBaseClass(obj);
@@ -78,13 +79,13 @@ export function getOracleTelemetryTraceHandlerClass(
   }
 
   /**
-   * OracleTelemetryTraceHandler extends TraceHandlerBase from oracledb module
+   * OracleTelemetryTraceMetricHandler extends TraceHandlerBase from oracledb module
    * It implements the abstract methods; `onEnterFn`, `onExitFn`,
    * `onBeginRoundTrip` and `onEndRoundTrip` of TraceHandlerBase class.
    * Inside these overridden methods, the input traceContext data is used
    * to generate attributes for span.
    */
-  class OracleTelemetryTraceHandler extends traceHandlerBase {
+  class OracleTelemetryTraceMetricHandler extends traceHandlerBase {
     private _getTracer: () => Tracer;
     private _instrumentConfig: OracleInstrumentationConfig;
 
@@ -116,6 +117,7 @@ export function getOracleTelemetryTraceHandlerClass(
 
     // Returns the connection related Attributes for
     // semantic standards and module custom keys.
+    
     private _getConnectionSpanAttributes(config: SpanConnectionConfig) {
       return {
         [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
@@ -296,7 +298,7 @@ export function getOracleTelemetryTraceHandlerClass(
       }
 
       const { instanceName, pdbName, serviceName } = connectLevelConfig;
-      const dbName = this._getDBNameSpace(instanceName, pdbName, serviceName);
+      const dbName = metricsUtils.getDBNameSpace(instanceName, pdbName, serviceName);
       const sqlCommand =
         callLevelConfig?.statement?.split(' ')[0].toUpperCase() || '';
       userContext.span.updateName(

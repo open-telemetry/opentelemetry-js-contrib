@@ -34,6 +34,13 @@ export interface SpanConnectionConfig {
   poolIncrement?: number;
 }
 
+export interface PoolConnectionsCounter {
+  idle: number;
+  pending: number;
+  used: number;
+  timeouts: number;
+}
+
 export interface OracleRequestHookInformation {
   inputArgs: any;
   connection: SpanConnectionConfig;
