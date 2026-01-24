@@ -1,0 +1,43 @@
+{
+  "run": {
+    "command": "nx run-many -t test",
+    "startTime": "2025-12-21T11:30:21.331Z",
+    "endTime": "2025-12-21T11:30:23.691Z",
+    "inner": false
+  },
+  "tasks": [
+    {
+      "taskId": "@opentelemetry/propagator-aws-xray:test",
+      "target": "test",
+      "projectName": "@opentelemetry/propagator-aws-xray",
+      "hash": "16722884133981407029",
+      "startTime": "2025-12-21T11:30:21.379Z",
+      "endTime": "2025-12-21T11:30:23.396Z",
+      "params": "",
+      "cacheStatus": "cache-miss",
+      "status": 0
+    },
+    {
+      "taskId": "@opentelemetry/propagator-aws-xray-lambda:test",
+      "target": "test",
+      "projectName": "@opentelemetry/propagator-aws-xray-lambda",
+      "hash": "2865633975079121287",
+      "startTime": "2025-12-21T11:30:21.379Z",
+      "endTime": "2025-12-21T11:30:23.531Z",
+      "params": "",
+      "cacheStatus": "cache-miss",
+      "status": 1
+    },
+    {
+      "taskId": "@opentelemetry/instrumentation-fs:test",
+      "target": "test",
+      "projectName": "@opentelemetry/instrumentation-fs",
+      "hash": "7325172120914512055",
+      "startTime": "2025-12-21T11:30:21.379Z",
+      "endTime": "2025-12-21T11:30:23.551Z",
+      "params": "",
+      "cacheStatus": "cache-miss",
+      "status": 1
+    }
+  ]
+}

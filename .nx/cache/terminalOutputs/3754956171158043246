@@ -1,0 +1,26 @@
+[1mnpm[22m [33mwarn[39m [94mUnknown env config "no-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown env config "http-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "http_proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "HTTP_PROXY". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "http-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "https_proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "HTTPS_PROXY". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "no-proxy". This will stop working in the next major version of npm.[39m
+
+> @opentelemetry/propagation-utils@0.31.7 test
+> nyc mocha 'test/**/*.test.ts' --grep 321. tracePoolEvents.js
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[33mWarning: Cannot find any files matching pattern "tracePoolEvents.js"[39m
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+
+
+[92m [0m[32m 0 passing[0m[90m (0ms)[0m
+
+-----------------------|---------|----------|---------|---------|--------------------------------------
+File                   | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                    
+-----------------------|---------|----------|---------|---------|--------------------------------------
+[31;1mAll files             [0m | [31;1m  13.23[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m  13.63[0m | [31;1m                                    [0m 
+[31;1m pubsub-propagation.ts[0m | [31;1m  13.23[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m  13.63[0m | [31;1m43-61,70-124,135-147,159-206,232-243[0m 
+-----------------------|---------|----------|---------|---------|--------------------------------------
+⠙[1G[0K

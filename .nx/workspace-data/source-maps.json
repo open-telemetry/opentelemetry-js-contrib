@@ -1,0 +1,822 @@
+{
+  "packages/baggage-span-processor": {
+    "root": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "name": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "tags": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:public": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:opentelemetry": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:nodejs": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:tracing": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:baggage": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:plugin": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.0": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.1": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.2": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.3": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.4": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.5": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.6": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.7": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.8": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.9": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.description": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js.packageName": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js.packageMain": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js.isInPackageManagerWorkspaces": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.executor": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.options": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.metadata": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.options.script": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.metadata.scriptContent": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.metadata.runCommand": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.executor": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.options": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.metadata": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.options.script": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.metadata.scriptContent": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.metadata.runCommand": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.executor": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.options": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.metadata": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.options.script": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.metadata.scriptContent": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.metadata.runCommand": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.executor": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.options": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.metadata": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.options.script": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.metadata.scriptContent": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.metadata.runCommand": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.executor": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.options": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.metadata": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.options.script": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.metadata.scriptContent": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.metadata.runCommand": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.executor": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.options": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.metadata": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.options.script": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.metadata.scriptContent": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.metadata.runCommand": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.executor": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.options": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.metadata": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.options.script": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.metadata.scriptContent": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.metadata.runCommand": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.executor": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.options": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.metadata": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.options.script": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.metadata.scriptContent": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.metadata.runCommand": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.executor": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.options": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.metadata": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.options.script": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.metadata.scriptContent": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.metadata.runCommand": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.watch": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.watch.executor": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.watch.options": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.watch.metadata": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.watch.options.script": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.watch.metadata.scriptContent": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.watch.metadata.runCommand": [
+      "packages/baggage-span-processor/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.dependsOn": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.compile.inputs": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.compile.outputs": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.compile.parallelism": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.lint.inputs": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.lint.parallelism": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.version:update.inputs": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.version:update.outputs": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.version:update.parallelism": [
+      "nx.json",
+      "nx/target-defaults"
+    ]
+  },
+  "packages/winston-transport": {
+    "root": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "name": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "tags": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:public": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:transport": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:logging": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:nodejs": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:opentelemetry": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:winston": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.0": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.1": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.2": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.3": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.4": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.5": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.6": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.7": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.8": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.description": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js.packageName": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js.packageMain": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js.isInPackageManagerWorkspaces": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.executor": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.options": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.metadata": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.options.script": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.metadata.scriptContent": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test.metadata.runCommand": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.executor": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.options": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.metadata": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.options.script": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.metadata.scriptContent": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.tdd.metadata.runCommand": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.executor": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.options": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.metadata": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.options.script": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.metadata.scriptContent": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.clean.metadata.runCommand": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.executor": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.options": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.metadata": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.options.script": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.metadata.scriptContent": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.metadata.runCommand": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.executor": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.options": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.metadata": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.options.script": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.metadata.scriptContent": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.metadata.runCommand": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.executor": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.options": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.metadata": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.options.script": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.metadata.scriptContent": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prewatch.metadata.runCommand": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.executor": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.options": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.metadata": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.options.script": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.metadata.scriptContent": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.prepublishOnly.metadata.runCommand": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.executor": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.options": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.metadata": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.options.script": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.metadata.scriptContent": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.version:update.metadata.runCommand": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.executor": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.options": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.metadata": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.options.script": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.metadata.scriptContent": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.compile.metadata.runCommand": [
+      "packages/winston-transport/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint.inputs": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.lint.parallelism": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.version:update.inputs": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.version:update.outputs": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.version:update.parallelism": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.compile.dependsOn": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.compile.inputs": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.compile.outputs": [
+      "nx.json",
+      "nx/target-defaults"
+    ],
+    "targets.compile.parallelism": [
+      "nx.json",
+      "nx/target-defaults"
+    ]
+  }
+}

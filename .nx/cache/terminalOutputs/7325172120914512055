@@ -1,0 +1,69 @@
+Debugger attached.
+Debugger attached.
+[1mnpm[22m [33mwarn[39m [94mUnknown env config "no-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown env config "http-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "http_proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "HTTP_PROXY". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "http-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "https_proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "HTTPS_PROXY". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "no-proxy". This will stop working in the next major version of npm.[39m
+
+> @opentelemetry/instrumentation-fs@0.25.1 test
+> nyc --no-clean mocha 'test/**/*.test.ts'
+
+Debugger attached.
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+Debugger attached.
+
+ Exception during run: /Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/instrumentation-fs/test/fs.test.ts:41
+    
+  > const createHook = <CreateHook>sinon.spy(
+      (fnName: FMember | FPMember, { args, span }) => {
+        // `ts-node`, which we use via `mocha` also patches module loading and
+        // creates a lot of unrelated spans. Filter those out.
+        if (['readFileSync', 'existsSync'].includes(fnName as string)) {
+          const filename = args[0];
+          if (!/test\/fixtures/.test(filename)) {
+            return false;
+          }
+        }
+        return true;
+      }
+  > );
+    const endHook = <EndHook>sinon.spy((fnName, { args, span }) => {
+
+SyntaxError: The angle-bracket syntax for type assertions, `<T>expr`, is not supported in type strip mode. Instead, use the 'as' syntax: `expr as T`.
+[90m    at parseTypeScript (node:internal/modules/typescript:68:40)[39m
+[90m    at processTypeScriptCode (node:internal/modules/typescript:146:42)[39m
+[90m    at stripTypeScriptModuleTypes (node:internal/modules/typescript:209:22)[39m
+[90m    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:148:26)[39m
+[90m    at defaultGetFormat (node:internal/modules/esm/get_format:211:36)[39m
+[90m    at defaultLoad (node:internal/modules/esm/load:94:16)[39m
+[90m    at ModuleLoader.load (node:internal/modules/esm/loader:833:12)[39m
+[90m    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:604:31)[39m
+[90m    at ModuleLoader.#createModuleJob (node:internal/modules/esm/loader:635:36)[39m
+[90m    at ModuleLoader.#getJobFromResolveResult (node:internal/modules/esm/loader:348:34)[39m
+[90m    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:313:41)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+[90m    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:677:25)[39m {
+  code: [32m'ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX'[39m
+}
+Waiting for the debugger to disconnect...
+--------------------|---------|----------|---------|---------|-------------------
+File                | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+--------------------|---------|----------|---------|---------|-------------------
+[31;1mAll files          [0m | [31;1m   2.43[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m   2.46[0m | [31;1m                 [0m 
+[31;1m instrumentation.ts[0m | [31;1m   2.43[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m   2.46[0m | [31;1m26-479           [0m 
+--------------------|---------|----------|---------|---------|-------------------
+Waiting for the debugger to disconnect...
+⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `test` failed with error:
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m1[39m
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/instrumentation-fs
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m @opentelemetry/instrumentation-fs@0.25.1
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/instrumentation-fs
+⠙[1G[0K[1mnpm[22m [31merror[39m command failed
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c nyc --no-clean mocha 'test/**/*.test.ts'
+⠙[1G[0KWaiting for the debugger to disconnect...
+Waiting for the debugger to disconnect...
+Waiting for the debugger to disconnect...

@@ -1,0 +1,66 @@
+[1mnpm[22m [33mwarn[39m [94mUnknown env config "no-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown env config "http-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "http_proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "HTTP_PROXY". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "http-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "https_proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "HTTPS_PROXY". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "no-proxy". This will stop working in the next major version of npm.[39m
+
+> @opentelemetry/instrumentation-mongoose@0.52.2 test
+> npm run test-v5-v6 --grep 321. tracePoolEvents.js
+
+[1mnpm[22m [33mwarn[39m [94m"321." is being parsed as a normal command line argument.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown cli config "--grep". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown env config "no-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown env config "http-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "http_proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "HTTP_PROXY". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "http-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "https_proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "HTTPS_PROXY". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "no-proxy". This will stop working in the next major version of npm.[39m
+
+> @opentelemetry/instrumentation-mongoose@0.52.2 test-v5-v6
+> nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/mongoose-common.test.ts' 'test/**/mongoose-v5-v6.test.ts' 321. tracePoolEvents.js
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+/Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/node_modules/mocha/lib/cli/options.js:138
+    throw createUnsupportedError(
+    ^
+
+Error: Option 321 is unsupported by the mocha cli
+    at createUnsupportedError (/Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/node_modules/[4mmocha[24m/lib/errors.js:126:13)
+    at createErrorForNumericPositionalArg (/Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/node_modules/[4mmocha[24m/lib/cli/options.js:138:11)
+    at parse (/Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/node_modules/[4mmocha[24m/lib/cli/options.js:189:5)
+    at loadOptions (/Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/node_modules/[4mmocha[24m/lib/cli/options.js:291:14)
+    at Object.<anonymous> (/Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/node_modules/[4mmocha[24m/bin/mocha.js:29:14)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1738:14)[39m
+    at Module.replacementCompile (/Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/node_modules/[4mappend-transform[24m/index.js:60:13)
+[90m    at node:internal/modules/cjs/loader:1871:10[39m
+    at Object.<anonymous> (/Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/node_modules/[4mappend-transform[24m/index.js:64:4)
+[90m    at Module.load (node:internal/modules/cjs/loader:1470:32)[39m {
+  code: [32m'ERR_MOCHA_UNSUPPORTED'[39m
+}
+
+Node.js v24.7.0
+----------|---------|----------|---------|---------|-------------------
+File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+----------|---------|----------|---------|---------|-------------------
+All files |       0 |        0 |       0 |       0 | [31;1m                 [0m 
+----------|---------|----------|---------|---------|-------------------
+⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `test-v5-v6` failed with error:
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m1[39m
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/instrumentation-mongoose
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m @opentelemetry/instrumentation-mongoose@0.52.2
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/instrumentation-mongoose
+⠙[1G[0K[1mnpm[22m [31merror[39m command failed
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/mongoose-common.test.ts' 'test/**/mongoose-v5-v6.test.ts' 321. tracePoolEvents.js
+⠙[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `test` failed with error:
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m1[39m
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/instrumentation-mongoose
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m @opentelemetry/instrumentation-mongoose@0.52.2
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/instrumentation-mongoose
+⠙[1G[0K[1mnpm[22m [31merror[39m command failed
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c npm run test-v5-v6 --grep 321. tracePoolEvents.js
+⠙[1G[0K

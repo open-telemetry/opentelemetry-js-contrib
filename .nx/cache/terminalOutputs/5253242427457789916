@@ -1,0 +1,51 @@
+[1mnpm[22m [33mwarn[39m [94mUnknown env config "no-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown env config "http-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "http_proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "HTTP_PROXY". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "http-proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "https_proxy". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "HTTPS_PROXY". This will stop working in the next major version of npm.[39m
+[1mnpm[22m [33mwarn[39m [94mUnknown user config "no-proxy". This will stop working in the next major version of npm.[39m
+
+> @opentelemetry/sampler-aws-xray@0.1.1 test
+> nyc mocha 'test/**/*.test.ts' --grep 321. tracePoolEvents.js
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[33mWarning: Cannot find any files matching pattern "tracePoolEvents.js"[39m
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+
+ Exception during run: Error: Cannot find module '/Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/sampler-aws-xray/src/fallback-sampler' imported from /Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/sampler-aws-xray/test/fallback-sampler.test.ts
+[90m    at finalizeResolution (node:internal/modules/esm/resolve:274:11)[39m
+[90m    at moduleResolve (node:internal/modules/esm/resolve:864:10)[39m
+[90m    at defaultResolve (node:internal/modules/esm/resolve:990:11)[39m
+[90m    at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:749:20)[39m
+[90m    at ModuleLoader.resolve (node:internal/modules/esm/loader:726:38)[39m
+[90m    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:312:38)[39m
+[90m    at ModuleJob.#link (node:internal/modules/esm/module_job:208:49)[39m {
+  code: [32m'ERR_MODULE_NOT_FOUND'[39m,
+  url: [32m'file:///Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/sampler-aws-xray/src/fallback-sampler'[39m
+}
+-----------------------------|---------|----------|---------|---------|--------------------
+File                         | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s  
+-----------------------------|---------|----------|---------|---------|--------------------
+[31;1mAll files                   [0m | [31;1m  15.21[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m  15.47[0m | [31;1m                  [0m 
+[31;1m aws-xray-sampling-client.ts[0m | [31;1m  11.76[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m  12.12[0m | [31;1m36-114            [0m 
+[31;1m fallback-sampler.ts        [0m | [31;1m     30[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m     30[0m | [31;1m36-66             [0m 
+[31;1m rate-limiter.ts            [0m | [31;1m   6.66[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m   6.66[0m | [31;1m34-63             [0m 
+[31;1m rate-limiting-sampler.ts   [0m | [31;1m  33.33[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m  33.33[0m | [31;1m34-56             [0m 
+[31;1m remote-sampler.ts          [0m | [31;1m   8.53[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m   8.64[0m | [31;1m54-345            [0m 
+[31;1m rule-cache.ts              [0m | [31;1m   8.33[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m   8.33[0m | [31;1m43-157            [0m 
+[31;1m sampling-rule-applier.ts   [0m | [31;1m  12.34[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m   12.5[0m | [31;1m82-263            [0m 
+[31;1m sampling-rule.ts           [0m | [31;1m   4.54[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m   4.54[0m | [31;1m42-75             [0m 
+[32;1m semconv.ts                 [0m | [32;1m    100[0m | [32;1m     100[0m | [32;1m    100[0m | [32;1m    100[0m | [33;1m                  [0m 
+[31;1m statistics.ts              [0m | [31;1m   12.5[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m   12.5[0m | [31;1m29-45             [0m 
+[31;1m utils.ts                   [0m | [31;1m  16.12[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m  17.85[0m | [31;1m42-46,53-68,75-103[0m 
+-----------------------------|---------|----------|---------|---------|--------------------
+⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `test` failed with error:
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m1[39m
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/sampler-aws-xray
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m @opentelemetry/sampler-aws-xray@0.1.1
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /Users/prajalgupta/Documents/work/otcopy/opentelemetry-js-contrib-oracle/packages/sampler-aws-xray
+⠙[1G[0K[1mnpm[22m [31merror[39m command failed
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c nyc mocha 'test/**/*.test.ts' --grep 321. tracePoolEvents.js
+⠙[1G[0K
