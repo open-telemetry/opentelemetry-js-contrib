@@ -13,8 +13,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
+
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
   Span,
@@ -117,7 +117,6 @@ export function getOracleTelemetryTraceMetricHandlerClass(
 
     // Returns the connection related Attributes for
     // semantic standards and module custom keys.
-    
     private _getConnectionSpanAttributes(config: SpanConnectionConfig) {
       return {
         [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
@@ -409,15 +408,11 @@ export function getOracleTelemetryTraceMetricHandlerClass(
         );
       }
 
-      switch (traceContext.operation) {
-        case SpanNames.EXECUTE:
-          this._handleExecuteCustomRequest(
-            traceContext.userContext.span,
-            traceContext
-          );
-          break;
-        default:
-          break;
+      if (traceContext.operation === SpanNames.EXECUTE) {
+        this._handleExecuteCustomRequest(
+          traceContext.userContext.span,
+          traceContext
+        );
       }
     }
 
@@ -464,7 +459,7 @@ export function getOracleTelemetryTraceMetricHandlerClass(
         span: this._getTracer().startSpan(spanName, {
           kind: SpanKind.CLIENT,
           attributes: spanAttrs,
-        })
+        }),
       };
     }
 

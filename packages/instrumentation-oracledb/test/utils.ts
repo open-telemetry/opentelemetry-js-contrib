@@ -1,5 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
+ * Copyright (c) 2025, Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +13,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (c) 2025, Oracle and/or its affiliates.
- * */
+ */
+
 import * as oracledb from 'oracledb';
 
 export const CONFIG = {
@@ -72,26 +72,3 @@ export async function sqlCreateTable(
   `;
   await conn.execute(plsql);
 }
-
-export const metricsDescription = [{
-  description:
-    'The number of connections that are currently in state described by the state attribute.',
-  unit: '{connection}',
-}, {
-  description:
-    'The number of current pending requests for an open connection.',
-  unit: '{request}',
-}, {
-  description:
-    'The number of connection timeouts that have occurred trying to obtain a connection from the pool.',
-  unit: '{timeout}',
-}, {
-  description: 'Duration of database client operations.',
-  unit: 's',
-  valueType: 1,
-  advice: {
-    explicitBucketBoundaries: [
-      0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10,
-    ],
-  },
-}]

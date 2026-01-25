@@ -22,7 +22,6 @@ import { SpanConnectionConfig } from './types';
 // onEnterFn returns this Context(contains only span for now) and it is
 // received in onExitFn to end the span.
 export interface InstrumentationContext {
-  connectionsOpen?: number;
   span: api.Span;
   startTime?:api.HrTime;
 }
