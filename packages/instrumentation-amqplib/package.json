@@ -59,7 +59,7 @@
     "@types/amqplib": "^0.10.7",
     "@types/lodash": "4.17.21",
     "amqplib": "0.8.0",
-    "lodash": "4.17.21"
+    "lodash": "4.17.23"
   },
   "engines": {
     "node": "^18.19.0 || >=20.6.0"
