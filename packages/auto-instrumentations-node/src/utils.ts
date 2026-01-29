@@ -298,7 +298,6 @@ export function getResourceDetectorsFromEnv(): Array<ResourceDetector> {
     ResourceDetector | ResourceDetector[]
   >([
     [RESOURCE_DETECTOR_CONTAINER, containerDetector],
-    [RESOURCE_DETECTOR_ENVIRONMENT, envDetector],
     [RESOURCE_DETECTOR_HOST, hostDetector],
     [RESOURCE_DETECTOR_OS, osDetector],
     [RESOURCE_DETECTOR_SERVICE_INSTANCE_ID, serviceInstanceIdDetector],
@@ -319,6 +318,7 @@ export function getResourceDetectorsFromEnv(): Array<ResourceDetector> {
       RESOURCE_DETECTOR_AZURE,
       [azureAppServiceDetector, azureFunctionsDetector, azureVmDetector],
     ],
+    [RESOURCE_DETECTOR_ENVIRONMENT, envDetector],
   ]);
 
   const resourceDetectorsFromEnv =
