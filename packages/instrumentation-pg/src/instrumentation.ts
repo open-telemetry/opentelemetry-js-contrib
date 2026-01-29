@@ -87,7 +87,9 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   // connections. The `_connCountsFromPoolName` is used to keep track of latest
   // values (per pool) and only update the metrics (_connectionsCount and
   // _connectionPendingRequests) when the values change.
-  private _connCountsFromPoolName: {[name: string]: utils.poolConnectionsCounter} = {};
+  private _connCountsFromPoolName: {
+    [name: string]: utils.poolConnectionsCounter;
+  } = {};
   private _semconvStability: SemconvStability;
 
   constructor(config: PgInstrumentationConfig = {}) {
@@ -529,7 +531,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
-        this._connCountsFromPoolName,
+        this._connCountsFromPoolName
       );
     });
 
@@ -539,7 +541,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
-        this._connCountsFromPoolName,
+        this._connCountsFromPoolName
       );
     });
 
@@ -549,7 +551,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
-        this._connCountsFromPoolName,
+        this._connCountsFromPoolName
       );
     });
 
@@ -559,7 +561,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
-        this._connCountsFromPoolName,
+        this._connCountsFromPoolName
       );
     });
     pgPool[EVENT_LISTENERS_SET] = true;

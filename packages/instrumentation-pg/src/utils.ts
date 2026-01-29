@@ -381,7 +381,7 @@ export function updateCounter(
   pool: PgPoolExtended,
   connectionCount: UpDownCounter,
   connectionPendingRequests: UpDownCounter,
-  connCountFromPoolName: {[name: string]: poolConnectionsCounter},
+  connCountFromPoolName: { [name: string]: poolConnectionsCounter }
 ) {
   const all = pool.totalCount;
   const pending = pool.waitingCount;
@@ -390,7 +390,7 @@ export function updateCounter(
 
   let connCount = connCountFromPoolName[poolName];
   if (!connCount) {
-    connCount = {used: 0, idle: 0, pending: 0};
+    connCount = { used: 0, idle: 0, pending: 0 };
     connCountFromPoolName[poolName] = connCount;
   }
 
