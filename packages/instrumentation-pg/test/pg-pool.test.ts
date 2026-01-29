@@ -328,6 +328,26 @@ describe('pg-pool', () => {
       assert.strictEqual(spans.length, 0);
     });
 
+    it('should create a span for client.release()', async () => {
+      const newPool = new pgPool(CONFIG);
+      create(); // enable instrumentation
+
+      const client = await newPool.connect();
+      client.release();
+      await newPool.end();
+
+      const spans = memoryExporter.getFinishedSpans();
+      const releaseSpans = spans.filter(
+        span => span.name === 'pg-pool.release'
+      );
+
+      assert.strictEqual(
+        releaseSpans.length,
+        1,
+        'expected one pg-pool.release span'
+      );
+    });
+
     it('should not create connect spans when ignoreConnectSpans=true', async () => {
       const newPool = new pgPool(CONFIG);
       create({
@@ -772,7 +792,7 @@ describe('pg-pool', () => {
           );
           assert.strictEqual(
             metrics[1].dataPoints[0].attributes[
-              ATTR_DB_CLIENT_CONNECTION_STATE
+            ATTR_DB_CLIENT_CONNECTION_STATE
             ],
             'used'
           );
@@ -783,7 +803,7 @@ describe('pg-pool', () => {
           );
           assert.strictEqual(
             metrics[1].dataPoints[1].attributes[
-              ATTR_DB_CLIENT_CONNECTION_STATE
+            ATTR_DB_CLIENT_CONNECTION_STATE
             ],
             'idle'
           );
@@ -1002,7 +1022,7 @@ describe('pg-pool', () => {
           );
           assert.strictEqual(
             metrics[1].dataPoints[0].attributes[
-              ATTR_DB_CLIENT_CONNECTION_STATE
+            ATTR_DB_CLIENT_CONNECTION_STATE
             ],
             'used'
           );
