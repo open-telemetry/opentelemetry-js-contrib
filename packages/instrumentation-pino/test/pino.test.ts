@@ -321,16 +321,16 @@ describe('PinoInstrumentation', () => {
     });
 
     it('does not stack mixins when reusing the same options object', () => {
-  const options: any = {};
+      const options: any = {};
 
-  const logger1 = pino(options);
-  const logger2 = pino(options);
-  const logger3 = pino(options);
+      pino(options);
+      pino(options);
+      const logger3 = pino(options);
 
-  assert.doesNotThrow(() => {
-    logger3.info('test message');
+      assert.doesNotThrow(() => {
+        logger3.info('test message');
+      });
     });
-  });
 
     it('`pino()` with no args works', () => {
       const logger = pino();

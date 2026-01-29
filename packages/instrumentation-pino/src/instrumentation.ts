@@ -55,12 +55,12 @@ export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentation
           const config = instrumentation.getConfig();
           const isEnabled = instrumentation.isEnabled();
 
-         const patchedArgs = [...args];
+          const patchedArgs = [...args];
 
           if (patchedArgs.length > 0 && typeof patchedArgs[0] === 'object') {
-           patchedArgs[0] = { ...(patchedArgs[0] as object) };
-           }
-           const logger = moduleExports(...patchedArgs);
+            patchedArgs[0] = { ...(patchedArgs[0] as object) };
+          }
+          const logger = moduleExports(...patchedArgs);
 
           // Setup "log correlation" -- injection of `trace_id` et al fields.
           // Note: If the Pino logger is configured with `nestedKey`, then
