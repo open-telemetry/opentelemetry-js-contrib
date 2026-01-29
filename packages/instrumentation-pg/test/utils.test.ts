@@ -108,6 +108,27 @@ describe('utils.ts', () => {
       );
     });
 
+    it('remove leading whitespaces when parsing operation names', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName('dbName', { text: ' SELECT $1' }),
+        'pg.query:SELECT dbName'
+      );
+    });
+
+    it('remove trailing whitespaces when parsing operation names', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName('dbName', { text: 'SELECT $1 ' }),
+        'pg.query:SELECT dbName'
+      );
+    });
+
+    it('remove leading and trailing whitespace when parsing operation names', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName('dbName', { text: '  SELECT $1  ' }),
+        'pg.query:SELECT dbName'
+      );
+    });
+
     it('omits db name if missing', () => {
       assert.strictEqual(
         utils.getQuerySpanName(undefined, dummyQuery),

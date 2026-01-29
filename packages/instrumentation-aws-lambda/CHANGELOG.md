@@ -1,6 +1,47 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.62.0...instrumentation-aws-lambda-v0.63.0) (2026-01-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3353](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3353)) ([a56bbdc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a56bbdc34a5015b0a5fdcb7522f168cfc90ba95c))
+
+## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.61.1...instrumentation-aws-lambda-v0.62.0) (2026-01-14)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3332](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3332)) ([925a150](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/925a1501ce0d082c6845d36e7c964e625ee3de0c))
+* **deps:** update deps matching '@opentelemetry/*' ([#3340](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3340)) ([2954943](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/29549434e7204b03d58635eb20352efee0e797d4))
+
+## [0.61.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.61.0...instrumentation-aws-lambda-v0.61.1) (2025-12-17)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.1.4 to ^2.2.0
+    * @opentelemetry/propagator-aws-xray-lambda bumped from ^0.55.4 to ^0.56.0
+
+## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.60.1...instrumentation-aws-lambda-v0.61.0) (2025-11-26)
+
+
+### Features
+
+* **instrumentation-aws-lambda:** add runtime-aware handler support for Node.js 24 compatibility ([#3255](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3255)) ([bddcd78](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bddcd78648a91ceabe1ecba4fb06367db541c966)), closes [#3251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3251)
+
+## [Unreleased]
+
+### Features
+
+* **instrumentation-aws-lambda:** Added runtime-aware handler support. The instrumentation automatically detects the Node.js runtime version from `AWS_EXECUTION_ENV` and adapts handler signatures accordingly:
+  * **Node.js 24+**: Only Promise-based handlers are supported (callbacks deprecated by AWS Lambda)
+  * **Node.js 22 and lower**: Both callback-based and Promise-based handlers are supported for backward compatibility
+  This ensures seamless operation across different Node.js runtime versions while respecting AWS Lambda's removal of callbacks in Node.js 24+.
+
 ## [0.60.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.60.0...instrumentation-aws-lambda-v0.60.1) (2025-11-24)
 
 

@@ -71,9 +71,29 @@ export const AWS_HANDLER_STREAMING_SYMBOL = Symbol.for(
 );
 export const AWS_HANDLER_STREAMING_RESPONSE = 'response';
 
+/**
+ * Determines if callback-based handlers are supported based on the Node.js runtime version.
+ * Returns true if callbacks are supported (Node.js < 24).
+ * Returns false if AWS_EXECUTION_ENV is not set or doesn't match the expected format.
+ */
+function isSupportingCallbacks(): boolean {
+  const executionEnv = process.env.AWS_EXECUTION_ENV;
+  if (!executionEnv) {
+    return false;
+  }
+
+  // AWS_EXECUTION_ENV format: AWS_Lambda_nodejs24.x, AWS_Lambda_nodejs22.x, etc.
+  const match = executionEnv.match(/AWS_Lambda_nodejs(\d+)\./);
+  if (match && match[1]) {
+    return parseInt(match[1], 10) < 24;
+  }
+
+  return false;
+}
+
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
-  private declare _traceForceFlusher?: () => Promise<void>;
-  private declare _metricForceFlusher?: () => Promise<void>;
+  declare private _traceForceFlusher?: () => Promise<void>;
+  declare private _metricForceFlusher?: () => Promise<void>;
 
   constructor(config: AwsLambdaInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -272,47 +292,113 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       };
     }
 
-    return function patchedHandler(
-      this: never,
-      // The event can be a user type, it truly is any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      event: any,
-      context: Context,
-      callback: Callback
-    ) {
-      _onRequest();
+    // Determine whether to support callbacks based on runtime version
+    const supportsCallbacks = isSupportingCallbacks();
 
-      const parent = plugin._determineParent(event, context);
+    if (supportsCallbacks) {
+      // Node.js 22 and lower: Support callback-based handlers for backward compatibility
+      return function patchedHandlerWithCallback(
+        this: never,
+        // The event can be a user type, it truly is any.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        event: any,
+        context: Context,
+        callback?: Callback
+      ) {
+        _onRequest();
 
-      const span = plugin._createSpanForRequest(
-        event,
-        context,
-        requestIsColdStart,
-        parent
-      );
+        const parent = plugin._determineParent(event, context);
 
-      plugin._applyRequestHook(span, event, context);
+        const span = plugin._createSpanForRequest(
+          event,
+          context,
+          requestIsColdStart,
+          parent
+        );
 
-      return otelContext.with(trace.setSpan(parent, span), () => {
-        // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
-        // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
-        // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
-        // win and the latter will be ignored.
-        const wrappedCallback = plugin._wrapCallback(callback, span);
-        const maybePromise = safeExecuteInTheMiddle(
-          () => original.apply(this, [event, context, wrappedCallback]),
-          error => {
-            if (error != null) {
-              // Exception thrown synchronously before resolving callback / promise.
-              plugin._applyResponseHook(span, error);
-              plugin._endSpan(span, error, () => {});
-            }
+        plugin._applyRequestHook(span, event, context);
+
+        return otelContext.with(trace.setSpan(parent, span), () => {
+          // Support both callback-based and Promise-based handlers for backward compatibility
+          if (callback) {
+            const wrappedCallback = plugin._wrapCallback(callback, span);
+            const maybePromise = safeExecuteInTheMiddle(
+              () => original.apply(this, [event, context, wrappedCallback]),
+              error => {
+                if (error != null) {
+                  // Exception thrown synchronously before resolving callback / promise.
+                  plugin._applyResponseHook(span, error);
+                  plugin._endSpan(span, error, () => {});
+                }
+              }
+            ) as Promise<{}> | undefined;
+
+            return plugin._handlePromiseResult(span, maybePromise);
+          } else {
+            // Promise-based handler
+            const maybePromise = safeExecuteInTheMiddle(
+              () =>
+                (
+                  original as (
+                    event: any,
+                    context: Context
+                  ) => Promise<any> | any
+                ).apply(this, [event, context]),
+              error => {
+                if (error != null) {
+                  // Exception thrown synchronously before resolving promise.
+                  plugin._applyResponseHook(span, error);
+                  plugin._endSpan(span, error, () => {});
+                }
+              }
+            ) as Promise<{}> | undefined;
+
+            return plugin._handlePromiseResult(span, maybePromise);
           }
-        ) as Promise<{}> | undefined;
+        });
+      };
+    } else {
+      // Node.js 24+: Only Promise-based handlers (callbacks deprecated)
+      return function patchedHandler(
+        this: never,
+        // The event can be a user type, it truly is any.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        event: any,
+        context: Context
+      ) {
+        _onRequest();
 
-        return plugin._handlePromiseResult(span, maybePromise);
-      });
-    };
+        const parent = plugin._determineParent(event, context);
+
+        const span = plugin._createSpanForRequest(
+          event,
+          context,
+          requestIsColdStart,
+          parent
+        );
+
+        plugin._applyRequestHook(span, event, context);
+
+        return otelContext.with(trace.setSpan(parent, span), () => {
+          // Promise-based handler only (Node.js 24+)
+          const maybePromise = safeExecuteInTheMiddle(
+            () =>
+              (
+                original as (event: any, context: Context) => Promise<any> | any
+              ).apply(this, [event, context]),
+            error => {
+              if (error != null) {
+                // Exception thrown synchronously before resolving promise.
+                plugin._applyResponseHook(span, error);
+                plugin._endSpan(span, error, () => {});
+              }
+            }
+          ) as Promise<{}> | undefined;
+
+          return plugin._handlePromiseResult(span, maybePromise);
+        });
+      };
+    }
   }
 
   private _createSpanForRequest(
@@ -443,11 +529,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
   private _wrapCallback(original: Callback, span: Span): Callback {
     const plugin = this;
     return function wrappedCallback(this: never, err, res) {
-      diag.debug('executing wrapped lookup callback function');
+      plugin._diag.debug('executing wrapped callback function');
       plugin._applyResponseHook(span, err, res);
 
       plugin._endSpan(span, err, () => {
-        diag.debug('executing original lookup callback function');
+        plugin._diag.debug('executing original callback function');
         return original.apply(this, [err, res]);
       });
     };
@@ -482,14 +568,14 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       flushers.push(this._traceForceFlusher());
     } else {
       diag.debug(
-        'Spans may not be exported for the lambda function because we are not force flushing before callback.'
+        'Spans may not be exported for the lambda function because we are not force flushing before handler completion.'
       );
     }
     if (this._metricForceFlusher) {
       flushers.push(this._metricForceFlusher());
     } else {
       diag.debug(
-        'Metrics may not be exported for the lambda function because we are not force flushing before callback.'
+        'Metrics may not be exported for the lambda function because we are not force flushing before handler completion.'
       );
     }
 

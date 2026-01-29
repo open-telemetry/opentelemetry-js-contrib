@@ -35,7 +35,7 @@ export class RateLimitingSampler implements Sampler {
     this.reservoir = new RateLimiter(quota);
   }
 
-  shouldSample(
+  public shouldSample(
     context: Context,
     traceId: string,
     spanName: string,

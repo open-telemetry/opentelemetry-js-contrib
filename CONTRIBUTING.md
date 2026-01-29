@@ -61,7 +61,7 @@ for general practices for OpenTelemetry project.
 
 #### Conventional commit
 
-The Conventional Commits specification is a lightweight convention on top of commit messages. It provides an easy set of rules for creating an explicit commit history; which makes it easier to write automated tools on top of. This convention dovetails with SemVer, by describing the features, fixes, and breaking changes made in commit messages. You can see examples [here](https://www.conventionalcommits.org/en/v1.0.0/#examples).
+The Conventional Commits specification is a lightweight convention on top of commit messages. It provides an easy set of rules for creating an explicit commit history; which makes it easier to write automated tools on top of. This convention dovetails with SemVer, by describing the features, fixes, and breaking changes made in commit messages. You can see examples [in the conventional commits specification](https://www.conventionalcommits.org/en/v1.0.0/#examples).
 
 We use [the "pr-title" CI workflow](./.github/workflows/pr-title.yml) to ensure PR titles, and hence the commit message from those PRs, follow the Conventional Commits spec.
 
@@ -352,7 +352,7 @@ Review the guidelines for [Becoming a Component Owner](#becoming-a-component-own
 
 Regardless of where instrumentation is hosted, it needs to be discoverable.
 The [OpenTelemetry registry](https://opentelemetry.io/registry/) exists to ensure that instrumentation is discoverable.
-You can find out how to add instrumentation to the registry [here](https://github.com/open-telemetry/opentelemetry.io#adding-a-project-to-the-opentelemetry-registry).
+You can find out how to add instrumentation to the registry [over at opentelemetry.io](https://github.com/open-telemetry/opentelemetry.io#adding-a-project-to-the-opentelemetry-registry).
 
 ## Contributing Vendor Components
 

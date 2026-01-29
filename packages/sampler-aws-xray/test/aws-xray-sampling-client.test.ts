@@ -173,8 +173,9 @@ describe('AWSXRaySamplingClient', () => {
   });
 
   it('testGetSamplingTargets', done => {
-    const data = require(DATA_DIR +
-      '/get-sampling-targets-response-sample.json');
+    const data = require(
+      DATA_DIR + '/get-sampling-targets-response-sample.json'
+    );
     nock(TEST_URL).post('/SamplingTargets').reply(200, data);
 
     const client = new AWSXRaySamplingClient(TEST_URL, new DiagConsoleLogger());

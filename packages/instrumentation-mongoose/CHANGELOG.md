@@ -1,6 +1,50 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.56.0...instrumentation-mongoose-v0.57.0) (2026-01-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3353](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3353)) ([a56bbdc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a56bbdc34a5015b0a5fdcb7522f168cfc90ba95c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.57.0 to ^0.58.0
+
+## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.55.1...instrumentation-mongoose-v0.56.0) (2026-01-14)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3332](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3332)) ([925a150](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/925a1501ce0d082c6845d36e7c964e625ee3de0c))
+* **deps:** update deps matching '@opentelemetry/*' ([#3340](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3340)) ([2954943](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/29549434e7204b03d58635eb20352efee0e797d4))
+* **instr-mongoose:** support net.* and db semconv migration ([#3307](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3307)) ([d4e729d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d4e729dcd3c14a9dea007f5cc3f8bcf990ce4466))
+
+
+### Bug Fixes
+
+* **mongoose:** patch updateOne/deleteOne on model level ([#3337](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3337)) ([679d8a9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/679d8a953931212da6a997c094135adabdd8ae5a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.56.0 to ^0.57.0
+
+## [0.55.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.55.0...instrumentation-mongoose-v0.55.1) (2025-12-17)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.55.0 to ^0.56.0
+
 ## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.54.0...instrumentation-mongoose-v0.55.0) (2025-11-06)
 
 

@@ -20,6 +20,7 @@
       "groupName": "OTel Core experimental",
       "matchPackageNames": [
         "@opentelemetry/api-logs",
+        "@opentelemetry/configuration",
         "@opentelemetry/exporter-logs-otlp-grpc",
         "@opentelemetry/exporter-logs-otlp-http",
         "@opentelemetry/exporter-logs-otlp-proto",
@@ -59,5 +60,8 @@
   "assignees": ["@dyladan", "@legendecas", "@pichlermarc", "@trentm"],
   "schedule": ["before 3am on Friday"],
   "labels": ["dependencies"],
-  "semanticCommitType": "feat"
+  "semanticCommitType": "feat",
+  "constraints": {
+    "npm": ">=11.6.3"
+  }
 }
