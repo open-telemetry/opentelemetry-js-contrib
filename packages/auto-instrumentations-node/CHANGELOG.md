@@ -1,6 +1,21 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.69.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.69.0...auto-instrumentations-node-v0.69.1) (2026-01-30)
+
+
+### Bug Fixes
+
+* **auto-instrumentation-node:** resource detector from env should be the last detector ([#3363](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3363)) ([97d9ef0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/97d9ef01008d47df6e2f56eb06908cda23ba6fe6))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-oracledb bumped from ^0.36.0 to ^0.37.0
+    * @opentelemetry/resource-detector-gcp bumped from ^0.46.0 to ^0.46.1
+
 ## [0.69.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.68.0...auto-instrumentations-node-v0.69.0) (2026-01-21)
 
 
