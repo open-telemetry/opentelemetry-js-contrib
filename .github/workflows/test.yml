@@ -150,6 +150,10 @@ jobs:
         env:
           RABBITMQ_DEFAULT_USER: username
           RABBITMQ_DEFAULT_PASS: password
+      nats:
+        image: nats
+        ports:
+          - 4222:4222
     env: &test_env
       RUN_CASSANDRA_TESTS: 1
       RUN_MEMCACHED_TESTS: 1
@@ -160,6 +164,7 @@ jobs:
       RUN_ORACLEDB_TESTS: 1
       RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
+      RUN_NATS_TESTS: 1
       RUN_RABBIT_TESTS: 1
       CASSANDRA_HOST: localhost
       MONGODB_DB: opentelemetry-tests
@@ -176,6 +181,8 @@ jobs:
       OPENTELEMETRY_MEMCACHED_PORT: 11211
       OPENTELEMETRY_REDIS_HOST: localhost
       OPENTELEMETRY_REDIS_PORT: 6379
+      OPENTELEMETRY_NATS_HOST: nats
+      OPENTELEMETRY_NATS_PORT: 4222
       ORACLE_HOSTNAME: localhost
       ORACLE_PORT: 1521
       ORACLE_CONNECTSTRING: localhost:1521/freepdb1

@@ -125,6 +125,7 @@ components:
     # Unmaintained
   packages/instrumentation-mysql2:
     - raphael-theriault-swi
+  packages/instrumentation-nats: []
   packages/instrumentation-nestjs-core: []
     # Unmaintained
   packages/instrumentation-net:
