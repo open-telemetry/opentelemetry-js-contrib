@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.46.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.46.0...resource-detector-gcp-v0.46.1) (2026-01-30)
+
+
+### Bug Fixes
+
+* **deps:** update dependency gcp-metadata to v8 ([#3359](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3359)) ([456c67a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/456c67a325eaa77184bf42b9fea53e0f255cc123))
+
 ## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.45.0...resource-detector-gcp-v0.46.0) (2026-01-21)
 
 
