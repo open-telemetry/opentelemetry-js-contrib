@@ -23,15 +23,16 @@ export interface IUser extends Document {
   age: number;
 }
 
-const UserSchema: Schema = new Schema({
+const UserSchema = new Schema({
   email: { type: String, required: true, unique: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   age: { type: Number, required: false },
 });
 
-// Export the model and return your IUser interface
-const User = mongoose.model<IUser>('User', UserSchema);
+// Export the model with type assertion to work around mongoose@9 type instantiation issues
+// @ts-expect-error - mongoose@9 has excessively deep type instantiation in model()
+const User = mongoose.model('User', UserSchema) as mongoose.Model<IUser>;
 export default User;
 
 export const loadUsers = async () => {

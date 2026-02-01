@@ -123,7 +123,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
   protected init(): InstrumentationModuleDefinition {
     const module = new InstrumentationNodeModuleDefinition(
       'mongoose',
-      ['>=5.9.7 <9'],
+      ['>=5.9.7 <10'],
       this.patch.bind(this),
       this.unpatch.bind(this)
     );
