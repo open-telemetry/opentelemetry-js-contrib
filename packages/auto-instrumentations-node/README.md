@@ -50,7 +50,7 @@ export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="https://your-endpoint"
 export OTEL_EXPORTER_OTLP_HEADERS="x-api-key=your-api-key"
 export OTEL_EXPORTER_OTLP_TRACES_HEADERS="x-api-key=your-api-key"
 export OTEL_RESOURCE_ATTRIBUTES="service.namespace=my-namespace"
-export OTEL_NODE_RESOURCE_DETECTORS="env,host,os,serviceinstance"
+export OTEL_NODE_RESOURCE_DETECTORS="host,os,serviceinstance,env"
 export OTEL_SERVICE_NAME="client"
 export NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 node app.js
@@ -74,8 +74,14 @@ By default, all SDK resource detectors are used, but you can use the environment
 For example, to enable only the `env`, `host` detectors:
 
 ```shell
-export OTEL_NODE_RESOURCE_DETECTORS="env,host"
+export OTEL_NODE_RESOURCE_DETECTORS="host,env"
 ```
+
+NOTE: The order set on `OTEL_NODE_RESOURCE_DETECTORS` will be respected and the detectors will be executed in order.
+For example, if you have `OTEL_RESOURCE_ATTRIBUTES="service.instance.id=custom-name"`, but also `serviceinstance` and `env` on `OTEL_NODE_RESOURCE_DETECTORS`, it can have 2 scenarios:
+
+- `OTEL_NODE_RESOURCE_DETECTORS="serviceinstance,env"` will have the `service.instance.id` as `custom-name`
+- `OTEL_NODE_RESOURCE_DETECTORS="env,serviceinstance"` will have the `service.instance.id` as a random UUID
 
 By default, all [Supported Instrumentations](#supported-instrumentations) are enabled, unless they are annotated with "default disabled".
 You can use the environment variable `OTEL_NODE_ENABLED_INSTRUMENTATIONS` to enable only certain instrumentations, including "default disabled" ones

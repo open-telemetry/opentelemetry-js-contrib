@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-aws",
-  "version": "2.9.0",
+  "version": "2.11.0",
   "description": "OpenTelemetry SDK resource detector for AWS",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -44,9 +44,9 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.56.0",
-    "@opentelemetry/instrumentation-fs": "^0.28.0",
-    "@opentelemetry/instrumentation-http": "^0.208.0",
+    "@opentelemetry/contrib-test-utils": "^0.58.0",
+    "@opentelemetry/instrumentation-fs": "^0.30.0",
+    "@opentelemetry/instrumentation-http": "^0.211.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0"
   },
   "peerDependencies": {
