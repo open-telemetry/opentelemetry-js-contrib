@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// @ts-expect-error cjs still works
+// @ts-expect-error chai v4 ships CJS only; named imports work at runtime via interop
 import { assert } from 'chai';
 import { isHashChange, defaultSanitizeUrl } from '../src/utils';
 
