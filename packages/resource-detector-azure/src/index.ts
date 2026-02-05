@@ -15,6 +15,7 @@
  */
 
 export {
+  azureAksDetector,
   azureAppServiceDetector,
   azureFunctionsDetector,
   azureVmDetector,
