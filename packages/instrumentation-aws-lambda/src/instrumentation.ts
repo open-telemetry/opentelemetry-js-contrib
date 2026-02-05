@@ -94,9 +94,25 @@ function isSupportingCallbacks(): boolean {
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
   declare private _traceForceFlusher?: () => Promise<void>;
   declare private _metricForceFlusher?: () => Promise<void>;
+  // Track proactively patched handler for cleanup on disable()
+  private _patchedHandler?: LambdaModule;
+  private _handlerFunctionName?: string;
 
   constructor(config: AwsLambdaInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+  }
+
+  override disable() {
+    super.disable();
+    // Explicitly unwrap the proactively patched handler
+    if (
+      this._patchedHandler &&
+      this._handlerFunctionName &&
+      isWrapped(this._patchedHandler[this._handlerFunctionName])
+    ) {
+      this._unwrap(this._patchedHandler, this._handlerFunctionName);
+    }
+    this._patchedHandler = undefined;
   }
 
   init() {
@@ -128,17 +144,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       try {
         fs.statSync(`${filename}.js`);
         filename += '.js';
-      } catch (e) {
+      } catch {
         try {
           fs.statSync(`${filename}.mjs`);
           // fallback to .mjs (ESM)
           filename += '.mjs';
-        } catch (e2) {
+        } catch {
           try {
             fs.statSync(`${filename}.cjs`);
             // fallback to .cjs (CommonJS)
             filename += '.cjs';
-          } catch (e3) {
+          } catch {
             this._diag.warn(
               'No handler file was able to resolved with one of the known extensions for the file',
               filename
@@ -162,6 +178,54 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       this.getConfig().lambdaStartTime ||
       Date.now() - Math.floor(1000 * process.uptime());
 
+    const patchHandler = (moduleExports: LambdaModule) => {
+      if (isWrapped(moduleExports[functionName])) {
+        this._unwrap(moduleExports, functionName);
+      }
+      this._wrap(
+        moduleExports,
+        functionName,
+        this._getHandler(lambdaStartTime)
+      );
+      return moduleExports;
+    };
+
+    const unpatchHandler = (moduleExports?: LambdaModule) => {
+      if (moduleExports == null) return;
+      this._unwrap(moduleExports, functionName);
+    };
+
+    // Store function name for cleanup in disable()
+    this._handlerFunctionName = functionName;
+
+    // Proactively require and patch the handler module.
+    // This is necessary for Node 24 Lambda where require-in-the-middle
+    // cannot identify the module due to missing package.json in the handler directory.
+    // The module will be cached, so Lambda's subsequent require will get the patched version.
+    // See: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3314
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const handlerModule = require(filename);
+      if (
+        handlerModule &&
+        handlerModule[functionName] &&
+        !isWrapped(handlerModule[functionName])
+      ) {
+        patchHandler(handlerModule);
+        this._patchedHandler = handlerModule;
+        diag.debug('Proactively patched lambda handler', {
+          filename,
+          functionName,
+        });
+      }
+    } catch (e) {
+      // Handler not found or error loading - will rely on require-in-the-middle hook
+      this._diag.debug(
+        'Could not proactively load handler, will rely on require hook',
+        { filename, error: e }
+      );
+    }
+
     return [
       new InstrumentationNodeModuleDefinition(
         // NB: The patching infrastructure seems to match names backwards, this must be the filename, while
@@ -174,21 +238,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
           new InstrumentationNodeModuleFile(
             module,
             ['*'],
-            (moduleExports: LambdaModule) => {
-              if (isWrapped(moduleExports[functionName])) {
-                this._unwrap(moduleExports, functionName);
-              }
-              this._wrap(
-                moduleExports,
-                functionName,
-                this._getHandler(lambdaStartTime)
-              );
-              return moduleExports;
-            },
-            (moduleExports?: LambdaModule) => {
-              if (moduleExports == null) return;
-              this._unwrap(moduleExports, functionName);
-            }
+            patchHandler,
+            unpatchHandler
           ),
         ]
       ),
