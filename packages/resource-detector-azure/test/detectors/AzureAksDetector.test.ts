@@ -82,6 +82,9 @@ describe('AzureAksDetector', () => {
     assert.strictEqual(attributes[ATTR_CLOUD_PROVIDER], undefined);
     assert.strictEqual(attributes[ATTR_CLOUD_PLATFORM], undefined);
     assert.strictEqual(attributes[ATTR_K8S_CLUSTER_NAME], undefined);
-    assert.strictEqual(attributes[CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE], undefined);
+    assert.strictEqual(
+      attributes[CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE],
+      undefined
+    );
   });
 });

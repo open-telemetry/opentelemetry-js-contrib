@@ -64,7 +64,10 @@ export function extractClusterNameFromResourceId(
   const managedClustersIndex = segments.findIndex(
     s => s.toLowerCase() === 'managedclusters'
   );
-  if (managedClustersIndex !== -1 && managedClustersIndex < segments.length - 1) {
+  if (
+    managedClustersIndex !== -1 &&
+    managedClustersIndex < segments.length - 1
+  ) {
     return segments[managedClustersIndex + 1];
   }
   // Fallback: just return the last segment
