@@ -36,6 +36,41 @@ export const AZURE_VM_METADATA_PATH =
 export const AZURE_VM_SCALE_SET_NAME_ATTRIBUTE = 'azure.vm.scaleset.name';
 export const AZURE_VM_SKU_ATTRIBUTE = 'azure.vm.sku';
 
+// AKS ConfigMap environment variables
+// The native AKS ConfigMap is 'aks-cluster-metadata' in 'kube-public' namespace
+// with a single key 'clusterResourceId'
+export const AKS_CLUSTER_RESOURCE_ID = 'CLUSTER_RESOURCE_ID';
+
+// AKS ConfigMap file path (mounted from aks-cluster-metadata ConfigMap in kube-public)
+export const AKS_METADATA_FILE_PATH = '/etc/kubernetes/aks-cluster-metadata';
+
+export interface AksClusterMetadata {
+  name?: string;
+  resourceId?: string;
+}
+
+/**
+ * Extracts the cluster name from an AKS ARM resource ID.
+ * @param resourceId The full ARM resource ID, e.g.:
+ *   /subscriptions/.../resourceGroups/.../providers/Microsoft.ContainerService/managedClusters/my-cluster
+ * @returns The cluster name (last segment), or undefined if not found
+ */
+export function extractClusterNameFromResourceId(
+  resourceId: string
+): string | undefined {
+  if (!resourceId) return undefined;
+  const segments = resourceId.split('/');
+  // The cluster name is the last segment after 'managedClusters'
+  const managedClustersIndex = segments.findIndex(
+    s => s.toLowerCase() === 'managedclusters'
+  );
+  if (managedClustersIndex !== -1 && managedClustersIndex < segments.length - 1) {
+    return segments[managedClustersIndex + 1];
+  }
+  // Fallback: just return the last segment
+  return segments[segments.length - 1] || undefined;
+}
+
 export interface AzureVmMetadata {
   azEnvironment?: string;
   additionalCapabilities?: {
