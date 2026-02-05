@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-document-load",
-  "version": "0.54.0",
+  "version": "0.56.0",
   "description": "OpenTelemetry instrumentation for document load operations in browser applications",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -61,12 +61,12 @@
     "@types/chai": "^5.2.2",
     "@web/dev-server-esbuild": "^1.0.1",
     "@web/dev-server-rollup": "^0.6.4",
-    "@web/test-runner": "^0.18.0",
+    "@web/test-runner": "^0.20.0",
     "chai": "^6.2.0"
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.208.0",
+    "@opentelemetry/instrumentation": "^0.211.0",
     "@opentelemetry/sdk-trace-web": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.23.0"
   },

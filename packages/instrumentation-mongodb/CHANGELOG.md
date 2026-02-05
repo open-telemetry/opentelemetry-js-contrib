@@ -1,6 +1,55 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.64.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.63.0...instrumentation-mongodb-v0.64.0) (2026-01-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3353](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3353)) ([a56bbdc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a56bbdc34a5015b0a5fdcb7522f168cfc90ba95c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.57.0 to ^0.58.0
+
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.62.0...instrumentation-mongodb-v0.63.0) (2026-01-14)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3332](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3332)) ([925a150](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/925a1501ce0d082c6845d36e7c964e625ee3de0c))
+* **deps:** update deps matching '@opentelemetry/*' ([#3340](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3340)) ([2954943](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/29549434e7204b03d58635eb20352efee0e797d4))
+* **instrumentation-mongodb:** support `net.*` and database semconv migration ([#3313](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3313)) ([930de4e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/930de4eb3b87879a56536ae186413915fab9f03d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.56.0 to ^0.57.0
+
+## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.61.0...instrumentation-mongodb-v0.62.0) (2025-12-17)
+
+
+### Features
+
+* **instrumentation-mongodb:** add support for mongodb v7 ([#3283](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3283)) ([dea3198](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/dea31983c18f92d147c2168c2140357b39540f39))
+
+
+### Bug Fixes
+
+* **instrumentation-mongodb:** Guard against multiple callback invocations ([#3293](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3293)) ([1673711](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1673711bd1b5360dbb28dbbd65c3d5422e0ba9e4))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.55.0 to ^0.56.0
+
 ## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.60.0...instrumentation-mongodb-v0.61.0) (2025-11-06)
 
 
