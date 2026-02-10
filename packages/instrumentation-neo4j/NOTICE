@@ -3,3 +3,4 @@
 The library contains the following changes compared to the original:
 * Removed `moduleVersionAttributeName` configuration option.
 * Added support for neo4j v5 and v6
+* Aligned with semconv v1.39.0

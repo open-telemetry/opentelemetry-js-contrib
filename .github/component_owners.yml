@@ -129,6 +129,10 @@ components:
     # Unmaintained
   packages/instrumentation-net:
     - seemk
+  packages/instrumentation-neo4j:
+    - seemk
+    - t2t2
+    - mhennoch
   packages/instrumentation-oracledb:
     - sudarshan12s
     - sharadraju

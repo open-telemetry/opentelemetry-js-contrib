@@ -1,4 +1,4 @@
 'neo4j-driver':
-  versions: ">=4.0.0 <6"
+  versions: ">=4.0.0 <7"
   commands:
     - npm run test
