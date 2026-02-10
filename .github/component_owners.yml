@@ -125,14 +125,14 @@ components:
     # Unmaintained
   packages/instrumentation-mysql2:
     - raphael-theriault-swi
-  packages/instrumentation-nestjs-core: []
-    # Unmaintained
-  packages/instrumentation-net:
-    - seemk
   packages/instrumentation-neo4j:
     - seemk
     - t2t2
     - mhennoch
+  packages/instrumentation-nestjs-core: []
+    # Unmaintained
+  packages/instrumentation-net:
+    - seemk
   packages/instrumentation-oracledb:
     - sudarshan12s
     - sharadraju
