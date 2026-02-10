@@ -13,9 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import type { Attributes } from '@opentelemetry/api';
 import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export interface RuntimeNodeInstrumentationConfig
   extends InstrumentationConfig {
   monitoringPrecision?: number;
+  /**
+   * Capture uncaught exceptions via process 'uncaughtExceptionMonitor' event.
+   * Enabled by default.
+   * @experimental
+   */
+  captureUncaughtException?: boolean;
+  /**
+   * Capture unhandled promise rejections via process 'unhandledRejection' event.
+   * Enabled by default.
+   * @experimental
+   */
+  captureUnhandledRejection?: boolean;
+  /**
+   * Add custom attributes to the emitted exception log records.
+   * @experimental
+   */
+  applyCustomAttributes?: (
+    error: unknown,
+    eventType: 'uncaughtException' | 'unhandledRejection'
+  ) => Attributes;
 }
