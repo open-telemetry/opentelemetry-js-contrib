@@ -95,9 +95,6 @@ const IS_CONFIRM_CHANNEL_CONTEXT_KEY: symbol = createContextKey(
   'opentelemetry.amqplib.channel.is-confirm-channel'
 );
 
-export const normalizeExchange = (exchangeName: string) =>
-  exchangeName !== '' ? exchangeName : '<default>';
-
 const censorPassword = (url: string): string => {
   return url.replace(/:[^:@/]*@/, ':***@');
 };
@@ -224,6 +221,20 @@ export const getConnectionAttributesFromUrl = (
   }
   return attributes;
 };
+
+export const getPublishSpanName = (
+  exchange: string,
+  routingKey: string,
+  messagingSemconvStability: SemconvStability
+): string => {
+  if (messagingSemconvStability & SemconvStability.STABLE) {
+    return `publish ${getPublishDestinationName(exchange, routingKey)}`;
+  }
+  return `publish ${normalizeExchange(exchange)}`;
+};
+
+const normalizeExchange = (exchangeName: string) =>
+  exchangeName !== '' ? exchangeName : '<default>';
 
 export const getPublishAttributes = (
   exchange: string,

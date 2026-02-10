@@ -68,6 +68,7 @@ import {
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
   getPublishAttributes,
+  getPublishSpanName,
   InstrumentationConnection,
   InstrumentationConsumeChannel,
   InstrumentationConsumeMessage,
@@ -76,7 +77,6 @@ import {
   isConfirmChannelTracing,
   markConfirmChannelTracing,
   MESSAGE_STORED_SPAN,
-  normalizeExchange,
   unmarkConfirmChannelTracing,
 } from './utils';
 /** @knipignore */
@@ -675,21 +675,22 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
     channel: InstrumentationPublishChannel,
     options?: Options.Publish
   ) {
-    const normalizedExchange = normalizeExchange(exchange);
-
-    const span = self.tracer.startSpan(`publish ${normalizedExchange}`, {
-      kind: SpanKind.PRODUCER,
-      attributes: {
-        ...channel.connection[CONNECTION_ATTRIBUTES],
-        ...getPublishAttributes(
-          exchange,
-          routingKey,
-          contentLength,
-          options,
-          self._messagingSemconvStability
-        ),
-      },
-    });
+    const span = self.tracer.startSpan(
+      getPublishSpanName(exchange, routingKey, self._messagingSemconvStability),
+      {
+        kind: SpanKind.PRODUCER,
+        attributes: {
+          ...channel.connection[CONNECTION_ATTRIBUTES],
+          ...getPublishAttributes(
+            exchange,
+            routingKey,
+            contentLength,
+            options,
+            self._messagingSemconvStability
+          ),
+        },
+      }
+    );
     const modifiedOptions = options ?? {};
     modifiedOptions.headers = modifiedOptions.headers ?? {};
 

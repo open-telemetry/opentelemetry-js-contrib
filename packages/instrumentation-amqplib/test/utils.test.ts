@@ -20,6 +20,7 @@ import {
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
   getPublishAttributes,
+  getPublishSpanName,
 } from '../src/utils';
 import {
   ATTR_NETWORK_PROTOCOL_NAME,
@@ -358,6 +359,136 @@ describe('utils', () => {
         expect(attributes[ATTR_MESSAGING_PROTOCOL_VERSION]).toEqual('0.9.1');
         expect(attributes[ATTR_NETWORK_PROTOCOL_NAME]).toEqual('AMQP');
         expect(attributes[ATTR_NETWORK_PROTOCOL_VERSION]).toEqual('0.9.1');
+      });
+    });
+  });
+
+  describe('getPublishSpanName', () => {
+    it('should return the exchange name', () => {
+      expect(
+        getPublishSpanName('test-exchange', 'routing.key', SemconvStability.OLD)
+      ).toBe('publish test-exchange');
+    });
+
+    it('should handle empty exchange as <default>', () => {
+      expect(getPublishSpanName('', 'routing.key', SemconvStability.OLD)).toBe(
+        'publish <default>'
+      );
+    });
+
+    it('should handle special characters in exchange name', () => {
+      expect(
+        getPublishSpanName(
+          'exchange.with-special_chars',
+          'routing.key',
+          SemconvStability.OLD
+        )
+      ).toBe('publish exchange.with-special_chars');
+    });
+
+    it('should handle long exchange names', () => {
+      expect(
+        getPublishSpanName(
+          'very-long-exchange-name-with-many-characters',
+          'routing.key',
+          SemconvStability.OLD
+        )
+      ).toBe('publish very-long-exchange-name-with-many-characters');
+    });
+
+    it('should ignore the routing key value', () => {
+      expect(
+        getPublishSpanName(
+          'test-exchange',
+          'different.routing.key',
+          SemconvStability.OLD
+        )
+      ).toBe('publish test-exchange');
+    });
+
+    describe('messaging semconv stability', () => {
+      describe('Stable attributes', () => {
+        it('should return exchange:routingKey when both are present', () => {
+          expect(
+            getPublishSpanName(
+              'test-exchange',
+              'routing.key',
+              SemconvStability.STABLE
+            )
+          ).toBe('publish test-exchange:routing.key');
+        });
+
+        it('should return only exchange when routing key is empty', () => {
+          expect(
+            getPublishSpanName('test-exchange', '', SemconvStability.STABLE)
+          ).toBe('publish test-exchange');
+        });
+
+        it('should return only routing key when exchange is empty', () => {
+          expect(
+            getPublishSpanName('', 'routing.key', SemconvStability.STABLE)
+          ).toBe('publish routing.key');
+        });
+
+        it('should use amq.default when both are empty', () => {
+          expect(getPublishSpanName('', '', SemconvStability.STABLE)).toBe(
+            'publish amq.default'
+          );
+        });
+
+        it('should handle dots in exchange and routing key', () => {
+          expect(
+            getPublishSpanName(
+              'app.service.exchange',
+              'user.created.event',
+              SemconvStability.STABLE
+            )
+          ).toBe('publish app.service.exchange:user.created.event');
+        });
+
+        it('should handle special characters', () => {
+          expect(
+            getPublishSpanName(
+              'exchange-with_special.chars',
+              'routing.key-with_special.chars',
+              SemconvStability.STABLE
+            )
+          ).toBe(
+            'publish exchange-with_special.chars:routing.key-with_special.chars'
+          );
+        });
+      });
+
+      describe('Both old and stable attributes', () => {
+        it('should use stable format when both flags are set', () => {
+          expect(
+            getPublishSpanName(
+              'test-exchange',
+              'routing.key',
+              SemconvStability.DUPLICATE
+            )
+          ).toBe('publish test-exchange:routing.key');
+        });
+
+        it('should prioritize stable format over old format', () => {
+          const spanName = getPublishSpanName(
+            'my-exchange',
+            'my.key',
+            SemconvStability.DUPLICATE
+          );
+          expect(spanName).toBe('publish my-exchange:my.key');
+          expect(spanName).not.toBe('publish my-exchange');
+        });
+
+        it('should use stable default when both are empty', () => {
+          const spanName = getPublishSpanName(
+            '',
+            '',
+            SemconvStability.DUPLICATE
+          );
+          expect(spanName).toBe('publish amq.default');
+          expect(spanName).not.toBe('publish <default>');
+        });
       });
     });
   });
