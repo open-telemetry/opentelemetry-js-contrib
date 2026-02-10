@@ -29,6 +29,7 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_MESSAGING_OPERATION,
   ATTR_MESSAGING_SYSTEM,
   ATTR_NET_PEER_NAME,
   ATTR_NET_PEER_PORT,
@@ -42,6 +43,7 @@ import {
   ATTR_MESSAGING_RABBITMQ_ROUTING_KEY,
   ATTR_MESSAGING_URL,
   MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+  MESSAGING_OPERATION_VALUE_PROCESS,
   OLD_ATTR_MESSAGING_MESSAGE_ID,
 } from '../src/semconv-obsolete';
 import type * as amqp from 'amqplib';
@@ -53,6 +55,8 @@ import {
   ATTR_MESSAGING_OPERATION_NAME,
   ATTR_MESSAGING_OPERATION_TYPE,
   ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY,
+  ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG,
+  MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
   MESSAGING_OPERATION_TYPE_VALUE_SEND,
 } from '@opentelemetry/semantic-conventions/incubating';
 
@@ -280,6 +284,63 @@ const getPublishDestinationName = (
   if (exchange && routingKey) return `${exchange}:${routingKey}`;
   if (exchange) return exchange;
   if (routingKey) return routingKey;
+  return 'amq.default';
+};
+
+export const getConsumeAttributes = (
+  queue: string,
+  msg: amqp.ConsumeMessage,
+  messagingSemconvStability: SemconvStability
+): Attributes => {
+  let attributes: Attributes = {};
+
+  if (messagingSemconvStability & SemconvStability.OLD) {
+    attributes = {
+      [ATTR_MESSAGING_DESTINATION]: msg.fields?.exchange,
+      [ATTR_MESSAGING_DESTINATION_KIND]: MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+      [ATTR_MESSAGING_RABBITMQ_ROUTING_KEY]: msg.fields?.routingKey,
+      [ATTR_MESSAGING_OPERATION]: MESSAGING_OPERATION_VALUE_PROCESS,
+      [OLD_ATTR_MESSAGING_MESSAGE_ID]: msg.properties?.messageId,
+      [ATTR_MESSAGING_CONVERSATION_ID]: msg.properties?.correlationId,
+    };
+  }
+  if (messagingSemconvStability & SemconvStability.STABLE) {
+    attributes = {
+      ...attributes,
+      [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+      [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+      [ATTR_MESSAGING_DESTINATION_NAME]: getConsumeDestinationName(
+        msg.fields?.exchange,
+        msg.fields?.routingKey,
+        queue
+      ),
+      [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: msg.fields?.routingKey,
+      [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: msg.fields?.deliveryTag,
+      [ATTR_MESSAGING_MESSAGE_ID]: msg.properties?.messageId,
+      [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: msg.properties?.correlationId,
+      [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: msg.content?.length,
+    };
+  }
+
+  return attributes;
+};
+
+const getConsumeDestinationName = (
+  exchange: string,
+  routingKey: string,
+  queue: string
+): string => {
+  if (exchange && routingKey && queue) {
+    return routingKey === queue
+      ? `${exchange}:${routingKey}`
+      : `${exchange}:${routingKey}:${queue}`;
+  }
+  if (exchange && routingKey) return `${exchange}:${routingKey}`;
+  if (exchange && queue) return `${exchange}:${queue}`;
+  if (routingKey && queue) return `${routingKey}:${queue}`;
+  if (exchange) return exchange;
+  if (routingKey) return routingKey;
+  if (queue) return queue;
   return 'amq.default';
 };
 
