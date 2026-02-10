@@ -21,6 +21,8 @@ import {
   getConnectionAttributesFromUrl,
 } from '../src/utils';
 import {
+  ATTR_NETWORK_PROTOCOL_NAME,
+  ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
@@ -66,6 +68,7 @@ describe('utils', () => {
     it('all features', () => {
       const attributes = getConnectionAttributesFromUrl(
         'amqp://user:pass@host:10000/vhost',
+        SemconvStability.OLD,
         SemconvStability.OLD
       );
       expect(attributes).toStrictEqual({
@@ -80,6 +83,7 @@ describe('utils', () => {
     it('all features encoded', () => {
       const attributes = getConnectionAttributesFromUrl(
         'amqp://user%61:%61pass@ho%61st:10000/v%2fhost',
+        SemconvStability.OLD,
         SemconvStability.OLD
       );
       expect(attributes).toStrictEqual({
@@ -94,6 +98,7 @@ describe('utils', () => {
     it('only protocol', () => {
       const attributes = getConnectionAttributesFromUrl(
         'amqp://',
+        SemconvStability.OLD,
         SemconvStability.OLD
       );
       expect(attributes).toStrictEqual({
@@ -108,6 +113,7 @@ describe('utils', () => {
     it('empty username and password', () => {
       const attributes = getConnectionAttributesFromUrl(
         'amqp://:@/',
+        SemconvStability.OLD,
         SemconvStability.OLD
       );
       expect(attributes).toStrictEqual({
@@ -119,6 +125,7 @@ describe('utils', () => {
     it('username and no password', () => {
       const attributes = getConnectionAttributesFromUrl(
         'amqp://user@',
+        SemconvStability.OLD,
         SemconvStability.OLD
       );
       expect(attributes).toStrictEqual({
@@ -130,6 +137,7 @@ describe('utils', () => {
     it('username and password, no host', () => {
       const attributes = getConnectionAttributesFromUrl(
         'amqp://user:pass@',
+        SemconvStability.OLD,
         SemconvStability.OLD
       );
       expect(attributes).toStrictEqual({
@@ -141,6 +149,7 @@ describe('utils', () => {
     it('host only', () => {
       const attributes = getConnectionAttributesFromUrl(
         'amqp://host',
+        SemconvStability.OLD,
         SemconvStability.OLD
       );
       expect(attributes).toStrictEqual({
@@ -155,6 +164,7 @@ describe('utils', () => {
     it('vhost only', () => {
       const attributes = getConnectionAttributesFromUrl(
         'amqp:///vhost',
+        SemconvStability.OLD,
         SemconvStability.OLD
       );
       expect(attributes).toStrictEqual({
@@ -169,6 +179,7 @@ describe('utils', () => {
     it('host only, trailing slash', () => {
       const attributes = getConnectionAttributesFromUrl(
         'amqp://host/',
+        SemconvStability.OLD,
         SemconvStability.OLD
       );
       expect(attributes).toStrictEqual({
@@ -183,6 +194,7 @@ describe('utils', () => {
     it('vhost encoded', () => {
       const attributes = getConnectionAttributesFromUrl(
         'amqp://host/%2f',
+        SemconvStability.OLD,
         SemconvStability.OLD
       );
       expect(attributes).toStrictEqual({
@@ -197,6 +209,7 @@ describe('utils', () => {
     it('IPv6 host', () => {
       const attributes = getConnectionAttributesFromUrl(
         'amqp://[::1]',
+        SemconvStability.OLD,
         SemconvStability.OLD
       );
       expect(attributes).toStrictEqual({
@@ -208,10 +221,11 @@ describe('utils', () => {
       });
     });
 
-    describe('semconv stability', () => {
+    describe('net semconv stability', () => {
       it('OLD semconv emits net.peer.* attributes', () => {
         const attributes = getConnectionAttributesFromUrl(
           'amqp://user:pass@host:10000/vhost',
+          SemconvStability.OLD,
           SemconvStability.OLD
         );
         expect(attributes[ATTR_NET_PEER_NAME]).toEqual('host');
@@ -223,7 +237,8 @@ describe('utils', () => {
       it('STABLE semconv emits server.* attributes', () => {
         const attributes = getConnectionAttributesFromUrl(
           'amqp://user:pass@host:10000/vhost',
-          SemconvStability.STABLE
+          SemconvStability.STABLE,
+          SemconvStability.OLD
         );
         expect(attributes[ATTR_NET_PEER_NAME]).toBeUndefined();
         expect(attributes[ATTR_NET_PEER_PORT]).toBeUndefined();
@@ -234,7 +249,8 @@ describe('utils', () => {
       it('DUPLICATE semconv emits both old and stable attributes', () => {
         const attributes = getConnectionAttributesFromUrl(
           'amqp://user:pass@host:10000/vhost',
-          SemconvStability.DUPLICATE
+          SemconvStability.DUPLICATE,
+          SemconvStability.OLD
         );
         expect(attributes[ATTR_NET_PEER_NAME]).toEqual('host');
         expect(attributes[ATTR_NET_PEER_PORT]).toEqual(10000);
@@ -249,6 +265,7 @@ describe('utils', () => {
             hostname: 'testhost',
             port: 5673,
           },
+          SemconvStability.OLD,
           SemconvStability.OLD
         );
         expect(attributes[ATTR_NET_PEER_NAME]).toEqual('testhost');
@@ -264,7 +281,8 @@ describe('utils', () => {
             hostname: 'testhost',
             port: 5673,
           },
-          SemconvStability.STABLE
+          SemconvStability.STABLE,
+          SemconvStability.OLD
         );
         expect(attributes[ATTR_NET_PEER_NAME]).toBeUndefined();
         expect(attributes[ATTR_NET_PEER_PORT]).toBeUndefined();
@@ -279,7 +297,8 @@ describe('utils', () => {
             hostname: 'testhost',
             port: 5673,
           },
-          SemconvStability.DUPLICATE
+          SemconvStability.DUPLICATE,
+          SemconvStability.OLD
         );
         expect(attributes[ATTR_NET_PEER_NAME]).toEqual('testhost');
         expect(attributes[ATTR_NET_PEER_PORT]).toEqual(5673);
@@ -287,5 +306,43 @@ describe('utils', () => {
         expect(attributes[ATTR_SERVER_PORT]).toEqual(5673);
       });
     });
+
+    describe('messaging semconv stability', () => {
+      it('OLD semconv emits messaging.* attributes', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user:pass@host:10000/vhost',
+          SemconvStability.OLD,
+          SemconvStability.OLD
+        );
+        expect(attributes[ATTR_MESSAGING_PROTOCOL]).toEqual('AMQP');
+        expect(attributes[ATTR_MESSAGING_PROTOCOL_VERSION]).toEqual('0.9.1');
+        expect(attributes[ATTR_NETWORK_PROTOCOL_NAME]).toBeUndefined();
+        expect(attributes[ATTR_NETWORK_PROTOCOL_VERSION]).toBeUndefined();
+      });
+
+      it('STABLE semconv emits network.protocol.* attributes', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user:pass@host:10000/vhost',
+          SemconvStability.OLD,
+          SemconvStability.STABLE
+        );
+        expect(attributes[ATTR_MESSAGING_PROTOCOL]).toBeUndefined();
+        expect(attributes[ATTR_MESSAGING_PROTOCOL_VERSION]).toBeUndefined();
+        expect(attributes[ATTR_NETWORK_PROTOCOL_NAME]).toEqual('AMQP');
+        expect(attributes[ATTR_NETWORK_PROTOCOL_VERSION]).toEqual('0.9.1');
+      });
+
+      it('DUPLICATE semconv emits both old and stable attributes', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user:pass@host:10000/vhost',
+          SemconvStability.OLD,
+          SemconvStability.DUPLICATE
+        );
+        expect(attributes[ATTR_MESSAGING_PROTOCOL]).toEqual('AMQP');
+        expect(attributes[ATTR_MESSAGING_PROTOCOL_VERSION]).toEqual('0.9.1');
+        expect(attributes[ATTR_NETWORK_PROTOCOL_NAME]).toEqual('AMQP');
+        expect(attributes[ATTR_NETWORK_PROTOCOL_VERSION]).toEqual('0.9.1');
+      });
+    })
   });
 });

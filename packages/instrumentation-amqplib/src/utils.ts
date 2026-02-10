@@ -20,10 +20,11 @@ import {
   HrTime,
   Span,
   Attributes,
-  AttributeValue,
 } from '@opentelemetry/api';
 import { SemconvStability } from '@opentelemetry/instrumentation';
 import {
+  ATTR_NETWORK_PROTOCOL_NAME,
+  ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
@@ -110,25 +111,6 @@ const getHostname = (hostnameFromUrl: string | undefined): string => {
   return hostnameFromUrl || 'localhost';
 };
 
-const extractConnectionAttributeOrLog = (
-  url: string | amqp.Options.Connect,
-  attributeKey: string,
-  attributeValue: AttributeValue,
-  nameForLog: string
-): Attributes => {
-  if (attributeValue) {
-    return { [attributeKey]: attributeValue };
-  } else {
-    diag.error(
-      `amqplib instrumentation: could not extract connection attribute ${nameForLog} from user supplied url`,
-      {
-        url,
-      }
-    );
-    return {};
-  }
-};
-
 export const getConnectionAttributesFromServer = (
   conn: amqp.Connection
 ): Attributes => {
@@ -144,60 +126,43 @@ export const getConnectionAttributesFromServer = (
 
 export const getConnectionAttributesFromUrl = (
   url: string | amqp.Options.Connect,
-  netSemconvStability: SemconvStability
+  netSemconvStability: SemconvStability,
+  messagingSemconvStability: SemconvStability
 ): Attributes => {
-  const attributes: Attributes = {
-    [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1', // this is the only protocol supported by the instrumented library
-  };
+  const attributes: Attributes = {};
+
+  if (messagingSemconvStability & SemconvStability.OLD) {
+    attributes[ATTR_MESSAGING_PROTOCOL_VERSION] = '0.9.1'; // this is the only protocol supported by the instrumented library
+  }
+  if (messagingSemconvStability & SemconvStability.STABLE) {
+    attributes[ATTR_NETWORK_PROTOCOL_VERSION] = '0.9.1'; // this is the only protocol supported by the instrumented library
+  }
 
   url = url || 'amqp://localhost';
   if (typeof url === 'object') {
-    const connectOptions = url as amqp.Options.Connect;
+    const protocol = getProtocol(url.protocol);
+    const hostname = getHostname(url.hostname);
+    const port = getPort(url.port, protocol);
 
-    const protocol = getProtocol(connectOptions?.protocol);
-    Object.assign(attributes, {
-      ...extractConnectionAttributeOrLog(
-        url,
-        ATTR_MESSAGING_PROTOCOL,
-        protocol,
-        'protocol'
-      ),
-    });
+    if (messagingSemconvStability & SemconvStability.OLD) {
+      attributes[ATTR_MESSAGING_PROTOCOL] = protocol;
+    }
+    if (messagingSemconvStability & SemconvStability.STABLE) {
+      attributes[ATTR_NETWORK_PROTOCOL_NAME] = protocol;
+    }
 
-    const hostname = getHostname(connectOptions?.hostname);
     if (netSemconvStability & SemconvStability.OLD) {
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          url,
-          ATTR_NET_PEER_NAME,
-          hostname,
-          'hostname'
-        ),
-      });
+      attributes[ATTR_NET_PEER_NAME] = hostname;
     }
     if (netSemconvStability & SemconvStability.STABLE) {
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          url,
-          ATTR_SERVER_ADDRESS,
-          hostname,
-          'hostname'
-        ),
-      });
+      attributes[ATTR_SERVER_ADDRESS] = hostname;
     }
 
-    const port = getPort(connectOptions.port, protocol);
     if (netSemconvStability & SemconvStability.OLD) {
-      Object.assign(
-        attributes,
-        extractConnectionAttributeOrLog(url, ATTR_NET_PEER_PORT, port, 'port')
-      );
+      attributes[ATTR_NET_PEER_PORT] = port;
     }
     if (netSemconvStability & SemconvStability.STABLE) {
-      Object.assign(
-        attributes,
-        extractConnectionAttributeOrLog(url, ATTR_SERVER_PORT, port, 'port')
-      );
+      attributes[ATTR_SERVER_PORT] = port;
     }
   } else {
     const censoredUrl = censorPassword(url);
@@ -206,35 +171,19 @@ export const getConnectionAttributesFromUrl = (
       const urlParts = new URL(censoredUrl);
 
       const protocol = getProtocol(urlParts.protocol);
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          censoredUrl,
-          ATTR_MESSAGING_PROTOCOL,
-          protocol,
-          'protocol'
-        ),
-      });
+      if (messagingSemconvStability & SemconvStability.OLD) {
+        attributes[ATTR_MESSAGING_PROTOCOL] = protocol;
+      }
+      if (messagingSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_NETWORK_PROTOCOL_NAME] = protocol;
+      }
 
       const hostname = getHostname(urlParts.hostname);
       if (netSemconvStability & SemconvStability.OLD) {
-        Object.assign(attributes, {
-          ...extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_NET_PEER_NAME,
-            hostname,
-            'hostname'
-          ),
-        });
+        attributes[ATTR_NET_PEER_NAME] = hostname;
       }
       if (netSemconvStability & SemconvStability.STABLE) {
-        Object.assign(attributes, {
-          ...extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_SERVER_ADDRESS,
-            hostname,
-            'hostname'
-          ),
-        });
+        attributes[ATTR_SERVER_ADDRESS] = hostname;
       }
 
       const port = getPort(
@@ -242,26 +191,10 @@ export const getConnectionAttributesFromUrl = (
         protocol
       );
       if (netSemconvStability & SemconvStability.OLD) {
-        Object.assign(
-          attributes,
-          extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_NET_PEER_PORT,
-            port,
-            'port'
-          )
-        );
+        attributes[ATTR_NET_PEER_PORT] = port;
       }
       if (netSemconvStability & SemconvStability.STABLE) {
-        Object.assign(
-          attributes,
-          extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_SERVER_PORT,
-            port,
-            'port'
-          )
-        );
+        attributes[ATTR_SERVER_PORT] = port;
       }
     } catch (err) {
       diag.error(

@@ -85,6 +85,7 @@ const supportedVersions = ['>=0.5.5 <1'];
 
 export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumentationConfig> {
   private _netSemconvStability!: SemconvStability;
+  private _messagingSemconvStability!: SemconvStability;
 
   constructor(config: AmqplibInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
@@ -95,6 +96,10 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
   private _setSemconvStabilityFromEnv() {
     this._netSemconvStability = semconvStabilityFromStr(
       'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._messagingSemconvStability = semconvStabilityFromStr(
+      'messaging',
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN
     );
   }
@@ -273,7 +278,8 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
           if (err == null) {
             const urlAttributes = getConnectionAttributesFromUrl(
               url,
-              self._netSemconvStability
+              self._netSemconvStability,
+              self._messagingSemconvStability
             );
             const serverAttributes = getConnectionAttributesFromServer(conn);
             conn[CONNECTION_ATTRIBUTES] = {
