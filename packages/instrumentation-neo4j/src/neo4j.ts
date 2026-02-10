@@ -1,11 +1,11 @@
 /*
- * Copyright Splunk Inc., Aspecto
+ * Copyright The OpenTelemetry Authors, Aspecto
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,12 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { ATTR_DB_NAMESPACE, ATTR_DB_OPERATION_NAME, ATTR_DB_QUERY_TEXT, ATTR_DB_SYSTEM_NAME } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+} from '@opentelemetry/semantic-conventions';
 import { Neo4jInstrumentationConfig } from './types';
 import { getAttributesFromNeo4jSession } from './utils';
 
@@ -55,11 +60,11 @@ export class Neo4jInstrumentation extends InstrumentationBase<Neo4jInstrumentati
     supportedVersions: string[]
   ): InstrumentationNodeModuleDefinition {
     const apiModuleFiles = ['session', 'transaction'].map(
-      (file) =>
+      file =>
         new InstrumentationNodeModuleFile(
           `${name}/lib/${file}.js`,
           supportedVersions,
-          (moduleExports) => {
+          moduleExports => {
             if (isWrapped(moduleExports.default.prototype.run)) {
               this._unwrap(moduleExports.default.prototype, 'run');
             }
@@ -68,7 +73,7 @@ export class Neo4jInstrumentation extends InstrumentationBase<Neo4jInstrumentati
 
             return moduleExports;
           },
-          (moduleExports) => {
+          moduleExports => {
             if (isWrapped(moduleExports.default.prototype.run)) {
               this._unwrap(moduleExports.default.prototype, 'run');
             }
@@ -162,7 +167,7 @@ export class Neo4jInstrumentation extends InstrumentationBase<Neo4jInstrumentati
                         records: records,
                         summary: args[0],
                       }),
-                    (e) => {
+                    e => {
                       if (e) {
                         diag.error('responseHook error', e);
                       }

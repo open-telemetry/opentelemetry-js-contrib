@@ -1,11 +1,11 @@
 /*
- * Copyright Splunk Inc., Aspecto
+ * Copyright The OpenTelemetry Authors, Aspecto
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,31 +29,34 @@ import {
   ATTR_DB_SYSTEM_NAME,
   ATTR_NETWORK_PEER_ADDRESS,
   ATTR_NETWORK_PEER_PORT,
-  ATTR_NETWORK_TRANSPORT
+  ATTR_NETWORK_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
-import { registerInstrumentationTesting, getTestSpans, resetMemoryExporter } from '@opentelemetry/contrib-test-utils';
-import { Neo4jInstrumentation } from '../src/neo4j';
 import {
-  ATTR_DB_USER,
-} from '../src/semconv';
-import { map, mergeMap } from 'rxjs/operators';
-// eslint-disable-next-line n/no-extraneous-import
+  registerInstrumentationTesting,
+  getTestSpans,
+  resetMemoryExporter,
+} from '@opentelemetry/contrib-test-utils';
 import { concat } from 'rxjs';
+import { map, mergeMap } from 'rxjs/operators';
 import { gt as semverGt } from 'semver';
+import { Neo4jInstrumentation } from '../src/neo4j';
+import { ATTR_DB_USER } from '../src/semconv';
 
 const port = Number(process.env.NEO4J_PORT) || 7687;
 const host = process.env.NEO4J_HOST || '127.0.0.1';
 const user = process.env.NEO4J_USER || 'neo4j';
 const password = process.env.NEO4J_PASSWORD || 'secret';
 
-const instrumentation = registerInstrumentationTesting(new Neo4jInstrumentation());
+const instrumentation = registerInstrumentationTesting(
+  new Neo4jInstrumentation()
+);
 
 import neo4j, { Driver } from 'neo4j-driver';
 import { normalizeResponse } from './utils';
 
 const shouldTest = process.env.RUN_NEO4J_TESTS;
 
-function assertSpan (span: ReadableSpan) {
+function assertSpan(span: ReadableSpan) {
   assert.strictEqual(span.kind, SpanKind.CLIENT);
   assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
   assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'neo4j');
@@ -62,7 +65,7 @@ function assertSpan (span: ReadableSpan) {
   assert.strictEqual(span.attributes[ATTR_NETWORK_PEER_ADDRESS], host);
   assert.strictEqual(span.attributes[ATTR_NETWORK_PEER_PORT], port);
   assert.strictEqual(span.attributes[ATTR_NETWORK_TRANSPORT], 'TCP');
-};
+}
 
 describe('neo4j instrumentation', () => {
   let driver: Driver;
@@ -98,7 +101,7 @@ describe('neo4j instrumentation', () => {
         clearTimeout(timeoutId);
         return;
       } catch (err) {
-        await new Promise((res) => setTimeout(res, 1000));
+        await new Promise(res => setTimeout(res, 1000));
       }
     }
     throw new Error('Could not connect to neo4j in allowed time frame');
@@ -136,7 +139,7 @@ describe('neo4j instrumentation', () => {
       );
     });
 
-    it('instruments "run" with subscribe', (done) => {
+    it('instruments "run" with subscribe', done => {
       driver
         .session()
         .run('CREATE (n:MyLabel) RETURN n')
@@ -144,7 +147,10 @@ describe('neo4j instrumentation', () => {
           onCompleted: () => {
             const span = getSingleSpan();
             assertSpan(span);
-            assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'CREATE');
+            assert.strictEqual(
+              span.attributes[ATTR_DB_OPERATION_NAME],
+              'CREATE'
+            );
             assert.strictEqual(
               span.attributes[ATTR_DB_QUERY_TEXT],
               'CREATE (n:MyLabel) RETURN n'
@@ -153,7 +159,7 @@ describe('neo4j instrumentation', () => {
           },
           onError(err) {
             done(err);
-          }
+          },
         });
     });
 
@@ -169,12 +175,12 @@ describe('neo4j instrumentation', () => {
       throw Error('should not be here');
     });
 
-    it('handles "run" exceptions with subscribe', (done) => {
+    it('handles "run" exceptions with subscribe', done => {
       driver
         .session()
         .run('NOT_EXISTS_OPERATION')
         .subscribe({
-          onError: (err) => {
+          onError: err => {
             const span = getSingleSpan();
             assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
             assert.strictEqual(span.status.message, err.message);
@@ -183,12 +189,12 @@ describe('neo4j instrumentation', () => {
         });
     });
 
-    it('closes span when on "onKeys" event', (done) => {
+    it('closes span when on "onKeys" event', done => {
       driver
         .session()
         .run('MATCH (n) RETURN n')
         .subscribe({
-          onKeys: (keys) => {
+          onKeys: keys => {
             const span = getSingleSpan();
             assertSpan(span);
             assert.deepStrictEqual(keys, ['n']);
@@ -197,9 +203,9 @@ describe('neo4j instrumentation', () => {
         });
     });
 
-    it('when passing "onKeys" and onCompleted, span is closed in onCompleted, and response hook is called', (done) => {
+    it('when passing "onKeys" and onCompleted, span is closed in onCompleted, and response hook is called', done => {
       instrumentation.setConfig({
-        responseHook: (span) => span.setAttribute('test', 'cool'),
+        responseHook: span => span.setAttribute('test', 'cool'),
       });
 
       driver
@@ -291,7 +297,7 @@ describe('neo4j instrumentation', () => {
       );
     });
 
-    it('responseHook works with subscribe', (done) => {
+    it('responseHook works with subscribe', done => {
       instrumentation.setConfig({
         responseHook: (span, response) => {
           span.setAttribute('db.response', normalizeResponse(response));
@@ -338,9 +344,11 @@ describe('neo4j instrumentation', () => {
     it('instruments session executeRead/readTransaction', async () => {
       // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
       const version = require('neo4j-driver/package.json').version;
-      const method = semverGt(version, '6.0.0') ? 'executeRead' : 'readTransaction';
+      const method = semverGt(version, '6.0.0')
+        ? 'executeRead'
+        : 'readTransaction';
 
-      await driver.session()[method as 'executeRead']((txc) => {
+      await driver.session()[method as 'executeRead'](txc => {
         return txc.run('MATCH (person:Person) RETURN person.name AS name');
       });
       const span = getSingleSpan();
@@ -355,9 +363,11 @@ describe('neo4j instrumentation', () => {
     it('instruments session executeWrite/writeTransaction', async () => {
       // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
       const version = require('neo4j-driver/package.json').version;
-      const method = semverGt(version, '6.0.0') ? 'executeWrite' : 'writeTransaction';
+      const method = semverGt(version, '6.0.0')
+        ? 'executeWrite'
+        : 'writeTransaction';
 
-      await driver.session()[method as 'executeWrite']((txc) => {
+      await driver.session()[method as 'executeWrite'](txc => {
         return txc.run('MATCH (person:Person) RETURN person.name AS name');
       });
       const span = getSingleSpan();
@@ -383,7 +393,7 @@ describe('neo4j instrumentation', () => {
   });
 
   describe('rxSession', () => {
-    it('instruments "run"', (done) => {
+    it('instruments "run"', done => {
       driver
         .rxSession()
         .run('MERGE (n:MyLabel) RETURN n')
@@ -397,7 +407,7 @@ describe('neo4j instrumentation', () => {
         });
     });
 
-    it('works when piping response', (done) => {
+    it('works when piping response', done => {
       const rxSession = driver.rxSession();
       rxSession
         .run(
@@ -407,7 +417,7 @@ describe('neo4j instrumentation', () => {
           }
         )
         .records()
-        .pipe(map((record) => record.get('name')))
+        .pipe(map(record => record.get('name')))
         .subscribe({
           next: () => {},
           complete: () => {
@@ -423,7 +433,7 @@ describe('neo4j instrumentation', () => {
         });
     });
 
-    it('works with response hook', (done) => {
+    it('works with response hook', done => {
       instrumentation.setConfig({
         responseHook: (span, response) => {
           span.setAttribute('db.response', normalizeResponse(response));
@@ -440,7 +450,7 @@ describe('neo4j instrumentation', () => {
             assertSpan(span);
             assert.strictEqual(
               span.attributes['db.response'],
-              `[{"n":{"labels":["MyLabel"],"properties":{}}}]`
+              '[{"n":{"labels":["MyLabel"],"properties":{}}}]'
             );
             done();
           },
@@ -449,18 +459,20 @@ describe('neo4j instrumentation', () => {
   });
 
   describe('reactive transaction', () => {
-    it('instruments rx session executeRead/readTransaction', (done) => {
+    it('instruments rx session executeRead/readTransaction', done => {
       // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
       const version = require('neo4j-driver/package.json').version;
-      const method = semverGt(version, '6.0.0') ? 'executeRead' : 'readTransaction';
+      const method = semverGt(version, '6.0.0')
+        ? 'executeRead'
+        : 'readTransaction';
 
       driver
-        .rxSession()
-        [method as 'executeRead']((txc) =>
+        .rxSession() // eslint-disable-next-line no-unexpected-multiline -- Conflict with prettier
+        [method as 'executeRead'](txc =>
           txc
             .run('MATCH (person:Person) RETURN person.name AS name')
             .records()
-            .pipe(map((record) => record.get('name')))
+            .pipe(map(record => record.get('name')))
         )
         .subscribe({
           next: () => {},
@@ -476,18 +488,20 @@ describe('neo4j instrumentation', () => {
         });
     });
 
-    it('instruments rx session executeWrite/writeTransaction', (done) => {
+    it('instruments rx session executeWrite/writeTransaction', done => {
       // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
       const version = require('neo4j-driver/package.json').version;
-      const method = semverGt(version, '6.0.0') ? 'executeWrite' : 'writeTransaction';
+      const method = semverGt(version, '6.0.0')
+        ? 'executeWrite'
+        : 'writeTransaction';
 
       driver
-        .rxSession()
-        [method as 'executeWrite']((txc) =>
+        .rxSession() // eslint-disable-next-line no-unexpected-multiline -- Conflict with prettier
+        [method as 'executeWrite'](txc =>
           txc
             .run('MATCH (person:Person) RETURN person.name AS name')
             .records()
-            .pipe(map((record) => record.get('name')))
+            .pipe(map(record => record.get('name')))
         )
         .subscribe({
           next: () => {},
@@ -504,12 +518,12 @@ describe('neo4j instrumentation', () => {
         });
     });
 
-    it('instruments rx explicit transactions', (done) => {
+    it('instruments rx explicit transactions', done => {
       driver
         .rxSession()
         .beginTransaction()
         .pipe(
-          mergeMap((txc) =>
+          mergeMap(txc =>
             concat(
               txc
                 .run(
@@ -555,7 +569,7 @@ describe('neo4j instrumentation', () => {
       if (shouldCheck) {
         routingDriver = neo4j.driver(
           `neo4j://${host}:${port}`,
-          neo4j.auth.basic(user, password),
+          neo4j.auth.basic(user, password)
         );
       }
     });
