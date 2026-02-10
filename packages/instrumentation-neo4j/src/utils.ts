@@ -13,13 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ATTR_DB_NAME,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-  ATTR_NET_TRANSPORT,
-} from './semconv';
+import { ATTR_DB_NAMESPACE, ATTR_NETWORK_PEER_ADDRESS, ATTR_NETWORK_PEER_PORT, ATTR_NETWORK_TRANSPORT } from '@opentelemetry/semantic-conventions';
+import { ATTR_DB_USER } from './semconv';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getAuth(connectionProvider: any) {
@@ -47,13 +42,13 @@ export function getAttributesFromNeo4jSession(session: any) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const attributes: Record<string, any> = {
-    [ATTR_NET_TRANSPORT]: 'IP.TCP',
+    [ATTR_NETWORK_TRANSPORT]: 'TCP',
     // "neo4j" is the default database name. When used, "session._database" is an empty string
-    [ATTR_DB_NAME]: session._database ? session._database : 'neo4j',
+    [ATTR_DB_NAMESPACE]: session._database ? session._database : 'neo4j',
   };
   if (address) {
-    attributes[ATTR_NET_PEER_NAME] = address._host;
-    attributes[ATTR_NET_PEER_PORT] = address._port;
+    attributes[ATTR_NETWORK_PEER_ADDRESS] = address._host;
+    attributes[ATTR_NETWORK_PEER_PORT] = address._port;
   }
 
   if (auth?.principal) {

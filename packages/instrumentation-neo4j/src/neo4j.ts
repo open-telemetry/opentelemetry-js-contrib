@@ -20,12 +20,6 @@ import {
   context,
   SpanKind,
 } from '@opentelemetry/api';
-import {
-  ATTR_DB_NAME,
-  ATTR_DB_OPERATION,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-} from './semconv';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import type * as neo4j from 'neo4j-driver';
 import {
@@ -36,6 +30,7 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
+import { ATTR_DB_NAMESPACE, ATTR_DB_OPERATION_NAME, ATTR_DB_QUERY_TEXT, ATTR_DB_SYSTEM_NAME } from '@opentelemetry/semantic-conventions';
 import { Neo4jInstrumentationConfig } from './types';
 import { getAttributesFromNeo4jSession } from './utils';
 
@@ -111,13 +106,13 @@ export class Neo4jInstrumentation extends InstrumentationBase<Neo4jInstrumentati
           const query = args[0] as string;
           const operation = query.trim().split(/\s+/)[0];
           const span = self.tracer.startSpan(
-            `${operation} ${connectionAttributes[ATTR_DB_NAME]}`,
+            `${operation} ${connectionAttributes[ATTR_DB_NAMESPACE]}`,
             {
               attributes: {
                 ...connectionAttributes,
-                [ATTR_DB_SYSTEM]: 'neo4j',
-                [ATTR_DB_OPERATION]: operation,
-                [ATTR_DB_STATEMENT]: query,
+                [ATTR_DB_SYSTEM_NAME]: 'neo4j',
+                [ATTR_DB_OPERATION_NAME]: operation,
+                [ATTR_DB_QUERY_TEXT]: query,
               },
               kind: SpanKind.CLIENT,
             }

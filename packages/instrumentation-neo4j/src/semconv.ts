@@ -13,11 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export const ATTR_DB_NAME = 'db.name' as const;
+
+// Removed but no replacement at the time
 export const ATTR_DB_USER = 'db.user' as const;
-export const ATTR_NET_PEER_NAME = 'net.peer.name' as const;
-export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
-export const ATTR_NET_TRANSPORT = 'net.transport' as const;
-export const ATTR_DB_OPERATION = 'db.operation' as const;
-export const ATTR_DB_STATEMENT = 'db.statement' as const;
-export const ATTR_DB_SYSTEM = 'db.system' as const;
