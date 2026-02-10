@@ -265,6 +265,14 @@ describe('UndiciInstrumentation `undici` tests', function () {
       });
       await consumeResponseBody(secondQueryResponse.body);
 
+      const thirdQueryResponse = await undici.request(queryRequestUrl, {
+        headers,
+        // QUERY from https://datatracker.ietf.org/doc/draft-ietf-httpbis-safe-method-w-body/
+        // @ts-expect-error undici `type HttpMethod` does not yet include 'QUERY'
+        method: 'QUERY',
+      });
+      await consumeResponseBody(thirdQueryResponse.body);
+
       assert.ok(
         firstQueryResponse!.headers['propagation-error'] === undefined,
         'propagation is set for instrumented requests'
@@ -275,7 +283,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
       );
 
       spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 2);
+      assert.strictEqual(spans.length, 3);
       assertSpan(spans[0], {
         hostname: 'localhost',
         httpStatusCode: firstQueryResponse!.statusCode,
@@ -304,6 +312,22 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.strictEqual(
         spans[1].attributes['http.request.method_original'],
         'custom',
+        'request original method is captured'
+      );
+
+      assertSpan(spans[2], {
+        hostname: 'localhost',
+        httpStatusCode: thirdQueryResponse!.statusCode,
+        spanName: 'QUERY',
+        httpMethod: 'QUERY',
+        path: '/',
+        query: '?query=test',
+        reqHeaders: headers,
+        resHeaders: thirdQueryResponse!.headers,
+      });
+      assert.strictEqual(
+        spans[2].attributes['http.request.method_original'],
+        'QUERY',
         'request original method is captured'
       );
     });

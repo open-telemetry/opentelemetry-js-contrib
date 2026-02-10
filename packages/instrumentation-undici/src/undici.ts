@@ -544,6 +544,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       PATCH: true,
       DELETE: true,
       TRACE: true,
+      // QUERY from https://datatracker.ietf.org/doc/draft-ietf-httpbis-safe-method-w-body/
+      QUERY: true,
     };
 
     if (original.toUpperCase() in knownMethods) {
