@@ -34,11 +34,27 @@ import {
   ATTR_NET_PEER_PORT,
 } from './semconv';
 import {
+  ATTR_MESSAGING_CONVERSATION_ID,
+  ATTR_MESSAGING_DESTINATION,
+  ATTR_MESSAGING_DESTINATION_KIND,
   ATTR_MESSAGING_PROTOCOL,
   ATTR_MESSAGING_PROTOCOL_VERSION,
+  ATTR_MESSAGING_RABBITMQ_ROUTING_KEY,
   ATTR_MESSAGING_URL,
+  MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+  OLD_ATTR_MESSAGING_MESSAGE_ID,
 } from '../src/semconv-obsolete';
 import type * as amqp from 'amqplib';
+import {
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_BODY_SIZE,
+  ATTR_MESSAGING_MESSAGE_CONVERSATION_ID,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION_NAME,
+  ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY,
+  MESSAGING_OPERATION_TYPE_VALUE_SEND,
+} from '@opentelemetry/semantic-conventions/incubating';
 
 export const MESSAGE_STORED_SPAN: unique symbol = Symbol(
   'opentelemetry.amqplib.message.stored-span'
@@ -207,6 +223,53 @@ export const getConnectionAttributesFromUrl = (
     }
   }
   return attributes;
+};
+
+export const getPublishAttributes = (
+  exchange: string,
+  routingKey: string,
+  contentLength: number,
+  options: amqp.Options.Publish = {},
+  messagingSemconvStability: SemconvStability
+): Attributes => {
+  let attributes: Attributes = {};
+
+  if (messagingSemconvStability & SemconvStability.OLD) {
+    attributes = {
+      [ATTR_MESSAGING_DESTINATION]: exchange,
+      [ATTR_MESSAGING_DESTINATION_KIND]: MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+      [ATTR_MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
+      [OLD_ATTR_MESSAGING_MESSAGE_ID]: options?.messageId,
+      [ATTR_MESSAGING_CONVERSATION_ID]: options?.correlationId,
+    };
+  }
+  if (messagingSemconvStability & SemconvStability.STABLE) {
+    attributes = {
+      ...attributes,
+      [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_SEND,
+      [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+      [ATTR_MESSAGING_DESTINATION_NAME]: getPublishDestinationName(
+        exchange,
+        routingKey
+      ),
+      [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: routingKey,
+      [ATTR_MESSAGING_MESSAGE_ID]: options?.messageId,
+      [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: options?.correlationId,
+      [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: contentLength,
+    };
+  }
+
+  return attributes;
+};
+
+const getPublishDestinationName = (
+  exchange: string,
+  routingKey: string
+): string => {
+  if (exchange && routingKey) return `${exchange}:${routingKey}`;
+  if (exchange) return exchange;
+  if (routingKey) return routingKey;
+  return 'amq.default';
 };
 
 export const markConfirmChannelTracing = (context: Context) => {
