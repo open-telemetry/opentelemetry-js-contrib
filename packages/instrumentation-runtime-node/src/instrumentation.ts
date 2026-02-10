@@ -107,10 +107,7 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
     if (config.captureUncaughtException && !this._onUncaughtExceptionHandler) {
       this._onUncaughtExceptionHandler =
         this._handleUncaughtException.bind(this);
-      process.on(
-        'uncaughtExceptionMonitor',
-        this._onUncaughtExceptionHandler
-      );
+      process.on('uncaughtExceptionMonitor', this._onUncaughtExceptionHandler);
     }
 
     if (
@@ -149,11 +146,7 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
   }
 
   private _handleUnhandledRejection(reason: unknown) {
-    this._emitExceptionLog(
-      reason,
-      SeverityNumber.ERROR,
-      'unhandledRejection'
-    );
+    this._emitExceptionLog(reason, SeverityNumber.ERROR, 'unhandledRejection');
   }
 
   private _emitExceptionLog(

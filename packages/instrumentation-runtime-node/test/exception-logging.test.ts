@@ -52,7 +52,11 @@ describe('runtime exception logging', () => {
     error.name = 'ValidationError';
     error.stack = 'Error: Something went wrong\n at foo (file.js:1:1)';
 
-    process.emit('uncaughtExceptionMonitor', error, 'uncaughtException');
+    (process.emit as unknown as (event: string, ...args: unknown[]) => boolean)(
+      'uncaughtExceptionMonitor',
+      error,
+      'uncaughtException'
+    );
 
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
@@ -138,7 +142,7 @@ describe('runtime exception logging', () => {
     instrumentation.setLoggerProvider(loggerProvider);
     instrumentation.enable();
 
-    process.emit(
+    (process.emit as unknown as (event: string, ...args: unknown[]) => boolean)(
       'uncaughtExceptionMonitor',
       new Error('boom'),
       'uncaughtException'
@@ -147,7 +151,10 @@ describe('runtime exception logging', () => {
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
     const record = records[records.length - 1];
-    assert.strictEqual(record.attributes['app.event.type'], 'uncaughtException');
+    assert.strictEqual(
+      record.attributes['app.event.type'],
+      'uncaughtException'
+    );
   });
 
   it('maps exception attributes for all supported shapes', () => {
@@ -167,10 +174,7 @@ describe('runtime exception logging', () => {
     });
     assert.strictEqual(objectAttrs[ATTR_EXCEPTION_TYPE], 'CustomError');
     assert.strictEqual(objectAttrs[ATTR_EXCEPTION_STACKTRACE], 'stack');
-    assert.strictEqual(
-      objectAttrs[ATTR_EXCEPTION_MESSAGE],
-      '[object Object]'
-    );
+    assert.strictEqual(objectAttrs[ATTR_EXCEPTION_MESSAGE], '[object Object]');
 
     const fallbackAttrs = asAny._getExceptionAttributes(null);
     assert.strictEqual(fallbackAttrs[ATTR_EXCEPTION_MESSAGE], 'null');
@@ -224,7 +228,7 @@ describe('runtime exception logging', () => {
   it('handles applyCustomAttributes returning undefined', () => {
     instrumentation.disable();
     instrumentation = new RuntimeNodeInstrumentation({
-      applyCustomAttributes: () => undefined,
+      applyCustomAttributes: () => ({}),
     });
     const loggerProvider = new LoggerProvider({
       processors: [new SimpleLogRecordProcessor(exporter)],
@@ -243,7 +247,7 @@ describe('runtime exception logging', () => {
   it('does not emit logs when disabled', () => {
     instrumentation.disable();
 
-    process.emit(
+    (process.emit as unknown as (event: string, ...args: unknown[]) => boolean)(
       'uncaughtExceptionMonitor',
       new Error('boom'),
       'uncaughtException'
@@ -256,12 +260,14 @@ describe('runtime exception logging', () => {
 
   it('skips logging when disabled but handlers are invoked', () => {
     const handler =
-      (instrumentation as unknown as {
-        _onUnhandledRejectionHandler?: (
-          reason: unknown,
-          promise: Promise<unknown>
-        ) => void;
-      })._onUnhandledRejectionHandler ?? undefined;
+      (
+        instrumentation as unknown as {
+          _onUnhandledRejectionHandler?: (
+            reason: unknown,
+            promise: Promise<unknown>
+          ) => void;
+        }
+      )._onUnhandledRejectionHandler ?? undefined;
 
     assert.ok(handler, 'expected unhandledRejection handler to be registered');
 
@@ -300,7 +306,7 @@ describe('runtime exception logging', () => {
     instrumentation.setLoggerProvider(loggerProvider);
     instrumentation.enable();
 
-    process.emit(
+    (process.emit as unknown as (event: string, ...args: unknown[]) => boolean)(
       'uncaughtExceptionMonitor',
       new Error('boom'),
       'uncaughtException'
