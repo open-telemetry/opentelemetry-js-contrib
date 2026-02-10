@@ -20,6 +20,7 @@ import {
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
   getConsumeAttributes,
+  getConsumeSpanName,
   getPublishAttributes,
   getPublishSpanName,
 } from '../src/utils';
@@ -736,6 +737,207 @@ describe('utils', () => {
             [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: 'corr-456',
             [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: 1024,
           });
+        });
+      });
+    });
+  });
+
+  describe('getConsumeSpanName', () => {
+    it('should return "<queue> process" with a basic queue name', () => {
+      expect(
+        getConsumeSpanName(
+          'test-queue',
+          {} as amqp.ConsumeMessage,
+          SemconvStability.OLD
+        )
+      ).toBe('test-queue process');
+    });
+
+    it('should handle empty queue', () => {
+      expect(
+        getConsumeSpanName('', {} as amqp.ConsumeMessage, SemconvStability.OLD)
+      ).toBe(' process');
+    });
+
+    it('should allow special characters in queue name', () => {
+      expect(
+        getConsumeSpanName(
+          'queue.with-special_chars',
+          {} as amqp.ConsumeMessage,
+          SemconvStability.OLD
+        )
+      ).toBe('queue.with-special_chars process');
+    });
+
+    it('should handle long queue name', () => {
+      expect(
+        getConsumeSpanName(
+          'very-long-queue-name-with-many-characters',
+          {} as amqp.ConsumeMessage,
+          SemconvStability.OLD
+        )
+      ).toBe('very-long-queue-name-with-many-characters process');
+    });
+
+    it('should allow underscores in queue name', () => {
+      expect(
+        getConsumeSpanName(
+          'my_queue_name',
+          {} as amqp.ConsumeMessage,
+          SemconvStability.OLD
+        )
+      ).toBe('my_queue_name process');
+    });
+
+    describe('messaging semconv stability', () => {
+      describe('Stable attributes', () => {
+        it('should return "consume <queue>" with a queue', () => {
+          const msg = {
+            fields: { exchange: '', routingKey: '' },
+          } as amqp.ConsumeMessage;
+          expect(
+            getConsumeSpanName('my-special-queue', msg, SemconvStability.STABLE)
+          ).toBe('consume my-special-queue');
+        });
+
+        it('should use "amq.default" when queue is empty and fields empty', () => {
+          const msg = {
+            fields: { exchange: '', routingKey: '' },
+          } as amqp.ConsumeMessage;
+          expect(getConsumeSpanName('', msg, SemconvStability.STABLE)).toBe(
+            'consume amq.default'
+          );
+        });
+
+        it('should return "consume exchange:routingKey" when queue and routingKey equals and exchange is present', () => {
+          const msg = {
+            fields: { exchange: 'a', routingKey: 'b' },
+          } as amqp.ConsumeMessage;
+          expect(getConsumeSpanName('b', msg, SemconvStability.STABLE)).toBe(
+            'consume a:b'
+          );
+        });
+
+        it('should return "consume queue" when queue==routingKey and no exchange', () => {
+          const msg = {
+            fields: { exchange: '', routingKey: 'c' },
+          } as amqp.ConsumeMessage;
+          expect(getConsumeSpanName('c', msg, SemconvStability.STABLE)).toBe(
+            'consume c'
+          );
+        });
+
+        it('should return "consume exchange" when exchange==queue==routingKey', () => {
+          const msg = {
+            fields: { exchange: 'x', routingKey: 'x' },
+          } as amqp.ConsumeMessage;
+          expect(getConsumeSpanName('x', msg, SemconvStability.STABLE)).toBe(
+            'consume x'
+          );
+        });
+
+        it('should return "consume exchange:routingKey:queue" when all are different', () => {
+          const msg = {
+            fields: { exchange: 'test-exchange', routingKey: 'routing.key' },
+          } as amqp.ConsumeMessage;
+          expect(
+            getConsumeSpanName('different-queue', msg, SemconvStability.STABLE)
+          ).toBe('consume test-exchange:routing.key:different-queue');
+        });
+
+        it('should return "consume exchange:routingKey" when queue is empty', () => {
+          const msg = {
+            fields: { exchange: 'ex', routingKey: 'rk' },
+          } as amqp.ConsumeMessage;
+          expect(getConsumeSpanName('', msg, SemconvStability.STABLE)).toBe(
+            'consume ex:rk'
+          );
+        });
+
+        it('should return "consume exchange:queue" when routingKey is empty', () => {
+          const msg = {
+            fields: { exchange: 'ex', routingKey: '' },
+          } as amqp.ConsumeMessage;
+          expect(getConsumeSpanName('q', msg, SemconvStability.STABLE)).toBe(
+            'consume ex:q'
+          );
+        });
+
+        it('should return "consume routingKey:queue" when exchange is empty', () => {
+          const msg = {
+            fields: { exchange: '', routingKey: 'r' },
+          } as amqp.ConsumeMessage;
+          expect(getConsumeSpanName('q', msg, SemconvStability.STABLE)).toBe(
+            'consume r:q'
+          );
+        });
+
+        it('should allow special characters in queue name', () => {
+          const msg = {
+            fields: { exchange: '', routingKey: '' },
+          } as amqp.ConsumeMessage;
+          expect(
+            getConsumeSpanName(
+              'queue.with-special_chars',
+              msg,
+              SemconvStability.STABLE
+            )
+          ).toBe('consume queue.with-special_chars');
+        });
+
+        it('should handle long queue names', () => {
+          const msg = {
+            fields: { exchange: '', routingKey: '' },
+          } as amqp.ConsumeMessage;
+          expect(
+            getConsumeSpanName(
+              'very-long-queue-name-with-many-characters',
+              msg,
+              SemconvStability.STABLE
+            )
+          ).toBe('consume very-long-queue-name-with-many-characters');
+        });
+
+        it('should handle numeric queue name', () => {
+          expect(
+            getConsumeSpanName(
+              '123456',
+              {} as amqp.ConsumeMessage,
+              SemconvStability.STABLE
+            )
+          ).toBe('consume 123456');
+        });
+
+        it('should handle dotted queue name', () => {
+          expect(
+            getConsumeSpanName(
+              'app.service-worker.queue',
+              {} as amqp.ConsumeMessage,
+              SemconvStability.STABLE
+            )
+          ).toBe('consume app.service-worker.queue');
+        });
+
+        it('should handle queue name with unicode', () => {
+          expect(
+            getConsumeSpanName(
+              'queue-émojis-🚀',
+              {} as amqp.ConsumeMessage,
+              SemconvStability.STABLE
+            )
+          ).toBe('consume queue-émojis-🚀');
+        });
+      });
+
+      describe('Both old and stable attributes', () => {
+        it('should prioritize stable format over old format', () => {
+          const spanName = getConsumeSpanName(
+            'my-queue',
+            {} as amqp.ConsumeMessage,
+            SemconvStability.DUPLICATE
+          );
+          expect(spanName).toBe('consume my-queue');
+          expect(spanName).not.toBe('my-queue process');
         });
       });
     });
