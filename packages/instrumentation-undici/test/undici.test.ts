@@ -283,7 +283,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
         path: '/',
         query: '?query=test',
         reqHeaders: headers,
-        resHeaders: firstQueryResponse!.headers,
       });
       assert.strictEqual(
         spans[0].attributes['http.request.method_original'],
@@ -299,7 +298,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
         path: '/',
         query: '?query=test',
         reqHeaders: headers,
-        resHeaders: secondQueryResponse!.headers,
       });
       assert.strictEqual(
         spans[1].attributes['http.request.method_original'],
@@ -349,21 +347,20 @@ describe('UndiciInstrumentation `undici` tests', function () {
         path: '/',
         query: '?query=test',
         reqHeaders: headers,
-        resHeaders: queryResponse.headers,
       });
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.foo-client'],
-        'bar',
+        ['bar'],
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.x-requested-with'],
-        'undici',
+        ['undici'],
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.response.header.foo-server'],
-        'bar',
+        ['bar'],
         'response headers from the server are captured'
       );
       assert.strictEqual(
@@ -414,21 +411,20 @@ describe('UndiciInstrumentation `undici` tests', function () {
         path: '/',
         query: '?query=test',
         reqHeaders: headers,
-        resHeaders: queryResponse.headers as unknown as Headers,
       });
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.foo-client'],
-        'bar',
+        ['bar'],
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.x-requested-with'],
-        'undici',
+        ['undici'],
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.response.header.foo-server'],
-        'bar',
+        ['bar'],
         'response headers from the server are captured'
       );
       assert.strictEqual(
@@ -487,21 +483,20 @@ describe('UndiciInstrumentation `undici` tests', function () {
         path: '/',
         query: '?query=test',
         reqHeaders: headers,
-        resHeaders: queryResponse.headers as unknown as Headers,
       });
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.foo-client'],
-        'bar',
+        ['bar'],
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.x-requested-with'],
-        'undici',
+        ['undici'],
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.response.header.foo-server'],
-        'bar',
+        ['bar'],
         'response headers from the server are captured'
       );
       assert.strictEqual(
@@ -568,21 +563,20 @@ describe('UndiciInstrumentation `undici` tests', function () {
         path: '/',
         query: '?query=test',
         reqHeaders: headers,
-        resHeaders: queryResponse.headers as unknown as Headers,
       });
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.foo-client'],
-        'bar',
+        ['bar'],
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.x-requested-with'],
-        'undici',
+        ['undici'],
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.response.header.foo-server'],
-        'bar',
+        ['bar'],
         'response headers from the server are captured'
       );
       assert.strictEqual(
@@ -637,7 +631,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpMethod: 'GET',
         path: '/',
         query: '?query=test',
-        resHeaders: headers,
       });
     });
 
@@ -875,7 +868,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
           path: '/',
           query: '?query=test',
           reqHeaders: testCase.headers,
-          resHeaders: queryResponse.headers,
         });
         assert.strictEqual(
           span.attributes['user_agent.original'],
@@ -907,7 +899,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpMethod: 'GET',
         path: '/',
         query: '?query=test',
-        resHeaders: res.headers,
       });
       assert.strictEqual(span.attributes['url.full'], fullUrl);
     });

@@ -176,7 +176,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         httpMethod: 'GET',
         path: '/',
         query: '?query=test',
-        resHeaders: response.headers,
       });
     });
 
@@ -202,7 +201,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         httpMethod: 'GET',
         path: '/',
         query: '?query=test',
-        resHeaders: response.headers,
       });
     });
 
@@ -229,7 +227,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
             response.statusText
           );
         },
-        startSpanHook: request => {
+        startSpanHook: _request => {
           return {
             'test.hook.attribute': 'hook-value',
           };
@@ -275,21 +273,20 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         path: '/',
         query: '?query=test',
         reqHeaders: reqInit.headers,
-        resHeaders: queryResponse.headers,
       });
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.foo-client'],
-        'bar',
+        ['bar'],
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.x-requested-with'],
-        'undici',
+        ['undici'],
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.response.header.foo-server'],
-        'bar',
+        ['bar'],
         'response headers from the server are captured'
       );
       assert.strictEqual(
