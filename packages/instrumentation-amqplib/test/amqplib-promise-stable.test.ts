@@ -69,9 +69,9 @@ const CHANNEL_CLOSED_IN_TEST = Symbol(
 );
 
 describe('amqplib instrumentation promise model - stable semconv', () => {
-  let conn: amqp.Connection;
+  let conn: amqp.ChannelModel;
   before(async function () {
-    instrumentation['_semconvStability'] = SemconvStability.STABLE;
+    instrumentation['_messagingSemconvStability'] = SemconvStability.STABLE;
 
     if (!shouldTest) {
       this.skip();
@@ -80,7 +80,7 @@ describe('amqplib instrumentation promise model - stable semconv', () => {
     }
   });
   after(async () => {
-    instrumentation['_semconvStability'] = SemconvStability.OLD;
+    instrumentation['_messagingSemconvStability'] = SemconvStability.OLD;
 
     if (shouldTest) {
       await conn.close();

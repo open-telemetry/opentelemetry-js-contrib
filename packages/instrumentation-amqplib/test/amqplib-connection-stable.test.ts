@@ -48,14 +48,14 @@ import { ATTR_MESSAGING_SYSTEM } from '@opentelemetry/semantic-conventions/incub
 
 describe('amqplib instrumentation connection - stable semconv', () => {
   before(function () {
-    instrumentation['_semconvStability'] = SemconvStability.STABLE;
+    instrumentation['_messagingSemconvStability'] = SemconvStability.STABLE;
 
     if (!shouldTest) {
       this.skip();
     }
   });
   after(async () => {
-    instrumentation['_semconvStability'] = SemconvStability.OLD;
+    instrumentation['_messagingSemconvStability'] = SemconvStability.OLD;
   });
 
   describe('connect with url object', () => {

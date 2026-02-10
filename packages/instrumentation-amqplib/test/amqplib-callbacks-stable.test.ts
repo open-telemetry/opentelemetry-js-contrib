@@ -71,7 +71,7 @@ describe('amqplib instrumentation callback model - stable semconv', () => {
     );
   });
   before(function (done) {
-    instrumentation['_semconvStability'] = SemconvStability.STABLE;
+    instrumentation['_messagingSemconvStability'] = SemconvStability.STABLE;
     if (!shouldTest) {
       this.skip();
     } else {
@@ -82,7 +82,7 @@ describe('amqplib instrumentation callback model - stable semconv', () => {
     }
   });
   after(done => {
-    instrumentation['_semconvStability'] = SemconvStability.OLD;
+    instrumentation['_messagingSemconvStability'] = SemconvStability.OLD;
     if (!shouldTest) {
       done();
     } else {
