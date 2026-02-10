@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.35.0...instrumentation-oracledb-v0.36.0) (2026-01-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3353](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3353)) ([a56bbdc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a56bbdc34a5015b0a5fdcb7522f168cfc90ba95c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.57.0 to ^0.58.0
+
 ## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.34.1...instrumentation-oracledb-v0.35.0) (2026-01-14)
 
 

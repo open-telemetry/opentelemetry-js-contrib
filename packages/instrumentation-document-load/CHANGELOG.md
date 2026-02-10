@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.55.0...instrumentation-document-load-v0.56.0) (2026-01-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3353](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3353)) ([a56bbdc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a56bbdc34a5015b0a5fdcb7522f168cfc90ba95c))
+
 ## [0.55.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.54.0...instrumentation-document-load-v0.55.0) (2026-01-14)
 
 

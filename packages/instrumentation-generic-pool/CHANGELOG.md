@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-generic-pool-v0.53.0...instrumentation-generic-pool-v0.54.0) (2026-01-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3353](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3353)) ([a56bbdc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a56bbdc34a5015b0a5fdcb7522f168cfc90ba95c))
+
 ## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-generic-pool-v0.52.0...instrumentation-generic-pool-v0.53.0) (2026-01-14)
 
 

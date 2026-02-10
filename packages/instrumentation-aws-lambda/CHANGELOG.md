@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.62.0...instrumentation-aws-lambda-v0.63.0) (2026-01-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3353](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3353)) ([a56bbdc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a56bbdc34a5015b0a5fdcb7522f168cfc90ba95c))
+
 ## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.61.1...instrumentation-aws-lambda-v0.62.0) (2026-01-14)
 
 

@@ -54,123 +54,6 @@ jobs:
       matrix:
         node: ["18", "20", "22", "24"]
     runs-on: ubuntu-latest
-    services:
-      mongo:
-        image: mongo
-        ports:
-          - 27017:27017
-      mssql:
-        image: mcr.microsoft.com/mssql/server:2022-latest
-        env:
-          MSSQL_SA_PASSWORD: mssql_passw0rd
-          ACCEPT_EULA: Y
-        ports:
-          - 1433:1433
-        options: >-
-          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $MSSQL_SA_PASSWORD -C -Q 'select 1' -b -o /dev/null"
-          --health-interval 1s
-          --health-timeout 30s
-          --health-start-period 10s
-          --health-retries 20
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_USER: otel
-          MYSQL_PASSWORD: secret
-          MYSQL_DATABASE: otel_mysql_database
-          MYSQL_ROOT_PASSWORD: rootpw
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      neo4j:
-        image: 'neo4j:4.4.46'
-        ports:
-          - 7687:7687
-        env:
-          NEO4J_AUTH: neo4j/secret
-      oracledb:
-        image: gvenzl/oracle-free:slim
-        env:
-          APP_USER: otel
-          APP_USER_PASSWORD: secret
-          ORACLE_PASSWORD: oracle
-        ports:
-          - 1521:1521
-        options: >-
-          --health-cmd "sqlplus system/oracle@//localhost/FREEPDB1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: otel_pg_database
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      rabbitmq:
-        image: rabbitmq:3
-        ports:
-          - 22221:5672
-        env:
-          RABBITMQ_DEFAULT_USER: username
-          RABBITMQ_DEFAULT_PASS: password
-      redis:
-        image: redis
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      MONGODB_DB: opentelemetry-tests
-      MONGODB_HOST: 127.0.0.1
-      MONGODB_PORT: 27017
-      MSSQL_PASSWORD: mssql_passw0rd
-      MYSQL_DATABASE: otel_mysql_database
-      MYSQL_HOST: 127.0.0.1
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: rootpw
-      MYSQL_PORT: 3306
-      MYSQL_USER: otel
-      NEO4J_HOST: 127.0.0.1
-      NEO4J_PASSWORD: secret
-      NEO4J_PORT: 7687
-      NEO4J_USER: neo4j
-      OPENTELEMETRY_REDIS_HOST: localhost
-      OPENTELEMETRY_REDIS_PORT: 6379
-      ORACLE_HOSTNAME: localhost
-      ORACLE_PORT: 1521
-      ORACLE_CONNECTSTRING: localhost:1521/freepdb1
-      ORACLE_USER: otel
-      ORACLE_PASSWORD: secret
-      ORACLE_SERVICENAME: FREEPDB1
-      POSTGRES_DB: otel_pg_database
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      RUN_MONGODB_TESTS: 1
-      RUN_MONGOOSE_TESTS: 1
-      RUN_MSSQL_TESTS: 1
-      RUN_MYSQL_TESTS: 1
-      RUN_NEO4J_TESTS: 1
-      RUN_ORACLEDB_TESTS: 1
-      RUN_POSTGRES_TESTS: 1
-      RUN_REDIS_TESTS: 1
-      NPM_CONFIG_UNSAFE_PERM: true
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -191,5 +74,11 @@ jobs:
           path: .nx
       - name: Build
         run: npm run compile
+      - name: Start Test Services
+        run: npm run test-services:start
       - name: Run test-all-versions
         run: npm run --if-present --workspaces test-all-versions ${{ inputs.npm-workspace-args }}
+      - name: Stop Test Services
+        if: always()
+        run: npm run test-services:stop
+
