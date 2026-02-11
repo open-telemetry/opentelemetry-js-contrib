@@ -108,7 +108,9 @@ describe('neo4j instrumentation', () => {
   });
 
   after(async () => {
-    await driver.close();
+    if (shouldTest) {
+      await driver.close();
+    }
   });
 
   beforeEach(async () => {
