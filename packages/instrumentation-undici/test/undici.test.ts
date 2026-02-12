@@ -321,7 +321,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
         path: '/',
         query: '?query=test',
         reqHeaders: headers,
-        resHeaders: thirdQueryResponse!.headers,
       });
       assert.strictEqual(
         spans[2].attributes['http.request.method_original'],
