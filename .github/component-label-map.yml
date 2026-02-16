@@ -180,6 +180,11 @@ pkg:instrumentation-mysql2:
           - packages/instrumentation-mysql2/**
           - packages/contrib-test-utils/**
           - packages/sql-common/**
+pkg:instrumentation-neo4j:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/instrumentation-neo4j/**
+          - packages/contrib-test-utils/**
 pkg:instrumentation-nestjs-core:
   - changed-files:
       - any-glob-to-any-file:

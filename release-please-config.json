@@ -58,6 +58,7 @@
     "packages/instrumentation-mysql": {},
     "packages/instrumentation-mysql2": {},
     "packages/instrumentation-nestjs-core": {},
+    "packages/instrumentation-neo4j": {},
     "packages/instrumentation-net": {},
     "packages/instrumentation-openai": {},
     "packages/instrumentation-oracledb": {},
