@@ -174,7 +174,7 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
     const errorAttributes = this._getExceptionAttributes(error);
     const timestamp = hrTime();
     const errorLog: LogRecord = {
-      eventName: 'exception',
+      body: 'exception',
       severityNumber,
       attributes: { ...errorAttributes, ...customAttributes },
       timestamp,

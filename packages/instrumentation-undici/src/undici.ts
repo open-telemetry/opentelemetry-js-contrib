@@ -384,7 +384,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
       for (const [name, value] of headersMap.entries()) {
         if (headersToAttribs.has(name)) {
-          const attrValue = Array.isArray(value) ? value.join(', ') : value;
+          const attrValue = Array.isArray(value) ? value : [value];
           spanAttributes[`http.request.header.${name}`] = attrValue;
         }
       }
@@ -420,26 +420,23 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       true
     );
 
-    const headersToAttribs = new Set();
-
     if (config.headersToSpanAttributes?.responseHeaders) {
+      const headersToAttribs = new Set();
       config.headersToSpanAttributes?.responseHeaders.forEach(name =>
         headersToAttribs.add(name.toLowerCase())
       );
-    }
 
-    for (let idx = 0; idx < response.headers.length; idx = idx + 2) {
-      const name = response.headers[idx].toString().toLowerCase();
-      const value = response.headers[idx + 1];
+      for (let idx = 0; idx < response.headers.length; idx = idx + 2) {
+        const name = response.headers[idx].toString().toLowerCase();
+        const value = response.headers[idx + 1];
 
-      if (headersToAttribs.has(name)) {
-        spanAttributes[`http.response.header.${name}`] = value.toString();
-      }
-
-      if (name === 'content-length') {
-        const contentLength = Number(value.toString());
-        if (!isNaN(contentLength)) {
-          spanAttributes['http.response.header.content-length'] = contentLength;
+        if (headersToAttribs.has(name)) {
+          const attrName = `http.response.header.${name}`;
+          if (!Object.hasOwn(spanAttributes, attrName)) {
+            spanAttributes[attrName] = [value.toString()];
+          } else {
+            (spanAttributes[attrName] as string[]).push(value.toString());
+          }
         }
       }
     }
@@ -544,6 +541,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       PATCH: true,
       DELETE: true,
       TRACE: true,
+      // QUERY from https://datatracker.ietf.org/doc/draft-ietf-httpbis-safe-method-w-body/
+      QUERY: true,
     };
 
     if (original.toUpperCase() in knownMethods) {

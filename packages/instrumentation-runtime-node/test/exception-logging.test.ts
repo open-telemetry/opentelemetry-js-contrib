@@ -61,7 +61,7 @@ describe('runtime exception logging', () => {
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
     const record = records[records.length - 1];
-    assert.strictEqual(record.eventName, 'exception');
+    assert.strictEqual(record.body, 'exception');
     assert.strictEqual(record.severityNumber, SeverityNumber.FATAL);
     assert.strictEqual(
       record.attributes[ATTR_EXCEPTION_MESSAGE],
@@ -83,7 +83,7 @@ describe('runtime exception logging', () => {
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
     const record = records[records.length - 1];
-    assert.strictEqual(record.eventName, 'exception');
+    assert.strictEqual(record.body, 'exception');
     assert.strictEqual(record.severityNumber, SeverityNumber.ERROR);
     assert.strictEqual(record.attributes[ATTR_EXCEPTION_MESSAGE], 'nope');
   });
@@ -228,7 +228,7 @@ describe('runtime exception logging', () => {
   it('handles applyCustomAttributes returning undefined', () => {
     instrumentation.disable();
     instrumentation = new RuntimeNodeInstrumentation({
-      applyCustomAttributes: () => ({}),
+      applyCustomAttributes: () => undefined,
     });
     const loggerProvider = new LoggerProvider({
       processors: [new SimpleLogRecordProcessor(exporter)],
