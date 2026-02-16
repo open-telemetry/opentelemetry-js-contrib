@@ -16,7 +16,7 @@
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "npm run test-v5-v6",
+    "test": "npm run test-v7-v9",
     "test-v5-v6": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/mongoose-common.test.ts' 'test/**/mongoose-v5-v6.test.ts'",
     "test-v7-v9": "nyc mocha --require '@opentelemetry/contrib-test-utils' 'test/mongoose-common.test.ts' 'test/**/mongoose-v7-v9.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
