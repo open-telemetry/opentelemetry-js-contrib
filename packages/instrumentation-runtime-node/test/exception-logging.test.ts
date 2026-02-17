@@ -28,6 +28,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 
 import { RuntimeNodeInstrumentation } from '../src/index';
+import type { RuntimeNodeInstrumentationConfig } from '../src/types';
 
 describe('runtime exception logging', () => {
   let exporter: InMemoryLogRecordExporter;
@@ -227,9 +228,10 @@ describe('runtime exception logging', () => {
 
   it('handles applyCustomAttributes returning undefined', () => {
     instrumentation.disable();
-    instrumentation = new RuntimeNodeInstrumentation({
+    const config = {
       applyCustomAttributes: () => undefined,
-    });
+    } as unknown as RuntimeNodeInstrumentationConfig;
+    instrumentation = new RuntimeNodeInstrumentation(config);
     const loggerProvider = new LoggerProvider({
       processors: [new SimpleLogRecordProcessor(exporter)],
     });
