@@ -15,6 +15,7 @@
  */
 
 import * as fs from 'fs';
+import { diag } from '@opentelemetry/api';
 import {
   ResourceDetector,
   DetectedResource,
@@ -79,8 +80,8 @@ export class AwsLambdaDetector implements ResourceDetector {
     try {
       const accountId = fs.readlinkSync(ACCOUNT_ID_SYMLINK_PATH);
       attributes[ATTR_CLOUD_ACCOUNT_ID] = accountId;
-    } catch {
-      // Symlink doesn't exist or readlink failed — silently skip
+    } catch (e) {
+      diag.debug('AwsLambdaDetector: cloud.account.id not available via symlink', e);
     }
 
     return { attributes };
