@@ -82,7 +82,7 @@ describe('awsLambdaDetector', () => {
   });
 
   describe('cloud.account.id from symlink', () => {
-    const symlinkPath = '/tmp/.otel-account-id';
+    const symlinkPath = '/tmp/.otel-aws-account-id';
 
     function setLambdaEnv() {
       process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';

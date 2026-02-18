@@ -34,7 +34,7 @@ import {
   CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
 } from '../semconv';
 
-const ACCOUNT_ID_SYMLINK_PATH = '/tmp/.otel-account-id';
+const ACCOUNT_ID_SYMLINK_PATH = '/tmp/.otel-aws-account-id';
 
 /**
  * The AwsLambdaDetector can be used to detect if a process is running in AWS Lambda
