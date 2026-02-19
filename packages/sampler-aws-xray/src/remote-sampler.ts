@@ -113,6 +113,8 @@ export class _AWSXRayRemoteSampler implements Sampler {
   private rulePollingJitterMillis: number;
   private targetPollingJitterMillis: number;
   private samplingClient: AWSXRaySamplingClient;
+  /** Promise that resolves once the initial sampling rules fetch completes. */
+  public readonly initialRulesFetch: Promise<void> = Promise.resolve();
 
   constructor(samplerConfig: AWSXRayRemoteSamplerConfig) {
     this.samplerDiag = diag.createComponentLogger({
@@ -150,7 +152,7 @@ export class _AWSXRayRemoteSampler implements Sampler {
     );
 
     // Start the Sampling Rules poller
-    this.startSamplingRulesPoller();
+    this.initialRulesFetch = this.startSamplingRulesPoller();
 
     // Start the Sampling Targets poller where the first poll occurs after the default interval
     this.startSamplingTargetsPoller();
@@ -226,40 +228,49 @@ export class _AWSXRayRemoteSampler implements Sampler {
     clearInterval(this.targetPoller);
   }
 
-  private startSamplingRulesPoller(): void {
-    // Execute first update
-    this.getAndUpdateSamplingRules();
+  private startSamplingRulesPoller(): Promise<void> {
+    // Execute first update and return its promise
+    const firstFetch = this.getAndUpdateSamplingRules();
     // Update sampling rules every 5 minutes (or user-defined polling interval)
     this.rulePoller = setInterval(
-      () => this.getAndUpdateSamplingRules(),
+      () =>
+        this.getAndUpdateSamplingRules().catch((e: unknown) =>
+          this.samplerDiag.error('Error refreshing sampling rules', e)
+        ),
       this.rulePollingIntervalMillis + this.rulePollingJitterMillis
     );
     this.rulePoller.unref();
+    return firstFetch;
   }
 
   private startSamplingTargetsPoller(): void {
     // Update sampling targets every targetPollingInterval (usually 10 seconds)
     this.targetPoller = setInterval(
-      () => this.getAndUpdateSamplingTargets(),
+      () =>
+        this.getAndUpdateSamplingTargets().catch((e: unknown) =>
+          this.samplerDiag.error('Error refreshing sampling targets', e)
+        ),
       this.targetPollingInterval * 1000 + this.targetPollingJitterMillis
     );
     this.targetPoller.unref();
   }
 
-  private getAndUpdateSamplingTargets(): void {
+  private getAndUpdateSamplingTargets(): Promise<void> {
     const requestBody: GetSamplingTargetsBody = {
       SamplingStatisticsDocuments:
         this.ruleCache.createSamplingStatisticsDocuments(this.clientId),
     };
 
-    this.samplingClient.fetchSamplingTargets(
+    return this.samplingClient.fetchSamplingTargets(
       requestBody,
       this.updateSamplingTargets.bind(this)
     );
   }
 
-  private getAndUpdateSamplingRules(): void {
-    this.samplingClient.fetchSamplingRules(this.updateSamplingRules.bind(this));
+  private getAndUpdateSamplingRules(): Promise<void> {
+    return this.samplingClient.fetchSamplingRules(
+      this.updateSamplingRules.bind(this)
+    );
   }
 
   private updateSamplingRules(responseObject: GetSamplingRulesResponse): void {
@@ -312,7 +323,7 @@ export class _AWSXRayRemoteSampler implements Sampler {
           'Performing out-of-band sampling rule polling to fetch updated rules.'
         );
         clearInterval(this.rulePoller);
-        this.startSamplingRulesPoller();
+        void this.startSamplingRulesPoller();
       }
     } catch (error: unknown) {
       this.samplerDiag.debug('Error occurred when updating Sampling Targets');

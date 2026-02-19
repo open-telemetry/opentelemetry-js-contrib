@@ -41,8 +41,8 @@ export class AWSXRaySamplingClient {
   public fetchSamplingTargets(
     requestBody: GetSamplingTargetsBody,
     callback: (responseObject: GetSamplingTargetsResponse) => void
-  ) {
-    this.makeSamplingRequest<GetSamplingTargetsResponse>(
+  ): Promise<void> {
+    return this.makeSamplingRequest<GetSamplingTargetsResponse>(
       this.samplingTargetsEndpoint,
       callback,
       (message: string) => this.samplerDiag.debug(message),
@@ -52,8 +52,8 @@ export class AWSXRaySamplingClient {
 
   public fetchSamplingRules(
     callback: (responseObject: GetSamplingRulesResponse) => void
-  ) {
-    this.makeSamplingRequest<GetSamplingRulesResponse>(
+  ): Promise<void> {
+    return this.makeSamplingRequest<GetSamplingRulesResponse>(
       this.getSamplingRulesEndpoint,
       callback,
       (message: string) => this.samplerDiag.error(message)
@@ -65,7 +65,7 @@ export class AWSXRaySamplingClient {
     callback: (responseObject: T) => void,
     logger: DiagLogFunction,
     requestBodyJsonString?: string
-  ): void {
+  ): Promise<void> {
     const options: http.RequestOptions = {
       method: 'POST',
       headers: {},
@@ -78,41 +78,56 @@ export class AWSXRaySamplingClient {
       };
     }
 
-    // Ensure AWS X-Ray Sampler does not generate traces itself
-    context.with(suppressTracing(context.active()), () => {
-      const req: http.ClientRequest = http
-        .request(url, options, response => {
-          response.setEncoding('utf-8');
-          let responseData = '';
-          response.on('data', dataChunk => (responseData += dataChunk));
-          response.on('end', () => {
-            if (response.statusCode === 200 && responseData.length > 0) {
-              let responseObject: T | undefined = undefined;
+    return new Promise<void>(resolve => {
+      // Ensure AWS X-Ray Sampler does not generate traces itself
+      context.with(suppressTracing(context.active()), () => {
+        const req: http.ClientRequest = http
+          .request(url, options, response => {
+            response.setEncoding('utf-8');
+            let responseData = '';
+            response.on('data', dataChunk => (responseData += dataChunk));
+            response.on('end', () => {
               try {
-                responseObject = JSON.parse(responseData) as T;
-              } catch (e: unknown) {
-                logger(`Error occurred when parsing responseData from ${url}`);
-              }
+                if (response.statusCode === 200 && responseData.length > 0) {
+                  let responseObject: T | undefined = undefined;
+                  try {
+                    responseObject = JSON.parse(responseData) as T;
+                  } catch (error: unknown) {
+                    logger(
+                      `Error occurred when parsing responseData from ${url}`, error
+                    );
+                  }
 
-              if (responseObject) {
-                callback(responseObject);
+                  if (responseObject) {
+                    callback(responseObject);
+                  }
+                } else {
+                  this.samplerDiag.debug(
+                    `${url} Response Code is: ${response.statusCode}`
+                  );
+                  this.samplerDiag.debug(
+                    `${url} responseData is: ${responseData}`
+                  );
+                }
+              } catch (error: unknown) {
+                logger(`Error occurred when processing response from ${url}`, error);
+              } finally {
+                resolve();
               }
-            } else {
-              this.samplerDiag.debug(
-                `${url} Response Code is: ${response.statusCode}`
-              );
-              this.samplerDiag.debug(`${url} responseData is: ${responseData}`);
-            }
+            });
+          })
+          .on('error', (error: unknown) => {
+            logger(
+              `Error occurred when making an HTTP POST to ${url}`, error
+            );
+            resolve();
           });
-        })
-        .on('error', (error: unknown) => {
-          logger(`Error occurred when making an HTTP POST to ${url}: ${error}`);
-        });
-      if (requestBodyJsonString) {
-        req.end(requestBodyJsonString);
-      } else {
-        req.end();
-      }
+        if (requestBodyJsonString) {
+          req.end(requestBodyJsonString);
+        } else {
+          req.end();
+        }
+      });
     });
   }
 }
