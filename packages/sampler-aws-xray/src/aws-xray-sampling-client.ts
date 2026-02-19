@@ -94,7 +94,8 @@ export class AWSXRaySamplingClient {
                     responseObject = JSON.parse(responseData) as T;
                   } catch (error: unknown) {
                     logger(
-                      `Error occurred when parsing responseData from ${url}`, error
+                      `Error occurred when parsing responseData from ${url}`,
+                      error
                     );
                   }
 
@@ -110,16 +111,17 @@ export class AWSXRaySamplingClient {
                   );
                 }
               } catch (error: unknown) {
-                logger(`Error occurred when processing response from ${url}`, error);
+                logger(
+                  `Error occurred when processing response from ${url}`,
+                  error
+                );
               } finally {
                 resolve();
               }
             });
           })
           .on('error', (error: unknown) => {
-            logger(
-              `Error occurred when making an HTTP POST to ${url}`, error
-            );
+            logger(`Error occurred when making an HTTP POST to ${url}`, error);
             resolve();
           });
         if (requestBodyJsonString) {

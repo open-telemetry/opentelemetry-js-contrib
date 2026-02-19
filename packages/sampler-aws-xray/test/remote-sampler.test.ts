@@ -416,12 +416,10 @@ describe('AWSXRayRemoteSampler', () => {
     // span1 and span2 are child spans of root span0
     // For _AWSXRayRemoteSampler (Non-ParentBased), expect all 3 spans to update statistics
     expect(
-      internalSampler['ruleCache']['ruleAppliers'][0]['statistics']
-        .RequestCount
+      internalSampler['ruleCache']['ruleAppliers'][0]['statistics'].RequestCount
     ).toBe(3);
     expect(
-      internalSampler['ruleCache']['ruleAppliers'][0]['statistics']
-        .SampleCount
+      internalSampler['ruleCache']['ruleAppliers'][0]['statistics'].SampleCount
     ).toBe(3);
   });
 });
