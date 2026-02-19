@@ -81,7 +81,10 @@ export class AwsLambdaDetector implements ResourceDetector {
       const accountId = fs.readlinkSync(ACCOUNT_ID_SYMLINK_PATH);
       attributes[ATTR_CLOUD_ACCOUNT_ID] = accountId;
     } catch (e) {
-      diag.debug('AwsLambdaDetector: cloud.account.id not available via symlink', e);
+      diag.debug(
+        'AwsLambdaDetector: cloud.account.id not available via symlink',
+        e
+      );
     }
 
     return { attributes };
