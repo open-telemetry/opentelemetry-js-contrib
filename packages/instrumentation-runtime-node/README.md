@@ -4,7 +4,7 @@
 [![Apache License][license-image]][license-image]
 
 This module provides automatic metric instrumentation that exposes measurements from the [Performance measurement APIs](https://nodejs.org/api/perf_hooks.html) (i.e. `perf_hooks`).
-While currently it is limited to metrics, it may be modified to produce other signals in the future.
+It can also emit OpenTelemetry logs for uncaught exceptions and unhandled promise rejections.
 
 ## Supported Versions
 
@@ -63,6 +63,9 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 | name                                        | type  | unit        | default | description                                                                                                                                                                                                                                                                                     |
 |---------------------------------------------|-------|-------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [`monitoringPrecision`](./src/types.ts#L25) | `int` | millisecond | `10`    | The approximate number of milliseconds for which to calculate event loop utilization averages. A larger value will result in more accurate averages at the expense of less granular data. Should be set to below the scrape interval of your metrics collector to avoid duplicated data points. |
+| [`captureUncaughtException`](./src/types.ts#L31) | `bool` | - | `true` | Whether to emit a `LogRecord` for uncaught exceptions (severity `FATAL`). Uses the `uncaughtExceptionMonitor` process event. |
+| [`captureUnhandledRejection`](./src/types.ts#L37) | `bool` | - | `true` | Whether to emit a `LogRecord` for unhandled promise rejections (severity `ERROR`). |
+| [`applyCustomAttributes`](./src/types.ts#L43) | `function` | - | `undefined` | Optional callback to attach custom attributes to emitted exception log records. |
 
 ## Useful links
 
