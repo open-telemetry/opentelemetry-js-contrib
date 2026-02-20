@@ -128,6 +128,7 @@ describe('lambda handler', () => {
   };
 
   const lambdaRequire = (module: string) =>
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require(path.resolve(__dirname, '..', module));
 
   const sampledAwsSpanContext: SpanContext = {
@@ -732,6 +733,75 @@ describe('lambda handler', () => {
         assert.strictEqual(spans.length, 1);
         assertSpanSuccess(span);
         assert.strictEqual(span.parentSpanContext?.spanId, undefined);
+      });
+    });
+
+    describe('handler in isolated directory (true Node 24 Lambda scenario)', () => {
+      // This test simulates the ACTUAL Node 24 Lambda environment where the handler
+      // is in /tmp with NO package.json in ANY parent directory. This causes
+      // require-in-the-middle to not provide a baseDir at all.
+      // Issue: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3314
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const fs = require('fs');
+      const tmpDir = '/tmp/lambda-test-isolated-' + process.pid;
+      const handlerPath = path.join(tmpDir, 'handler.js');
+
+      const handlerCode = `
+'use strict';
+exports.handler = async function handler(_event, _context) {
+  return 'ok';
+};
+exports.error = async function error(_event, _context) {
+  throw new Error('handler error');
+};
+`;
+
+      beforeEach(() => {
+        // Create isolated directory with handler - no package.json anywhere
+        fs.mkdirSync(tmpDir, { recursive: true });
+        fs.writeFileSync(handlerPath, handlerCode);
+      });
+
+      afterEach(() => {
+        // Clean up
+        try {
+          delete require.cache[require.resolve(handlerPath)];
+        } catch {
+          // ignore if not cached
+        }
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      });
+
+      it('should export a valid span when handler is in isolated directory', async () => {
+        // Set LAMBDA_TASK_ROOT to our isolated tmp directory
+        process.env.LAMBDA_TASK_ROOT = tmpDir;
+        process.env._HANDLER = 'handler.handler';
+
+        const provider = new NodeTracerProvider({
+          spanProcessors: [new BatchSpanProcessor(memoryExporter)],
+        });
+        provider.register();
+
+        instrumentation = new AwsLambdaInstrumentation({});
+        instrumentation.setTracerProvider(provider);
+
+        // Require the handler from the isolated location
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const handlerModule = require(handlerPath);
+        const result = await handlerModule.handler('arg', ctx);
+
+        assert.strictEqual(result, 'ok');
+        const spans = memoryExporter.getFinishedSpans();
+        // This assertion will FAIL with current implementation, proving issue #3314
+        assert.strictEqual(
+          spans.length,
+          1,
+          'Expected 1 span but got ' +
+            spans.length +
+            ' - instrumentation did not patch the handler (issue #3314)'
+        );
+        const [span] = spans;
+        assertSpanSuccess(span);
       });
     });
   });
