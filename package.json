@@ -78,7 +78,7 @@
     "karma-webpack": "5.0.1",
     "lerna": "9.0.3",
     "markdownlint-cli2": "0.19.1",
-    "minimatch": "9.0.5",
+    "minimatch": "10.2.1",
     "mocha": "11.7.5",
     "nock": "14.0.10",
     "nx": "20.8.3",
