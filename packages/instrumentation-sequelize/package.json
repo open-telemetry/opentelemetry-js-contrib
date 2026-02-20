@@ -49,7 +49,7 @@
     "@opentelemetry/contrib-test-utils": "^0.59.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@types/node": "18.18.14",
-    "nyc": "15.1.0",
+    "nyc": "17.1.0",
     "rimraf": "5.0.10",
     "sequelize": "^6.37.3",
     "typescript": "5.0.4"
