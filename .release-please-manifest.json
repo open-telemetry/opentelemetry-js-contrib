@@ -11,7 +11,7 @@
   "packages/auto-instrumentations-web": "0.57.0",
   "packages/baggage-span-processor": "0.5.0",
   "packages/baggage-log-record-processor": "0.13.0",
-  "packages/host-metrics": "0.38.2",
+  "packages/host-metrics": "0.38.3",
   "packages/id-generator-aws-xray": "2.1.0",
   "packages/propagation-utils": "0.31.15",
   "packages/redis-common": "0.38.2",
