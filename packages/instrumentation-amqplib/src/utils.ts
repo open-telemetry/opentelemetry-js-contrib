@@ -20,24 +20,45 @@ import {
   HrTime,
   Span,
   Attributes,
-  AttributeValue,
 } from '@opentelemetry/api';
 import { SemconvStability } from '@opentelemetry/instrumentation';
 import {
+  ATTR_NETWORK_PROTOCOL_NAME,
+  ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_MESSAGING_OPERATION,
   ATTR_MESSAGING_SYSTEM,
   ATTR_NET_PEER_NAME,
   ATTR_NET_PEER_PORT,
 } from './semconv';
 import {
+  ATTR_MESSAGING_CONVERSATION_ID,
+  ATTR_MESSAGING_DESTINATION,
+  ATTR_MESSAGING_DESTINATION_KIND,
   ATTR_MESSAGING_PROTOCOL,
   ATTR_MESSAGING_PROTOCOL_VERSION,
+  ATTR_MESSAGING_RABBITMQ_ROUTING_KEY,
   ATTR_MESSAGING_URL,
+  MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+  MESSAGING_OPERATION_VALUE_PROCESS,
+  OLD_ATTR_MESSAGING_MESSAGE_ID,
 } from '../src/semconv-obsolete';
 import type * as amqp from 'amqplib';
+import {
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_BODY_SIZE,
+  ATTR_MESSAGING_MESSAGE_CONVERSATION_ID,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION_NAME,
+  ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY,
+  ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG,
+  MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+  MESSAGING_OPERATION_TYPE_VALUE_SEND,
+} from '@opentelemetry/semantic-conventions/incubating';
 
 export const MESSAGE_STORED_SPAN: unique symbol = Symbol(
   'opentelemetry.amqplib.message.stored-span'
@@ -78,9 +99,6 @@ const IS_CONFIRM_CHANNEL_CONTEXT_KEY: symbol = createContextKey(
   'opentelemetry.amqplib.channel.is-confirm-channel'
 );
 
-export const normalizeExchange = (exchangeName: string) =>
-  exchangeName !== '' ? exchangeName : '<default>';
-
 const censorPassword = (url: string): string => {
   return url.replace(/:[^:@/]*@/, ':***@');
 };
@@ -110,25 +128,6 @@ const getHostname = (hostnameFromUrl: string | undefined): string => {
   return hostnameFromUrl || 'localhost';
 };
 
-const extractConnectionAttributeOrLog = (
-  url: string | amqp.Options.Connect,
-  attributeKey: string,
-  attributeValue: AttributeValue,
-  nameForLog: string
-): Attributes => {
-  if (attributeValue) {
-    return { [attributeKey]: attributeValue };
-  } else {
-    diag.error(
-      `amqplib instrumentation: could not extract connection attribute ${nameForLog} from user supplied url`,
-      {
-        url,
-      }
-    );
-    return {};
-  }
-};
-
 export const getConnectionAttributesFromServer = (
   conn: amqp.Connection
 ): Attributes => {
@@ -144,60 +143,43 @@ export const getConnectionAttributesFromServer = (
 
 export const getConnectionAttributesFromUrl = (
   url: string | amqp.Options.Connect,
-  netSemconvStability: SemconvStability
+  netSemconvStability: SemconvStability,
+  messagingSemconvStability: SemconvStability
 ): Attributes => {
-  const attributes: Attributes = {
-    [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1', // this is the only protocol supported by the instrumented library
-  };
+  const attributes: Attributes = {};
+
+  if (messagingSemconvStability & SemconvStability.OLD) {
+    attributes[ATTR_MESSAGING_PROTOCOL_VERSION] = '0.9.1'; // this is the only protocol supported by the instrumented library
+  }
+  if (messagingSemconvStability & SemconvStability.STABLE) {
+    attributes[ATTR_NETWORK_PROTOCOL_VERSION] = '0.9.1'; // this is the only protocol supported by the instrumented library
+  }
 
   url = url || 'amqp://localhost';
   if (typeof url === 'object') {
-    const connectOptions = url as amqp.Options.Connect;
+    const protocol = getProtocol(url.protocol);
+    const hostname = getHostname(url.hostname);
+    const port = getPort(url.port, protocol);
 
-    const protocol = getProtocol(connectOptions?.protocol);
-    Object.assign(attributes, {
-      ...extractConnectionAttributeOrLog(
-        url,
-        ATTR_MESSAGING_PROTOCOL,
-        protocol,
-        'protocol'
-      ),
-    });
+    if (messagingSemconvStability & SemconvStability.OLD) {
+      attributes[ATTR_MESSAGING_PROTOCOL] = protocol;
+    }
+    if (messagingSemconvStability & SemconvStability.STABLE) {
+      attributes[ATTR_NETWORK_PROTOCOL_NAME] = protocol;
+    }
 
-    const hostname = getHostname(connectOptions?.hostname);
     if (netSemconvStability & SemconvStability.OLD) {
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          url,
-          ATTR_NET_PEER_NAME,
-          hostname,
-          'hostname'
-        ),
-      });
+      attributes[ATTR_NET_PEER_NAME] = hostname;
     }
     if (netSemconvStability & SemconvStability.STABLE) {
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          url,
-          ATTR_SERVER_ADDRESS,
-          hostname,
-          'hostname'
-        ),
-      });
+      attributes[ATTR_SERVER_ADDRESS] = hostname;
     }
 
-    const port = getPort(connectOptions.port, protocol);
     if (netSemconvStability & SemconvStability.OLD) {
-      Object.assign(
-        attributes,
-        extractConnectionAttributeOrLog(url, ATTR_NET_PEER_PORT, port, 'port')
-      );
+      attributes[ATTR_NET_PEER_PORT] = port;
     }
     if (netSemconvStability & SemconvStability.STABLE) {
-      Object.assign(
-        attributes,
-        extractConnectionAttributeOrLog(url, ATTR_SERVER_PORT, port, 'port')
-      );
+      attributes[ATTR_SERVER_PORT] = port;
     }
   } else {
     const censoredUrl = censorPassword(url);
@@ -206,35 +188,19 @@ export const getConnectionAttributesFromUrl = (
       const urlParts = new URL(censoredUrl);
 
       const protocol = getProtocol(urlParts.protocol);
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          censoredUrl,
-          ATTR_MESSAGING_PROTOCOL,
-          protocol,
-          'protocol'
-        ),
-      });
+      if (messagingSemconvStability & SemconvStability.OLD) {
+        attributes[ATTR_MESSAGING_PROTOCOL] = protocol;
+      }
+      if (messagingSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_NETWORK_PROTOCOL_NAME] = protocol;
+      }
 
       const hostname = getHostname(urlParts.hostname);
       if (netSemconvStability & SemconvStability.OLD) {
-        Object.assign(attributes, {
-          ...extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_NET_PEER_NAME,
-            hostname,
-            'hostname'
-          ),
-        });
+        attributes[ATTR_NET_PEER_NAME] = hostname;
       }
       if (netSemconvStability & SemconvStability.STABLE) {
-        Object.assign(attributes, {
-          ...extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_SERVER_ADDRESS,
-            hostname,
-            'hostname'
-          ),
-        });
+        attributes[ATTR_SERVER_ADDRESS] = hostname;
       }
 
       const port = getPort(
@@ -242,26 +208,10 @@ export const getConnectionAttributesFromUrl = (
         protocol
       );
       if (netSemconvStability & SemconvStability.OLD) {
-        Object.assign(
-          attributes,
-          extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_NET_PEER_PORT,
-            port,
-            'port'
-          )
-        );
+        attributes[ATTR_NET_PEER_PORT] = port;
       }
       if (netSemconvStability & SemconvStability.STABLE) {
-        Object.assign(
-          attributes,
-          extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_SERVER_PORT,
-            port,
-            'port'
-          )
-        );
+        attributes[ATTR_SERVER_PORT] = port;
       }
     } catch (err) {
       diag.error(
@@ -274,6 +224,133 @@ export const getConnectionAttributesFromUrl = (
     }
   }
   return attributes;
+};
+
+export const getPublishSpanName = (
+  exchange: string,
+  routingKey: string,
+  messagingSemconvStability: SemconvStability
+): string => {
+  if (messagingSemconvStability & SemconvStability.STABLE) {
+    return `publish ${getPublishDestinationName(exchange, routingKey)}`;
+  }
+  return `publish ${normalizeExchange(exchange)}`;
+};
+
+const normalizeExchange = (exchangeName: string) =>
+  exchangeName !== '' ? exchangeName : '<default>';
+
+export const getPublishAttributes = (
+  exchange: string,
+  routingKey: string,
+  contentLength: number,
+  options: amqp.Options.Publish = {},
+  messagingSemconvStability: SemconvStability
+): Attributes => {
+  let attributes: Attributes = {};
+
+  if (messagingSemconvStability & SemconvStability.OLD) {
+    attributes = {
+      [ATTR_MESSAGING_DESTINATION]: exchange,
+      [ATTR_MESSAGING_DESTINATION_KIND]: MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+      [ATTR_MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
+      [OLD_ATTR_MESSAGING_MESSAGE_ID]: options?.messageId,
+      [ATTR_MESSAGING_CONVERSATION_ID]: options?.correlationId,
+    };
+  }
+  if (messagingSemconvStability & SemconvStability.STABLE) {
+    attributes = {
+      ...attributes,
+      [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_SEND,
+      [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+      [ATTR_MESSAGING_DESTINATION_NAME]: getPublishDestinationName(
+        exchange,
+        routingKey
+      ),
+      [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: routingKey,
+      [ATTR_MESSAGING_MESSAGE_ID]: options?.messageId,
+      [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: options?.correlationId,
+      [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: contentLength,
+    };
+  }
+
+  return attributes;
+};
+
+const getPublishDestinationName = (
+  exchange: string,
+  routingKey: string
+): string => {
+  if (exchange && routingKey) return `${exchange}:${routingKey}`;
+  if (exchange) return exchange;
+  if (routingKey) return routingKey;
+  return 'amq.default';
+};
+
+export const getConsumeSpanName = (
+  queue: string,
+  msg: amqp.ConsumeMessage,
+  messagingSemconvStability: SemconvStability
+): string => {
+  if (messagingSemconvStability & SemconvStability.STABLE) {
+    return `consume ${getConsumeDestinationName(
+      msg.fields?.exchange,
+      msg.fields?.routingKey,
+      queue
+    )}`;
+  }
+  return `${queue} process`;
+};
+
+export const getConsumeAttributes = (
+  queue: string,
+  msg: amqp.ConsumeMessage,
+  messagingSemconvStability: SemconvStability
+): Attributes => {
+  let attributes: Attributes = {};
+
+  if (messagingSemconvStability & SemconvStability.OLD) {
+    attributes = {
+      [ATTR_MESSAGING_DESTINATION]: msg.fields?.exchange,
+      [ATTR_MESSAGING_DESTINATION_KIND]: MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
+      [ATTR_MESSAGING_RABBITMQ_ROUTING_KEY]: msg.fields?.routingKey,
+      [ATTR_MESSAGING_OPERATION]: MESSAGING_OPERATION_VALUE_PROCESS,
+      [OLD_ATTR_MESSAGING_MESSAGE_ID]: msg.properties?.messageId,
+      [ATTR_MESSAGING_CONVERSATION_ID]: msg.properties?.correlationId,
+    };
+  }
+  if (messagingSemconvStability & SemconvStability.STABLE) {
+    attributes = {
+      ...attributes,
+      [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+      [ATTR_MESSAGING_OPERATION_NAME]: 'consume',
+      [ATTR_MESSAGING_DESTINATION_NAME]: getConsumeDestinationName(
+        msg.fields?.exchange,
+        msg.fields?.routingKey,
+        queue
+      ),
+      [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: msg.fields?.routingKey,
+      [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: msg.fields?.deliveryTag,
+      [ATTR_MESSAGING_MESSAGE_ID]: msg.properties?.messageId,
+      [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: msg.properties?.correlationId,
+      [ATTR_MESSAGING_MESSAGE_BODY_SIZE]: msg.content?.length,
+    };
+  }
+
+  return attributes;
+};
+
+const getConsumeDestinationName = (
+  exchange: string,
+  routingKey: string,
+  queue: string
+): string => {
+  const parts: string[] = [];
+  if (exchange && !parts.includes(exchange)) parts.push(exchange);
+  if (routingKey && !parts.includes(routingKey)) parts.push(routingKey);
+  if (queue && !parts.includes(queue)) parts.push(queue);
+
+  return parts.length ? parts.join(':') : 'amq.default';
 };
 
 export const markConfirmChannelTracing = (context: Context) => {
