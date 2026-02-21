@@ -72,10 +72,12 @@ export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentation
               level: number,
               ...rest: unknown[]
             ) => {
-              return Object.assign(
-                otelMixin(ctx, level),
-                origMixin(ctx, level, ...rest)
-              );
+              const otelMixinResult = otelMixin(ctx, level);
+              if (config.passLogCorrelationToMixin) {
+                return origMixin(otelMixinResult, level, ...rest);
+              } else {
+                return Object.assign(otelMixinResult, origMixin(ctx, level, ...rest));
+              }
             };
           }
 
@@ -184,13 +186,16 @@ export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentation
         return {};
       }
 
-      const logKeys = instrumentation.getConfig().logKeys ?? DEFAULT_LOG_KEYS;
-
-      const record = {
-        [logKeys.traceId]: spanContext.traceId,
-        [logKeys.spanId]: spanContext.spanId,
-        [logKeys.traceFlags]: `0${spanContext.traceFlags.toString(16)}`,
+      const logKeys = {
+        ...DEFAULT_LOG_KEYS,
+        ...instrumentation.getConfig().logKeys,
       };
+
+      const record: Record<string, string> = {};
+      if (logKeys.traceId) record[logKeys.traceId] = spanContext.traceId;
+      if (logKeys.spanId) record[logKeys.spanId] = spanContext.spanId;
+      if (logKeys.traceFlags)
+        record[logKeys.traceFlags] = `0${spanContext.traceFlags.toString(16)}`;
 
       instrumentation._callHook(span, record, level);
 
