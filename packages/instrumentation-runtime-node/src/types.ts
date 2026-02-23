@@ -29,5 +29,8 @@ export interface RuntimeNodeInstrumentationConfig
    * Add custom attributes to the emitted exception log records.
    * @experimental
    */
-  applyCustomAttributes?: (error: unknown, eventType: 'uncaughtException') => Attributes;
+  applyCustomAttributes?: (
+    error: unknown,
+    eventType: 'uncaughtException'
+  ) => Attributes;
 }

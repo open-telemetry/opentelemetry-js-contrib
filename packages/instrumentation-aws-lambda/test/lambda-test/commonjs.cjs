@@ -1,3 +1,3 @@
-exports.handler = async function (event, context) {
+exports.handler = async function (_event, _context) {
   return 'ok';
 };

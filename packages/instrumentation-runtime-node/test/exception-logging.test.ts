@@ -91,7 +91,11 @@ describe('runtime exception logging', () => {
         eventType: 'uncaughtException'
       ) => void;
     };
-    asAny._emitExceptionLog(rejection, SeverityNumber.FATAL, 'uncaughtException');
+    asAny._emitExceptionLog(
+      rejection,
+      SeverityNumber.FATAL,
+      'uncaughtException'
+    );
 
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
@@ -113,7 +117,11 @@ describe('runtime exception logging', () => {
         eventType: 'uncaughtException'
       ) => void;
     };
-    asAny._emitExceptionLog(rejection, SeverityNumber.FATAL, 'uncaughtException');
+    asAny._emitExceptionLog(
+      rejection,
+      SeverityNumber.FATAL,
+      'uncaughtException'
+    );
 
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);

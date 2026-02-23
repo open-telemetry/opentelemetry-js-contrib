@@ -13,38 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-unused-vars */
 const api = require('@opentelemetry/api');
 
 // Promise-based handlers (all Node.js versions)
-exports.handler = async function (event, context) {
+exports.handler = async function (_event, _context) {
   return 'ok';
 };
 
-exports.error = async function (event, context) {
+exports.error = async function (_event, _context) {
   throw new Error('handler error');
 };
 
-exports.callbackerror = async function (event, context) {
+exports.callbackerror = async function (_event, _context) {
   throw new Error('handler error');
 };
 
-exports.stringerror = async function (event, context) {
+exports.stringerror = async function (_event, _context) {
   throw 'handler error';
 };
 
-exports.context = async function (event, context) {
+exports.context = async function (_event, _context) {
   return api.trace.getSpan(api.context.active()).spanContext().traceId;
 };
 
 // Callback-based handlers (Node.js 22 and lower only - for backward compatibility testing)
-exports.callbackHandler = function (event, context, callback) {
+exports.callbackHandler = function (_event, _context, callback) {
   callback(null, 'ok');
 };
 
-exports.callbackError = function (event, context, callback) {
+exports.callbackError = function (_event, _context, callback) {
   callback(new Error('handler error'));
 };
 
-exports.callbackContext = function (event, context, callback) {
+exports.callbackContext = function (_event, _context, callback) {
   callback(null, api.trace.getSpan(api.context.active()).spanContext().traceId);
 };

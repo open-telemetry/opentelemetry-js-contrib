@@ -104,7 +104,6 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
         this._handleUncaughtException.bind(this);
       process.on('uncaughtExceptionMonitor', this._onUncaughtExceptionHandler);
     }
-
   }
 
   private _unregisterExceptionHandlers() {
@@ -115,7 +114,6 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
       );
       this._onUncaughtExceptionHandler = undefined;
     }
-
   }
 
   private _handleUncaughtException(
