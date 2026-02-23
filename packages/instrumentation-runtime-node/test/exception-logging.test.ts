@@ -78,24 +78,20 @@ describe('runtime exception logging', () => {
     );
   });
 
-  it('emits an ERROR log for unhandled rejections', () => {
-    process.emit('unhandledRejection', 'nope', Promise.resolve());
-
-    const records = exporter.getFinishedLogRecords();
-    assert.ok(records.length >= 1);
-    const record = records[records.length - 1];
-    assert.strictEqual(record.body, 'exception');
-    assert.strictEqual(record.severityNumber, SeverityNumber.ERROR);
-    assert.strictEqual(record.attributes[ATTR_EXCEPTION_MESSAGE], 'nope');
-  });
-
   it('captures attributes from non-Error objects', () => {
     const rejection = {
       name: 'WeirdError',
       message: 'bad',
       stack: 'stack here',
     };
-    process.emit('unhandledRejection', rejection, Promise.resolve());
+    const asAny = instrumentation as unknown as {
+      _emitExceptionLog: (
+        error: unknown,
+        severityNumber: SeverityNumber,
+        eventType: 'uncaughtException'
+      ) => void;
+    };
+    asAny._emitExceptionLog(rejection, SeverityNumber.FATAL, 'uncaughtException');
 
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
@@ -110,7 +106,14 @@ describe('runtime exception logging', () => {
 
   it('stringifies unknown rejection values', () => {
     const rejection = { foo: 'bar' };
-    process.emit('unhandledRejection', rejection, Promise.resolve());
+    const asAny = instrumentation as unknown as {
+      _emitExceptionLog: (
+        error: unknown,
+        severityNumber: SeverityNumber,
+        eventType: 'uncaughtException'
+      ) => void;
+    };
+    asAny._emitExceptionLog(rejection, SeverityNumber.FATAL, 'uncaughtException');
 
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
@@ -122,7 +125,14 @@ describe('runtime exception logging', () => {
   });
 
   it('stringifies non-object values', () => {
-    process.emit('unhandledRejection', 42, Promise.resolve());
+    const asAny = instrumentation as unknown as {
+      _emitExceptionLog: (
+        error: unknown,
+        severityNumber: SeverityNumber,
+        eventType: 'uncaughtException'
+      ) => void;
+    };
+    asAny._emitExceptionLog(42, SeverityNumber.FATAL, 'uncaughtException');
 
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
@@ -186,23 +196,22 @@ describe('runtime exception logging', () => {
       _emitExceptionLog: (
         error: unknown,
         severityNumber: SeverityNumber,
-        eventType: 'uncaughtException' | 'unhandledRejection'
+        eventType: 'uncaughtException'
       ) => void;
       _handleUncaughtException: (
         error: Error,
         origin: NodeJS.UncaughtExceptionOrigin
       ) => void;
-      _handleUnhandledRejection: (reason: unknown) => void;
     };
 
-    asAny._emitExceptionLog('boom', SeverityNumber.ERROR, 'unhandledRejection');
+    asAny._emitExceptionLog('boom', SeverityNumber.ERROR, 'uncaughtException');
     asAny._handleUncaughtException(new Error('oops'), 'uncaughtException');
-    asAny._handleUnhandledRejection('nope');
 
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
-    const record = records[records.length - 1];
-    assert.strictEqual(record.severityNumber, SeverityNumber.ERROR);
+    const severities = records.map(record => record.severityNumber);
+    assert.ok(severities.includes(SeverityNumber.ERROR));
+    assert.ok(severities.includes(SeverityNumber.FATAL));
   });
 
   it('keeps emitting when applyCustomAttributes throws', () => {
@@ -218,7 +227,11 @@ describe('runtime exception logging', () => {
     instrumentation.setLoggerProvider(loggerProvider);
     instrumentation.enable();
 
-    process.emit('unhandledRejection', 'nope', Promise.resolve());
+    (process.emit as unknown as (event: string, ...args: unknown[]) => boolean)(
+      'uncaughtExceptionMonitor',
+      new Error('nope'),
+      'uncaughtException'
+    );
 
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
@@ -238,7 +251,11 @@ describe('runtime exception logging', () => {
     instrumentation.setLoggerProvider(loggerProvider);
     instrumentation.enable();
 
-    process.emit('unhandledRejection', 'nope', Promise.resolve());
+    (process.emit as unknown as (event: string, ...args: unknown[]) => boolean)(
+      'uncaughtExceptionMonitor',
+      new Error('nope'),
+      'uncaughtException'
+    );
 
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
@@ -254,8 +271,6 @@ describe('runtime exception logging', () => {
       new Error('boom'),
       'uncaughtException'
     );
-    process.emit('unhandledRejection', 'nope', Promise.resolve());
-
     const records = exporter.getFinishedLogRecords();
     assert.strictEqual(records.length, 0);
   });
@@ -264,17 +279,17 @@ describe('runtime exception logging', () => {
     const handler =
       (
         instrumentation as unknown as {
-          _onUnhandledRejectionHandler?: (
-            reason: unknown,
-            promise: Promise<unknown>
+          _onUncaughtExceptionHandler?: (
+            error: Error,
+            origin: NodeJS.UncaughtExceptionOrigin
           ) => void;
         }
-      )._onUnhandledRejectionHandler ?? undefined;
+      )._onUncaughtExceptionHandler ?? undefined;
 
-    assert.ok(handler, 'expected unhandledRejection handler to be registered');
+    assert.ok(handler, 'expected uncaughtException handler to be registered');
 
     instrumentation.disable();
-    handler('nope', Promise.resolve());
+    handler(new Error('nope'), 'uncaughtException');
 
     const records = exporter.getFinishedLogRecords();
     assert.strictEqual(records.length, 0);
@@ -285,12 +300,12 @@ describe('runtime exception logging', () => {
       _emitExceptionLog: (
         error: unknown,
         severityNumber: SeverityNumber,
-        eventType: 'uncaughtException' | 'unhandledRejection'
+        eventType: 'uncaughtException'
       ) => void;
     };
 
     instrumentation.disable();
-    asAny._emitExceptionLog('boom', SeverityNumber.ERROR, 'unhandledRejection');
+    asAny._emitExceptionLog('boom', SeverityNumber.ERROR, 'uncaughtException');
 
     const records = exporter.getFinishedLogRecords();
     assert.strictEqual(records.length, 0);
@@ -300,7 +315,6 @@ describe('runtime exception logging', () => {
     instrumentation.disable();
     instrumentation = new RuntimeNodeInstrumentation({
       captureUncaughtException: false,
-      captureUnhandledRejection: false,
     });
     const loggerProvider = new LoggerProvider({
       processors: [new SimpleLogRecordProcessor(exporter)],
@@ -313,8 +327,6 @@ describe('runtime exception logging', () => {
       new Error('boom'),
       'uncaughtException'
     );
-    process.emit('unhandledRejection', 'nope', Promise.resolve());
-
     const records = exporter.getFinishedLogRecords();
     assert.strictEqual(records.length, 0);
   });

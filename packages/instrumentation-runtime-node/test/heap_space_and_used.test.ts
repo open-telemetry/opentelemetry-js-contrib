@@ -52,7 +52,6 @@ describe('v8js.memory.heap.*', function () {
       const instrumentation = new RuntimeNodeInstrumentation({
         monitoringPrecision: MEASUREMENT_INTERVAL,
         captureUncaughtException: false,
-        captureUnhandledRejection: false,
       });
       instrumentation.setMeterProvider(meterProvider);
 
@@ -101,7 +100,6 @@ describe('v8js.memory.heap.*', function () {
         const instrumentation = new RuntimeNodeInstrumentation({
           monitoringPrecision: MEASUREMENT_INTERVAL,
           captureUncaughtException: false,
-          captureUnhandledRejection: false,
         });
         instrumentation.setMeterProvider(meterProvider);
         const map = [...Array(10).keys()].map(x => x + 10);

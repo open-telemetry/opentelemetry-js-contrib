@@ -39,7 +39,6 @@ describe('nodejs.eventloop.utilization', function () {
       monitoringPrecision: MEASUREMENT_INTERVAL,
       enabled: false,
       captureUncaughtException: false,
-      captureUnhandledRejection: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
@@ -58,7 +57,6 @@ describe('nodejs.eventloop.utilization', function () {
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
       captureUncaughtException: false,
-      captureUnhandledRejection: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 

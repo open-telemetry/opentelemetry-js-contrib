@@ -26,17 +26,8 @@ export interface RuntimeNodeInstrumentationConfig
    */
   captureUncaughtException?: boolean;
   /**
-   * Capture unhandled promise rejections via process 'unhandledRejection' event.
-   * Enabled by default.
-   * @experimental
-   */
-  captureUnhandledRejection?: boolean;
-  /**
    * Add custom attributes to the emitted exception log records.
    * @experimental
    */
-  applyCustomAttributes?: (
-    error: unknown,
-    eventType: 'uncaughtException' | 'unhandledRejection'
-  ) => Attributes;
+  applyCustomAttributes?: (error: unknown, eventType: 'uncaughtException') => Attributes;
 }

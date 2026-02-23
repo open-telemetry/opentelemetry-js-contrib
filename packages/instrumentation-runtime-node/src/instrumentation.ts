@@ -36,7 +36,6 @@ import { PACKAGE_VERSION, PACKAGE_NAME } from './version';
 const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
   monitoringPrecision: 10,
   captureUncaughtException: true,
-  captureUnhandledRejection: true,
 };
 
 export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeInstrumentationConfig> {
@@ -44,10 +43,6 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
   private _onUncaughtExceptionHandler?: (
     error: Error,
     origin: NodeJS.UncaughtExceptionOrigin
-  ) => void;
-  private _onUnhandledRejectionHandler?: (
-    reason: unknown,
-    promise: Promise<unknown>
   ) => void;
 
   constructor(config: RuntimeNodeInstrumentationConfig = {}) {
@@ -110,14 +105,6 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
       process.on('uncaughtExceptionMonitor', this._onUncaughtExceptionHandler);
     }
 
-    if (
-      config.captureUnhandledRejection &&
-      !this._onUnhandledRejectionHandler
-    ) {
-      this._onUnhandledRejectionHandler =
-        this._handleUnhandledRejection.bind(this);
-      process.on('unhandledRejection', this._onUnhandledRejectionHandler);
-    }
   }
 
   private _unregisterExceptionHandlers() {
@@ -129,13 +116,6 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
       this._onUncaughtExceptionHandler = undefined;
     }
 
-    if (this._onUnhandledRejectionHandler) {
-      process.removeListener(
-        'unhandledRejection',
-        this._onUnhandledRejectionHandler
-      );
-      this._onUnhandledRejectionHandler = undefined;
-    }
   }
 
   private _handleUncaughtException(
@@ -145,14 +125,10 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
     this._emitExceptionLog(error, SeverityNumber.FATAL, 'uncaughtException');
   }
 
-  private _handleUnhandledRejection(reason: unknown) {
-    this._emitExceptionLog(reason, SeverityNumber.ERROR, 'unhandledRejection');
-  }
-
   private _emitExceptionLog(
     error: unknown,
     severityNumber: SeverityNumber,
-    eventType: 'uncaughtException' | 'unhandledRejection'
+    eventType: 'uncaughtException'
   ) {
     if (!this.isEnabled()) {
       return;

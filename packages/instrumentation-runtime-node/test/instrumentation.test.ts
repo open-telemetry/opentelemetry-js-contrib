@@ -38,7 +38,6 @@ describe('instrumentation', function () {
       monitoringPrecision: MEASUREMENT_INTERVAL,
       enabled: false,
       captureUncaughtException: false,
-      captureUnhandledRejection: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
@@ -58,7 +57,6 @@ describe('instrumentation', function () {
       monitoringPrecision: MEASUREMENT_INTERVAL,
       enabled: false,
       captureUncaughtException: false,
-      captureUnhandledRejection: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 

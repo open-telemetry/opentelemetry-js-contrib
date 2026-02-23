@@ -40,7 +40,6 @@ describe('nodejs.eventloop.delay.*', function () {
       const instrumentation = new RuntimeNodeInstrumentation({
         monitoringPrecision: 10,
         captureUncaughtException: false,
-        captureUnhandledRejection: false,
       });
       instrumentation.setMeterProvider(meterProvider);
 
