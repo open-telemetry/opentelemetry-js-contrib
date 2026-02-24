@@ -123,6 +123,7 @@ function createResolverSpan(
     [AttributeNames.FIELD_NAME]: info.fieldName,
     [AttributeNames.FIELD_PATH]: path.join('.'),
     [AttributeNames.FIELD_TYPE]: info.returnType.toString(),
+    [AttributeNames.PARENT_NAME]: info.parentType.name,
   };
 
   const span = tracer.startSpan(
