@@ -2,6 +2,9 @@ on:
   push:
     branches:
       - main
+  # If tweaking release notes (https://github.com/googleapis/release-please#how-can-i-fix-release-notes),
+  # it can be helpful to be able to manually re-run release-please.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -29,7 +32,7 @@ jobs:
         run: |
           npm ci --ignore-scripts
 
-      - uses: actions/create-github-app-token@7e473efe3cb98aa54f8d4bac15400b15fad77d94 # v2.2.0
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         id: otelbot-token
         with:
           app-id: ${{ vars.OTELBOT_JS_CONTRIB_APP_ID }}

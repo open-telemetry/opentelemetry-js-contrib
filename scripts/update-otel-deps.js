@@ -333,7 +333,10 @@ function updateNpmWorkspacesDeps({ patterns, allowRangeBumpFor0x, dryRun }) {
   }
 
   // Summary/commit message.
-  let commitMsg = `chore(deps): update deps${matchStr}\n\n`;
+  // Note: using `feat` rather than `chore`, because if release-please is
+  // being used, it ignores `chore` conventional-commits when determining if
+  // a package needs a new release.
+  let commitMsg = `feat(deps): update deps${matchStr}\n\n`;
   commitMsg +=
     '    ' +
     Array.from(summaryStrs)

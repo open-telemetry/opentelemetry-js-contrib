@@ -1,6 +1,28 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.58.0...instrumentation-graphql-v0.59.0) (2026-02-16)
+
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3383](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3383)) ([d3ac785](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3ac7851d69d0781c2c631012937a73998b744e1))
+
+## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.57.0...instrumentation-graphql-v0.58.0) (2026-01-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3353](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3353)) ([a56bbdc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a56bbdc34a5015b0a5fdcb7522f168cfc90ba95c))
+
+## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.56.0...instrumentation-graphql-v0.57.0) (2026-01-14)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3332](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3332)) ([925a150](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/925a1501ce0d082c6845d36e7c964e625ee3de0c))
+* **deps:** update deps matching '@opentelemetry/*' ([#3340](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3340)) ([2954943](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/29549434e7204b03d58635eb20352efee0e797d4))
+
 ## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.55.0...instrumentation-graphql-v0.56.0) (2025-11-06)
 
 

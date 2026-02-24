@@ -14,4 +14,5 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
+export type { GlobalErrorsInstrumentationConfig } from './instrumentation';
+export { ExceptionInstrumentation } from './instrumentation';
