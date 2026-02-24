@@ -4,18 +4,26 @@
       mode: latest-minors
     node: '>=14'
     commands: npm test
+    env:
+      - SKIP_TEST_IF_DISABLED=true
   - versions:
       include: '^10.0.0'
       mode: latest-minors
     node: '>=18'
     commands: npm test
+    env:
+      - SKIP_TEST_IF_DISABLED=true
   - versions:
       include: '^11.0.0'
       mode: latest-minors
     node: '>=18'
     commands: npm test
+    env:
+      - SKIP_TEST_IF_DISABLED=true
   - versions:
       include: '^12.0.0'
       mode: latest-minors
     node: '>=20'
     commands: npm test
+    env:
+      - SKIP_TEST_IF_DISABLED=true
