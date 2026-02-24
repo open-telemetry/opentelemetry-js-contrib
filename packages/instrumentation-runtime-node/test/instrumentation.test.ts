@@ -15,7 +15,7 @@
  */
 import { MeterProvider } from '@opentelemetry/sdk-metrics';
 
-import { RuntimeNodeInstrumentation } from '../src';
+import { RuntimeNodeInstrumentation } from '../src/index';
 import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
 
@@ -37,6 +37,7 @@ describe('instrumentation', function () {
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
       enabled: false,
+      captureUncaughtException: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
@@ -55,6 +56,7 @@ describe('instrumentation', function () {
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
       enabled: false,
+      captureUncaughtException: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 

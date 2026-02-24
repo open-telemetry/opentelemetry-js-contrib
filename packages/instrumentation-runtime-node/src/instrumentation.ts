@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
+import type { AnyValueMap, LogRecord } from '@opentelemetry/api-logs';
+import { SeverityNumber } from '@opentelemetry/api-logs';
+import {
+  ATTR_EXCEPTION_MESSAGE,
+  ATTR_EXCEPTION_STACKTRACE,
+  ATTR_EXCEPTION_TYPE,
+} from '@opentelemetry/semantic-conventions';
+import { hrTime } from '@opentelemetry/core';
 
 import { RuntimeNodeInstrumentationConfig } from './types';
 import { MetricCollector } from './types/metricCollector';
@@ -27,10 +35,15 @@ import { PACKAGE_VERSION, PACKAGE_NAME } from './version';
 
 const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
   monitoringPrecision: 10,
+  captureUncaughtException: true,
 };
 
 export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeInstrumentationConfig> {
   private readonly _collectors: MetricCollector[] = [];
+  private _onUncaughtExceptionHandler?: (
+    error: Error,
+    origin: NodeJS.UncaughtExceptionOrigin
+  ) => void;
 
   constructor(config: RuntimeNodeInstrumentationConfig = {}) {
     super(
@@ -49,6 +62,7 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
       for (const collector of this._collectors) {
         collector.enable();
       }
+      this._registerExceptionHandlers();
     }
   }
 
@@ -72,6 +86,7 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
     for (const collector of this._collectors) {
       collector.enable();
     }
+    this._registerExceptionHandlers();
   }
 
   override disable() {
@@ -79,5 +94,107 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
     for (const collector of this._collectors) {
       collector.disable();
     }
+    this._unregisterExceptionHandlers();
+  }
+
+  private _registerExceptionHandlers() {
+    const config = this.getConfig();
+    if (config.captureUncaughtException && !this._onUncaughtExceptionHandler) {
+      this._onUncaughtExceptionHandler =
+        this._handleUncaughtException.bind(this);
+      process.on('uncaughtExceptionMonitor', this._onUncaughtExceptionHandler);
+    }
+  }
+
+  private _unregisterExceptionHandlers() {
+    if (this._onUncaughtExceptionHandler) {
+      process.removeListener(
+        'uncaughtExceptionMonitor',
+        this._onUncaughtExceptionHandler
+      );
+      this._onUncaughtExceptionHandler = undefined;
+    }
+  }
+
+  private _handleUncaughtException(
+    error: Error,
+    _origin: NodeJS.UncaughtExceptionOrigin
+  ) {
+    this._emitExceptionLog(error, SeverityNumber.FATAL, 'uncaughtException');
+  }
+
+  private _emitExceptionLog(
+    error: unknown,
+    severityNumber: SeverityNumber,
+    eventType: 'uncaughtException'
+  ) {
+    if (!this.isEnabled()) {
+      return;
+    }
+
+    const config = this.getConfig();
+    let customAttributes: AnyValueMap = {};
+    if (config.applyCustomAttributes) {
+      try {
+        customAttributes = config.applyCustomAttributes(error, eventType) ?? {};
+      } catch (err) {
+        this._diag.error(
+          'applyCustomAttributes threw while handling an exception',
+          err
+        );
+      }
+    }
+
+    const errorAttributes = this._getExceptionAttributes(error);
+    const timestamp = hrTime();
+    const errorLog: LogRecord = {
+      body: 'exception',
+      severityNumber,
+      attributes: { ...errorAttributes, ...customAttributes },
+      timestamp,
+      observedTimestamp: timestamp,
+    };
+
+    this.logger.emit(errorLog);
+  }
+
+  private _getExceptionAttributes(error: unknown): AnyValueMap {
+    if (error instanceof Error) {
+      return {
+        [ATTR_EXCEPTION_TYPE]: error.name,
+        [ATTR_EXCEPTION_MESSAGE]: error.message,
+        [ATTR_EXCEPTION_STACKTRACE]: error.stack,
+      };
+    }
+
+    if (typeof error === 'string') {
+      return {
+        [ATTR_EXCEPTION_MESSAGE]: error,
+      };
+    }
+
+    if (error && typeof error === 'object') {
+      const maybeName = (error as { name?: unknown }).name;
+      const maybeMessage = (error as { message?: unknown }).message;
+      const maybeStack = (error as { stack?: unknown }).stack;
+
+      return {
+        ...(typeof maybeName === 'string'
+          ? { [ATTR_EXCEPTION_TYPE]: maybeName }
+          : {}),
+        ...(typeof maybeMessage === 'string'
+          ? { [ATTR_EXCEPTION_MESSAGE]: maybeMessage }
+          : {
+              [ATTR_EXCEPTION_MESSAGE]: String(error),
+            }),
+        ...(typeof maybeStack === 'string'
+          ? { [ATTR_EXCEPTION_STACKTRACE]: maybeStack }
+          : {}),
+      };
+    }
+
+    return {
+      [ATTR_EXCEPTION_MESSAGE]: String(error),
+    };
   }
 }

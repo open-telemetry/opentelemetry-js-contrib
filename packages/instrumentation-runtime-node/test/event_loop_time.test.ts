@@ -16,7 +16,7 @@
 
 import * as assert from 'assert';
 import { MeterProvider } from '@opentelemetry/sdk-metrics';
-import { RuntimeNodeInstrumentation } from '../src';
+import { RuntimeNodeInstrumentation } from '../src/index';
 import { TestMetricReader } from './testMetricsReader';
 import { METRIC_NODEJS_EVENTLOOP_TIME } from '../src/semconv';
 
@@ -38,6 +38,7 @@ describe('nodejs.eventloop.time', function () {
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
       enabled: false,
+      captureUncaughtException: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
@@ -55,6 +56,7 @@ describe('nodejs.eventloop.time', function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
+      captureUncaughtException: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
