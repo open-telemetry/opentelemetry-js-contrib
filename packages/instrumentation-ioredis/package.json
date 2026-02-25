@@ -21,6 +21,7 @@
     "test:debug": "cross-env RUN_REDIS_TESTS=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
+    "test-services:ls": "echo redis",
     "test-services:start": "cd ../.. && npm run test-services:start redis",
     "test-services:stop": "cd ../.. && npm run test-services:stop redis",
     "version:update": "node ../../scripts/version-update.js"

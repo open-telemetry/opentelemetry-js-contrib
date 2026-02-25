@@ -19,6 +19,7 @@
     "test:debug": "cross-env RUN_MEMCACHED_TESTS=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "//todo": "echo \"add test-all-versions\"",
+    "test-services:ls": "echo memcached",
     "test-services:start": "cd ../.. && npm run test-services:start memcached",
     "test-services:stop": "cd ../.. && npm run test-services:stop memcached",
     "version:update": "node ../../scripts/version-update.js"
