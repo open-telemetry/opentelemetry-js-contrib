@@ -98,7 +98,7 @@ jobs:
         if: ${{ matrix.node == '22' }}
         run: npm run test:browser:ci:affected
       - name: Start Test Services (Delta)
-        run: npm run test-services:start:ci
+        run: npm run test-services:start:affected
       - name: Unit tests (Nodejs - Delta)
         run: npm run test:ci:affected
       - name: Stop Test Services (Delta)
@@ -143,7 +143,7 @@ jobs:
       - name: Compile (Delta)
         run: npm run compile:ci:affected
       - name: Start Test Services (Delta)
-        run: npm run test-services:start:ci
+        run: npm run test-services:start:affected
       - name: Test All Versions (Delta)
         run: npm run test-all-versions:ci:affected
       - name: Stop Test Services (Delta)
