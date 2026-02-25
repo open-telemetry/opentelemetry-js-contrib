@@ -107,6 +107,47 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
       );
     });
 
+    it('instruments direct Hapi.Lifecycle.Method extensions with named method', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+
+      server.ext('onRequest', async function myOnRequestHandler(request, h, err) {
+        return h.continue;
+      });
+      await server.start();
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/test',
+          });
+          assert.strictEqual(res.statusCode, 200);
+
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+          const extHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'ext - onRequest - myOnRequestHandler');
+          assert.notStrictEqual(extHandlerSpan, undefined);
+          assert.strictEqual(
+            extHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.EXT
+          );
+          assert.strictEqual(
+            extHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
+            'onRequest'
+          );
+
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
+    });
+
     it('instruments single ServerExtEventsRequestObject', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const extension: hapi.ServerExtEventsRequestObject = {
@@ -182,7 +223,7 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
 
           const extHandlerSpans = memoryExporter
             .getFinishedSpans()
-            .filter(span => span.name === 'ext - onRequest');
+            .filter(span => span.name === 'ext - onRequest - firstHandler' || span.name === 'ext - onRequest - secondHandler');
           assert.notStrictEqual(extHandlerSpans, undefined);
           assert.strictEqual(extHandlerSpans.length, 2);
 
