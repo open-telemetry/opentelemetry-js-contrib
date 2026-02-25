@@ -148,7 +148,7 @@ jobs:
         run: npm run test-all-versions:ci:affected
       - name: Stop Test Services (Delta)
         if: always()
-        run: npm run test-services:stop:ci
+        run: npm run test-services:stop
       - name: Upload Test Artifacts
         uses: actions/upload-artifact@v4
         with:
