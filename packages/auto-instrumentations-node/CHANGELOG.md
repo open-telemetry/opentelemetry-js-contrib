@@ -1,6 +1,17 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.70.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.70.0...auto-instrumentations-node-v0.70.1) (2026-02-25)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.27.0 to ^0.28.0
+    * @opentelemetry/instrumentation-graphql bumped from ^0.59.0 to ^0.60.0
+    * @opentelemetry/instrumentation-socket.io bumped from ^0.58.0 to ^0.59.0
+
 ## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.69.0...auto-instrumentations-node-v0.70.0) (2026-02-16)
 
 

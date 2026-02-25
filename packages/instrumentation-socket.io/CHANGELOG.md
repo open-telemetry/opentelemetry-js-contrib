@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-socket.io-v0.58.0...instrumentation-socket.io-v0.59.0) (2026-02-25)
+
+
+### Features
+
+* **deps:** lock file maintenance ([#3261](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3261)) ([540926b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/540926bffe713c591163abaf56fbb0e18aaf5b88))
+
 ## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-socket.io-v0.57.0...instrumentation-socket.io-v0.58.0) (2026-02-16)
 
 
