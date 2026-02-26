@@ -81,16 +81,15 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   declare private _operationDuration: Histogram;
   declare private _connectionsCount: UpDownCounter;
   declare private _connectionPendingRequests: UpDownCounter;
+  // `_connCountsFromPoolName` is used to keep track of
   // Pool events connect, acquire, release and remove can be called
   // multiple times without changing the values of total, idle and waiting
-  // connections. The _connectionsCounter is used to keep track of latest
-  // values and only update the metrics _connectionsCount and _connectionPendingRequests
-  // when the value change.
-  private _connectionsCounter: utils.poolConnectionsCounter = {
-    used: 0,
-    idle: 0,
-    pending: 0,
-  };
+  // connections. The `_connCountsFromPoolName` is used to keep track of latest
+  // values (per pool) and only update the metrics (_connectionsCount and
+  // _connectionPendingRequests) when the values change.
+  private _connCountsFromPoolName: {
+    [name: string]: utils.poolConnectionsCounter;
+  } = {};
   private _semconvStability: SemconvStability;
 
   constructor(config: PgInstrumentationConfig = {}) {
@@ -116,11 +115,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       }
     );
 
-    this._connectionsCounter = {
-      idle: 0,
-      pending: 0,
-      used: 0,
-    };
+    this._connCountsFromPoolName = {};
     this._connectionsCount = this.meter.createUpDownCounter(
       METRIC_DB_CLIENT_CONNECTION_COUNT,
       {
@@ -531,42 +526,42 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     const poolName = utils.getPoolName(pgPool.options);
 
     pgPool.on('connect', () => {
-      this._connectionsCounter = utils.updateCounter(
+      utils.updateCounter(
         poolName,
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
-        this._connectionsCounter
+        this._connCountsFromPoolName
       );
     });
 
     pgPool.on('acquire', () => {
-      this._connectionsCounter = utils.updateCounter(
+      utils.updateCounter(
         poolName,
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
-        this._connectionsCounter
+        this._connCountsFromPoolName
       );
     });
 
     pgPool.on('remove', () => {
-      this._connectionsCounter = utils.updateCounter(
+      utils.updateCounter(
         poolName,
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
-        this._connectionsCounter
+        this._connCountsFromPoolName
       );
     });
 
     pgPool.on('release' as any, () => {
-      this._connectionsCounter = utils.updateCounter(
+      utils.updateCounter(
         poolName,
         pgPool,
         this._connectionsCount,
         this._connectionPendingRequests,
-        this._connectionsCounter
+        this._connCountsFromPoolName
       );
     });
     pgPool[EVENT_LISTENERS_SET] = true;
