@@ -27,6 +27,7 @@ import { PACKAGE_VERSION, PACKAGE_NAME } from './version';
 
 const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
   monitoringPrecision: 10,
+  gcDurationBuckets: [0.01, 0.1, 1, 10],
 };
 
 export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeInstrumentationConfig> {

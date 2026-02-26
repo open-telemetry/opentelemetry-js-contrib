@@ -18,4 +18,5 @@ import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 export interface RuntimeNodeInstrumentationConfig
   extends InstrumentationConfig {
   monitoringPrecision?: number;
+  gcDurationBuckets?: number[];
 }
