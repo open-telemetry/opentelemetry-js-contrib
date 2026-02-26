@@ -22,6 +22,7 @@ import { EventLoopDelayCollector } from './metrics/eventLoopDelayCollector';
 import { GCCollector } from './metrics/gcCollector';
 import { HeapSpacesSizeAndUsedCollector } from './metrics/heapSpacesSizeAndUsedCollector';
 import { EventLoopTimeCollector } from './metrics/eventLoopTimeCollector';
+import { ActiveResourcesCollector } from './metrics/activeResourcesCollector';
 /** @knipignore */
 import { PACKAGE_VERSION, PACKAGE_NAME } from './version';
 
@@ -44,6 +45,7 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
       new EventLoopDelayCollector(this._config),
       new GCCollector(this._config),
       new HeapSpacesSizeAndUsedCollector(this._config),
+      new ActiveResourcesCollector(this._config),
     ];
     if (this._config.enabled) {
       for (const collector of this._collectors) {
