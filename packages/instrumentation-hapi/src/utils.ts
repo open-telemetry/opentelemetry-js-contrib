@@ -110,11 +110,16 @@ export const getRouteMetadata = (
 
 export const getExtMetadata = (
   extPoint: Hapi.ServerRequestExtType,
-  pluginName?: string
+  pluginName?: string,
+  methodName?: string
 ): {
   attributes: Attributes;
   name: string;
 } => {
+  let baseName = `ext - ${extPoint}`;
+  if (methodName && methodName !== 'method') { // method is the default name for the extension in the ServerExtEventsObject format.
+    baseName = `ext - ${extPoint} - ${methodName}`;
+  }
   if (pluginName) {
     return {
       attributes: {
@@ -122,7 +127,7 @@ export const getExtMetadata = (
         [AttributeNames.HAPI_TYPE]: HapiLayerType.EXT,
         [AttributeNames.PLUGIN_NAME]: pluginName,
       },
-      name: `${pluginName}: ext - ${extPoint}`,
+      name: `${pluginName}: ${baseName}`,
     };
   }
   return {
@@ -130,7 +135,7 @@ export const getExtMetadata = (
       [AttributeNames.EXT_TYPE]: extPoint,
       [AttributeNames.HAPI_TYPE]: HapiLayerType.EXT,
     },
-    name: `ext - ${extPoint}`,
+    name: baseName,
   };
 };
 
