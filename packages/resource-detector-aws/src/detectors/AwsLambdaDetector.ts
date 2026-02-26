@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import * as fs from 'fs';
+import { diag } from '@opentelemetry/api';
 import {
   ResourceDetector,
   DetectedResource,
@@ -21,6 +23,7 @@ import {
 } from '@opentelemetry/resources';
 import {
   ATTR_AWS_LOG_GROUP_NAMES,
+  ATTR_CLOUD_ACCOUNT_ID,
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_REGION,
@@ -31,6 +34,8 @@ import {
   CLOUD_PROVIDER_VALUE_AWS,
   CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
 } from '../semconv';
+
+const ACCOUNT_ID_SYMLINK_PATH = '/tmp/.otel-aws-account-id';
 
 /**
  * The AwsLambdaDetector can be used to detect if a process is running in AWS Lambda
@@ -70,6 +75,16 @@ export class AwsLambdaDetector implements ResourceDetector {
     }
     if (logStreamName) {
       attributes[ATTR_FAAS_INSTANCE] = logStreamName;
+    }
+
+    try {
+      const accountId = fs.readlinkSync(ACCOUNT_ID_SYMLINK_PATH);
+      attributes[ATTR_CLOUD_ACCOUNT_ID] = accountId;
+    } catch (e) {
+      diag.debug(
+        'AwsLambdaDetector: cloud.account.id not available via symlink',
+        e
+      );
     }
 
     return { attributes };

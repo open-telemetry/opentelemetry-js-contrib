@@ -15,11 +15,13 @@
  */
 
 import * as assert from 'assert';
+import * as fs from 'fs';
 import { detectResources } from '@opentelemetry/resources';
 import { assertEmptyResource } from '@opentelemetry/contrib-test-utils';
 import { awsLambdaDetector } from '../../src';
 import {
   ATTR_AWS_LOG_GROUP_NAMES,
+  ATTR_CLOUD_ACCOUNT_ID,
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_REGION,
@@ -76,6 +78,58 @@ describe('awsLambdaDetector', () => {
       assert.deepStrictEqual(resource.attributes[ATTR_AWS_LOG_GROUP_NAMES], [
         '/aws/lambda/name',
       ]);
+    });
+  });
+
+  describe('cloud.account.id from symlink', () => {
+    const symlinkPath = '/tmp/.otel-aws-account-id';
+
+    function setLambdaEnv() {
+      process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
+      process.env.AWS_REGION = 'us-east-1';
+      process.env.AWS_LAMBDA_FUNCTION_NAME = 'name';
+      process.env.AWS_LAMBDA_FUNCTION_VERSION = 'v1';
+      process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE = '128';
+    }
+
+    afterEach(() => {
+      try {
+        fs.unlinkSync(symlinkPath);
+      } catch {
+        // ignore if not present
+      }
+    });
+
+    it('sets cloud.account.id when symlink exists', () => {
+      setLambdaEnv();
+      fs.symlinkSync('123456789012', symlinkPath);
+
+      const resource = detectResources({ detectors: [awsLambdaDetector] });
+
+      assert.strictEqual(
+        resource.attributes[ATTR_CLOUD_ACCOUNT_ID],
+        '123456789012'
+      );
+    });
+
+    it('preserves leading zeros in account ID', () => {
+      setLambdaEnv();
+      fs.symlinkSync('000123456789', symlinkPath);
+
+      const resource = detectResources({ detectors: [awsLambdaDetector] });
+
+      assert.strictEqual(
+        resource.attributes[ATTR_CLOUD_ACCOUNT_ID],
+        '000123456789'
+      );
+    });
+
+    it('does not set cloud.account.id when symlink is missing', () => {
+      setLambdaEnv();
+
+      const resource = detectResources({ detectors: [awsLambdaDetector] });
+
+      assert.strictEqual(resource.attributes[ATTR_CLOUD_ACCOUNT_ID], undefined);
     });
   });
 
