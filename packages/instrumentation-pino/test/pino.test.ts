@@ -174,6 +174,47 @@ describe('PinoInstrumentation', () => {
       });
     });
 
+    it('injects span context to records with partial custom keys', () => {
+      const logKeys = {
+        traceId: 'traceId',
+        spanId: 'spanId',
+      };
+      instrumentation.setConfig({ logKeys });
+      tracer.startActiveSpan('abc', span => {
+        logger.info('a message');
+        span.end();
+
+        sinon.assert.calledOnce(writeSpy);
+        const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+        const { traceId, spanId, traceFlags } = span.spanContext();
+        assert.strictEqual(record['traceId'], traceId);
+        assert.strictEqual(record['spanId'], spanId);
+        assert.strictEqual(record['trace_id'], undefined);
+        assert.strictEqual(record['span_id'], undefined);
+        assert.strictEqual(record['trace_flags'], traceFlags);
+        assert.strictEqual(record['msg'], 'a message');
+      });
+    });
+
+    it('injects span context to records with an explicitly undefined custom key', () => {
+      const logKeys = {
+        traceFlags: undefined,
+      };
+      instrumentation.setConfig({ logKeys });
+      tracer.startActiveSpan('abc', span => {
+        logger.info('a message');
+        span.end();
+
+        sinon.assert.calledOnce(writeSpy);
+        const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+        const { traceId, spanId } = span.spanContext();
+        assert.strictEqual(record['trace_id'], traceId);
+        assert.strictEqual(record['span_id'], spanId);
+        assert.strictEqual(record['trace_flags'], undefined);
+        assert.strictEqual(record['msg'], 'a message');
+      });
+    });
+
     it('injects span context to child logger records', () => {
       const child = logger.child({ childField: 42 });
       tracer.startActiveSpan('abc', span => {
@@ -437,6 +478,52 @@ describe('PinoInstrumentation', () => {
         const { spanId } = span.spanContext();
         const record = JSON.parse(stdoutSpy.firstCall.args[0].toString());
         assert.strictEqual(record['trace_id'], '123');
+        assert.strictEqual(record['span_id'], spanId);
+      });
+    });
+
+    it('ensures user mixin can override values', () => {
+      const logger = pino(
+        {
+          mixin(mergeObject: object) {
+            return { ...mergeObject, trace_id: '123' };
+          },
+        },
+        process.stdout
+      );
+      instrumentation.setConfig({
+        passLogCorrelationToMixin: true,
+      });
+      tracer.startActiveSpan('abc', span => {
+        logger.info('a message');
+        span.end();
+
+        const { spanId } = span.spanContext();
+        const record = JSON.parse(stdoutSpy.firstCall.args[0].toString());
+        assert.strictEqual(record['trace_id'], '123');
+        assert.strictEqual(record['span_id'], spanId);
+      });
+    });
+
+    it('ensures user mixin can eliminate values', () => {
+      const logger = pino(
+        {
+          mixin(mergeObject: object) {
+            return { ...mergeObject, trace_id: undefined };
+          },
+        },
+        process.stdout
+      );
+      instrumentation.setConfig({
+        passLogCorrelationToMixin: true,
+      });
+      tracer.startActiveSpan('abc', span => {
+        logger.info('a message');
+        span.end();
+
+        const { spanId } = span.spanContext();
+        const record = JSON.parse(stdoutSpy.firstCall.args[0].toString());
+        assert.strictEqual(record['trace_id'], undefined);
         assert.strictEqual(record['span_id'], spanId);
       });
     });

@@ -39,6 +39,13 @@ export interface PinoInstrumentationConfig extends InstrumentationConfig {
   disableLogCorrelation?: boolean;
 
   /**
+   * Whether to pass the injected trace-context fields into the
+   * mixin function's context.
+   * @default false
+   */
+  passLogCorrelationToMixin?: boolean;
+
+  /**
    * A function that allows injecting additional fields in log records. It is
    * called, as `logHook(span, record)`, for each log record emitted in a valid
    * span context. It requires `disableLogCorrelation` to be false.
@@ -50,8 +57,8 @@ export interface PinoInstrumentationConfig extends InstrumentationConfig {
    * available.
    */
   logKeys?: {
-    traceId: string;
-    spanId: string;
-    traceFlags: string;
+    traceId?: string;
+    spanId?: string;
+    traceFlags?: string;
   };
 }
