@@ -47,7 +47,7 @@
     "@opentelemetry/contrib-test-utils": "^0.59.0",
     "@opentelemetry/instrumentation-http": "^0.212.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "bignumber.js": "9.3.1"
+    "bignumber.js": "10.0.2"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.0.0"
