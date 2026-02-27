@@ -23,14 +23,11 @@ import { METRIC_V8JS_MEMORY_HEAP_MAX } from '../semconv';
 
 export class HeapSizeLimitCollector extends BaseCollector {
   updateMetricInstruments(meter: Meter): void {
-    const heapMax = meter.createObservableGauge(
-      METRIC_V8JS_MEMORY_HEAP_MAX,
-      {
-        description:
-          'Maximum heap size allowed by the V8 engine, as set by --max-old-space-size or V8 defaults.',
-        unit: 'By',
-      }
-    );
+    const heapMax = meter.createObservableGauge(METRIC_V8JS_MEMORY_HEAP_MAX, {
+      description:
+        'Maximum heap size allowed by the V8 engine, as set by --max-old-space-size or V8 defaults.',
+      unit: 'By',
+    });
 
     meter.addBatchObservableCallback(
       observableResult => {

@@ -41,9 +41,7 @@ describe('v8js.memory.heap.max', function () {
     instrumentation.setMeterProvider(meterProvider);
 
     // act
-    await new Promise(resolve =>
-      setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
-    );
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
     const { resourceMetrics, errors } = await metricReader.collect();
 
     // assert
@@ -57,7 +55,11 @@ describe('v8js.memory.heap.max', function () {
       x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_MAX
     );
 
-    assert.notEqual(metric, undefined, `${METRIC_V8JS_MEMORY_HEAP_MAX} not found`);
+    assert.notEqual(
+      metric,
+      undefined,
+      `${METRIC_V8JS_MEMORY_HEAP_MAX} not found`
+    );
 
     assert.strictEqual(
       metric!.dataPointType,
@@ -80,9 +82,7 @@ describe('v8js.memory.heap.max', function () {
     instrumentation.setMeterProvider(meterProvider);
 
     // act
-    await new Promise(resolve =>
-      setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
-    );
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
     const { resourceMetrics, errors } = await metricReader.collect();
 
     // assert
@@ -92,10 +92,18 @@ describe('v8js.memory.heap.max', function () {
       x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_MAX
     );
 
-    assert.notEqual(metric, undefined, `${METRIC_V8JS_MEMORY_HEAP_MAX} not found`);
+    assert.notEqual(
+      metric,
+      undefined,
+      `${METRIC_V8JS_MEMORY_HEAP_MAX} not found`
+    );
 
     if (metric!.dataPointType === DataPointType.GAUGE) {
-      assert.strictEqual(metric!.dataPoints.length, 1, 'expected exactly one data point (global, not per-space)');
+      assert.strictEqual(
+        metric!.dataPoints.length,
+        1,
+        'expected exactly one data point (global, not per-space)'
+      );
       const value = metric!.dataPoints[0].value as number;
       assert.ok(value > 0, `expected positive heap_size_limit, got ${value}`);
     }
@@ -109,9 +117,7 @@ describe('v8js.memory.heap.max', function () {
     instrumentation.setMeterProvider(meterProvider);
 
     // act
-    await new Promise(resolve =>
-      setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
-    );
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
     const { resourceMetrics, errors } = await metricReader.collect();
 
     // assert
