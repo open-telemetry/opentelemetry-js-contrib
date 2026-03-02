@@ -1,6 +1,23 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.22.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.21.0...instrumentation-undici-v0.22.0) (2026-02-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-undici:** fix header capture to match spec ([#3378](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3378))
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3383](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3383)) ([d3ac785](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3ac7851d69d0781c2c631012937a73998b744e1))
+* **instrumentation-undici:** support "QUERY" as a known HTTP method ([#3374](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3374)) ([4754713](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/47547133da08518bb0bcdcc79017d610d90f1d6f))
+
+
+### Bug Fixes
+
+* **instrumentation-undici:** fix header capture to match spec ([#3378](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3378)) ([f55d048](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f55d04836afeb4c6b0651194d50f56eef92a79a9))
+
 ## [0.21.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.20.0...instrumentation-undici-v0.21.0) (2026-01-21)
 
 

@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.22.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.21.0...winston-transport-v0.22.0) (2026-02-16)
+
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3383](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3383)) ([d3ac785](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3ac7851d69d0781c2c631012937a73998b744e1))
+
 ## [0.21.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.20.0...winston-transport-v0.21.0) (2026-01-21)
 
 

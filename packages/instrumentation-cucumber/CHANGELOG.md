@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.27.0...instrumentation-cucumber-v0.28.0) (2026-02-25)
+
+
+### Features
+
+* **deps:** lock file maintenance ([#3261](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3261)) ([540926b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/540926bffe713c591163abaf56fbb0e18aaf5b88))
+
+## [0.27.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.26.0...instrumentation-cucumber-v0.27.0) (2026-02-16)
+
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3383](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3383)) ([d3ac785](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3ac7851d69d0781c2c631012937a73998b744e1))
+
 ## [0.26.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.25.0...instrumentation-cucumber-v0.26.0) (2026-01-21)
 
 

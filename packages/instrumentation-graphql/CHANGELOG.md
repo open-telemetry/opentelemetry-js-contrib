@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.60.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.59.0...instrumentation-graphql-v0.60.0) (2026-02-25)
+
+
+### Features
+
+* **instrumentation-graphql:** add parent name in attributes of resolver span ([#3287](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3287)) ([ea2a90a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ea2a90a87b5b5a6d29f980a73e61cefa020ab81c))
+
+## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.58.0...instrumentation-graphql-v0.59.0) (2026-02-16)
+
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3383](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3383)) ([d3ac785](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3ac7851d69d0781c2c631012937a73998b744e1))
+
 ## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.57.0...instrumentation-graphql-v0.58.0) (2026-01-21)
 
 

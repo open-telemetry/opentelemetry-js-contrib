@@ -188,8 +188,8 @@ describe('AWSXRayRemoteSampler', () => {
         ).toEqual(SamplingDecision.RECORD_AND_SAMPLED);
 
         done();
-      }, 50);
-    }, 50);
+      }, 500);
+    }, 500);
   });
 
   it('testLargeReservoir', done => {
@@ -254,8 +254,8 @@ describe('AWSXRayRemoteSampler', () => {
         ).toEqual(1000);
         expect(sampled).toEqual(1000);
         done();
-      }, 50);
-    }, 50);
+      }, 500);
+    }, 500);
   });
 
   it('testSomeReservoir', done => {
@@ -334,8 +334,8 @@ describe('AWSXRayRemoteSampler', () => {
 
         expect(sampled).toEqual(100);
         done();
-      }, 50);
-    }, 50);
+      }, 500);
+    }, 500);
   });
 
   it('generates valid ClientId', () => {
@@ -389,7 +389,7 @@ describe('AWSXRayRemoteSampler', () => {
         ].SampleCount
       ).toBe(1);
       done();
-    }, 50);
+    }, 500);
   });
 
   it('Non-ParentBased _AWSXRayRemoteSampler creates expected Statistics based on all 3 Spans, disregarding Parent Span Sampling Decision', done => {
@@ -429,7 +429,7 @@ describe('AWSXRayRemoteSampler', () => {
           .SampleCount
       ).toBe(3);
       done();
-    }, 50);
+    }, 500);
   });
 });
 

@@ -208,6 +208,7 @@ describe('graphql', () => {
           'books',
           '[Book]',
           'books {\n' + '      name\n' + '    }',
+          'Query',
           executeSpan.spanContext().spanId
         );
         const parentId = resolveParentSpan.spanContext().spanId;
@@ -217,6 +218,7 @@ describe('graphql', () => {
           'books.0.name',
           'String',
           'name',
+          'Book',
           parentId
         );
         assertResolveSpan(
@@ -225,6 +227,7 @@ describe('graphql', () => {
           'books.1.name',
           'String',
           'name',
+          'Book',
           parentId
         );
         assertResolveSpan(
@@ -233,6 +236,7 @@ describe('graphql', () => {
           'books.2.name',
           'String',
           'name',
+          'Book',
           parentId
         );
       });
@@ -341,6 +345,7 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: *) {\n' + '      name\n' + '    }',
+          'Query',
           executeSpan.spanContext().spanId
         );
         const parentId = resolveParentSpan.spanContext().spanId;
@@ -350,6 +355,7 @@ describe('graphql', () => {
           'book.name',
           'String',
           'name',
+          'Book',
           parentId
         );
       });
@@ -446,6 +452,7 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: $id) {\n' + '      name\n' + '    }',
+          'Query',
           executeSpan.spanContext().spanId
         );
         const parentId = resolveParentSpan.spanContext().spanId;
@@ -455,6 +462,7 @@ describe('graphql', () => {
           'book.name',
           'String',
           'name',
+          'Book',
           parentId
         );
       });
@@ -541,6 +549,7 @@ describe('graphql', () => {
             '        name\n' +
             '      }\n' +
             '    }',
+          'Query',
           executeSpan.spanContext().spanId
         );
 
@@ -551,6 +560,7 @@ describe('graphql', () => {
           'search.0.name',
           'String',
           'name',
+          'Book',
           parentId
         );
         assertResolveSpan(
@@ -559,6 +569,7 @@ describe('graphql', () => {
           'search.1.name',
           'String',
           'name',
+          'EBook',
           parentId
         );
       });
@@ -900,6 +911,7 @@ describe('graphql', () => {
         'books',
         '[Book]',
         'books {\n      name\n    }',
+        'Query',
         executeSpanId
       );
 
@@ -909,6 +921,7 @@ describe('graphql', () => {
         'books.0.name',
         'String',
         'name',
+        'Book',
         executeSpanId
       );
 
@@ -918,6 +931,7 @@ describe('graphql', () => {
         'books.1.name',
         'String',
         'name',
+        'Book',
         executeSpanId
       );
 
@@ -927,6 +941,7 @@ describe('graphql', () => {
         'books.2.name',
         'String',
         'name',
+        'Book',
         executeSpanId
       );
     });
@@ -1016,6 +1031,7 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: 0) {\n' + '      name\n' + '    }',
+          'Query',
           executeSpan.spanContext().spanId
         );
         const parentId = resolveParentSpan.spanContext().spanId;
@@ -1025,6 +1041,7 @@ describe('graphql', () => {
           'book.name',
           'String',
           'name',
+          'Book',
           parentId
         );
       });
@@ -1123,10 +1140,19 @@ describe('graphql', () => {
             '    ) {\n' +
             '      id\n' +
             '    }',
+          'Mutation',
           executeSpan.spanContext().spanId
         );
         const parentId = resolveParentSpan.spanContext().spanId;
-        assertResolveSpan(span1, 'id', 'addBook.id', 'Int', 'id', parentId);
+        assertResolveSpan(
+          span1,
+          'id',
+          'addBook.id',
+          'Int',
+          'id',
+          'Book',
+          parentId
+        );
       });
     });
     describe('AND source is query with param and variables', () => {
@@ -1222,6 +1248,7 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: $id) {\n' + '      name\n' + '    }',
+          'Query',
           executeSpan.spanContext().spanId
         );
         const parentId = resolveParentSpan.spanContext().spanId;
@@ -1231,6 +1258,7 @@ describe('graphql', () => {
           'book.name',
           'String',
           'name',
+          'Book',
           parentId
         );
       });
@@ -1325,10 +1353,19 @@ describe('graphql', () => {
           '    ) {\n' +
           '      id\n' +
           '    }',
+        'Mutation',
         executeSpan.spanContext().spanId
       );
       const parentId = resolveParentSpan.spanContext().spanId;
-      assertResolveSpan(span1, 'id', 'addBook.id', 'Int', 'id', parentId);
+      assertResolveSpan(
+        span1,
+        'id',
+        'addBook.id',
+        'Int',
+        'id',
+        'Book',
+        parentId
+      );
     });
   });
 

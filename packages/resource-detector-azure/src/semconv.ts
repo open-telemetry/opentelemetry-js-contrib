@@ -68,6 +68,15 @@ export const ATTR_DEPLOYMENT_ENVIRONMENT_NAME =
   'deployment.environment.name' as const;
 
 /**
+ * The name of the cluster.
+ *
+ * @example opentelemetry-cluster
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_K8S_CLUSTER_NAME = 'k8s.cluster.name' as const;
+
+/**
  * The execution environment ID as a string, that will be potentially reused for other invocations to the same function/function version.
  *
  * @example 2021/06/28/[$LATEST]2f399eb14537447da05ab2a2e39309de
@@ -198,6 +207,15 @@ export const CLOUD_PLATFORM_VALUE_AZURE_FUNCTIONS = 'azure.functions' as const;
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const CLOUD_PLATFORM_VALUE_AZURE_VM = 'azure.vm' as const;
+
+/**
+ * Enum value "azure.aks" for attribute {@link ATTR_CLOUD_PLATFORM}.
+ *
+ * Azure Kubernetes Service
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const CLOUD_PLATFORM_VALUE_AZURE_AKS = 'azure.aks' as const;
 
 /**
  * Enum value "azure" for attribute {@link ATTR_CLOUD_PROVIDER}.
