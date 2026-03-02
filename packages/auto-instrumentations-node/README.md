@@ -209,7 +209,7 @@ registerInstrumentations({
 ### Removed instrumentations
 
 - [`@opentelemetry/instrumentation-fastify`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/archive/instrumentation-fastify) was removed Mar 2026. It had been deprecated (and default disabled) Jan 2025, in favor of the [`@fastify/otel`](https://www.npmjs.com/package/@fastify/otel) instrumentation package, maintained by the Fastify authors.
-    - Please see [the offical plugin's README.md](https://github.com/fastify/otel?tab=readme-ov-file#usage) for instructions on how to use `@fastify/otel`.
+  - Please see [the offical plugin's README.md](https://github.com/fastify/otel?tab=readme-ov-file#usage) for instructions on how to use `@fastify/otel`.
 
 ## Useful links
 
