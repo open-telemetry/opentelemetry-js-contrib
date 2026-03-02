@@ -10,7 +10,7 @@ mongoose:
     commands: npm run test-v7-v9
   - versions:
       include: ">=8 <9"
-      mode: max-7
+      mode: max-5
     node: '>=16.20.1'
     commands: npm run test-v7-v9
   - versions:
