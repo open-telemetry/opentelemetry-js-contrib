@@ -39,7 +39,6 @@
   "packages/instrumentation-connect": "0.56.0",
   "packages/instrumentation-dns": "0.56.0",
   "packages/instrumentation-express": "0.61.0",
-  "packages/instrumentation-fastify": "0.57.0",
   "packages/instrumentation-generic-pool": "0.56.0",
   "packages/instrumentation-graphql": "0.61.0",
   "packages/instrumentation-hapi": "0.59.0",

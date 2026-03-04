@@ -54,7 +54,6 @@
     "@opentelemetry/instrumentation-dataloader": "^0.30.0",
     "@opentelemetry/instrumentation-dns": "^0.56.0",
     "@opentelemetry/instrumentation-express": "^0.61.0",
-    "@opentelemetry/instrumentation-fastify": "^0.57.0",
     "@opentelemetry/instrumentation-fs": "^0.32.0",
     "@opentelemetry/instrumentation-generic-pool": "^0.56.0",
     "@opentelemetry/instrumentation-graphql": "^0.61.0",
