@@ -68,7 +68,7 @@
     "eslint-plugin-yet-another-license-header": "0.2.0",
     "expect": "29.7.0",
     "glob": "13.0.6",
-    "globals": "^16.3.0",
+    "globals": "^17.0.0",
     "karma": "6.4.4",
     "karma-chrome-launcher": "3.2.0",
     "karma-coverage": "2.2.1",
