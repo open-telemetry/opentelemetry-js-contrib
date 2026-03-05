@@ -16,7 +16,7 @@
 
 import * as assert from 'assert';
 import { MeterProvider, DataPointType } from '@opentelemetry/sdk-metrics';
-import { RuntimeNodeInstrumentation } from '../src';
+import { RuntimeNodeInstrumentation } from '../src/index';
 import { TestMetricReader } from './testMetricsReader';
 import * as semconv from '../src/semconv';
 
@@ -39,6 +39,7 @@ describe('nodejs.eventloop.delay.*', function () {
       // arrange
       const instrumentation = new RuntimeNodeInstrumentation({
         monitoringPrecision: 10,
+        captureUncaughtException: false,
       });
       instrumentation.setMeterProvider(meterProvider);
 
