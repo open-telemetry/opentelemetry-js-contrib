@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-runtime-node",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "description": "OpenTelemetry instrumentation for Node.js Performance measurement API",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -42,7 +42,7 @@
   "dependencies": {
     "@opentelemetry/api-logs": "^0.211.0",
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/instrumentation": "^0.212.0",
+    "@opentelemetry/instrumentation": "^0.213.0",
     "@opentelemetry/semantic-conventions": "^1.29.0"
   },
   "devDependencies": {

@@ -36,7 +36,7 @@ import { assertSpan, getStatement } from './asserts';
 import { DB_NAME, MONGO_URI } from './config';
 
 // Please run `npm run test-services:start` before
-describe('mongoose instrumentation [v7/v8]', () => {
+describe('mongoose instrumentation [v7/v8/v9]', () => {
   // For these tests, MongoDB must be running. Add RUN_MONGOOSE_TESTS to run
   // these tests.
   const RUN_MONGOOSE_TESTS = process.env.RUN_MONGOOSE_TESTS;
@@ -53,32 +53,11 @@ describe('mongoose instrumentation [v7/v8]', () => {
     // Try to connect to MongoDB
     try {
       await mongoose.connect(MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        useFindAndModify: false,
-        useCreateIndex: true,
         dbName: DB_NAME,
-      } as any); // TODO: amir - document older mongoose support
+      });
     } catch (err: any) {
-      // connect signature changed from mongo v5 to v6.
-      // the following check tries both signatures, so test-all-versions
-      // can run against both versions.
-      if (err?.name === 'MongoParseError') {
-        try {
-          await mongoose.connect(MONGO_URI, {
-            dbName: DB_NAME,
-          }); // TODO: amir - document older mongoose support
-        } catch (innerErr: any) {
-          console.log(
-            'Skipping mongoose tests. Connection failed:',
-            innerErr.message
-          );
-          shouldTest = false;
-        }
-      } else {
-        console.log('Skipping mongoose tests. Connection failed:', err.message);
-        shouldTest = false;
-      }
+      console.log('Skipping mongoose tests. Connection failed:', err.message);
+      shouldTest = false;
     }
   });
 
