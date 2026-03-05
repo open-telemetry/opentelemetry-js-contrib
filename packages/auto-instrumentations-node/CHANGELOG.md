@@ -1,6 +1,17 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.72.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.71.0...auto-instrumentations-node-v0.72.0) (2026-03-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auto-instrumentations-node, instrumentation-fastify:** remove instrumentation-fastify ([#3409](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3409))
+
+### Features
+
+* **auto-instrumentations-node, instrumentation-fastify:** remove instrumentation-fastify ([#3409](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3409)) ([ac26e9a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ac26e9a56c2846482673b76e670623a399e5dafe))
+
 ## [0.71.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.70.1...auto-instrumentations-node-v0.71.0) (2026-03-04)
 
 
