@@ -15,7 +15,11 @@
  */
 
 import * as assert from 'assert';
-import { azureAppServiceDetector } from '../../src/detectors/AzureAppServiceDetector';
+import {
+  azureAppServiceDetector,
+  azureContainerAppsDetector,
+  azureFunctionsDetector,
+} from '../../src';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_CLOUD_PLATFORM,
@@ -25,7 +29,6 @@ import {
   ATTR_HOST_ID,
   ATTR_SERVICE_INSTANCE_ID,
 } from '../../src/semconv';
-import { azureFunctionsDetector } from '../../src';
 import { detectResources } from '@opentelemetry/resources';
 
 describe('AzureAppServiceDetector', () => {
@@ -86,7 +89,7 @@ describe('AzureAppServiceDetector', () => {
     process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
 
     const resource = detectResources({
-      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+      detectors: [azureFunctionsDetector, azureAppServiceDetector, azureContainerAppsDetector],
     });
     assert.ok(resource);
     const attributes = resource.attributes;
@@ -117,7 +120,7 @@ describe('AzureAppServiceDetector', () => {
     delete process.env.WEBSITE_OWNER_NAME;
 
     const resource = detectResources({
-      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+      detectors: [azureFunctionsDetector, azureAppServiceDetector, azureContainerAppsDetector],
     });
     assert.ok(resource);
     const attributes = resource.attributes;

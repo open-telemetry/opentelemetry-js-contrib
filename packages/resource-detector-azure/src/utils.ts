@@ -15,6 +15,12 @@
  */
 
 import {
+  CONTAINER_APP_ENV_DNS_SUFFIX,
+  CONTAINER_APP_HOSTNAME,
+  CONTAINER_APP_NAME,
+  CONTAINER_APP_PORT,
+  CONTAINER_APP_REPLICA_NAME,
+  CONTAINER_APP_REVISION,
   FUNCTIONS_VERSION,
   WEBSITE_OWNER_NAME,
   WEBSITE_RESOURCE_GROUP,
@@ -43,5 +49,16 @@ export function isAzureFunction(): boolean {
   return !!(
     process.env[FUNCTIONS_VERSION] ||
     process.env[WEBSITE_SKU] === 'FlexConsumption'
+  );
+}
+
+export function isAzureContainerApps(): boolean {
+  return !!(
+    process.env[CONTAINER_APP_NAME] &&
+    process.env[CONTAINER_APP_REVISION] &&
+    process.env[CONTAINER_APP_HOSTNAME] &&
+    process.env[CONTAINER_APP_ENV_DNS_SUFFIX] &&
+    process.env[CONTAINER_APP_PORT] &&
+    process.env[CONTAINER_APP_REPLICA_NAME]
   );
 }
