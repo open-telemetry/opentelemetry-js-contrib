@@ -585,9 +585,11 @@ describe('redis v4-v5', () => {
       await client.set('another-key', 'another-value');
       const multiClient = client.multi();
       let commands: any = multiClient.set('key', 'value');
-      // wait 10 ms before adding next command
-      // simulate long operation
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // Wait 100ms before adding next command to simulate a long operation.
+      // We use 100ms (instead of a smaller value) to avoid test flakiness:
+      // setTimeout doesn't guarantee exact timing, but we assume that
+      // setTimeout(..., 100) will always take longer than 10ms.
+      await new Promise(resolve => setTimeout(resolve, 100));
       commands = commands.get('another-key');
       const [setKeyReply, otherKeyValue] = await commands.exec(); // ['OK', 'another-value']
 
@@ -595,21 +597,25 @@ describe('redis v4-v5', () => {
       assert.strictEqual(otherKeyValue, 'another-value'); // verify we did not screw up the normal functionality
 
       const [_setSpan, multiSetSpan, multiGetSpan] = getTestSpans();
-      // verify that commands span started when it was added to multi and not when "sent".
-      // they were called with 10 ms gap between them, so it should be reflected in the span start time
-      // could be nice feature in the future to capture an event for when it is actually sent
+      // Verify that command spans started when added to multi, not when "sent" to
+      // redis server upon exec(). The commands were called with a 100ms gap between
+      // them, so it should be reflected in the span start time.
       const startTimeDiff =
         hrTimeToMilliseconds(multiGetSpan.startTime) -
         hrTimeToMilliseconds(multiSetSpan.startTime);
       assert.ok(
-        startTimeDiff >= 9,
+        startTimeDiff >= 10,
         `diff of start time should be >= 10 and it's ${startTimeDiff}`
       );
 
       const endTimeDiff =
         hrTimeToMilliseconds(multiGetSpan.endTime) -
         hrTimeToMilliseconds(multiSetSpan.endTime);
-      assert.ok(endTimeDiff < 10); // spans should all end together when multi response arrives from redis server
+      // spans should all end together when multi response arrives from redis server
+      assert.ok(
+        endTimeDiff < 10,
+        `end times should be close together, diff: ${endTimeDiff}ms`
+      );
     });
 
     it('response hook for multi commands', async () => {
