@@ -102,8 +102,6 @@ components:
     - JamieDanielson
     - pkanal
     - raphael-theriault-swi
-  packages/instrumentation-fastify: []
-    # Unmaintained
   packages/instrumentation-generic-pool: []
     # Unmaintained
   packages/instrumentation-graphql:
