@@ -108,7 +108,7 @@ describe('runtime exception logging', () => {
     );
   });
 
-  it('stringifies unknown rejection values', () => {
+  it('does not set exception message for unknown object shapes', () => {
     const rejection = { foo: 'bar' };
     const asAny = instrumentation as unknown as {
       _emitExceptionLog: (
@@ -126,10 +126,7 @@ describe('runtime exception logging', () => {
     const records = exporter.getFinishedLogRecords();
     assert.ok(records.length >= 1);
     const record = records[records.length - 1];
-    assert.strictEqual(
-      record.attributes[ATTR_EXCEPTION_MESSAGE],
-      '[object Object]'
-    );
+    assert.strictEqual(record.attributes[ATTR_EXCEPTION_MESSAGE], undefined);
   });
 
   it('stringifies non-object values', () => {
@@ -174,29 +171,6 @@ describe('runtime exception logging', () => {
       record.attributes['app.event.type'],
       'uncaughtException'
     );
-  });
-
-  it('maps exception attributes for all supported shapes', () => {
-    const asAny = instrumentation as unknown as {
-      _getExceptionAttributes: (error: unknown) => Record<string, unknown>;
-    };
-
-    const errorAttrs = asAny._getExceptionAttributes(new Error('boom'));
-    assert.ok(errorAttrs[ATTR_EXCEPTION_MESSAGE]);
-
-    const stringAttrs = asAny._getExceptionAttributes('oops');
-    assert.strictEqual(stringAttrs[ATTR_EXCEPTION_MESSAGE], 'oops');
-
-    const objectAttrs = asAny._getExceptionAttributes({
-      name: 'CustomError',
-      stack: 'stack',
-    });
-    assert.strictEqual(objectAttrs[ATTR_EXCEPTION_TYPE], 'CustomError');
-    assert.strictEqual(objectAttrs[ATTR_EXCEPTION_STACKTRACE], 'stack');
-    assert.strictEqual(objectAttrs[ATTR_EXCEPTION_MESSAGE], '[object Object]');
-
-    const fallbackAttrs = asAny._getExceptionAttributes(null);
-    assert.strictEqual(fallbackAttrs[ATTR_EXCEPTION_MESSAGE], 'null');
   });
 
   it('emits via internal log helper', () => {

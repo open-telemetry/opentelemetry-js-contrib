@@ -16,11 +16,6 @@
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 import type { AnyValueMap, LogRecord } from '@opentelemetry/api-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
-import {
-  ATTR_EXCEPTION_MESSAGE,
-  ATTR_EXCEPTION_STACKTRACE,
-  ATTR_EXCEPTION_TYPE,
-} from '@opentelemetry/semantic-conventions';
 import { hrTime } from '@opentelemetry/core';
 
 import { RuntimeNodeInstrumentationConfig } from './types';
@@ -145,56 +140,16 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
       }
     }
 
-    const errorAttributes = this._getExceptionAttributes(error);
     const timestamp = hrTime();
     const errorLog: LogRecord = {
       body: 'exception',
+      exception: error,
       severityNumber,
-      attributes: { ...errorAttributes, ...customAttributes },
+      attributes: customAttributes,
       timestamp,
       observedTimestamp: timestamp,
     };
 
     this.logger.emit(errorLog);
-  }
-
-  private _getExceptionAttributes(error: unknown): AnyValueMap {
-    if (error instanceof Error) {
-      return {
-        [ATTR_EXCEPTION_TYPE]: error.name,
-        [ATTR_EXCEPTION_MESSAGE]: error.message,
-        [ATTR_EXCEPTION_STACKTRACE]: error.stack,
-      };
-    }
-
-    if (typeof error === 'string') {
-      return {
-        [ATTR_EXCEPTION_MESSAGE]: error,
-      };
-    }
-
-    if (error && typeof error === 'object') {
-      const maybeName = (error as { name?: unknown }).name;
-      const maybeMessage = (error as { message?: unknown }).message;
-      const maybeStack = (error as { stack?: unknown }).stack;
-
-      return {
-        ...(typeof maybeName === 'string'
-          ? { [ATTR_EXCEPTION_TYPE]: maybeName }
-          : {}),
-        ...(typeof maybeMessage === 'string'
-          ? { [ATTR_EXCEPTION_MESSAGE]: maybeMessage }
-          : {
-              [ATTR_EXCEPTION_MESSAGE]: String(error),
-            }),
-        ...(typeof maybeStack === 'string'
-          ? { [ATTR_EXCEPTION_STACKTRACE]: maybeStack }
-          : {}),
-      };
-    }
-
-    return {
-      [ATTR_EXCEPTION_MESSAGE]: String(error),
-    };
   }
 }
