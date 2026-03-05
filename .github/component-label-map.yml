@@ -104,11 +104,6 @@ pkg:instrumentation-express:
   - changed-files:
       - any-glob-to-any-file:
           - packages/instrumentation-express/**
-pkg:instrumentation-fastify:
-  - changed-files:
-      - any-glob-to-any-file:
-          - packages/instrumentation-fastify/**
-          - packages/contrib-test-utils/**
 pkg:instrumentation-fs:
   - changed-files:
       - any-glob-to-any-file:
@@ -304,7 +299,6 @@ pkg-status:unmaintained:
           - packages/instrumentation-tedious/**
           - packages/instrumentation-connect/**
           - packages/instrumentation-dns/**
-          - packages/instrumentation-fastify/**
           - packages/instrumentation-generic-pool/**
           - packages/instrumentation-hapi/**
           - packages/instrumentation-knex/**

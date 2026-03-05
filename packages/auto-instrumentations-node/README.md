@@ -50,7 +50,7 @@ export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="https://your-endpoint"
 export OTEL_EXPORTER_OTLP_HEADERS="x-api-key=your-api-key"
 export OTEL_EXPORTER_OTLP_TRACES_HEADERS="x-api-key=your-api-key"
 export OTEL_RESOURCE_ATTRIBUTES="service.namespace=my-namespace"
-export OTEL_NODE_RESOURCE_DETECTORS="env,host,os,serviceinstance"
+export OTEL_NODE_RESOURCE_DETECTORS="host,os,serviceinstance,env"
 export OTEL_SERVICE_NAME="client"
 export NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 node app.js
@@ -74,8 +74,14 @@ By default, all SDK resource detectors are used, but you can use the environment
 For example, to enable only the `env`, `host` detectors:
 
 ```shell
-export OTEL_NODE_RESOURCE_DETECTORS="env,host"
+export OTEL_NODE_RESOURCE_DETECTORS="host,env"
 ```
+
+NOTE: The order set on `OTEL_NODE_RESOURCE_DETECTORS` will be respected and the detectors will be executed in order.
+For example, if you have `OTEL_RESOURCE_ATTRIBUTES="service.instance.id=custom-name"`, but also `serviceinstance` and `env` on `OTEL_NODE_RESOURCE_DETECTORS`, it can have 2 scenarios:
+
+- `OTEL_NODE_RESOURCE_DETECTORS="serviceinstance,env"` will have the `service.instance.id` as `custom-name`
+- `OTEL_NODE_RESOURCE_DETECTORS="env,serviceinstance"` will have the `service.instance.id` as a random UUID
 
 By default, all [Supported Instrumentations](#supported-instrumentations) are enabled, unless they are annotated with "default disabled".
 You can use the environment variable `OTEL_NODE_ENABLED_INSTRUMENTATIONS` to enable only certain instrumentations, including "default disabled" ones
@@ -171,10 +177,6 @@ registerInstrumentations({
 - [@opentelemetry/instrumentation-dataloader](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-dataloader)
 - [@opentelemetry/instrumentation-dns](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-dns)
 - [@opentelemetry/instrumentation-express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-express)
-- [@opentelemetry/instrumentation-fastify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-fastify) (deprecated, default disabled)
-  - This component is **deprecated** in favor of the official instrumentation package [`@fastify/otel`](https://www.npmjs.com/package/@fastify/otel), maintained by the Fastify authors.
-    - Please see [the offical plugin's README.md](https://github.com/fastify/otel?tab=readme-ov-file#usage) for instructions on how to use `@fastify/otel`.
-  - This component will be removed on June 30, 2025
 - [@opentelemetry/instrumentation-fs](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-fs) (default disabled)
 - [@opentelemetry/instrumentation-generic-pool](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-generic-pool)
 - [@opentelemetry/instrumentation-graphql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-graphql)
@@ -203,6 +205,11 @@ registerInstrumentations({
 - [@opentelemetry/instrumentation-socket.io](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-socket.io)
 - [@opentelemetry/instrumentation-undici](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-undici)
 - [@opentelemetry/instrumentation-winston](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-winston)
+
+### Removed instrumentations
+
+- [`@opentelemetry/instrumentation-fastify`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/archive/instrumentation-fastify) was removed Mar 2026. It had been deprecated (and default disabled) Jan 2025, in favor of the [`@fastify/otel`](https://www.npmjs.com/package/@fastify/otel) instrumentation package, maintained by the Fastify authors.
+  - Please see [the offical plugin's README.md](https://github.com/fastify/otel?tab=readme-ov-file#usage) for instructions on how to use `@fastify/otel`.
 
 ## Useful links
 

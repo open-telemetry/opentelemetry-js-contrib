@@ -81,6 +81,42 @@ This package implements Semantic Convention [Version 1.37.0](https://github.com/
 | azure.container_app.name                | The name of the Azure Container App. Value of Process Environment Variable `CONTAINER_APP_NAME`.                                               |
 | host.name                     | The hostname of the container. Value of Process Environment Variable `CONTAINER_APP_HOSTNAME.                             |
 | azure.container_app.instance.id           | The replica name of the Azure Container App instance. Value of Process Environment Variable `CONTAINER_APP_REPLICA_NAME`.                      |
+### Azure Kubernetes Service (AKS) Resource Detector
+
+The AKS detector reads cluster metadata from the native `aks-cluster-metadata` ConfigMap in the `kube-public` namespace, which is automatically created by AKS. The ConfigMap contains a `clusterResourceId` key with the full ARM resource ID of the cluster.
+
+| Resource Attribute | Description                                                                                                                                                                                                  |
+|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| cloud.platform     | The cloud platform. Here, it's always "azure.aks".                                                                                                                                                           |
+| cloud.provider     | The cloud service provider. In this context, it's always "azure".                                                                                                                                            |
+| cloud.resource_id  | The Azure Resource Manager URI uniquely identifying the AKS cluster. Value from `clusterResourceId` key in the `aks-cluster-metadata` ConfigMap.                                                             |
+| k8s.cluster.name   | The name of the AKS cluster, extracted from the ARM resource ID.                                                                                                                                             |
+
+#### Usage
+
+To use the AKS detector, configure your pod to read from the native `aks-cluster-metadata` ConfigMap in the `kube-public` namespace:
+
+```yaml
+env:
+  - name: CLUSTER_RESOURCE_ID
+    valueFrom:
+      configMapKeyRef:
+        name: aks-cluster-metadata
+        key: clusterResourceId
+```
+
+Alternatively, you can mount the ConfigMap as a file at `/etc/kubernetes/aks-cluster-metadata`.
+
+```typescript
+import { detectResources } from '@opentelemetry/resources';
+import { azureAksDetector } from '@opentelemetry/resource-detector-azure';
+
+const resource = detectResources({
+    detectors: [azureAksDetector],
+});
+
+const tracerProvider = new NodeTracerProvider({ resource });
+```
 
 ## Useful links
 
