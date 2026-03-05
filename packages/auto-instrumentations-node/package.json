@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-node",
-  "version": "0.71.0",
+  "version": "0.72.0",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/auto-instrumentations-node#readme",

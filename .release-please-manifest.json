@@ -7,7 +7,7 @@
   "packages/resource-detector-github": "0.32.0",
   "packages/resource-detector-instana": "0.32.0",
   "packages/auto-configuration-propagators": "0.4.6",
-  "packages/auto-instrumentations-node": "0.71.0",
+  "packages/auto-instrumentations-node": "0.72.0",
   "packages/auto-instrumentations-web": "0.58.0",
   "packages/baggage-span-processor": "0.5.0",
   "packages/baggage-log-record-processor": "0.14.0",
