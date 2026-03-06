@@ -22,7 +22,7 @@
 // const fs = require('fs');
 // const { execSync } = require('child_process');
 import fs from 'fs';
-import {join, resolve, relative, dirname, basename} from 'path';
+import { join, resolve, relative, dirname, basename } from 'path';
 import { globSync } from 'glob';
 // const rimraf = require('rimraf');
 
@@ -30,10 +30,14 @@ import yaml from 'js-yaml';
 
 const TOP = resolve(import.meta.dirname, '..');
 const SCRIPT_FILE = relative(TOP, import.meta.filename);
-const CO_FILE = relative(process.cwd(),
-  join(TOP, '.github', 'component_owners.yml'));
-const CLM_FILE = relative(process.cwd(),
-  join(TOP, '.github', 'component-label-map.yml'));
+const CO_FILE = relative(
+  process.cwd(),
+  join(TOP, '.github', 'component_owners.yml')
+);
+const CLM_FILE = relative(
+  process.cwd(),
+  join(TOP, '.github', 'component-label-map.yml')
+);
 
 const USE_COLOR = process.stdout.isTTY && !process.env.NO_COLOR?.length > 0;
 let numWarns = 0;
@@ -50,9 +54,7 @@ function warn(...args) {
 }
 
 function getAllWorkspaceDirs() {
-  const pj = JSON.parse(
-    fs.readFileSync(join(TOP, 'package.json'), 'utf8')
-  );
+  const pj = JSON.parse(fs.readFileSync(join(TOP, 'package.json'), 'utf8'));
   return pj.workspaces
     .map(wsGlob => globSync(join(wsGlob, 'package.json')))
     .flat()
@@ -239,24 +241,28 @@ const co = yaml.load(fs.readFileSync(CO_FILE, 'utf8'));
 const coComponents = new Set(Object.keys(co.components));
 const coMissing = wsDirs.difference(coComponents);
 if (coMissing.size) {
-  warn(`"${CO_FILE}" is missing ${coMissing.size === 1 ? 'an entry' : 'entries'} for: ${Array.from(coMissing).join(', ')}`)
+  warn(
+    `"${CO_FILE}" is missing ${coMissing.size === 1 ? 'an entry' : 'entries'} for: ${Array.from(coMissing).join(', ')}`
+  );
 }
 const coExtraneous = coComponents.difference(wsDirs);
 if (coExtraneous.size) {
-  warn(`"${CO_FILE}" has ${coExtraneous.size === 1 ? 'an extraneous entry' : 'extraneous entries'} for: ${Array.from(coExtraneous).join(', ')}`)
+  warn(
+    `"${CO_FILE}" has ${coExtraneous.size === 1 ? 'an extraneous entry' : 'extraneous entries'} for: ${Array.from(coExtraneous).join(', ')}`
+  );
 }
 
 // Get set of unmaintained components.
 const unmaintainedPkgDirs = new Set();
 for (let [pkgDir, maintainers] of Object.entries(co.components)) {
   if (maintainers.length === 0) {
-    unmaintainedPkgDirs.add(pkgDir)
+    unmaintainedPkgDirs.add(pkgDir);
   }
 }
 
 // Build data for `pkg:*` enties in component-label-map.yml.
 const pjFromPkgDir = {};
-const pkgDirFromPkgName = {} // map '@opentelemetry/foo' -> 'packages/foo'
+const pkgDirFromPkgName = {}; // map '@opentelemetry/foo' -> 'packages/foo'
 for (let pkgDir of wsDirs) {
   const pj = JSON.parse(fs.readFileSync(join(pkgDir, 'package.json')));
   pjFromPkgDir[pkgDir] = pj;
@@ -313,7 +319,10 @@ clmParts.push(`
 pkg-status:unmaintained:
   - changed-files:
       - any-glob-to-any-file:
-${Array.from(unmaintainedPkgDirs).sort().map(d => `          - ${d}/**`).join('\n')}
+${Array.from(unmaintainedPkgDirs)
+  .sort()
+  .map(d => `          - ${d}/**`)
+  .join('\n')}
 `);
 const clmContent = clmParts.join('');
 
@@ -324,9 +333,6 @@ if (clmContent !== currClmContent) {
 } else {
   console.log(`"${CLM_FILE}" unchanged.`);
 }
-
-
-
 
 // genSemconvTs(wsDir);
 if (numWarns > 0) {
