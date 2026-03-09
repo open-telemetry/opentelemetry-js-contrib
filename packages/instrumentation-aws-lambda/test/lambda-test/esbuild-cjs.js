@@ -19,8 +19,8 @@
 // property" unless the instrumentation handles it.
 // See: https://github.com/evanw/esbuild/issues/2199
 
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
 
 async function handler(event, context) {
   return 'ok';
@@ -30,13 +30,13 @@ async function error(event, context) {
   throw new Error('handler error');
 }
 
-Object.defineProperty(exports, "handler", {
+Object.defineProperty(exports, 'handler', {
   enumerable: true,
   get: function () { return handler; },
   // intentionally no configurable: true — this is what esbuild produces
 });
 
-Object.defineProperty(exports, "error", {
+Object.defineProperty(exports, 'error', {
   enumerable: true,
   get: function () { return error; },
 });
