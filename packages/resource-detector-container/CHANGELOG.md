@@ -1,6 +1,30 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.8.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.8.0...resource-detector-container-v0.8.1) (2026-01-14)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.56.0 to ^0.57.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.28.0 to ^0.29.0
+
+## [0.8.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.7.11...resource-detector-container-v0.8.0) (2025-12-17)
+
+
+### Features
+
+* apply rule @typescript-eslint/explicit-member-accessibility ([#3250](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3250)) ([d0f9491](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d0f94913cfd7fccc29053a0dc6f6aef6572235cc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.55.0 to ^0.56.0
+
 ## [0.7.11](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.7.10...resource-detector-container-v0.7.11) (2025-11-06)
 
 

@@ -157,7 +157,7 @@ function getNpmInfo(name) {
     );
   }
 
-  const stdout = execSync(`npm info -j "${name}"`);
+  const stdout = execSync(`npm info --json "${name}"`);
   const npmInfo = JSON.parse(stdout);
 
   cache[name] = {
@@ -195,6 +195,8 @@ function bitrotInstrumentations() {
     'user-interaction',
     'long-task',
     'document-load',
+    'browser-navigation',
+    'web-exception',
     'runtime-node',
     'dns',
     'net',

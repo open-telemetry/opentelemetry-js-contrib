@@ -78,9 +78,9 @@ function extractModuleExports(module: any) {
 }
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
-  private declare _operationDuration: Histogram;
-  private declare _connectionsCount: UpDownCounter;
-  private declare _connectionPendingRequests: UpDownCounter;
+  declare private _operationDuration: Histogram;
+  declare private _connectionsCount: UpDownCounter;
+  declare private _connectionPendingRequests: UpDownCounter;
   // Pool events connect, acquire, release and remove can be called
   // multiple times without changing the values of total, idle and waiting
   // connections. The _connectionsCounter is used to keep track of latest
@@ -249,7 +249,12 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     const plugin = this;
     return (original: PgClientConnect) => {
       return function connect(this: pgTypes.Client, callback?: Function) {
-        if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
+        const config = plugin.getConfig();
+
+        if (
+          utils.shouldSkipInstrumentation(config) ||
+          config.ignoreConnectSpans
+        ) {
           return original.call(this, callback);
         }
 
@@ -341,6 +346,8 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           : firstArgIsQueryObjectWithText
             ? {
                 ...(arg0 as any),
+                name: arg0.name,
+                text: arg0.text,
                 values:
                   (arg0 as any).values ??
                   (Array.isArray(args[1]) ? args[1] : undefined),
@@ -569,7 +576,16 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
-        if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
+        const config = plugin.getConfig();
+
+        if (utils.shouldSkipInstrumentation(config)) {
+          return originalConnect.call(this, callback as any);
+        }
+
+        // Still set up event listeners for metrics even when skipping spans
+        plugin._setPoolConnectEventListeners(this);
+
+        if (config.ignoreConnectSpans) {
           return originalConnect.call(this, callback as any);
         }
 
@@ -581,8 +597,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             plugin._semconvStability
           ),
         });
-
-        plugin._setPoolConnectEventListeners(this);
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());

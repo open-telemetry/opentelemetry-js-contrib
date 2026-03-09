@@ -67,8 +67,8 @@ export type TestSpan = ISpan & {
  * There is little error checking here; we are assuming valid OTLP.
  */
 export class TestCollector {
-  endpointUrl?: string;
-  spans: Array<TestSpan> = [];
+  public endpointUrl?: string;
+  public spans: Array<TestSpan> = [];
   private _http;
 
   constructor() {
@@ -76,12 +76,12 @@ export class TestCollector {
     this._http = createServer(this._onRequest.bind(this));
   }
 
-  clear(): void {
+  public clear(): void {
     this.spans = [];
   }
 
   // Start listening and set address to `endpointUrl`.
-  async start(): Promise<void> {
+  public async start(): Promise<void> {
     return new Promise(resolve => {
       this._http.listen(() => {
         this.endpointUrl = `http://localhost:${
@@ -92,7 +92,7 @@ export class TestCollector {
     });
   }
 
-  close() {
+  public close() {
     this.endpointUrl = undefined;
     return this._http.close();
   }
@@ -106,7 +106,7 @@ export class TestCollector {
    * same, this attempts to get the correct ordering using `parentSpanId` -- a
    * parent span starts before any of its direct children. This isn't perfect.
    */
-  get sortedSpans(): Array<TestSpan> {
+  public get sortedSpans(): Array<TestSpan> {
     return this.spans.slice().sort((a, b) => {
       assert(typeof a.startTimeUnixNano === 'string');
       assert(typeof b.startTimeUnixNano === 'string');
@@ -132,7 +132,7 @@ export class TestCollector {
     });
   }
 
-  _onRequest(req: IncomingMessage, res: ServerResponse) {
+  private _onRequest(req: IncomingMessage, res: ServerResponse) {
     const parsedUrl = new URL(req.url as string, this.endpointUrl);
     let instream: EventEmitter;
     if (req.headers['content-encoding'] === 'gzip') {
@@ -171,7 +171,7 @@ export class TestCollector {
     });
   }
 
-  _ingestTraces(body: string) {
+  private _ingestTraces(body: string) {
     const data = JSON.parse(body);
     // Read an OTLP `resourceSpans` body into `this.spans`.
     for (const resourceSpan of data.resourceSpans) {

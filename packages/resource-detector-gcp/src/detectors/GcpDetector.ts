@@ -216,7 +216,7 @@ export class GcpDetector implements ResourceDetector {
     return resource.attributes;
   }
 
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     const asyncAttributes = this._asyncAttributes();
     const attributes = {} as DetectedResourceAttributes;
     ATTRIBUTE_NAMES.forEach(name => {

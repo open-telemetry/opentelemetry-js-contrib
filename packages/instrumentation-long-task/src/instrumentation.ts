@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+// PerformanceLongTaskTiming is experimental and may change in future versions.
+// https://developer.mozilla.org/en-US/docs/Web/API/PerformanceLongTaskTiming
+/* eslint-disable baseline-js/use-baseline */
+
 import { hrTime } from '@opentelemetry/core';
 import { diag } from '@opentelemetry/api';
 import { InstrumentationBase } from '@opentelemetry/instrumentation';

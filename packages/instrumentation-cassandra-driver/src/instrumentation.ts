@@ -28,6 +28,8 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import { CassandraDriverInstrumentationConfig, ResultSet } from './types';
 import {
@@ -38,7 +40,15 @@ import {
   ATTR_DB_USER,
   ATTR_NET_PEER_NAME,
   ATTR_NET_PEER_PORT,
+  DB_SYSTEM_NAME_VALUE_CASSANDRA,
 } from './semconv';
+import {
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { EventEmitter } from 'events';
@@ -47,8 +57,23 @@ import type * as CassandraDriver from 'cassandra-driver';
 const supportedVersions = ['>=4.4.0 <5'];
 
 export class CassandraDriverInstrumentation extends InstrumentationBase<CassandraDriverInstrumentationConfig> {
+  private _netSemconvStability!: SemconvStability;
+  private _dbSemconvStability!: SemconvStability;
+
   constructor(config: CassandraDriverInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._setSemconvStabilityFromEnv();
+  }
+
+  private _setSemconvStabilityFromEnv() {
+    this._netSemconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._dbSemconvStability = semconvStabilityFromStr(
+      'database',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   protected init() {
@@ -166,6 +191,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
 
   private _getPatchedSendOnConnection() {
     return (original: (...args: unknown[]) => unknown) => {
+      const plugin = this;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return function patchedSendOnConnection(this: any, ...args: unknown[]) {
         const span = trace.getSpan(context.active());
@@ -174,10 +200,17 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
         if (span !== undefined && conn !== undefined) {
           const port = parseInt(conn.port, 10);
 
-          span.setAttribute(ATTR_NET_PEER_NAME, conn.address);
-
-          if (!isNaN(port)) {
-            span.setAttribute(ATTR_NET_PEER_PORT, port);
+          if (plugin._netSemconvStability & SemconvStability.OLD) {
+            span.setAttribute(ATTR_NET_PEER_NAME, conn.address);
+            if (!isNaN(port)) {
+              span.setAttribute(ATTR_NET_PEER_PORT, port);
+            }
+          }
+          if (plugin._netSemconvStability & SemconvStability.STABLE) {
+            span.setAttribute(ATTR_SERVER_ADDRESS, conn.address);
+            if (!isNaN(port)) {
+              span.setAttribute(ATTR_SERVER_PORT, port);
+            }
           }
         }
 
@@ -234,10 +267,12 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
 
         const batchPromise = safeExecuteInTheMiddle(
           () => {
-            return original.apply(
-              this,
-              args
-            ) as Promise<CassandraDriver.types.ResultSet>;
+            return context.with(batchContext, () => {
+              return original.apply(
+                this,
+                args
+              ) as Promise<CassandraDriver.types.ResultSet>;
+            });
           },
           error => {
             if (error) {
@@ -285,10 +320,12 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
           };
           args[3] = wrappedCallback;
         }
-
+        const streamContext = trace.setSpan(context.active(), span);
         return safeExecuteInTheMiddle(
           () => {
-            return original.apply(this, args);
+            return context.with(streamContext, () => {
+              return original.apply(this, args);
+            });
           },
           error => {
             if (error) {
@@ -304,24 +341,39 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
     { op, query }: { op: string; query?: unknown },
     client: CassandraDriver.Client
   ): Span {
-    const attributes: Attributes = {
-      [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_CASSANDRA,
-    };
+    const attributes: Attributes = {};
+
+    if (this._dbSemconvStability & SemconvStability.OLD) {
+      attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_CASSANDRA;
+    }
+    if (this._dbSemconvStability & SemconvStability.STABLE) {
+      attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_CASSANDRA;
+    }
 
     if (this._shouldIncludeDbStatement() && query !== undefined) {
       const statement = truncateQuery(query, this._getMaxQueryLength());
-      attributes[ATTR_DB_STATEMENT] = statement;
+      if (this._dbSemconvStability & SemconvStability.OLD) {
+        attributes[ATTR_DB_STATEMENT] = statement;
+      }
+      if (this._dbSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_DB_QUERY_TEXT] = statement;
+      }
     }
 
+    // db.user (deprecated, no stable replacement - only emit with OLD)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (client as any).options?.credentials?.username;
-
-    if (user) {
+    if (user && this._dbSemconvStability & SemconvStability.OLD) {
       attributes[ATTR_DB_USER] = user;
     }
 
     if (client.keyspace) {
-      attributes[ATTR_DB_NAME] = client.keyspace;
+      if (this._dbSemconvStability & SemconvStability.OLD) {
+        attributes[ATTR_DB_NAME] = client.keyspace;
+      }
+      if (this._dbSemconvStability & SemconvStability.STABLE) {
+        attributes[ATTR_DB_NAMESPACE] = client.keyspace;
+      }
     }
 
     return this.tracer.startSpan(`cassandra-driver.${op}`, {

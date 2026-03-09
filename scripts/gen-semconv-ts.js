@@ -72,10 +72,9 @@ function genSemconvTs(wsDir) {
     paths: [path.join(wsDir, 'node_modules')],
   });
   const semconvStable = require(semconvPath);
-  const semconvVer = require(path.resolve(
-    semconvPath,
-    '../../../package.json'
-  )).version;
+  const semconvVer = require(
+    path.resolve(semconvPath, '../../../package.json')
+  ).version;
 
   // Gather unstable semconv imports. Consider any imports from
   // '@opentelemetry/semantic-conventions/incubating' or from an existing local
@@ -232,8 +231,10 @@ ${chunks.join('\n\n')}
   );
   console.log(`Generated "${semconvTsPath}".`);
 
-  console.log('Running "npx eslint --fix src/semconv.ts" to fix formatting.');
-  execSync('npx eslint --fix src/semconv.ts', { cwd: wsDir });
+  console.log(
+    'Running "npx prettier --write src/semconv.ts" to fix formatting.'
+  );
+  execSync('npx prettier --write src/semconv.ts', { cwd: wsDir });
 }
 
 // mainline

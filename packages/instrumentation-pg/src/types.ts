@@ -79,4 +79,12 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    * the tracing context, following the {@link https://github.com/open-telemetry/opentelemetry-sqlcommenter sqlcommenter} format
    */
   addSqlCommenterCommentToQueries?: boolean;
+
+  /**
+   * If true, `pg.connect` and `pg-pool.connect` spans will not be created.
+   * Query spans and pool metrics are still recorded.
+   *
+   * @default false
+   */
+  ignoreConnectSpans?: boolean;
 }

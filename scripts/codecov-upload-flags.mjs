@@ -42,6 +42,7 @@ const pkgsWithFlag = pkgFiles.flat().map(f => {
   //   ./codecov --verbose upload-coverage --help
   // ```
   // or check https://docs.codecov.com/docs/cli-options
+  // prettier-ignore
   const command = [
     './codecov --verbose',
     'upload-coverage',
@@ -93,7 +94,10 @@ if (existsSync(codecovPath)) {
   );
   execSync(`curl -O "${url}.SHA256SUM"`, execOpts);
   execSync(`curl -O "${url}.SHA256SUM.sig"`, execOpts);
-  execSync('gpg --verify "codecov.SHA256SUM.sig" "codecov.SHA256SUM"', execOpts);
+  execSync(
+    'gpg --verify "codecov.SHA256SUM.sig" "codecov.SHA256SUM"',
+    execOpts
+  );
 }
 // make sure we have exec perms
 chmodSync(codecovPath, 0o555);

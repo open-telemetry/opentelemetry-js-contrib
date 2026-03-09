@@ -39,6 +39,18 @@ registerInstrumentations({
 
 PgInstrumentation contains both pg and [`pg.Pool`](https://node-postgres.com/api/pool) so it will be instrumented automatically.
 
+### Span Types Created
+
+This instrumentation creates the following span types:
+
+| Span Name | Description | When Created |
+| --------- | ----------- | ------------ |
+| `pg.query:<OPERATION> <database>` | Database query execution | When `client.query()` is called |
+| `pg.connect` | Client connection to database | When `new Client().connect()` is called directly |
+| `pg-pool.connect` | Pool connection acquisition wait time | When acquiring a connection from `pg-pool` |
+
+The `pg-pool.connect` spans measure the time spent waiting to acquire a connection from the pool. This can be valuable for identifying connection pool exhaustion or sizing issues. However, in high-throughput scenarios where connections are readily available, these spans may add noise with minimal diagnostic value. Consider using the `requireParentSpan` option or sampling strategies if pool connect spans become excessive.
+
 ### PostgreSQL Instrumentation Options
 
 PostgreSQL instrumentation has few options available to choose from. You can set the following:
@@ -50,6 +62,7 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 | `responseHook` | `PgInstrumentationExecutionResponseHook` (function) | Function for adding custom span attributes from db response |
 | `requireParentSpan` | `boolean` | If true, requires a parent span to create new spans (default false) |
 | `addSqlCommenterCommentToQueries` | `boolean` | If true, adds [sqlcommenter](https://github.com/open-telemetry/opentelemetry-sqlcommenter) specification compliant comment to queries with tracing context (default false). _NOTE: A comment will not be added to queries that already contain `--` or `/* ... */` in them, even if these are not actually part of comments_ |
+| `ignoreConnectSpans` | `boolean` | If true, `pg.connect` and `pg-pool.connect` spans will not be created. Query spans and pool metrics are still recorded (default false) |
 
 ## Semantic Conventions
 

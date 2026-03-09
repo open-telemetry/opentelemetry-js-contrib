@@ -39,7 +39,7 @@ export type executeArgumentsArray = [
   Maybe<{ [key: string]: any }>,
   Maybe<string>,
   Maybe<graphqlTypes.GraphQLFieldResolver<any, any>>,
-  Maybe<graphqlTypes.GraphQLTypeResolver<any, any>>
+  Maybe<graphqlTypes.GraphQLTypeResolver<any, any>>,
 ];
 
 export type executeFunctionWithArgs = (

@@ -44,7 +44,7 @@ export class BaggageLogRecordProcessor implements LogRecordProcessor {
   /**
    * Forces to export all finished log records.
    */
-  forceFlush(): Promise<void> {
+  public forceFlush(): Promise<void> {
     // no-op
     return Promise.resolve();
   }
@@ -54,7 +54,7 @@ export class BaggageLogRecordProcessor implements LogRecordProcessor {
    * @param logRecord the ReadWriteLogRecord that just emitted.
    * @param context the current Context, or an empty Context if the Logger was obtained with include_trace_context=false
    */
-  onEmit(logRecord: SdkLogRecord, context?: Context): void {
+  public onEmit(logRecord: SdkLogRecord, context?: Context): void {
     if (context) {
       (propagation.getBaggage(context)?.getAllEntries() ?? [])
         .filter(entry => this._keyPredicate(entry[0]))
@@ -66,7 +66,7 @@ export class BaggageLogRecordProcessor implements LogRecordProcessor {
    * Shuts down the processor. Called when SDK is shut down. This is an
    * opportunity for processor to do any cleanup required.
    */
-  shutdown(): Promise<void> {
+  public shutdown(): Promise<void> {
     // no-op
     return Promise.resolve();
   }

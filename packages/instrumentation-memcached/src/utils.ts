@@ -15,10 +15,7 @@
  */
 
 import type * as Memcached from 'memcached';
-import {
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from './semconv';
+import { ATTR_NET_PEER_NAME, ATTR_NET_PEER_PORT } from './semconv';
 import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,

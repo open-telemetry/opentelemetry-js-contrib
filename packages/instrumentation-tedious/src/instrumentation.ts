@@ -20,7 +20,18 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
+import {
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER,
+} from '@opentelemetry/semantic-conventions';
 import {
   DB_SYSTEM_VALUE_MSSQL,
   ATTR_DB_NAME,
@@ -75,9 +86,24 @@ function setDatabase(this: ApproxConnection, databaseName: string) {
 
 export class TediousInstrumentation extends InstrumentationBase<TediousInstrumentationConfig> {
   static readonly COMPONENT = 'tedious';
+  private _netSemconvStability!: SemconvStability;
+  private _dbSemconvStability!: SemconvStability;
 
   constructor(config: TediousInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._setSemconvStabilityFromEnv();
+  }
+
+  // Used for testing.
+  private _setSemconvStabilityFromEnv() {
+    this._netSemconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._dbSemconvStability = semconvStabilityFromStr(
+      'database',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   protected init() {
@@ -209,22 +235,45 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
           return request.sqlTextOrProcedure;
         })(request);
 
+        const attributes: api.Attributes = {};
+        if (thisPlugin._dbSemconvStability & SemconvStability.OLD) {
+          attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MSSQL;
+          attributes[ATTR_DB_NAME] = databaseName;
+          // >=4 uses `authentication` object; older versions just userName and password pair
+          attributes[ATTR_DB_USER] =
+            this.config?.userName ??
+            this.config?.authentication?.options?.userName;
+          attributes[ATTR_DB_STATEMENT] = sql;
+          attributes[ATTR_DB_SQL_TABLE] = request.table;
+        }
+        if (thisPlugin._dbSemconvStability & SemconvStability.STABLE) {
+          // The OTel spec for "db.namespace" discusses handling for connection
+          // to MSSQL "named instances". This isn't currently supported.
+          //    https://opentelemetry.io/docs/specs/semconv/database/sql-server/#:~:text=%5B1%5D%20db%2Enamespace
+          attributes[ATTR_DB_NAMESPACE] = databaseName;
+          attributes[ATTR_DB_SYSTEM_NAME] =
+            DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
+          attributes[ATTR_DB_QUERY_TEXT] = sql;
+          attributes[ATTR_DB_COLLECTION_NAME] = request.table;
+          // See https://opentelemetry.io/docs/specs/semconv/database/sql-server/#spans
+          // TODO(3290): can `db.response.status_code` be added?
+          // TODO(3290): is `operation` correct for `db.operation.name`
+          // TODO(3290): can `db.query.summary` reliably be calculated?
+          // TODO(3290): `db.stored_procedure.name`
+        }
+        if (thisPlugin._netSemconvStability & SemconvStability.OLD) {
+          attributes[ATTR_NET_PEER_NAME] = this.config?.server;
+          attributes[ATTR_NET_PEER_PORT] = this.config?.options?.port;
+        }
+        if (thisPlugin._netSemconvStability & SemconvStability.STABLE) {
+          attributes[ATTR_SERVER_ADDRESS] = this.config?.server;
+          attributes[ATTR_SERVER_PORT] = this.config?.options?.port;
+        }
         const span = thisPlugin.tracer.startSpan(
           getSpanName(operation, databaseName, sql, request.table),
           {
             kind: api.SpanKind.CLIENT,
-            attributes: {
-              [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MSSQL,
-              [ATTR_DB_NAME]: databaseName,
-              [ATTR_NET_PEER_PORT]: this.config?.options?.port,
-              [ATTR_NET_PEER_NAME]: this.config?.server,
-              // >=4 uses `authentication` object, older versions just userName and password pair
-              [ATTR_DB_USER]:
-                this.config?.userName ??
-                this.config?.authentication?.options?.userName,
-              [ATTR_DB_STATEMENT]: sql,
-              [ATTR_DB_SQL_TABLE]: request.table,
-            },
+            attributes,
           }
         );
 
@@ -242,6 +291,7 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
               code: api.SpanStatusCode.ERROR,
               message: err.message,
             });
+            // TODO(3290): set `error.type` attribute?
           }
           span.end();
         });
@@ -279,7 +329,7 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
         if (!shouldInject) return runUserRequest();
 
         const traceparent = thisPlugin._buildTraceparent(span);
-        
+
         void thisPlugin
           ._injectContextInfo(this, tediousModule, traceparent)
           .finally(runUserRequest);

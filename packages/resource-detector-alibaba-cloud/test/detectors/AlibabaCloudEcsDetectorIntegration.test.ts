@@ -23,6 +23,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { detectResources } from '@opentelemetry/resources';
+import { TestMetricReader } from '@opentelemetry/contrib-test-utils';
 
 describe('[Integration] AlibabaCloudEcsDetector', () => {
   it('should not start spans for detector requests', async () => {
@@ -30,6 +31,7 @@ describe('[Integration] AlibabaCloudEcsDetector', () => {
     const sdk = new NodeSDK({
       instrumentations: [new HttpInstrumentation()],
       spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+      metricReaders: [new TestMetricReader()],
     });
 
     sdk.start();

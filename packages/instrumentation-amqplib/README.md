@@ -89,7 +89,16 @@ By default, the tests that connect to RabbitMQ are skipped. To make sure these t
 
 ## Semantic Conventions
 
-This package emits telemetry using Semantic Convention [version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This instrumentation implements Semantic Conventions (semconv) v1.7.0. Since then, many networking-related semantic conventions (in semconv v1.21.0 and v1.23.1) were stabilized. As of `@opentelemetry/instrumentation-amqplib@0.56.0` support has been added for migrating to the stable semantic conventions using the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable as follows:
+
+1. Upgrade to the latest version of this instrumentation package.
+2. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` to emit both old and stable semantic conventions. (The [`http` token is used to control the `net.*` attributes](https://github.com/open-telemetry/opentelemetry-js/issues/5663#issuecomment-3349204546).)
+3. Modify alerts, dashboards, metrics, and other processes in your Observability system to use the stable semantic conventions.
+4. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http` to emit only the stable semantic conventions.
+
+By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` is not set or does not include `http`, then the old v1.7.0 semconv is used.
+The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new networking semconv, after which a new minor version will use the new semconv by default and drop support for the old semconv.
+See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/) and [deprecated network attributes](https://opentelemetry.io/docs/specs/semconv/registry/attributes/network/#deprecated-network-attributes) for details.
 
 Attributes collected:
 
@@ -105,8 +114,11 @@ Attributes collected:
 | `messaging.protocol_version`     | The version of the transport protocol.                                 |
 | `messaging.system`               | A string identifying the messaging system.                             |
 | `messaging.url`                  | The connection string.                                                 |
-| `net.peer.name`                  | Remote hostname or similar.                                            |
-| `net.peer.port`                  | Remote port number.                                                    |
+
+| Old semconv     | Stable semconv   | Description        |
+| --------------- | ---------------- | ------------------ |
+| `net.peer.name` | `server.address` | Remote hostname    |
+| `net.peer.port` | `server.port`    | Remote port number |
 
 ## Useful links
 

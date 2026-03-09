@@ -26,6 +26,8 @@ import {
   InstrumentationBase,
   InstrumentationModuleDefinition,
   InstrumentationNodeModuleDefinition,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -33,7 +35,13 @@ import {
   ATTR_DB_OPERATION,
   ATTR_DB_STATEMENT,
   ATTR_DB_SYSTEM,
+  DB_SYSTEM_NAME_VALUE_MONGODB,
 } from './semconv';
+import {
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+} from '@opentelemetry/semantic-conventions';
 
 const contextCaptureFunctionsCommon = [
   'deleteOne',
@@ -86,14 +94,49 @@ function instrumentRemove(moduleVersion: string | undefined): boolean {
   );
 }
 
+/**
+ * 8.21.0 changed Document.updateOne/deleteOne so that the Query is not fully built when Query.exec() is called.
+ * @param moduleVersion
+ */
+function needsDocumentMethodPatch(moduleVersion: string | undefined): boolean {
+  if (!moduleVersion || !moduleVersion.startsWith('8.')) {
+    return false;
+  }
+
+  const minor = parseInt(moduleVersion.split('.')[1], 10);
+  return minor >= 21;
+}
+
 // when mongoose functions are called, we store the original call context
 // and then set it as the parent for the spans created by Query/Aggregate exec()
 // calls. this bypass the unlinked spans issue on thenables await operations.
 export const _STORED_PARENT_SPAN: unique symbol = Symbol('stored-parent-span');
 
+// Prevents double-instrumentation when doc.updateOne/deleteOne (Mongoose 8.21.0+)
+// creates a span and returns a Query that also calls exec()
+export const _ALREADY_INSTRUMENTED: unique symbol = Symbol(
+  'already-instrumented'
+);
+
 export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrumentationConfig> {
+  private _netSemconvStability!: SemconvStability;
+  private _dbSemconvStability!: SemconvStability;
+
   constructor(config: MongooseInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._setSemconvStabilityFromEnv();
+  }
+
+  // Used for testing.
+  private _setSemconvStabilityFromEnv() {
+    this._netSemconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._dbSemconvStability = semconvStabilityFromStr(
+      'database',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   protected init(): InstrumentationModuleDefinition {
@@ -128,6 +171,31 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         moduleExports.Model.prototype,
         'remove',
         this.patchOnModelMethods('remove', moduleVersion)
+      );
+    }
+
+    // Mongoose 8.21.0+ changed Document.updateOne()/deleteOne() so that the Query is not fully built when Query.exec() is called.
+    //
+    // See https://github.com/Automattic/mongoose/blob/7dbda12dca1bd7adb9e270d7de8ac5229606ce72/lib/document.js#L861.
+    // - `this` is a Query object
+    // - the update happens in a pre-hook that gets called when Query.exec() is already running.
+    // - when we instrument Query.exec(), we don't have access to the options yet as they get set during Query.exec() only.
+    //
+    // Unfortunately, after Query.exec() is finished, the options are left modified by the library, so just delaying
+    // attaching the attributes after the span is done is not an option. Therefore, we patch Model methods
+    // and grab the data directly where the user provides it.
+    //
+    // ref: https://github.com/Automattic/mongoose/pull/15908 (introduced this behavior)
+    if (needsDocumentMethodPatch(moduleVersion)) {
+      this._wrap(
+        moduleExports.Model.prototype,
+        'updateOne',
+        this._patchDocumentUpdateMethods('updateOne', moduleVersion)
+      );
+      this._wrap(
+        moduleExports.Model.prototype,
+        'deleteOne',
+        this._patchDocumentUpdateMethods('deleteOne', moduleVersion)
       );
     }
 
@@ -183,6 +251,11 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
       this._unwrap(moduleExports.Model.prototype, 'remove');
     }
 
+    if (needsDocumentMethodPatch(moduleVersion)) {
+      this._unwrap(moduleExports.Model.prototype, 'updateOne');
+      this._unwrap(moduleExports.Model.prototype, 'deleteOne');
+    }
+
     this._unwrap(moduleExports.Query.prototype, 'exec');
     this._unwrap(moduleExports.Aggregate.prototype, 'exec');
 
@@ -210,10 +283,16 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer('aggregate', {
+          const statement = dbStatementSerializer('aggregate', {
             options: this.options,
             aggregatePipeline: this._pipeline,
           });
+          if (self._dbSemconvStability & SemconvStability.OLD) {
+            attributes[ATTR_DB_STATEMENT] = statement;
+          }
+          if (self._dbSemconvStability & SemconvStability.STABLE) {
+            attributes[ATTR_DB_QUERY_TEXT] = statement;
+          }
         }
 
         const span = self._startSpan(
@@ -240,6 +319,11 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     const self = this;
     return (originalExec: Function) => {
       return function exec(this: any, callback?: Function) {
+        // Skip if already instrumented by document instance method patch
+        if (this[_ALREADY_INSTRUMENTED]) {
+          return originalExec.apply(this, arguments);
+        }
+
         if (
           self.getConfig().requireParentSpan &&
           trace.getSpan(context.active()) === undefined
@@ -251,12 +335,19 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer(this.op, {
-            condition: this._conditions,
+          const statement = dbStatementSerializer(this.op, {
+            // Use public API methods (getFilter/getOptions) for better compatibility
+            condition: this.getFilter?.() ?? this._conditions,
             updates: this._update,
-            options: this.options,
+            options: this.getOptions?.() ?? this.options,
             fields: this._fields,
           });
+          if (self._dbSemconvStability & SemconvStability.OLD) {
+            attributes[ATTR_DB_STATEMENT] = statement;
+          }
+          if (self._dbSemconvStability & SemconvStability.STABLE) {
+            attributes[ATTR_DB_QUERY_TEXT] = statement;
+          }
         }
         const span = self._startSpan(
           this.mongooseCollection,
@@ -296,10 +387,13 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer(
-            op,
-            serializePayload
-          );
+          const statement = dbStatementSerializer(op, serializePayload);
+          if (self._dbSemconvStability & SemconvStability.OLD) {
+            attributes[ATTR_DB_STATEMENT] = statement;
+          }
+          if (self._dbSemconvStability & SemconvStability.STABLE) {
+            attributes[ATTR_DB_QUERY_TEXT] = statement;
+          }
         }
         const span = self._startSpan(
           this.constructor.collection,
@@ -321,6 +415,83 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
           callback,
           moduleVersion
         );
+      };
+    };
+  }
+
+  // Patch document instance methods (doc.updateOne/deleteOne) for Mongoose 8.21.0+.
+  private _patchDocumentUpdateMethods(
+    op: string,
+    moduleVersion: string | undefined
+  ) {
+    const self = this;
+    return (originalMethod: Function) => {
+      return function method(
+        this: any,
+        update?: any,
+        options?: any,
+        callback?: Function
+      ) {
+        if (
+          self.getConfig().requireParentSpan &&
+          trace.getSpan(context.active()) === undefined
+        ) {
+          return originalMethod.apply(this, arguments);
+        }
+
+        // determine actual callback since different argument patterns are allowed
+        let actualCallback: Function | undefined = callback;
+        let actualUpdate = update;
+        let actualOptions = options;
+
+        if (typeof update === 'function') {
+          actualCallback = update;
+          actualUpdate = undefined;
+          actualOptions = undefined;
+        } else if (typeof options === 'function') {
+          actualCallback = options;
+          actualOptions = undefined;
+        }
+
+        const attributes: Attributes = {};
+        const dbStatementSerializer = self.getConfig().dbStatementSerializer;
+        if (dbStatementSerializer) {
+          const statement = dbStatementSerializer(op, {
+            // Document instance methods automatically use the document's _id as filter
+            condition: { _id: this._id },
+            updates: actualUpdate,
+            options: actualOptions,
+          });
+          if (self._dbSemconvStability & SemconvStability.OLD) {
+            attributes[ATTR_DB_STATEMENT] = statement;
+          }
+          if (self._dbSemconvStability & SemconvStability.STABLE) {
+            attributes[ATTR_DB_QUERY_TEXT] = statement;
+          }
+        }
+
+        const span = self._startSpan(
+          this.constructor.collection,
+          this.constructor.modelName,
+          op,
+          attributes
+        );
+
+        const result = self._handleResponse(
+          span,
+          originalMethod,
+          this,
+          arguments,
+          actualCallback,
+          moduleVersion
+        );
+
+        // Mark returned Query to prevent double-instrumentation when exec() is eventually called
+        if (result && typeof result === 'object') {
+          result[_ALREADY_INSTRUMENTED] = true;
+        }
+
+        return result;
       };
     };
   }
@@ -364,10 +535,13 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const attributes: Attributes = {};
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
-          attributes[ATTR_DB_STATEMENT] = dbStatementSerializer(
-            op,
-            serializePayload
-          );
+          const statement = dbStatementSerializer(op, serializePayload);
+          if (self._dbSemconvStability & SemconvStability.OLD) {
+            attributes[ATTR_DB_STATEMENT] = statement;
+          }
+          if (self._dbSemconvStability & SemconvStability.STABLE) {
+            attributes[ATTR_DB_QUERY_TEXT] = statement;
+          }
         }
 
         const span = self._startSpan(
@@ -426,16 +600,34 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     attributes: Attributes,
     parentSpan?: Span
   ): Span {
+    const finalAttributes: Attributes = {
+      ...attributes,
+      ...getAttributesFromCollection(
+        collection,
+        this._dbSemconvStability,
+        this._netSemconvStability
+      ),
+    };
+
+    if (this._dbSemconvStability & SemconvStability.OLD) {
+      finalAttributes[ATTR_DB_OPERATION] = operation;
+      finalAttributes[ATTR_DB_SYSTEM] = 'mongoose'; // keep for backwards compatibility
+    }
+    if (this._dbSemconvStability & SemconvStability.STABLE) {
+      finalAttributes[ATTR_DB_OPERATION_NAME] = operation;
+      finalAttributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MONGODB; // actual db system name
+    }
+
+    const spanName =
+      this._dbSemconvStability & SemconvStability.STABLE
+        ? `${operation} ${collection.name}`
+        : `mongoose.${modelName}.${operation}`;
+
     return this.tracer.startSpan(
-      `mongoose.${modelName}.${operation}`,
+      spanName,
       {
         kind: SpanKind.CLIENT,
-        attributes: {
-          ...attributes,
-          ...getAttributesFromCollection(collection),
-          [ATTR_DB_OPERATION]: operation,
-          [ATTR_DB_SYSTEM]: 'mongoose',
-        },
+        attributes: finalAttributes,
       },
       parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined
     );

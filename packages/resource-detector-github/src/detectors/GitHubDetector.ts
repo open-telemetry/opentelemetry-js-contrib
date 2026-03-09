@@ -25,7 +25,7 @@ import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
  * https://docs.github.com/en/free-pro-team@latest/actions/reference/environment-variables
  */
 class GitHubDetector implements ResourceDetector {
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     const attributes = {
       'github.workflow': process.env.GITHUB_WORKFLOW || undefined,
       'github.run_id': process.env.GITHUB_RUN_ID || undefined,

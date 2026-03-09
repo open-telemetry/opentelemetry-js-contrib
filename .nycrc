@@ -1,10 +1,6 @@
 {
-  "extension": [
-    ".ts"
-  ],
-  "include": [
-    "src/**"
-  ],
+  "extension": [".ts"],
+  "include": ["src/**"],
   "reporter": ["text", "json"],
   "exclude": [
     "**/*.d.ts",

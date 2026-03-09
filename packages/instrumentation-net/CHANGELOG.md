@@ -1,6 +1,21 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.54.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.53.0...instrumentation-net-v0.54.0) (2026-01-14)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3332](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3332)) ([925a150](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/925a1501ce0d082c6845d36e7c964e625ee3de0c))
+* **deps:** update deps matching '@opentelemetry/*' ([#3340](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3340)) ([2954943](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/29549434e7204b03d58635eb20352efee0e797d4))
+
+## [0.53.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.52.0...instrumentation-net-v0.53.0) (2025-12-17)
+
+
+### Features
+
+* **instrumentation-net:** support `net.*` semconv migration ([#3268](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3268)) ([289e735](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/289e73552bb45603e164b2b2e3fc79bcf75a9abd))
+
 ## [0.52.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.51.0...instrumentation-net-v0.52.0) (2025-11-06)
 
 

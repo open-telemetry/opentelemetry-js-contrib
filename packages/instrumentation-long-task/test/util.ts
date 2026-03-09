@@ -16,7 +16,7 @@
 import * as tracing from '@opentelemetry/sdk-trace-base';
 
 export class DummySpanExporter implements tracing.SpanExporter {
-  export(spans: tracing.ReadableSpan[]) {}
+  export(_spans: tracing.ReadableSpan[]) {}
 
   shutdown() {
     return Promise.resolve();
