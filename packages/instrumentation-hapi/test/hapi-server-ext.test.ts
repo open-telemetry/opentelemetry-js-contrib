@@ -110,9 +110,12 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
     it('instruments direct Hapi.Lifecycle.Method extensions with named method', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
 
-      server.ext('onRequest', async function myOnRequestHandler(request, h, err) {
-        return h.continue;
-      });
+      server.ext(
+        'onRequest',
+        async function myOnRequestHandler(request, h, err) {
+          return h.continue;
+        }
+      );
       await server.start();
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
@@ -223,7 +226,11 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
 
           const extHandlerSpans = memoryExporter
             .getFinishedSpans()
-            .filter(span => span.name === 'ext - onRequest - firstHandler' || span.name === 'ext - onRequest - secondHandler');
+            .filter(
+              span =>
+                span.name === 'ext - onRequest - firstHandler' ||
+                span.name === 'ext - onRequest - secondHandler'
+            );
           assert.notStrictEqual(extHandlerSpans, undefined);
           assert.strictEqual(extHandlerSpans.length, 2);
 

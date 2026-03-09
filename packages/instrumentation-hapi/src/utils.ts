@@ -117,7 +117,8 @@ export const getExtMetadata = (
   name: string;
 } => {
   let baseName = `ext - ${extPoint}`;
-  if (methodName && methodName !== 'method') { // method is the default name for the extension in the ServerExtEventsObject format.
+  if (methodName && methodName !== 'method') {
+    // method is the default name for the extension in the ServerExtEventsObject format.
     baseName = `ext - ${extPoint} - ${methodName}`;
   }
   if (pluginName) {
