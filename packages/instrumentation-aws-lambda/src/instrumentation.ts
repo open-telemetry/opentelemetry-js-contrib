@@ -105,9 +105,7 @@ function makeExportsConfigurable<T>(moduleExports: T): T {
   if (keys.every(key => descriptors[key].configurable)) {
     return moduleExports;
   }
-  const fixed = Object.create(
-    Object.getPrototypeOf(moduleExports)
-  ) as T;
+  const fixed = Object.create(Object.getPrototypeOf(moduleExports)) as T;
   for (const key of keys) {
     Object.defineProperty(fixed, key, {
       value: (moduleExports as Record<string, unknown>)[key],

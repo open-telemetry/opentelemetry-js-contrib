@@ -32,11 +32,15 @@ async function error(event, context) {
 
 Object.defineProperty(exports, 'handler', {
   enumerable: true,
-  get: function () { return handler; },
+  get: function () {
+    return handler;
+  },
   // intentionally no configurable: true — this is what esbuild produces
 });
 
 Object.defineProperty(exports, 'error', {
   enumerable: true,
-  get: function () { return error; },
+  get: function () {
+    return error;
+  },
 });
