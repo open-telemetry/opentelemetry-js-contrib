@@ -91,6 +91,34 @@ function isSupportingCallbacks(): boolean {
   return false;
 }
 
+// When esbuild bundles ESM to CJS format, it defines exports using non-configurable
+// accessor descriptors. OpenTelemetry's shimmer then fails with "Cannot redefine property"
+// when trying to wrap the handler. This replaces such exports with a new object that has
+// configurable data descriptors so shimmer can wrap them.
+// See: https://github.com/evanw/esbuild/issues/2199
+function makeExportsConfigurable<T>(moduleExports: T): T {
+  if (typeof moduleExports !== 'object' || moduleExports === null) {
+    return moduleExports;
+  }
+  const keys = Object.getOwnPropertyNames(moduleExports);
+  const descriptors = Object.getOwnPropertyDescriptors(moduleExports);
+  if (keys.every(key => descriptors[key].configurable)) {
+    return moduleExports;
+  }
+  const fixed = Object.create(
+    Object.getPrototypeOf(moduleExports)
+  ) as T;
+  for (const key of keys) {
+    Object.defineProperty(fixed, key, {
+      value: (moduleExports as Record<string, unknown>)[key],
+      writable: true,
+      enumerable: descriptors[key].enumerable,
+      configurable: true,
+    });
+  }
+  return fixed;
+}
+
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
   declare private _traceForceFlusher?: () => Promise<void>;
   declare private _metricForceFlusher?: () => Promise<void>;
@@ -175,6 +203,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
             module,
             ['*'],
             (moduleExports: LambdaModule) => {
+              moduleExports = makeExportsConfigurable(moduleExports);
               if (isWrapped(moduleExports[functionName])) {
                 this._unwrap(moduleExports, functionName);
               }
