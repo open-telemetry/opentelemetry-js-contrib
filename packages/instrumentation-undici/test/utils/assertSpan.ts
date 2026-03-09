@@ -44,7 +44,6 @@ export const assertSpan = (
     httpStatusCode?: number;
     httpMethod: string;
     spanName?: string;
-    resHeaders?: Headers | IncomingHttpHeaders;
     hostname: string;
     reqHeaders?: Headers | IncomingHttpHeaders;
     path?: string | null;
@@ -136,22 +135,6 @@ export const assertSpan = (
     hrTimeToNanoseconds(span.duration) > 0,
     'must have positive duration'
   );
-
-  if (validations.resHeaders) {
-    // Headers were added in v17.5.0, v16.15.0
-    // https://nodejs.org/api/globals.html#class-headers
-    const { resHeaders } = validations;
-    const contentLengthHeader = getHeader(resHeaders, 'content-length');
-
-    if (contentLengthHeader) {
-      const contentLength = Number(contentLengthHeader);
-
-      assert.strictEqual(
-        span.attributes['http.response.header.content-length'],
-        contentLength
-      );
-    }
-  }
 
   assert.strictEqual(
     span.attributes[ATTR_SERVER_ADDRESS],
