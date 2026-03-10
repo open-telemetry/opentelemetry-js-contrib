@@ -59,7 +59,7 @@ import { AWSXRayLambdaPropagator } from '@opentelemetry/propagator-aws-xray-lamb
 
 const memoryExporter = new InMemorySpanExporter();
 
-const assertSpanSuccess = (span: ReadableSpan) => {
+export const assertSpanSuccess = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
   assert.strictEqual(span.name, 'my_function');
   assert.strictEqual(span.attributes[ATTR_FAAS_EXECUTION], 'aws_request_id');
