@@ -81,6 +81,7 @@ This package implements Semantic Convention [Version 1.37.0](https://github.com/
 | azure.container_app.name                | The name of the Azure Container App. Value of Process Environment Variable `CONTAINER_APP_NAME`.                                               |
 | host.name                     | The hostname of the container. Value of Process Environment Variable `CONTAINER_APP_HOSTNAME.                             |
 | azure.container_app.instance.id           | The replica name of the Azure Container App instance. Value of Process Environment Variable `CONTAINER_APP_REPLICA_NAME`.                      |
+
 ### Azure Kubernetes Service (AKS) Resource Detector
 
 The AKS detector reads cluster metadata from the native `aks-cluster-metadata` ConfigMap in the `kube-public` namespace, which is automatically created by AKS. The ConfigMap contains a `clusterResourceId` key with the full ARM resource ID of the cluster.

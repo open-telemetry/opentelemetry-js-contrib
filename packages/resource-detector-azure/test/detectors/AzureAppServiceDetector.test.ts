@@ -89,7 +89,11 @@ describe('AzureAppServiceDetector', () => {
     process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
 
     const resource = detectResources({
-      detectors: [azureFunctionsDetector, azureAppServiceDetector, azureContainerAppsDetector],
+      detectors: [
+        azureFunctionsDetector,
+        azureAppServiceDetector,
+        azureContainerAppsDetector,
+      ],
     });
     assert.ok(resource);
     const attributes = resource.attributes;
@@ -120,7 +124,11 @@ describe('AzureAppServiceDetector', () => {
     delete process.env.WEBSITE_OWNER_NAME;
 
     const resource = detectResources({
-      detectors: [azureFunctionsDetector, azureAppServiceDetector, azureContainerAppsDetector],
+      detectors: [
+        azureFunctionsDetector,
+        azureAppServiceDetector,
+        azureContainerAppsDetector,
+      ],
     });
     assert.ok(resource);
     const attributes = resource.attributes;

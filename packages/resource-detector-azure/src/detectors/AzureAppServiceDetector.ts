@@ -36,7 +36,11 @@ import {
   ATTR_CLOUD_PLATFORM,
   CLOUD_PLATFORM_VALUE_AZURE_APP_SERVICE,
 } from '../semconv';
-import { getAzureResourceUri, isAzureContainerApps, isAzureFunction } from '../utils';
+import {
+  getAzureResourceUri,
+  isAzureContainerApps,
+  isAzureFunction,
+} from '../utils';
 
 const APP_SERVICE_ATTRIBUTE_ENV_VARS = {
   [ATTR_CLOUD_REGION]: REGION_NAME,

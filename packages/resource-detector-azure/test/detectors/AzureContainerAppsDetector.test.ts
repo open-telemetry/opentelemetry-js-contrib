@@ -19,13 +19,17 @@ import { detectResources } from '@opentelemetry/resources';
 import {
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_PROVIDER,
-  ATTR_HOST_NAME
+  ATTR_HOST_NAME,
 } from '../../src/semconv';
-import { AZURE_CONTAINER_APP_INSTANCE_ID, AZURE_CONTAINER_APP_NAME, AZURE_CONTAINER_APP_VERSION } from '../../src/types';
+import {
+  AZURE_CONTAINER_APP_INSTANCE_ID,
+  AZURE_CONTAINER_APP_NAME,
+  AZURE_CONTAINER_APP_VERSION,
+} from '../../src/types';
 import {
   azureAppServiceDetector,
   azureContainerAppsDetector,
-  azureFunctionsDetector
+  azureFunctionsDetector,
 } from '../../src';
 
 describe('AzureContainerAppsDetector', () => {
@@ -55,17 +59,21 @@ describe('AzureContainerAppsDetector', () => {
     process.env.CONTAINER_APP_REPLICA_NAME = 'test-replica-name';
 
     const resource = detectResources({
-      detectors: [azureContainerAppsDetector, azureFunctionsDetector, azureAppServiceDetector],
+      detectors: [
+        azureContainerAppsDetector,
+        azureFunctionsDetector,
+        azureAppServiceDetector,
+      ],
     });
     assert.ok(resource);
     const attributes = resource.attributes;
     assert.strictEqual(attributes[ATTR_CLOUD_PROVIDER], 'azure');
     assert.strictEqual(attributes[ATTR_CLOUD_PLATFORM], 'azure.container_apps');
-    assert.strictEqual(attributes[AZURE_CONTAINER_APP_NAME], 'test-container-app');
     assert.strictEqual(
-      attributes[ATTR_HOST_NAME],
-      'test-hostname'
+      attributes[AZURE_CONTAINER_APP_NAME],
+      'test-container-app'
     );
+    assert.strictEqual(attributes[ATTR_HOST_NAME], 'test-hostname');
     assert.strictEqual(
       attributes[AZURE_CONTAINER_APP_INSTANCE_ID],
       'test-replica-name'

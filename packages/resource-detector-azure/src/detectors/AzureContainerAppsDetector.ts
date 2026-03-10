@@ -30,7 +30,7 @@ import {
   CONTAINER_APP_HOSTNAME,
   CONTAINER_APP_NAME,
   CONTAINER_APP_REPLICA_NAME,
-  CONTAINER_APP_REVISION
+  CONTAINER_APP_REVISION,
 } from '../types';
 
 const CONTAINER_APP_ATTRIBUTE_ENV_VARS = {
@@ -38,7 +38,7 @@ const CONTAINER_APP_ATTRIBUTE_ENV_VARS = {
   [AZURE_CONTAINER_APP_INSTANCE_ID]: CONTAINER_APP_REPLICA_NAME,
   [AZURE_CONTAINER_APP_NAME]: CONTAINER_APP_NAME,
   [AZURE_CONTAINER_APP_VERSION]: CONTAINER_APP_REVISION,
-}
+};
 
 class AzureContainerAppsDetector implements ResourceDetector {
   public detect(): DetectedResource {
@@ -50,16 +50,17 @@ class AzureContainerAppsDetector implements ResourceDetector {
         [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_AZURE,
       };
 
-      for (const [key, value] of Object.entries(CONTAINER_APP_ATTRIBUTE_ENV_VARS)) {
+      for (const [key, value] of Object.entries(
+        CONTAINER_APP_ATTRIBUTE_ENV_VARS
+      )) {
         const envVar = process.env[value];
         if (envVar) {
           attributes = { ...attributes, ...{ [key]: envVar } };
         }
       }
     }
-    return { attributes }
+    return { attributes };
   }
 }
 
 export const azureContainerAppsDetector = new AzureContainerAppsDetector();
-
