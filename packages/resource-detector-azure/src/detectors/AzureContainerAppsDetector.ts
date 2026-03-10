@@ -41,7 +41,7 @@ const CONTAINER_APP_ATTRIBUTE_ENV_VARS = {
 }
 
 class AzureContainerAppsDetector implements ResourceDetector {
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     let attributes = {};
 
     if (isAzureContainerApps()) {

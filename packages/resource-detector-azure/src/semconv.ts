@@ -206,7 +206,7 @@ export const CLOUD_PLATFORM_VALUE_AZURE_APP_SERVICE =
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const CLOUD_PLATFORM_VALUE_AZURE_CONTAINER_APPS = "azure.container_apps" as const;
+export const CLOUD_PLATFORM_VALUE_AZURE_CONTAINER_APPS = 'azure.container_apps' as const;
 
 /**
  * Enum value "azure.functions" for attribute {@link ATTR_CLOUD_PLATFORM}.
