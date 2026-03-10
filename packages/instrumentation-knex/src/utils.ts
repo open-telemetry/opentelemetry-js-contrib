@@ -83,6 +83,52 @@ export const limitLength = (str: string, maxLength: number) => {
     return str.substring(0, maxLength) + '..';
   }
   return str;
+  
+};
+
+/**
+ * Helpers to extract connection details from a Knex connectionString.
+ * When Knex is configured via `connection.connectionString` instead of
+ * explicit fields like `host`, `port`, and `database`, these values are
+ * embedded in the URL and must be parsed out.
+ * e.g. "postgres://user:pass@localhost:5432/mydb"
+ */
+
+
+
+export const extractDatabaseFromConnectionString = (
+  connectionString?: string
+): string | undefined => {
+  if (!connectionString) return undefined;
+  try {
+    const db = new URL(connectionString).pathname?.replace(/^\//, '');
+    return db || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+export const extractHostFromConnectionString = (
+  connectionString?: string
+): string | undefined => {
+  if (!connectionString) return undefined;
+  try {
+    return new URL(connectionString).hostname || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+export const extractPortFromConnectionString = (
+  connectionString?: string
+): number | undefined => {
+  if (!connectionString) return undefined;
+  try {
+    const port = new URL(connectionString).port;
+    return port ? parseInt(port, 10) : undefined;
+  } catch {
+    return undefined;
+  }
 };
 
 export const extractTableName = (builder: any): string => {

@@ -623,6 +623,57 @@ describe('Knex instrumentation', () => {
   });
 });
 
+
+describe('utils: connectionString parsing', () => {
+  it('should extract database name from connectionString', () => {
+    const { extractDatabaseFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractDatabaseFromConnectionString('postgres://user:pass@localhost:5432/mydb'),
+      'mydb'
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString('mysql://user:pass@host/testdb'),
+      'testdb'
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString(undefined),
+      undefined
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString('not-a-url'),
+      undefined
+    );
+  });
+
+  it('should extract host from connectionString', () => {
+    const { extractHostFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractHostFromConnectionString('postgres://user:pass@myhost:5432/mydb'),
+      'myhost'
+    );
+    assert.strictEqual(
+      extractHostFromConnectionString(undefined),
+      undefined
+    );
+  });
+
+  it('should extract port from connectionString', () => {
+    const { extractPortFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractPortFromConnectionString('postgres://user:pass@localhost:5432/mydb'),
+      5432
+    );
+    assert.strictEqual(
+      extractPortFromConnectionString('postgres://user:pass@localhost/mydb'),
+      undefined  // no port specified
+    );
+    assert.strictEqual(
+      extractPortFromConnectionString(undefined),
+      undefined
+    );
+  });
+});
+
 const assertSpans = (
   actualSpans: any[],
   expectedSpans: any[],
