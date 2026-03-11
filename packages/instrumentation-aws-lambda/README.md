@@ -50,6 +50,26 @@ export const handler = async (event, context) => {
 
 **Note**: AWS Lambda has removed callback-based handlers in Node.js 24 runtime. It's required to migrate to Promise-based handlers when upgrading to Node.js 24+.
 
+### ES Module hook required for Node.js 24+ AWS Lambda runtimes
+
+A change in the AWS Lambda runtime for Node.js 24 is that the user handler module is now loaded with `await import(...)` rather than `require(...)`.
+This means that **OpenTelemetry's ECMAScript Module (ESM) hook must be enabled for instrumentation of AWS Lambda functions using the Node.js 24+ runtime.**
+This can be done either by:
+
+1. Adding `--experimental-loader=@opentelemetry/instrumentation/hook.mjs` to the `NODE_OPTIONS` environment variable, or
+
+2. loading the same hook via [`module.register(...)`](https://nodejs.org/api/all.html#moduleregisterspecifier-parenturl-options)
+    before the Lambda handler module is loaded.
+    For example, create a file "register-hook.mjs" next to your handler module:
+
+    ```js
+    // register-hook.mjs
+    import {register} from 'node:module';
+    register('./hook.mjs', import.meta.url);
+    ```
+
+    and add `--import=/var/task/register-hook.mjs` to the `NODE_OPTIONS` environment variable. This same `register-hook.mjs` could be used for other OpenTelemetry initialization.
+
 ## Usage
 
 Create a file to initialize the instrumentation, such as `lambda-wrapper.js`.
