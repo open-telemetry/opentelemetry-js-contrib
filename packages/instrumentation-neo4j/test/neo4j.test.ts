@@ -142,7 +142,9 @@ describe('neo4j instrumentation', () => {
     });
 
     it('instruments "run" with promise and object query syntax', async () => {
-      const res = await driver.session().run({text: 'CREATE (n:MyLabel) RETURN n'});
+      const res = await driver
+        .session()
+        .run({ text: 'CREATE (n:MyLabel) RETURN n' });
 
       assert.equal(res.records.length, 1);
       assert.deepStrictEqual((res.records[0].toObject() as any).n.labels, [
