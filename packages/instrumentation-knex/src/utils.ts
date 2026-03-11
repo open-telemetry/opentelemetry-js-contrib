@@ -83,7 +83,6 @@ export const limitLength = (str: string, maxLength: number) => {
     return str.substring(0, maxLength) + '..';
   }
   return str;
-  
 };
 
 /**
@@ -93,8 +92,6 @@ export const limitLength = (str: string, maxLength: number) => {
  * embedded in the URL and must be parsed out.
  * e.g. "postgres://user:pass@localhost:5432/mydb"
  */
-
-
 
 export const extractDatabaseFromConnectionString = (
   connectionString?: string
