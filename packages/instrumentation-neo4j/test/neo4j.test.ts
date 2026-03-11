@@ -38,7 +38,7 @@ import {
 } from '@opentelemetry/contrib-test-utils';
 import { concat } from 'rxjs';
 import { map, mergeMap } from 'rxjs/operators';
-import { gt as semverGt } from 'semver';
+import { gte as semverGte } from 'semver';
 import { Neo4jInstrumentation } from '../src/neo4j';
 import { ATTR_DB_USER } from '../src/semconv';
 
@@ -125,6 +125,24 @@ describe('neo4j instrumentation', () => {
   describe('session', () => {
     it('instruments "run" with promise', async () => {
       const res = await driver.session().run('CREATE (n:MyLabel) RETURN n');
+
+      assert.equal(res.records.length, 1);
+      assert.deepStrictEqual((res.records[0].toObject() as any).n.labels, [
+        'MyLabel',
+      ]);
+
+      const span = getSingleSpan();
+      assertSpan(span);
+      assert.strictEqual(span.name, 'CREATE neo4j');
+      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'CREATE');
+      assert.strictEqual(
+        span.attributes[ATTR_DB_QUERY_TEXT],
+        'CREATE (n:MyLabel) RETURN n'
+      );
+    });
+
+    it('instruments "run" with promise and object query syntax', async () => {
+      const res = await driver.session().run({text: 'CREATE (n:MyLabel) RETURN n'});
 
       assert.equal(res.records.length, 1);
       assert.deepStrictEqual((res.records[0].toObject() as any).n.labels, [
@@ -346,7 +364,7 @@ describe('neo4j instrumentation', () => {
     it('instruments session executeRead/readTransaction', async () => {
       // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
       const version = require('neo4j-driver/package.json').version;
-      const method = semverGt(version, '6.0.0')
+      const method = semverGte(version, '6.0.0')
         ? 'executeRead'
         : 'readTransaction';
 
@@ -365,7 +383,7 @@ describe('neo4j instrumentation', () => {
     it('instruments session executeWrite/writeTransaction', async () => {
       // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
       const version = require('neo4j-driver/package.json').version;
-      const method = semverGt(version, '6.0.0')
+      const method = semverGte(version, '6.0.0')
         ? 'executeWrite'
         : 'writeTransaction';
 
@@ -464,7 +482,7 @@ describe('neo4j instrumentation', () => {
     it('instruments rx session executeRead/readTransaction', done => {
       // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
       const version = require('neo4j-driver/package.json').version;
-      const method = semverGt(version, '6.0.0')
+      const method = semverGte(version, '6.0.0')
         ? 'executeRead'
         : 'readTransaction';
 
@@ -493,7 +511,7 @@ describe('neo4j instrumentation', () => {
     it('instruments rx session executeWrite/writeTransaction', done => {
       // https://github.com/neo4j/neo4j-javascript-driver/wiki/6.x-changelog#-removals
       const version = require('neo4j-driver/package.json').version;
-      const method = semverGt(version, '6.0.0')
+      const method = semverGte(version, '6.0.0')
         ? 'executeWrite'
         : 'writeTransaction';
 

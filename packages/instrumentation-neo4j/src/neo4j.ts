@@ -108,7 +108,19 @@ export class Neo4jInstrumentation extends InstrumentationBase<Neo4jInstrumentati
           }
 
           const connectionAttributes = getAttributesFromNeo4jSession(this);
-          const query = args[0] as string;
+
+          // Reflect neo4j's logic for query param (either parameterised string or object {query, parameters})
+          // https://github.com/neo4j/neo4j-javascript-driver/blob/6.x/packages/core/src/internal/util.ts#L64
+          let query = '';
+          const rawQuery = args[0] as RunArgs[0];
+          if (typeof rawQuery === 'string') {
+            query = rawQuery;
+          } else if (rawQuery instanceof String) {
+            query = rawQuery.toString();
+          } else if (typeof rawQuery === 'object' && rawQuery?.text != null) {
+            query = rawQuery.text;
+          }
+
           const operation = query.trim().split(/\s+/)[0];
           const span = self.tracer.startSpan(
             `${operation} ${connectionAttributes[ATTR_DB_NAMESPACE]}`,

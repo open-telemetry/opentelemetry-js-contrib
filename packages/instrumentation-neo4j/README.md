@@ -10,12 +10,12 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 ## Installation
 
 ```bash
-npm install --save @opentelemetry/instrumentation-mysql2
+npm install --save @opentelemetry/instrumentation-neo4j
 ```
 
 ## Supported Versions
 
-- [`neo4j-driver`](https://www.npmjs.com/package/neo4j-driver) versions `>=4.0.0 <6`
+- [`neo4j-driver`](https://www.npmjs.com/package/neo4j-driver) versions `>=4.0.0 <7`
 
 ## Usage
 
