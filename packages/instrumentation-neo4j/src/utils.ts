@@ -19,18 +19,6 @@ import {
   ATTR_NETWORK_PEER_PORT,
   ATTR_NETWORK_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_DB_USER } from './semconv';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getAuth(connectionProvider: any) {
-  if (connectionProvider._authenticationProvider) {
-    return connectionProvider._authenticationProvider._authTokenManager
-      ?._authToken;
-  }
-
-  return connectionProvider._authToken;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getAttributesFromNeo4jSession(session: any) {
   const connectionHolder =
@@ -43,7 +31,6 @@ export function getAttributesFromNeo4jSession(session: any) {
 
   // seedRouter is used when connecting to a url that starts with "neo4j", usually aura
   const address = connectionProvider._address ?? connectionProvider._seedRouter;
-  const auth = getAuth(connectionProvider);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const attributes: Record<string, any> = {
@@ -56,8 +43,5 @@ export function getAttributesFromNeo4jSession(session: any) {
     attributes[ATTR_NETWORK_PEER_PORT] = address._port;
   }
 
-  if (auth?.principal) {
-    attributes[ATTR_DB_USER] = auth.principal;
-  }
   return attributes;
 }

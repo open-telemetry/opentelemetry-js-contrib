@@ -40,7 +40,6 @@ import { concat } from 'rxjs';
 import { map, mergeMap } from 'rxjs/operators';
 import { gte as semverGte } from 'semver';
 import { Neo4jInstrumentation } from '../src/neo4j';
-import { ATTR_DB_USER } from '../src/semconv';
 
 const port = Number(process.env.NEO4J_PORT) || 7687;
 const host = process.env.NEO4J_HOST || '127.0.0.1';
@@ -61,7 +60,6 @@ function assertSpan(span: ReadableSpan) {
   assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
   assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'neo4j');
   assert.strictEqual(span.attributes[ATTR_DB_NAMESPACE], 'neo4j');
-  assert.strictEqual(span.attributes[ATTR_DB_USER], user);
   assert.strictEqual(span.attributes[ATTR_NETWORK_PEER_ADDRESS], host);
   assert.strictEqual(span.attributes[ATTR_NETWORK_PEER_PORT], port);
   assert.strictEqual(span.attributes[ATTR_NETWORK_TRANSPORT], 'TCP');
