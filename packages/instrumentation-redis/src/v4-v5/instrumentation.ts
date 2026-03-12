@@ -242,6 +242,74 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
       }
     );
 
+    const clusterIndexModule = new InstrumentationNodeModuleFile(
+      `${basePackageName}/dist/lib/cluster/index.js`,
+      ['^1.0.0', '^5.0.0'],
+      (moduleExports: any) => {
+        const redisClusterPrototype = moduleExports?.default?.prototype;
+
+        // Patch MULTI to store cluster options on the multi command object
+        // so that _traceClientCommand can read connection attributes later
+        if (redisClusterPrototype?.MULTI) {
+          if (isWrapped(redisClusterPrototype?.MULTI)) {
+            this._unwrap(redisClusterPrototype, 'MULTI');
+          }
+          this._wrap(
+            redisClusterPrototype,
+            'MULTI',
+            this._getPatchRedisClusterMulti()
+          );
+        }
+
+        return moduleExports;
+      },
+      (moduleExports: any) => {
+        const redisClusterPrototype = moduleExports?.default?.prototype;
+        if (isWrapped(redisClusterPrototype?.MULTI)) {
+          this._unwrap(redisClusterPrototype, 'MULTI');
+        }
+      }
+    );
+
+    const clusterMultiCommanderModule = new InstrumentationNodeModuleFile(
+      `${basePackageName}/dist/lib/cluster/multi-command.js`,
+      ['^1.0.0', '^5.0.0'],
+      (moduleExports: any) => {
+        const redisClusterMultiCommandPrototype =
+          moduleExports?.default?.prototype;
+
+        if (isWrapped(redisClusterMultiCommandPrototype?.exec)) {
+          this._unwrap(redisClusterMultiCommandPrototype, 'exec');
+        }
+        this._wrap(
+          redisClusterMultiCommandPrototype,
+          'exec',
+          this._getPatchMultiCommandsExec(false)
+        );
+
+        if (isWrapped(redisClusterMultiCommandPrototype?.addCommand)) {
+          this._unwrap(redisClusterMultiCommandPrototype, 'addCommand');
+        }
+        this._wrap(
+          redisClusterMultiCommandPrototype,
+          'addCommand',
+          this._getPatchClusterMultiCommandsAddCommand()
+        );
+
+        return moduleExports;
+      },
+      (moduleExports: any) => {
+        const redisClusterMultiCommandPrototype =
+          moduleExports?.default?.prototype;
+        if (isWrapped(redisClusterMultiCommandPrototype?.exec)) {
+          this._unwrap(redisClusterMultiCommandPrototype, 'exec');
+        }
+        if (isWrapped(redisClusterMultiCommandPrototype?.addCommand)) {
+          this._unwrap(redisClusterMultiCommandPrototype, 'addCommand');
+        }
+      }
+    );
+
     return new InstrumentationNodeModuleDefinition(
       basePackageName,
       ['^1.0.0', '^5.0.0'],
@@ -249,7 +317,13 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
         return moduleExports;
       },
       () => {},
-      [commanderModuleFile, multiCommanderModule, clientIndexModule]
+      [
+        commanderModuleFile,
+        multiCommanderModule,
+        clientIndexModule,
+        clusterIndexModule,
+        clusterMultiCommanderModule,
+      ]
     );
   }
 
@@ -327,6 +401,36 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     return function addCommandWrapper(original: Function) {
       return function addCommandPatch(this: any, args: Array<string | Buffer>) {
         return plugin._traceClientCommand(original, this, arguments, args);
+      };
+    };
+  }
+
+ private _getPatchClusterMultiCommandsAddCommand() {
+    const plugin = this;
+    return function addCommandWrapper(original: Function) {
+      return function addCommandPatch(
+        this: any,
+        firstKeyOrArgs: any,
+        isReadonly: any,
+        args: Array<string | Buffer>
+      ) {
+        // Cluster addCommand is called in two ways:
+        // 1. Internally by named commands: (firstKey, isReadonly, args, transformReply)
+        // 2. Directly by user via .addCommand([...]): (args) - single array argument
+        const redisArgs = Array.isArray(firstKeyOrArgs)
+          ? firstKeyOrArgs
+          : args;
+        return plugin._traceClientCommand(original, this, arguments, redisArgs);
+      };
+    };
+  }
+  private _getPatchRedisClusterMulti() {
+    return function multiPatchWrapper(original: Function) {
+      return function multiPatch(this: any) {
+        const multiRes = original.apply(this, arguments);
+        // Store cluster options so _traceClientCommand can read connection attributes
+        multiRes[MULTI_COMMAND_OPTIONS] = this._options;
+        return multiRes;
       };
     };
   }
