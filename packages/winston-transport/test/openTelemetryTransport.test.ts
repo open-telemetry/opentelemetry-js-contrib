@@ -70,6 +70,43 @@ describe('OpenTelemetryTransportV3', () => {
     );
   });
 
+  it('emit LogRecord with exception from err field', () => {
+    const transport = new OpenTelemetryTransportV3();
+    transport.log({ message: kMessage, err: new Error('boom') }, () => {});
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].body, kMessage);
+    assert.strictEqual(logRecords[0].attributes['exception.message'], 'boom');
+    assert.strictEqual(logRecords[0].attributes['exception.type'], 'Error');
+    assert.ok(
+      typeof logRecords[0].attributes['exception.stacktrace'] === 'string'
+    );
+    assert.strictEqual(logRecords[0].attributes['err'], undefined);
+  });
+
+  it('emit LogRecord with exception from stack field', () => {
+    const transport = new OpenTelemetryTransportV3();
+    transport.log(
+      {
+        message: 'boom',
+        stack: 'Error: boom\n    at test',
+        [Symbol.for('level')]: 'error',
+      },
+      () => {}
+    );
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].body, 'boom');
+    assert.strictEqual(logRecords[0].attributes['exception.message'], 'boom');
+    assert.strictEqual(
+      logRecords[0].attributes['exception.stacktrace'],
+      'Error: boom\n    at test'
+    );
+    assert.strictEqual(logRecords[0].attributes['stack'], undefined);
+  });
+
   describe('emit logRecord severity', () => {
     it('npm levels', () => {
       const callback = () => {};

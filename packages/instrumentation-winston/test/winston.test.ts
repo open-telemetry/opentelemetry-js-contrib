@@ -80,6 +80,12 @@ describe('WinstonInstrumentation', () => {
       case 'colorize':
         format = winston.format.colorize();
         break;
+      case 'errors':
+        format = winston.format.combine(
+          winston.format.errors({ stack: true }),
+          winston.format.json()
+        );
+        break;
       case 'none':
       case undefined:
         format = undefined;
@@ -252,6 +258,31 @@ describe('WinstonInstrumentation', () => {
           logRecords[0].attributes['extraAttribute2'],
           'attributeValue2'
         );
+      }
+    });
+
+    it('emit LogRecord with exception attributes', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+        });
+        initLogger(undefined, 'errors');
+
+        (logger as any).error(new Error('boom'));
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].body, 'boom');
+        assert.strictEqual(
+          logRecords[0].attributes['exception.message'],
+          'boom'
+        );
+        assert.strictEqual(logRecords[0].attributes['exception.type'], 'Error');
+        assert.ok(
+          typeof logRecords[0].attributes['exception.stacktrace'] === 'string'
+        );
+        assert.strictEqual(logRecords[0].attributes['stack'], undefined);
+
+        initLogger();
       }
     });
 
