@@ -43,7 +43,7 @@ describe('nodejs.eventloop.delay.*', function () {
       instrumentation.setMeterProvider(meterProvider);
 
       // act
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       const { resourceMetrics, errors } = await metricReader.collect();
 
       // assert

@@ -32,7 +32,7 @@ export class AWSXRayIdGenerator implements IdGenerator {
    * characters corresponding to 128 bits. The first 4 bytes correspond to the current
    * time, in seconds, as per X-Ray trace ID format.
    */
-  generateTraceId(): string {
+  public generateTraceId(): string {
     return generateTraceId(generateRandomBytes);
   }
 
@@ -40,7 +40,7 @@ export class AWSXRayIdGenerator implements IdGenerator {
    * Returns a random 8-byte span ID formatted/encoded as a 16 lowercase hex
    * characters corresponding to 64 bits.
    */
-  generateSpanId(): string {
+  public generateSpanId(): string {
     return generateSpanId(generateRandomBytes);
   }
 }

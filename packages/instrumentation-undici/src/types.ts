@@ -55,7 +55,7 @@ export interface RequestHookFunction<T = UndiciRequest> {
 
 export interface ResponseHookFunction<
   RequestType = UndiciRequest,
-  ResponseType = UndiciResponse
+  ResponseType = UndiciResponse,
 > {
   (span: Span, info: { request: RequestType; response: ResponseType }): void;
 }
@@ -68,7 +68,7 @@ export interface StartSpanHookFunction<T = UndiciRequest> {
 // so it seems logical to have similar options than the HTTP instrumentation
 export interface UndiciInstrumentationConfig<
   RequestType = UndiciRequest,
-  ResponseType = UndiciResponse
+  ResponseType = UndiciResponse,
 > extends InstrumentationConfig {
   /** Not trace all outgoing requests that matched with custom function */
   ignoreRequestHook?: IgnoreRequestFunction<RequestType>;

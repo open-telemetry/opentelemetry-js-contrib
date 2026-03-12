@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
+
 import 'mocha';
 import { expect } from 'expect';
 import { ATTR_DB_OPERATION } from '../src/semconv';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 import { MongooseInstrumentation } from '../src';
 import {
   getTestSpans,
@@ -33,7 +36,7 @@ import { assertSpan, getStatement } from './asserts';
 import { DB_NAME, MONGO_URI } from './config';
 
 // Please run `npm run test-services:start` before
-describe('mongoose instrumentation [v7/v8]', () => {
+describe('mongoose instrumentation [v7/v8/v9]', () => {
   // For these tests, MongoDB must be running. Add RUN_MONGOOSE_TESTS to run
   // these tests.
   const RUN_MONGOOSE_TESTS = process.env.RUN_MONGOOSE_TESTS;
@@ -50,32 +53,11 @@ describe('mongoose instrumentation [v7/v8]', () => {
     // Try to connect to MongoDB
     try {
       await mongoose.connect(MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        useFindAndModify: false,
-        useCreateIndex: true,
         dbName: DB_NAME,
-      } as any); // TODO: amir - document older mongoose support
+      });
     } catch (err: any) {
-      // connect signature changed from mongo v5 to v6.
-      // the following check tries both signatures, so test-all-versions
-      // can run against both versions.
-      if (err?.name === 'MongoParseError') {
-        try {
-          await mongoose.connect(MONGO_URI, {
-            dbName: DB_NAME,
-          }); // TODO: amir - document older mongoose support
-        } catch (innerErr: any) {
-          console.log(
-            'Skipping mongoose tests. Connection failed:',
-            innerErr.message
-          );
-          shouldTest = false;
-        }
-      } else {
-        console.log('Skipping mongoose tests. Connection failed:', err.message);
-        shouldTest = false;
-      }
+      console.log('Skipping mongoose tests. Connection failed:', err.message);
+      shouldTest = false;
     }
   });
 
@@ -119,9 +101,16 @@ describe('mongoose instrumentation [v7/v8]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(spans[0] as ReadableSpan);
+    assertSpan(
+      spans[0] as ReadableSpan,
+      SemconvStability.OLD | SemconvStability.STABLE,
+      SemconvStability.OLD | SemconvStability.STABLE
+    );
     expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('findOneAndUpdate');
-    const statement = getStatement(spans[0] as ReadableSpan);
+    const statement = getStatement(
+      spans[0] as ReadableSpan,
+      SemconvStability.OLD | SemconvStability.STABLE
+    );
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
     expect(statement.updates).toEqual({ isUpdated: true });

@@ -22,6 +22,7 @@ import {
   SpanKind,
   Tracer,
 } from '@opentelemetry/api';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 import {
   AwsSdkInstrumentationConfig,
   NormalizedRequest,
@@ -45,7 +46,8 @@ export interface ServiceExtension {
   requestPreSpanHook: (
     request: NormalizedRequest,
     config: AwsSdkInstrumentationConfig,
-    diag: DiagLogger
+    diag: DiagLogger,
+    dbSemconvStability?: SemconvStability
   ) => RequestMetadata;
 
   // called before request is sent, and after span is started

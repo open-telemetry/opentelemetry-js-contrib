@@ -31,12 +31,14 @@ import {
 import { logs } from '@opentelemetry/api-logs';
 const assert = chai.assert;
 
-const STRING_ERROR = 'Some error string.'
+const STRING_ERROR = 'Some error string.';
 
 describe('ExceptionInstrumentation', () => {
   const exporter = new InMemoryLogRecordExporter();
   const logRecordProcessor = new SimpleLogRecordProcessor(exporter);
-  const loggerProvider = new LoggerProvider({processors:[logRecordProcessor]});
+  const loggerProvider = new LoggerProvider({
+    processors: [logRecordProcessor],
+  });
   logs.setGlobalLoggerProvider(loggerProvider);
 
   // Helper function to throw an error of a specific type so that we can allow the error to propagate and test the instrumentation.
@@ -96,17 +98,15 @@ describe('ExceptionInstrumentation', () => {
   });
 
   describe('throwing an error', () => {
-    const instr = new ExceptionInstrumentation();
+    let disableInstrumentations: () => void;
     beforeEach(() => {
-      registerInstrumentations({
-        instrumentations: [instr],
+      disableInstrumentations = registerInstrumentations({
+        instrumentations: [new ExceptionInstrumentation()],
       });
-
-      instr.enable();
     });
 
     afterEach(() => {
-      instr.disable();
+      disableInstrumentations();
       exporter.reset();
     });
 
@@ -139,8 +139,14 @@ describe('ExceptionInstrumentation', () => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], 'Something happened!');
-        assert.strictEqual(event.attributes[ATTR_EXCEPTION_TYPE], 'ValidationError');
+        assert.strictEqual(
+          event.attributes[ATTR_EXCEPTION_MESSAGE],
+          'Something happened!'
+        );
+        assert.strictEqual(
+          event.attributes[ATTR_EXCEPTION_TYPE],
+          'ValidationError'
+        );
         assert.strictEqual(event.attributes[ATTR_EXCEPTION_STACKTRACE], stack);
       }, 0);
     });
@@ -154,7 +160,10 @@ describe('ExceptionInstrumentation', () => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], STRING_ERROR);
+        assert.strictEqual(
+          event.attributes[ATTR_EXCEPTION_MESSAGE],
+          STRING_ERROR
+        );
       }, 0);
     });
   });
@@ -168,21 +177,24 @@ describe('ExceptionInstrumentation', () => {
         'app.custom.exception': error.message.toLocaleUpperCase(),
       };
     };
-    const instr = new ExceptionInstrumentation({
-      applyCustomAttributes: applyCustomAttrs,
-    });
-    beforeEach(() => {
-      registerInstrumentations({
-        instrumentations: [instr],
-      });
 
-      instr.enable();
+    let disableInstrumentations: () => void;
+
+    beforeEach(() => {
+      disableInstrumentations = registerInstrumentations({
+        instrumentations: [
+          new ExceptionInstrumentation({
+            applyCustomAttributes: applyCustomAttrs,
+          }),
+        ],
+      });
     });
 
     afterEach(() => {
-      instr.disable();
+      disableInstrumentations();
       exporter.reset();
     });
+
     it('should add custom attributes to the event', async () => {
       setTimeout(() => {
         throwErr('Something happened!');
@@ -208,8 +220,14 @@ describe('ExceptionInstrumentation', () => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], STRING_ERROR);
-        assert.strictEqual(event.attributes['app.custom.exception'], STRING_ERROR.toLocaleUpperCase());
+        assert.strictEqual(
+          event.attributes[ATTR_EXCEPTION_MESSAGE],
+          STRING_ERROR
+        );
+        assert.strictEqual(
+          event.attributes['app.custom.exception'],
+          STRING_ERROR.toLocaleUpperCase()
+        );
       }, 0);
     });
   });

@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-aws-xray-lambda-v0.55.4...propagator-aws-xray-lambda-v0.56.0) (2025-12-17)
+
+
+### Features
+
+* apply rule @typescript-eslint/explicit-member-accessibility ([#3250](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3250)) ([d0f9491](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d0f94913cfd7fccc29053a0dc6f6aef6572235cc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^2.1.4 to ^2.2.0
+
 ## [0.55.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-aws-xray-lambda-v0.55.3...propagator-aws-xray-lambda-v0.55.4) (2025-11-24)
 
 

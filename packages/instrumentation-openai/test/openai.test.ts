@@ -96,7 +96,7 @@ describe('OpenAI', function () {
     const filename = `${this.currentTest
       ?.fullTitle()
       .toLowerCase()
-      .replace(/\s/g, '-')}.json`;
+      .replace(/[^a-z0-9]+/g, '-')}.json`;
     const { nockDone: nd } = await nockBack(filename, {
       afterRecord: sanitizeRecordings,
     });
@@ -1782,6 +1782,28 @@ describe('OpenAI', function () {
         index: 0,
         message: {},
       });
+    });
+
+    it('copes with .withResponse() usage', async () => {
+      const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+        {
+          role: 'user',
+          content: input,
+        },
+      ];
+      const retval = await client.chat.completions
+        .create({
+          model,
+          messages,
+          stream: true,
+        })
+        .withResponse();
+      let content = '';
+      expect(retval.response).toBeTruthy();
+      for await (const part of retval.data) {
+        content += part.choices[0].delta.content || '';
+      }
+      expect(content).toEqual('Atlantic Ocean.');
     });
 
     it('records usage', async () => {

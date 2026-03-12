@@ -38,7 +38,7 @@ import {
  * Returns an empty Resource if detection fails.
  */
 export class AwsLambdaDetector implements ResourceDetector {
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     // Check if running inside AWS Lambda environment
     const executionEnv = process.env.AWS_EXECUTION_ENV;
     if (!executionEnv?.startsWith('AWS_Lambda_')) {

@@ -240,7 +240,9 @@ declare module 'router' {
     }
 
     interface RouterConstructor extends IRouter {
-      new (options?: RouterOptions): IRouter &
+      new (
+        options?: RouterOptions
+      ): IRouter &
         ((
           req: http.IncomingMessage,
           res: http.ServerResponse,

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+export { azureAksDetector } from './AzureAksDetector';
 export { azureAppServiceDetector } from './AzureAppServiceDetector';
 export { azureFunctionsDetector } from './AzureFunctionsDetector';
 export { azureVmDetector } from './AzureVmDetector';

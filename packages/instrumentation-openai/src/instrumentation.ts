@@ -208,22 +208,33 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           // want to wrap that iteration to gather telemetry. Instead of wrapping
           // `Symbol.asyncIterator`, which would be nice, we wrap the `iterator`
           // method because it is used internally by `Stream#tee()`.
-          return apiPromise.then(stream => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            self._wrap(stream as any, 'iterator', origIterator => {
-              return () => {
-                return self._onChatCompletionsStreamIterator(
-                  origIterator(),
-                  span,
-                  startNow,
-                  config,
-                  commonAttrs,
-                  ctx
-                );
-              };
-            });
-            return stream;
-          });
+          apiPromise
+            .then(stream => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              self._wrap(stream as any, 'iterator', origIterator => {
+                return () => {
+                  return self._onChatCompletionsStreamIterator(
+                    origIterator(),
+                    span,
+                    startNow,
+                    config,
+                    commonAttrs,
+                    ctx
+                  );
+                };
+              });
+              return stream;
+            })
+            .catch(
+              self._createAPIPromiseRejectionHandler(
+                startNow,
+                span,
+                commonAttrs
+              )
+            );
+          // We have to return the original `APIPromise` instance, because it is
+          // a customized subclass of `Promise`.
+          return apiPromise;
         }
 
         // Non-streaming.

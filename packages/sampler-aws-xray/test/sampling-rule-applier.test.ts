@@ -41,8 +41,9 @@ const DATA_DIR = __dirname + '/data';
 
 describe('SamplingRuleApplier', () => {
   it('testApplierAttributeMatchingFromXRayResponse', () => {
-    const sampleData = require(DATA_DIR +
-      '/get-sampling-rules-response-sample-2.json');
+    const sampleData = require(
+      DATA_DIR + '/get-sampling-rules-response-sample-2.json'
+    );
 
     const allRules = sampleData['SamplingRuleRecords'];
     const defaultRule: SamplingRule = allRules[0]['SamplingRule'];

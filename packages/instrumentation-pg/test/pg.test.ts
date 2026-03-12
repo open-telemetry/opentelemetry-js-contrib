@@ -1039,6 +1039,101 @@ describe('pg', () => {
         done();
       });
     });
+
+    it('should generate traces for SQL template literal objects ', async () => {
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        // Mock SQLStatement from sql-template-strings library
+        class SQLStatement {
+          strings: string[];
+          values: any[];
+
+          constructor(strings: string[], values: any[]) {
+            this.strings = strings;
+            this.values = values;
+          }
+
+          get text(): string {
+            return this.strings.reduce(
+              (prev: string, curr: string, i: number) => prev + '$' + i + curr
+            );
+          }
+        }
+
+        const name = 'pg_tables';
+        const sqlQuery = new SQLStatement(
+          ['SELECT * FROM information_schema.tables WHERE table_name = ', ''],
+          [name]
+        );
+        const resPromise = await client.query(sqlQuery);
+        assert.ok(resPromise);
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 1);
+        const pgSpan = spans[0];
+
+        assert.strictEqual(pgSpan.name, 'pg.query:SELECT otel_pg_database');
+        assert.strictEqual(
+          pgSpan.attributes[ATTR_DB_STATEMENT],
+          'SELECT * FROM information_schema.tables WHERE table_name = $1'
+        );
+
+        const executedQueries = getExecutedQueries();
+        assert.ok(executedQueries.length > 0);
+        assert.strictEqual(
+          executedQueries[executedQueries.length - 1].text,
+          'SELECT * FROM information_schema.tables WHERE table_name = $1'
+        );
+      });
+    });
+
+    it('should generate traces for SQL template literals with added comments', async () => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      });
+
+      const span = tracer.startSpan('test span');
+
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        // Mock SQLStatement from sql-template-strings library
+        class SQLStatement {
+          strings: string[];
+          values: any[];
+
+          constructor(strings: string[], values: any[]) {
+            this.strings = strings;
+            this.values = values;
+          }
+
+          get text(): string {
+            return this.strings.reduce(
+              (prev: string, curr: string, i: number) => prev + '$' + i + curr
+            );
+          }
+        }
+        const tableName = 'pg_tables';
+        const sqlQuery = new SQLStatement(
+          ['SELECT * FROM information_schema.tables WHERE table_name = ', ''],
+          [tableName]
+        );
+
+        const res = await client.query(sqlQuery);
+        assert.ok(res);
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 1);
+        const pgSpan = spans[0];
+
+        const commentedQuery = addSqlCommenterComment(
+          trace.wrapSpanContext(pgSpan.spanContext()),
+          sqlQuery.text
+        );
+        const executedQueries = getExecutedQueries();
+        assert.ok(executedQueries.length > 0);
+        const lastQuery = executedQueries[executedQueries.length - 1];
+        assert.strictEqual(lastQuery.text, commentedQuery);
+      });
+    });
   });
 
   describe('exception event recording', () => {
