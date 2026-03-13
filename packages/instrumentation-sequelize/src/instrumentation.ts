@@ -175,7 +175,9 @@ export class SequelizeInstrumentation extends InstrumentationBase<SequelizeInstr
         if (dialect !== 'sqlite') {
           // Server address and port don't make sense for SQLite DBs.
           attributes[ATTR_SERVER_ADDRESS] = config?.host;
-          attributes[ATTR_SERVER_PORT] = config?.port ? Number(config?.port) : undefined;
+          attributes[ATTR_SERVER_PORT] = config?.port
+            ? Number(config?.port)
+            : undefined;
         }
 
         const newSpan: Span = self.tracer.startSpan(`Sequelize ${operation}`, {
