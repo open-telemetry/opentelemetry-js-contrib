@@ -56,6 +56,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
   private _dbSemconvStability!: SemconvStability;
 
   constructor(config: MySQL2InstrumentationConfig = {}) {
+    console.log('XXX instr-mysql2: ctor');
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
     this._setSemconvStabilityFromEnv();
   }
