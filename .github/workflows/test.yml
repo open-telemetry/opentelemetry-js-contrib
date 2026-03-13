@@ -145,6 +145,9 @@ jobs:
       - name: Start Test Services (Delta)
         run: npm run test-services:start:affected
       - name: Test All Versions (Delta)
+        env:
+          # XXX Trying to get better error from mocha on the CI failure we are seeing only with Node 24 here.
+          NODE_OPTIONS: '--no-experimental-strip-types'
         run: npm run test-all-versions:ci:affected
       - name: Stop Test Services (Delta)
         if: always()
