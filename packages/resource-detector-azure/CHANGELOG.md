@@ -1,6 +1,35 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.21.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.20.0...resource-detector-azure-v0.21.0) (2026-03-04)
+
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3411](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3411)) ([7f4b776](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7f4b776abbe22aa38d2e9f36c22aa293a9e31687))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.59.0 to ^0.60.0
+
+## [0.20.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.19.0...resource-detector-azure-v0.20.0) (2026-02-16)
+
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3383](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3383)) ([d3ac785](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3ac7851d69d0781c2c631012937a73998b744e1))
+* **resource-detector-azure:** Add AKS Resource Detector ([#3371](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3371)) ([44990b4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/44990b49e87e9e54ff845d5dfd7bfc4275886931))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.58.0 to ^0.59.0
+
 ## [0.19.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.18.0...resource-detector-azure-v0.19.0) (2026-01-21)
 
 

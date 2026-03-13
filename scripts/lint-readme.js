@@ -27,9 +27,6 @@ const autoInstrumentationWebDeps = require(
   `${monorepoRoot}/packages/auto-instrumentations-web/package.json`
 ).dependencies;
 
-// remove exempt instrumentations
-delete autoInstrumentationNodeDeps['@opentelemetry/instrumentation-fastify'];
-
 // extract info from package.json
 const packageJsonUrl = path.resolve(`${packageRoot}/package.json`);
 const pjson = require(packageJsonUrl);
