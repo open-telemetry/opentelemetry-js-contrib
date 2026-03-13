@@ -177,6 +177,8 @@ components:
   packages/propagator-aws-xray:
     - jj22ee
   packages/propagator-aws-xray-lambda: [ ]
-  # Unmaintained
+    # Unmaintained
+  packages/sql-common: []
+    # Unmaintained
 ignored-authors:
   - renovate-bot
