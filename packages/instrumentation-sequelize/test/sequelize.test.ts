@@ -326,7 +326,7 @@ describe('instrumentation-sequelize', () => {
   });
 
   describe('sqlite', () => {
-    const instance = new sequelize.Sequelize('sqlite::memory', {
+    const instance = new sequelize.Sequelize('sqlite:memory', {
       logging: false,
     });
     instance.define('User', {
