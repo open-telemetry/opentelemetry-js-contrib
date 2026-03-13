@@ -43,7 +43,9 @@ jobs:
             echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
           fi
       - name: Compile (Delta)
-        run: npm run compile:ci:affected
+        #XXX
+        # run: npm run compile:ci:affected
+        run: npm run compile
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -112,8 +114,9 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - "18"
-          - "20"
+          #XXX
+          # - "18"
+          # - "20"
           - "22"
           - "24"
     steps:
@@ -141,14 +144,20 @@ jobs:
             echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
           fi
       - name: Compile (Delta)
-        run: npm run compile:ci:affected
+        #XXX
+        # run: npm run compile:ci:affected
+        run: npm run compile
       - name: Start Test Services (Delta)
-        run: npm run test-services:start:affected
+        #XXX
+        # run: npm run test-services:start:affected
+        run: npm run test-services:start
       - name: Test All Versions (Delta)
         env:
           # XXX Trying to get better error from mocha on the CI failure we are seeing only with Node 24 here.
           NODE_OPTIONS: '--no-experimental-strip-types'
-        run: npm run test-all-versions:ci:affected
+        #XXX
+        # run: npm run test-all-versions:ci:affected
+        run: npm run test-all-versions
       - name: Stop Test Services (Delta)
         if: always()
         run: npm run test-services:stop

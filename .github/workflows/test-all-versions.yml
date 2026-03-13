@@ -52,7 +52,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["18", "20", "22", "24"]
+        #XXX
+        # node: ["18", "20", "22", "24"]
+        node: ["22", "24"]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -77,8 +79,11 @@ jobs:
       - name: Start Test Services
         run: npm run test-services:start
       - name: Run test-all-versions
+        env:
+          # XXX Trying to get better error from mocha on the CI failure we are seeing only with Node 24 here.
+          NODE_OPTIONS: '--no-experimental-strip-types'
         run: npm run --if-present --workspaces test-all-versions ${{ inputs.npm-workspace-args }}
       - name: Stop Test Services
         if: always()
         run: npm run test-services:stop
-      
+

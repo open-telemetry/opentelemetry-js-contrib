@@ -53,7 +53,7 @@ export class SequelizeInstrumentation extends InstrumentationBase<SequelizeInstr
   static readonly supportedVersions = '>=6 <7';
 
   constructor(config: SequelizeInstrumentationConfig = {}) {
-    console.log('XXX here in instr-sequelize ctor', )
+    console.log('XXX here in instr-sequelize ctor');
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
