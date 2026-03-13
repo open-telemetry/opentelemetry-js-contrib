@@ -15,4 +15,5 @@
  */
 
 export { NestInstrumentation } from './instrumentation';
-export { AttributeNames } from '@opentelemetry/instrumentation-nestjs';
+export { AttributeNames } from './enums/AttributeNames';
+export type { NestInstrumentationConfig } from './types';
