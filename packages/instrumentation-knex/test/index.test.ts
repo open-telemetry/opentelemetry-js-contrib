@@ -652,6 +652,7 @@ describe('utils: connectionString parsing', () => {
       extractHostFromConnectionString('postgres://user:pass@myhost:5432/mydb'),
       'myhost'
     );
+    assert.strictEqual(extractHostFromConnectionString('not-a-url'), undefined);
     assert.strictEqual(extractHostFromConnectionString(undefined), undefined);
   });
 
@@ -667,6 +668,7 @@ describe('utils: connectionString parsing', () => {
       extractPortFromConnectionString('postgres://user:pass@localhost/mydb'),
       undefined // no port specified
     );
+    assert.strictEqual(extractPortFromConnectionString('not-a-url'), undefined);
     assert.strictEqual(extractPortFromConnectionString(undefined), undefined);
   });
 });
