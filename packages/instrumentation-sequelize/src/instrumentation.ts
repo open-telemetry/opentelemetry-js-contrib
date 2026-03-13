@@ -163,16 +163,20 @@ export class SequelizeInstrumentation extends InstrumentationBase<SequelizeInstr
           else tableName = extractTableFromQuery(statement);
         }
 
+        const dialect = sequelizeInstance.getDialect();
         const attributes: Attributes = {
-          [ATTR_DB_SYSTEM_NAME]: sequelizeInstance.getDialect(),
+          [ATTR_DB_SYSTEM_NAME]: dialect,
           [ATTR_DB_NAMESPACE]: config?.database,
           [ATTR_DB_OPERATION_NAME]: operation,
           [ATTR_DB_QUERY_TEXT]: statement,
           [ATTR_DB_COLLECTION_NAME]: tableName,
-          [ATTR_SERVER_ADDRESS]: config?.host,
-          [ATTR_SERVER_PORT]: config?.port ? Number(config?.port) : undefined,
           [ATTR_NETWORK_TRANSPORT]: self._getNetTransport(config?.protocol),
         };
+        if (dialect !== 'sqlite') {
+          // Server address and port don't make sense for SQLite DBs.
+          attributes[ATTR_SERVER_ADDRESS] = config?.host;
+          attributes[ATTR_SERVER_PORT] = config?.port ? Number(config?.port) : undefined;
+        }
 
         const newSpan: Span = self.tracer.startSpan(`Sequelize ${operation}`, {
           kind: SpanKind.CLIENT,
