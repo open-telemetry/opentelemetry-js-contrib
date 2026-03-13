@@ -15,6 +15,7 @@
  */
 
 import * as semver from 'semver';
+import { createRequire } from 'module';
 
 import { context, SpanStatusCode } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -25,11 +26,20 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { NestInstrumentation } from '../src';
-import { getRequester, setup, App } from './setup';
+import {
+  getRequester,
+  setupHttp,
+  setupMicroservice,
+  App,
+  MicroserviceApp,
+} from './setup';
+import { assertSpans } from './utils';
 
 import * as util from 'util';
 
-const LIB_VERSION = require('@nestjs/core/package.json').version;
+const packageRequire = createRequire(__filename);
+const LIB_VERSION = packageRequire('@nestjs/core/package.json')
+  .version as string;
 
 // This is a meagre testing of just a single value of
 // OTEL_SEMCONV_STABILITY_OPT_IN, because testing multiple configurations of
@@ -48,17 +58,10 @@ describe('nestjs-core', () => {
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
   instrumentation.setTracerProvider(provider);
-
-  it('should keep microservice instrumentation disabled', () => {
-    const moduleDefinitions = instrumentation.init() as any[];
-
-    assert(Array.isArray(moduleDefinitions));
-    assert.strictEqual(moduleDefinitions.length, 1);
-  });
-
   let contextManager: AsyncLocalStorageContextManager;
   let app: App;
-  let request = async (path: string): Promise<unknown> => {
+  let microserviceApp: MicroserviceApp | undefined;
+  let request = async (_path: string): Promise<unknown> => {
     throw new Error('Not yet initialized.');
   };
 
@@ -68,11 +71,15 @@ describe('nestjs-core', () => {
     instrumentation.setConfig({});
     instrumentation.enable();
 
-    app = await setup(LIB_VERSION);
+    app = await setupHttp(LIB_VERSION);
     request = getRequester(app);
   });
 
   afterEach(async () => {
+    if (microserviceApp) {
+      await microserviceApp.close();
+      microserviceApp = undefined;
+    }
     await app.close();
 
     memoryExporter.reset();
@@ -203,98 +210,76 @@ describe('nestjs-core', () => {
       },
     ]);
   });
-});
 
-const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
-  assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
-  assert(
-    Array.isArray(expectedSpans),
-    'Expected `expectedSpans` to be an array'
-  );
-  assert.strictEqual(
-    actualSpans.length,
-    expectedSpans.length,
-    'Expected span count different from actual'
-  );
+  it('should capture standalone microservice handlers', async () => {
+    memoryExporter.reset();
+    microserviceApp = await setupMicroservice('standalone');
 
-  actualSpans.forEach((span, idx) => {
-    const expected = expectedSpans[idx];
-    if (expected === null) return;
-    try {
-      assert.notStrictEqual(span, undefined);
-      assert.notStrictEqual(expected, undefined);
+    assert.strictEqual(await microserviceApp.sendMessage('sum', [1, 2, 3]), 6);
 
-      assert.strictEqual(span.attributes.component, '@nestjs/core');
-      assert.strictEqual(span.attributes['nestjs.module'], expected.module);
-
-      assert.strictEqual(span.name, expected.name);
-
-      // Because OTEL_SEMCONV_STABILITY_OPT_IN=http/dup is being set for testing
-      // we expect both the deprecated:
-      assert.strictEqual(span.attributes['http.method'], expected.method);
-      assert.strictEqual(span.attributes['http.url'], expected.url);
-      // ... and stable HTTP semconv attributes:
-      assert.strictEqual(
-        span.attributes['http.request.method'],
-        expected.method
-      );
-      assert.strictEqual(span.attributes['url.full'], expected.url);
-
-      assert.strictEqual(span.attributes['http.route'], expected.path);
-      assert.strictEqual(span.attributes['nestjs.type'], expected.type);
-      assert.strictEqual(span.attributes['nestjs.callback'], expected.callback);
-      assert.strictEqual(
-        span.attributes['nest.controller.instance'],
-        expected.instance
-      );
-
-      assert.strictEqual(
-        span.attributes.component,
-        NestInstrumentation.COMPONENT
-      );
-      assert.strictEqual(
-        typeof span.attributes['nestjs.version'],
-        'string',
-        'nestjs.version not specified'
-      );
-      assert.deepEqual(
-        span.status,
-        expected.status || { code: SpanStatusCode.UNSET }
-      );
-      if (typeof expected.parentSpanIdx === 'number') {
-        assert.strictEqual(
-          span.parentSpanContext?.spanId,
-          actualSpans[expected.parentSpanIdx].spanContext().spanId
-        );
-      } else if (typeof expected.parentSpanName === 'string') {
-        const parentSpan = actualSpans.find(
-          s => s.name === expected.parentSpanName
-        );
-        assert.notStrictEqual(
-          parentSpan,
-          undefined,
-          `Cannot find span named ${expected.parentSpanName} expected to be the parent of ${span.name}`
-        );
-        assert.strictEqual(
-          span.parentSpanContext?.spanId,
-          parentSpan.spanContext().spanId,
-          `Expected "${expected.parentSpanName}" to be the parent of "${
-            span.name
-          }", but found "${
-            actualSpans.find(
-              s => s.spanContext().spanId === span.parentSpanContext?.spanId
-            ).name
-          }"`
-        );
-      } else if (expected.parentSpan !== null) {
-        assert.strictEqual(
-          span.parentSpanContext?.spanId,
-          expected.parentSpan?.spanContext().spanId
-        );
-      }
-    } catch (e: any) {
-      e.message = `At span[${idx}] "${span.name}": ${e.message}`;
-      throw e;
-    }
+    assertSpans(memoryExporter.getFinishedSpans(), [
+      {
+        type: 'microservice_creation',
+        service: 'test',
+        name: 'Create Nest Microservice',
+        module: 'AppModule',
+        transport: 'TestTransportStrategy',
+      },
+      {
+        type: 'message_handler',
+        service: 'test',
+        name: 'sumNumbers',
+        callback: 'sumNumbers',
+        parentSpanName: 'MicroserviceController.sumNumbers',
+      },
+      {
+        type: 'message_context',
+        service: 'test',
+        name: 'MicroserviceController.sumNumbers',
+        callback: 'sumNumbers',
+        controller: 'MicroserviceController',
+        pattern: 'sum',
+      },
+    ]);
   });
-};
+
+  it('should capture hybrid microservice handlers', async () => {
+    memoryExporter.reset();
+    microserviceApp = await setupMicroservice('hybrid');
+
+    assert.strictEqual(
+      await microserviceApp.emitEvent('notification', 'hello'),
+      'notification:hello'
+    );
+
+    assertSpans(memoryExporter.getFinishedSpans(), [
+      {
+        type: 'app_creation',
+        service: 'test',
+        name: 'Create Nest App',
+        module: 'AppModule',
+      },
+      {
+        type: 'microservice_creation',
+        service: 'test',
+        name: 'Connect Nest Microservice',
+        transport: 'TestTransportStrategy',
+      },
+      {
+        type: 'message_handler',
+        service: 'test',
+        name: 'handleNotification',
+        callback: 'handleNotification',
+        parentSpanName: 'MicroserviceController.handleNotification',
+      },
+      {
+        type: 'message_context',
+        service: 'test',
+        name: 'MicroserviceController.handleNotification',
+        callback: 'handleNotification',
+        controller: 'MicroserviceController',
+        pattern: 'notification',
+      },
+    ]);
+  });
+});
