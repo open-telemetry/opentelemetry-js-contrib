@@ -300,7 +300,15 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
             const callback = args[callbackIdx] as Function;
-            return context.bind(parentContext, callback).apply(this, arguments);
+            // Preserve the active context (which may include baggage set by middleware)
+            // but restore the parent span to prevent sibling middleware spans
+            // from nesting under each other
+            const activeContext = context.active();
+            const parentSpan = trace.getSpan(parentContext);
+            const nextContext = parentSpan
+              ? trace.setSpan(activeContext, parentSpan)
+              : activeContext;
+            return context.bind(nextContext, callback).apply(this, arguments);
           };
         }
 
