@@ -90,11 +90,11 @@ by providing a comma-separated list of the instrumentation package names without
 
 For example, to enable only
 [@opentelemetry/instrumentation-http](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-http)
-and [@opentelemetry/instrumentation-nestjs-core](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs-core)
+and [@opentelemetry/instrumentation-nestjs](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs)
 instrumentations:
 
 ```shell
-export OTEL_NODE_ENABLED_INSTRUMENTATIONS="http,nestjs-core"
+export OTEL_NODE_ENABLED_INSTRUMENTATIONS="http,nestjs"
 ```
 
 To disable only [@opentelemetry/instrumentation-net](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-net):
@@ -193,7 +193,7 @@ registerInstrumentations({
 - [@opentelemetry/instrumentation-mongoose](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-mongoose)
 - [@opentelemetry/instrumentation-mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-mysql)
 - [@opentelemetry/instrumentation-mysql2](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-mysql2)
-- [@opentelemetry/instrumentation-nestjs-core](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs-core)
+- [@opentelemetry/instrumentation-nestjs](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs)
 - [@opentelemetry/instrumentation-net](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-net)
 - [@opentelemetry/instrumentation-openai](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-openai)
 - [@opentelemetry/instrumentation-oracledb](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-oracledb)

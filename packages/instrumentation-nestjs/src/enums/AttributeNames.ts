@@ -14,5 +14,15 @@
  * limitations under the License.
  */
 
-export { NestInstrumentation } from './instrumentation';
-export { AttributeNames } from '@opentelemetry/instrumentation-nestjs';
+export enum AttributeNames {
+  VERSION = 'nestjs.version',
+  TYPE = 'nestjs.type',
+  MODULE = 'nestjs.module',
+  CONTROLLER = 'nestjs.controller',
+  CALLBACK = 'nestjs.callback',
+  PATTERN = 'nestjs.pattern',
+  TRANSPORT = 'nestjs.transport',
+  PIPES = 'nestjs.pipes',
+  INTERCEPTORS = 'nestjs.interceptors',
+  GUARDS = 'nestjs.guards',
+}

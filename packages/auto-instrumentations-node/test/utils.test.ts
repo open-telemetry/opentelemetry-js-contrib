@@ -74,8 +74,7 @@ describe('utils', () => {
     });
 
     it('should return only instrumentations enabled via OTEL_NODE_ENABLED_INSTRUMENTATIONS environment variable', () => {
-      process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS =
-        'http,aws-sdk, nestjs-core'; // separator with and without whitespaces should be allowed
+      process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS = 'http,aws-sdk, nestjs'; // separator with and without whitespaces should be allowed
       try {
         const instrumentations = getNodeAutoInstrumentations();
 
@@ -84,7 +83,7 @@ describe('utils', () => {
           new Set([
             '@opentelemetry/instrumentation-http',
             '@opentelemetry/instrumentation-aws-sdk',
-            '@opentelemetry/instrumentation-nestjs-core',
+            '@opentelemetry/instrumentation-nestjs',
           ])
         );
       } finally {

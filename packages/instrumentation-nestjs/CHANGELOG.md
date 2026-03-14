@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
-This package is deprecated. Use `@opentelemetry/instrumentation-nestjs` instead.
+This package was renamed from `@opentelemetry/instrumentation-nestjs-core`.
 
 ## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.58.0...instrumentation-nestjs-core-v0.59.0) (2026-03-04)
 
