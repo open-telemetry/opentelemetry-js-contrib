@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.22.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.21.0...resource-detector-azure-v0.22.0) (2026-03-14)
+
+
+### Features
+
+* **resource-detector-azure:** add detector for Azure Container Apps ([#3289](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3289)) ([8014376](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80143762c334ea0c90263ac330fa29c70323cd9d))
+
 ## [0.21.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.20.0...resource-detector-azure-v0.21.0) (2026-03-04)
 
 

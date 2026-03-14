@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.57.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.57.0...instrumentation-knex-v0.57.1) (2026-03-14)
+
+
+### Bug Fixes
+
+* **instrumentation-knex:** parse connectionString for db name, host and port ([#3424](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3424)) ([3740fd8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3740fd89f8252906b4470146a9a5bfd4827fee34))
+
 ## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.56.0...instrumentation-knex-v0.57.0) (2026-03-04)
 
 
