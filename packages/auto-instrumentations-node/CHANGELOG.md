@@ -1,6 +1,26 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.72.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.71.0...auto-instrumentations-node-v0.72.0) (2026-03-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auto-instrumentations-node, instrumentation-fastify:** remove instrumentation-fastify ([#3409](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3409))
+
+### Features
+
+* **auto-instrumentations-node, instrumentation-fastify:** remove instrumentation-fastify ([#3409](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3409)) ([ac26e9a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ac26e9a56c2846482673b76e670623a399e5dafe))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-hapi bumped from ^0.59.0 to ^0.60.0
+    * @opentelemetry/instrumentation-knex bumped from ^0.57.0 to ^0.57.1
+    * @opentelemetry/resource-detector-azure bumped from ^0.21.0 to ^0.22.0
+
 ## [0.71.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.70.1...auto-instrumentations-node-v0.71.0) (2026-03-04)
 
 
