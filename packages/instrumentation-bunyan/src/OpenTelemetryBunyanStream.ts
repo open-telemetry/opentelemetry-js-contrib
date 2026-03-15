@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import { logs, SeverityNumber, Logger } from '@opentelemetry/api-logs';
+import {
+  logs,
+  SeverityNumber,
+  Logger,
+  type LogRecord,
+} from '@opentelemetry/api-logs';
 import type { LogLevelString } from 'bunyan';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -135,6 +140,7 @@ export class OpenTelemetryBunyanStream {
       time,
       level,
       msg,
+      err,
       v, // eslint-disable-line @typescript-eslint/no-unused-vars
       hostname, // eslint-disable-line @typescript-eslint/no-unused-vars
       pid, // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -149,7 +155,7 @@ export class OpenTelemetryBunyanStream {
     } else {
       fields.time = time; // Expose non-Date "time" field on attributes.
     }
-    const otelRec = {
+    const otelRec: LogRecord = {
       timestamp,
       observedTimestamp: timestamp,
       severityNumber: severityNumberFromBunyanLevel(level),
@@ -157,6 +163,9 @@ export class OpenTelemetryBunyanStream {
       body: msg,
       attributes: fields,
     };
+    if (err !== undefined) {
+      otelRec.exception = err;
+    }
     this._otelLogger.emit(otelRec);
   }
 }
