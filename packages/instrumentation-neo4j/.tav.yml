@@ -1,0 +1,8 @@
+'neo4j-driver':
+  versions:
+    include: ">=4.0.0 <7"
+    # Broken release
+    # https://github.com/neo4j/neo4j-javascript-driver/wiki/5.0-changelog#502
+    exclude: "5.0.1"
+    mode: max-7
+  commands: npm run test

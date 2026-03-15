@@ -72,6 +72,13 @@ services:
       timeout: 10s
       retries: 30
 
+  neo4j:
+    image: 'neo4j:4.4.46'
+    environment:
+      NEO4J_AUTH: neo4j/secret
+    ports:
+      - 7687:7687
+
   oracledb:
     image: gvenzl/oracle-free:slim
     environment:
