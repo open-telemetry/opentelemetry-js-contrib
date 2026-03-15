@@ -31,7 +31,7 @@ jobs:
       # Use the same Node.js version used for `release-please` workflow.
       - uses: actions/setup-node@v6
         with:
-          node-version: 18
+          node-version: 24
       - name: Install
         run: npm ci --ignore-scripts
         timeout-minutes: 10
