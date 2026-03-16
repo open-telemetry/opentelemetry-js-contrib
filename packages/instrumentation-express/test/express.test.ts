@@ -39,12 +39,7 @@ instrumentation.enable();
 instrumentation.disable();
 
 import * as express from 'express';
-import {
-  RPCMetadata,
-  RPCType,
-  getRPCMetadata,
-  setRPCMetadata,
-} from '@opentelemetry/core';
+import { RPCMetadata, getRPCMetadata } from '@opentelemetry/core';
 import { Server } from 'http';
 
 const LIB_VERSION = require('express/package.json').version;
@@ -629,36 +624,25 @@ describe('ExpressInstrumentation', () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let capturedBaggage: string | undefined;
 
-      const app = express();
-      app.use((req, res, next) => {
-        const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
-        return context.with(
-          setRPCMetadata(
-            trace.setSpan(context.active(), rootSpan),
-            rpcMetadata
-          ),
-          next
-        );
-      });
-
-      app.use((req, res, next) => {
-        const baggage = propagation.createBaggage({
-          'test.key': { value: 'test-value' },
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          const baggage = propagation.createBaggage({
+            'test.key': { value: 'test-value' },
+          });
+          const ctxWithBaggage = propagation.setBaggage(
+            context.active(),
+            baggage
+          );
+          return context.with(ctxWithBaggage, next);
         });
-        const ctxWithBaggage = propagation.setBaggage(
-          context.active(),
-          baggage
-        );
-        return context.with(ctxWithBaggage, next);
+
+        app.get('/test', (req, res) => {
+          const baggage = propagation.getBaggage(context.active());
+          capturedBaggage = baggage?.getEntry('test.key')?.value;
+          res.status(200).end('ok');
+        });
       });
 
-      app.get('/test', (req, res) => {
-        const baggage = propagation.getBaggage(context.active());
-        capturedBaggage = baggage?.getEntry('test.key')?.value;
-        res.status(200).end('ok');
-      });
-
-      const httpServer = await createServer(app);
       server = httpServer.server;
       port = httpServer.port;
 
