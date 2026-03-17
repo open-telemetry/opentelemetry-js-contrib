@@ -31,8 +31,6 @@ declare module 'router' {
       name: string;
       method: string;
       handle: RequestHandler | ErrorRequestHandler;
-      handle_request: RequestHandler;
-      handle_error: ErrorRequestHandler;
       match: (path: string) => boolean;
     }
 
