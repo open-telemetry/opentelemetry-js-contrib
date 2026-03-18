@@ -36,6 +36,7 @@
   "packages/instrumentation-aws-sdk": "0.69.0",
   "packages/instrumentation-bunyan": "0.59.0",
   "packages/instrumentation-cassandra-driver": "0.59.0",
+  "packages/instrumentation-console": "0.1.0",
   "packages/instrumentation-connect": "0.57.0",
   "packages/instrumentation-dns": "0.57.0",
   "packages/instrumentation-express": "0.62.0",

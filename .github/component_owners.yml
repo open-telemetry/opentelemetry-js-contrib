@@ -94,6 +94,8 @@ components:
     - trentm
   packages/instrumentation-cassandra-driver:
     - seemk
+  packages/instrumentation-console:
+    - hectorhdzg
   packages/instrumentation-connect: []
     # Unmaintained
   packages/instrumentation-dns: []
