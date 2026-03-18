@@ -83,10 +83,7 @@ export class ConsoleInstrumentation extends InstrumentationBase<ConsoleInstrumen
       if (this._originals.has(method)) continue;
 
       this._originals.set(method, original);
-      (console as any)[method] = this._createPatchedMethod(
-        method,
-        original
-      );
+      (console as any)[method] = this._createPatchedMethod(method, original);
     }
   }
 
@@ -157,7 +154,8 @@ export class ConsoleInstrumentation extends InstrumentationBase<ConsoleInstrumen
           if (isSpanContextValid(spanContext)) {
             attributes['trace_id'] = spanContext.traceId;
             attributes['span_id'] = spanContext.spanId;
-            attributes['trace_flags'] = `0${spanContext.traceFlags.toString(16)}`;
+            attributes['trace_flags'] =
+              `0${spanContext.traceFlags.toString(16)}`;
 
             instrumentation._callHook(span, attributes);
           }
