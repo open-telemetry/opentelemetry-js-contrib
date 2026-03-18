@@ -233,10 +233,7 @@ describe('ConsoleInstrumentation', () => {
         console.log('no hook');
         assert.strictEqual(hookCalled, false);
         // Log sending still works
-        assert.strictEqual(
-          memExporter.getFinishedLogRecords().length,
-          1
-        );
+        assert.strictEqual(memExporter.getFinishedLogRecords().length, 1);
       });
       span.end();
     });
