@@ -95,6 +95,7 @@ components:
   packages/instrumentation-cassandra-driver:
     - seemk
   packages/instrumentation-console:
+    - jacksonweber
     - hectorhdzg
   packages/instrumentation-connect: []
     # Unmaintained
