@@ -116,6 +116,7 @@ components:
   packages/instrumentation-koa: []
     # Unmaintained
   packages/instrumentation-langchain:
+    - hectorhdzg
     - yiyuan-he
     - mxiamxia
   packages/instrumentation-memcached: []
@@ -136,6 +137,7 @@ components:
   packages/instrumentation-runtime-node:
     - d4nyll
   packages/instrumentation-openai:
+    - hectorhdzg
     - trentm
     - seemk
   packages/instrumentation-pg:
