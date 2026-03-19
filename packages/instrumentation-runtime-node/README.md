@@ -4,7 +4,7 @@
 [![Apache License][license-image]][license-image]
 
 This module provides automatic metric instrumentation that exposes measurements from the [Performance measurement APIs](https://nodejs.org/api/perf_hooks.html) (i.e. `perf_hooks`).
-It can also emit OpenTelemetry logs for uncaught exceptions and unhandled promise rejections.
+It can also emit OpenTelemetry logs for uncaught exceptions.
 
 ## Supported Versions
 
