@@ -149,8 +149,13 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
         // `method` actually refers to the knex API method - Not exactly "operation"
         // in the spec sense, but matches most of the time.
         const operation = query?.method;
+        // Knex can be configured with a connectionString instead of explicit fields.
+        // Fall back to parsing the connectionString if filename and database are not set.
+        const connectionString = config?.connection?.connectionString;
         const name =
-          config?.connection?.filename || config?.connection?.database;
+          config?.connection?.filename ||
+          config?.connection?.database ||
+          utils.extractDatabaseFromConnectionString(connectionString);
         const { maxQueryLength } = instrumentation.getConfig();
 
         const attributes: api.Attributes = {
@@ -166,8 +171,13 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
             [ATTR_DB_OPERATION]: operation,
             [ATTR_DB_USER]: config?.connection?.user,
             [ATTR_DB_NAME]: name,
-            [ATTR_NET_PEER_NAME]: config?.connection?.host,
-            [ATTR_NET_PEER_PORT]: config?.connection?.port,
+            // Fall back to parsing host and port from connectionString if not explicitly set.
+            [ATTR_NET_PEER_NAME]:
+              config?.connection?.host ??
+              utils.extractHostFromConnectionString(connectionString),
+            [ATTR_NET_PEER_PORT]:
+              config?.connection?.port ??
+              utils.extractPortFromConnectionString(connectionString),
             [ATTR_NET_TRANSPORT]: transport,
           });
         }
@@ -177,8 +187,13 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
             [ATTR_DB_COLLECTION_NAME]: table,
             [ATTR_DB_OPERATION_NAME]: operation,
             [ATTR_DB_NAMESPACE]: name,
-            [ATTR_SERVER_ADDRESS]: config?.connection?.host,
-            [ATTR_SERVER_PORT]: config?.connection?.port,
+            // Fall back to parsing host and port from connectionString if not explicitly set.
+            [ATTR_SERVER_ADDRESS]:
+              config?.connection?.host ??
+              utils.extractHostFromConnectionString(connectionString),
+            [ATTR_SERVER_PORT]:
+              config?.connection?.port ??
+              utils.extractPortFromConnectionString(connectionString),
           });
         }
         if (maxQueryLength) {

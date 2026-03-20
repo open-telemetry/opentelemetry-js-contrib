@@ -30,8 +30,7 @@ describe('utils', () => {
       ).filter(depName => {
         return (
           depName.startsWith('@opentelemetry/instrumentation-') &&
-          depName !== '@opentelemetry/instrumentation-fs' &&
-          depName !== '@opentelemetry/instrumentation-fastify'
+          depName !== '@opentelemetry/instrumentation-fs'
         );
       });
 

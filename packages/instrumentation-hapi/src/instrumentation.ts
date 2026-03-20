@@ -339,7 +339,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         if (api.trace.getSpan(api.context.active()) === undefined) {
           return await method.apply(this, params);
         }
-        const metadata = getExtMetadata(extPoint, pluginName);
+        const metadata = getExtMetadata(extPoint, pluginName, method.name);
         const span = instrumentation.tracer.startSpan(metadata.name, {
           attributes: metadata.attributes,
         });

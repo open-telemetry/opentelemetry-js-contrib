@@ -22,6 +22,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeSDK } from '@opentelemetry/sdk-node';
+import { TestMetricReader } from '@opentelemetry/contrib-test-utils';
 
 describe('[Integration] AzureVmServiceDetector', () => {
   it('should not start spans for detector requests', async () => {
@@ -29,6 +30,7 @@ describe('[Integration] AzureVmServiceDetector', () => {
     const sdk = new NodeSDK({
       instrumentations: [new HttpInstrumentation()],
       spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+      metricReaders: [new TestMetricReader()],
     });
 
     sdk.start();

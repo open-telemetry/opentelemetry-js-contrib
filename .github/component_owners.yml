@@ -102,8 +102,6 @@ components:
     - JamieDanielson
     - pkanal
     - raphael-theriault-swi
-  packages/instrumentation-fastify: []
-    # Unmaintained
   packages/instrumentation-generic-pool: []
     # Unmaintained
   packages/instrumentation-graphql:
@@ -117,6 +115,10 @@ components:
     # Unmaintained
   packages/instrumentation-koa: []
     # Unmaintained
+  packages/instrumentation-langchain:
+    - hectorhdzg
+    - yiyuan-he
+    - mxiamxia
   packages/instrumentation-memcached: []
     # Unmaintained
   packages/instrumentation-mongodb:
@@ -135,6 +137,7 @@ components:
   packages/instrumentation-runtime-node:
     - d4nyll
   packages/instrumentation-openai:
+    - hectorhdzg
     - trentm
     - seemk
   packages/instrumentation-pg:
@@ -176,6 +179,8 @@ components:
   packages/propagator-aws-xray:
     - jj22ee
   packages/propagator-aws-xray-lambda: [ ]
-  # Unmaintained
+    # Unmaintained
+  packages/sql-common: []
+    # Unmaintained
 ignored-authors:
   - renovate-bot

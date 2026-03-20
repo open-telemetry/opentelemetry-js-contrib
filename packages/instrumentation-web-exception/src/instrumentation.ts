@@ -47,9 +47,12 @@ export interface GlobalErrorsInstrumentationConfig
 }
 
 export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsInstrumentationConfig> {
+  declare private _onErrorHandler?: (
+    event: ErrorEvent | PromiseRejectionEvent
+  ) => void;
+
   constructor(config: GlobalErrorsInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this.onError = this.onError.bind(this);
   }
 
   init() {}
@@ -96,12 +99,17 @@ export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsIn
   }
 
   override disable(): void {
-    window.removeEventListener('error', this.onError);
-    window.removeEventListener('unhandledrejection', this.onError);
+    if (this._onErrorHandler) {
+      window.removeEventListener('error', this._onErrorHandler);
+      window.removeEventListener('unhandledrejection', this._onErrorHandler);
+    }
   }
 
   override enable(): void {
-    window.addEventListener('error', this.onError);
-    window.addEventListener('unhandledrejection', this.onError);
+    if (!this._onErrorHandler) {
+      this._onErrorHandler = this.onError.bind(this);
+    }
+    window.addEventListener('error', this._onErrorHandler);
+    window.addEventListener('unhandledrejection', this._onErrorHandler);
   }
 }

@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-export enum AttributeNames {
-  FASTIFY_NAME = 'fastify.name',
-  FASTIFY_TYPE = 'fastify.type',
-  HOOK_NAME = 'hook.name',
-  PLUGIN_NAME = 'plugin.name',
-}
+/**
+ * This file is used to load the instrumentation before running tests.
+ * It ensures that the instrumentation is loaded and registered before any
+ * other modules are imported.
+ */
 
-export enum FastifyTypes {
-  MIDDLEWARE = 'middleware',
-  REQUEST_HANDLER = 'request_handler',
-}
+import { LangChainInstrumentation } from '../src';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
-export enum FastifyNames {
-  MIDDLEWARE = 'middleware',
-  REQUEST_HANDLER = 'request handler',
-}
+registerInstrumentations({
+  instrumentations: [new LangChainInstrumentation()],
+});

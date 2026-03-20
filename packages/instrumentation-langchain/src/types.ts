@@ -13,27 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export interface FastifyRequestInfo {
-  request: any; // FastifyRequest object from fastify package
-}
-
-/**
- * Function that can be used to add custom attributes to the current span
- * @param span - The Fastify handler span.
- * @param info - The Fastify request info object.
- */
-export interface FastifyCustomAttributeFunction {
-  (span: Span, info: FastifyRequestInfo): void;
-}
-
-/**
- * Options available for the Fastify Instrumentation
- */
-export interface FastifyInstrumentationConfig extends InstrumentationConfig {
-  /** Function for adding custom attributes to each handler span */
-  requestHook?: FastifyCustomAttributeFunction;
+export interface LangChainInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * Set to true to enable capture of content data, such as prompt and
+   * completion content, tool call function arguments, etc. By default, this is
+   * `false` to avoid possible exposure of sensitive data.
+   */
+  captureMessageContent?: boolean;
 }

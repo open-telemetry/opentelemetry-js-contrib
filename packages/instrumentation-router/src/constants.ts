@@ -16,12 +16,31 @@
 
 export const MODULE_NAME = 'router';
 
-// Router.prototype.handle
-export const ROUTE_ROUTER_FN = `function router(req, res, next) {
-    router.handle(req, res, next)
-  }`;
+export interface RouterConstants {
+  requestHandlerName: string;
+  errorHandlerName: string;
+  routeFunctionBody: string;
+  handleFunctionBody: string;
+}
 
-// Route.prototype.dispatch
-export const ROUTER_HANDLE_FN = `function handle(req, res, next) {
+export const V1_CONSTANTS: RouterConstants = {
+  requestHandlerName: 'handle_request',
+  errorHandlerName: 'handle_error',
+  routeFunctionBody: `function router(req, res, next) {
+    router.handle(req, res, next)
+  }`,
+  handleFunctionBody: `function handle(req, res, next) {
     route.dispatch(req, res, next)
-  }`;
+  }`,
+};
+
+export const V2_CONSTANTS: RouterConstants = {
+  requestHandlerName: 'handleRequest',
+  errorHandlerName: 'handleError',
+  routeFunctionBody: `function router (req, res, next) {
+    router.handle(req, res, next)
+  }`,
+  handleFunctionBody: `function handle (req, res, next) {
+    route.dispatch(req, res, next)
+  }`,
+};
