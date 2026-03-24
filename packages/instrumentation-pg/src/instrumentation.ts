@@ -46,7 +46,10 @@ import {
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
-import { addSqlCommenterComment } from '@opentelemetry/sql-common';
+import {
+  addSqlCommenterComment,
+  buildTraceparent,
+} from '@opentelemetry/sql-common';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
@@ -76,6 +79,10 @@ function extractModuleExports(module: any) {
     ? module.default // ESM
     : module; // CommonJS
 }
+
+const INTERNAL_SET_QUERY = Symbol(
+  'opentelemetry.instrumentation-pg.internal-set-query'
+);
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   declare private _operationDuration: Histogram;
@@ -318,6 +325,15 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     return (original: typeof pgTypes.Client.prototype.query) => {
       this._diag.debug('Patching pg.Client.prototype.query');
       return function query(this: PgClientExtended, ...args: unknown[]) {
+        // Skip our own internal SET application_name queries
+        if (
+          typeof args[0] === 'object' &&
+          args[0] !== null &&
+          (args[0] as any)[INTERNAL_SET_QUERY]
+        ) {
+          return original.apply(this, args as never);
+        }
+
         if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
           return original.apply(this, args as never);
         }
@@ -475,6 +491,31 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             },
             true
           );
+        }
+
+        // Inject trace context via SET application_name if enabled.
+        // The SET is pushed synchronously into pg's internal FIFO queue
+        // before the user's query, guaranteeing correct ordering. Note that
+        // pg processes one query at a time (readyForQuery gate), so the SET
+        // completes a full round-trip before the user's query is dispatched.
+        if (instrumentationConfig.enableTraceContextPropagation) {
+          const traceparent = buildTraceparent(span);
+          if (traceparent) {
+            const setQuery = {
+              text: `SET application_name = '${traceparent}'`,
+              [INTERNAL_SET_QUERY]: true,
+            };
+            try {
+              const setResult: unknown = original.apply(this, [
+                setQuery,
+              ] as never);
+              if (setResult instanceof Promise) {
+                setResult.catch(() => {});
+              }
+            } catch {
+              // Silently ignore SET failures to avoid breaking user queries
+            }
+          }
         }
 
         let result: unknown;
