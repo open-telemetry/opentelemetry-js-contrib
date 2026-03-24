@@ -1136,6 +1136,258 @@ describe('pg', () => {
     });
   });
 
+  describe('enableTraceContextPropagation', () => {
+    it('should not send SET application_name when enableTraceContextPropagation is not specified', async () => {
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const query = 'SELECT NOW()';
+        const res = await client.query(query);
+        assert.ok(res);
+
+        const executedQueries = getExecutedQueries();
+        assert.equal(executedQueries.length, 1);
+        assert.equal(executedQueries[0].text, query);
+      });
+    });
+
+    it('should send SET application_name before the user query when enableTraceContextPropagation=true', async () => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const query = 'SELECT NOW()';
+        const res = await client.query(query);
+        assert.ok(res);
+
+        const executedQueries = getExecutedQueries();
+        assert.equal(
+          executedQueries.length,
+          2,
+          'Expected 2 queries: SET application_name + user query'
+        );
+
+        const setQuery = executedQueries[0].text;
+        assert.ok(
+          setQuery?.startsWith("SET application_name = '00-"),
+          `Expected SET application_name query, got: ${setQuery}`
+        );
+
+        assert.equal(executedQueries[1].text, query);
+      });
+    });
+
+    it('should set application_name to a valid W3C traceparent format', async () => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const res = await client.query('SELECT NOW()');
+        assert.ok(res);
+
+        const executedQueries = getExecutedQueries();
+        const setQuery = executedQueries[0].text!;
+
+        // Extract the traceparent value from SET application_name = '...'
+        const match = setQuery.match(/^SET application_name = '(.+)'$/);
+        assert.ok(
+          match,
+          `Expected SET query to match pattern, got: ${setQuery}`
+        );
+        const traceparent = match![1];
+
+        // Validate W3C traceparent format: 00-{32 hex traceId}-{16 hex spanId}-{2 hex flags}
+        const traceparentRegex = /^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/;
+        assert.ok(
+          traceparentRegex.test(traceparent),
+          `Expected valid traceparent, got: ${traceparent}`
+        );
+
+        // Verify the traceId and spanId match the pg.query span
+        const [span0] = memoryExporter.getFinishedSpans();
+        const parts = traceparent.split('-');
+        assert.equal(
+          parts[1],
+          span0.spanContext().traceId,
+          'traceId in application_name should match the span traceId'
+        );
+        assert.equal(
+          parts[2],
+          span0.spanContext().spanId,
+          'spanId in application_name should match the span spanId'
+        );
+      });
+    });
+
+    it('should set application_name for prepared statements', async () => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const res = await client.query({
+          name: 'prepared-trace-ctx',
+          text: 'SELECT $1::text',
+          values: ['hello'],
+        });
+        assert.ok(res);
+
+        const executedQueries = getExecutedQueries();
+        assert.equal(
+          executedQueries.length,
+          2,
+          'Expected 2 queries: SET application_name + prepared statement'
+        );
+        assert.ok(
+          executedQueries[0].text?.startsWith("SET application_name = '00-"),
+          'SET application_name should precede prepared statement'
+        );
+        assert.equal(executedQueries[1].text, 'SELECT $1::text');
+      });
+    });
+
+    it('should work together with addSqlCommenterCommentToQueries', async () => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+        addSqlCommenterCommentToQueries: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const query = 'SELECT NOW()';
+        const res = await client.query(query);
+        assert.ok(res);
+
+        const executedQueries = getExecutedQueries();
+        assert.equal(
+          executedQueries.length,
+          2,
+          'Expected 2 queries: SET application_name + commented query'
+        );
+
+        // First should be SET application_name
+        assert.ok(
+          executedQueries[0].text?.startsWith("SET application_name = '00-"),
+          'First query should be SET application_name'
+        );
+
+        // Second should have SQL Commenter comment appended
+        assert.ok(
+          executedQueries[1].text?.includes('/*'),
+          'User query should have SQL Commenter comment'
+        );
+        assert.ok(
+          executedQueries[1].text?.startsWith('SELECT NOW()'),
+          'User query should start with original text'
+        );
+      });
+    });
+
+    it('should set correct application_name for concurrent queries on the same connection', async () => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+      });
+
+      // Fire 3 queries concurrently without awaiting each individually.
+      // All 6 items (3x SET + 3x query) are pushed synchronously into
+      // pg's queryQueue, and we verify they are correctly paired.
+      const results = await Promise.all([
+        context.with(
+          trace.setSpan(context.active(), tracer.startSpan('span-A')),
+          () => client.query('SELECT 1 AS a')
+        ),
+        context.with(
+          trace.setSpan(context.active(), tracer.startSpan('span-B')),
+          () => client.query('SELECT 2 AS b')
+        ),
+        context.with(
+          trace.setSpan(context.active(), tracer.startSpan('span-C')),
+          () => client.query('SELECT 3 AS c')
+        ),
+      ]);
+
+      assert.ok(results[0]);
+      assert.ok(results[1]);
+      assert.ok(results[2]);
+
+      const executedQueries = getExecutedQueries();
+      assert.equal(
+        executedQueries.length,
+        6,
+        'Expected 6 queries: 3x SET + 3x user query'
+      );
+
+      // Verify correct pairing: SET-A, Q-A, SET-B, Q-B, SET-C, Q-C
+      for (let i = 0; i < 3; i++) {
+        const setQuery = executedQueries[i * 2];
+        const userQuery = executedQueries[i * 2 + 1];
+
+        assert.ok(
+          setQuery.text?.startsWith("SET application_name = '00-"),
+          `Query ${i * 2} should be a SET application_name`
+        );
+        assert.ok(
+          !userQuery.text?.startsWith('SET application_name'),
+          `Query ${i * 2 + 1} should be the user query, not SET`
+        );
+      }
+
+      // Verify each SET has a different spanId (each query gets its own span)
+      const setQueries = [
+        executedQueries[0].text!,
+        executedQueries[2].text!,
+        executedQueries[4].text!,
+      ];
+      const spanIds = setQueries.map(q => {
+        const match = q.match(/00-[0-9a-f]{32}-([0-9a-f]{16})-[0-9a-f]{2}/);
+        return match![1];
+      });
+      assert.notEqual(
+        spanIds[0],
+        spanIds[1],
+        'Span A and B should have different spanIds'
+      );
+      assert.notEqual(
+        spanIds[1],
+        spanIds[2],
+        'Span B and C should have different spanIds'
+      );
+      assert.notEqual(
+        spanIds[0],
+        spanIds[2],
+        'Span A and C should have different spanIds'
+      );
+    });
+
+    it('should not create a span for the internal SET application_name query', async () => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const res = await client.query('SELECT NOW()');
+        assert.ok(res);
+
+        const spans = memoryExporter.getFinishedSpans();
+        // Should only have 1 span for the user query, not 2
+        assert.equal(
+          spans.length,
+          1,
+          'Internal SET application_name should not generate a span'
+        );
+        assert.ok(
+          spans[0].name.includes('SELECT'),
+          'The only span should be for the user query'
+        );
+      });
+    });
+  });
+
   describe('exception event recording', () => {
     const assertExceptionEvents = (pgSpan: any) => {
       assert.strictEqual(
