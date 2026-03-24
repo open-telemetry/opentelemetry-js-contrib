@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import { SpanStatusCode, context, trace } from '@opentelemetry/api';
+import {
+  SpanStatusCode,
+  context,
+  propagation,
+  trace,
+} from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -603,6 +608,54 @@ describe('ExpressInstrumentation', () => {
           assert.ok(
             routerLayer.handle.stack.length === 1,
             'router layer stack is accessible'
+          );
+        }
+      );
+    });
+  });
+
+  describe('Baggage propagation through middleware', () => {
+    let server: Server, port: number;
+    afterEach(() => {
+      server?.close();
+    });
+
+    it('should preserve baggage set by middleware in downstream handlers', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let capturedBaggage: string | undefined;
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          const baggage = propagation.createBaggage({
+            'test.key': { value: 'test-value' },
+          });
+          const ctxWithBaggage = propagation.setBaggage(
+            context.active(),
+            baggage
+          );
+          return context.with(ctxWithBaggage, next);
+        });
+
+        app.get('/test', (req, res) => {
+          const baggage = propagation.getBaggage(context.active());
+          capturedBaggage = baggage?.getEntry('test.key')?.value;
+          res.status(200).end('ok');
+        });
+      });
+
+      server = httpServer.server;
+      port = httpServer.port;
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/test`);
+          rootSpan.end();
+
+          assert.strictEqual(
+            capturedBaggage,
+            'test-value',
+            'Baggage set by middleware should be available in downstream handler'
           );
         }
       );
