@@ -1136,6 +1136,12 @@ describe('pg', () => {
     });
   });
 
+  function expectedSetApplicationName(span: { spanContext(): any }) {
+    const sc = span.spanContext();
+    const traceparent = `00-${sc.traceId}-${sc.spanId}-0${Number(sc.traceFlags || 0).toString(16)}`;
+    return `SET application_name = '${traceparent}'`;
+  }
+
   describe('enableTraceContextPropagation', () => {
     it('should not send SET application_name when enableTraceContextPropagation is not specified', async () => {
       const span = tracer.startSpan('test span');
@@ -1168,57 +1174,15 @@ describe('pg', () => {
           'Expected 2 queries: SET application_name + user query'
         );
 
-        const setQuery = executedQueries[0].text;
-        assert.ok(
-          setQuery?.startsWith("SET application_name = '00-"),
-          `Expected SET application_name query, got: ${setQuery}`
+        const [querySpan] = memoryExporter.getFinishedSpans();
+
+        assert.equal(
+          executedQueries[0].text,
+          expectedSetApplicationName(querySpan),
+          'SET application_name should contain the exact traceparent of the query span'
         );
 
         assert.equal(executedQueries[1].text, query);
-      });
-    });
-
-    it('should set application_name to a valid W3C traceparent format', async () => {
-      instrumentation.setConfig({
-        enableTraceContextPropagation: true,
-      });
-
-      const span = tracer.startSpan('test span');
-      await context.with(trace.setSpan(context.active(), span), async () => {
-        const res = await client.query('SELECT NOW()');
-        assert.ok(res);
-
-        const executedQueries = getExecutedQueries();
-        const setQuery = executedQueries[0].text!;
-
-        // Extract the traceparent value from SET application_name = '...'
-        const match = setQuery.match(/^SET application_name = '(.+)'$/);
-        assert.ok(
-          match,
-          `Expected SET query to match pattern, got: ${setQuery}`
-        );
-        const traceparent = match![1];
-
-        // Validate W3C traceparent format: 00-{32 hex traceId}-{16 hex spanId}-{2 hex flags}
-        const traceparentRegex = /^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/;
-        assert.ok(
-          traceparentRegex.test(traceparent),
-          `Expected valid traceparent, got: ${traceparent}`
-        );
-
-        // Verify the traceId and spanId match the pg.query span
-        const [span0] = memoryExporter.getFinishedSpans();
-        const parts = traceparent.split('-');
-        assert.equal(
-          parts[1],
-          span0.spanContext().traceId,
-          'traceId in application_name should match the span traceId'
-        );
-        assert.equal(
-          parts[2],
-          span0.spanContext().spanId,
-          'spanId in application_name should match the span spanId'
-        );
       });
     });
 
@@ -1242,9 +1206,11 @@ describe('pg', () => {
           2,
           'Expected 2 queries: SET application_name + prepared statement'
         );
-        assert.ok(
-          executedQueries[0].text?.startsWith("SET application_name = '00-"),
-          'SET application_name should precede prepared statement'
+        const [querySpan] = memoryExporter.getFinishedSpans();
+        assert.equal(
+          executedQueries[0].text,
+          expectedSetApplicationName(querySpan),
+          'SET application_name should contain exact traceparent before prepared statement'
         );
         assert.equal(executedQueries[1].text, 'SELECT $1::text');
       });
@@ -1269,10 +1235,11 @@ describe('pg', () => {
           'Expected 2 queries: SET application_name + commented query'
         );
 
-        // First should be SET application_name
-        assert.ok(
-          executedQueries[0].text?.startsWith("SET application_name = '00-"),
-          'First query should be SET application_name'
+        const [querySpan] = memoryExporter.getFinishedSpans();
+        assert.equal(
+          executedQueries[0].text,
+          expectedSetApplicationName(querySpan),
+          'First query should be SET application_name with exact traceparent'
         );
 
         // Second should have SQL Commenter comment appended
@@ -1321,46 +1288,25 @@ describe('pg', () => {
         'Expected 6 queries: 3x SET + 3x user query'
       );
 
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      assert.equal(finishedSpans.length, 3, 'Expected 3 query spans');
+
       // Verify correct pairing: SET-A, Q-A, SET-B, Q-B, SET-C, Q-C
+      // Each SET should match the exact traceparent of its corresponding query span.
       for (let i = 0; i < 3; i++) {
         const setQuery = executedQueries[i * 2];
         const userQuery = executedQueries[i * 2 + 1];
 
-        assert.ok(
-          setQuery.text?.startsWith("SET application_name = '00-"),
-          `Query ${i * 2} should be a SET application_name`
+        assert.equal(
+          setQuery.text,
+          expectedSetApplicationName(finishedSpans[i]),
+          `Query ${i * 2} should be SET application_name with exact traceparent for span ${i}`
         );
         assert.ok(
           !userQuery.text?.startsWith('SET application_name'),
           `Query ${i * 2 + 1} should be the user query, not SET`
         );
       }
-
-      // Verify each SET has a different spanId (each query gets its own span)
-      const setQueries = [
-        executedQueries[0].text!,
-        executedQueries[2].text!,
-        executedQueries[4].text!,
-      ];
-      const spanIds = setQueries.map(q => {
-        const match = q.match(/00-[0-9a-f]{32}-([0-9a-f]{16})-[0-9a-f]{2}/);
-        return match![1];
-      });
-      assert.notEqual(
-        spanIds[0],
-        spanIds[1],
-        'Span A and B should have different spanIds'
-      );
-      assert.notEqual(
-        spanIds[1],
-        spanIds[2],
-        'Span B and C should have different spanIds'
-      );
-      assert.notEqual(
-        spanIds[0],
-        spanIds[2],
-        'Span A and C should have different spanIds'
-      );
     });
 
     it('should not create a span for the internal SET application_name query', async () => {
