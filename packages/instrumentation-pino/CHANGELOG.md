@@ -1,6 +1,12 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [Unreleased]
+
+### Features
+
+* **instrumentation-pino:** use the Logs API `exception` field for pino error records during log sending, including support for custom pino `errorKey` ([#3425](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3425))
+
 ## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.58.0...instrumentation-pino-v0.59.0) (2026-03-04)
 
 
