@@ -105,7 +105,23 @@ export class KinesisServiceExtension implements ServiceExtension {
       propagation.inject(context.active(), parsed);
       const injected = JSON.stringify(parsed);
 
-      entry.Data = isBuffer ? new TextEncoder().encode(injected) : injected;
+      const injectedBytes = isBuffer
+        ? new TextEncoder().encode(injected)
+        : injected;
+      const byteLength = isBuffer
+        ? (injectedBytes as Uint8Array).byteLength
+        : new TextEncoder().encode(injectedBytes as string).byteLength;
+
+      // Kinesis record limit is 1 MB (1,048,576 bytes). Skip injection if
+      // the enriched payload would exceed that.
+      if (byteLength > 1_048_576) {
+        diag.debug(
+          'aws-sdk instrumentation: Skipping context injection into Kinesis record because the enriched payload would exceed the 1 MB record size limit.'
+        );
+        return;
+      }
+
+      entry.Data = injectedBytes;
     } catch {
       diag.debug(
         'aws-sdk instrumentation: Failed to inject context into Kinesis record Data, data is not valid JSON.'

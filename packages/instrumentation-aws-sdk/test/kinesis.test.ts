@@ -169,6 +169,45 @@ describe('Kinesis - v3', () => {
       );
     });
 
+    it('does not inject trace context if payload would exceed 1 MB', async () => {
+      nock(`https://kinesis.${region}.amazonaws.com`)
+        .post('/')
+        .reply(
+          200,
+          fs.readFileSync(
+            './test/mock-responses/kinesis-put-record.json',
+            'utf8'
+          )
+        );
+
+      // Create a JSON payload just under 1 MB so that adding trace context
+      // headers would push it over the limit.
+      const padding = 'x'.repeat(1_048_576 - 20);
+      const payload = { d: padding };
+      const originalData = new TextEncoder().encode(JSON.stringify(payload));
+
+      const params = {
+        StreamName: dummyStreamName,
+        PartitionKey: 'pk-1',
+        Data: originalData,
+      };
+
+      await client.send(new PutRecordCommand(params));
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const putRecordSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => {
+          return s.name === `${dummyStreamName} send`;
+        }
+      );
+      expect(putRecordSpans.length).toBe(1);
+
+      // Data should remain unchanged — no trace context injected
+      const resultData = JSON.parse(new TextDecoder().decode(params.Data));
+      expect(resultData.traceparent).toBeUndefined();
+      expect(resultData.d).toBe(padding);
+    });
+
     it('handles non-JSON data gracefully', async () => {
       nock(`https://kinesis.${region}.amazonaws.com`)
         .post('/')
