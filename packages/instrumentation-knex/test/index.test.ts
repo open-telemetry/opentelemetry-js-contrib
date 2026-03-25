@@ -35,7 +35,7 @@ const plugin = new KnexInstrumentation({
 
 import knex from 'knex';
 // @ts-ignore
-import * as BetterSqlite3Dialect from 'knex/lib/dialects/better-sqlite3';
+import * as BetterSqlite3Dialect from 'knex/lib/dialects/better-sqlite3/index.js';
 
 describe('Knex instrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
