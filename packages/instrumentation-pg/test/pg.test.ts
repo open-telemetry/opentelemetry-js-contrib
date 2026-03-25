@@ -1136,13 +1136,13 @@ describe('pg', () => {
     });
   });
 
-  function expectedSetApplicationName(span: { spanContext(): any }) {
-    const sc = span.spanContext();
-    const traceparent = `00-${sc.traceId}-${sc.spanId}-0${Number(sc.traceFlags || 0).toString(16)}`;
-    return `SET application_name = '${traceparent}'`;
-  }
-
   describe('enableTraceContextPropagation', () => {
+    function expectedSetApplicationName(span: { spanContext(): any }) {
+      const sc = span.spanContext();
+      const traceparent = `00-${sc.traceId}-${sc.spanId}-0${Number(sc.traceFlags || 0).toString(16)}`;
+      return `SET application_name = '${traceparent}'`;
+    }
+
     it('should not send SET application_name when enableTraceContextPropagation is not specified', async () => {
       const span = tracer.startSpan('test span');
       await context.with(trace.setSpan(context.active(), span), async () => {
