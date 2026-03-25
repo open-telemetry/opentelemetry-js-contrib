@@ -92,7 +92,7 @@ describe('DataloaderInstrumentation', () => {
       assert.strictEqual(batchSpan.name, 'dataloader.batch');
       assert.strictEqual(batchSpan.kind, SpanKind.INTERNAL);
       assert.deepStrictEqual(batchSpan.links, [
-        { context: loadSpan.spanContext(), attributes: {} },
+        { context: loadSpan.spanContext() },
       ]);
     });
 
@@ -206,7 +206,7 @@ describe('DataloaderInstrumentation', () => {
       assert.strictEqual(batchSpan.name, 'dataloader.batch');
       assert.strictEqual(batchSpan.kind, SpanKind.INTERNAL);
       assert.deepStrictEqual(batchSpan.links, [
-        { context: loadSpan.spanContext(), attributes: {} },
+        { context: loadSpan.spanContext() },
       ]);
 
       assert.strictEqual(loadManySpan.name, 'dataloader.loadMany');
