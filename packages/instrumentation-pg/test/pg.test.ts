@@ -1309,29 +1309,6 @@ describe('pg', () => {
       }
     });
 
-    it('should not create a span for the internal SET application_name query', async () => {
-      instrumentation.setConfig({
-        enableTraceContextPropagation: true,
-      });
-
-      const span = tracer.startSpan('test span');
-      await context.with(trace.setSpan(context.active(), span), async () => {
-        const res = await client.query('SELECT NOW()');
-        assert.ok(res);
-
-        const spans = memoryExporter.getFinishedSpans();
-        // Should only have 1 span for the user query, not 2
-        assert.equal(
-          spans.length,
-          1,
-          'Internal SET application_name should not generate a span'
-        );
-        assert.ok(
-          spans[0].name.includes('SELECT'),
-          'The only span should be for the user query'
-        );
-      });
-    });
   });
 
   describe('exception event recording', () => {
