@@ -1308,7 +1308,6 @@ describe('pg', () => {
         );
       }
     });
-
   });
 
   describe('exception event recording', () => {
