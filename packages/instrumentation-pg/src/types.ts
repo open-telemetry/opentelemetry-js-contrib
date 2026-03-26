@@ -87,4 +87,17 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    * @default false
    */
   ignoreConnectSpans?: boolean;
+
+  /**
+   * If true, injects the current span's W3C traceparent into the PostgreSQL
+   * session via `SET application_name` before each query.
+   *
+   * NOTE: This adds an extra `SET application_name` round-trip to the
+   * connection before each user query. The SET must complete before pg's
+   * internal queue dispatches the user's query, so expect roughly double
+   * the number of network round-trips when this option is enabled.
+   *
+   * @default false
+   */
+  enableTraceContextPropagation?: boolean;
 }
