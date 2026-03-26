@@ -22,8 +22,6 @@ import { Histogram, ValueType } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
 import { ATTR_V8JS_GC_TYPE, METRIC_V8JS_GC_DURATION } from '../semconv';
 
-const DEFAULT_GC_DURATION_BUCKETS = [0.01, 0.1, 1, 10];
-
 const kinds: string[] = [];
 kinds[perf_hooks.constants.NODE_PERFORMANCE_GC_MAJOR] = 'major';
 kinds[perf_hooks.constants.NODE_PERFORMANCE_GC_MINOR] = 'minor';
@@ -61,7 +59,7 @@ export class GCCollector extends BaseCollector {
         unit: 's',
         valueType: ValueType.DOUBLE,
         advice: {
-          explicitBucketBoundaries: DEFAULT_GC_DURATION_BUCKETS,
+          explicitBucketBoundaries: this._config.gcDurationBuckets,
         },
       }
     );
