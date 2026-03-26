@@ -312,4 +312,55 @@ describe('runtime exception logging', () => {
     const records = exporter.getFinishedLogRecords();
     assert.strictEqual(records.length, 0);
   });
+
+  it('calls loggerProvider.forceFlush after emitting uncaught exceptions', () => {
+    instrumentation.disable();
+    exporter = new InMemoryLogRecordExporter();
+    const loggerProvider = new LoggerProvider({
+      processors: [new SimpleLogRecordProcessor(exporter)],
+    });
+    let forceFlushCalls = 0;
+    const originalForceFlush = loggerProvider.forceFlush.bind(loggerProvider);
+    loggerProvider.forceFlush = () => {
+      forceFlushCalls++;
+      return originalForceFlush();
+    };
+
+    instrumentation = new RuntimeNodeInstrumentation();
+    instrumentation.setLoggerProvider(loggerProvider);
+    instrumentation.enable();
+
+    (process.emit as unknown as (event: string, ...args: unknown[]) => boolean)(
+      'uncaughtExceptionMonitor',
+      new Error('boom'),
+      'uncaughtException'
+    );
+
+    const records = exporter.getFinishedLogRecords();
+    assert.ok(records.length >= 1);
+    assert.strictEqual(forceFlushCalls, 1);
+  });
+
+  it('swallows loggerProvider.forceFlush failures', async () => {
+    instrumentation.disable();
+    exporter = new InMemoryLogRecordExporter();
+    const loggerProvider = new LoggerProvider({
+      processors: [new SimpleLogRecordProcessor(exporter)],
+    });
+    loggerProvider.forceFlush = () => Promise.reject(new Error('flush failed'));
+
+    instrumentation = new RuntimeNodeInstrumentation();
+    instrumentation.setLoggerProvider(loggerProvider);
+    instrumentation.enable();
+
+    (process.emit as unknown as (event: string, ...args: unknown[]) => boolean)(
+      'uncaughtExceptionMonitor',
+      new Error('boom'),
+      'uncaughtException'
+    );
+    await Promise.resolve();
+
+    const records = exporter.getFinishedLogRecords();
+    assert.ok(records.length >= 1);
+  });
 });

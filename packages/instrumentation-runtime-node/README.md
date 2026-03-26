@@ -5,6 +5,10 @@
 
 This module provides automatic metric instrumentation that exposes measurements from the [Performance measurement APIs](https://nodejs.org/api/perf_hooks.html) (i.e. `perf_hooks`).
 It can also emit OpenTelemetry logs for uncaught exceptions.
+When a configured logger provider exposes `forceFlush()` (for example, the SDK
+`LoggerProvider`), this instrumentation calls it immediately after emitting the
+uncaught-exception log record as a best-effort attempt to reduce log loss on
+process termination.
 
 ## Supported Versions
 

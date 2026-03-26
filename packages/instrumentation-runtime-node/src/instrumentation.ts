@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
-import type { AnyValueMap, LogRecord } from '@opentelemetry/api-logs';
+import type {
+  AnyValueMap,
+  LogRecord,
+  LoggerProvider,
+} from '@opentelemetry/api-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { hrTime } from '@opentelemetry/core';
 
@@ -35,6 +39,7 @@ const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
 
 export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeInstrumentationConfig> {
   private readonly _collectors: MetricCollector[] = [];
+  private _loggerProvider?: LoggerProvider;
   private _onUncaughtExceptionHandler?: (
     error: Error,
     origin: NodeJS.UncaughtExceptionOrigin
@@ -90,6 +95,11 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
       collector.disable();
     }
     this._unregisterExceptionHandlers();
+  }
+
+  override setLoggerProvider(loggerProvider: LoggerProvider): void {
+    super.setLoggerProvider(loggerProvider);
+    this._loggerProvider = loggerProvider;
   }
 
   private _registerExceptionHandlers() {
@@ -151,5 +161,29 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
     };
 
     this.logger.emit(errorLog);
+    this._forceFlushLogs();
+  }
+
+  private _forceFlushLogs() {
+    const loggerProvider = this._loggerProvider as
+      | (LoggerProvider & { forceFlush?: () => Promise<void> })
+      | undefined;
+    if (typeof loggerProvider?.forceFlush !== 'function') {
+      return;
+    }
+
+    try {
+      void loggerProvider.forceFlush().catch(err => {
+        this._diag.error(
+          'loggerProvider.forceFlush failed while handling an exception',
+          err
+        );
+      });
+    } catch (err) {
+      this._diag.error(
+        'loggerProvider.forceFlush threw while handling an exception',
+        err
+      );
+    }
   }
 }
