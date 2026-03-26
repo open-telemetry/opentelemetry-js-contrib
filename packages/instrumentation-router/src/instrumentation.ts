@@ -30,12 +30,17 @@ import type * as Router from 'router';
 import * as types from './internal-types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import * as constants from './constants';
+import {
+  RouterConstants,
+  MODULE_NAME,
+  V1_CONSTANTS,
+  V2_CONSTANTS,
+} from './constants';
 import * as utils from './utils';
 import AttributeNames from './enums/AttributeNames';
 import LayerType from './enums/LayerType';
 
-const supportedVersions = ['>=1.0.0 <2'];
+const supportedVersions = ['>=1.0.0 <3'];
 
 export class RouterInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
@@ -43,10 +48,11 @@ export class RouterInstrumentation extends InstrumentationBase {
   }
 
   private _moduleVersion?: string;
+  private _constants?: RouterConstants;
 
   init() {
     const module = new InstrumentationNodeModuleDefinition(
-      constants.MODULE_NAME,
+      MODULE_NAME,
       supportedVersions,
       (moduleExports, moduleVersion) => {
         this._moduleVersion = moduleVersion;
@@ -58,30 +64,36 @@ export class RouterInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleFile(
         'router/lib/layer.js',
         supportedVersions,
-        moduleExports => {
+        (moduleExports, moduleVersion) => {
           const Layer: any = moduleExports;
-          if (isWrapped(Layer.prototype.handle_request)) {
-            this._unwrap(Layer.prototype, 'handle_request');
+          const isV2 = moduleVersion?.startsWith('2.');
+          this._constants ??= isV2 ? V2_CONSTANTS : V1_CONSTANTS;
+          const requestHandlerName = this._constants.requestHandlerName;
+          const errorHandlerName = this._constants.errorHandlerName;
+          if (isWrapped(Layer.prototype[requestHandlerName])) {
+            this._unwrap(Layer.prototype, requestHandlerName);
           }
           this._wrap(
             Layer.prototype,
-            'handle_request',
+            requestHandlerName,
             this._requestHandlerPatcher.bind(this)
           );
-          if (isWrapped(Layer.prototype.handle_error)) {
-            this._unwrap(Layer.prototype, 'handle_error');
+          if (isWrapped(Layer.prototype[errorHandlerName])) {
+            this._unwrap(Layer.prototype, errorHandlerName);
           }
           this._wrap(
             Layer.prototype,
-            'handle_error',
+            errorHandlerName,
             this._errorHandlerPatcher.bind(this)
           );
           return moduleExports;
         },
         moduleExports => {
           const Layer: any = moduleExports;
-          this._unwrap(Layer.prototype, 'handle_request');
-          this._unwrap(Layer.prototype, 'handle_error');
+          if (this._constants !== undefined) {
+            this._unwrap(Layer.prototype, this._constants.requestHandlerName);
+            this._unwrap(Layer.prototype, this._constants.errorHandlerName);
+          }
           return moduleExports;
         }
       )
@@ -91,7 +103,7 @@ export class RouterInstrumentation extends InstrumentationBase {
   }
 
   // Define handle_request wrapper separately to ensure the signature has the correct length
-  private _requestHandlerPatcher(original: Router.Layer['handle_request']) {
+  private _requestHandlerPatcher(original: Router.RequestHandler) {
     const instrumentation = this;
     return function wrapped_handle_request(
       this: Router.Layer,
@@ -101,7 +113,10 @@ export class RouterInstrumentation extends InstrumentationBase {
     ) {
       // Skip creating spans if the registered handler is of invalid length, because
       // we know router will ignore those
-      if (utils.isInternal(this.handle) || this.handle.length > 3) {
+      if (
+        this.handle.length > 3 ||
+        utils.isInternal(this.handle, instrumentation._constants)
+      ) {
         return original.call(this, req, res, next);
       }
       const { context, wrappedNext } = instrumentation._setupSpan(
@@ -115,7 +130,7 @@ export class RouterInstrumentation extends InstrumentationBase {
   }
 
   // Define handle_error wrapper separately to ensure the signature has the correct length
-  private _errorHandlerPatcher(original: Router.Layer['handle_error']) {
+  private _errorHandlerPatcher(original: Router.ErrorRequestHandler) {
     const instrumentation = this;
     return function wrapped_handle_request(
       this: Router.Layer,
@@ -126,7 +141,10 @@ export class RouterInstrumentation extends InstrumentationBase {
     ) {
       // Skip creating spans if the registered handler is of invalid length, because
       // we know router will ignore those
-      if (utils.isInternal(this.handle) || this.handle.length !== 4) {
+      if (
+        this.handle.length !== 4 ||
+        utils.isInternal(this.handle, instrumentation._constants)
+      ) {
         return original.call(this, error, req, res, next);
       }
       const { context, wrappedNext } = instrumentation._setupSpan(

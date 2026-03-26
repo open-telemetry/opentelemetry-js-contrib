@@ -34,6 +34,7 @@ describe('lru-memoizer instrumentation', () => {
 
       let memoizerLoadCallback: MemoizerTestCallback;
       const memoizedFoo = memoizer({
+        max: 10,
         load: (_param: unknown, callback: MemoizerTestCallback) => {
           memoizerLoadCallback = callback;
         },
@@ -61,6 +62,7 @@ describe('lru-memoizer instrumentation', () => {
       const ongoingMemoizerLoads: Function[] = [];
 
       const memoizedFoo = memoizer({
+        max: 10,
         load: (_param: unknown, callback: MemoizerTestCallback) => {
           // don't call the cb yet, first invoke another call,
           // to let it go into the internal "pendingLoad" queue
@@ -89,6 +91,7 @@ describe('lru-memoizer instrumentation', () => {
 
     it('should not throw when last argument is not callback', () => {
       const memoizedFoo = memoizer({
+        max: 10,
         load: (callback: MemoizerTestCallback) => {
           return 'foo';
         },
@@ -103,6 +106,7 @@ describe('lru-memoizer instrumentation', () => {
   describe('sync', () => {
     it('should not break sync memoizer', () => {
       const memoizedFoo = memoizer.sync({
+        max: 10,
         load: (_params: any) => 'foo',
         hash: () => 'bar',
       } as any);
@@ -117,6 +121,7 @@ describe('lru-memoizer instrumentation', () => {
         .getTracer('lru-memoize-testing');
 
       const memoizedFoo = memoizer.sync({
+        max: 10,
         load: (_params: any) => Promise.resolve('foo'),
         hash: () => 'bar',
       } as any);

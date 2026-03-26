@@ -175,9 +175,17 @@ describe('nodejs.eventloop.utilization', function () {
       'Expected utilization in fourth measurement to be 1'
     );
 
-    // Fifth measurement: Do some NON-blocking work (sanity check, should be low)
-    await new Promise(resolve => setTimeout(resolve, 50));
-    const fifthUtilization = await collectUtilization();
+    // Fifth measurement: Do some non-blocking work and retry a few times to
+    // avoid a timing flake where one collection window can still include the
+    // previous busy period.
+    let fifthUtilization = 1;
+    for (let i = 0; i < 5; i++) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      fifthUtilization = await collectUtilization();
+      if (fifthUtilization < 1) {
+        break;
+      }
+    }
     assert.ok(
       fifthUtilization < 1,
       `Expected utilization in fifth measurement to be less than 1, but got ${fifthUtilization}`

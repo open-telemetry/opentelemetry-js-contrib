@@ -32,7 +32,7 @@ export class LruMemoizerInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'lru-memoizer',
-        ['>=1.3 <3'],
+        ['>=1.3 <4'],
         moduleExports => {
           // moduleExports is a function which receives an options object,
           // and returns a "memoizer" function upon invocation.

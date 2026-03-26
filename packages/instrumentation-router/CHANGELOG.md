@@ -1,6 +1,14 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.57.0...instrumentation-router-v0.58.0) (2026-03-25)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3450](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3450)) ([c8df394](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c8df394f02d68ae48a79a50258682c09dac13b8b))
+* **instrumentation-router:** add support for router 2.x ([#3442](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3442)) ([4ab5d39](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4ab5d392510439b3097b226b3508755654ab7725))
+
 ## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.56.0...instrumentation-router-v0.57.0) (2026-03-04)
 
 

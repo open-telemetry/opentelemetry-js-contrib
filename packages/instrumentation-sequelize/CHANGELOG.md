@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-sequelize-v0.6.0...instrumentation-sequelize-v0.7.0) (2026-03-25)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3450](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3450)) ([c8df394](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c8df394f02d68ae48a79a50258682c09dac13b8b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.60.0 to ^0.61.0
+
 ## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-sequelize-v0.5.0...instrumentation-sequelize-v0.6.0) (2026-03-04)
 
 
