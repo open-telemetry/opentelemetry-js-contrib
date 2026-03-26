@@ -48,6 +48,14 @@ describe('nestjs-core', () => {
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
   instrumentation.setTracerProvider(provider);
+
+  it('should keep microservice instrumentation disabled', () => {
+    const moduleDefinitions = instrumentation.init() as any[];
+
+    assert(Array.isArray(moduleDefinitions));
+    assert.strictEqual(moduleDefinitions.length, 1);
+  });
+
   let contextManager: AsyncLocalStorageContextManager;
   let app: App;
   let request = async (path: string): Promise<unknown> => {

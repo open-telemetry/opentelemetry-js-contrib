@@ -43,7 +43,7 @@ import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
 import { MongooseInstrumentation } from '@opentelemetry/instrumentation-mongoose';
 import { MySQL2Instrumentation } from '@opentelemetry/instrumentation-mysql2';
 import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
-import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
+import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs';
 import { NetInstrumentation } from '@opentelemetry/instrumentation-net';
 import { OpenAIInstrumentation } from '@opentelemetry/instrumentation-openai';
 import { OracleInstrumentation } from '@opentelemetry/instrumentation-oracledb';
@@ -121,7 +121,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-mongoose': MongooseInstrumentation,
   '@opentelemetry/instrumentation-mysql2': MySQL2Instrumentation,
   '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
-  '@opentelemetry/instrumentation-nestjs-core': NestInstrumentation,
+  '@opentelemetry/instrumentation-nestjs': NestInstrumentation,
   '@opentelemetry/instrumentation-net': NetInstrumentation,
   '@opentelemetry/instrumentation-openai': OpenAIInstrumentation,
   '@opentelemetry/instrumentation-oracledb': OracleInstrumentation,

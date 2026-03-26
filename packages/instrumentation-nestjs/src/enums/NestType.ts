@@ -14,5 +14,11 @@
  * limitations under the License.
  */
 
-export { NestInstrumentation } from './instrumentation';
-export { AttributeNames } from '@opentelemetry/instrumentation-nestjs';
+export enum NestType {
+  APP_CREATION = 'app_creation',
+  MICROSERVICE_CREATION = 'microservice_creation',
+  REQUEST_CONTEXT = 'request_context',
+  REQUEST_HANDLER = 'handler',
+  MESSAGE_CONTEXT = 'message_context',
+  MESSAGE_HANDLER = 'message_handler',
+}

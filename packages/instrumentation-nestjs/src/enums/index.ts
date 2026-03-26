@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export { NestInstrumentation } from './instrumentation';
-export { AttributeNames } from '@opentelemetry/instrumentation-nestjs';
+export { AttributeNames } from './AttributeNames';
+export { NestType } from './NestType';

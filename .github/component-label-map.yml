@@ -161,6 +161,10 @@ pkg:instrumentation-nestjs-core:
   - changed-files:
       - any-glob-to-any-file:
           - packages/instrumentation-nestjs-core/**
+pkg:instrumentation-nestjs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/instrumentation-nestjs/**
 pkg:instrumentation-net:
   - changed-files:
       - any-glob-to-any-file:
