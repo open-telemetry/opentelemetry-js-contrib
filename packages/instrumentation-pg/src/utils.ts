@@ -381,28 +381,36 @@ export function updateCounter(
   pool: PgPoolExtended,
   connectionCount: UpDownCounter,
   connectionPendingRequests: UpDownCounter,
-  latestCounter: poolConnectionsCounter
-): poolConnectionsCounter {
+  connCountFromPoolName: { [name: string]: poolConnectionsCounter }
+) {
   const all = pool.totalCount;
   const pending = pool.waitingCount;
   const idle = pool.idleCount;
   const used = all - idle;
 
-  connectionCount.add(used - latestCounter.used, {
+  let connCount = connCountFromPoolName[poolName];
+  if (!connCount) {
+    connCount = { used: 0, idle: 0, pending: 0 };
+    connCountFromPoolName[poolName] = connCount;
+  }
+
+  connectionCount.add(used - connCount.used, {
     [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_USED,
     [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
   });
 
-  connectionCount.add(idle - latestCounter.idle, {
+  connectionCount.add(idle - connCount.idle, {
     [ATTR_DB_CLIENT_CONNECTION_STATE]: DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
     [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
   });
 
-  connectionPendingRequests.add(pending - latestCounter.pending, {
+  connectionPendingRequests.add(pending - connCount.pending, {
     [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
   });
 
-  return { used: used, idle: idle, pending: pending };
+  connCount.used = used;
+  connCount.idle = idle;
+  connCount.pending = pending;
 }
 
 export function patchCallbackPGPool(
