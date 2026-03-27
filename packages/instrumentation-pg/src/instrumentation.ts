@@ -340,18 +340,18 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         // to properly narrow arg0, but TS 4.3.5 does not.
         const queryConfig = firstArgIsString
           ? {
-              text: arg0 as string,
-              values: Array.isArray(args[1]) ? args[1] : undefined,
-            }
+            text: arg0 as string,
+            values: Array.isArray(args[1]) ? args[1] : undefined,
+          }
           : firstArgIsQueryObjectWithText
             ? {
-                ...(arg0 as any),
-                name: arg0.name,
-                text: arg0.text,
-                values:
-                  (arg0 as any).values ??
-                  (Array.isArray(args[1]) ? args[1] : undefined),
-              }
+              ...(arg0 as any),
+              name: arg0.name,
+              text: arg0.text,
+              values:
+                (arg0 as any).values ??
+                (Array.isArray(args[1]) ? args[1] : undefined),
+            }
             : undefined;
 
         const attributes: Attributes = {
@@ -571,6 +571,35 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     });
     pgPool[EVENT_LISTENERS_SET] = true;
   }
+  private _wrapClientRelease(client: any) {
+    if (!client || typeof client.release !== 'function') return;
+    if (isWrapped(client.release)) return;
+
+    const plugin = this;
+
+    this._wrap(client, 'release', (originalRelease: Function) => {
+      return function release(this: any, ...args: any[]) {
+        const span = plugin.tracer.startSpan(SpanNames.POOL_RELEASE, {
+          kind: SpanKind.CLIENT,
+          attributes: utils.getSemanticAttributesFromPoolConnection(
+            this.connectionParameters ?? {},
+            plugin._semconvStability
+          ),
+        });
+
+        try {
+          const result = originalRelease.apply(this, args);
+          span.end();
+          return result;
+        } catch (err) {
+          span.recordException(err as Error);
+          span.setStatus({ code: SpanStatusCode.ERROR });
+          span.end();
+          throw err;
+        }
+      };
+    });
+  }
 
   private _getPoolConnectPatch() {
     const plugin = this;
@@ -617,7 +646,32 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           }
         );
 
-        return handleConnectResult(span, connectResult);
+        if (!(connectResult instanceof Promise)) {
+          span.end();
+          return connectResult;
+        }
+
+        return context.bind(
+          context.active(),
+          (connectResult as Promise<any>)
+            .then(client => {
+              span.end();
+
+              // 🔴 THIS is where release will be instrumented
+              plugin._wrapClientRelease(client);
+
+              return client;
+            })
+            .catch(err => {
+              span.recordException(err as Error);
+              span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message: utils.getErrorMessage(err),
+              });
+              span.end();
+              throw err;
+            })
+        );
       };
     };
   }
@@ -632,9 +686,9 @@ function handleConnectResult(span: Span, connectResult: unknown) {
   return context.bind(
     context.active(),
     connectResultPromise
-      .then(result => {
+      .then((client: any) => {
         span.end();
-        return result;
+        return client;
       })
       .catch((error: unknown) => {
         if (error instanceof Error) {
