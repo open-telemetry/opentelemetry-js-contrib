@@ -196,3 +196,13 @@ export const NODEJS_EVENTLOOP_STATE_VALUE_ACTIVE = 'active' as const;
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const NODEJS_EVENTLOOP_STATE_VALUE_IDLE = 'idle' as const;
+
+/**
+ * Maximum heap size allowed by the V8 engine.
+ *
+ * @note The value can be retrieved from value `heap_size_limit` of [`v8.getHeapStatistics()`](https://nodejs.org/api/v8.html#v8getheapstatistics).
+ * This is the absolute ceiling the heap can grow to, controlled by `--max-old-space-size` or V8 defaults.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_V8JS_MEMORY_HEAP_MAX = 'v8js.memory.heap.max' as const;

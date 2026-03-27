@@ -23,6 +23,7 @@ import { BaseCollector } from './baseCollector';
 import {
   ATTR_V8JS_HEAP_SPACE_NAME,
   METRIC_V8JS_MEMORY_HEAP_LIMIT,
+  METRIC_V8JS_MEMORY_HEAP_MAX,
   METRIC_V8JS_MEMORY_HEAP_USED,
   METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
   METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE,
@@ -59,9 +60,18 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
       }
     );
 
+    const heapMax = meter.createObservableGauge(METRIC_V8JS_MEMORY_HEAP_MAX, {
+      description:
+        'Maximum heap size allowed by the V8 engine, as set by --max-old-space-size or V8 defaults.',
+      unit: 'By',
+    });
+
     meter.addBatchObservableCallback(
       observableResult => {
         if (!this._config.enabled) return;
+
+        const heapStats = v8.getHeapStatistics();
+        observableResult.observe(heapMax, heapStats.heap_size_limit);
 
         const data = this.scrape();
         if (data === undefined) return;
@@ -93,7 +103,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
           );
         }
       },
-      [heapLimit, heapSpaceUsed, heapSpaceAvailable, heapSpacePhysical]
+      [heapMax, heapLimit, heapSpaceUsed, heapSpaceAvailable, heapSpacePhysical]
     );
   }
 
