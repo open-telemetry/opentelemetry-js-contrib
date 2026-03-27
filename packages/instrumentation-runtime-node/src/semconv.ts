@@ -44,6 +44,14 @@ export const ATTR_V8JS_GC_TYPE = 'v8js.gc.type' as const;
 export const ATTR_V8JS_HEAP_SPACE_NAME = 'v8js.heap.space.name' as const;
 
 /**
+ * The type of Active Resource.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_V8JS_ACTIVE_RESOURCE_TYPE =
+  'v8js.active_resource.type' as const;
+
+/**
  * Event loop maximum delay.
  *
  * @note Value can be retrieved from value `histogram.max` of [`perf_hooks.monitorEventLoopDelay([options])`](https://nodejs.org/api/perf_hooks.html#perf_hooksmonitoreventloopdelayoptions)
@@ -178,6 +186,15 @@ export const METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE =
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const METRIC_V8JS_MEMORY_HEAP_USED = 'v8js.memory.heap.used' as const;
+
+/**
+ * Types of the active resources that are currently keeping the event loop alive.
+ *
+ * @note The value can be retrieved from [`process.getActiveResourcesInfo()`](https://nodejs.org/api/process.html#processgetactiveresourcesinfo)
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_V8JS_ACTIVE_RESOURCE = 'v8js.active_resource' as const;
 
 /**
  * Enum value "active" for attribute {@link ATTR_NODEJS_EVENTLOOP_STATE}.
