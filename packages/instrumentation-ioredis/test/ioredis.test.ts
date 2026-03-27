@@ -40,6 +40,7 @@ import {
   IORedisRequestHookInformation,
 } from '../src/types';
 import {
+  ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_SYSTEM_NAME,
   ATTR_EXCEPTION_MESSAGE,
@@ -266,6 +267,7 @@ describe('ioredis', () => {
             ...DEFAULT_STABLE_ATTRIBUTES,
             [ATTR_DB_STATEMENT]: `${command.name} ${command.expectedDbStatement}`,
             [ATTR_DB_QUERY_TEXT]: `${command.name} ${command.expectedDbStatement}`,
+            [ATTR_DB_OPERATION_NAME]: `${command.name}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -298,6 +300,7 @@ describe('ioredis', () => {
           ...DEFAULT_STABLE_ATTRIBUTES,
           [ATTR_DB_STATEMENT]: `hset ${hashKeyName} random [1 other arguments]`,
           [ATTR_DB_QUERY_TEXT]: `hset ${hashKeyName} random [1 other arguments]`,
+          [ATTR_DB_OPERATION_NAME]: 'hset',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -360,6 +363,7 @@ describe('ioredis', () => {
           ...DEFAULT_STABLE_ATTRIBUTES,
           [ATTR_DB_STATEMENT]: 'scan 0 MATCH test-* COUNT 1000',
           [ATTR_DB_QUERY_TEXT]: 'scan 0 MATCH test-* COUNT 1000',
+          [ATTR_DB_OPERATION_NAME]: 'scan',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
@@ -459,6 +463,7 @@ describe('ioredis', () => {
           ...DEFAULT_STABLE_ATTRIBUTES,
           [ATTR_DB_STATEMENT]: 'multi',
           [ATTR_DB_QUERY_TEXT]: 'multi',
+          [ATTR_DB_OPERATION_NAME]: 'multi',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -478,6 +483,17 @@ describe('ioredis', () => {
               assert.strictEqual(endedSpans[1].name, 'set');
               assert.strictEqual(endedSpans[2].name, 'get');
               assert.strictEqual(endedSpans[3].name, 'exec');
+              assert.ok(
+                endedSpans[1].attributes[ATTR_DB_OPERATION_NAME] ===
+                  'MULTI set' ||
+                  endedSpans[1].attributes[ATTR_DB_OPERATION_NAME] === 'set'
+              );
+
+              assert.ok(
+                endedSpans[2].attributes[ATTR_DB_OPERATION_NAME] ===
+                  'MULTI get' ||
+                  endedSpans[2].attributes[ATTR_DB_OPERATION_NAME] === 'get'
+              );
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -497,6 +513,7 @@ describe('ioredis', () => {
           ...DEFAULT_STABLE_ATTRIBUTES,
           [ATTR_DB_STATEMENT]: 'set foo [1 other arguments]',
           [ATTR_DB_QUERY_TEXT]: 'set foo [1 other arguments]',
+          [ATTR_DB_OPERATION_NAME]: 'PIPELINE set',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -514,6 +531,20 @@ describe('ioredis', () => {
             assert.strictEqual(endedSpans[0].name, 'set');
             assert.strictEqual(endedSpans[1].name, 'del');
             assert.strictEqual(endedSpans[2].name, 'test span');
+            assert.ok(
+              endedSpans[0].attributes[ATTR_DB_OPERATION_NAME] ===
+                'PIPELINE set' ||
+                endedSpans[0].attributes[ATTR_DB_OPERATION_NAME] === 'set'
+            );
+
+            assert.ok(
+              endedSpans[1].attributes[ATTR_DB_OPERATION_NAME] ===
+                'PIPELINE del' ||
+                endedSpans[1].attributes[ATTR_DB_OPERATION_NAME] === 'del'
+            );
+            attributes[ATTR_DB_OPERATION_NAME] =
+              endedSpans[0].attributes[ATTR_DB_OPERATION_NAME] || 'set';
+
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -533,6 +564,7 @@ describe('ioredis', () => {
           ...DEFAULT_STABLE_ATTRIBUTES,
           [ATTR_DB_STATEMENT]: `get ${testKeyName}`,
           [ATTR_DB_QUERY_TEXT]: `get ${testKeyName}`,
+          [ATTR_DB_OPERATION_NAME]: 'get',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -564,6 +596,7 @@ describe('ioredis', () => {
           ...DEFAULT_STABLE_ATTRIBUTES,
           [ATTR_DB_STATEMENT]: `del ${testKeyName}`,
           [ATTR_DB_QUERY_TEXT]: `del ${testKeyName}`,
+          [ATTR_DB_OPERATION_NAME]: 'del',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -600,6 +633,7 @@ describe('ioredis', () => {
           ...DEFAULT_STABLE_ATTRIBUTES,
           [ATTR_DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
           [ATTR_DB_QUERY_TEXT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
+          [ATTR_DB_OPERATION_NAME]: 'evalsha',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -709,6 +743,7 @@ describe('ioredis', () => {
             ...DEFAULT_STABLE_ATTRIBUTES,
             [ATTR_DB_STATEMENT]: `set ${testKeyName} [1 other arguments]`,
             [ATTR_DB_QUERY_TEXT]: `set ${testKeyName} [1 other arguments]`,
+            [ATTR_DB_OPERATION_NAME]: 'set',
           },
           [],
           unsetStatus
@@ -789,6 +824,7 @@ describe('ioredis', () => {
             ...DEFAULT_STABLE_ATTRIBUTES,
             [ATTR_DB_STATEMENT]: dbQueryText,
             [ATTR_DB_QUERY_TEXT]: dbQueryText,
+            [ATTR_DB_OPERATION_NAME]: `${command.name}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -1110,6 +1146,7 @@ describe('ioredis', () => {
           {
             ...DEFAULT_STABLE_ATTRIBUTES,
             [ATTR_DB_QUERY_TEXT]: `set ${testKeyName} [1 other arguments]`,
+            [ATTR_DB_OPERATION_NAME]: 'set',
           },
           [],
           unsetStatus
