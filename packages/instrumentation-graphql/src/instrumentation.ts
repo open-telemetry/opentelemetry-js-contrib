@@ -482,8 +482,11 @@ export class GraphQLInstrumentation extends InstrumentationBase<GraphQLInstrumen
     );
 
     if (schema) {
-      wrapFields(schema.getQueryType(), this.tracer, () => this.getConfig());
-      wrapFields(schema.getMutationType(), this.tracer, () => this.getConfig());
+      // Share a single visited Set across Query and Mutation so that types
+      // reachable from both are only traversed once per execute call.
+      const visited = new Set<graphqlTypes.GraphQLObjectType>();
+      wrapFields(schema.getQueryType(), this.tracer, () => this.getConfig(), visited);
+      wrapFields(schema.getMutationType(), this.tracer, () => this.getConfig(), visited);
     }
 
     return {
