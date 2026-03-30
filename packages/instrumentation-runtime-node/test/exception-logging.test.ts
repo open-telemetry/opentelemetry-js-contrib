@@ -39,7 +39,9 @@ describe('runtime exception logging', () => {
     const loggerProvider = new LoggerProvider({
       processors: [new SimpleLogRecordProcessor(exporter)],
     });
-    instrumentation = new RuntimeNodeInstrumentation();
+    instrumentation = new RuntimeNodeInstrumentation({
+      captureUncaughtException: true,
+    });
     instrumentation.setLoggerProvider(loggerProvider);
     instrumentation.enable();
   });
@@ -148,6 +150,7 @@ describe('runtime exception logging', () => {
   it('applies custom attributes and passes event type', () => {
     instrumentation.disable();
     instrumentation = new RuntimeNodeInstrumentation({
+      captureUncaughtException: true,
       applyCustomAttributes: (_error, eventType) => ({
         'app.event.type': eventType,
       }),
@@ -199,6 +202,7 @@ describe('runtime exception logging', () => {
   it('keeps emitting when applyCustomAttributes throws', () => {
     instrumentation.disable();
     instrumentation = new RuntimeNodeInstrumentation({
+      captureUncaughtException: true,
       applyCustomAttributes: () => {
         throw new Error('boom');
       },
@@ -224,6 +228,7 @@ describe('runtime exception logging', () => {
   it('handles applyCustomAttributes returning undefined', () => {
     instrumentation.disable();
     const config = {
+      captureUncaughtException: true,
       applyCustomAttributes: () => undefined,
     } as unknown as RuntimeNodeInstrumentationConfig;
     instrumentation = new RuntimeNodeInstrumentation(config);
@@ -326,7 +331,9 @@ describe('runtime exception logging', () => {
       return originalForceFlush();
     };
 
-    instrumentation = new RuntimeNodeInstrumentation();
+    instrumentation = new RuntimeNodeInstrumentation({
+      captureUncaughtException: true,
+    });
     instrumentation.setLoggerProvider(loggerProvider);
     instrumentation.enable();
 
@@ -349,7 +356,9 @@ describe('runtime exception logging', () => {
     });
     loggerProvider.forceFlush = () => Promise.reject(new Error('flush failed'));
 
-    instrumentation = new RuntimeNodeInstrumentation();
+    instrumentation = new RuntimeNodeInstrumentation({
+      captureUncaughtException: true,
+    });
     instrumentation.setLoggerProvider(loggerProvider);
     instrumentation.enable();
 

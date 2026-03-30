@@ -21,7 +21,7 @@ export interface RuntimeNodeInstrumentationConfig
   monitoringPrecision?: number;
   /**
    * Capture uncaught exceptions via process 'uncaughtExceptionMonitor' event.
-   * Enabled by default.
+   * Disabled by default.
    * @experimental
    */
   captureUncaughtException?: boolean;
