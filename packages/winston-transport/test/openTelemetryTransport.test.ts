@@ -85,6 +85,177 @@ describe('OpenTelemetryTransportV3', () => {
     assert.strictEqual(logRecords[0].attributes['err'], undefined);
   });
 
+  it('emit LogRecord with exception from string error field', () => {
+    const transport = new OpenTelemetryTransportV3();
+    transport.log({ message: kMessage, error: 'boom' }, () => {});
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].body, kMessage);
+    assert.strictEqual(logRecords[0].attributes['exception.message'], 'boom');
+    assert.strictEqual(logRecords[0].attributes['error'], undefined);
+  });
+
+  it('emit LogRecord with exception from coded error object', () => {
+    const transport = new OpenTelemetryTransportV3();
+    transport.log({ message: kMessage, error: { code: 500 } }, () => {});
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].body, kMessage);
+    assert.strictEqual(logRecords[0].attributes['exception.type'], '500');
+    assert.strictEqual(logRecords[0].attributes['error'], undefined);
+  });
+
+  it('keeps winston exception-handler metadata attributes', () => {
+    const transport = new OpenTelemetryTransportV3();
+    const err = new Error('boom');
+    transport.log(
+      {
+        message: 'uncaughtException: boom',
+        error: err,
+        stack: err.stack,
+        exception: true,
+        date: 'Thu Jan 01 1970 00:00:00 GMT+0000 (UTC)',
+        process: { pid: 1234 },
+        os: { uptime: 10 },
+        trace: [{ file: 'app.js', line: 1 }],
+        [Symbol.for('level')]: 'error',
+      },
+      () => {}
+    );
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].attributes['exception.message'], 'boom');
+    assert.strictEqual(logRecords[0].attributes['exception.type'], 'Error');
+    assert.deepStrictEqual(logRecords[0].attributes['process'], { pid: 1234 });
+    assert.deepStrictEqual(logRecords[0].attributes['os'], { uptime: 10 });
+    assert.deepStrictEqual(logRecords[0].attributes['trace'], [
+      { file: 'app.js', line: 1 },
+    ]);
+    assert.strictEqual(logRecords[0].attributes['exception'], true);
+    assert.strictEqual(
+      logRecords[0].attributes['date'],
+      'Thu Jan 01 1970 00:00:00 GMT+0000 (UTC)'
+    );
+    assert.strictEqual(logRecords[0].attributes['error'], undefined);
+  });
+
+  it('keeps error.cause as attribute when error is promoted to exception', () => {
+    const transport = new OpenTelemetryTransportV3();
+    const cause = new Error('root cause');
+    const error = new Error('boom') as Error & { cause?: Error };
+    error.cause = cause;
+
+    transport.log({ message: kMessage, error }, () => {});
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].attributes['exception.message'], 'boom');
+    assert.strictEqual(logRecords[0].attributes['exception.type'], 'Error');
+    assert.strictEqual(logRecords[0].attributes['error'], undefined);
+    assert.strictEqual(
+      logRecords[0].attributes['error.cause.message'],
+      'root cause'
+    );
+    assert.strictEqual(logRecords[0].attributes['error.cause.type'], 'Error');
+    assert.ok(
+      typeof logRecords[0].attributes['error.cause.stacktrace'] === 'string'
+    );
+  });
+
+  it('keeps error.cause.code when cause has only code', () => {
+    const transport = new OpenTelemetryTransportV3();
+    const error = new Error('boom') as Error & { cause?: unknown };
+    error.cause = { code: 'ECONNRESET' };
+
+    transport.log({ message: kMessage, error }, () => {});
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(
+      logRecords[0].attributes['error.cause.code'],
+      'ECONNRESET'
+    );
+  });
+
+  it('stringifies non-object, non-string/number error.cause values', () => {
+    const transport = new OpenTelemetryTransportV3();
+    const error = new Error('boom') as Error & { cause?: unknown };
+    error.cause = true;
+
+    transport.log({ message: kMessage, error }, () => {});
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].attributes['error.cause'], 'true');
+  });
+
+  it('keeps primitive string error.cause', () => {
+    const transport = new OpenTelemetryTransportV3();
+    const error = new Error('boom') as Error & { cause?: unknown };
+    error.cause = 'network timeout';
+
+    transport.log({ message: kMessage, error }, () => {});
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(
+      logRecords[0].attributes['error.cause'],
+      'network timeout'
+    );
+  });
+
+  it('does not set cause attributes when error.cause is null', () => {
+    const transport = new OpenTelemetryTransportV3();
+    const error = new Error('boom') as Error & { cause?: unknown };
+    error.cause = null;
+
+    transport.log({ message: kMessage, error }, () => {});
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].attributes['error.cause'], undefined);
+    assert.strictEqual(
+      logRecords[0].attributes['error.cause.message'],
+      undefined
+    );
+  });
+
+  it('stringifies object cause when no supported cause fields exist', () => {
+    const transport = new OpenTelemetryTransportV3();
+    const error = new Error('boom') as Error & { cause?: unknown };
+    error.cause = {};
+
+    transport.log({ message: kMessage, error }, () => {});
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(
+      logRecords[0].attributes['error.cause'],
+      '[object Object]'
+    );
+  });
+
+  it('emit LogRecord with exception from splat args', () => {
+    const transport = new OpenTelemetryTransportV3();
+    const err = new Error('boom');
+    transport.log(
+      {
+        message: kMessage,
+        [Symbol.for('splat')]: [err, 'ignored'],
+        [Symbol.for('level')]: 'error',
+      },
+      () => {}
+    );
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].attributes['exception.message'], 'boom');
+    assert.strictEqual(logRecords[0].attributes['exception.type'], 'Error');
+  });
+
   it('emit LogRecord with exception from stack field', () => {
     const transport = new OpenTelemetryTransportV3();
     transport.log(
@@ -104,6 +275,29 @@ describe('OpenTelemetryTransportV3', () => {
       logRecords[0].attributes['exception.stacktrace'],
       'Error: boom\n    at test'
     );
+    assert.strictEqual(logRecords[0].attributes['stack'], undefined);
+  });
+
+  it('emit LogRecord with exception from stack field and explicit code/name', () => {
+    const transport = new OpenTelemetryTransportV3();
+    transport.log(
+      {
+        message: 'boom',
+        stack: 'TypeError: boom\n    at test',
+        name: 'CustomErrorName',
+        code: 'E_CUSTOM',
+        [Symbol.for('level')]: 'error',
+      },
+      () => {}
+    );
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].body, 'boom');
+    assert.strictEqual(logRecords[0].attributes['exception.type'], 'E_CUSTOM');
+    assert.strictEqual(logRecords[0].attributes['exception.message'], 'boom');
+    assert.strictEqual(logRecords[0].attributes['name'], undefined);
+    assert.strictEqual(logRecords[0].attributes['code'], undefined);
     assert.strictEqual(logRecords[0].attributes['stack'], undefined);
   });
 
