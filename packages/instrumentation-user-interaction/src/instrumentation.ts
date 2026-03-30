@@ -53,6 +53,11 @@ function defaultShouldPreventSpanCreation() {
 export class UserInteractionInstrumentation extends InstrumentationBase<UserInteractionInstrumentationConfig> {
   readonly version = PACKAGE_VERSION;
   readonly moduleName: string = 'user-interaction';
+  // NOTE: `_enabled` is a private property of the base class for nodejs platform
+  // but not for browser so we cannot access it. TS complains if we use it because
+  // we get the types of the nodejs implementation (we cannot override)
+  // As a workaround we use a new flag until types are fixed or design is updated
+  private _isEnabled = false;
   private _spansData = new WeakMap<api.Span, SpanData>();
   declare private _zonePatched?: boolean;
   // for addEventListener/removeEventListener state
@@ -119,6 +124,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     eventName: EventName,
     parentSpan?: api.Span
   ): api.Span | undefined {
+    if (!this._isEnabled) {
+      return undefined;
+    }
     if (!(element instanceof HTMLElement)) {
       return undefined;
     }
@@ -378,8 +386,6 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * Patches the history api
    */
   _patchHistoryApi() {
-    this._unpatchHistoryApi();
-
     this._wrap(history, 'replaceState', this._patchHistoryMethod());
     this._wrap(history, 'pushState', this._patchHistoryMethod());
     this._wrap(history, 'back', this._patchHistoryMethod());
@@ -403,17 +409,6 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
         return result;
       };
     };
-  }
-
-  /**
-   * unpatch the history api methods
-   */
-  _unpatchHistoryApi() {
-    if (isWrapped(history.replaceState)) this._unwrap(history, 'replaceState');
-    if (isWrapped(history.pushState)) this._unwrap(history, 'pushState');
-    if (isWrapped(history.back)) this._unwrap(history, 'back');
-    if (isWrapped(history.forward)) this._unwrap(history, 'forward');
-    if (isWrapped(history.go)) this._unwrap(history, 'go');
   }
 
   /**
@@ -575,6 +570,14 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * implements enable function
    */
   override enable() {
+    if (this._isEnabled) {
+      return;
+    }
+    this._isEnabled = true;
+    // If already patched do nothing
+    if (typeof this._zonePatched === 'boolean') {
+      return;
+    }
     const ZoneWithPrototype = this._getZoneWithPrototype();
     this._diag.debug(
       'applying patch to',
@@ -645,36 +648,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * implements unpatch function
    */
   override disable() {
-    const ZoneWithPrototype = this._getZoneWithPrototype();
-    this._diag.debug(
-      'removing patch from',
-      this.moduleName,
-      this.version,
-      'zone:',
-      !!ZoneWithPrototype
-    );
-    if (ZoneWithPrototype && this._zonePatched) {
-      if (isWrapped(ZoneWithPrototype.prototype.runTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'runTask');
-      }
-      if (isWrapped(ZoneWithPrototype.prototype.scheduleTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'scheduleTask');
-      }
-      if (isWrapped(ZoneWithPrototype.prototype.cancelTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
-      }
-    } else {
-      const targets = this._getPatchableEventTargets();
-      targets.forEach(target => {
-        if (isWrapped(target.addEventListener)) {
-          this._unwrap(target, 'addEventListener');
-        }
-        if (isWrapped(target.removeEventListener)) {
-          this._unwrap(target, 'removeEventListener');
-        }
-      });
+    if (!this._isEnabled) {
+      return;
     }
-    this._unpatchHistoryApi();
+    this._isEnabled = false;
   }
 
   /**
