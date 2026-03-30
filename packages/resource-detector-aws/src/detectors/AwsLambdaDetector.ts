@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
+import { context } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import {
   ResourceDetector,
   DetectedResource,
   DetectedResourceAttributes,
 } from '@opentelemetry/resources';
+import * as http from 'http';
 import {
   ATTR_AWS_LOG_GROUP_NAMES,
+  ATTR_CLOUD_AVAILABILITY_ZONE,
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_REGION,
@@ -32,12 +36,21 @@ import {
   CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
 } from '../semconv';
 
+interface LambdaExecutionEnvironmentMetadata {
+  readonly AvailabilityZoneID?: string;
+}
+
 /**
  * The AwsLambdaDetector can be used to detect if a process is running in AWS Lambda
  * and return a {@link Resource} populated with data about the environment.
  * Returns an empty Resource if detection fails.
  */
 export class AwsLambdaDetector implements ResourceDetector {
+  public readonly AWS_LAMBDA_EXECUTION_ENVIRONMENT_METADATA_PATH =
+    '/2026-01-15/metadata/execution-environment';
+  public readonly AWS_LAMBDA_METADATA_AUTH_HEADER = 'Authorization';
+  public readonly MILLISECOND_TIME_OUT = 1000;
+
   public detect(): DetectedResource {
     // Check if running inside AWS Lambda environment
     const executionEnv = process.env.AWS_EXECUTION_ENV;
@@ -72,7 +85,85 @@ export class AwsLambdaDetector implements ResourceDetector {
       attributes[ATTR_FAAS_INSTANCE] = logStreamName;
     }
 
+    const metadataApi = process.env.AWS_LAMBDA_METADATA_API;
+    const metadataToken = process.env.AWS_LAMBDA_METADATA_TOKEN;
+    if (metadataApi && metadataToken) {
+      attributes[ATTR_CLOUD_AVAILABILITY_ZONE] = context.with(
+        suppressTracing(context.active()),
+        () => this._fetchAvailabilityZone(metadataApi, metadataToken)
+      );
+    }
+
     return { attributes };
+  }
+
+  private async _fetchAvailabilityZone(
+    metadataApi: string,
+    metadataToken: string
+  ): Promise<string | undefined> {
+    try {
+      const metadata = await this._fetchExecutionEnvironmentMetadata(
+        metadataApi,
+        metadataToken
+      );
+      return metadata.AvailabilityZoneID;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async _fetchExecutionEnvironmentMetadata(
+    metadataApi: string,
+    metadataToken: string
+  ): Promise<LambdaExecutionEnvironmentMetadata> {
+    const url = new URL(
+      `http://${metadataApi}${this.AWS_LAMBDA_EXECUTION_ENVIRONMENT_METADATA_PATH}`
+    );
+    const metadata = await this._fetchString(url, {
+      method: 'GET',
+      timeout: this.MILLISECOND_TIME_OUT,
+      headers: {
+        [this.AWS_LAMBDA_METADATA_AUTH_HEADER]: `Bearer ${metadataToken}`,
+      },
+    });
+
+    return JSON.parse(metadata);
+  }
+
+  private async _fetchString(
+    url: URL,
+    options: http.RequestOptions
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        req.abort();
+        reject(new Error('Lambda metadata api request timed out.'));
+      }, this.MILLISECOND_TIME_OUT);
+
+      const req = http.request(url, options, res => {
+        clearTimeout(timeoutId);
+        const { statusCode } = res;
+        res.setEncoding('utf8');
+        let rawData = '';
+        res.on('data', chunk => (rawData += chunk));
+        res.on('end', () => {
+          if (statusCode && statusCode >= 200 && statusCode < 300) {
+            resolve(rawData);
+          } else {
+            reject(
+              new Error('Failed to load page, status code: ' + statusCode)
+            );
+          }
+        });
+      });
+
+      req.on('error', err => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
+
+      req.end();
+    });
   }
 }
 

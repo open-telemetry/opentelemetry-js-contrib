@@ -15,11 +15,13 @@
  */
 
 import * as assert from 'assert';
+import * as nock from 'nock';
 import { detectResources } from '@opentelemetry/resources';
 import { assertEmptyResource } from '@opentelemetry/contrib-test-utils';
 import { awsLambdaDetector } from '../../src';
 import {
   ATTR_AWS_LOG_GROUP_NAMES,
+  ATTR_CLOUD_AVAILABILITY_ZONE,
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_REGION,
@@ -31,15 +33,22 @@ import {
   CLOUD_PLATFORM_VALUE_AWS_LAMBDA,
 } from '../../src/semconv';
 
+const AWS_LAMBDA_METADATA_API = '169.254.100.1:9001';
+const AWS_LAMBDA_METADATA_TOKEN = 'test-token';
+const AWS_LAMBDA_METADATA_HOST = `http://${AWS_LAMBDA_METADATA_API}`;
+
 describe('awsLambdaDetector', () => {
   let oldEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
     oldEnv = { ...process.env };
+    nock.disableNetConnect();
+    nock.cleanAll();
   });
 
   afterEach(() => {
     process.env = oldEnv;
+    nock.enableNetConnect();
   });
 
   describe('on lambda', () => {
@@ -51,8 +60,23 @@ describe('awsLambdaDetector', () => {
       process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE = '128';
       process.env.AWS_LAMBDA_LOG_GROUP_NAME = '/aws/lambda/name';
       process.env.AWS_LAMBDA_LOG_STREAM_NAME = '2024/03/14/[$LATEST]123456';
+      process.env.AWS_LAMBDA_METADATA_API = AWS_LAMBDA_METADATA_API;
+      process.env.AWS_LAMBDA_METADATA_TOKEN = AWS_LAMBDA_METADATA_TOKEN;
+
+      const scope = nock(AWS_LAMBDA_METADATA_HOST)
+        .get(awsLambdaDetector.AWS_LAMBDA_EXECUTION_ENVIRONMENT_METADATA_PATH)
+        .matchHeader(
+          awsLambdaDetector.AWS_LAMBDA_METADATA_AUTH_HEADER,
+          `Bearer ${AWS_LAMBDA_METADATA_TOKEN}`
+        )
+        .reply(200, {
+          AvailabilityZoneID: 'use1-az1',
+        });
 
       const resource = detectResources({ detectors: [awsLambdaDetector] });
+      await resource.waitForAsyncAttributes?.();
+
+      scope.done();
 
       assert.strictEqual(
         resource.attributes[ATTR_CLOUD_PROVIDER],
@@ -63,6 +87,10 @@ describe('awsLambdaDetector', () => {
         CLOUD_PLATFORM_VALUE_AWS_LAMBDA
       );
       assert.strictEqual(resource.attributes[ATTR_CLOUD_REGION], 'us-east-1');
+      assert.strictEqual(
+        resource.attributes[ATTR_CLOUD_AVAILABILITY_ZONE],
+        'use1-az1'
+      );
       assert.strictEqual(resource.attributes[ATTR_FAAS_NAME], 'name');
       assert.strictEqual(resource.attributes[ATTR_FAAS_VERSION], 'v1');
       assert.strictEqual(
@@ -76,6 +104,49 @@ describe('awsLambdaDetector', () => {
       assert.deepStrictEqual(resource.attributes[ATTR_AWS_LOG_GROUP_NAMES], [
         '/aws/lambda/name',
       ]);
+    });
+
+    it('keeps env-based attributes when metadata endpoint request fails', async () => {
+      process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
+      process.env.AWS_REGION = 'us-east-1';
+      process.env.AWS_LAMBDA_FUNCTION_NAME = 'name';
+      process.env.AWS_LAMBDA_FUNCTION_VERSION = 'v1';
+      process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE = '128';
+      process.env.AWS_LAMBDA_METADATA_API = AWS_LAMBDA_METADATA_API;
+      process.env.AWS_LAMBDA_METADATA_TOKEN = AWS_LAMBDA_METADATA_TOKEN;
+
+      const scope = nock(AWS_LAMBDA_METADATA_HOST)
+        .get(awsLambdaDetector.AWS_LAMBDA_EXECUTION_ENVIRONMENT_METADATA_PATH)
+        .matchHeader(
+          awsLambdaDetector.AWS_LAMBDA_METADATA_AUTH_HEADER,
+          `Bearer ${AWS_LAMBDA_METADATA_TOKEN}`
+        )
+        .reply(500);
+
+      const resource = detectResources({ detectors: [awsLambdaDetector] });
+      await resource.waitForAsyncAttributes?.();
+
+      scope.done();
+
+      assert.strictEqual(
+        resource.attributes[ATTR_CLOUD_PROVIDER],
+        CLOUD_PROVIDER_VALUE_AWS
+      );
+      assert.strictEqual(
+        resource.attributes[ATTR_CLOUD_PLATFORM],
+        CLOUD_PLATFORM_VALUE_AWS_LAMBDA
+      );
+      assert.strictEqual(resource.attributes[ATTR_CLOUD_REGION], 'us-east-1');
+      assert.strictEqual(resource.attributes[ATTR_FAAS_NAME], 'name');
+      assert.strictEqual(resource.attributes[ATTR_FAAS_VERSION], 'v1');
+      assert.strictEqual(
+        resource.attributes[ATTR_FAAS_MAX_MEMORY],
+        128 * 1024 * 1024
+      );
+      assert.strictEqual(
+        resource.attributes[ATTR_CLOUD_AVAILABILITY_ZONE],
+        undefined
+      );
     });
   });
 

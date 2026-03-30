@@ -107,6 +107,7 @@ Populates `faas` and `cloud` for functions running on [AWS Lambda](https://aws.a
 
 | Resource Attribute | Description                                                         |
 |--------------------|---------------------------------------------------------------------|
+| cloud.availability_zone | Value of `AvailabilityZoneID` from the Lambda metadata endpoint (AZ ID, for example `use1-az1`) |
 | cloud.platform     | The cloud platform. In this context, it's always "aws_lambda"       |
 | cloud.provider     | The cloud provider. In this context, it's always "aws"              |
 | cloud.region       | Value of Process Environment Variable `AWS_REGION`                  |
