@@ -1,6 +1,25 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.61.0...instrumentation-express-v0.62.0) (2026-03-25)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3450](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3450)) ([c8df394](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c8df394f02d68ae48a79a50258682c09dac13b8b))
+
+
+### Bug Fixes
+
+* **instrumentation-express:** propagate baggage in middleware ([#3437](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3437)) ([92313a7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/92313a735387f27d15cbdc4a602cced6797a44ac))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.60.0 to ^0.61.0
+
 ## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.60.0...instrumentation-express-v0.61.0) (2026-03-04)
 
 

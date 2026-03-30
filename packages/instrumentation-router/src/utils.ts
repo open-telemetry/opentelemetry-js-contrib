@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import * as constants from './constants';
+import { RouterConstants } from './constants';
 import * as types from './internal-types';
 
 // Detect whether a function is a router package internal plumbing handler
-export const isInternal = (fn: Function) => {
+export const isInternal = (fn: Function, constants?: RouterConstants) => {
   // Note that both of those functions are sync
-  if (fn.name === 'handle' && fn.toString() === constants.ROUTER_HANDLE_FN) {
+  if (fn.name === 'handle' && fn.toString() === constants?.handleFunctionBody) {
     return true;
   }
-  if (fn.name === 'router' && fn.toString() === constants.ROUTE_ROUTER_FN) {
+  if (fn.name === 'router' && fn.toString() === constants?.routeFunctionBody) {
     return true;
   }
   return false;
