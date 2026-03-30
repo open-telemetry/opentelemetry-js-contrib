@@ -16,7 +16,7 @@
 
 /// <reference types="zone.js" />
 
-import { isWrapped, InstrumentationBase } from '@opentelemetry/instrumentation';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
 import * as api from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
@@ -57,9 +57,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
   // but not for browser so we cannot access it. TS complains if we use it because
   // we get the types of the nodejs implementation (we cannot override)
   // As a workaround we use a new flag until types are fixed or design is updated
-  private _isEnabled = false;
-  private _spansData = new WeakMap<api.Span, SpanData>();
+  declare private _isEnabled?: boolean;
   declare private _zonePatched?: boolean;
+  private _spansData = new WeakMap<api.Span, SpanData>();
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
     Function | EventListenerObject,
@@ -578,6 +578,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     if (typeof this._zonePatched === 'boolean') {
       return;
     }
+
     const ZoneWithPrototype = this._getZoneWithPrototype();
     this._diag.debug(
       'applying patch to',
@@ -587,19 +588,6 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
       !!ZoneWithPrototype
     );
     if (ZoneWithPrototype) {
-      if (isWrapped(ZoneWithPrototype.prototype.runTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'runTask');
-        this._diag.debug('removing previous patch from method runTask');
-      }
-      if (isWrapped(ZoneWithPrototype.prototype.scheduleTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'scheduleTask');
-        this._diag.debug('removing previous patch from method scheduleTask');
-      }
-      if (isWrapped(ZoneWithPrototype.prototype.cancelTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
-        this._diag.debug('removing previous patch from method cancelTask');
-      }
-
       this._zonePatched = true;
       this._wrap(
         ZoneWithPrototype.prototype,
@@ -620,18 +608,6 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
       this._zonePatched = false;
       const targets = this._getPatchableEventTargets();
       targets.forEach(target => {
-        if (isWrapped(target.addEventListener)) {
-          this._unwrap(target, 'addEventListener');
-          this._diag.debug(
-            'removing previous patch from method addEventListener'
-          );
-        }
-        if (isWrapped(target.removeEventListener)) {
-          this._unwrap(target, 'removeEventListener');
-          this._diag.debug(
-            'removing previous patch from method removeEventListener'
-          );
-        }
         this._wrap(target, 'addEventListener', this._patchAddEventListener());
         this._wrap(
           target,
