@@ -570,11 +570,11 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * implements enable function
    */
   override enable() {
+    // Early return if already enabled or patched
     if (this._isEnabled) {
       return;
     }
     this._isEnabled = true;
-    // If already patched do nothing
     if (typeof this._zonePatched === 'boolean') {
       return;
     }
