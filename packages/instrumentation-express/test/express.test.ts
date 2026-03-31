@@ -40,7 +40,7 @@ instrumentation.disable();
 
 import * as express from 'express';
 import { RPCMetadata, getRPCMetadata } from '@opentelemetry/core';
-import { Server } from 'http';
+import { get as httpGet, type Server } from 'http';
 
 const LIB_VERSION = require('express/package.json').version;
 const isExpressV5 = semver.satisfies(LIB_VERSION, '>=5.0.0');
@@ -124,14 +124,14 @@ describe('ExpressInstrumentation', () => {
         }
         return next();
       };
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       let rpcMetadata: RPCMetadata | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use(express.json());
         app.use((req, res, next) => {
           rpcMetadata = getRPCMetadata(context.active());
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -150,7 +150,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'tata');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 3);
+          assert.strictEqual(closeListenerCount, 2);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -182,11 +182,11 @@ describe('ExpressInstrumentation', () => {
 
     it('supports sync middlewares directly responding', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -212,7 +212,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'middleware');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 3);
+          assert.strictEqual(closeListenerCount, 2);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -226,11 +226,11 @@ describe('ExpressInstrumentation', () => {
 
     it('supports async middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -255,7 +255,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'tata');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 3);
+          assert.strictEqual(closeListenerCount, 2);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -269,11 +269,11 @@ describe('ExpressInstrumentation', () => {
 
     it('supports async middlewares directly responding', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -298,7 +298,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'middleware');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 3);
+          assert.strictEqual(closeListenerCount, 2);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -312,11 +312,11 @@ describe('ExpressInstrumentation', () => {
 
     it('captures sync middleware errors', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -335,7 +335,7 @@ describe('ExpressInstrumentation', () => {
         async () => {
           await httpRequest.get(`http://localhost:${port}/toto/tata`);
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 3);
+          assert.strictEqual(closeListenerCount, 2);
 
           const errorSpan = memoryExporter
             .getFinishedSpans()
@@ -356,11 +356,11 @@ describe('ExpressInstrumentation', () => {
 
     it('captures async middleware errors', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -379,7 +379,7 @@ describe('ExpressInstrumentation', () => {
         async () => {
           await httpRequest.get(`http://localhost:${port}/toto/tata`);
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 2);
+          assert.strictEqual(closeListenerCount, 1);
 
           const errorSpan = memoryExporter
             .getFinishedSpans()
@@ -608,6 +608,59 @@ describe('ExpressInstrumentation', () => {
           assert.ok(
             routerLayer.handle.stack.length === 1,
             'router layer stack is accessible'
+          );
+        }
+      );
+    });
+
+    it('should end spans when the client aborts the request', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let requestReceived: () => void;
+      const requestReceivedPromise = new Promise<void>(resolve => {
+        requestReceived = resolve;
+      });
+      let responseClosed: () => void;
+      const responseClosedPromise = new Promise<void>(resolve => {
+        responseClosed = resolve;
+      });
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.get('/slow', (req, res) => {
+          requestReceived!();
+          res.on('close', () => {
+            responseClosed!();
+          });
+          // Simulate slow handler - never sends response
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          let clientError: Error | undefined;
+          const clientReq = httpGet(`http://localhost:${port}/slow`);
+          clientReq.on('error', err => {
+            clientError = err;
+          });
+          await requestReceivedPromise;
+          clientReq.destroy();
+          await responseClosedPromise;
+          assert.ok(
+            clientError,
+            'client should have received an error from the aborted request'
+          );
+          rootSpan.end();
+          const spans = memoryExporter.getFinishedSpans();
+          const requestHandlerSpan = spans.find(span =>
+            span.name.includes('request handler')
+          );
+          assert.notStrictEqual(
+            requestHandlerSpan,
+            undefined,
+            'request handler span should be ended even when client aborts'
           );
         }
       );
