@@ -67,6 +67,14 @@ new ConsoleInstrumentation({
 
 When a console method is called within an active span context, the resulting LogRecord will automatically include `trace_id`, `span_id`, and `trace_flags` attributes for log correlation.
 
+## Important: Infinite Loop Prevention
+
+This instrumentation requires `@opentelemetry/api >= 1.9.1`. Starting from that version, the `DiagConsoleLogger` saves references to the original `console` methods at module load time, so internal OTel diagnostic logging bypasses the instrumentation and avoids infinite loops.
+
+Additionally, this instrumentation includes a re-entrancy guard to prevent loops from exporters that write to the console (e.g., `ConsoleLogRecordExporter`).
+
+> **Note:** Avoid using `ConsoleLogRecordExporter` or `ConsoleSpanExporter` together with this instrumentation in production. Use network-based exporters (e.g., OTLP) instead.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
