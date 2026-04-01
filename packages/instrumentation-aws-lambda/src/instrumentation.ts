@@ -597,9 +597,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       );
       const spanContext = trace.getSpanContext(propagatedContext);
 
-      if (!spanContext) continue;
-
-      links.push({ context: spanContext });
+      if (spanContext) {
+        links.push({ context: spanContext })
+      };
     }
     return links;
   }
