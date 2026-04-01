@@ -83,6 +83,7 @@ In your Lambda function configuration, add or update the `NODE_OPTIONS` environm
 | `responseHook`          | `ResponseHook` (function)          | Hook for adding custom attributes before lambda returns the response. Receives params: `span, { err?, res? }`                                                                                                                                                                                                 |
 | `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway).                                                                                                                                       |
 | `lambdaHandler`         | `string`                           | By default, this instrumentation automatically determines the Lambda handler function to instrument. This option is used to override that behavior by explicitly specifying the Lambda handler to instrument. See [Specifying the Lambda Handler](#specifying-the-lambda-handler) for additional information. |
+| `useConfiguredPropagatorForSqsExtraction` | `boolean` | By default for SQS messages, this instrumentation uses the AWS X-Ray propagator to extract context from `systemAttributes` which is spec-compliant. This option can be set to `true` to override that behavior, meaning context will be extracted from `messageAttributes` using the configured propagator. The latter deviates from the spec but can be useful when your producer injects context into `messageAttributes`. |
 
 ### Hooks Usage Example
 
@@ -167,6 +168,20 @@ provider.register({
 Alternatively, use the `auto-configuration-package` as in example #1 and set the OTEL_PROPAGATORS environment variable to `xray`.
 
 For additional information, see the [documentation for lambda semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/faas/aws-lambda.md#aws-x-ray-active-tracing-considerations).
+
+### SQS Event Context Extraction
+
+When your Lambda function is triggered by SQS, the instrumentation creates a CONSUMER span with span links to the producer trace contexts extracted from the SQS messages.
+
+By default, context is extracted from the `AWSTraceHeader` system attribute using the AWS X-Ray propagator, as defined by the [OpenTelemetry semantic conventions for AWS Lambda](https://opentelemetry.io/docs/specs/semconv/faas/aws-lambda/#sqs-event). This works when AWS X-Ray active tracing is enabled on the SQS queue.
+
+If your SQS producers inject trace context into message attributes using the globally configured propagator (as `@opentelemetry/instrumentation-aws-sdk` does by default with W3C traceparent), set `useConfiguredPropagatorForSqsExtraction: true`:
+
+```js
+new AwsLambdaInstrumentation({
+    useConfiguredPropagatorForSqsExtraction: true,
+})
+```
 
 ## Semantic Conventions
 
