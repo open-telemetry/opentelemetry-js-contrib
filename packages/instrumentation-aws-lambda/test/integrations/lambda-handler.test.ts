@@ -1222,9 +1222,83 @@ describe('lambda handler', () => {
     });
   });
 
-  describe('sync handler sqs propagation', () => {
-    it('creates process span for sqs record, with lambda invocation span as parent and span link to the producer traceId and spanId', async () => {
+  describe('sqs context propagation (default: AWSTraceHeader)', () => {
+    it('creates process span with span link (sync handler)', async () => {
       initializeHandler('lambda-test/sync.handler');
+      const sqsEvent = {
+        Records: [
+          {
+            attributes: {
+              AWSTraceHeader: sampledAwsHeader,
+              ApproximateReceiveCount: '1',
+              SentTimestamp: '1234567890',
+              SenderId: 'sender',
+              ApproximateFirstReceiveTimestamp: '1234567890',
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN:
+              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/sync').handler(sqsEvent, ctx);
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+      assert.equal(
+        spans[0].parentSpanContext?.traceId,
+        spans[1].spanContext().traceId
+      );
+      assert.equal(
+        spans[0].parentSpanContext?.spanId,
+        spans[1].spanContext().spanId
+      );
+      assert.equal(spans[0].links[0]?.context.traceId, sampledAwsSpanContext.traceId);
+      assert.equal(spans[0].links[0]?.context.spanId, sampledAwsSpanContext.spanId);
+    });
+
+    it('creates process span with span link (async handler)', async () => {
+      initializeHandler('lambda-test/async.handler');
+      const sqsEvent = {
+        Records: [
+          {
+            attributes: {
+              AWSTraceHeader: sampledAwsHeader,
+              ApproximateReceiveCount: '1',
+              SentTimestamp: '1234567890',
+              SenderId: 'sender',
+              ApproximateFirstReceiveTimestamp: '1234567890',
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN:
+              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/async').handler(sqsEvent, ctx);
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+      assert.equal(
+        spans[0].parentSpanContext?.traceId,
+        spans[1].spanContext().traceId
+      );
+      assert.equal(
+        spans[0].parentSpanContext?.spanId,
+        spans[1].spanContext().spanId
+      );
+      assert.equal(spans[0].links[0]?.context.traceId, sampledAwsSpanContext.traceId);
+      assert.equal(spans[0].links[0]?.context.spanId, sampledAwsSpanContext.spanId);
+    });
+  });
+
+  describe('sqs context propagation (experimental: messageAttributes)', () => {
+    it('creates process span with span link (sync handler)', async () => {
+      initializeHandler('lambda-test/sync.handler', {
+        useConfiguredPropagatorForSqsExtraction: true,
+      });
       const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
       const producerSpanId = '83b7424a259945cb';
       const sqsEvent = {
@@ -1258,11 +1332,11 @@ describe('lambda handler', () => {
       assert.equal(spans[0].links[0]?.context.traceId, producerTraceId);
       assert.equal(spans[0].links[0].context.spanId, producerSpanId);
     });
-  });
 
-  describe('async handler sqs propagation', () => {
-    it('creates process span for sqs record, with lambda invocation span as parent and span link to the producer traceId and spanId', async () => {
-      initializeHandler('lambda-test/async.handler');
+    it('creates process span with span link (async handler)', async () => {
+      initializeHandler('lambda-test/async.handler', {
+        useConfiguredPropagatorForSqsExtraction: true,
+      });
       const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
       const producerSpanId = '83b7424a259945cb';
       const sqsEvent = {

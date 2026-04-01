@@ -27,6 +27,7 @@ import {
 import {
   Context as OtelContext,
   context as otelContext,
+  defaultTextMapGetter,
   diag,
   trace,
   propagation,
@@ -40,6 +41,10 @@ import {
   Attributes,
   Link,
 } from '@opentelemetry/api';
+import {
+  AWSXRayPropagator,
+  AWSXRAY_TRACE_ID_HEADER,
+} from '@opentelemetry/propagator-aws-xray';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_CLOUD_ACCOUNT_ID,
@@ -591,14 +596,43 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
   }
 
   private _extractSqsSpanLinks(messages: SQSRecord[]): Link[] {
+    return this.getConfig().useConfiguredPropagatorForSqsExtraction === true
+      ? AwsLambdaInstrumentation._extractLinksFromMessageAttributes(messages)
+      : AwsLambdaInstrumentation._extractLinksFromAWSTraceHeader(messages);
+  }
+
+  private static _extractLinksFromAWSTraceHeader(
+    messages: SQSRecord[]
+  ): Link[] {
+    const xrayPropagator = new AWSXRayPropagator();
+    const links: Link[] = [];
+    for (const message of messages) {
+      const awsTraceHeader = message.attributes?.AWSTraceHeader;
+      if (!awsTraceHeader) continue;
+
+      const carrier = { [AWSXRAY_TRACE_ID_HEADER]: awsTraceHeader };
+      const propagatedContext = xrayPropagator.extract(
+        ROOT_CONTEXT,
+        carrier,
+        defaultTextMapGetter
+      );
+      const spanContext = trace.getSpanContext(propagatedContext);
+      if (spanContext) {
+        links.push({ context: spanContext });
+      }
+    }
+    return links;
+  }
+
+  private static _extractLinksFromMessageAttributes(
+    messages: SQSRecord[]
+  ): Link[] {
     const propagationFields = propagation.fields();
     const links: Link[] = [];
-
     for (const message of messages) {
       const hasPropagationFields = Object.keys(
         message.messageAttributes || []
       ).some(attr => propagationFields.includes(attr));
-
       if (!hasPropagationFields) continue;
 
       const propagatedContext = propagation.extract(
@@ -607,10 +641,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         sqsContextGetter
       );
       const spanContext = trace.getSpanContext(propagatedContext);
-
       if (spanContext) {
-        links.push({ context: spanContext })
-      };
+        links.push({ context: spanContext });
+      }
     }
     return links;
   }
