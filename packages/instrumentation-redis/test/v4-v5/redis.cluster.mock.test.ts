@@ -16,6 +16,7 @@
 import {
   getTestSpans,
   registerInstrumentationTesting,
+  getInstrumentation,
 } from '@opentelemetry/contrib-test-utils';
 import { RedisInstrumentation } from '../../src/index';
 import * as assert from 'assert';
@@ -244,6 +245,24 @@ describe('redis v4-v5 cluster mock (no live Redis required)', () => {
       const resolvedOptions =
         fakeMultiObj.options || fakeMultiObj[MULTI_COMMAND_OPTIONS];
       assert.deepStrictEqual(resolvedOptions, fakeOptions);
+    });
+  });
+
+  describe('instrumentation disable/enable — unpatch callbacks', () => {
+    it('should unwrap cluster module methods on disable and re-wrap on enable without errors', () => {
+      const instrumentation = getInstrumentation();
+      assert.ok(instrumentation, 'Expected instrumentation instance');
+
+      // disable() triggers the unpatch callbacks for clusterIndexModule
+      // and clusterMultiCommanderModule, unwrapping MULTI, exec, addCommand
+      assert.doesNotThrow(() => {
+        instrumentation!.disable();
+      });
+
+      // enable() re-patches all modules
+      assert.doesNotThrow(() => {
+        instrumentation!.enable();
+      });
     });
   });
 });
