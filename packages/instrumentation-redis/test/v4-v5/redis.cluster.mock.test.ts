@@ -29,15 +29,19 @@ import {
 process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
 registerInstrumentationTesting(new RedisInstrumentation());
 
-// Import AFTER registerInstrumentationTesting so module patching fires on require
-import RedisClusterMultiCommand from '@redis/client/dist/lib/cluster/multi-command';
-import { ErrorReply } from '@redis/client/dist/lib/errors';
+// Use require() so we can gracefully handle redis@4.0.x which uses
+// @node-redis/client instead of @redis/client and won't have these modules
+let RedisClusterMultiCommand: any;
+let ErrorReply: any;
 
-/**
- * Creates a RedisClusterMultiCommand with a fake executeMulti.
- * rawReplies is what transformReplies receives — plain values or ErrorReply
- * instances (ErrorReply in the array triggers MultiErrorReply inside transformReplies).
- */
+try {
+  RedisClusterMultiCommand =
+    require('@redis/client/dist/lib/cluster/multi-command').default;
+  ErrorReply = require('@redis/client/dist/lib/errors').ErrorReply;
+} catch {
+  // @redis/client not available in this redis version — tests will be skipped
+}
+
 function makeMultiCommand(rawReplies: unknown[] | Error) {
   const executeMulti = async () => {
     if (rawReplies instanceof Error) throw rawReplies;
@@ -47,7 +51,7 @@ function makeMultiCommand(rawReplies: unknown[] | Error) {
     if (rawReplies instanceof Error) throw rawReplies;
     return rawReplies;
   };
-  return new (RedisClusterMultiCommand as any)(
+  return new RedisClusterMultiCommand(
     executeMulti,
     executePipeline,
     undefined, // routing / firstKey
@@ -56,6 +60,13 @@ function makeMultiCommand(rawReplies: unknown[] | Error) {
 }
 
 describe('redis v4-v5 cluster mock (no live Redis required)', () => {
+  before(function () {
+    if (!RedisClusterMultiCommand) {
+      this.test!.parent!.pending = true;
+      this.skip();
+    }
+  });
+
   describe('cluster addCommand — named command path (firstKey, isReadonly, args)', () => {
     it('should create a span when called as (firstKey, isReadonly, args) — internal named command path', async () => {
       const multi = makeMultiCommand([1]);
@@ -65,14 +76,14 @@ describe('redis v4-v5 cluster mock (no live Redis required)', () => {
       multi.addCommand('mykey', true, ['GET', 'mykey'], undefined);
 
       try {
-        await (multi as any).exec();
+        await multi.exec();
       } catch {}
 
       const spans = getTestSpans();
-      const getSpan = spans.find(s => s.name === 'redis-GET');
+      const getSpan = spans.find((s: any) => s.name === 'redis-GET');
       assert.ok(
         getSpan,
-        `Expected redis-GET span, got: ${spans.map(s => s.name).join(', ')}`
+        `Expected redis-GET span, got: ${spans.map((s: any) => s.name).join(', ')}`
       );
       assert.strictEqual(getSpan!.attributes['db.system'], 'redis');
       assert.ok(
@@ -93,14 +104,14 @@ describe('redis v4-v5 cluster mock (no live Redis required)', () => {
       multi.addCommand(['SET', 'mykey', 'myval'], false, undefined, undefined);
 
       try {
-        await (multi as any).exec();
+        await multi.exec();
       } catch {}
 
       const spans = getTestSpans();
-      const setSpan = spans.find(s => s.name === 'redis-SET');
+      const setSpan = spans.find((s: any) => s.name === 'redis-SET');
       assert.ok(
         setSpan,
-        `Expected redis-SET span, got: ${spans.map(s => s.name).join(', ')}`
+        `Expected redis-SET span, got: ${spans.map((s: any) => s.name).join(', ')}`
       );
       assert.strictEqual(setSpan!.attributes['db.system'], 'redis');
       assert.ok(
@@ -125,12 +136,14 @@ describe('redis v4-v5 cluster mock (no live Redis required)', () => {
       );
 
       try {
-        await (multi as any).exec();
+        await multi.exec();
       } catch {}
 
       const spans = getTestSpans();
-      const zcardSpan = spans.find(s => s.name === 'redis-ZCARD');
-      const zremSpan = spans.find(s => s.name === 'redis-ZREMRANGEBYSCORE');
+      const zcardSpan = spans.find((s: any) => s.name === 'redis-ZCARD');
+      const zremSpan = spans.find(
+        (s: any) => s.name === 'redis-ZREMRANGEBYSCORE'
+      );
 
       assert.ok(zcardSpan, 'Expected redis-ZCARD span');
       assert.ok(zremSpan, 'Expected redis-ZREMRANGEBYSCORE span');
@@ -148,13 +161,13 @@ describe('redis v4-v5 cluster mock (no live Redis required)', () => {
       multi.addCommand('key2', false, ['SET', 'key2', 'val2'], undefined);
 
       try {
-        await (multi as any).exec();
+        await multi.exec();
       } catch {}
 
       const spans = getTestSpans();
       spans
-        .filter(s => s.name === 'redis-SET')
-        .forEach(s => {
+        .filter((s: any) => s.name === 'redis-SET')
+        .forEach((s: any) => {
           assert.strictEqual(s.attributes[ATTR_DB_OPERATION_NAME], 'MULTI SET');
         });
     });
@@ -167,17 +180,17 @@ describe('redis v4-v5 cluster mock (no live Redis required)', () => {
       multi.addCommand('key1', false, ['SET', 'key1', 'val'], undefined);
 
       try {
-        await (multi as any).exec();
+        await multi.exec();
       } catch {}
 
       const spans = getTestSpans();
-      const setSpan = spans.find(s => s.name === 'redis-SET');
+      const setSpan = spans.find((s: any) => s.name === 'redis-SET');
       assert.ok(setSpan, 'Expected redis-SET span');
       assert.strictEqual(setSpan!.status.code, SpanStatusCode.ERROR);
       assert.strictEqual(setSpan!.status.message, 'cluster exec failed');
     });
 
-    it('should handle per-command errors via MultiErrorReply — error span is ERROR, success span is UNSET', async () => {
+    it('should handle per-command errors via MultiErrorReply — failing span is ERROR', async () => {
       // ErrorReply in the rawReplies array causes transformReplies to throw MultiErrorReply
       const wrongTypeErr = new ErrorReply(
         'WRONGTYPE Operation against a key holding the wrong kind of value'
@@ -188,19 +201,19 @@ describe('redis v4-v5 cluster mock (no live Redis required)', () => {
       multi.addCommand('key2', true, ['ZCARD', 'key2'], undefined);
 
       try {
-        await (multi as any).exec();
+        await multi.exec();
       } catch {}
 
       const spans = getTestSpans();
-      const incrSpan = spans.find(s => s.name === 'redis-INCR');
-      const zcardSpan = spans.find(s => s.name === 'redis-ZCARD');
+      const incrSpan = spans.find((s: any) => s.name === 'redis-INCR');
+      const zcardSpan = spans.find((s: any) => s.name === 'redis-ZCARD');
 
       assert.ok(incrSpan, 'Expected redis-INCR span');
       assert.ok(zcardSpan, 'Expected redis-ZCARD span');
       assert.strictEqual(incrSpan!.status.code, SpanStatusCode.ERROR);
     });
   });
-  
+
   describe('cluster MULTI patch — MULTI_COMMAND_OPTIONS symbol', () => {
     it('should store cluster _options on the returned multi object under MULTI_COMMAND_OPTIONS symbol', () => {
       const MULTI_COMMAND_OPTIONS = Symbol.for(
