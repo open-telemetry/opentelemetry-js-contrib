@@ -405,7 +405,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     };
   }
 
- private _getPatchClusterMultiCommandsAddCommand() {
+  private _getPatchClusterMultiCommandsAddCommand() {
     const plugin = this;
     return function addCommandWrapper(original: Function) {
       return function addCommandPatch(
@@ -417,9 +417,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
         // Cluster addCommand is called in two ways:
         // 1. Internally by named commands: (firstKey, isReadonly, args, transformReply)
         // 2. Directly by user via .addCommand([...]): (args) - single array argument
-        const redisArgs = Array.isArray(firstKeyOrArgs)
-          ? firstKeyOrArgs
-          : args;
+        const redisArgs = Array.isArray(firstKeyOrArgs) ? firstKeyOrArgs : args;
         return plugin._traceClientCommand(original, this, arguments, redisArgs);
       };
     };

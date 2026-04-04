@@ -33,7 +33,9 @@ import { createCluster } from 'redis';
 import type { RedisClusterType } from 'redis';
 const shouldTest = process.env.RUN_REDIS_CLUSTER_TESTS;
 const clusterRootNodes = [
-  { url: `redis://${process.env.OPENTELEMETRY_REDIS_CLUSTER_HOST || 'localhost'}:${process.env.OPENTELEMETRY_REDIS_CLUSTER_PORT || 6379}` },
+  {
+    url: `redis://${process.env.OPENTELEMETRY_REDIS_CLUSTER_HOST || 'localhost'}:${process.env.OPENTELEMETRY_REDIS_CLUSTER_PORT || 6379}`,
+  },
 ];
 describe('redis v4-v5 cluster', () => {
   before(function () {
@@ -66,15 +68,35 @@ describe('redis v4-v5 cluster', () => {
       const spanNames = spans.map(s => s.name);
       const zremSpan = spans.find(s => s.name === 'redis-ZREMRANGEBYSCORE');
       const zcardSpan = spans.find(s => s.name === 'redis-ZCARD');
-      assert.ok(zremSpan, `Expected redis-ZREMRANGEBYSCORE span, got: ${spanNames.join(', ')}`);
-      assert.ok(zcardSpan, `Expected redis-ZCARD span, got: ${spanNames.join(', ')}`);
+      assert.ok(
+        zremSpan,
+        `Expected redis-ZREMRANGEBYSCORE span, got: ${spanNames.join(', ')}`
+      );
+      assert.ok(
+        zcardSpan,
+        `Expected redis-ZCARD span, got: ${spanNames.join(', ')}`
+      );
       assert.strictEqual(zremSpan.attributes['db.system'], 'redis');
-      assert.ok((zremSpan.attributes[ATTR_DB_STATEMENT] as string)?.startsWith('ZREMRANGEBYSCORE'));
-      assert.ok((zremSpan.attributes[ATTR_DB_QUERY_TEXT] as string)?.startsWith('ZREMRANGEBYSCORE'));
+      assert.ok(
+        (zremSpan.attributes[ATTR_DB_STATEMENT] as string)?.startsWith(
+          'ZREMRANGEBYSCORE'
+        )
+      );
+      assert.ok(
+        (zremSpan.attributes[ATTR_DB_QUERY_TEXT] as string)?.startsWith(
+          'ZREMRANGEBYSCORE'
+        )
+      );
       assert.strictEqual(zremSpan.attributes[ATTR_DB_OPERATION_NAME], 'MULTI');
       assert.strictEqual(zcardSpan.attributes['db.system'], 'redis');
-      assert.ok((zcardSpan.attributes[ATTR_DB_STATEMENT] as string)?.startsWith('ZCARD'));
-      assert.ok((zcardSpan.attributes[ATTR_DB_QUERY_TEXT] as string)?.startsWith('ZCARD'));
+      assert.ok(
+        (zcardSpan.attributes[ATTR_DB_STATEMENT] as string)?.startsWith('ZCARD')
+      );
+      assert.ok(
+        (zcardSpan.attributes[ATTR_DB_QUERY_TEXT] as string)?.startsWith(
+          'ZCARD'
+        )
+      );
       assert.strictEqual(zcardSpan.attributes[ATTR_DB_OPERATION_NAME], 'MULTI');
     });
     it('should produce spans for commands run inside multi().exec() with generic addCommand on a cluster', async () => {
@@ -88,17 +110,17 @@ describe('redis v4-v5 cluster', () => {
       const setSpan = spans.find(s => s.name === 'redis-SET');
       assert.ok(setSpan, 'Expected redis-SET span');
       assert.strictEqual(setSpan.attributes['db.system'], 'redis');
-      assert.ok((setSpan.attributes[ATTR_DB_STATEMENT] as string)?.startsWith('SET'));
+      assert.ok(
+        (setSpan.attributes[ATTR_DB_STATEMENT] as string)?.startsWith('SET')
+      );
     });
     it('should handle errors in cluster multi commands', async () => {
       const key = 'test-cluster-error-key';
       await client.set(key, 'string-value');
-    
+
       try {
-         await client.multi().set(key, 'value').incr(key).exec();
-      } catch (err: any) {
-        
-      }
+        await client.multi().set(key, 'value').incr(key).exec();
+      } catch (err: any) {}
       const spans = getTestSpans();
       const incrSpan = spans.find(s => s.name === 'redis-INCR');
       assert.ok(incrSpan, 'Expected redis-INCR span');
