@@ -32,7 +32,6 @@ import {
 } from '@opentelemetry/instrumentation';
 import {
   ATTR_DB_NAMESPACE,
-  ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_SYSTEM_NAME,
 } from '@opentelemetry/semantic-conventions';
@@ -121,14 +120,12 @@ export class Neo4jInstrumentation extends InstrumentationBase<Neo4jInstrumentati
             query = rawQuery.text;
           }
 
-          const operation = query.trim().split(/\s+/)[0];
           const span = self.tracer.startSpan(
-            `${operation} ${connectionAttributes[ATTR_DB_NAMESPACE]}`,
+            `${connectionAttributes[ATTR_DB_NAMESPACE]}`,
             {
               attributes: {
                 ...connectionAttributes,
                 [ATTR_DB_SYSTEM_NAME]: 'neo4j',
-                [ATTR_DB_OPERATION_NAME]: operation,
                 [ATTR_DB_QUERY_TEXT]: query,
               },
               kind: SpanKind.CLIENT,

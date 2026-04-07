@@ -24,7 +24,6 @@ import {
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
   ATTR_DB_NAMESPACE,
-  ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_SYSTEM_NAME,
   ATTR_NETWORK_PEER_ADDRESS,
@@ -131,8 +130,7 @@ describe('neo4j instrumentation', () => {
 
       const span = getSingleSpan();
       assertSpan(span);
-      assert.strictEqual(span.name, 'CREATE neo4j');
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'CREATE');
+      assert.strictEqual(span.name, 'neo4j');
       assert.strictEqual(
         span.attributes[ATTR_DB_QUERY_TEXT],
         'CREATE (n:MyLabel) RETURN n'
@@ -151,8 +149,7 @@ describe('neo4j instrumentation', () => {
 
       const span = getSingleSpan();
       assertSpan(span);
-      assert.strictEqual(span.name, 'CREATE neo4j');
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'CREATE');
+      assert.strictEqual(span.name, 'neo4j');
       assert.strictEqual(
         span.attributes[ATTR_DB_QUERY_TEXT],
         'CREATE (n:MyLabel) RETURN n'
@@ -167,10 +164,6 @@ describe('neo4j instrumentation', () => {
           onCompleted: () => {
             const span = getSingleSpan();
             assertSpan(span);
-            assert.strictEqual(
-              span.attributes[ATTR_DB_OPERATION_NAME],
-              'CREATE'
-            );
             assert.strictEqual(
               span.attributes[ATTR_DB_QUERY_TEXT],
               'CREATE (n:MyLabel) RETURN n'
@@ -255,14 +248,7 @@ describe('neo4j instrumentation', () => {
       assert.strictEqual(spans.length, 3);
       for (const span of spans) {
         assertSpan(span);
-        assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'MATCH');
       }
-    });
-
-    it('captures operation with trailing white spaces', async () => {
-      await driver.session().run('  MATCH (k) RETURN k ');
-      const span = getSingleSpan();
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'MATCH');
     });
 
     it('does not capture any span when ignoreOrphanedSpans is set to true', async () => {
@@ -373,7 +359,6 @@ describe('neo4j instrumentation', () => {
       });
       const span = getSingleSpan();
       assertSpan(span);
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'MATCH');
       assert.strictEqual(
         span.attributes[ATTR_DB_QUERY_TEXT],
         'MATCH (person:Person) RETURN person.name AS name'
@@ -392,7 +377,6 @@ describe('neo4j instrumentation', () => {
       });
       const span = getSingleSpan();
       assertSpan(span);
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'MATCH');
       assert.strictEqual(
         span.attributes[ATTR_DB_QUERY_TEXT],
         'MATCH (person:Person) RETURN person.name AS name'
