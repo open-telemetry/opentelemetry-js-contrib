@@ -29,6 +29,8 @@ import {
   ATTR_NETWORK_PEER_ADDRESS,
   ATTR_NETWORK_PEER_PORT,
   ATTR_NETWORK_TRANSPORT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
   registerInstrumentationTesting,
@@ -62,6 +64,8 @@ function assertSpan(span: ReadableSpan) {
   assert.strictEqual(span.attributes[ATTR_NETWORK_PEER_ADDRESS], host);
   assert.strictEqual(span.attributes[ATTR_NETWORK_PEER_PORT], port);
   assert.strictEqual(span.attributes[ATTR_NETWORK_TRANSPORT], 'TCP');
+  assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], host);
+  assert.strictEqual(span.attributes[ATTR_SERVER_PORT], port);
 }
 
 describe('neo4j instrumentation', () => {

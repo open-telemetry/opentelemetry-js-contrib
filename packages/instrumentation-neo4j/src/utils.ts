@@ -18,6 +18,8 @@ import {
   ATTR_NETWORK_PEER_ADDRESS,
   ATTR_NETWORK_PEER_PORT,
   ATTR_NETWORK_TRANSPORT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getAttributesFromNeo4jSession(session: any) {
@@ -41,6 +43,8 @@ export function getAttributesFromNeo4jSession(session: any) {
   if (address) {
     attributes[ATTR_NETWORK_PEER_ADDRESS] = address._host;
     attributes[ATTR_NETWORK_PEER_PORT] = address._port;
+    attributes[ATTR_SERVER_ADDRESS] = address._host;
+    attributes[ATTR_SERVER_PORT] = address._port;
   }
 
   return attributes;
