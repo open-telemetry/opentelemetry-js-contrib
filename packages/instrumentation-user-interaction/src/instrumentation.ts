@@ -398,7 +398,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * Patches the certain history api method
    */
   _patchHistoryMethod() {
-    const plugin = this;
+  if (!plugin._isEnabled) { return original.apply(this, args); }
     return (original: any) => {
       return function patchHistoryMethod(this: History, ...args: unknown[]) {
         const url = `${location.pathname}${location.hash}${location.search}`;
