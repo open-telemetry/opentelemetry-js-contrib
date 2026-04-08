@@ -63,7 +63,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@types/bson": "4.0.5",
-    "mongodb": "6.19.0"
+    "mongodb": "7.1.1"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.214.0",
