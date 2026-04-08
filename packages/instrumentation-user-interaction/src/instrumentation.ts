@@ -386,6 +386,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * Patches the history api
    */
   _patchHistoryApi() {
+    if (!this._isEnabled) return;
     this._wrap(history, 'replaceState', this._patchHistoryMethod());
     this._wrap(history, 'pushState', this._patchHistoryMethod());
     this._wrap(history, 'back', this._patchHistoryMethod());
