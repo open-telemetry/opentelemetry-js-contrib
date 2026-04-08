@@ -172,7 +172,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       ((window as any).navigation as EventTarget);
 
     // Only patch history API if Navigation API is not available
-    if (!navigationApi && ! this._isHistoryPatched) {
+    if (!navigationApi && !this._isHistoryPatched) {
       this._patchHistoryApi();
       this._isHistoryPatched = true;
     }
