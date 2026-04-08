@@ -27,7 +27,6 @@ import { CucumberInstrumentation } from '@opentelemetry/instrumentation-cucumber
 import { DataloaderInstrumentation } from '@opentelemetry/instrumentation-dataloader';
 import { DnsInstrumentation } from '@opentelemetry/instrumentation-dns';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
-import { FastifyInstrumentation } from '@opentelemetry/instrumentation-fastify';
 import { FsInstrumentation } from '@opentelemetry/instrumentation-fs';
 import { GenericPoolInstrumentation } from '@opentelemetry/instrumentation-generic-pool';
 import { GraphQLInstrumentation } from '@opentelemetry/instrumentation-graphql';
@@ -106,7 +105,6 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-dataloader': DataloaderInstrumentation,
   '@opentelemetry/instrumentation-dns': DnsInstrumentation,
   '@opentelemetry/instrumentation-express': ExpressInstrumentation,
-  '@opentelemetry/instrumentation-fastify': FastifyInstrumentation,
   '@opentelemetry/instrumentation-fs': FsInstrumentation,
   '@opentelemetry/instrumentation-generic-pool': GenericPoolInstrumentation,
   '@opentelemetry/instrumentation-graphql': GraphQLInstrumentation,
@@ -139,10 +137,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
 };
 
-const defaultExcludedInstrumentations = [
-  '@opentelemetry/instrumentation-fs',
-  '@opentelemetry/instrumentation-fastify',
-];
+const defaultExcludedInstrumentations = ['@opentelemetry/instrumentation-fs'];
 
 // Config types inferred automatically from the first argument of the constructor
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;

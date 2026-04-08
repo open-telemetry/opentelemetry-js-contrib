@@ -37,7 +37,7 @@ To load the instrumentation, specify it in the Node Tracer's configuration:
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
-const { ConnectInstrumentation } = require('@opentelemetry/instrumentation-connnect');
+const { ConnectInstrumentation } = require('@opentelemetry/instrumentation-connect');
 
 const provider = new NodeTracerProvider();
 provider.register();

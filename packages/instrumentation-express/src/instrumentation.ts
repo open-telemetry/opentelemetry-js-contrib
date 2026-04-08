@@ -263,8 +263,8 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
           spanHasEnded = true;
           currentContext = parentContext;
         }
-        // listener for response.on('finish')
-        const onResponseFinish = () => {
+        // listener for response.on('close')
+        const onResponseEnded = () => {
           if (spanHasEnded === false) {
             spanHasEnded = true;
             span.end();
@@ -293,14 +293,22 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
 
             if (spanHasEnded === false) {
               spanHasEnded = true;
-              req.res?.removeListener('finish', onResponseFinish);
+              req.res?.removeListener('close', onResponseEnded);
               span.end();
             }
             if (!(req.route && isError) && isLayerPathStored) {
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
             const callback = args[callbackIdx] as Function;
-            return context.bind(parentContext, callback).apply(this, arguments);
+            // Preserve the active context (which may include baggage set by middleware)
+            // but restore the parent span to prevent sibling middleware spans
+            // from nesting under each other
+            const activeContext = context.active();
+            const parentSpan = trace.getSpan(parentContext);
+            const nextContext = parentSpan
+              ? trace.setSpan(activeContext, parentSpan)
+              : activeContext;
+            return context.bind(nextContext, callback).apply(this, arguments);
           };
         }
 
@@ -318,11 +326,11 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
           /**
            * At this point if the callback wasn't called, that means either the
            * layer is asynchronous (so it will call the callback later on) or that
-           * the layer directly ends the http response, so we'll hook into the "finish"
+           * the layer directly ends the http response, so we'll hook into the "close"
            * event to handle the later case.
            */
           if (!spanHasEnded) {
-            res.once('finish', onResponseFinish);
+            res.once('close', onResponseEnded);
           }
         }
       };

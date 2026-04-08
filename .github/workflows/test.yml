@@ -50,7 +50,7 @@ jobs:
       # Upload the compilation results as an artifact thta will be available
       # only for this runa dn will be deleted in one day.
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
@@ -83,7 +83,7 @@ jobs:
         run: npm ci
         timeout-minutes: 10
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
@@ -103,12 +103,12 @@ jobs:
         if: ${{ matrix.node == '22' }}
         run: npm run test:browser:ci:affected
       - name: Start Test Services (Delta)
-        run: npm run test-services:start:ci
+        run: npm run test-services:start:affected
       - name: Unit tests (Nodejs - Delta)
         run: npm run test:ci:affected
       - name: Stop Test Services (Delta)
         if: always()
-        run: npm run test-services:stop:ci
+        run: npm run test-services:stop
 
   test-all-versions:
     needs: compile
@@ -131,7 +131,7 @@ jobs:
       - run: npm ci
         timeout-minutes: 10
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: compile-cache-${{ github.run_number }}
           path: .nx
@@ -148,14 +148,14 @@ jobs:
       - name: Compile (Delta)
         run: npm run compile:ci:affected
       - name: Start Test Services (Delta)
-        run: npm run test-services:start:ci
+        run: npm run test-services:start:affected
       - name: Test All Versions (Delta)
         run: npm run test-all-versions:ci:affected
       - name: Stop Test Services (Delta)
         if: always()
-        run: npm run test-services:stop:ci
+        run: npm run test-services:stop
       - name: Upload Test Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tests-coverage-cache-${{ github.run_number }}-${{ matrix.node }}
           include-hidden-files: true
@@ -182,22 +182,22 @@ jobs:
         timeout-minutes: 10
       # Note: Keep this in sync with the node versions from `test-all-versions` job.
       - name: Download Test Artifacts (18)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: tests-coverage-cache-${{ github.run_number }}-18
           path: .
       - name: Download Test Artifacts (20)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: tests-coverage-cache-${{ github.run_number }}-20
           path: .
       - name: Download Test Artifacts (22)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: tests-coverage-cache-${{ github.run_number }}-22
           path: .
       - name: Download Test Artifacts (24)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: tests-coverage-cache-${{ github.run_number }}-24
           path: .

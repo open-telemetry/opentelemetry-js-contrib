@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.38.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.38.2...host-metrics-v0.38.3) (2026-02-25)
+
+
+### Bug Fixes
+
+* **instrumentation-host-metrics:** unpin and update to systeminformation@^5.31.1 ([#3392](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3392)) ([e4ffdb4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e4ffdb43d160ace57420978da9c1855be653abe1))
+
 ## [0.38.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.38.1...host-metrics-v0.38.2) (2026-01-21)
 
 
