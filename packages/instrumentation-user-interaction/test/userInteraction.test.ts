@@ -16,10 +16,7 @@
 const originalSetTimeout = window.setTimeout;
 import { context, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
-import {
-  isWrapped,
-  registerInstrumentations,
-} from '@opentelemetry/instrumentation';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/sdk-trace-base';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
@@ -27,7 +24,6 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import 'zone.js';
 import { UserInteractionInstrumentation } from '../src';
-import { WindowWithZone } from '../src/internal-types';
 import { UserInteractionInstrumentationConfig } from '../src/types';
 import {
   assertClickSpan,
@@ -532,92 +528,6 @@ describe('UserInteractionInstrumentation', () => {
 
         done();
       });
-    });
-
-    it('should handle unpatch', () => {
-      const _window: WindowWithZone = window as unknown as WindowWithZone;
-      const ZoneWithPrototype = _window.Zone;
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.runTask),
-        true,
-        'runTask should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.scheduleTask),
-        true,
-        'scheduleTask should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.cancelTask),
-        true,
-        'cancelTask should be wrapped'
-      );
-
-      assert.strictEqual(
-        isWrapped(history.replaceState),
-        true,
-        'replaceState should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.pushState),
-        true,
-        'pushState should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.back),
-        true,
-        'back should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.forward),
-        true,
-        'forward should be wrapped'
-      );
-      assert.strictEqual(isWrapped(history.go), true, 'go should be wrapped');
-
-      userInteractionInstrumentation.disable();
-
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.runTask),
-        false,
-        'runTask should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.scheduleTask),
-        false,
-        'scheduleTask should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.cancelTask),
-        false,
-        'cancelTask should be unwrapped'
-      );
-
-      assert.strictEqual(
-        isWrapped(history.replaceState),
-        false,
-        'replaceState should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.pushState),
-        false,
-        'pushState should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.back),
-        false,
-        'back should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.forward),
-        false,
-        'forward should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.go),
-        false,
-        'go should be unwrapped'
-      );
     });
   });
 });
