@@ -124,11 +124,15 @@ function isSupportingCallbacks(): boolean {
 }
 
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
+  private _xrayPropagator: AWSXRayPropagator | undefined;
   declare private _traceForceFlusher?: () => Promise<void>;
   declare private _metricForceFlusher?: () => Promise<void>;
 
   constructor(config: AwsLambdaInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    if (!config.useConfiguredPropagatorForSqsExtraction) {
+      this._xrayPropagator = new AWSXRayPropagator();
+    }
   }
 
   init() {
@@ -603,20 +607,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
   private _extractSqsSpanLinks(messages: SQSRecord[]): Link[] {
     return this.getConfig().useConfiguredPropagatorForSqsExtraction === true
       ? AwsLambdaInstrumentation._extractLinksFromMessageAttributes(messages)
-      : AwsLambdaInstrumentation._extractLinksFromAWSTraceHeader(messages);
+      : this._extractLinksFromAWSTraceHeader(messages);
   }
 
-  private static _extractLinksFromAWSTraceHeader(
-    messages: SQSRecord[]
-  ): Link[] {
-    const xrayPropagator = new AWSXRayPropagator();
+  private _extractLinksFromAWSTraceHeader(messages: SQSRecord[]): Link[] {
     const links: Link[] = [];
     for (const message of messages) {
       const awsTraceHeader = message.attributes?.AWSTraceHeader;
       if (!awsTraceHeader) continue;
 
       const carrier = { [AWSXRAY_TRACE_ID_HEADER]: awsTraceHeader };
-      const propagatedContext = xrayPropagator.extract(
+      const propagatedContext = this._xrayPropagator!.extract(
         ROOT_CONTEXT,
         carrier,
         defaultTextMapGetter
