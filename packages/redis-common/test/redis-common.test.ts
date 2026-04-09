@@ -46,7 +46,15 @@ describe('#defaultDbStatementSerializer()', () => {
     // ACL subcommands with sensitive data should be redacted
     {
       cmdName: 'ACL',
-      cmdArgs: ['SETUSER', 'alice', 'on', '>MySecretPass', '~user:alice:*', '+@read', '+@write'],
+      cmdArgs: [
+        'SETUSER',
+        'alice',
+        'on',
+        '>MySecretPass',
+        '~user:alice:*',
+        '+@read',
+        '+@write',
+      ],
       expected: 'ACL SETUSER [6 other arguments]',
     },
     {
@@ -69,6 +77,18 @@ describe('#defaultDbStatementSerializer()', () => {
       cmdName: 'CONFIG',
       cmdArgs: ['GET', 'maxmemory'],
       expected: 'CONFIG GET [1 other arguments]',
+    },
+    // GETSET (deprecated) args should be redacted since it can contain sensitive data
+    {
+      cmdName: 'GETSET',
+      cmdArgs: ['key', 'secret_value'],
+      expected: 'GETSET key [1 other arguments]',
+    },
+    // PSETEX (deprecated) can also contain sensitive data
+    {
+      cmdName: 'PSETEX',
+      cmdArgs: ['key', '100000', 'secret_value'],
+      expected: 'PSETEX key [2 other arguments]',
     },
   ].forEach(({ cmdName, cmdArgs, expected }) => {
     it(`should serialize the correct number of arguments for ${cmdName}`, () => {
