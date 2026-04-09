@@ -1243,8 +1243,14 @@ describe('lambda handler', () => {
         spans[0].parentSpanContext?.spanId,
         spans[1].spanContext().spanId
       );
-      assert.equal(spans[0].links[0]?.context.traceId, sampledAwsSpanContext.traceId);
-      assert.equal(spans[0].links[0]?.context.spanId, sampledAwsSpanContext.spanId);
+      assert.equal(
+        spans[0].links[0]?.context.traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.equal(
+        spans[0].links[0]?.context.spanId,
+        sampledAwsSpanContext.spanId
+      );
     });
 
     it('creates process span with span link (async handler)', async () => {
@@ -1278,8 +1284,14 @@ describe('lambda handler', () => {
         spans[0].parentSpanContext?.spanId,
         spans[1].spanContext().spanId
       );
-      assert.equal(spans[0].links[0]?.context.traceId, sampledAwsSpanContext.traceId);
-      assert.equal(spans[0].links[0]?.context.spanId, sampledAwsSpanContext.spanId);
+      assert.equal(
+        spans[0].links[0]?.context.traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.equal(
+        spans[0].links[0]?.context.spanId,
+        sampledAwsSpanContext.spanId
+      );
     });
   });
 
