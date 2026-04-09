@@ -41,6 +41,7 @@ import {
   ATTR_FAAS_TRIGGER,
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_ID,
   ATTR_MESSAGING_OPERATION_TYPE,
   ATTR_MESSAGING_SYSTEM,
   FAAS_TRIGGER_VALUE_PUBSUB,
@@ -532,10 +533,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     return maybePromise;
   }
 
-  private _startEventSourceSpans(
-    event: any,
-    invocationSpan: Span
-  ): Span[] {
+  private _startEventSourceSpans(event: any, invocationSpan: Span): Span[] {
     const spans: Span[] = [];
     switch (this._determineEventSource(event)) {
       case 'sqs':
@@ -614,7 +612,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       );
       const spanContext = trace.getSpanContext(propagatedContext);
       if (spanContext) {
-        links.push({ context: spanContext });
+        links.push({
+          context: spanContext,
+          attributes: { [ATTR_MESSAGING_MESSAGE_ID]: message.messageId },
+        });
       }
     }
     return links;
@@ -638,7 +639,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       );
       const spanContext = trace.getSpanContext(propagatedContext);
       if (spanContext) {
-        links.push({ context: spanContext });
+        links.push({
+          context: spanContext,
+          attributes: { [ATTR_MESSAGING_MESSAGE_ID]: message.messageId },
+        });
       }
     }
     return links;
