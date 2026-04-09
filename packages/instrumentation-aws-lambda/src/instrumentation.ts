@@ -350,7 +350,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         plugin._applyRequestHook(span, event, context);
 
         return otelContext.with(trace.setSpan(parent, span), () => {
-          const additionalSpans = plugin._startEventSourceSpans(event);
+          const additionalSpans = plugin._startEventSourceSpans(event, span);
 
           // Support both callback-based and Promise-based handlers for backward compatibility
           if (callback) {
@@ -435,7 +435,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         plugin._applyRequestHook(span, event, context);
 
         return otelContext.with(trace.setSpan(parent, span), () => {
-          const additionalSpans = plugin._startEventSourceSpans(event);
+          const additionalSpans = plugin._startEventSourceSpans(event, span);
 
           // Promise-based handler only (Node.js 24+)
           const maybePromise = safeExecuteInTheMiddle(
@@ -543,10 +543,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     return maybePromise;
   }
 
-  private _startEventSourceSpans(event: any): Span[] {
+  private _startEventSourceSpans(
+    event: any,
+    invocationSpan: Span
+  ): Span[] {
     const spans: Span[] = [];
     switch (this._determineEventSource(event)) {
       case 'sqs':
+        invocationSpan.setAttribute(
+          ATTR_FAAS_TRIGGER,
+          FAAS_TRIGGER_VALUE_PUBSUB
+        );
         spans.push(this._startSqsProcessSpan(event));
         break;
       // TODO implement other event sources
