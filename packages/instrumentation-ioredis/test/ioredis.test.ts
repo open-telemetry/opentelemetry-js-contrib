@@ -663,6 +663,82 @@ describe('ioredis', () => {
           });
         });
       });
+
+      describe('sensitive command sanitization', function () {
+        after(async () => {
+          // cleanup added user
+          client.acl('DELUSER', 'testuser');
+        })
+
+        it('should redact CONFIG SET arguments in db.statement', async function () {
+          const span = provider.getTracer('ioredis-test').startSpan('test span');
+          await context.with(trace.setSpan(context.active(), span), async function () {
+            await client.config('SET', 'hz', '15');
+            span.end();
+            const endedSpans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(
+              endedSpans[0].attributes[ATTR_DB_STATEMENT],
+              'config SET [2 other arguments]'
+            );
+            assert.strictEqual(
+              endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+              'config SET [2 other arguments]'
+            );
+          });
+        });
+
+        it('should redact ACL SETUSER arguments in db.statement', async function () {
+          const span = provider.getTracer('ioredis-test').startSpan('test span');
+          await context.with(trace.setSpan(context.active(), span), async function () {
+            await (client as any).acl('setuser', 'testuser');
+            span.end();
+            const endedSpans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(
+              endedSpans[0].attributes[ATTR_DB_STATEMENT],
+              'acl setuser [1 other arguments]'
+            );
+            assert.strictEqual(
+              endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+              'acl setuser [1 other arguments]'
+            );
+          });
+          await (client as any).acl('deluser', 'testuser'); // cleanup
+        });
+
+        it('should redact GETSET value in db.statement', async function () {
+          const span = provider.getTracer('ioredis-test').startSpan('test span');
+          await context.with(trace.setSpan(context.active(), span), async function () {
+            await client.getset(testKeyName, 'secret-value');
+            span.end();
+            const endedSpans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(
+              endedSpans[0].attributes[ATTR_DB_STATEMENT],
+              `getset ${testKeyName} [1 other arguments]`
+            );
+            assert.strictEqual(
+              endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+              `getset ${testKeyName} [1 other arguments]`
+            );
+          });
+        });
+
+        it('should redact PSETEX value in db.statement', async function () {
+          const span = provider.getTracer('ioredis-test').startSpan('test span');
+          await context.with(trace.setSpan(context.active(), span), async function () {
+            await client.psetex(testKeyName, 60000, 'secret-value');
+            span.end();
+            const endedSpans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(
+              endedSpans[0].attributes[ATTR_DB_STATEMENT],
+              `psetex ${testKeyName} [2 other arguments]`
+            );
+            assert.strictEqual(
+              endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+              `psetex ${testKeyName} [2 other arguments]`
+            );
+          });
+        });
+      });
     });
 
     describe('Instrumenting without parent span', () => {

@@ -215,6 +215,66 @@ describe('redis v4-v5', () => {
         'ERR value is not an integer or out of range'
       );
     });
+
+    describe('sensitive command sanitization', function () {
+      it('redacts CONFIG SET arguments in db.statement', async function () {
+        await client.sendCommand(['CONFIG', 'SET', 'hz', '15']);
+        const [span] = getTestSpans();
+        assert.strictEqual(
+          span?.attributes[ATTR_DB_STATEMENT],
+          'CONFIG SET [2 other arguments]'
+        );
+        assert.strictEqual(
+          span?.attributes[ATTR_DB_QUERY_TEXT],
+          'CONFIG SET [2 other arguments]'
+        );
+      });
+
+      it('redacts ACL SETUSER arguments in db.statement', async function () {
+        await client.sendCommand(['ACL', 'SETUSER', 'testuser']);
+        const [span] = getTestSpans();
+        assert.strictEqual(
+          span?.attributes[ATTR_DB_STATEMENT],
+          'ACL SETUSER [1 other arguments]'
+        );
+        assert.strictEqual(
+          span?.attributes[ATTR_DB_QUERY_TEXT],
+          'ACL SETUSER [1 other arguments]'
+        );
+        await context.with(suppressTracing(context.active()), async function () {
+          await client.sendCommand(['ACL', 'DELUSER', 'testuser']);
+        });
+      });
+
+      it('redacts GETSET value in db.statement', async function () {
+        await context.with(suppressTracing(context.active()), async function () {
+          await client.set('key', 'initial');
+        });
+        await client.sendCommand(['GETSET', 'key', 'secret-value']);
+        const [span] = getTestSpans();
+        assert.strictEqual(
+          span?.attributes[ATTR_DB_STATEMENT],
+          'GETSET key [1 other arguments]'
+        );
+        assert.strictEqual(
+          span?.attributes[ATTR_DB_QUERY_TEXT],
+          'GETSET key [1 other arguments]'
+        );
+      });
+
+      it('redacts PSETEX value in db.statement', async function () {
+        await client.sendCommand(['PSETEX', 'key', '60000', 'secret-value']);
+        const [span] = getTestSpans();
+        assert.strictEqual(
+          span?.attributes[ATTR_DB_STATEMENT],
+          'PSETEX key [2 other arguments]'
+        );
+        assert.strictEqual(
+          span?.attributes[ATTR_DB_QUERY_TEXT],
+          'PSETEX key [2 other arguments]'
+        );
+      });
+    });
   });
 
   describe('client connect', () => {
