@@ -187,13 +187,26 @@ new AwsLambdaInstrumentation({
 
 This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
-Attributes collected:
+Attributes collected on the invocation (SERVER) span:
 
 | Attribute          | Short Description                                                         |
 |--------------------|---------------------------------------------------------------------------|
 | `cloud.account.id` | The cloud account ID the resource is assigned to.                         |
 | `faas.execution`   | The execution ID of the current function execution.                       |
 | `faas.id`          | The unique ID of the single function that this runtime instance executes. |
+| `faas.coldstart`   | Whether the invocation is a cold start.                                   |
+| `faas.trigger`     | Type of the trigger (`pubsub` for SQS events).                           |
+
+Additional attributes collected on the SQS process (CONSUMER) span:
+
+| Attribute                        | Short Description                                                  |
+|----------------------------------|--------------------------------------------------------------------|
+| `faas.trigger`                   | Type of the trigger (`pubsub`).                                    |
+| `messaging.operation.type`       | The type of the messaging operation (`process`).                   |
+| `messaging.system`               | The messaging system (`aws_sqs`).                                  |
+| `messaging.destination.name`     | The queue name extracted from the event source ARN.                |
+| `messaging.batch.message_count`  | The number of messages in the batch.                               |
+| `url.full`                       | The reconstructed SQS queue URL.                                   |
 
 ## Useful links
 
