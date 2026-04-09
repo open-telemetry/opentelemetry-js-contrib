@@ -28,7 +28,8 @@ const serializationSubsets = [
     args: 0,
   },
   {
-    regex: /^(GETSET|LPUSH|MSET|PFA|PSETEX|PUBLISH|RPUSH|SADD|SET|SPUBLISH|XADD|ZADD)/i,
+    regex:
+      /^(GETSET|LPUSH|MSET|PFA|PSETEX|PUBLISH|RPUSH|SADD|SET|SPUBLISH|XADD|ZADD)/i,
     args: 1,
   },
   {

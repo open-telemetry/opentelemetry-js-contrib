@@ -241,15 +241,21 @@ describe('redis v4-v5', () => {
           span?.attributes[ATTR_DB_QUERY_TEXT],
           'ACL SETUSER [1 other arguments]'
         );
-        await context.with(suppressTracing(context.active()), async function () {
-          await client.sendCommand(['ACL', 'DELUSER', 'testuser']);
-        });
+        await context.with(
+          suppressTracing(context.active()),
+          async function () {
+            await client.sendCommand(['ACL', 'DELUSER', 'testuser']);
+          }
+        );
       });
 
       it('redacts GETSET value in db.statement', async function () {
-        await context.with(suppressTracing(context.active()), async function () {
-          await client.set('key', 'initial');
-        });
+        await context.with(
+          suppressTracing(context.active()),
+          async function () {
+            await client.set('key', 'initial');
+          }
+        );
         await client.sendCommand(['GETSET', 'key', 'secret-value']);
         const [span] = getTestSpans();
         assert.strictEqual(
