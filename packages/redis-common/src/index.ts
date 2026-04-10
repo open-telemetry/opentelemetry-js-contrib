@@ -28,16 +28,23 @@ const serializationSubsets = [
     args: 0,
   },
   {
-    regex: /^(LPUSH|MSET|PFA|PUBLISH|RPUSH|SADD|SET|SPUBLISH|XADD|ZADD)/i,
+    regex:
+      /^(GETSET|LPUSH|MSET|PFA|PSETEX|PUBLISH|RPUSH|SADD|SET|SPUBLISH|XADD|ZADD)/i,
     args: 1,
   },
   {
     regex: /^(HSET|HMSET|LSET|LINSERT)/i,
     args: 2,
   },
+  // ACL and CONFIG subcommands may contain sensitive data (e.g. passwords),
+  // so only serialize the subcommand name (first argument).
+  {
+    regex: /^(ACL|CONFIG)/i,
+    args: 1,
+  },
   {
     regex:
-      /^(ACL|BIT|B[LRZ]|CLIENT|CLUSTER|CONFIG|COMMAND|DECR|DEL|EVAL|EX|FUNCTION|GEO|GET|HINCR|HMGET|HSCAN|INCR|L[TRLM]|MEMORY|P[EFISTU]|RPOP|S[CDIMORSU]|XACK|X[CDGILPRT]|Z[CDILMPRS])/i,
+      /^(BIT|B[LRZ]|CLIENT|CLUSTER|COMMAND|DECR|DEL|EVAL|EX|FUNCTION|GEO|GET|HINCR|HMGET|HSCAN|INCR|L[TRLM]|MEMORY|P[EFISTU]|RPOP|S[CDIMORSU]|XACK|X[CDGILPRT]|Z[CDILMPRS])/i,
     args: -1,
   },
 ];

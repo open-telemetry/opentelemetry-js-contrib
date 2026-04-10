@@ -335,6 +335,80 @@ describe('redis v2-v3', () => {
       });
     });
 
+    describe('sensitive command sanitization', () => {
+      it('should redact CONFIG SET arguments in db.statement', function (done) {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.config('set', 'hz', '15', (err: unknown) => {
+            try {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = testUtils.getTestSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_STATEMENT],
+                'config set [2 other arguments]'
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'config set [2 other arguments]'
+              );
+              done();
+            } catch (error) {
+              done(error);
+            }
+          });
+        });
+      });
+
+      it('should redact GETSET value in db.statement', function (done) {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.getset('test', 'secret-value', (err: unknown) => {
+            try {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = testUtils.getTestSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_STATEMENT],
+                'getset test [1 other arguments]'
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'getset test [1 other arguments]'
+              );
+              done();
+            } catch (err) {
+              done(err);
+            }
+          });
+        });
+      });
+
+      it('should redact PSETEX value in db.statement', function (done) {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.psetex('test', 60000, 'secret-value', (err: unknown) => {
+            try {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = testUtils.getTestSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_STATEMENT],
+                'psetex test [2 other arguments]'
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'psetex test [2 other arguments]'
+              );
+              done();
+            } catch (err) {
+              done(err);
+            }
+          });
+        });
+      });
+    });
+
     describe('dbStatementSerializer config', () => {
       const dbStatementSerializer = (
         cmdName: string,
