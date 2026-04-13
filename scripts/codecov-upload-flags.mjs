@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import { globSync } from 'glob';
 import { chmodSync, existsSync, readFileSync } from 'fs';
 import path from 'path';
@@ -44,17 +44,17 @@ const pkgsWithFlag = pkgFiles.flat().map(f => {
   // or check https://docs.codecov.com/docs/cli-options
   // prettier-ignore
   const command = [
-    './codecov --verbose',
-    'upload-coverage',
-    '--git-service github',
+   './codecov', '--verbose',
+   'upload-coverage',
+   '--git-service', 'github',
     // we don't need xcrun or pycoverage plugins
-    '--plugin gcov',
-    '--gcov-executable gcov',
-    '--file', report,
-    '--flag', flag,
-    // limit any scan to the pacakge folder
-    '--dir', path,
-  ];
+   '--plugin', 'gcov',
+   '--gcov-executable', 'gcov',
+   '--file', report,
+   '--flag', flag,
+    // limit any scan to the package folder
+   '--dir', path,
+ ];
 
   if (typeof commitSha === 'string') {
     command.push('--sha', commitSha);
@@ -63,7 +63,7 @@ const pkgsWithFlag = pkgFiles.flat().map(f => {
     command.push('--branch', branchName);
   }
 
-  return { name, flag, path, report, command: command.join(' ') };
+  return { name, flag, path, report, command };
 });
 
 // Download codecov-cli if necessary
@@ -108,13 +108,13 @@ for (const pkg of pkgsWithFlag) {
     console.log(
       `\n\nCODECOV: Merging coverage reports of "${pkg.name}" into ${pkg.path}coverage/coverage-final.json.`
     );
-    execSync(
-      `cd ${pkg.path} && npx nyc merge .nyc_output coverage/coverage-final.json`,
-      execOpts
+    spawnSync(
+      'npx', ['nyc', 'merge', '.nyc_output', 'coverage/coverage-final.json'],
+      { ...execOpts, cwd: pkg.path, shell: false }
     );
     console.log(
-      `\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${pkg.command}`
+      `\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${pkg.command.join(' ')}`
     );
-    execSync(pkg.command, execOpts);
+    spawnSync(pkg.command[0], pkg.command.slice(1), { ...execOpts, shell: false });
   }
 }
