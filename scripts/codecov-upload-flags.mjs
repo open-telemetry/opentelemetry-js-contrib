@@ -109,12 +109,16 @@ for (const pkg of pkgsWithFlag) {
       `\n\nCODECOV: Merging coverage reports of "${pkg.name}" into ${pkg.path}coverage/coverage-final.json.`
     );
     spawnSync(
-      'npx', ['nyc', 'merge', '.nyc_output', 'coverage/coverage-final.json'],
+      'npx',
+      ['nyc', 'merge', '.nyc_output', 'coverage/coverage-final.json'],
       { ...execOpts, cwd: pkg.path, shell: false }
     );
     console.log(
       `\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${pkg.command.join(' ')}`
     );
-    spawnSync(pkg.command[0], pkg.command.slice(1), { ...execOpts, shell: false });
+    spawnSync(pkg.command[0], pkg.command.slice(1), {
+      ...execOpts,
+      shell: false,
+    });
   }
 }
