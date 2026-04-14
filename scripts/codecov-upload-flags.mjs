@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { execSync, spawnSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import { globSync } from 'glob';
 import { chmodSync, existsSync, readFileSync } from 'fs';
 import path from 'path';
@@ -108,17 +108,14 @@ for (const pkg of pkgsWithFlag) {
     console.log(
       `\n\nCODECOV: Merging coverage reports of "${pkg.name}" into ${pkg.path}coverage/coverage-final.json.`
     );
-    spawnSync(
+    execFileSync(
       'npx',
       ['nyc', 'merge', '.nyc_output', 'coverage/coverage-final.json'],
-      { ...execOpts, cwd: pkg.path, shell: false }
+      { ...execOpts, cwd: pkg.path }
     );
     console.log(
       `\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${pkg.command.join(' ')}`
     );
-    spawnSync(pkg.command[0], pkg.command.slice(1), {
-      ...execOpts,
-      shell: false,
-    });
+    execFileSync(pkg.command[0], pkg.command.slice(1), execOpts);
   }
 }
