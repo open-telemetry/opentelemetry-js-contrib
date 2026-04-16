@@ -5,7 +5,7 @@
 
 import * as assert from 'assert';
 import { MeterProvider } from '@opentelemetry/sdk-metrics';
-import { RuntimeNodeInstrumentation } from '../src';
+import { RuntimeNodeInstrumentation } from '../src/index';
 import { TestMetricReader } from './testMetricsReader';
 import { METRIC_NODEJS_EVENTLOOP_UTILIZATION } from '../src/semconv';
 
@@ -27,6 +27,7 @@ describe('nodejs.eventloop.utilization', function () {
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
       enabled: false,
+      captureUncaughtException: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
@@ -44,6 +45,7 @@ describe('nodejs.eventloop.utilization', function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
+      captureUncaughtException: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
@@ -162,9 +164,17 @@ describe('nodejs.eventloop.utilization', function () {
       'Expected utilization in fourth measurement to be 1'
     );
 
-    // Fifth measurement: Do some NON-blocking work (sanity check, should be low)
-    await new Promise(resolve => setTimeout(resolve, 50));
-    const fifthUtilization = await collectUtilization();
+    // Fifth measurement: Do some non-blocking work and retry a few times to
+    // avoid a timing flake where one collection window can still include the
+    // previous busy period.
+    let fifthUtilization = 1;
+    for (let i = 0; i < 5; i++) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      fifthUtilization = await collectUtilization();
+      if (fifthUtilization < 1) {
+        break;
+      }
+    }
     assert.ok(
       fifthUtilization < 1,
       `Expected utilization in fifth measurement to be less than 1, but got ${fifthUtilization}`

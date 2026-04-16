@@ -6,7 +6,7 @@
 import * as assert from 'assert';
 import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
 import { GaugeMetricData } from '@opentelemetry/sdk-metrics/build/src/export/MetricData';
-import { RuntimeNodeInstrumentation } from '../src';
+import { RuntimeNodeInstrumentation } from '../src/index';
 import { TestMetricReader } from './testMetricsReader';
 import {
   ATTR_V8JS_HEAP_SPACE_NAME,
@@ -40,6 +40,7 @@ describe('v8js.memory.heap.*', function () {
       // arrange
       const instrumentation = new RuntimeNodeInstrumentation({
         monitoringPrecision: MEASUREMENT_INTERVAL,
+        captureUncaughtException: false,
       });
       instrumentation.setMeterProvider(meterProvider);
 
@@ -87,6 +88,7 @@ describe('v8js.memory.heap.*', function () {
         // arrange
         const instrumentation = new RuntimeNodeInstrumentation({
           monitoringPrecision: MEASUREMENT_INTERVAL,
+          captureUncaughtException: false,
         });
         instrumentation.setMeterProvider(meterProvider);
         const map = [...Array(10).keys()].map(x => x + 10);
