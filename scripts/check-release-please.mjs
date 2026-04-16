@@ -106,7 +106,7 @@ configPackages.forEach(relativeLocation => {
 });
 
 if (errors.length) {
-  console.error('Errors occured:\n');
+  console.error('Errors occurred:\n');
   console.error(errors.join('\n\n'));
   process.exit(1);
 } else {
