@@ -7,4 +7,6 @@ export enum SpanNames {
   QUERY_PREFIX = 'pg.query',
   CONNECT = 'pg.connect',
   POOL_CONNECT = 'pg-pool.connect',
+  POOL_RELEASE = 'pg-pool.release',
 }
+
