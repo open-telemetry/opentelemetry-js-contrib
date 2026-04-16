@@ -3,7 +3,6 @@ knex:
     - versions:
         include: ">=1.0.0 <2"
         mode: max-3
-      peerDependencies: "@vscode/sqlite3@^5.0.7"
       commands: npm run test
     - versions:
         include: ">=2.0.0 <4"
