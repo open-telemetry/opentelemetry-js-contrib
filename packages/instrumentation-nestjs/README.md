@@ -3,12 +3,6 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-> [!IMPORTANT]
-> The `@opentelemetry/instrumentation-nestjs-core` package is deprecated.
-> Use [`@opentelemetry/instrumentation-nestjs`](../instrumentation-nestjs) instead.
-> This package remains as a compatibility wrapper that preserves the historical
-> NestJS core-only behavior by keeping Nest microservice instrumentation disabled.
-
 This module provides automatic instrumentation for the [Nest framework][pkg-web-url] module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
@@ -18,11 +12,8 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 ## Installation
 
 ```bash
-npm install --save @opentelemetry/instrumentation-nestjs-core
+npm install --save @opentelemetry/instrumentation-nestjs
 ```
-
-Existing users of `@opentelemetry/instrumentation-nestjs-core` can keep using it,
-but new setups should install `@opentelemetry/instrumentation-nestjs`.
 
 ### Supported Versions
 
@@ -30,13 +21,13 @@ but new setups should install `@opentelemetry/instrumentation-nestjs`.
 
 ## Usage
 
-OpenTelemetry Nest Instrumentation allows the user to automatically collect trace data from the controller handlers and export them to the backend of choice.
+OpenTelemetry Nest Instrumentation allows the user to automatically collect trace data from HTTP controllers and Nest microservice handlers and export them to the backend of choice.
 
 To load a specific instrumentation (**Nest** in this case), specify it in the registerInstrumentations' configuration.
 
 ```javascript
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { NestInstrumentation } = require('@opentelemetry/instrumentation-nestjs-core');
+const { NestInstrumentation } = require('@opentelemetry/instrumentation-nestjs');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
@@ -54,8 +45,12 @@ registerInstrumentations({
 | Name                            | `nestjs.type`     | Description                                                                | Included attributes         |
 |---------------------------------|-------------------|----------------------------------------------------------------------------|-----------------------------|
 | `Create Nest App`               | `app_creation`    | Traces the bootup for the Nest App. The `NestFactory(Static).create` call. | `nestjs.module`             |
+| `Create Nest Microservice`      | `microservice_creation` | Traces standalone microservice bootup via `NestFactory.createMicroservice`. | `nestjs.module`, `nestjs.transport` |
+| `Connect Nest Microservice`     | `microservice_creation` | Traces hybrid microservice attachment via `app.connectMicroservice`.      | `nestjs.transport`          |
 | `<ControllerName>.<memberName>` | `request_context` | Traces the whole request context.                                          | `http.*`, `nestjs.callback` |
 | `<memberName>`                  | `handler`         | Traces the work of a specific controller member function.                  | `nestjs.callback`           |
+| `<ControllerName>.<memberName>` | `message_context` | Traces the handling of a Nest microservice message or event pattern.       | `nestjs.callback`, `nestjs.pattern` |
+| `<memberName>`                  | `message_handler` | Traces the work of a specific Nest microservice handler function.          | `nestjs.callback`           |
 
 ## Semantic Conventions
 
@@ -71,6 +66,8 @@ Attributes collected:
 | `nestjs.module`                       | Nest module class name                                                 |
 | `nestjs.controller`                   | Nest controller class name                                             |
 | `nestjs.callback`                     | The function name of the member in the controller                      |
+| `nestjs.pattern`                      | Microservice pattern assigned to the handler                           |
+| `nestjs.transport`                    | Configured Nest microservice transport or custom strategy name         |
 | `http.route`                          | Route assigned to handler. Ex: `/users/:id`                            |
 | `http.method` / `http.request.method` | HTTP method. See "HTTP Semantic Convention migration" note below.      |
 | `http.url` / `url.full`               | Full request URL. See "HTTP Semantic Convention migration" note below. |
@@ -81,7 +78,7 @@ Attributes collected:
 
 HTTP semantic conventions (semconv) were stabilized in v1.23.0, and a [migration process](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/http-migration.md#http-semantic-convention-stability-migration)
 was defined.  This instrumentations adds some minimal HTTP-related
-attributes on created spans. Starting with `instrumentation-nestjs-core` version
+attributes on created spans. Starting with `instrumentation-nestjs` version
 0.52.0, the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable can be used to
 customize which HTTP semantic conventions are used for those HTTP-related
 attributes.
@@ -115,6 +112,6 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-nestjs-core
-[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-nestjs-core.svg
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-nestjs
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-nestjs.svg
 [pkg-web-url]: https://nestjs.com/
