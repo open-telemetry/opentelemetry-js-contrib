@@ -11,6 +11,26 @@ import {
 } from '@opentelemetry/api';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 
+const propagator = new W3CTraceContextPropagator();
+const TRACE_PARENT_HEADER = 'traceparent';
+
+/**
+ * Builds a W3C traceparent string from a span.
+ * Returns undefined if the span context is invalid or tracing is suppressed.
+ *
+ * Format: "00-{traceId}-{spanId}-{flags}"
+ * See: https://www.w3.org/TR/trace-context/#traceparent-header
+ */
+export function buildTraceparent(span: Span): string | undefined {
+  const carrier: Record<string, string> = {};
+  propagator.inject(
+    trace.setSpan(ROOT_CONTEXT, span),
+    carrier,
+    defaultTextMapSetter
+  );
+  return carrier[TRACE_PARENT_HEADER];
+}
+
 // NOTE: This function currently is returning false-positives
 // in cases where comment characters appear in string literals
 // ("SELECT '-- not a comment';" would return true, although has no comment)
