@@ -28,16 +28,6 @@ import {
   SemconvStability,
   semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
-import { ATTR_MESSAGING_OPERATION } from './semconv';
-import {
-  ATTR_MESSAGING_DESTINATION,
-  ATTR_MESSAGING_DESTINATION_KIND,
-  ATTR_MESSAGING_RABBITMQ_ROUTING_KEY,
-  MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
-  MESSAGING_OPERATION_VALUE_PROCESS,
-  OLD_ATTR_MESSAGING_MESSAGE_ID,
-  ATTR_MESSAGING_CONVERSATION_ID,
-} from '../src/semconv-obsolete';
 import type {
   Connection,
   ConsumeMessage,
@@ -56,6 +46,10 @@ import {
   CONNECTION_ATTRIBUTES,
   getConnectionAttributesFromServer,
   getConnectionAttributesFromUrl,
+  getConsumeAttributes,
+  getConsumeSpanName,
+  getPublishAttributes,
+  getPublishSpanName,
   InstrumentationConnection,
   InstrumentationConsumeChannel,
   InstrumentationConsumeMessage,
@@ -64,7 +58,6 @@ import {
   isConfirmChannelTracing,
   markConfirmChannelTracing,
   MESSAGE_STORED_SPAN,
-  normalizeExchange,
   unmarkConfirmChannelTracing,
 } from './utils';
 /** @knipignore */
@@ -74,6 +67,7 @@ const supportedVersions = ['>=0.5.5 <1'];
 
 export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumentationConfig> {
   private _netSemconvStability!: SemconvStability;
+  private _messagingSemconvStability!: SemconvStability;
 
   constructor(config: AmqplibInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
@@ -84,6 +78,10 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
   private _setSemconvStabilityFromEnv() {
     this._netSemconvStability = semconvStabilityFromStr(
       'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
+    this._messagingSemconvStability = semconvStabilityFromStr(
+      'messaging',
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN
     );
   }
@@ -262,7 +260,8 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
           if (err == null) {
             const urlAttributes = getConnectionAttributesFromUrl(
               url,
-              self._netSemconvStability
+              self._netSemconvStability,
+              self._messagingSemconvStability
             );
             const serverAttributes = getConnectionAttributesFromServer(conn);
             conn[CONNECTION_ATTRIBUTES] = {
@@ -417,7 +416,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
           ROOT_CONTEXT,
           headers
         );
-        const exchange = msg.fields?.exchange;
+
         let links: Link[] | undefined;
         if (self._config.useLinksForConsume) {
           const parentSpanContext = parentContext
@@ -433,18 +432,16 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
           }
         }
         const span = self.tracer.startSpan(
-          `${queue} process`,
+          getConsumeSpanName(queue, msg, self._messagingSemconvStability),
           {
             kind: SpanKind.CONSUMER,
             attributes: {
               ...channel?.connection?.[CONNECTION_ATTRIBUTES],
-              [ATTR_MESSAGING_DESTINATION]: exchange,
-              [ATTR_MESSAGING_DESTINATION_KIND]:
-                MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
-              [ATTR_MESSAGING_RABBITMQ_ROUTING_KEY]: msg.fields?.routingKey,
-              [ATTR_MESSAGING_OPERATION]: MESSAGING_OPERATION_VALUE_PROCESS,
-              [OLD_ATTR_MESSAGING_MESSAGE_ID]: msg?.properties.messageId,
-              [ATTR_MESSAGING_CONVERSATION_ID]: msg?.properties.correlationId,
+              ...getConsumeAttributes(
+                queue,
+                msg,
+                self._messagingSemconvStability
+              ),
             },
             links,
           },
@@ -509,6 +506,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
         self,
         exchange,
         routingKey,
+        content.length,
         channel,
         options
       );
@@ -611,6 +609,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
           self,
           exchange,
           routingKey,
+        content.length,
           channel,
           options
         );
@@ -651,24 +650,26 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
     self: this,
     exchange: string,
     routingKey: string,
+    contentLength: number,
     channel: InstrumentationPublishChannel,
     options?: Options.Publish
   ) {
-    const normalizedExchange = normalizeExchange(exchange);
-
-    const span = self.tracer.startSpan(`publish ${normalizedExchange}`, {
-      kind: SpanKind.PRODUCER,
-      attributes: {
-        ...channel.connection[CONNECTION_ATTRIBUTES],
-        [ATTR_MESSAGING_DESTINATION]: exchange,
-        [ATTR_MESSAGING_DESTINATION_KIND]:
-          MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
-
-        [ATTR_MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
-        [OLD_ATTR_MESSAGING_MESSAGE_ID]: options?.messageId,
-        [ATTR_MESSAGING_CONVERSATION_ID]: options?.correlationId,
-      },
-    });
+    const span = self.tracer.startSpan(
+      getPublishSpanName(exchange, routingKey, self._messagingSemconvStability),
+      {
+        kind: SpanKind.PRODUCER,
+        attributes: {
+          ...channel.connection[CONNECTION_ATTRIBUTES],
+          ...getPublishAttributes(
+            exchange,
+            routingKey,
+            contentLength,
+            options,
+            self._messagingSemconvStability
+          ),
+        },
+      }
+    );
     const modifiedOptions = options ?? {};
     modifiedOptions.headers = modifiedOptions.headers ?? {};
 
