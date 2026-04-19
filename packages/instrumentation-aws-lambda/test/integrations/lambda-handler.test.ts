@@ -725,6 +725,38 @@ describe('lambda handler', () => {
     });
   });
 
+  describe('esbuild CJS bundle with non-configurable exports', () => {
+    it('should export a valid span', async () => {
+      initializeHandler('lambda-test/esbuild-cjs.handler');
+
+      const result = await lambdaRequire('lambda-test/esbuild-cjs').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+    });
+
+    it('should record error', async () => {
+      initializeHandler('lambda-test/esbuild-cjs.error');
+
+      let err: Error;
+      try {
+        await lambdaRequire('lambda-test/esbuild-cjs').error('arg', ctx);
+      } catch (e: any) {
+        err = e;
+      }
+      assert.strictEqual(err!.message, 'handler error');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanFailure(span);
+    });
+  });
+
   describe('custom handler', () => {
     it('prioritizes instrumenting the handler specified on the config over the handler implied from the _HANDLER env var', async () => {
       initializeHandler('not-a-real-handler', {
