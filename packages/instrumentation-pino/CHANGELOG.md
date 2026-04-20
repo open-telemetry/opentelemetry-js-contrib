@@ -7,6 +7,20 @@
 
 * **instrumentation-pino:** use the Logs API `exception` field for pino error records during log sending, including support for custom pino `errorKey` ([#3425](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3425))
 
+## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.60.0...instrumentation-pino-v0.61.0) (2026-04-17)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3479](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3479)) ([8891261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8891261cb590efcb661bd9f8afec4d1adf885ad8))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.61.0 to ^0.62.0
+
 ## [0.60.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.59.0...instrumentation-pino-v0.60.0) (2026-03-25)
 
 

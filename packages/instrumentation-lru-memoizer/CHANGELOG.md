@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-lru-memoizer-v0.58.0...instrumentation-lru-memoizer-v0.59.0) (2026-04-17)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3479](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3479)) ([8891261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8891261cb590efcb661bd9f8afec4d1adf885ad8))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.61.0 to ^0.62.0
+
 ## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-lru-memoizer-v0.57.0...instrumentation-lru-memoizer-v0.58.0) (2026-03-25)
 
 

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
@@ -263,8 +252,8 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
           spanHasEnded = true;
           currentContext = parentContext;
         }
-        // listener for response.on('finish')
-        const onResponseFinish = () => {
+        // listener for response.on('close')
+        const onResponseEnded = () => {
           if (spanHasEnded === false) {
             spanHasEnded = true;
             span.end();
@@ -293,7 +282,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
 
             if (spanHasEnded === false) {
               spanHasEnded = true;
-              req.res?.removeListener('finish', onResponseFinish);
+              req.res?.removeListener('close', onResponseEnded);
               span.end();
             }
             if (!(req.route && isError) && isLayerPathStored) {
@@ -326,11 +315,11 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
           /**
            * At this point if the callback wasn't called, that means either the
            * layer is asynchronous (so it will call the callback later on) or that
-           * the layer directly ends the http response, so we'll hook into the "finish"
+           * the layer directly ends the http response, so we'll hook into the "close"
            * event to handle the later case.
            */
           if (!spanHasEnded) {
-            res.once('finish', onResponseFinish);
+            res.once('close', onResponseEnded);
           }
         }
       };

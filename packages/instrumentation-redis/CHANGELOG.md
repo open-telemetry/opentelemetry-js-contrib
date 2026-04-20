@@ -1,6 +1,27 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.62.0...instrumentation-redis-v0.63.0) (2026-04-17)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3479](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3479)) ([8891261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8891261cb590efcb661bd9f8afec4d1adf885ad8))
+
+
+### Bug Fixes
+
+* **redis-common:** expand redaction to include ACL, CONFIG, PSETEX, GETSET ([#3472](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3472)) ([39193ca](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/39193cac4124eedc9e8fa5ae16ba960b5ab7a36b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/redis-common bumped from ^0.38.2 to ^0.38.3
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.61.0 to ^0.62.0
+
 ## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.61.0...instrumentation-redis-v0.62.0) (2026-03-25)
 
 
