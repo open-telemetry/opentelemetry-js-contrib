@@ -1,6 +1,62 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.73.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.72.0...auto-instrumentations-node-v0.73.0) (2026-04-17)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3479](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3479)) ([8891261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8891261cb590efcb661bd9f8afec4d1adf885ad8))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-amqplib bumped from ^0.61.0 to ^0.62.0
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.66.0 to ^0.67.0
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.69.0 to ^0.70.0
+    * @opentelemetry/instrumentation-bunyan bumped from ^0.59.0 to ^0.60.0
+    * @opentelemetry/instrumentation-cassandra-driver bumped from ^0.59.0 to ^0.60.0
+    * @opentelemetry/instrumentation-connect bumped from ^0.57.0 to ^0.58.0
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.30.0 to ^0.31.0
+    * @opentelemetry/instrumentation-dataloader bumped from ^0.31.0 to ^0.32.0
+    * @opentelemetry/instrumentation-dns bumped from ^0.57.0 to ^0.58.0
+    * @opentelemetry/instrumentation-express bumped from ^0.62.0 to ^0.63.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-generic-pool bumped from ^0.57.0 to ^0.58.0
+    * @opentelemetry/instrumentation-graphql bumped from ^0.62.0 to ^0.63.0
+    * @opentelemetry/instrumentation-hapi bumped from ^0.60.0 to ^0.61.0
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.62.0 to ^0.63.0
+    * @opentelemetry/instrumentation-kafkajs bumped from ^0.23.0 to ^0.24.0
+    * @opentelemetry/instrumentation-knex bumped from ^0.58.0 to ^0.59.0
+    * @opentelemetry/instrumentation-koa bumped from ^0.62.0 to ^0.63.0
+    * @opentelemetry/instrumentation-lru-memoizer bumped from ^0.58.0 to ^0.59.0
+    * @opentelemetry/instrumentation-memcached bumped from ^0.57.0 to ^0.58.0
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.67.0 to ^0.68.0
+    * @opentelemetry/instrumentation-mongoose bumped from ^0.60.0 to ^0.61.0
+    * @opentelemetry/instrumentation-mysql bumped from ^0.60.0 to ^0.61.0
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.60.0 to ^0.61.0
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.60.0 to ^0.61.0
+    * @opentelemetry/instrumentation-net bumped from ^0.58.0 to ^0.59.0
+    * @opentelemetry/instrumentation-openai bumped from ^0.12.0 to ^0.13.0
+    * @opentelemetry/instrumentation-oracledb bumped from ^0.39.0 to ^0.40.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.66.0 to ^0.67.0
+    * @opentelemetry/instrumentation-pino bumped from ^0.60.0 to ^0.61.0
+    * @opentelemetry/instrumentation-redis bumped from ^0.62.0 to ^0.63.0
+    * @opentelemetry/instrumentation-restify bumped from ^0.59.0 to ^0.60.0
+    * @opentelemetry/instrumentation-router bumped from ^0.58.0 to ^0.59.0
+    * @opentelemetry/instrumentation-runtime-node bumped from ^0.27.0 to ^0.28.0
+    * @opentelemetry/instrumentation-socket.io bumped from ^0.61.0 to ^0.62.0
+    * @opentelemetry/instrumentation-tedious bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-undici bumped from ^0.24.0 to ^0.25.0
+    * @opentelemetry/instrumentation-winston bumped from ^0.58.0 to ^0.59.0
+    * @opentelemetry/resource-detector-alibaba-cloud bumped from ^0.33.4 to ^0.33.5
+    * @opentelemetry/resource-detector-aws bumped from ^2.14.0 to ^2.15.0
+    * @opentelemetry/resource-detector-azure bumped from ^0.22.0 to ^0.23.0
+    * @opentelemetry/resource-detector-container bumped from ^0.8.5 to ^0.8.6
+    * @opentelemetry/resource-detector-gcp bumped from ^0.49.0 to ^0.50.0
+
 ## [0.72.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.71.0...auto-instrumentations-node-v0.72.0) (2026-03-25)
 
 

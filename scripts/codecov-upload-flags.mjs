@@ -1,20 +1,9 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import { globSync } from 'glob';
 import { chmodSync, existsSync, readFileSync } from 'fs';
 import path from 'path';
@@ -44,17 +33,17 @@ const pkgsWithFlag = pkgFiles.flat().map(f => {
   // or check https://docs.codecov.com/docs/cli-options
   // prettier-ignore
   const command = [
-    './codecov --verbose',
-    'upload-coverage',
-    '--git-service github',
+   './codecov', '--verbose',
+   'upload-coverage',
+   '--git-service', 'github',
     // we don't need xcrun or pycoverage plugins
-    '--plugin gcov',
-    '--gcov-executable gcov',
-    '--file', report,
-    '--flag', flag,
-    // limit any scan to the pacakge folder
-    '--dir', path,
-  ];
+   '--plugin', 'gcov',
+   '--gcov-executable', 'gcov',
+   '--file', report,
+   '--flag', flag,
+    // limit any scan to the package folder
+   '--dir', path,
+ ];
 
   if (typeof commitSha === 'string') {
     command.push('--sha', commitSha);
@@ -63,7 +52,7 @@ const pkgsWithFlag = pkgFiles.flat().map(f => {
     command.push('--branch', branchName);
   }
 
-  return { name, flag, path, report, command: command.join(' ') };
+  return { name, flag, path, report, command };
 });
 
 // Download codecov-cli if necessary
@@ -108,13 +97,14 @@ for (const pkg of pkgsWithFlag) {
     console.log(
       `\n\nCODECOV: Merging coverage reports of "${pkg.name}" into ${pkg.path}coverage/coverage-final.json.`
     );
-    execSync(
-      `cd ${pkg.path} && npx nyc merge .nyc_output coverage/coverage-final.json`,
-      execOpts
+    execFileSync(
+      'npx',
+      ['nyc', 'merge', '.nyc_output', 'coverage/coverage-final.json'],
+      { ...execOpts, cwd: pkg.path }
     );
     console.log(
-      `\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${pkg.command}`
+      `\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${pkg.command.join(' ')}`
     );
-    execSync(pkg.command, execOpts);
+    execFileSync(pkg.command[0], pkg.command.slice(1), execOpts);
   }
 }
