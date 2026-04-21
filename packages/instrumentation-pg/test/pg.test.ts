@@ -275,9 +275,8 @@ describe('pg', () => {
     });
 
     it('should return a promise if callback is not provided', function (done) {
-      this.timeout(10000);
-      const resPromise = connClient.connect();
-      resPromise
+      connClient
+        .connect()
         .then(res => {
           assert.equal(res, undefined);
           assert.deepStrictEqual(
@@ -286,9 +285,7 @@ describe('pg', () => {
           );
           done();
         })
-        .catch((err: Error) => {
-          assert.ok(false, err.message);
-        });
+        .catch(done);
     });
 
     it('should throw on failure', done => {
