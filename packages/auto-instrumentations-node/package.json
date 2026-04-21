@@ -43,6 +43,7 @@
     "@opentelemetry/core": "^2.0.0"
   },
   "dependencies": {
+    "@opentelemetry/host-metrics": "^0.38.0",
     "@opentelemetry/instrumentation": "^0.215.0",
     "@opentelemetry/instrumentation-amqplib": "^0.62.0",
     "@opentelemetry/instrumentation-aws-lambda": "^0.67.0",

@@ -32,6 +32,12 @@ try {
   );
 }
 
+if (process.env.OTEL_NODE_HOST_METRICS_ENABLED === 'true') {
+  void import('@opentelemetry/host-metrics').then(({ HostMetrics }) => {
+    new HostMetrics().start();
+  });
+}
+
 async function shutdown(): Promise<void> {
   try {
     await sdk.shutdown();

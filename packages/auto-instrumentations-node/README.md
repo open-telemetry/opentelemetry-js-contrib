@@ -124,6 +124,16 @@ Notes:
 - Logs are always sent to console, no matter the environment, or debug level.
 - Debug logs are extremely verbose. Enable debug logging only when needed. Debug logging negatively impacts the performance of your application.
 
+### Host Metrics
+
+Host metrics (CPU, memory, network) are not collected by default. To enable them, set `OTEL_NODE_HOST_METRICS_ENABLED=true`:
+
+```shell
+export OTEL_NODE_HOST_METRICS_ENABLED="true"
+```
+
+This uses [`@opentelemetry/host-metrics`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/host-metrics) and automatically exports to the same metrics pipeline configured for your application.
+
 ## Usage: Instrumentation Initialization
 
 OpenTelemetry Meta Packages for Node automatically loads instrumentations for Node builtin modules and common packages.
