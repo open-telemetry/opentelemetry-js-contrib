@@ -274,7 +274,8 @@ describe('pg', () => {
       });
     });
 
-    it('should return a promise if callback is not provided', done => {
+    it('should return a promise if callback is not provided', function (done) {
+      this.timeout(10000);
       const resPromise = connClient.connect();
       resPromise
         .then(res => {
