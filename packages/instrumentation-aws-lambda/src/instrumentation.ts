@@ -585,7 +585,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     });
   }
 
-  private static _extractSqsQueueUrl(queueArn: string): string {
+  private static _extractSqsQueueUrl(queueArn?: string): string {
+    if (!queueArn) return 'unknown';
     const queueArnParts = queueArn.split(':');
     const region = queueArnParts[3];
     const accountId = queueArnParts[4];
