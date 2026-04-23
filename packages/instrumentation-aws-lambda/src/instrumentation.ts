@@ -759,7 +759,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     callback: () => void,
     additionalSpans?: Span[]
   ): void {
-    additionalSpans?.forEach(s => this._endSpan(s, err ?? null));
+    if (additionalSpans) {
+      for (const s of additionalSpans) {
+        this._endSpan(s, err ?? null);
+      }
+    }
 
     this._endSpan(invocationSpan, err ?? null);
 
