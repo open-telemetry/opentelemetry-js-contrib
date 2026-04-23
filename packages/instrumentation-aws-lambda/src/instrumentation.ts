@@ -571,7 +571,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     const queueName = queueArn?.split(':').pop() ?? 'unknown';
     const links = this._extractSqsSpanLinks(messages);
 
-    return this.tracer.startSpan(`${queueName} process`, {
+    return this.tracer.startSpan(`process ${queueName}`, {
       kind: SpanKind.CONSUMER,
       attributes: {
         [ATTR_FAAS_TRIGGER]: FAAS_TRIGGER_VALUE_PUBSUB,
