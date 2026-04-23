@@ -578,7 +578,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
         [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_AWS_SQS,
         [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
-        [ATTR_MESSAGING_BATCH_MESSAGE_COUNT]: event.Records.length,
+        ...(event.Records.length > 1 && {
+          [ATTR_MESSAGING_BATCH_MESSAGE_COUNT]: event.Records.length,
+        }),
         [ATTR_URL_FULL]: AwsLambdaInstrumentation._extractSqsQueueUrl(queueArn),
       },
       links,
