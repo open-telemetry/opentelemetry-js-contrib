@@ -379,11 +379,10 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       });
     });
 
-    it('should capture error if fetch request is aborted', async function () {
+    it('should not record abort as an error if fetch request is aborted', async function () {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
 
-      let fetchError;
       const controller = new AbortController();
       const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
       const fetchPromise = fetch(fetchUrl, { signal: controller.signal });
@@ -391,8 +390,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       try {
         await fetchPromise;
       } catch (err) {
-        // Expected error
-        fetchError = err as Error;
+        // Expected - fetch throws on abort, but we don't need the error
       }
 
       // Let the error be published to diagnostics channel
@@ -402,18 +400,53 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       const span = spans[0];
       assert.ok(span, 'a span is present');
       assert.strictEqual(spans.length, 1);
-      assertSpan(span, {
-        hostname: 'localhost',
-        httpMethod: 'GET',
-        path: '/',
-        query: '?query=test',
-        error: fetchError,
-        noNetPeer: true, // do not check network attribs
-        forceStatus: {
-          code: SpanStatusCode.ERROR,
-          message: 'The operation was aborted.',
-        },
-      });
+
+      // Per OTel HTTP spec: intentional cancellation SHOULD NOT be an error
+      assert.strictEqual(
+        span.status.code,
+        SpanStatusCode.UNSET,
+        'span status should be UNSET for aborted requests'
+      );
+      assert.strictEqual(
+        span.events.length,
+        0,
+        'no exception event should be recorded for aborted requests'
+      );
+      assert.strictEqual(
+        span.attributes['error.type'],
+        undefined,
+        'error.type should not be set for aborted requests'
+      );
+    });
+
+    it('should still record genuine errors as errors', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      let fetchError;
+      try {
+        const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/error`;
+        await fetch(fetchUrl);
+      } catch (err) {
+        fetchError = err as Error;
+      }
+
+      spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        span.status.code,
+        SpanStatusCode.ERROR,
+        'genuine errors should still set status to ERROR'
+      );
+      assert.strictEqual(
+        span.events.length,
+        1,
+        'genuine errors should record an exception event'
+      );
+      assert.ok(fetchError, 'fetch should have thrown');
     });
   });
 });
+   
