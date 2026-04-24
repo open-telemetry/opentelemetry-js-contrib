@@ -36,6 +36,7 @@ import {
 } from '@opentelemetry/propagator-aws-xray';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_AWS_SQS_QUEUE_URL,
   ATTR_CLOUD_ACCOUNT_ID,
   ATTR_FAAS_COLDSTART,
   ATTR_FAAS_TRIGGER,
@@ -581,7 +582,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         ...(event.Records.length > 1 && {
           [ATTR_MESSAGING_BATCH_MESSAGE_COUNT]: event.Records.length,
         }),
-        [ATTR_URL_FULL]: AwsLambdaInstrumentation._extractSqsQueueUrl(queueArn),
+        [ATTR_AWS_SQS_QUEUE_URL]: AwsLambdaInstrumentation._extractSqsQueueUrl(queueArn),
       },
       links,
     });
