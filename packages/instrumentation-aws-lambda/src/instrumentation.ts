@@ -34,8 +34,10 @@ import {
   AWSXRayPropagator,
   AWSXRAY_TRACE_ID_HEADER,
 } from '@opentelemetry/propagator-aws-xray';
-import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-import { ATTR_MESSAGING_OPERATION_NAME } from '@opentelemetry/semantic-conventions/incubating';
+import {
+  ATTR_SERVER_ADDRESS,
+  ATTR_URL_FULL,
+} from '@opentelemetry/semantic-conventions';
 import {
   ATTR_AWS_SQS_QUEUE_URL,
   ATTR_CLOUD_ACCOUNT_ID,
@@ -44,6 +46,7 @@ import {
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION_NAME,
   ATTR_MESSAGING_OPERATION_TYPE,
   ATTR_MESSAGING_SYSTEM,
   FAAS_TRIGGER_VALUE_PUBSUB,
@@ -65,7 +68,7 @@ import {
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { LambdaModule } from './internal-types';
+import { LambdaModule, SqsQueueArnParts } from './internal-types';
 
 const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   keys(carrier): string[] {
@@ -569,8 +572,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
 
   private _startSqsProcessSpan(event: SQSEvent): Span {
     const messages = event.Records;
-    const queueArn = messages[0]?.eventSourceARN;
-    const queueName = queueArn?.split(':').pop() ?? 'unknown';
+    const queueArnParts = AwsLambdaInstrumentation._parseSqsQueueArn(
+      messages[0]?.eventSourceARN
+    );
+    const queueName = queueArnParts?.queueName ?? 'unknown';
     const links = this._extractSqsSpanLinks(messages);
 
     return this.tracer.startSpan(`process ${queueName}`, {
@@ -584,18 +589,30 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
         ...(event.Records.length > 1 && {
           [ATTR_MESSAGING_BATCH_MESSAGE_COUNT]: event.Records.length,
         }),
-        [ATTR_AWS_SQS_QUEUE_URL]: AwsLambdaInstrumentation._extractSqsQueueUrl(queueArn),
+        ...(queueArnParts && {
+          [ATTR_SERVER_ADDRESS]: `sqs.${queueArnParts.region}.amazonaws.com`,
+          [ATTR_AWS_SQS_QUEUE_URL]:
+            AwsLambdaInstrumentation._extractSqsQueueUrl(queueArnParts),
+        }),
       },
       links,
     });
   }
 
-  private static _extractSqsQueueUrl(queueArn?: string): string {
-    if (!queueArn) return 'unknown';
-    const queueArnParts = queueArn.split(':');
-    const region = queueArnParts[3];
-    const accountId = queueArnParts[4];
-    const queueName = queueArnParts[5];
+  private static _parseSqsQueueArn(
+    queueArn?: string
+  ): SqsQueueArnParts | undefined {
+    if (!queueArn) return undefined;
+    const parts = queueArn.split(':');
+    const region = parts[3];
+    const accountId = parts[4];
+    const queueName = parts[5];
+    if (!region || !accountId || !queueName) return undefined;
+    return { region, accountId, queueName };
+  }
+
+  private static _extractSqsQueueUrl(queueArnParts: SqsQueueArnParts): string {
+    const { region, accountId, queueName } = queueArnParts;
     return `https://sqs.${region}.amazonaws.com/${accountId}/${queueName}`;
   }
 

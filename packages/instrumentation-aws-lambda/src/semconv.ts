@@ -105,6 +105,17 @@ export const ATTR_MESSAGING_DESTINATION_NAME = 'messaging.destination.name' as c
 export const ATTR_MESSAGING_MESSAGE_ID = 'messaging.message.id' as const;
 
 /**
+ * The system-specific name of the messaging operation.
+ *
+ * @example ack
+ * @example nack
+ * @example send
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_OPERATION_NAME = 'messaging.operation.name' as const;
+
+/**
  * A string identifying the type of the messaging operation.
  *
  * @note If a custom value is used, it **MUST** be of low cardinality.
