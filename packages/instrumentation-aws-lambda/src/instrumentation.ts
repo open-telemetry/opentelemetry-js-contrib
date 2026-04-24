@@ -35,6 +35,7 @@ import {
   AWSXRAY_TRACE_ID_HEADER,
 } from '@opentelemetry/propagator-aws-xray';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
+import { ATTR_MESSAGING_OPERATION_NAME } from '@opentelemetry/semantic-conventions/incubating';
 import {
   ATTR_AWS_SQS_QUEUE_URL,
   ATTR_CLOUD_ACCOUNT_ID,
@@ -576,6 +577,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       kind: SpanKind.CONSUMER,
       attributes: {
         [ATTR_FAAS_TRIGGER]: FAAS_TRIGGER_VALUE_PUBSUB,
+        [ATTR_MESSAGING_OPERATION_NAME]: 'ack',
         [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
         [ATTR_MESSAGING_SYSTEM]: MESSAGING_SYSTEM_VALUE_AWS_SQS,
         [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
