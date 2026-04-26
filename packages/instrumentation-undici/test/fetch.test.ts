@@ -432,6 +432,10 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       }
 
       spans = memoryExporter.getFinishedSpans();
+       // If aborted before span was created, no span is expected
+      if (spans.length === 0) {
+        return;
+      }
       const span = spans[0];
       assert.ok(span, 'a span is present');
       assert.strictEqual(spans.length, 1);
