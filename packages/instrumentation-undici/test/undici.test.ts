@@ -762,52 +762,52 @@ describe('UndiciInstrumentation `undici` tests', function () {
     });
 
     it('should not record abort as an error if undici request is aborted', async function () {
-  let spans = memoryExporter.getFinishedSpans();
-  assert.strictEqual(spans.length, 0);
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
 
-  const controller = new AbortController();
+      const controller = new AbortController();
 
-  const requestPromise = undici.request(
-    `${protocol}://${hostname}:${mockServer.port}/?query=test`,
-    { signal: controller.signal }
-  );
+      const requestPromise = undici.request(
+        `${protocol}://${hostname}:${mockServer.port}/?query=test`,
+        { signal: controller.signal }
+      );
 
-  controller.abort();
+      controller.abort();
 
-  try {
-    await requestPromise;
-  } catch (err) {
-    // Expected - request throws on abort
-  }
+      try {
+        await requestPromise;
+      } catch (err) {
+        // Expected - request throws on abort
+      }
 
-  // Allow async instrumentation to finish
-  await new Promise(resolve => setTimeout(resolve, 50));
+      // Allow async instrumentation to finish
+      await new Promise(resolve => setTimeout(resolve, 50));
 
-  spans = memoryExporter.getFinishedSpans();
-  const span = spans[0];
+      spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
 
-  assert.ok(span, 'a span is present');
-  assert.strictEqual(spans.length, 1);
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(spans.length, 1);
 
-  // 🚨 Core fix validation
-  assert.strictEqual(
-    span.status.code,
-    SpanStatusCode.UNSET,
-    'span status should be UNSET for aborted requests'
-  );
+      // 🚨 Core fix validation
+      assert.strictEqual(
+        span.status.code,
+        SpanStatusCode.UNSET,
+        'span status should be UNSET for aborted requests'
+      );
 
-  assert.strictEqual(
-    span.events.length,
-    0,
-    'no exception event should be recorded for aborted requests'
-  );
+      assert.strictEqual(
+        span.events.length,
+        0,
+        'no exception event should be recorded for aborted requests'
+      );
 
-  assert.strictEqual(
-    span.attributes['error.type'],
-    undefined,
-    'error.type should not be set for aborted requests'
-  );
-});
+      assert.strictEqual(
+        span.attributes['error.type'],
+        undefined,
+        'error.type should not be set for aborted requests'
+      );
+    });
     const userAgentRequests: Array<{
       name: string;
       headers: Record<string, string | string[] | undefined>;

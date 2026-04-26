@@ -432,7 +432,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       }
 
       spans = memoryExporter.getFinishedSpans();
-       // If aborted before span was created, no span is expected
+      // If aborted before span was created, no span is expected
       if (spans.length === 0) {
         return;
       }
@@ -453,4 +453,3 @@ describe('UndiciInstrumentation `fetch` tests', function () {
     });
   });
 });
-   
