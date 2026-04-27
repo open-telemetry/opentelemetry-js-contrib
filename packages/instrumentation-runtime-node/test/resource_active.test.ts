@@ -68,8 +68,6 @@ describe('v8js.resource.active', function () {
   });
 
   it(`should write ${METRIC_V8JS_RESOURCE_ACTIVE} ${ATTR_V8JS_RESOURCE_TYPE} attribute`, async function () {
-    // We are only looking for the presence of 'TTYWrap' in this test.
-    // Because at this point it is the only option.
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
     });
@@ -95,7 +93,7 @@ describe('v8js.resource.active', function () {
       metric = foundMetric;
     }
     const spaceAttribute = metric?.dataPoints.find(
-      x => x.attributes[ATTR_V8JS_RESOURCE_TYPE] === 'TTYWrap'
+      x => x.attributes[ATTR_V8JS_RESOURCE_TYPE] === 'Timeout'
     );
 
     assert.notEqual(
