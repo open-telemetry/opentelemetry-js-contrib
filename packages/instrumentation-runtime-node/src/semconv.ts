@@ -33,7 +33,7 @@ export const ATTR_V8JS_GC_TYPE = 'v8js.gc.type' as const;
 export const ATTR_V8JS_HEAP_SPACE_NAME = 'v8js.heap.space.name' as const;
 
 /**
- * The type of Active Resource.
+ * The type of active resource.
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
