@@ -42,14 +42,10 @@ export class ActiveResourcesCollector extends BaseCollector {
         if (!this._config.enabled) return;
 
         const data = this.scrape();
-        if (data === undefined) return;
 
-        // Store the procssed data
         const pdata: DataMap = {};
 
-        // Count each type
-        for (const t of data) {
-          const type: string = t;
+        for (const type of data) {
           if (Object.hasOwn(pdata, type)) {
             pdata[type] += 1;
           } else {
