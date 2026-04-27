@@ -72,34 +72,41 @@ describe('v8js.resource.active', function () {
       monitoringPrecision: MEASUREMENT_INTERVAL,
     });
     instrumentation.setMeterProvider(meterProvider);
-    const map = [...Array(10).keys()].map(x => x + 10);
-    map.indexOf(1);
-    // act
-    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
-    const { resourceMetrics, errors } = await metricReader.collect();
 
-    // assert
-    assert.deepEqual(
-      errors,
-      [],
-      'expected no errors from the callback during collection'
-    );
-    const scopeMetrics = resourceMetrics.scopeMetrics;
-    let metric: GaugeMetricData | undefined = undefined;
-    const foundMetric = scopeMetrics[0].metrics.find(
-      x => x.descriptor.name === METRIC_V8JS_RESOURCE_ACTIVE
-    );
-    if (foundMetric?.dataPointType === DataPointType.GAUGE) {
-      metric = foundMetric;
+    // We need a Timout to really exist for this test.
+    const keepAlive = setTimeout(() => {}, 60_000);
+    try {
+      await new Promise(resolve =>
+        setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
+      );
+      const { resourceMetrics, errors } = await metricReader.collect();
+
+      assert.deepEqual(
+        errors,
+        [],
+        'expected no errors from the callback during collection'
+      );
+      const scopeMetrics = resourceMetrics.scopeMetrics;
+      let metric: GaugeMetricData | undefined = undefined;
+      const foundMetric = scopeMetrics[0].metrics.find(
+        x => x.descriptor.name === METRIC_V8JS_RESOURCE_ACTIVE
+      );
+      if (foundMetric?.dataPointType === DataPointType.GAUGE) {
+        metric = foundMetric;
+      }
+      const typeAttribute = metric?.dataPoints.find(
+        x => x.attributes[ATTR_V8JS_RESOURCE_TYPE] === 'Timeout'
+      );
+
+      assert.notEqual(
+        typeAttribute,
+        undefined,
+        `${METRIC_V8JS_RESOURCE_ACTIVE} space "${ATTR_V8JS_RESOURCE_TYPE}" not found`
+      );
+
+      assert.ok(typeAttribute!.value >= 1);
+    } finally {
+      clearTimeout(keepAlive);
     }
-    const spaceAttribute = metric?.dataPoints.find(
-      x => x.attributes[ATTR_V8JS_RESOURCE_TYPE] === 'Timeout'
-    );
-
-    assert.notEqual(
-      spaceAttribute,
-      undefined,
-      `${METRIC_V8JS_RESOURCE_ACTIVE} space "${ATTR_V8JS_RESOURCE_TYPE}" not found`
-    );
   });
 });
