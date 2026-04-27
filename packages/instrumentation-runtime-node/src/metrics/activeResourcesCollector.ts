@@ -33,7 +33,7 @@ export class ActiveResourcesCollector extends BaseCollector {
       {
         description:
           'Count of the active resources that are currently keeping the event loop alive.',
-        unit: '{resource_type}',
+        unit: '{resource}',
       }
     );
 
@@ -44,12 +44,12 @@ export class ActiveResourcesCollector extends BaseCollector {
         const data = this.scrape();
         if (data === undefined) return;
 
-        // STore the procssed data
+        // Store the procssed data
         const pdata: DataMap = {};
 
-        // Convert String to string and count
+        // Count each type
         for (const t of data) {
-          const type: string = t.toString();
+          const type: string = t;
           if (Object.hasOwn(pdata, type)) {
             pdata[type] += 1;
           } else {
@@ -71,7 +71,7 @@ export class ActiveResourcesCollector extends BaseCollector {
 
   internalDisable(): void {}
 
-  private scrape(): String[] {
+  private scrape(): string[] {
     return process.getActiveResourcesInfo();
   }
 }
