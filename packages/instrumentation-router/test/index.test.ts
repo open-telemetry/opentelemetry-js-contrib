@@ -255,4 +255,197 @@ describe('Router instrumentation', () => {
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
     });
   });
+
+  describe('Response listener management (issue #3458)', () => {
+    // Builds a server with `count` trivial middleware on a single Router and
+    // captures res.listenerCount('close') as observed *during* the response's
+    // own 'close' event. The test installs its own 'close' listener first so
+    // that, at the moment of capture, any not-yet-removed instrumentation
+    // listeners are still present.
+    const createLeakServer = async (
+      count: number,
+      mw: Router.RequestHandler
+    ) => {
+      const router = new Router();
+      let observedCloseListeners: number | undefined;
+      let observedListenersAtRequestStart: number | undefined;
+
+      router.use((_req, res, next) => {
+        observedListenersAtRequestStart = res.listenerCount('close');
+        res.on('close', () => {
+          observedCloseListeners = res.listenerCount('close');
+        });
+        next();
+      });
+      for (let i = 0; i < count; i++) {
+        router.use(mw);
+      }
+      router.get('/ping', (_req, res) => {
+        res.end('pong');
+      });
+
+      const server = http.createServer((req, res) => {
+        router(req, res, () => {
+          if (!res.headersSent) {
+            res.statusCode = 404;
+            res.end('not found');
+          }
+        });
+      });
+      await new Promise<void>(resolve => server.listen(0, resolve));
+      return {
+        server,
+        getCloseListeners: () => observedCloseListeners,
+        getInitialListeners: () => observedListenersAtRequestStart,
+      };
+    };
+
+    // Captures any process warnings emitted during `fn`. Used to assert that
+    // no MaxListenersExceededWarning fires while a request is in flight.
+    const collectWarnings = async <T>(fn: () => Promise<T>) => {
+      const warnings: Error[] = [];
+      const onWarning = (w: Error) => warnings.push(w);
+      process.on('warning', onWarning);
+      try {
+        const result = await fn();
+        return { result, warnings };
+      } finally {
+        process.removeListener('warning', onWarning);
+      }
+    };
+
+    it('does not emit MaxListenersExceededWarning with many sync middleware', async () => {
+      const leakServer = await createLeakServer(20, (_req, _res, next) =>
+        next()
+      );
+      try {
+        const { warnings } = await collectWarnings(async () => {
+          assert.strictEqual(
+            await request('/ping', leakServer.server),
+            'pong'
+          );
+        });
+        const maxListenersWarn = warnings.find(
+          w => w.name === 'MaxListenersExceededWarning'
+        );
+        assert.strictEqual(
+          maxListenersWarn,
+          undefined,
+          `unexpected warning: ${maxListenersWarn?.message}`
+        );
+        // For synchronous next() the fallback listener is never attached, so
+        // the only 'close' listeners at the time of close are http.Server's
+        // built-in one plus the one our probe registered. Without the fix
+        // this would scale with the middleware count (~22).
+        assert.strictEqual(leakServer.getCloseListeners(), 2);
+      } finally {
+        leakServer.server.close();
+      }
+    });
+
+    it('does not leak close listeners with many async middleware', async () => {
+      const asyncMw: Router.RequestHandler = (_req, _res, next) => {
+        setImmediate(next);
+      };
+      const leakServer = await createLeakServer(20, asyncMw);
+      try {
+        const { warnings } = await collectWarnings(async () => {
+          assert.strictEqual(
+            await request('/ping', leakServer.server),
+            'pong'
+          );
+        });
+        const maxListenersWarn = warnings.find(
+          w => w.name === 'MaxListenersExceededWarning'
+        );
+        assert.strictEqual(
+          maxListenersWarn,
+          undefined,
+          `unexpected warning: ${maxListenersWarn?.message}`
+        );
+        // Each async layer's fallback listener is removed when its `next()`
+        // eventually fires, so by the time the response closes the only
+        // remaining 'close' listeners are http.Server's built-in one plus
+        // our probe.
+        assert.strictEqual(leakServer.getCloseListeners(), 2);
+      } finally {
+        leakServer.server.close();
+      }
+    });
+
+    it('still ends the span when a layer ends the response without calling next()', async () => {
+      const router = new Router();
+      router.use((_req, _res, next) => next());
+      router.get('/ping', function selfEndingHandler(_req, res) {
+        // Intentionally never calls next(); the fallback 'close' listener is
+        // what must end the span here.
+        res.end('pong');
+      });
+      const server = http.createServer((req, res) => router(req, res, () => {}));
+      await new Promise<void>(resolve => server.listen(0, resolve));
+      try {
+        assert.strictEqual(await request('/ping', server), 'pong');
+        const finished = memoryExporter.getFinishedSpans();
+        const handlerSpan = finished.find(
+          s => s.attributes['router.name'] === 'selfEndingHandler'
+        );
+        assert.notStrictEqual(
+          handlerSpan,
+          undefined,
+          'expected a span for selfEndingHandler to be ended'
+        );
+        assert.notStrictEqual(
+          handlerSpan?.endTime,
+          undefined,
+          'expected handlerSpan to have an end time'
+        );
+      } finally {
+        server.close();
+      }
+    });
+
+    it('ends the span when the client aborts before the layer responds', async () => {
+      const router = new Router();
+      let serverResponse: http.ServerResponse | undefined;
+      router.get('/hang', function hangingHandler(_req, res) {
+        // Hold the response open; rely on the client abort -> 'close' to end
+        // the span.
+        serverResponse = res;
+      });
+      const server = http.createServer((req, res) => router(req, res, () => {}));
+      await new Promise<void>(resolve => server.listen(0, resolve));
+      const port = (server.address() as AddressInfo).port;
+
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const req = http.get(`http://localhost:${port}/hang`, () => {
+            // unexpected; the server never replies
+            reject(new Error('unexpected response'));
+          });
+          req.on('error', () => resolve()); // expected: aborted
+          // Wait for the request to actually reach the handler, then abort.
+          const wait = setInterval(() => {
+            if (serverResponse) {
+              clearInterval(wait);
+              req.destroy();
+            }
+          }, 5);
+        });
+
+        // 'close' fires asynchronously after destroy; give the loop a tick.
+        await new Promise(r => setTimeout(r, 20));
+
+        const handlerSpan = memoryExporter
+          .getFinishedSpans()
+          .find(s => s.attributes['router.name'] === 'hangingHandler');
+        assert.notStrictEqual(
+          handlerSpan,
+          undefined,
+          'expected hangingHandler span to be ended on client abort'
+        );
+      } finally {
+        server.close();
+      }
+    });
+  });
 });
