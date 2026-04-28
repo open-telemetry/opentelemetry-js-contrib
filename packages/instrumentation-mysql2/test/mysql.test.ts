@@ -1492,6 +1492,219 @@ describe('mysql2', () => {
         });
       });
     });
+
+    describe('enableTraceContextPropagation', () => {
+      const expectedSet = (span: ReadableSpan) => {
+        const sc = span.spanContext();
+        const flags = Number(sc.traceFlags || 0)
+          .toString(16)
+          .padStart(2, '0');
+        const traceparent = `00-${sc.traceId}-${sc.spanId}-${flags}`;
+        return `SET @traceparent = '${traceparent}'`;
+      };
+
+      it('should not send SET @traceparent when option is not specified', done => {
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          connection.query('SELECT 1+1 as solution', (err, res) => {
+            assert.ifError(err);
+            assert.ok(res);
+            getLastQueries(1)
+              .then(([query]) => {
+                assert.doesNotMatch(query, /SET @traceparent/);
+                done();
+              })
+              .catch(done);
+          });
+        });
+      });
+
+      it('should send SET @traceparent before the user query when enabled', done => {
+        instrumentation.setConfig({
+          enableTraceContextPropagation: true,
+        });
+
+        const sql = 'SELECT 1+1 as solution';
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          connection.query(sql, (err, res) => {
+            assert.ifError(err);
+            assert.ok(res);
+            const finished = memoryExporter.getFinishedSpans();
+            assert.strictEqual(finished.length, 1);
+            getLastQueries(2)
+              .then(queries => {
+                // queries are returned newest-first
+                assert.strictEqual(queries[1], expectedSet(finished[0]));
+                assert.strictEqual(queries[0], sql);
+                done();
+              })
+              .catch(done);
+          });
+        });
+      });
+
+      it('should send SET @traceparent before a prepared statement (execute)', done => {
+        instrumentation.setConfig({
+          enableTraceContextPropagation: true,
+        });
+
+        const sql = 'SELECT ?+? as solution';
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          connection.execute(sql, [1, 1], (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const finished = memoryExporter.getFinishedSpans();
+            assert.strictEqual(finished.length, 1);
+            getLastQueries(2)
+              .then(queries => {
+                // The prepared statement shows up in the general_log as the
+                // formatted SQL with values inlined.
+                assert.strictEqual(queries[1], expectedSet(finished[0]));
+                assert.match(queries[0], /SELECT 1\+1 as solution/);
+                done();
+              })
+              .catch(done);
+          });
+        });
+      });
+
+      it('should work together with addSqlCommenterCommentToQueries', done => {
+        instrumentation.setConfig({
+          enableTraceContextPropagation: true,
+          addSqlCommenterCommentToQueries: true,
+        } as any);
+
+        const sql = 'SELECT 1+1 as solution';
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          connection.query(sql, (err, res) => {
+            assert.ifError(err);
+            assert.ok(res);
+            const finished = memoryExporter.getFinishedSpans();
+            assert.strictEqual(finished.length, 1);
+            getLastQueries(2)
+              .then(queries => {
+                assert.strictEqual(queries[1], expectedSet(finished[0]));
+                // user query starts with the original text and has a sqlcommenter comment
+                assert.match(queries[0], /^SELECT 1\+1 as solution \/\*/);
+                assert.match(queries[0], /traceparent=/);
+                done();
+              })
+              .catch(done);
+          });
+        });
+      });
+
+      it('should pair SET with the right query for concurrent queries on the same connection', done => {
+        instrumentation.setConfig({
+          enableTraceContextPropagation: true,
+        });
+
+        const tracer = provider.getTracer('default');
+        let pending = 3;
+        const onDone = (err?: any) => {
+          if (err) return done(err);
+          if (--pending !== 0) return;
+          const finished = memoryExporter.getFinishedSpans();
+          assert.strictEqual(finished.length, 3, 'expected 3 query spans');
+          getLastQueries(6)
+            .then(queries => {
+              // newest-first: [Q-C, SET-C, Q-B, SET-B, Q-A, SET-A]
+              const chronological = queries.slice().reverse();
+              for (let i = 0; i < 3; i++) {
+                const setLine = chronological[i * 2];
+                const userLine = chronological[i * 2 + 1];
+                assert.strictEqual(
+                  setLine,
+                  expectedSet(finished[i]),
+                  `pair ${i}: SET should match span ${i} traceparent`
+                );
+                assert.doesNotMatch(
+                  userLine,
+                  /^SET @traceparent/,
+                  `pair ${i}: second line should be the user query`
+                );
+              }
+              done();
+            })
+            .catch(done);
+        };
+
+        // All three context.with(...) calls run synchronously before any
+        // callbacks fire, so all 6 commands (SET-A, Q-A, SET-B, Q-B, SET-C, Q-C)
+        // are pushed into the same connection's command queue in order.
+        context.with(
+          trace.setSpan(context.active(), tracer.startSpan('span-A')),
+          () => {
+            connection.query('SELECT 1 AS a', err => onDone(err));
+          }
+        );
+        context.with(
+          trace.setSpan(context.active(), tracer.startSpan('span-B')),
+          () => {
+            connection.query('SELECT 2 AS b', err => onDone(err));
+          }
+        );
+        context.with(
+          trace.setSpan(context.active(), tracer.startSpan('span-C')),
+          () => {
+            connection.query('SELECT 3 AS c', err => onDone(err));
+          }
+        );
+      });
+
+      it('should send SET @traceparent for pool.query', done => {
+        instrumentation.setConfig({
+          enableTraceContextPropagation: true,
+        });
+
+        const sql = 'SELECT 1+1 as solution';
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          pool.query(sql, (err, res) => {
+            assert.ifError(err);
+            assert.ok(res);
+            const finished = memoryExporter.getFinishedSpans();
+            assert.strictEqual(finished.length, 1);
+            getLastQueries(2)
+              .then(queries => {
+                assert.strictEqual(queries[1], expectedSet(finished[0]));
+                assert.strictEqual(queries[0], sql);
+                done();
+              })
+              .catch(done);
+          });
+        });
+      });
+
+      it('should send SET @traceparent for pool.execute', done => {
+        instrumentation.setConfig({
+          enableTraceContextPropagation: true,
+        });
+
+        const sql = 'SELECT ?+? as solution';
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          pool.execute(sql, [1, 1], (err, res: RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const finished = memoryExporter.getFinishedSpans();
+            assert.strictEqual(finished.length, 1);
+            getLastQueries(2)
+              .then(queries => {
+                assert.strictEqual(queries[1], expectedSet(finished[0]));
+                assert.match(queries[0], /SELECT 1\+1 as solution/);
+                done();
+              })
+              .catch(done);
+          });
+        });
+      });
+    });
   });
   describe('promise API', () => {
     let instrumentation: MySQL2Instrumentation;

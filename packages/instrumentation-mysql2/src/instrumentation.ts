@@ -22,6 +22,7 @@ import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationConfig } from './types';
 import {
+  buildTraceparent,
   getConnectionAttributes,
   getConnectionPrototypeToInstrument,
   getQueryText,
@@ -212,6 +213,29 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
 
           span.end();
         });
+
+        // Inject trace context via `SET @traceparent = '...'` if enabled.
+        // The SET is dispatched on the same connection (`this`) immediately
+        // before the user query, using the closure-held `originalQuery`
+        // reference so it bypasses our wrapper and is not re-instrumented.
+        // mysql2 serializes commands per connection (one in-flight at a
+        // time), so the SET completes before the user query runs.
+        if (thisPlugin.getConfig().enableTraceContextPropagation) {
+          const traceparent = buildTraceparent(span);
+          if (traceparent) {
+            try {
+              originalQuery.call(
+                this,
+                `SET @traceparent = '${traceparent}'`,
+                () => {
+                  // ignore SET result
+                }
+              );
+            } catch {
+              // Silently ignore SET failures to avoid breaking user queries
+            }
+          }
+        }
 
         if (arguments.length === 1) {
           if (typeof (query as any).onResult === 'function') {
