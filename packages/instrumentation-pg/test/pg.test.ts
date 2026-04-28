@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -275,19 +264,19 @@ describe('pg', () => {
     });
 
     it('should return a promise if callback is not provided', done => {
-      const resPromise = connClient.connect();
-      resPromise
-        .then(res => {
-          assert.equal(res, undefined);
+      connClient
+        .connect()
+        .then(() => {
+          // Note: pg's documented Promise return type is `Promise<void>`, but
+          // some pg versions resolve with the client itself. We only assert
+          // the connect span was created.
           assert.deepStrictEqual(
             memoryExporter.getFinishedSpans()[0].name,
             'pg.connect'
           );
           done();
         })
-        .catch((err: Error) => {
-          assert.ok(false, err.message);
-        });
+        .catch(done);
     });
 
     it('should throw on failure', done => {

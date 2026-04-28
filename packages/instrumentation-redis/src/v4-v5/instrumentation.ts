@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -48,7 +37,7 @@ const MULTI_COMMAND_OPTIONS = Symbol(
   'opentelemetry.instrumentation.redis.multi_command_options'
 );
 
-interface MutliCommandInfo {
+interface MultiCommandInfo {
   span: Span;
   commandName: string;
   commandArgs: Array<string | Buffer>;
@@ -465,7 +454,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
       );
     } else {
       const redisClientMultiCommand = res as {
-        [OTEL_OPEN_SPANS]?: Array<MutliCommandInfo>;
+        [OTEL_OPEN_SPANS]?: Array<MultiCommandInfo>;
       };
       redisClientMultiCommand[OTEL_OPEN_SPANS] =
         redisClientMultiCommand[OTEL_OPEN_SPANS] || [];
@@ -479,7 +468,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
   }
 
   private _endSpansWithRedisReplies(
-    openSpans: Array<MutliCommandInfo>,
+    openSpans: Array<MultiCommandInfo>,
     replies: unknown[],
     isPipeline = false
   ) {
