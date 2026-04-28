@@ -145,11 +145,7 @@ jobs:
       - name: Start Test Services (Delta)
         run: npm run test-services:start:affected
       - name: Test All Versions (Delta)
-        run: |
-          set -a
-          . ./test/test-services.env
-          set +a
-          npm run test-all-versions:ci:affected
+        run: npm run test-all-versions:ci:affected
       - name: Stop Test Services (Delta)
         if: always()
         run: npm run test-services:stop

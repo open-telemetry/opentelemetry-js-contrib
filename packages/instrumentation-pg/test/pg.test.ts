@@ -275,19 +275,19 @@ describe('pg', () => {
     });
 
     it('should return a promise if callback is not provided', done => {
-      connClient
-        .connect()
-        .then(() => {
-          // Note: pg's documented Promise return type is `Promise<void>`, but
-          // some pg versions resolve with the client itself. We only assert
-          // the connect span was created.
+      const resPromise = connClient.connect();
+      resPromise
+        .then(res => {
+          assert.equal(res, undefined);
           assert.deepStrictEqual(
             memoryExporter.getFinishedSpans()[0].name,
             'pg.connect'
           );
           done();
         })
-        .catch(done);
+        .catch((err: Error) => {
+          assert.ok(false, err.message);
+        });
     });
 
     it('should throw on failure', done => {
