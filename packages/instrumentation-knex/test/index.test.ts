@@ -184,6 +184,42 @@ describe('Knex instrumentation', () => {
       );
     });
 
+    it('should read connection attributes from function-based connection settings', async () => {
+      client = knex({
+        client: 'sqlite3',
+        connection: async () => ({
+          filename: ':memory:',
+        }),
+        log: {
+          warn: () => undefined,
+        },
+        useNullAsDefault: true,
+      });
+
+      const parentSpan = tracer.startSpan('parentSpan');
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          assert.deepEqual(await client.raw('select 1 as result'), [
+            { result: 1 },
+          ]);
+          parentSpan.end();
+
+          const instrumentationSpans = memoryExporter.getFinishedSpans();
+          const last = instrumentationSpans.pop() as any;
+          assertSpans(instrumentationSpans, [
+            {
+              op: 'raw',
+              statement: 'select 1 as result',
+              parentSpan,
+            },
+          ]);
+
+          assert(last.name, 'parentSpan');
+        }
+      );
+    });
+
     it('should catch errors', async () => {
       const parentSpan = tracer.startSpan('parentSpan');
       const neverError = new Error('Query was expected to error');
