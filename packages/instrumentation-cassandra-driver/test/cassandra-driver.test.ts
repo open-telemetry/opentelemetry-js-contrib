@@ -3,21 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-  ReadableSpan,
-} from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
   Attributes,
-  context,
   Span,
   SpanKind,
   SpanStatus,
   SpanStatusCode,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_SYSTEM_NAME,
@@ -49,11 +42,12 @@ import { ResponseHookInfo } from '../src/types';
 // specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
 process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
 
-const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
-});
-context.setGlobalContextManager(new AsyncLocalStorageContextManager());
+// const memoryExporter = new InMemorySpanExporter();
+// const provider = new NodeTracerProvider({
+//   spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+// });
+// context.setGlobalContextManager(new AsyncLocalStorageContextManager());
+const provider = testUtils.registerInstrumentationTestingProvider();
 
 const testCassandra = process.env.RUN_CASSANDRA_TESTS;
 const shouldTest = testCassandra;
@@ -113,7 +107,8 @@ function assertSingleSpan(
   customAttributes?: Attributes,
   includeAddressAttrs = true
 ) {
-  const spans = memoryExporter.getFinishedSpans();
+  // const spans = memoryExporter.getFinishedSpans();
+  const spans = testUtils.getTestSpans();
   assert.strictEqual(spans.length, 1);
   const [span] = spans;
   assertSpan(span, name, query, status, customAttributes, includeAddressAttrs);
@@ -124,7 +119,7 @@ function assertAttributeInSingleSpan(
   attributes?: Attributes,
   includeAddressAttrs = true
 ) {
-  const spans = memoryExporter.getFinishedSpans();
+  const spans = testUtils.getTestSpans();
   assert.strictEqual(spans.length, 1);
   const [span] = spans;
   assertSpan(span, name, undefined, undefined, attributes, includeAddressAttrs);
@@ -137,7 +132,7 @@ function assertErrorSpan(
   customAttributes?: Attributes,
   includeAddressAttrs = true
 ) {
-  const spans = memoryExporter.getFinishedSpans();
+  const spans = testUtils.getTestSpans();
   assert.strictEqual(spans.length, 1);
   const [span] = spans;
 
@@ -219,7 +214,8 @@ describe('CassandraDriverInstrumentation', () => {
 
   describe('execute', () => {
     beforeEach(() => {
-      memoryExporter.reset();
+      // memoryExporter.reset();
+      testUtils.resetMemoryExporter();
     });
 
     it('creates a span for promise based execute', async () => {
@@ -333,7 +329,8 @@ describe('CassandraDriverInstrumentation', () => {
 
   describe('batch', () => {
     beforeEach(() => {
-      memoryExporter.reset();
+      // memoryExporter.reset();
+      testUtils.resetMemoryExporter();
     });
 
     const q1 = "insert into ot.test (userid, count) values ('1234', 42)";
@@ -388,13 +385,15 @@ describe('CassandraDriverInstrumentation', () => {
 
   describe('stream', () => {
     beforeEach(() => {
-      memoryExporter.reset();
+      // memoryExporter.reset();
+      testUtils.resetMemoryExporter();
     });
 
     const query = 'select * from ot.test';
 
     function assertStreamSpans() {
-      const spans = memoryExporter.getFinishedSpans();
+      // const spans = memoryExporter.getFinishedSpans();
+      const spans = testUtils.getTestSpans();
       // stream internally uses execute
       assert.strictEqual(spans.length, 2);
       assertSpan(spans[0], 'cassandra-driver.execute');
@@ -439,11 +438,13 @@ describe('CassandraDriverInstrumentation', () => {
     it('uses old attributes when OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
       (instrumentation as any)._setSemconvStabilityFromEnv();
-      memoryExporter.reset();
+      // memoryExporter.reset();
+      testUtils.resetMemoryExporter();
 
       await client.execute('select * from ot.test');
 
-      const spans = memoryExporter.getFinishedSpans();
+      // const spans = memoryExporter.getFinishedSpans();
+      const spans = testUtils.getTestSpans();
       assert.strictEqual(spans.length, 1);
       testUtils.assertSpan(
         spans[0],
@@ -460,11 +461,13 @@ describe('CassandraDriverInstrumentation', () => {
     it('uses stable attributes when OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
       (instrumentation as any)._setSemconvStabilityFromEnv();
-      memoryExporter.reset();
+      // memoryExporter.reset();
+      testUtils.resetMemoryExporter();
 
       await client.execute('select * from ot.test');
 
-      const spans = memoryExporter.getFinishedSpans();
+      // const spans = memoryExporter.getFinishedSpans();
+      const spans = testUtils.getTestSpans();
       assert.strictEqual(spans.length, 1);
       testUtils.assertSpan(
         spans[0],
