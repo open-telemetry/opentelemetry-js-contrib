@@ -245,8 +245,8 @@ function normalizeException(exception: unknown): unknown {
     typeof exceptionObject['type'] === 'string' &&
     typeof exceptionObject['name'] !== 'string'
   ) {
-    return { ...exceptionObject, name: exceptionObject['type'] };
+    exceptionObject['name'] = exceptionObject['type'];
   }
 
-  return exception;
+  return exceptionObject;
 }
