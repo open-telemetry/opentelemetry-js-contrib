@@ -4,15 +4,10 @@
  */
 import * as assert from 'assert';
 
+import { registerInstrumentationTestingProvider, getTestSpans, getTestMemoryExporter } from '@opentelemetry/contrib-test-utils';
 import { context, trace } from '@opentelemetry/api';
 import { RPCType, setRPCMetadata, RPCMetadata } from '@opentelemetry/core';
 import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
 import * as http from 'http';
 import type { AddressInfo } from 'net';
 import { ANONYMOUS_NAME, ConnectInstrumentation } from '../src';
@@ -37,14 +32,8 @@ const httpRequest = {
 };
 
 const instrumentation = new ConnectInstrumentation();
-const contextManager = new AsyncLocalStorageContextManager().enable();
-const memoryExporter = new InMemorySpanExporter();
-const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-const provider = new NodeTracerProvider({
-  spanProcessors: [spanProcessor],
-});
+const provider = registerInstrumentationTestingProvider();
 instrumentation.setTracerProvider(provider);
-context.setGlobalContextManager(contextManager);
 
 const tracer = provider.getTracer('default');
 
@@ -71,9 +60,7 @@ describe('connect', () => {
         resolve();
       })
     );
-    contextManager.disable();
-    contextManager.enable();
-    memoryExporter.reset();
+    getTestMemoryExporter()?.reset();
     instrumentation.disable();
   });
 
@@ -86,7 +73,7 @@ describe('connect', () => {
 
       await httpRequest.get(`http://localhost:${PORT}/`);
 
-      const spans = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
       assert.strictEqual(spans.length, 0);
     });
   });
@@ -128,7 +115,7 @@ describe('connect', () => {
 
       await httpRequest.get(`http://localhost:${PORT}/`);
 
-      const spans = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
       assert.strictEqual(spans.length, 1);
       const span = spans[0];
       assert.deepStrictEqual(span.attributes, {
@@ -146,7 +133,7 @@ describe('connect', () => {
 
       await httpRequest.get(`http://localhost:${PORT}/`);
 
-      const spans = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
       assert.strictEqual(spans.length, 1);
       const span = spans[0];
       assert.deepStrictEqual(span.attributes, {
@@ -164,7 +151,7 @@ describe('connect', () => {
 
       await httpRequest.get(`http://localhost:${PORT}/foo`);
 
-      const spans = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
       assert.strictEqual(spans.length, 1);
       const span = spans[0];
       assert.deepStrictEqual(span.attributes, {
@@ -195,7 +182,7 @@ describe('connect', () => {
       await httpRequest.get(`http://localhost:${PORT}/foo`);
       rootSpan.end();
 
-      const spans = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
       assert.strictEqual(spans.length, 3);
       const changedRootSpan = spans[2];
       assert.strictEqual(changedRootSpan.name, 'root span');
@@ -221,7 +208,7 @@ describe('connect', () => {
       await httpRequest.get(`http://localhost:${PORT}/foo`);
       rootSpan.end();
 
-      const spans = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
       assert.strictEqual(spans.length, 3);
       const changedRootSpan = spans[2];
       const span = spans[0];
