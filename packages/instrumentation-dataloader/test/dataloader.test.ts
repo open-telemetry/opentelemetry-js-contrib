@@ -51,7 +51,6 @@ describe('DataloaderInstrumentation', () => {
 
   afterEach(() => {
     getTestMemoryExporter()?.reset();
-    context.disable();
     instrumentation.setConfig({});
     instrumentation.disable();
     extraInstrumentation.disable();
