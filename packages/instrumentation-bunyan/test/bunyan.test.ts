@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { registerInstrumentationTestingProvider } from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -14,7 +15,6 @@ import {
   SimpleLogRecordProcessor,
   InMemoryLogRecordExporter,
 } from '@opentelemetry/sdk-logs';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
@@ -29,10 +29,9 @@ import type * as BunyanLogger from 'bunyan';
 // import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
-const tracerProvider = new NodeTracerProvider({
+const tracerProvider = registerInstrumentationTestingProvider({
   spanProcessors: [new SimpleSpanProcessor(new InMemorySpanExporter())],
 });
-tracerProvider.register();
 const tracer = tracerProvider.getTracer('default');
 
 const resource = resourceFromAttributes({
