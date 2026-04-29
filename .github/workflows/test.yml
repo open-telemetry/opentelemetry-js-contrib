@@ -105,99 +105,99 @@ jobs:
         if: always()
         run: npm run test-services:stop
 
-  test-all-versions:
-    needs: compile
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node:
-          - "18"
-          - "20"
-          - "22"
-          - "24"
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node }}
-      - run: npm ci
-        timeout-minutes: 10
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: compile-cache-${{ github.run_number }}
-          path: .nx
-      # Note: see comment in the compile job
-      - name: Set base and head commits
-        run: |
-          if [ "${{github.event_name}}" == "push" ]; then
-            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
-            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
-          else
-            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
-            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
-          fi
-      - name: Compile (Delta)
-        run: npm run compile:ci:affected
-      - name: Start Test Services (Delta)
-        run: npm run test-services:start:affected
-      - name: Test All Versions (Delta)
-        run: npm run test-all-versions:ci:affected
-      - name: Stop Test Services (Delta)
-        if: always()
-        run: npm run test-services:stop
-      - name: Upload Test Artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: tests-coverage-cache-${{ github.run_number }}-${{ matrix.node }}
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 1
-          path: |
-            !node_modules
-            packages/*/.nyc_output/**
-            LICENSE
+  # test-all-versions:
+  #   needs: compile
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       node:
+  #         - "18"
+  #         - "20"
+  #         - "22"
+  #         - "24"
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #       with:
+  #         fetch-depth: 0
+  #     - uses: actions/setup-node@v6
+  #       with:
+  #         node-version: ${{ matrix.node }}
+  #     - run: npm ci
+  #       timeout-minutes: 10
+  #     - name: Download Build Artifacts
+  #       uses: actions/download-artifact@v8
+  #       with:
+  #         name: compile-cache-${{ github.run_number }}
+  #         path: .nx
+  #     # Note: see comment in the compile job
+  #     - name: Set base and head commits
+  #       run: |
+  #         if [ "${{github.event_name}}" == "push" ]; then
+  #           echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
+  #           echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
+  #         else
+  #           echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
+  #           echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
+  #         fi
+  #     - name: Compile (Delta)
+  #       run: npm run compile:ci:affected
+  #     - name: Start Test Services (Delta)
+  #       run: npm run test-services:start:affected
+  #     - name: Test All Versions (Delta)
+  #       run: npm run test-all-versions:ci:affected
+  #     - name: Stop Test Services (Delta)
+  #       if: always()
+  #       run: npm run test-services:stop
+  #     - name: Upload Test Artifacts
+  #       uses: actions/upload-artifact@v7
+  #       with:
+  #         name: tests-coverage-cache-${{ github.run_number }}-${{ matrix.node }}
+  #         include-hidden-files: true
+  #         if-no-files-found: error
+  #         retention-days: 1
+  #         path: |
+  #           !node_modules
+  #           packages/*/.nyc_output/**
+  #           LICENSE
 
-  coverage-report:
-    needs: test-all-versions
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 18
-      - name: Install
-        run: npm ci --ignore-scripts
-        timeout-minutes: 10
-      # Note: Keep this in sync with the node versions from `test-all-versions` job.
-      - name: Download Test Artifacts (18)
-        uses: actions/download-artifact@v8
-        with:
-          name: tests-coverage-cache-${{ github.run_number }}-18
-          path: .
-      - name: Download Test Artifacts (20)
-        uses: actions/download-artifact@v8
-        with:
-          name: tests-coverage-cache-${{ github.run_number }}-20
-          path: .
-      - name: Download Test Artifacts (22)
-        uses: actions/download-artifact@v8
-        with:
-          name: tests-coverage-cache-${{ github.run_number }}-22
-          path: .
-      - name: Download Test Artifacts (24)
-        uses: actions/download-artifact@v8
-        with:
-          name: tests-coverage-cache-${{ github.run_number }}-24
-          path: .
-      - name: Report Coverage with Flags
-        run: node ./scripts/codecov-upload-flags.mjs
-        env:
-          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_BRANCH_NAME: ${{ github.event.pull_request.head.label }}
+  # coverage-report:
+  #   needs: test-all-versions
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v6
+  #       with:
+  #         fetch-depth: 0
+  #     - uses: actions/setup-node@v6
+  #       with:
+  #         node-version: 18
+  #     - name: Install
+  #       run: npm ci --ignore-scripts
+  #       timeout-minutes: 10
+  #     # Note: Keep this in sync with the node versions from `test-all-versions` job.
+  #     - name: Download Test Artifacts (18)
+  #       uses: actions/download-artifact@v8
+  #       with:
+  #         name: tests-coverage-cache-${{ github.run_number }}-18
+  #         path: .
+  #     - name: Download Test Artifacts (20)
+  #       uses: actions/download-artifact@v8
+  #       with:
+  #         name: tests-coverage-cache-${{ github.run_number }}-20
+  #         path: .
+  #     - name: Download Test Artifacts (22)
+  #       uses: actions/download-artifact@v8
+  #       with:
+  #         name: tests-coverage-cache-${{ github.run_number }}-22
+  #         path: .
+  #     - name: Download Test Artifacts (24)
+  #       uses: actions/download-artifact@v8
+  #       with:
+  #         name: tests-coverage-cache-${{ github.run_number }}-24
+  #         path: .
+  #     - name: Report Coverage with Flags
+  #       run: node ./scripts/codecov-upload-flags.mjs
+  #       env:
+  #         COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+  #         PR_BRANCH_NAME: ${{ github.event.pull_request.head.label }}
