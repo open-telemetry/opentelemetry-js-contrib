@@ -4,7 +4,11 @@
  */
 import * as assert from 'assert';
 
-import { registerInstrumentationTestingProvider, getTestSpans, getTestMemoryExporter } from '@opentelemetry/contrib-test-utils';
+import {
+  registerInstrumentationTestingProvider,
+  getTestSpans,
+  getTestMemoryExporter,
+} from '@opentelemetry/contrib-test-utils';
 import { context, trace } from '@opentelemetry/api';
 import { RPCType, setRPCMetadata, RPCMetadata } from '@opentelemetry/core';
 import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';

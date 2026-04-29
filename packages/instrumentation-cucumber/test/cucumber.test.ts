@@ -3,7 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { registerInstrumentationTestingProvider, getTestMemoryExporter, getTestSpans } from '@opentelemetry/contrib-test-utils';
+import {
+  registerInstrumentationTestingProvider,
+  getTestMemoryExporter,
+  getTestSpans,
+} from '@opentelemetry/contrib-test-utils';
 import { context, SpanStatusCode } from '@opentelemetry/api';
 import {
   ATTR_CODE_FILE_PATH,
@@ -41,7 +45,7 @@ describe('CucumberInstrumentation', () => {
       [ATTR_SERVICE_NAME]: 'CucumberInstrumentation',
     }),
   });
-  
+
   before(() => {
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
