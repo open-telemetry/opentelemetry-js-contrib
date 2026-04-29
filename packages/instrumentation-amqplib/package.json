@@ -59,7 +59,7 @@
     "@opentelemetry/contrib-test-utils": "^0.62.0",
     "@types/amqplib": "^0.10.7",
     "@types/lodash": "4.17.24",
-    "amqplib": "0.8.0",
+    "amqplib": "^1.0.3",
     "lodash": "4.18.1"
   },
   "engines": {
