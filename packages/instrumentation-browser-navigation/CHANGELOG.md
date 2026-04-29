@@ -1,6 +1,25 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.8.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.7.0...instrumentation-browser-navigation-v0.8.0) (2026-04-17)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3479](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3479)) ([8891261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8891261cb590efcb661bd9f8afec4d1adf885ad8))
+
+
+### Bug Fixes
+
+* **instr-browser-navigation:** avoid unpatching history API ([#3470](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3470)) ([f267476](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f267476a7cccf03c78ec130f72ef0c79ec31d888))
+
+## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.6.0...instrumentation-browser-navigation-v0.7.0) (2026-03-25)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3450](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3450)) ([c8df394](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c8df394f02d68ae48a79a50258682c09dac13b8b))
+
 ## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.5.0...instrumentation-browser-navigation-v0.6.0) (2026-03-04)
 
 

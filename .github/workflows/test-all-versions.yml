@@ -38,7 +38,7 @@ jobs:
       - name: Build
         run: npm run compile
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tav-build-cache-${{ github.run_number }}
           path: .nx
@@ -68,7 +68,7 @@ jobs:
         run: npm ci
         timeout-minutes: 10
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: tav-build-cache-${{ github.run_number }}
           path: .nx

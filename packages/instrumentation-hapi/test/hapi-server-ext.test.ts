@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { context, SpanStatusCode, trace } from '@opentelemetry/api';
@@ -107,6 +96,50 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
       );
     });
 
+    it('instruments direct Hapi.Lifecycle.Method extensions with named method', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+
+      server.ext(
+        'onRequest',
+        async function myOnRequestHandler(request, h, err) {
+          return h.continue;
+        }
+      );
+      await server.start();
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/test',
+          });
+          assert.strictEqual(res.statusCode, 200);
+
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+          const extHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'ext - onRequest - myOnRequestHandler');
+          assert.notStrictEqual(extHandlerSpan, undefined);
+          assert.strictEqual(
+            extHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.EXT
+          );
+          assert.strictEqual(
+            extHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
+            'onRequest'
+          );
+
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
+    });
+
     it('instruments single ServerExtEventsRequestObject', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const extension: hapi.ServerExtEventsRequestObject = {
@@ -182,7 +215,11 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
 
           const extHandlerSpans = memoryExporter
             .getFinishedSpans()
-            .filter(span => span.name === 'ext - onRequest');
+            .filter(
+              span =>
+                span.name === 'ext - onRequest - firstHandler' ||
+                span.name === 'ext - onRequest - secondHandler'
+            );
           assert.notStrictEqual(extHandlerSpans, undefined);
           assert.strictEqual(extHandlerSpans.length, 2);
 

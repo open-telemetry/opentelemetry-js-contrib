@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-lru-memoizer
 
 ## Supported Versions
 
-- [`lru-memoizer`](https://www.npmjs.com/package/lru-memoizer) versions `>=1.3.0 <3`
+- [`lru-memoizer`](https://www.npmjs.com/package/lru-memoizer) versions `>=1.3.0 <4`
 
 ## Usage
 

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
@@ -47,6 +36,15 @@ export const ATTR_CLOUD_PROVIDER = 'cloud.provider' as const;
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_CLOUD_REGION = 'cloud.region' as const;
+
+/**
+ * Container name used by container runtime.
+ *
+ * @example opentelemetry-autoconf
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_CONTAINER_NAME = 'container.name' as const;
 
 /**
  * Name of the [deployment environment](https://wikipedia.org/wiki/Deployment_environment) (aka deployment tier).
@@ -189,6 +187,16 @@ export const ATTR_SERVICE_INSTANCE_ID = 'service.instance.id' as const;
  */
 export const CLOUD_PLATFORM_VALUE_AZURE_APP_SERVICE =
   'azure.app_service' as const;
+
+/**
+ * Enum value "azure.container_apps" for attribute {@link ATTR_CLOUD_PLATFORM}.
+ *
+ * Azure Container Apps
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const CLOUD_PLATFORM_VALUE_AZURE_CONTAINER_APPS =
+  'azure.container_apps' as const;
 
 /**
  * Enum value "azure.functions" for attribute {@link ATTR_CLOUD_PLATFORM}.

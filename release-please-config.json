@@ -46,13 +46,15 @@
     "packages/instrumentation-connect": {},
     "packages/instrumentation-dns": {},
     "packages/instrumentation-express": {},
-    "packages/instrumentation-fastify": {},
     "packages/instrumentation-generic-pool": {},
     "packages/instrumentation-graphql": {},
     "packages/instrumentation-hapi": {},
     "packages/instrumentation-ioredis": {},
     "packages/instrumentation-knex": {},
     "packages/instrumentation-koa": {},
+    "packages/instrumentation-langchain": {
+      "skip-github-release": true
+    },
     "packages/instrumentation-memcached": {},
     "packages/instrumentation-mongodb": {},
     "packages/instrumentation-mysql": {},
