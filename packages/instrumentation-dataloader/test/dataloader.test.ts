@@ -3,16 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
 import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
+  registerInstrumentationTestingProvider,
+  getTestMemoryExporter,
   runTestFixture,
   TestCollector,
+  getTestSpans,
 } from '@opentelemetry/contrib-test-utils';
 
 import { DataloaderInstrumentation } from '../src';
@@ -32,12 +29,8 @@ function getMd5HashFromIdx(idx: number) {
 
 describe('DataloaderInstrumentation', () => {
   let dataloader: Dataloader<string, string, string>;
-  let contextManager: AsyncLocalStorageContextManager;
-
-  const memoryExporter = new InMemorySpanExporter();
-  const provider = new NodeTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
-  });
+  
+  const provider = registerInstrumentationTestingProvider();
   const tracer = provider.getTracer('default');
 
   instrumentation.setTracerProvider(provider);
@@ -45,8 +38,6 @@ describe('DataloaderInstrumentation', () => {
 
   beforeEach(async () => {
     instrumentation.enable();
-    contextManager = new AsyncLocalStorageContextManager();
-    context.setGlobalContextManager(contextManager.enable());
     dataloader = new Dataloader(
       async keys =>
         keys.map((_, idx) => {
@@ -55,11 +46,11 @@ describe('DataloaderInstrumentation', () => {
       { cache: true }
     );
 
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    assert.strictEqual(getTestSpans().length, 0);
   });
 
   afterEach(() => {
-    memoryExporter.reset();
+    getTestMemoryExporter()?.reset();
     context.disable();
     instrumentation.setConfig({});
     instrumentation.disable();
@@ -71,8 +62,9 @@ describe('DataloaderInstrumentation', () => {
       assert.strictEqual(await dataloader.load('test'), getMd5HashFromIdx(0));
 
       // We should have exactly two spans (one for .load and one for the following batch)
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
-      const [batchSpan, loadSpan] = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 2);
+      const [batchSpan, loadSpan] = spans;
 
       assert.strictEqual(loadSpan.name, 'dataloader.load');
       assert.strictEqual(loadSpan.kind, SpanKind.CLIENT);
@@ -96,7 +88,7 @@ describe('DataloaderInstrumentation', () => {
             getMd5HashFromIdx(0)
           );
 
-          const [_, loadSpan] = memoryExporter.getFinishedSpans();
+          const [_, loadSpan] = getTestSpans();
           assert.strictEqual(
             loadSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
@@ -117,7 +109,7 @@ describe('DataloaderInstrumentation', () => {
             getMd5HashFromIdx(0)
           );
 
-          const [_, loadSpan] = memoryExporter.getFinishedSpans();
+          const [_, loadSpan] = getTestSpans();
           assert.strictEqual(
             loadSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
@@ -137,9 +129,9 @@ describe('DataloaderInstrumentation', () => {
       } catch (e) {}
 
       // All spans should be finished, both load as well as the batch ones should have errored
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
-      const [batchSpan, clearSpan, loadSpan] =
-        memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 3);
+      const [batchSpan, clearSpan, loadSpan] = spans;
 
       assert.deepStrictEqual(loadSpan.status, {
         code: SpanStatusCode.ERROR,
@@ -165,8 +157,9 @@ describe('DataloaderInstrumentation', () => {
       assert.strictEqual(await namedDataloader.load('test'), 0);
 
       // We should have exactly two spans (one for .load and one for the following batch)
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
-      const [batchSpan, loadSpan] = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 2);
+      const [batchSpan, loadSpan] = spans
 
       if ((namedDataloader as { name?: string | null }).name === undefined) {
         // For versions of dataloader package that does not support name, we should
@@ -188,9 +181,9 @@ describe('DataloaderInstrumentation', () => {
 
       // We should have exactly three spans (one for .loadMany, one for the underlying .load
       // and one for the following batch)
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
-      const [batchSpan, loadSpan, loadManySpan] =
-        memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 3);
+      const [batchSpan, loadSpan, loadManySpan] = spans
 
       assert.strictEqual(batchSpan.name, 'dataloader.batch');
       assert.strictEqual(batchSpan.kind, SpanKind.INTERNAL);
@@ -219,7 +212,7 @@ describe('DataloaderInstrumentation', () => {
             getMd5HashFromIdx(0),
           ]);
 
-          const [, , loadManySpan] = memoryExporter.getFinishedSpans();
+          const [, , loadManySpan] = getTestSpans();
           assert.strictEqual(
             loadManySpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
@@ -239,7 +232,7 @@ describe('DataloaderInstrumentation', () => {
             getMd5HashFromIdx(0),
           ]);
 
-          const [, , loadManySpan] = memoryExporter.getFinishedSpans();
+          const [, , loadManySpan] = getTestSpans();
           assert.strictEqual(
             loadManySpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
@@ -261,9 +254,9 @@ describe('DataloaderInstrumentation', () => {
 
       // All spans should be finished, both load as well as the batch ones should have errored
       // but loadMany one should not have errored
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
-      const [batchSpan, clearSpan, loadSpan, loadManySpan] =
-        memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 4);
+      const [batchSpan, clearSpan, loadSpan, loadManySpan] = spans;
 
       assert.deepStrictEqual(loadSpan.status, {
         code: SpanStatusCode.ERROR,
@@ -294,9 +287,9 @@ describe('DataloaderInstrumentation', () => {
 
       // We should have exactly three spans (one for .loadMany, one for the underlying .load
       // and one for the following batch)
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
-      const [batchSpan, loadSpan, loadManySpan] =
-        memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 3);
+      const [batchSpan, loadSpan, loadManySpan] = spans;
 
       if ((namedDataloader as { name?: string | null }).name === undefined) {
         // For versions of dataloader package that does not support name, we should
@@ -317,8 +310,9 @@ describe('DataloaderInstrumentation', () => {
       dataloader.clear('test');
 
       // We should have exactly one span
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-      const [clearSpan] = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      const [clearSpan] = spans;
 
       assert.strictEqual(clearSpan.name, 'dataloader.clear');
       assert.strictEqual(clearSpan.kind, SpanKind.CLIENT);
@@ -332,7 +326,7 @@ describe('DataloaderInstrumentation', () => {
         async () => {
           dataloader.clear('test');
 
-          const [clearSpan] = memoryExporter.getFinishedSpans();
+          const [clearSpan] = getTestSpans();
           assert.strictEqual(
             clearSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
@@ -350,7 +344,7 @@ describe('DataloaderInstrumentation', () => {
         async () => {
           dataloader.clear('test');
 
-          const [clearSpan] = memoryExporter.getFinishedSpans();
+          const [clearSpan] = getTestSpans();
           assert.strictEqual(
             clearSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
@@ -363,8 +357,9 @@ describe('DataloaderInstrumentation', () => {
       dataloader.clear('test');
 
       // All spans should be finished, but none should have errored
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-      const [clearSpan] = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      const [clearSpan] = spans;
 
       assert.deepStrictEqual(clearSpan.status, {
         code: SpanStatusCode.UNSET,
@@ -380,8 +375,9 @@ describe('DataloaderInstrumentation', () => {
       namedDataloader.clear('test');
 
       // We should have exactly one span
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-      const [clearSpan] = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      const [clearSpan] = spans;
 
       if ((namedDataloader as { name?: string | null }).name === undefined) {
         // For versions of dataloader
@@ -398,8 +394,9 @@ describe('DataloaderInstrumentation', () => {
       dataloader.clearAll();
 
       // We should have exactly one span
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-      const [clearSpan] = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      const [clearSpan] = spans;
 
       assert.strictEqual(clearSpan.name, 'dataloader.clearAll');
       assert.strictEqual(clearSpan.kind, SpanKind.CLIENT);
@@ -413,7 +410,7 @@ describe('DataloaderInstrumentation', () => {
         async () => {
           dataloader.clearAll();
 
-          const [clearSpan] = memoryExporter.getFinishedSpans();
+          const [clearSpan] = getTestSpans();
           assert.strictEqual(
             clearSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
@@ -431,7 +428,7 @@ describe('DataloaderInstrumentation', () => {
         async () => {
           dataloader.clearAll();
 
-          const [clearSpan] = memoryExporter.getFinishedSpans();
+          const [clearSpan] = getTestSpans();
           assert.strictEqual(
             clearSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
@@ -444,8 +441,9 @@ describe('DataloaderInstrumentation', () => {
       dataloader.clearAll();
 
       // All spans should be finished, but none should have errored
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-      const [clearSpan] = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      const [clearSpan] = spans;
 
       assert.deepStrictEqual(clearSpan.status, {
         code: SpanStatusCode.UNSET,
@@ -458,8 +456,9 @@ describe('DataloaderInstrumentation', () => {
       dataloader.prime('test', '1');
 
       // We should have exactly one span
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-      const [primeSpan] = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      const [primeSpan] = spans;
 
       assert.strictEqual(primeSpan.name, 'dataloader.prime');
       assert.strictEqual(primeSpan.kind, SpanKind.CLIENT);
@@ -473,7 +472,7 @@ describe('DataloaderInstrumentation', () => {
         async () => {
           dataloader.prime('test', '1');
 
-          const [primeSpan] = memoryExporter.getFinishedSpans();
+          const [primeSpan] = getTestSpans();
           assert.strictEqual(
             primeSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
@@ -491,7 +490,7 @@ describe('DataloaderInstrumentation', () => {
         async () => {
           dataloader.prime('test', '1');
 
-          const [primeSpan] = memoryExporter.getFinishedSpans();
+          const [primeSpan] = getTestSpans();
           assert.strictEqual(
             primeSpan.parentSpanContext?.spanId,
             rootSpan.spanContext().spanId
@@ -504,8 +503,9 @@ describe('DataloaderInstrumentation', () => {
       dataloader.prime('test', '1');
 
       // All spans should be finished, but none should have errored
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-      const [primeSpan] = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      const [primeSpan] = spans;
 
       assert.deepStrictEqual(primeSpan.status, {
         code: SpanStatusCode.UNSET,
@@ -521,8 +521,9 @@ describe('DataloaderInstrumentation', () => {
       namedDataloader.prime('test', 1);
 
       // We should have exactly one span
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-      const [primeSpan] = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      const [primeSpan] = spans;
 
       if ((namedDataloader as { name?: string | null }).name === undefined) {
         // For versions of dataloader
@@ -537,8 +538,9 @@ describe('DataloaderInstrumentation', () => {
       dataloader.prime('test', '1').prime('test2', '2');
 
       // We should have exactly two spans
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
-      const [primeSpan1, primeSpan2] = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 2);
+      const [primeSpan1, primeSpan2] = spans;
 
       assert.strictEqual(primeSpan1.name, 'dataloader.prime');
       assert.strictEqual(primeSpan2.name, 'dataloader.prime');
@@ -552,7 +554,7 @@ describe('DataloaderInstrumentation', () => {
     assert.deepStrictEqual(await dataloader.loadMany(['test']), [
       getMd5HashFromIdx(0),
     ]);
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    assert.strictEqual(getTestSpans().length, 0);
 
     // Same goes for any new dataloaders that are created while the instrumentation is disabled
     const alternativeDataloader = new Dataloader(
@@ -570,7 +572,7 @@ describe('DataloaderInstrumentation', () => {
       alternativeDataloader.prime('test', 1),
       alternativeDataloader
     );
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    assert.strictEqual(getTestSpans().length, 0);
   });
 
   it('should not create anything if parent span is required, but missing', async () => {
@@ -584,7 +586,7 @@ describe('DataloaderInstrumentation', () => {
     assert.strictEqual(await dataloader.clearAll(), dataloader);
     assert.strictEqual(await dataloader.prime('test', '1'), dataloader);
 
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    assert.strictEqual(getTestSpans().length, 0);
   });
 
   it('should avoid double shimming of functions', async () => {
@@ -592,14 +594,14 @@ describe('DataloaderInstrumentation', () => {
 
     // Dataloader created prior to the extra instrumentation
     assert.strictEqual(await dataloader.load('test'), getMd5HashFromIdx(0));
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+    assert.strictEqual(getTestSpans().length, 2);
 
     assert.deepStrictEqual(await dataloader.loadMany(['test']), [
       getMd5HashFromIdx(0),
     ]);
 
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
-    memoryExporter.reset();
+    assert.strictEqual(getTestSpans().length, 4);
+    getTestMemoryExporter()?.reset();
 
     // Same goes for any new dataloaders that are created after the extra instrumentation is added
     const alternativeDataloader = new Dataloader(
@@ -607,10 +609,10 @@ describe('DataloaderInstrumentation', () => {
       { cache: false }
     );
     assert.strictEqual(await alternativeDataloader.load('test'), 1);
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+    assert.strictEqual(getTestSpans().length, 2);
 
     assert.deepStrictEqual(await alternativeDataloader.loadMany(['test']), [1]);
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 5);
+    assert.strictEqual(getTestSpans().length, 5);
   });
 
   it('should not prune custom methods', async () => {
@@ -627,8 +629,8 @@ describe('DataloaderInstrumentation', () => {
     const customDataloader = new CustomDataLoader();
     await customDataloader.customLoad();
 
-    assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
-    const [batchSpan, loadSpan] = memoryExporter.getFinishedSpans();
+    assert.strictEqual(getTestSpans().length, 2);
+    const [batchSpan, loadSpan] = getTestSpans();
 
     assert.strictEqual(loadSpan.name, 'dataloader.load');
     assert.strictEqual(batchSpan.name, 'dataloader.batch');
