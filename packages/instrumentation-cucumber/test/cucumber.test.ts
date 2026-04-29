@@ -8,7 +8,7 @@ import {
   getTestMemoryExporter,
   getTestSpans,
 } from '@opentelemetry/contrib-test-utils';
-import { context, SpanStatusCode } from '@opentelemetry/api';
+import { SpanStatusCode } from '@opentelemetry/api';
 import {
   ATTR_CODE_FILE_PATH,
   ATTR_CODE_FUNCTION_NAME,
