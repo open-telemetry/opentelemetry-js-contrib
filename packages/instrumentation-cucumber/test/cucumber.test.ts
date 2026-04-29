@@ -3,13 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { registerInstrumentationTestingProvider, getTestMemoryExporter, getTestSpans } from '@opentelemetry/contrib-test-utils';
 import { context, SpanStatusCode } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
 import {
   ATTR_CODE_FILE_PATH,
   ATTR_CODE_FUNCTION_NAME,
@@ -41,26 +36,19 @@ import {
 import { PassThrough } from 'stream';
 
 describe('CucumberInstrumentation', () => {
-  const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  const provider = new NodeTracerProvider({
+  const provider = registerInstrumentationTestingProvider({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'CucumberInstrumentation',
     }),
-    spanProcessors: [spanProcessor],
   });
-  const contextManager = new AsyncLocalStorageContextManager().enable();
-
+  
   before(() => {
     instrumentation.setTracerProvider(provider);
-    context.setGlobalContextManager(contextManager);
     instrumentation.enable();
   });
 
   afterEach(() => {
-    contextManager.disable();
-    contextManager.enable();
-    memoryExporter.reset();
+    getTestMemoryExporter()?.reset();
   });
 
   after(async () => {
@@ -122,7 +110,7 @@ describe('CucumberInstrumentation', () => {
       });
 
       it('generates spans for cucumber execution', () => {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         // should have Feature span
         const parent = spans.find(span => span.name.startsWith('Feature'));
         assert(parent, 'Expected a parent span');
@@ -152,7 +140,7 @@ describe('CucumberInstrumentation', () => {
       });
 
       it('adds scenario attributes to parent span', () => {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const parent = spans.find(span => span.name.startsWith('Feature'));
         assert(parent, 'Expected a parent span');
 
@@ -172,7 +160,7 @@ describe('CucumberInstrumentation', () => {
       });
 
       it('adds step args to span attributes', () => {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const parameterisedSpan = spans.find(span =>
           span.name.startsWith('Then(it is pushed')
         );
@@ -184,7 +172,7 @@ describe('CucumberInstrumentation', () => {
       });
 
       it('adds step table to span attributes', () => {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const tableSpan = spans.find(span =>
           span.name.startsWith('Then(does something')
         );
@@ -220,7 +208,7 @@ describe('CucumberInstrumentation', () => {
       });
 
       it('has a scenario for every example', () => {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const scenarios = spans.filter(span => span.name.startsWith('Feature'));
         assert.equal(scenarios.length, 2);
 
@@ -234,7 +222,7 @@ describe('CucumberInstrumentation', () => {
       });
 
       it('sets a span of a failing step to error', () => {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const span = spans.find(span => span.name === 'Given(a failing step)');
         assert(span);
 
@@ -258,7 +246,7 @@ describe('CucumberInstrumentation', () => {
         });
 
         it('generates spans for each attempt', () => {
-          const spans = memoryExporter.getFinishedSpans();
+          const spans = getTestSpans();
           const parent = spans.find(span => span.name.includes('Feature'));
           assert(parent);
 
@@ -274,7 +262,7 @@ describe('CucumberInstrumentation', () => {
         });
 
         it('creates scanario spans as children of attempts', () => {
-          const spans = memoryExporter.getFinishedSpans();
+          const spans = getTestSpans();
           const attemptSpans = spans.filter(span =>
             span.name.startsWith('Attempt')
           );
@@ -308,7 +296,7 @@ describe('CucumberInstrumentation', () => {
       });
 
       it('adds doc strings as arg to span attributes', () => {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
 
@@ -337,7 +325,7 @@ describe('CucumberInstrumentation', () => {
       });
 
       it('adds spans for background steps', () => {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
 
@@ -358,7 +346,7 @@ describe('CucumberInstrumentation', () => {
               Scenario: Fails ${hook} Hook
                 When I push the button
           `);
-          const spans = memoryExporter.getFinishedSpans();
+          const spans = getTestSpans();
           const parent = spans.find(span =>
             span.name.includes(`Fails ${hook}`)
           );
@@ -391,7 +379,7 @@ describe('CucumberInstrumentation', () => {
       });
 
       it('sets undefined steps to error', () => {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
         assert.equal(parent.status.code, SpanStatusCode.ERROR);
@@ -427,7 +415,7 @@ describe('CucumberInstrumentation', () => {
       });
 
       it('sets ambiguous steps to error', () => {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
         assert.equal(parent.status.code, SpanStatusCode.ERROR);
@@ -457,7 +445,7 @@ describe('CucumberInstrumentation', () => {
               Given a skipped step
               Then it is pushed to "limit"
         `);
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
         assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
@@ -475,7 +463,7 @@ describe('CucumberInstrumentation', () => {
             Scenario:
               When I push the button
         `);
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const parent = spans.find(
           span =>
             span.name.includes('Feature') &&
@@ -497,7 +485,7 @@ describe('CucumberInstrumentation', () => {
               Given a pending step
               When I push the button
         `);
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
         assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'PENDING');
@@ -515,7 +503,7 @@ describe('CucumberInstrumentation', () => {
             Scenario: pending scenario
               When I push the button
         `);
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
         assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'PENDING');
@@ -545,7 +533,7 @@ describe('CucumberInstrumentation', () => {
           When I do anything at all
           Then no spans are recorded
       `);
-      const spans = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
       assert.equal(spans.length, 0);
     });
   });
