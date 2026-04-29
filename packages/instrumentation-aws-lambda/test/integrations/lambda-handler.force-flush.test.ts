@@ -7,12 +7,13 @@
 
 import * as path from 'path';
 
+import { registerInstrumentationTestingProvider } from '@opentelemetry/contrib-test-utils';
+
 import { AwsLambdaInstrumentation } from '../../src';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
 } from '@opentelemetry/sdk-trace-base';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import { ProxyTracerProvider, TracerProvider } from '@opentelemetry/api';
@@ -75,11 +76,10 @@ describe('force flush', () => {
     metricMemoryExporter.reset();
   });
 
-  it('should force flush NodeTracerProvider', async () => {
-    const provider = new NodeTracerProvider({
+  it('should force flush TracerProvider', async () => {
+    const provider = registerInstrumentationTestingProvider({
       spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
     });
-    provider.register();
     let forceFlushed = false;
     const forceFlush = () =>
       new Promise<void>(resolve => {
@@ -94,20 +94,19 @@ describe('force flush', () => {
     assert.strictEqual(forceFlushed, true);
   });
 
-  it('should force flush ProxyTracerProvider with NodeTracerProvider', async () => {
-    const nodeTracerProvider = new NodeTracerProvider({
+  it('should force flush ProxyTracerProvider with TracerProvider', async () => {
+    const tracerProvider = registerInstrumentationTestingProvider({
       spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
     });
-    nodeTracerProvider.register();
     const provider = new ProxyTracerProvider();
-    provider.setDelegate(nodeTracerProvider);
+    provider.setDelegate(tracerProvider);
     let forceFlushed = false;
     const forceFlush = () =>
       new Promise<void>(resolve => {
         forceFlushed = true;
         resolve();
       });
-    nodeTracerProvider.forceFlush = forceFlush;
+    tracerProvider.forceFlush = forceFlush;
     initializeHandlerTracing('lambda-test/sync.handler', provider);
 
     await lambdaRequire('lambda-test/sync').handler('arg', ctx);
@@ -136,10 +135,9 @@ describe('force flush', () => {
   });
 
   it('should complete handler after force flush providers', async () => {
-    const nodeTracerProvider = new NodeTracerProvider({
+    const nodeTracerProvider = registerInstrumentationTestingProvider({
       spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
     });
-    nodeTracerProvider.register();
     const tracerProvider = new ProxyTracerProvider();
     tracerProvider.setDelegate(nodeTracerProvider);
     let tracerForceFlushed = false;
