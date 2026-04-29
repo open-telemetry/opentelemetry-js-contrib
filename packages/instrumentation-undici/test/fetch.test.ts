@@ -419,6 +419,48 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       );
     });
 
+
+    it('should not record error if fetch response body is cancelled', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+      const response = await fetch(fetchUrl);
+
+      // Cancel the response body instead of consuming it
+      await response.body?.cancel();
+
+      // Let the error be published to diagnostics channel
+      await new Promise(r => setTimeout(r, 50));
+
+      spans = memoryExporter.getFinishedSpans();
+
+      // If cancelled before span was recorded, no span is expected
+      if (spans.length === 0) {
+        return;
+      }
+
+      const span = spans[0];
+      assert.strictEqual(spans.length, 1);
+
+      // Per OTel HTTP spec: intentional cancellation SHOULD NOT be an error
+      assert.strictEqual(
+        span.status.code,
+        SpanStatusCode.UNSET,
+        'span status should be UNSET when response body is cancelled'
+      );
+      assert.strictEqual(
+        span.events.length,
+        0,
+        'no exception event should be recorded when response body is cancelled'
+      );
+      assert.strictEqual(
+        span.attributes['error.type'],
+        undefined,
+        'error.type should not be set when response body is cancelled'
+      );
+    });
+
     it('should still record genuine errors as errors', async function () {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
@@ -453,3 +495,4 @@ describe('UndiciInstrumentation `fetch` tests', function () {
     });
   });
 });
+

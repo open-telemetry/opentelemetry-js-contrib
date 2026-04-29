@@ -491,7 +491,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
         message: error.message,
       });
       span.end();
-      // Record metrics (with the error)
+      
       attributes[ATTR_ERROR_TYPE] = error.message;
     }
 
