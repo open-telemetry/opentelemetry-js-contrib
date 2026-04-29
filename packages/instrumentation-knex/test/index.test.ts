@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -35,7 +24,7 @@ const plugin = new KnexInstrumentation({
 
 import knex from 'knex';
 // @ts-ignore
-import * as BetterSqlite3Dialect from 'knex/lib/dialects/better-sqlite3';
+import * as BetterSqlite3Dialect from 'knex/lib/dialects/better-sqlite3/index.js';
 
 describe('Knex instrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
@@ -620,6 +609,56 @@ describe('Knex instrumentation', () => {
         },
       ]);
     });
+  });
+});
+
+describe('utils: connectionString parsing', () => {
+  it('should extract database name from connectionString', () => {
+    const { extractDatabaseFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractDatabaseFromConnectionString(
+        'postgres://user:pass@localhost:5432/mydb'
+      ),
+      'mydb'
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString('mysql://user:pass@host/testdb'),
+      'testdb'
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString(undefined),
+      undefined
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString('not-a-url'),
+      undefined
+    );
+  });
+
+  it('should extract host from connectionString', () => {
+    const { extractHostFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractHostFromConnectionString('postgres://user:pass@myhost:5432/mydb'),
+      'myhost'
+    );
+    assert.strictEqual(extractHostFromConnectionString('not-a-url'), undefined);
+    assert.strictEqual(extractHostFromConnectionString(undefined), undefined);
+  });
+
+  it('should extract port from connectionString', () => {
+    const { extractPortFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractPortFromConnectionString(
+        'postgres://user:pass@localhost:5432/mydb'
+      ),
+      5432
+    );
+    assert.strictEqual(
+      extractPortFromConnectionString('postgres://user:pass@localhost/mydb'),
+      undefined // no port specified
+    );
+    assert.strictEqual(extractPortFromConnectionString('not-a-url'), undefined);
+    assert.strictEqual(extractPortFromConnectionString(undefined), undefined);
   });
 });
 

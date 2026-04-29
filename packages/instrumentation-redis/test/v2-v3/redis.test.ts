@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -330,6 +319,80 @@ describe('redis v2-v3', () => {
           client.set('callbacksTestKey', 'value', () => {
             const activeSpan = trace.getSpan(context.active());
             assert.strictEqual(activeSpan, rootSpan);
+          });
+        });
+      });
+    });
+
+    describe('sensitive command sanitization', () => {
+      it('should redact CONFIG SET arguments in db.statement', function (done) {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.config('set', 'hz', '15', (err: unknown) => {
+            try {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = testUtils.getTestSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_STATEMENT],
+                'config set [2 other arguments]'
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'config set [2 other arguments]'
+              );
+              done();
+            } catch (error) {
+              done(error);
+            }
+          });
+        });
+      });
+
+      it('should redact GETSET value in db.statement', function (done) {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.getset('test', 'secret-value', (err: unknown) => {
+            try {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = testUtils.getTestSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_STATEMENT],
+                'getset test [1 other arguments]'
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'getset test [1 other arguments]'
+              );
+              done();
+            } catch (err) {
+              done(err);
+            }
+          });
+        });
+      });
+
+      it('should redact PSETEX value in db.statement', function (done) {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.psetex('test', 60000, 'secret-value', (err: unknown) => {
+            try {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = testUtils.getTestSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_STATEMENT],
+                'psetex test [2 other arguments]'
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'psetex test [2 other arguments]'
+              );
+              done();
+            } catch (err) {
+              done(err);
+            }
           });
         });
       });

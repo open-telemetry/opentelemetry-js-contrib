@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -661,6 +650,102 @@ describe('ioredis', () => {
             testUtils.assertPropagation(evalshaSpan, span);
             done();
           });
+        });
+      });
+
+      describe('sensitive command sanitization', function () {
+        after(async () => {
+          // cleanup added user
+          client.acl('DELUSER', 'testuser');
+        });
+
+        it('should redact CONFIG SET arguments in db.statement', async function () {
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async function () {
+              await client.config('SET', 'hz', '15');
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_STATEMENT],
+                'config SET [2 other arguments]'
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'config SET [2 other arguments]'
+              );
+            }
+          );
+        });
+
+        it('should redact ACL SETUSER arguments in db.statement', async function () {
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async function () {
+              await (client as any).acl('setuser', 'testuser');
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_STATEMENT],
+                'acl setuser [1 other arguments]'
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'acl setuser [1 other arguments]'
+              );
+            }
+          );
+          await (client as any).acl('deluser', 'testuser'); // cleanup
+        });
+
+        it('should redact GETSET value in db.statement', async function () {
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async function () {
+              await client.getset(testKeyName, 'secret-value');
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_STATEMENT],
+                `getset ${testKeyName} [1 other arguments]`
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                `getset ${testKeyName} [1 other arguments]`
+              );
+            }
+          );
+        });
+
+        it('should redact PSETEX value in db.statement', async function () {
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async function () {
+              await client.psetex(testKeyName, 60000, 'secret-value');
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_STATEMENT],
+                `psetex ${testKeyName} [2 other arguments]`
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                `psetex ${testKeyName} [2 other arguments]`
+              );
+            }
+          );
         });
       });
     });
