@@ -69,5 +69,6 @@
   "packages/propagator-ot-trace": "0.29.0",
   "packages/propagator-aws-xray": "2.2.0",
   "packages/propagator-aws-xray-lambda": "0.56.0",
-  "packages/instrumentation-browser-navigation": "0.8.0"
+  "packages/instrumentation-browser-navigation": "0.8.0",
+  "packages/profiler-nodejs": "0.1.0"
 }

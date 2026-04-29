@@ -107,7 +107,7 @@ describe('NodeProfiling', () => {
     return exportedBatches[0];
   }
 
-  it('默认会在 wall profile 中启用 cpu time 采集', async () => {
+  it('enables CPU time collection for wall profiles by default', async () => {
     const batch = await collectWith();
     const decoded = batch.profiles.map(profile => [
       profile.filename,
@@ -136,7 +136,7 @@ describe('NodeProfiling', () => {
     ]);
   });
 
-  it('cpuProfilingEnabled=false 时会关闭 cpu time 采集', async () => {
+  it('disables CPU time collection when cpuProfilingEnabled=false', async () => {
     const batch = await collectWith({
       cpuProfilingEnabled: false,
     });
@@ -157,7 +157,7 @@ describe('NodeProfiling', () => {
     ]);
   });
 
-  it('仍兼容已废弃的 collectCpuTime 配置', async () => {
+  it('remains compatible with the deprecated collectCpuTime option', async () => {
     await collectWith({
       collectCpuTime: false,
     });
@@ -170,7 +170,7 @@ describe('NodeProfiling', () => {
     });
   });
 
-  it('cpuProfilingEnabled 的优先级高于 collectCpuTime', async () => {
+  it('gives cpuProfilingEnabled precedence over collectCpuTime', async () => {
     await collectWith({
       cpuProfilingEnabled: true,
       collectCpuTime: false,

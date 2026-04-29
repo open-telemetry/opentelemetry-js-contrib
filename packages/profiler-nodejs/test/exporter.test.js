@@ -19,7 +19,7 @@ const assert = require('node:assert/strict');
 const { DatakitProfilingExporter } = require('../src/exporter');
 
 describe('DatakitProfilingExporter', () => {
-  it('会按 ddtrace Node.js 兼容布局发送 multipart 请求', async () => {
+  it('sends a multipart request using the ddtrace-compatible Node.js layout', async () => {
     let captured;
     const exporter = new DatakitProfilingExporter({
       endpoint: 'http://127.0.0.1:9529/profiling/v1/input',
@@ -77,7 +77,7 @@ describe('DatakitProfilingExporter', () => {
     });
   });
 
-  it('非 2xx 响应时会抛出错误', async () => {
+  it('throws when the backend responds with a non-2xx status', async () => {
     const exporter = new DatakitProfilingExporter({
       fetch: async () => new Response('bad request', { status: 400 }),
     });

@@ -101,16 +101,16 @@ app.get('/work', async (req, res) => {
 
 async function main() {
   const server = await listen(app, port);
-  console.log(`[demo] 服务已启动: http://127.0.0.1:${port}`);
-  console.log(`[demo] Trace 主地址: ${otlpBaseEndpoint}`);
-  console.log(`[demo] Trace 实际上报地址: ${otlpTracesEndpoint}`);
+  console.log(`[demo] service started: http://127.0.0.1:${port}`);
+  console.log(`[demo] trace base endpoint: ${otlpBaseEndpoint}`);
+  console.log(`[demo] effective trace export endpoint: ${otlpTracesEndpoint}`);
 
   try {
     await tracer.startActiveSpan('validation.run', async span => {
       try {
         const traceContext = span.spanContext();
         console.log(
-          `[demo] 发起验证请求，根 span traceId=${traceContext.traceId}`
+          `[demo] sending validation request, root span traceId=${traceContext.traceId}`
         );
 
         const response = await axios.get(`http://127.0.0.1:${port}/work`, {
@@ -119,7 +119,7 @@ async function main() {
           },
         });
 
-        console.log('[demo] 服务响应:');
+        console.log('[demo] service response:');
         console.log(JSON.stringify(response.data, null, 2));
         span.setAttribute('validation.response.status', response.status);
         span.setStatus({ code: SpanStatusCode.OK });
@@ -142,7 +142,7 @@ async function main() {
 }
 
 main().catch(error => {
-  console.error('[demo] 执行失败:', error);
+  console.error('[demo] demo failed:', error);
   process.exitCode = 1;
 });
 

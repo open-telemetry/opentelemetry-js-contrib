@@ -45,16 +45,18 @@ const server = http.createServer((req, res) => {
   req.on('end', () => {
     const rawBody = Buffer.concat(chunks);
     const body = rawBody.toString('utf8');
-    console.log(`[receiver] 收到请求: ${req.method} ${requestPath}`);
+    console.log(`[receiver] received request: ${req.method} ${requestPath}`);
     console.log(`[receiver] content-type: ${req.headers['content-type'] || ''}`);
 
     try {
       const payload = JSON.parse(body);
       const summary = summarize(payload);
-      console.log('[receiver] payload 摘要:');
+      console.log('[receiver] payload summary:');
       console.log(JSON.stringify(summary, null, 2));
     } catch (_error) {
-      console.log('[receiver] 无法解析为 JSON，输出原始字节长度和前 48 字节十六进制');
+      console.log(
+        '[receiver] payload is not JSON, showing raw length and the first 48 bytes as hex'
+      );
       console.log(
         JSON.stringify(
           {
@@ -73,9 +75,9 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`[receiver] 已监听 http://127.0.0.1:${port}${basePath}`);
+  console.log(`[receiver] listening on http://127.0.0.1:${port}${basePath}`);
   console.log(
-    `[receiver] 同时接受 http://127.0.0.1:${port}${normalizePath(
+    `[receiver] also accepting http://127.0.0.1:${port}${normalizePath(
       `${basePath}/v1/traces`
     )}`
   );
