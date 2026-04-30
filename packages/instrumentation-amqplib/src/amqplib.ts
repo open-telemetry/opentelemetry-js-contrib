@@ -70,7 +70,7 @@ import {
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
-const supportedVersions = ['>=0.5.5 <1'];
+const supportedVersions = ['>=0.5.5 <2'];
 
 export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumentationConfig> {
   private _netSemconvStability!: SemconvStability;
