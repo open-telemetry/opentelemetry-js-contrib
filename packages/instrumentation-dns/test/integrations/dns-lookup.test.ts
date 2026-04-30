@@ -3,27 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+import { getTestMemoryExporter, getTestSpans, registerInstrumentationTestingProvider } from '@opentelemetry/contrib-test-utils';
 import * as assert from 'assert';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { DnsInstrumentation } from '../../src';
 import * as dns from 'dns';
 import * as utils from '../utils/utils';
 import { assertSpan } from '../utils/assertSpan';
 import { SpanStatusCode } from '@opentelemetry/api';
 
-const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
-});
-
 describe('dns.lookup()', () => {
   let instrumentation: DnsInstrumentation;
+  let provider: ReturnType<typeof registerInstrumentationTestingProvider>;
 
   before(function (done) {
+    provider = registerInstrumentationTestingProvider();
     // mandatory
     if (process.env.CI) {
       instrumentation = new DnsInstrumentation();
@@ -46,7 +39,7 @@ describe('dns.lookup()', () => {
   });
 
   afterEach(() => {
-    memoryExporter.reset();
+    getTestMemoryExporter()?.reset();
   });
 
   after(() => {
@@ -62,7 +55,7 @@ describe('dns.lookup()', () => {
           assert.ok(address);
           assert.ok(family);
 
-          const spans = memoryExporter.getFinishedSpans();
+          const spans = getTestSpans();
           const [span] = spans;
           assert.strictEqual(spans.length, 1);
           assertSpan(span, { addresses: [{ address, family }], hostname });
@@ -80,7 +73,7 @@ describe('dns.lookup()', () => {
         assert.ok(address);
         assert.ok(family);
 
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
         assertSpan(span, { addresses: [{ address, family }], hostname });
@@ -98,7 +91,7 @@ describe('dns.lookup()', () => {
         dns.lookup(hostname, (err, address, family) => {
           assert.ok(err);
 
-          const spans = memoryExporter.getFinishedSpans();
+          const spans = getTestSpans();
           const [span] = spans;
 
           assert.strictEqual(spans.length, 1);
@@ -121,7 +114,7 @@ describe('dns.lookup()', () => {
         dns.lookup(hostname, -1, () => {});
         assert.fail();
       } catch (error: any) {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
         assertSpan(span, {
@@ -142,7 +135,7 @@ describe('dns.lookup()', () => {
         dns.lookup(hostname as any, 4, () => {});
         assert.fail();
       } catch (error: any) {
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
         assertSpan(span, {
@@ -166,7 +159,7 @@ describe('dns.lookup()', () => {
           assert.ok(address);
           assert.ok(family);
 
-          const spans = memoryExporter.getFinishedSpans();
+          const spans = getTestSpans();
           const [span] = spans;
           assert.strictEqual(spans.length, 1);
 
@@ -185,7 +178,7 @@ describe('dns.lookup()', () => {
             assert.ok(address);
             assert.ok(family);
 
-            const spans = memoryExporter.getFinishedSpans();
+            const spans = getTestSpans();
             const [span] = spans;
             assert.strictEqual(spans.length, 1);
 
@@ -205,7 +198,7 @@ describe('dns.lookup()', () => {
           assert.strictEqual(err, null);
           assert.ok(addresses instanceof Array);
 
-          const spans = memoryExporter.getFinishedSpans();
+          const spans = getTestSpans();
           const [span] = spans;
           assert.strictEqual(spans.length, 1);
           assertSpan(span, { addresses, hostname });

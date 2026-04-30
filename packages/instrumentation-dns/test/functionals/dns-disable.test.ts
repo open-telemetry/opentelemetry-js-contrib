@@ -3,21 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { getTestSpans, registerInstrumentationTestingProvider } from '@opentelemetry/contrib-test-utils';
 import { context } from '@opentelemetry/api';
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { DnsInstrumentation } from '../../src';
 import * as Sinon from 'sinon';
 import * as dns from 'dns';
 
-const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
-});
+const provider = registerInstrumentationTestingProvider();
 const tracer = provider.getTracer('default');
 
 describe('DnsInstrumentation', () => {
@@ -50,7 +43,7 @@ describe('DnsInstrumentation', () => {
         assert.ok(address);
         assert.ok(family);
 
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         assert.strictEqual(spans.length, 0);
 
         // @ts-expect-error __wrapped is injected
