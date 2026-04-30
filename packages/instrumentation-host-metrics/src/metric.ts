@@ -15,12 +15,16 @@ import {
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
+  ATTR_CPU_LOGICAL_NUMBER,
+  ATTR_CPU_MODE,
   ATTR_NETWORK_IO_DIRECTION,
-  ATTR_PROCESS_CPU_STATE,
-  ATTR_SYSTEM_CPU_LOGICAL_NUMBER,
-  ATTR_SYSTEM_CPU_STATE,
   ATTR_SYSTEM_DEVICE,
   ATTR_SYSTEM_MEMORY_STATE,
+  CPU_MODE_VALUE_IDLE,
+  CPU_MODE_VALUE_INTERRUPT,
+  CPU_MODE_VALUE_NICE,
+  CPU_MODE_VALUE_SYSTEM,
+  CPU_MODE_VALUE_USER,
   METRIC_PROCESS_CPU_TIME,
   METRIC_PROCESS_CPU_UTILIZATION,
   METRIC_PROCESS_MEMORY_USAGE,
@@ -30,15 +34,9 @@ import {
   METRIC_SYSTEM_MEMORY_UTILIZATION,
   METRIC_SYSTEM_NETWORK_ERRORS,
   METRIC_SYSTEM_NETWORK_IO,
+  METRIC_SYSTEM_NETWORK_PACKET_DROPPED,
   NETWORK_IO_DIRECTION_VALUE_RECEIVE,
   NETWORK_IO_DIRECTION_VALUE_TRANSMIT,
-  PROCESS_CPU_STATE_VALUE_SYSTEM,
-  PROCESS_CPU_STATE_VALUE_USER,
-  SYSTEM_CPU_STATE_VALUE_IDLE,
-  SYSTEM_CPU_STATE_VALUE_INTERRUPT,
-  SYSTEM_CPU_STATE_VALUE_NICE,
-  SYSTEM_CPU_STATE_VALUE_SYSTEM,
-  SYSTEM_CPU_STATE_VALUE_USER,
   SYSTEM_MEMORY_STATE_VALUE_FREE,
   SYSTEM_MEMORY_STATE_VALUE_USED,
 } from './semconv';
@@ -153,10 +151,7 @@ export class HostMetricsInstrumentation extends InstrumentationBase<HostMetricsI
 
     if (systemNetworkGroupEnabled) {
       networkDropped = this.meter.createObservableCounter(
-        // There is no semconv pkg export for this in v1.37.0 because
-        // https://github.com/open-telemetry/semantic-conventions/issues/2828.
-        // TODO: update to `METRIC_SYSTEM_NETWORK_PACKET_DROPPED` (breaking change)
-        'system.network.dropped',
+        METRIC_SYSTEM_NETWORK_PACKET_DROPPED,
         { description: 'Network dropped packets' }
       );
       observables.push(networkDropped);
@@ -253,45 +248,45 @@ export class HostMetricsInstrumentation extends InstrumentationBase<HostMetricsI
     for (let i = 0, j = cpuUsages.length; i < j; i++) {
       const cpuUsage = cpuUsages[i];
       observableResult.observe(cpuTime, cpuUsage.user, {
-        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_USER,
-        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
+        [ATTR_CPU_MODE]: CPU_MODE_VALUE_USER,
+        [ATTR_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(cpuTime, cpuUsage.system, {
-        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_SYSTEM,
-        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
+        [ATTR_CPU_MODE]: CPU_MODE_VALUE_SYSTEM,
+        [ATTR_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(cpuTime, cpuUsage.idle, {
-        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_IDLE,
-        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
+        [ATTR_CPU_MODE]: CPU_MODE_VALUE_IDLE,
+        [ATTR_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(cpuTime, cpuUsage.interrupt, {
-        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_INTERRUPT,
-        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
+        [ATTR_CPU_MODE]: CPU_MODE_VALUE_INTERRUPT,
+        [ATTR_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(cpuTime, cpuUsage.nice, {
-        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_NICE,
-        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
+        [ATTR_CPU_MODE]: CPU_MODE_VALUE_NICE,
+        [ATTR_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
 
       observableResult.observe(cpuUtilization, cpuUsage.userP, {
-        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_USER,
-        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
+        [ATTR_CPU_MODE]: CPU_MODE_VALUE_USER,
+        [ATTR_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(cpuUtilization, cpuUsage.systemP, {
-        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_SYSTEM,
-        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
+        [ATTR_CPU_MODE]: CPU_MODE_VALUE_SYSTEM,
+        [ATTR_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(cpuUtilization, cpuUsage.idleP, {
-        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_IDLE,
-        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
+        [ATTR_CPU_MODE]: CPU_MODE_VALUE_IDLE,
+        [ATTR_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(cpuUtilization, cpuUsage.interruptP, {
-        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_INTERRUPT,
-        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
+        [ATTR_CPU_MODE]: CPU_MODE_VALUE_INTERRUPT,
+        [ATTR_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
       observableResult.observe(cpuUtilization, cpuUsage.niceP, {
-        [ATTR_SYSTEM_CPU_STATE]: SYSTEM_CPU_STATE_VALUE_NICE,
-        [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
+        [ATTR_CPU_MODE]: CPU_MODE_VALUE_NICE,
+        [ATTR_CPU_LOGICAL_NUMBER]: cpuUsage.cpuNumber,
       });
     }
   }
@@ -303,16 +298,16 @@ export class HostMetricsInstrumentation extends InstrumentationBase<HostMetricsI
     processCpuUtilization: ObservableGauge
   ): void {
     observableResult.observe(processCpuTime, processCpuUsage.user, {
-      [ATTR_PROCESS_CPU_STATE]: PROCESS_CPU_STATE_VALUE_USER,
+      [ATTR_CPU_MODE]: CPU_MODE_VALUE_USER,
     });
     observableResult.observe(processCpuTime, processCpuUsage.system, {
-      [ATTR_PROCESS_CPU_STATE]: PROCESS_CPU_STATE_VALUE_SYSTEM,
+      [ATTR_CPU_MODE]: CPU_MODE_VALUE_SYSTEM,
     });
     observableResult.observe(processCpuUtilization, processCpuUsage.userP, {
-      [ATTR_PROCESS_CPU_STATE]: PROCESS_CPU_STATE_VALUE_USER,
+      [ATTR_CPU_MODE]: CPU_MODE_VALUE_USER,
     });
     observableResult.observe(processCpuUtilization, processCpuUsage.systemP, {
-      [ATTR_PROCESS_CPU_STATE]: PROCESS_CPU_STATE_VALUE_SYSTEM,
+      [ATTR_CPU_MODE]: CPU_MODE_VALUE_SYSTEM,
     });
   }
 

@@ -18,10 +18,9 @@ import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';
 import {
+  ATTR_CPU_LOGICAL_NUMBER,
+  ATTR_CPU_MODE,
   ATTR_NETWORK_IO_DIRECTION,
-  ATTR_PROCESS_CPU_STATE,
-  ATTR_SYSTEM_CPU_LOGICAL_NUMBER,
-  ATTR_SYSTEM_CPU_STATE,
   ATTR_SYSTEM_DEVICE,
   ATTR_SYSTEM_MEMORY_STATE,
 } from '../src/semconv';
@@ -165,40 +164,40 @@ describe('Host Metrics Instrumentation', () => {
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'user',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+          [ATTR_CPU_MODE]: 'user',
+          [ATTR_CPU_LOGICAL_NUMBER]: '0',
         },
         90714.26
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'system',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+          [ATTR_CPU_MODE]: 'system',
+          [ATTR_CPU_LOGICAL_NUMBER]: '0',
         },
         63192.83
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'idle',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+          [ATTR_CPU_MODE]: 'idle',
+          [ATTR_CPU_LOGICAL_NUMBER]: '0',
         },
         374870.8
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'interrupt',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+          [ATTR_CPU_MODE]: 'interrupt',
+          [ATTR_CPU_LOGICAL_NUMBER]: '0',
         },
         0
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'nice',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+          [ATTR_CPU_MODE]: 'nice',
+          [ATTR_CPU_LOGICAL_NUMBER]: '0',
         },
         0
       );
@@ -206,40 +205,40 @@ describe('Host Metrics Instrumentation', () => {
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'user',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+          [ATTR_CPU_MODE]: 'user',
+          [ATTR_CPU_LOGICAL_NUMBER]: '1',
         },
         11005.72
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'system',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+          [ATTR_CPU_MODE]: 'system',
+          [ATTR_CPU_LOGICAL_NUMBER]: '1',
         },
         7678.62
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'idle',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+          [ATTR_CPU_MODE]: 'idle',
+          [ATTR_CPU_LOGICAL_NUMBER]: '1',
         },
         510035
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'interrupt',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+          [ATTR_CPU_MODE]: 'interrupt',
+          [ATTR_CPU_LOGICAL_NUMBER]: '1',
         },
         0
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'nice',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+          [ATTR_CPU_MODE]: 'nice',
+          [ATTR_CPU_LOGICAL_NUMBER]: '1',
         },
         0
       );
@@ -251,40 +250,40 @@ describe('Host Metrics Instrumentation', () => {
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'user',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+          [ATTR_CPU_MODE]: 'user',
+          [ATTR_CPU_LOGICAL_NUMBER]: '0',
         },
         0.7
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'system',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+          [ATTR_CPU_MODE]: 'system',
+          [ATTR_CPU_LOGICAL_NUMBER]: '0',
         },
         0.2
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'idle',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+          [ATTR_CPU_MODE]: 'idle',
+          [ATTR_CPU_LOGICAL_NUMBER]: '0',
         },
         0.1
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'interrupt',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+          [ATTR_CPU_MODE]: 'interrupt',
+          [ATTR_CPU_LOGICAL_NUMBER]: '0',
         },
         0
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'nice',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '0',
+          [ATTR_CPU_MODE]: 'nice',
+          [ATTR_CPU_LOGICAL_NUMBER]: '0',
         },
         0
       );
@@ -292,40 +291,40 @@ describe('Host Metrics Instrumentation', () => {
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'user',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+          [ATTR_CPU_MODE]: 'user',
+          [ATTR_CPU_LOGICAL_NUMBER]: '1',
         },
         0.3
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'system',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+          [ATTR_CPU_MODE]: 'system',
+          [ATTR_CPU_LOGICAL_NUMBER]: '1',
         },
         0.5
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'idle',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+          [ATTR_CPU_MODE]: 'idle',
+          [ATTR_CPU_LOGICAL_NUMBER]: '1',
         },
         0.2
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'interrupt',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+          [ATTR_CPU_MODE]: 'interrupt',
+          [ATTR_CPU_LOGICAL_NUMBER]: '1',
         },
         0
       );
       ensureValue(
         metric,
         {
-          [ATTR_SYSTEM_CPU_STATE]: 'nice',
-          [ATTR_SYSTEM_CPU_LOGICAL_NUMBER]: '1',
+          [ATTR_CPU_MODE]: 'nice',
+          [ATTR_CPU_LOGICAL_NUMBER]: '1',
         },
         0
       );
@@ -350,7 +349,7 @@ describe('Host Metrics Instrumentation', () => {
     });
 
     it('should export Network io dropped', async () => {
-      const metric = await getRecords(reader, 'system.network.dropped');
+      const metric = await getRecords(reader, 'system.network.packet.dropped');
 
       ensureValue(
         metric,
@@ -415,10 +414,10 @@ describe('Host Metrics Instrumentation', () => {
     it('should export Process CPU time metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.time');
 
-      ensureValue(metric, { [ATTR_PROCESS_CPU_STATE]: 'user' }, 90.71356);
+      ensureValue(metric, { [ATTR_CPU_MODE]: 'user' }, 90.71356);
       ensureValue(
         metric,
-        { [ATTR_PROCESS_CPU_STATE]: 'system' },
+        { [ATTR_CPU_MODE]: 'system' },
         63.192629999999994
       );
     });
@@ -426,8 +425,8 @@ describe('Host Metrics Instrumentation', () => {
     it('should export Process CPU utilization metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.utilization');
 
-      ensureValue(metric, { [ATTR_PROCESS_CPU_STATE]: 'user' }, 0.025);
-      ensureValue(metric, { [ATTR_PROCESS_CPU_STATE]: 'system' }, 0.05);
+      ensureValue(metric, { [ATTR_CPU_MODE]: 'user' }, 0.025);
+      ensureValue(metric, { [ATTR_CPU_MODE]: 'system' }, 0.05);
     });
 
     it('should export Process Memory usage metrics', async () => {
@@ -498,7 +497,7 @@ describe('Host Metrics Instrumentation', () => {
       {
         metricGroups: ['system.network'],
         expectedMetricNames: [
-          'system.network.dropped',
+          'system.network.packet.dropped',
           'system.network.errors',
           'system.network.io',
         ],

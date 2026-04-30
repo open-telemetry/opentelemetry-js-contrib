@@ -19,35 +19,23 @@
 export const ATTR_NETWORK_IO_DIRECTION = 'network.io.direction' as const;
 
 /**
- * Deprecated, use `cpu.mode` instead.
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `cpu.mode`.
- */
-export const ATTR_PROCESS_CPU_STATE = 'process.cpu.state' as const;
-
-/**
- * Deprecated, use `cpu.logical_number` instead.
+ * The logical CPU number [0..n-1].
  *
  * @example 1
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_SYSTEM_CPU_LOGICAL_NUMBER =
-  'system.cpu.logical_number' as const;
+export const ATTR_CPU_LOGICAL_NUMBER = 'cpu.logical_number' as const;
 
 /**
- * Deprecated, use `cpu.mode` instead.
+ * The mode of the CPU.
  *
  * @example idle
  * @example interrupt
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `cpu.mode`.
  */
-export const ATTR_SYSTEM_CPU_STATE = 'system.cpu.state' as const;
+export const ATTR_CPU_MODE = 'cpu.mode' as const;
 
 /**
  * The device identifier
@@ -140,6 +128,14 @@ export const METRIC_SYSTEM_NETWORK_ERRORS = 'system.network.errors' as const;
 export const METRIC_SYSTEM_NETWORK_IO = 'system.network.io' as const;
 
 /**
+ * The number of packets dropped.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_SYSTEM_NETWORK_PACKET_DROPPED =
+  'system.network.packet.dropped' as const;
+
+/**
  * Enum value "receive" for attribute {@link ATTR_NETWORK_IO_DIRECTION}.
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
@@ -154,53 +150,39 @@ export const NETWORK_IO_DIRECTION_VALUE_RECEIVE = 'receive' as const;
 export const NETWORK_IO_DIRECTION_VALUE_TRANSMIT = 'transmit' as const;
 
 /**
- * Enum value "system" for attribute {@link ATTR_PROCESS_CPU_STATE}.
+ * Enum value "idle" for attribute {@link ATTR_CPU_MODE}.
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const PROCESS_CPU_STATE_VALUE_SYSTEM = 'system' as const;
+export const CPU_MODE_VALUE_IDLE = 'idle' as const;
 
 /**
- * Enum value "user" for attribute {@link ATTR_PROCESS_CPU_STATE}.
+ * Enum value "interrupt" for attribute {@link ATTR_CPU_MODE}.
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const PROCESS_CPU_STATE_VALUE_USER = 'user' as const;
+export const CPU_MODE_VALUE_INTERRUPT = 'interrupt' as const;
 
 /**
- * Enum value "idle" for attribute {@link ATTR_SYSTEM_CPU_STATE}.
+ * Enum value "nice" for attribute {@link ATTR_CPU_MODE}.
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const SYSTEM_CPU_STATE_VALUE_IDLE = 'idle' as const;
+export const CPU_MODE_VALUE_NICE = 'nice' as const;
 
 /**
- * Enum value "interrupt" for attribute {@link ATTR_SYSTEM_CPU_STATE}.
+ * Enum value "system" for attribute {@link ATTR_CPU_MODE}.
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const SYSTEM_CPU_STATE_VALUE_INTERRUPT = 'interrupt' as const;
+export const CPU_MODE_VALUE_SYSTEM = 'system' as const;
 
 /**
- * Enum value "nice" for attribute {@link ATTR_SYSTEM_CPU_STATE}.
+ * Enum value "user" for attribute {@link ATTR_CPU_MODE}.
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const SYSTEM_CPU_STATE_VALUE_NICE = 'nice' as const;
-
-/**
- * Enum value "system" for attribute {@link ATTR_SYSTEM_CPU_STATE}.
- *
- * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const SYSTEM_CPU_STATE_VALUE_SYSTEM = 'system' as const;
-
-/**
- * Enum value "user" for attribute {@link ATTR_SYSTEM_CPU_STATE}.
- *
- * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const SYSTEM_CPU_STATE_VALUE_USER = 'user' as const;
+export const CPU_MODE_VALUE_USER = 'user' as const;
 
 /**
  * Enum value "free" for attribute {@link ATTR_SYSTEM_MEMORY_STATE}.
