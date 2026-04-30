@@ -30,6 +30,13 @@ import AttributeNames from './enums/AttributeNames';
 import LayerType from './enums/LayerType';
 
 const supportedVersions = ['>=1.0.0 <3'];
+const responseFinishSpanEndersKey = Symbol(
+  'opentelemetry.instrumentation-router.finishSpanEnders'
+);
+
+type ResponseWithFinishSpanEnders = http.ServerResponse & {
+  [responseFinishSpanEndersKey]?: Array<() => void>;
+};
 
 export class RouterInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
@@ -188,8 +195,7 @@ export class RouterInstrumentation extends InstrumentationBase {
     const endSpan = utils.once(span.end.bind(span));
 
     utils.renameHttpSpan(parentSpan, layer.method, route);
-    // make sure spans are ended at least when response is finished
-    res.prependOnceListener('finish', endSpan);
+    this._registerResponseFinishSpanEnder(res, endSpan);
 
     const wrappedNext: Router.NextFunction = err => {
       if (err) {
@@ -206,5 +212,27 @@ export class RouterInstrumentation extends InstrumentationBase {
       context: api.trace.setSpan(parent, span),
       wrappedNext,
     };
+  }
+
+  private _registerResponseFinishSpanEnder(
+    res: http.ServerResponse,
+    endSpan: () => void
+  ) {
+    const response = res as ResponseWithFinishSpanEnders;
+    let finishSpanEnders = response[responseFinishSpanEndersKey];
+    if (finishSpanEnders === undefined) {
+      finishSpanEnders = [];
+      response[responseFinishSpanEndersKey] = finishSpanEnders;
+
+      // Make sure spans are ended at least when response is finished. Use a
+      // single response listener, because a request can pass many router layers.
+      res.prependOnceListener('finish', () => {
+        const pendingEnders = response[responseFinishSpanEndersKey] ?? [];
+        delete response[responseFinishSpanEndersKey];
+        pendingEnders.forEach(pendingEndSpan => pendingEndSpan());
+      });
+    }
+
+    finishSpanEnders.push(endSpan);
   }
 }

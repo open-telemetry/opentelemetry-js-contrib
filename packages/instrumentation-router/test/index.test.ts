@@ -246,6 +246,59 @@ describe('Router instrumentation', () => {
         testLocalServer.close();
       }
     });
+
+    it('should only add one finish listener for many matched layers', async () => {
+      const router = new Router();
+      const finishListenerCounts: number[] = [];
+      let serverResponse: http.ServerResponse | undefined;
+
+      for (let i = 0; i < 12; i++) {
+        router.use((_req, res, next) => {
+          finishListenerCounts.push(res.listenerCount('finish'));
+          next();
+        });
+      }
+
+      router.get('/many-layers', (_req, res) => {
+        serverResponse = res;
+        finishListenerCounts.push(res.listenerCount('finish'));
+        res.end('ok');
+      });
+
+      const testLocalServer = http.createServer((req, res) => {
+        router(req, res, err => {
+          if (err) {
+            res.statusCode = 500;
+            res.end(err.message);
+          }
+        });
+      });
+
+      await new Promise<void>(resolve => testLocalServer.listen(0, resolve));
+
+      try {
+        assert.strictEqual(
+          await request('/many-layers', testLocalServer),
+          'ok'
+        );
+        const maxFinishListeners = Math.max(...finishListenerCounts);
+        assert.strictEqual(
+          new Set(finishListenerCounts).size,
+          1,
+          'router instrumentation should reuse the same response finish listener'
+        );
+        assert.ok(
+          maxFinishListeners < 10,
+          `expected listener count to stay below the default warning threshold, got ${maxFinishListeners}`
+        );
+        assert.ok(
+          (serverResponse?.listenerCount('finish') ?? 0) < maxFinishListeners
+        );
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 13);
+      } finally {
+        testLocalServer.close();
+      }
+    });
   });
 
   describe('Disabling instrumentation', () => {
