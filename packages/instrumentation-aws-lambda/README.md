@@ -226,7 +226,7 @@ Additional attributes collected on the SQS process (CONSUMER) span:
 | `messaging.system`               | The messaging system (`aws_sqs`).                                  |
 | `messaging.destination.name`     | The queue name extracted from the event source ARN.                |
 | `messaging.batch.message_count`  | The number of messages in the batch.                               |
-| `url.full`                       | The reconstructed SQS queue URL.                                   |
+| `aws.sqs.queue.url`              | The reconstructed SQS queue URL.                                   |
 
 ## Useful links
 
