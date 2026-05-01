@@ -652,7 +652,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     const links: Link[] = [];
     for (const message of messages) {
       const hasPropagationFields = Object.keys(
-        message.messageAttributes || []
+        message.messageAttributes || {}
       ).some(attr => propagationFields.includes(attr));
       if (!hasPropagationFields) continue;
 
