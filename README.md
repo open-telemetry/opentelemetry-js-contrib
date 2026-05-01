@@ -90,7 +90,7 @@ We'd love your help! Use tags [up-for-grabs][up-for-grabs-issues] and [good firs
 
 ### Emeritus
 
-- [Amir Blum](https://github.com/blumamir), Approver
+- [Amir Blum](https://github.com/blumamir), Maintainer
 - [Svetlana Brennan](https://github.com/svetlanabrennan), Approver
 
 For more information about the emeritus role, see the
