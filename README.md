@@ -88,6 +88,14 @@ We'd love your help! Use tags [up-for-grabs][up-for-grabs-issues] and [good firs
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url] or in [Slack](https://cloud-native.slack.com/archives/C01NL1GRPQR)
 - For more 3rd party components for JS as well as other languages, check [OpenTelemetry Registry](https://opentelemetry.io/registry/)
 
+### Emeritus
+
+- [Amir Blum](https://github.com/blumamir), Approver
+- [Svetlana Brennan](https://github.com/svetlanabrennan), Approver
+
+For more information about the emeritus role, see the
+[community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
+
 ## License
 
 Apache 2.0 - See [LICENSE][license-url] for more information.
