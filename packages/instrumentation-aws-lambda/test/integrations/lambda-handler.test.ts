@@ -1242,7 +1242,7 @@ describe('lambda handler', () => {
             },
             eventSource: 'aws:sqs',
             eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
         ],
       };
@@ -1275,7 +1275,7 @@ describe('lambda handler', () => {
         'msg-001'
       );
       assert.strictEqual(processSpan.kind, SpanKind.CONSUMER);
-      assert.strictEqual(processSpan.name, 'process launch-queue');
+      assert.strictEqual(processSpan.name, 'process test-queue');
       assert.strictEqual(
         processSpan.attributes[ATTR_FAAS_TRIGGER],
         FAAS_TRIGGER_VALUE_PUBSUB
@@ -1294,7 +1294,7 @@ describe('lambda handler', () => {
       );
       assert.strictEqual(
         processSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME],
-        'launch-queue'
+        'test-queue'
       );
       assert.strictEqual(
         processSpan.attributes[ATTR_SERVER_ADDRESS],
@@ -1302,7 +1302,7 @@ describe('lambda handler', () => {
       );
       assert.strictEqual(
         processSpan.attributes[ATTR_AWS_SQS_QUEUE_URL],
-        'https://sqs.eu-central-1.amazonaws.com/783764587482/launch-queue'
+        'https://sqs.eu-central-1.amazonaws.com/783764587482/test-queue'
       );
       assert.strictEqual(
         processSpan.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT],
@@ -1329,7 +1329,7 @@ describe('lambda handler', () => {
             },
             eventSource: 'aws:sqs',
             eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
         ],
       };
@@ -1362,7 +1362,7 @@ describe('lambda handler', () => {
         'msg-001'
       );
       assert.strictEqual(processSpan.kind, SpanKind.CONSUMER);
-      assert.strictEqual(processSpan.name, 'process launch-queue');
+      assert.strictEqual(processSpan.name, 'process test-queue');
       assert.strictEqual(
         processSpan.attributes[ATTR_FAAS_TRIGGER],
         FAAS_TRIGGER_VALUE_PUBSUB
@@ -1381,7 +1381,7 @@ describe('lambda handler', () => {
       );
       assert.strictEqual(
         processSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME],
-        'launch-queue'
+        'test-queue'
       );
       assert.strictEqual(
         processSpan.attributes[ATTR_SERVER_ADDRESS],
@@ -1389,7 +1389,7 @@ describe('lambda handler', () => {
       );
       assert.strictEqual(
         processSpan.attributes[ATTR_AWS_SQS_QUEUE_URL],
-        'https://sqs.eu-central-1.amazonaws.com/783764587482/launch-queue'
+        'https://sqs.eu-central-1.amazonaws.com/783764587482/test-queue'
       );
       assert.strictEqual(
         processSpan.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT],
@@ -1416,7 +1416,7 @@ describe('lambda handler', () => {
             },
             eventSource: 'aws:sqs',
             eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
           {
             messageId: 'msg-002',
@@ -1429,7 +1429,7 @@ describe('lambda handler', () => {
             },
             eventSource: 'aws:sqs',
             eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
         ],
       };
@@ -1474,7 +1474,7 @@ describe('lambda handler', () => {
             },
             eventSource: 'aws:sqs',
             eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
         ],
       };
@@ -1512,7 +1512,7 @@ describe('lambda handler', () => {
             },
             eventSource: 'aws:sqs',
             eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
         ],
       };
