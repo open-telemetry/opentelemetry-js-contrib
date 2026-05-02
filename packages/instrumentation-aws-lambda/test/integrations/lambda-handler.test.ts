@@ -1235,19 +1235,19 @@ describe('lambda handler', () => {
       const spans = memoryExporter.getFinishedSpans();
 
       assert.strictEqual(spans.length, 2);
-      assert.equal(
+      assert.strictEqual(
         spans[0].parentSpanContext?.traceId,
         spans[1].spanContext().traceId
       );
-      assert.equal(
+      assert.strictEqual(
         spans[0].parentSpanContext?.spanId,
         spans[1].spanContext().spanId
       );
-      assert.equal(
+      assert.strictEqual(
         spans[0].links[0]?.context.traceId,
         sampledAwsSpanContext.traceId
       );
-      assert.equal(
+      assert.strictEqual(
         spans[0].links[0]?.context.spanId,
         sampledAwsSpanContext.spanId
       );
@@ -1276,19 +1276,19 @@ describe('lambda handler', () => {
       const spans = memoryExporter.getFinishedSpans();
 
       assert.strictEqual(spans.length, 2);
-      assert.equal(
+      assert.strictEqual(
         spans[0].parentSpanContext?.traceId,
         spans[1].spanContext().traceId
       );
-      assert.equal(
+      assert.strictEqual(
         spans[0].parentSpanContext?.spanId,
         spans[1].spanContext().spanId
       );
-      assert.equal(
+      assert.strictEqual(
         spans[0].links[0]?.context.traceId,
         sampledAwsSpanContext.traceId
       );
-      assert.equal(
+      assert.strictEqual(
         spans[0].links[0]?.context.spanId,
         sampledAwsSpanContext.spanId
       );
@@ -1322,16 +1322,16 @@ describe('lambda handler', () => {
       const spans = memoryExporter.getFinishedSpans();
 
       assert.strictEqual(spans.length, 2);
-      assert.equal(
+      assert.strictEqual(
         spans[0].parentSpanContext?.traceId,
         spans[1].spanContext().traceId
       );
-      assert.equal(
+      assert.strictEqual(
         spans[0].parentSpanContext?.spanId,
         spans[1].spanContext().spanId
       );
-      assert.equal(spans[0].links[0]?.context.traceId, producerTraceId);
-      assert.equal(spans[0].links[0].context.spanId, producerSpanId);
+      assert.strictEqual(spans[0].links[0]?.context.traceId, producerTraceId);
+      assert.strictEqual(spans[0].links[0].context.spanId, producerSpanId);
     });
 
     it('creates process span with span link (async handler)', async () => {
@@ -1360,16 +1360,16 @@ describe('lambda handler', () => {
       const spans = memoryExporter.getFinishedSpans();
 
       assert.strictEqual(spans.length, 2);
-      assert.equal(
+      assert.strictEqual(
         spans[0].parentSpanContext?.traceId,
         spans[1].spanContext().traceId
       );
-      assert.equal(
+      assert.strictEqual(
         spans[0].parentSpanContext?.spanId,
         spans[1].spanContext().spanId
       );
-      assert.equal(spans[0].links[0]?.context.traceId, producerTraceId);
-      assert.equal(spans[0].links[0].context.spanId, producerSpanId);
+      assert.strictEqual(spans[0].links[0]?.context.traceId, producerTraceId);
+      assert.strictEqual(spans[0].links[0].context.spanId, producerSpanId);
     });
   });
 
