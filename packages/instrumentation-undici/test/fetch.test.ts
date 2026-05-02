@@ -419,7 +419,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       );
     });
 
-
     it('should not record error if fetch response body is cancelled', async function () {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
@@ -495,4 +494,3 @@ describe('UndiciInstrumentation `fetch` tests', function () {
     });
   });
 });
-
