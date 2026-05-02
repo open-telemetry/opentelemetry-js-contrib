@@ -1235,20 +1235,22 @@ describe('lambda handler', () => {
       const spans = memoryExporter.getFinishedSpans();
 
       assert.strictEqual(spans.length, 2);
+      const [processSpan, invocationSpan] = spans;
+
       assert.strictEqual(
-        spans[0].parentSpanContext?.traceId,
-        spans[1].spanContext().traceId
+        processSpan.parentSpanContext?.traceId,
+        invocationSpan.spanContext().traceId
       );
       assert.strictEqual(
-        spans[0].parentSpanContext?.spanId,
-        spans[1].spanContext().spanId
+        processSpan.parentSpanContext?.spanId,
+        invocationSpan.spanContext().spanId
       );
       assert.strictEqual(
-        spans[0].links[0]?.context.traceId,
+        processSpan.links[0]?.context.traceId,
         sampledAwsSpanContext.traceId
       );
       assert.strictEqual(
-        spans[0].links[0]?.context.spanId,
+        processSpan.links[0]?.context.spanId,
         sampledAwsSpanContext.spanId
       );
     });
@@ -1276,20 +1278,22 @@ describe('lambda handler', () => {
       const spans = memoryExporter.getFinishedSpans();
 
       assert.strictEqual(spans.length, 2);
+      const [processSpan, invocationSpan] = spans;
+
       assert.strictEqual(
-        spans[0].parentSpanContext?.traceId,
-        spans[1].spanContext().traceId
+        processSpan.parentSpanContext?.traceId,
+        invocationSpan.spanContext().traceId
       );
       assert.strictEqual(
-        spans[0].parentSpanContext?.spanId,
-        spans[1].spanContext().spanId
+        processSpan.parentSpanContext?.spanId,
+        invocationSpan.spanContext().spanId
       );
       assert.strictEqual(
-        spans[0].links[0]?.context.traceId,
+        processSpan.links[0]?.context.traceId,
         sampledAwsSpanContext.traceId
       );
       assert.strictEqual(
-        spans[0].links[0]?.context.spanId,
+        processSpan.links[0]?.context.spanId,
         sampledAwsSpanContext.spanId
       );
     });
