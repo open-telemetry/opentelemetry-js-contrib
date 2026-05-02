@@ -27,8 +27,23 @@ import * as assert from 'assert';
 import {
   ATTR_URL_FULL,
   ATTR_EXCEPTION_MESSAGE,
+  ATTR_SERVER_ADDRESS,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_FAAS_COLDSTART, ATTR_FAAS_NAME } from '../../src/semconv';
+import {
+  ATTR_AWS_SQS_QUEUE_URL,
+  ATTR_FAAS_COLDSTART,
+  ATTR_FAAS_NAME,
+  ATTR_FAAS_TRIGGER,
+  ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION_NAME,
+  ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_SYSTEM,
+  FAAS_TRIGGER_VALUE_PUBSUB,
+  MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+  MESSAGING_SYSTEM_VALUE_AWS_SQS,
+} from '../../src/semconv';
 import { ATTR_FAAS_EXECUTION } from '../../src/semconv-obsolete';
 import {
   Context as OtelContext,
@@ -1217,6 +1232,7 @@ describe('lambda handler', () => {
       const sqsEvent = {
         Records: [
           {
+            messageId: 'msg-001',
             attributes: {
               AWSTraceHeader: sampledAwsHeader,
               ApproximateReceiveCount: '1',
@@ -1253,6 +1269,49 @@ describe('lambda handler', () => {
         processSpan.links[0]?.context.spanId,
         sampledAwsSpanContext.spanId
       );
+
+      assert.strictEqual(
+        processSpan.links[0]?.attributes?.[ATTR_MESSAGING_MESSAGE_ID],
+        'msg-001'
+      );
+      assert.strictEqual(processSpan.kind, SpanKind.CONSUMER);
+      assert.strictEqual(processSpan.name, 'process launch-queue');
+      assert.strictEqual(
+        processSpan.attributes[ATTR_FAAS_TRIGGER],
+        FAAS_TRIGGER_VALUE_PUBSUB
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_OPERATION_NAME],
+        'process'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_OPERATION_TYPE],
+        MESSAGING_OPERATION_TYPE_VALUE_PROCESS
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_SYSTEM],
+        MESSAGING_SYSTEM_VALUE_AWS_SQS
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME],
+        'launch-queue'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_SERVER_ADDRESS],
+        'sqs.eu-central-1.amazonaws.com'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_AWS_SQS_QUEUE_URL],
+        'https://sqs.eu-central-1.amazonaws.com/783764587482/launch-queue'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT],
+        undefined
+      );
+      assert.strictEqual(
+        invocationSpan.attributes[ATTR_FAAS_TRIGGER],
+        FAAS_TRIGGER_VALUE_PUBSUB
+      );
     });
 
     it('creates process span with span link (async handler)', async () => {
@@ -1260,6 +1319,7 @@ describe('lambda handler', () => {
       const sqsEvent = {
         Records: [
           {
+            messageId: 'msg-001',
             attributes: {
               AWSTraceHeader: sampledAwsHeader,
               ApproximateReceiveCount: '1',
@@ -1295,6 +1355,49 @@ describe('lambda handler', () => {
       assert.strictEqual(
         processSpan.links[0]?.context.spanId,
         sampledAwsSpanContext.spanId
+      );
+
+      assert.strictEqual(
+        processSpan.links[0]?.attributes?.[ATTR_MESSAGING_MESSAGE_ID],
+        'msg-001'
+      );
+      assert.strictEqual(processSpan.kind, SpanKind.CONSUMER);
+      assert.strictEqual(processSpan.name, 'process launch-queue');
+      assert.strictEqual(
+        processSpan.attributes[ATTR_FAAS_TRIGGER],
+        FAAS_TRIGGER_VALUE_PUBSUB
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_OPERATION_NAME],
+        'process'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_OPERATION_TYPE],
+        MESSAGING_OPERATION_TYPE_VALUE_PROCESS
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_SYSTEM],
+        MESSAGING_SYSTEM_VALUE_AWS_SQS
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME],
+        'launch-queue'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_SERVER_ADDRESS],
+        'sqs.eu-central-1.amazonaws.com'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_AWS_SQS_QUEUE_URL],
+        'https://sqs.eu-central-1.amazonaws.com/783764587482/launch-queue'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT],
+        undefined
+      );
+      assert.strictEqual(
+        invocationSpan.attributes[ATTR_FAAS_TRIGGER],
+        FAAS_TRIGGER_VALUE_PUBSUB
       );
     });
   });
