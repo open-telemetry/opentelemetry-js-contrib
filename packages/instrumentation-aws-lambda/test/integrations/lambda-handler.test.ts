@@ -1400,6 +1400,60 @@ describe('lambda handler', () => {
         FAAS_TRIGGER_VALUE_PUBSUB
       );
     });
+
+    it('sets batch message count attribute for events with more than 1 record', async () => {
+      initializeHandler('lambda-test/async.handler');
+      const sqsEvent = {
+        Records: [
+          {
+            messageId: 'msg-001',
+            attributes: {
+              AWSTraceHeader: sampledAwsHeader,
+              ApproximateReceiveCount: '1',
+              SentTimestamp: '1234567890',
+              SenderId: 'sender',
+              ApproximateFirstReceiveTimestamp: '1234567890',
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN:
+              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+          },
+          {
+            messageId: 'msg-002',
+            attributes: {
+              AWSTraceHeader: sampledAwsHeader,
+              ApproximateReceiveCount: '1',
+              SentTimestamp: '1234567890',
+              SenderId: 'sender',
+              ApproximateFirstReceiveTimestamp: '1234567890',
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN:
+              'arn:aws:sqs:eu-central-1:783764587482:launch-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/async').handler(sqsEvent, ctx);
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+      const [processSpan] = spans;
+
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT],
+        2
+      );
+      assert.strictEqual(processSpan.links.length, 2);
+      assert.strictEqual(
+        processSpan.links[0]?.attributes?.[ATTR_MESSAGING_MESSAGE_ID],
+        'msg-001'
+      );
+      assert.strictEqual(
+        processSpan.links[1]?.attributes?.[ATTR_MESSAGING_MESSAGE_ID],
+        'msg-002'
+      );
+    });
   });
 
   describe('sqs context propagation (experimental: messageAttributes)', () => {
