@@ -789,7 +789,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.ok(span, 'a span is present');
       assert.strictEqual(spans.length, 1);
 
-      
       assert.strictEqual(
         span.status.code,
         SpanStatusCode.UNSET,
