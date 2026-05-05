@@ -124,6 +124,20 @@ Notes:
 - Logs are always sent to console, no matter the environment, or debug level.
 - Debug logs are extremely verbose. Enable debug logging only when needed. Debug logging negatively impacts the performance of your application.
 
+### Flush telemetry on crash
+
+By default, the SDK only shuts down on `SIGTERM` or normal `beforeExit`. Uncaught exceptions, unhandled promise rejections, and `SIGINT` bypass `beforeExit`, so any spans/metrics/logs still buffered in a Batch processor are dropped — this is the typical "logs visible in stdout but never reach the collector" symptom.
+
+Set `OTEL_NODE_FLUSH_ON_CRASH=true` to register handlers for `uncaughtException`, `unhandledRejection`, and `SIGINT` that race `sdk.shutdown()` against a bounded timeout before exiting. The original error is written to `stderr` first, and the process still exits non-zero so the crash semantics are preserved.
+
+```shell
+export OTEL_NODE_FLUSH_ON_CRASH=true
+# Optional, defaults to 5000ms:
+export OTEL_NODE_FLUSH_ON_CRASH_TIMEOUT_MS=3000
+```
+
+Caveat: registering an `uncaughtException` handler suppresses Node's default behavior of terminating on unhandled errors. The handler always calls `process.exit(1)` after flushing to keep that semantics — but if you also register your own `uncaughtException` handler that swallows errors, the process can be left in an undefined state. Don't enable this flag unless you're comfortable with that trade-off.
+
 ## Usage: Instrumentation Initialization
 
 OpenTelemetry Meta Packages for Node automatically loads instrumentations for Node builtin modules and common packages.
