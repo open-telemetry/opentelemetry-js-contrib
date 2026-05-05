@@ -136,12 +136,14 @@ components:
     - sharadraju
   packages/instrumentation-runtime-node:
     - d4nyll
+    - raphael-theriault-swi
   packages/instrumentation-openai:
     - hectorhdzg
     - trentm
     - seemk
   packages/instrumentation-pg:
     - maryliag
+    - raphael-theriault-swi
   packages/instrumentation-pino:
     - seemk
   packages/instrumentation-redis:
@@ -180,7 +182,7 @@ components:
     - jj22ee
   packages/propagator-aws-xray-lambda: [ ]
     # Unmaintained
-  packages/sql-common: []
-    # Unmaintained
+  packages/sql-common:
+    - raphael-theriault-swi
 ignored-authors:
   - renovate-bot
