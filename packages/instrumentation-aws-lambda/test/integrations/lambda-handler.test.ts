@@ -1241,8 +1241,7 @@ describe('lambda handler', () => {
               ApproximateFirstReceiveTimestamp: '1234567890',
             },
             eventSource: 'aws:sqs',
-            eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
         ],
       };
@@ -1328,8 +1327,7 @@ describe('lambda handler', () => {
               ApproximateFirstReceiveTimestamp: '1234567890',
             },
             eventSource: 'aws:sqs',
-            eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
         ],
       };
@@ -1415,8 +1413,7 @@ describe('lambda handler', () => {
               ApproximateFirstReceiveTimestamp: '1234567890',
             },
             eventSource: 'aws:sqs',
-            eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
           {
             messageId: 'msg-002',
@@ -1428,8 +1425,7 @@ describe('lambda handler', () => {
               ApproximateFirstReceiveTimestamp: '1234567890',
             },
             eventSource: 'aws:sqs',
-            eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
         ],
       };
@@ -1473,8 +1469,7 @@ describe('lambda handler', () => {
               },
             },
             eventSource: 'aws:sqs',
-            eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
         ],
       };
@@ -1511,8 +1506,7 @@ describe('lambda handler', () => {
               },
             },
             eventSource: 'aws:sqs',
-            eventSourceARN:
-              'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
           },
         ],
       };

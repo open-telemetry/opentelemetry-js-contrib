@@ -80,7 +80,8 @@ export const ATTR_FAAS_TRIGGER = 'faas.trigger' as const;
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_MESSAGING_BATCH_MESSAGE_COUNT = 'messaging.batch.message_count' as const;
+export const ATTR_MESSAGING_BATCH_MESSAGE_COUNT =
+  'messaging.batch.message_count' as const;
 
 /**
  * The message destination name
@@ -93,7 +94,8 @@ export const ATTR_MESSAGING_BATCH_MESSAGE_COUNT = 'messaging.batch.message_count
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_MESSAGING_DESTINATION_NAME = 'messaging.destination.name' as const;
+export const ATTR_MESSAGING_DESTINATION_NAME =
+  'messaging.destination.name' as const;
 
 /**
  * A value used by the messaging system as an identifier for the message, represented as a string.
@@ -113,7 +115,8 @@ export const ATTR_MESSAGING_MESSAGE_ID = 'messaging.message.id' as const;
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_MESSAGING_OPERATION_NAME = 'messaging.operation.name' as const;
+export const ATTR_MESSAGING_OPERATION_NAME =
+  'messaging.operation.name' as const;
 
 /**
  * A string identifying the type of the messaging operation.
@@ -121,7 +124,8 @@ export const ATTR_MESSAGING_OPERATION_NAME = 'messaging.operation.name' as const
  * @note If a custom value is used, it **MUST** be of low cardinality.
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_MESSAGING_OPERATION_TYPE = 'messaging.operation.type' as const;
+export const ATTR_MESSAGING_OPERATION_TYPE =
+  'messaging.operation.type' as const;
 
 /**
  * The messaging system as identified by the client instrumentation.
