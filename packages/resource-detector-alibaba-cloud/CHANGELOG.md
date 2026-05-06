@@ -1,6 +1,15 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.33.7](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.33.6...resource-detector-alibaba-cloud-v0.33.7) (2026-05-06)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.63.0 to ^0.64.0
+
 ## [0.33.6](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.33.5...resource-detector-alibaba-cloud-v0.33.6) (2026-04-29)
 
 
