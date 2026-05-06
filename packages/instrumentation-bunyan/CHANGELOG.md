@@ -1,6 +1,14 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.61.0...instrumentation-bunyan-v0.62.0) (2026-05-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3507](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3507)) ([e1ef3d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e1ef3d1b14f177afd738f1c967018c1dc6fc900e))
+* **instrumentation-bunyan:** use Logs API exception field when translating bunyan error records ([#3431](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3431)) ([9053dfe](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9053dfefe8ec20450dc467b0b23a7e45470029dc))
+
 ## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.60.0...instrumentation-bunyan-v0.61.0) (2026-04-29)
 
 

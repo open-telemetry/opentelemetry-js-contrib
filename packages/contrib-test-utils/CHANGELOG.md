@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.64.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.63.0...contrib-test-utils-v0.64.0) (2026-05-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3507](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3507)) ([e1ef3d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e1ef3d1b14f177afd738f1c967018c1dc6fc900e))
+
 ## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.62.0...contrib-test-utils-v0.63.0) (2026-04-29)
 
 
