@@ -118,15 +118,12 @@ function isSupportingCallbacks(): boolean {
 }
 
 export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstrumentationConfig> {
-  private _xrayPropagator: AWSXRayPropagator | undefined;
+  private readonly _xrayPropagator = new AWSXRayPropagator();
   declare private _traceForceFlusher?: () => Promise<void>;
   declare private _metricForceFlusher?: () => Promise<void>;
 
   constructor(config: AwsLambdaInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    if (!config.useConfiguredPropagatorForSqsExtraction) {
-      this._xrayPropagator = new AWSXRayPropagator();
-    }
   }
 
   init() {
@@ -629,7 +626,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       if (!awsTraceHeader) continue;
 
       const carrier = { [AWSXRAY_TRACE_ID_HEADER]: awsTraceHeader };
-      const propagatedContext = this._xrayPropagator!.extract(
+      const propagatedContext = this._xrayPropagator.extract(
         ROOT_CONTEXT,
         carrier,
         defaultTextMapGetter
