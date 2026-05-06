@@ -128,12 +128,13 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
 
     const config = this.getConfig();
     let customAttributes: AnyValueMap = {};
-    if (config.applyCustomAttributes) {
+    if (config.applyCustomExceptionAttributes) {
       try {
-        customAttributes = config.applyCustomAttributes(error, eventType) ?? {};
+        customAttributes =
+          config.applyCustomExceptionAttributes(error, eventType) ?? {};
       } catch (err) {
         this._diag.error(
-          'applyCustomAttributes threw while handling an exception',
+          'applyCustomExceptionAttributes threw while handling an exception',
           err
         );
       }

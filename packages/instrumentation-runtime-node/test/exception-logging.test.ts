@@ -140,7 +140,7 @@ describe('runtime exception logging', () => {
     instrumentation.disable();
     instrumentation = new RuntimeNodeInstrumentation({
       captureUncaughtException: true,
-      applyCustomAttributes: (_error, eventType) => ({
+      applyCustomExceptionAttributes: (_error, eventType) => ({
         'app.event.type': eventType,
       }),
     });
@@ -188,11 +188,11 @@ describe('runtime exception logging', () => {
     assert.ok(severities.includes(SeverityNumber.FATAL));
   });
 
-  it('keeps emitting when applyCustomAttributes throws', () => {
+  it('keeps emitting when applyCustomExceptionAttributes throws', () => {
     instrumentation.disable();
     instrumentation = new RuntimeNodeInstrumentation({
       captureUncaughtException: true,
-      applyCustomAttributes: () => {
+      applyCustomExceptionAttributes: () => {
         throw new Error('boom');
       },
     });
@@ -214,11 +214,11 @@ describe('runtime exception logging', () => {
     assert.strictEqual(record.attributes[ATTR_EXCEPTION_MESSAGE], 'nope');
   });
 
-  it('handles applyCustomAttributes returning undefined', () => {
+  it('handles applyCustomExceptionAttributes returning undefined', () => {
     instrumentation.disable();
     const config = {
       captureUncaughtException: true,
-      applyCustomAttributes: () => undefined,
+      applyCustomExceptionAttributes: () => undefined,
     } as unknown as RuntimeNodeInstrumentationConfig;
     instrumentation = new RuntimeNodeInstrumentation(config);
     const loggerProvider = new LoggerProvider({
