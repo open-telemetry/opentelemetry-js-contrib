@@ -222,11 +222,13 @@ Additional attributes collected on the SQS process (CONSUMER) span:
 | Attribute                        | Short Description                                                  |
 |----------------------------------|--------------------------------------------------------------------|
 | `faas.trigger`                   | Type of the trigger (`pubsub`).                                    |
+| `messaging.operation.name`       | The name of the messaging operation (`process`).                   |
 | `messaging.operation.type`       | The type of the messaging operation (`process`).                   |
 | `messaging.system`               | The messaging system (`aws_sqs`).                                  |
 | `messaging.destination.name`     | The queue name extracted from the event source ARN.                |
 | `messaging.batch.message_count`  | The number of messages in the batch.                               |
 | `aws.sqs.queue.url`              | The reconstructed SQS queue URL.                                   |
+| `server.address`                 | The SQS regional domain name.                                      |
 
 ## Useful links
 
