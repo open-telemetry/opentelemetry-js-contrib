@@ -761,52 +761,52 @@ describe('UndiciInstrumentation `undici` tests', function () {
       });
     });
 
-    it('should capture error if undici request is aborted', async function () {
-      // AbortController was added in: v15.0.0, v14.17.0
-      // but we still run tests for node v14
-      // https://nodejs.org/api/globals.html#class-abortcontroller
-      if (typeof AbortController === 'undefined') {
-        this.skip();
-      }
-
+    it('should not record abort as an error if undici request is aborted', async function () {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
 
-      let requestError;
       const controller = new AbortController();
-      const requestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
-      const requestPromise = undici.request(requestUrl, {
-        signal: controller.signal,
-      });
+
+      const requestPromise = undici.request(
+        `${protocol}://${hostname}:${mockServer.port}/?query=test`,
+        { signal: controller.signal }
+      );
+
       controller.abort();
+
       try {
         await requestPromise;
       } catch (err) {
-        // Expected error
-        requestError = err as Error;
+        // Expected - request throws on abort
       }
 
-      // Let the error be published to diagnostics channel
-      await new Promise(r => setTimeout(r, 50));
+      // Allow async instrumentation to finish
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
+
       assert.ok(span, 'a span is present');
       assert.strictEqual(spans.length, 1);
-      assertSpan(span, {
-        hostname: 'localhost',
-        httpMethod: 'GET',
-        path: '/',
-        query: '?query=test',
-        error: requestError,
-        noNetPeer: true, // do not check network attribs
-        forceStatus: {
-          code: SpanStatusCode.ERROR,
-          message: requestError?.message,
-        },
-      });
-    });
 
+      assert.strictEqual(
+        span.status.code,
+        SpanStatusCode.UNSET,
+        'span status should be UNSET for aborted requests'
+      );
+
+      assert.strictEqual(
+        span.events.length,
+        0,
+        'no exception event should be recorded for aborted requests'
+      );
+
+      assert.strictEqual(
+        span.attributes['error.type'],
+        undefined,
+        'error.type should not be set for aborted requests'
+      );
+    });
     const userAgentRequests: Array<{
       name: string;
       headers: Record<string, string | string[] | undefined>;

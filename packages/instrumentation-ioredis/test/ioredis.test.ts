@@ -655,8 +655,10 @@ describe('ioredis', () => {
 
       describe('sensitive command sanitization', function () {
         after(async () => {
-          // cleanup added user
-          client.acl('DELUSER', 'testuser');
+          // cleanup added user (ACL not available in older ioredis versions)
+          if (typeof (client as any).acl === 'function') {
+            await (client as any).acl('DELUSER', 'testuser');
+          }
         });
 
         it('should redact CONFIG SET arguments in db.statement', async function () {
@@ -682,6 +684,9 @@ describe('ioredis', () => {
         });
 
         it('should redact ACL SETUSER arguments in db.statement', async function () {
+          if (typeof (client as any).acl !== 'function') {
+            this.skip();
+          }
           const span = provider
             .getTracer('ioredis-test')
             .startSpan('test span');

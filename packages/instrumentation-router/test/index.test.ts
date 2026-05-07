@@ -255,4 +255,47 @@ describe('Router instrumentation', () => {
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
     });
   });
+
+  describe('Response listener management (issue #3458)', () => {
+    it('does not emit MaxListenersExceededWarning with many sync middleware', async () => {
+      const router = new Router();
+
+      for (let i = 0; i < 20; i++) {
+        router.use((_req, _res, next) => next());
+      }
+
+      router.get('/ping', (_req, res) => {
+        res.end('pong');
+      });
+
+      const server = http.createServer((req, res) => {
+        router(req, res, () => {
+          if (!res.headersSent) {
+            res.statusCode = 404;
+            res.end('not found');
+          }
+        });
+      });
+      await new Promise<void>(resolve => server.listen(0, resolve));
+
+      const warnings: Error[] = [];
+      const onWarning = (w: Error) => warnings.push(w);
+      process.on('warning', onWarning);
+
+      try {
+        assert.strictEqual(await request('/ping', server), 'pong');
+        const maxListenersWarn = warnings.find(
+          w => w.name === 'MaxListenersExceededWarning'
+        );
+        assert.strictEqual(
+          maxListenersWarn,
+          undefined,
+          `unexpected warning: ${maxListenersWarn?.message}`
+        );
+      } finally {
+        process.removeListener('warning', onWarning);
+        server.close();
+      }
+    });
+  });
 });

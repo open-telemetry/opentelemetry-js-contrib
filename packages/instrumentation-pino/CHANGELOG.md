@@ -1,6 +1,27 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.62.0...instrumentation-pino-v0.63.0) (2026-05-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3507](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3507)) ([e1ef3d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e1ef3d1b14f177afd738f1c967018c1dc6fc900e))
+* **instrumentation-pino:** use Logs API exception field when translating pino error records ([#3426](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3426)) ([6837b8c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6837b8ccb6b263deeba8e320e50e96457146258a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.63.0 to ^0.64.0
+
+## [Unreleased]
+
+### Features
+
+* **instrumentation-pino:** use the Logs API `exception` field for pino error records during log sending, including support for custom pino `errorKey` ([#3425](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3425))
+
 ## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.61.0...instrumentation-pino-v0.62.0) (2026-04-29)
 
 
