@@ -780,12 +780,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
   ): void {
     if (additionalSpans) {
       for (const s of additionalSpans) {
-        this._endSpan(s, err ?? null);
+        this._endSpan(s, err);
       }
     }
 
-    this._endSpan(invocationSpan, err ?? null);
-
+    this._endSpan(invocationSpan, err);
     const flushers = [];
     if (this._traceForceFlusher) {
       flushers.push(this._traceForceFlusher());
