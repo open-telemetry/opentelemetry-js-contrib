@@ -35,6 +35,16 @@ describe('UndiciInstrumentation `fetch` tests', function () {
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
 
+  async function waitForSpans(count: number, timeoutMs = 1000): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (
+      memoryExporter.getFinishedSpans().length < count &&
+      Date.now() < deadline
+    ) {
+      await new Promise(r => setTimeout(r, 5));
+    }
+  }
+
   before(function (done) {
     // Do not test if the `fetch` global API is not available
     // This applies to nodejs < v18 or nodejs < v16.15 wihtout the flag
@@ -386,6 +396,8 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       const controller = new AbortController();
       const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
       const fetchPromise = fetch(fetchUrl, { signal: controller.signal });
+      // Make sure the span is started before we abort
+      await Promise.resolve();
       controller.abort();
       try {
         await fetchPromise;
@@ -393,8 +405,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         // Expected - fetch throws on abort, but we don't need the error
       }
 
-      // Let the error be published to diagnostics channel
-      await new Promise(r => setTimeout(r, 50));
+      await waitForSpans(1);
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
@@ -429,17 +440,11 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       // Cancel the response body instead of consuming it
       await response.body?.cancel();
 
-      // Let the error be published to diagnostics channel
-      await new Promise(r => setTimeout(r, 50));
+      await waitForSpans(1);
 
       spans = memoryExporter.getFinishedSpans();
-
-      // If cancelled before span was recorded, no span is expected
-      if (spans.length === 0) {
-        return;
-      }
-
       const span = spans[0];
+      assert.ok(span, 'a span is present');
       assert.strictEqual(spans.length, 1);
 
       // Per OTel HTTP spec: intentional cancellation SHOULD NOT be an error
