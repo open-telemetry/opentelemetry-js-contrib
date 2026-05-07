@@ -15,7 +15,7 @@
     "compile": "tsc -p .",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-runtime-node",
     "prepublishOnly": "npm run compile",
-    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha --expose-gc 'test/**/*.test.ts'",
     "version:update": "node ../../scripts/version-update.js"
   },
   "author": "OpenTelemetry Authors",
