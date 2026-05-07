@@ -97,13 +97,13 @@ In your Lambda function configuration, add or update the `NODE_OPTIONS` environm
 
 ## AWS Lambda Instrumentation Options
 
-| Options                 | Type                               | Description                                                                                                                                                                                                                                                                                                   |
-|-------------------------|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `requestHook`           | `RequestHook` (function)           | Hook for adding custom attributes before lambda starts handling the request. Receives params: `span, { event, context }`                                                                                                                                                                                      |
-| `responseHook`          | `ResponseHook` (function)          | Hook for adding custom attributes before lambda returns the response. Receives params: `span, { err?, res? }`                                                                                                                                                                                                 |
-| `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway).                                                                                                                                       |
-| `lambdaHandler`         | `string`                           | By default, this instrumentation automatically determines the Lambda handler function to instrument. This option is used to override that behavior by explicitly specifying the Lambda handler to instrument. See [Specifying the Lambda Handler](#specifying-the-lambda-handler) for additional information. |
-| `useConfiguredPropagatorForSqsExtraction` | `boolean` | By default for SQS messages, this instrumentation uses the AWS X-Ray propagator to extract context from `systemAttributes` which is spec-compliant. This option can be set to `true` to override that behavior, meaning context will be extracted from `messageAttributes` using the configured propagator. The latter deviates from the spec but can be useful when your producer injects context into `messageAttributes`. |
+| Options | Type | Description |
+|---------|------|-------------|
+| `requestHook` | `RequestHook` (function) | Hook for adding custom attributes before lambda starts handling the request. Receives params: `span, { event, context }` |
+| `responseHook` | `ResponseHook` (function) | Hook for adding custom attributes before lambda returns the response. Receives params: `span, { err?, res? }` |
+| `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway). |
+| `lambdaHandler` | `string` | By default, this instrumentation automatically determines the Lambda handler function to instrument. This option is used to override that behavior by explicitly specifying the Lambda handler to instrument. See [Specifying the Lambda Handler](#specifying-the-lambda-handler) for additional information. |
+| `useGlobalPropagatorForSqsExtraction` | `boolean` | By default for SQS messages, this instrumentation uses the AWS X-Ray propagator to extract context from `systemAttributes` which is spec-compliant. This option can be set to `true` to override that behavior, meaning context will be extracted from `messageAttributes` using the configured propagator. The latter deviates from the spec but can be useful when your producer injects context into `messageAttributes`. |
 
 ### Hooks Usage Example
 
@@ -195,11 +195,11 @@ When your Lambda function is triggered by SQS, the instrumentation creates a CON
 
 By default, context is extracted from the `AWSTraceHeader` system attribute using the AWS X-Ray propagator, as defined by the [OpenTelemetry semantic conventions for AWS Lambda](https://opentelemetry.io/docs/specs/semconv/faas/aws-lambda/#sqs-event). This works when AWS X-Ray active tracing is enabled on the SQS queue.
 
-If your SQS producers inject trace context into message attributes using the globally configured propagator (as `@opentelemetry/instrumentation-aws-sdk` does by default with W3C traceparent), set `useConfiguredPropagatorForSqsExtraction: true`:
+If your SQS producers inject trace context into message attributes using the globally configured propagator (as `@opentelemetry/instrumentation-aws-sdk` does by default with W3C traceparent), set `useGlobalPropagatorForSqsExtraction: true`:
 
 ```js
 new AwsLambdaInstrumentation({
-    useConfiguredPropagatorForSqsExtraction: true,
+    useGlobalPropagatorForSqsExtraction: true,
 })
 ```
 

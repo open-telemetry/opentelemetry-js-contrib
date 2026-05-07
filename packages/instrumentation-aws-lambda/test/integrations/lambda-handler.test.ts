@@ -1455,7 +1455,7 @@ describe('lambda handler', () => {
   describe('sqs context propagation (experimental: messageAttributes)', () => {
     it('creates process span with span link (sync handler)', async () => {
       initializeHandler('lambda-test/sync.handler', {
-        useConfiguredPropagatorForSqsExtraction: true,
+        useGlobalPropagatorForSqsExtraction: true,
       });
       const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
       const producerSpanId = '83b7424a259945cb';
@@ -1492,7 +1492,7 @@ describe('lambda handler', () => {
 
     it('creates process span with span link (async handler)', async () => {
       initializeHandler('lambda-test/async.handler', {
-        useConfiguredPropagatorForSqsExtraction: true,
+        useGlobalPropagatorForSqsExtraction: true,
       });
       const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
       const producerSpanId = '83b7424a259945cb';

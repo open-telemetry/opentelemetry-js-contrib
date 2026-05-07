@@ -30,5 +30,5 @@ export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
   eventContextExtractor?: EventContextExtractor;
   lambdaHandler?: string;
   lambdaStartTime?: number;
-  useConfiguredPropagatorForSqsExtraction?: boolean;
+  useGlobalPropagatorForSqsExtraction?: boolean;
 }

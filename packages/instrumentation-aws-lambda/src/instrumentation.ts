@@ -614,7 +614,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
   }
 
   private _extractSqsSpanLinks(messages: SQSRecord[]): Link[] {
-    return this.getConfig().useConfiguredPropagatorForSqsExtraction === true
+    return this.getConfig().useGlobalPropagatorForSqsExtraction === true
       ? AwsLambdaInstrumentation._extractLinksFromMessageAttributes(messages)
       : this._extractLinksFromAWSTraceHeader(messages);
   }
