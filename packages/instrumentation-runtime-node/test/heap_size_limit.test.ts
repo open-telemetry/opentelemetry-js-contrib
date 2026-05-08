@@ -1,28 +1,17 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as assert from 'assert';
 import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
-import { RuntimeNodeInstrumentation } from '../src';
+import { RuntimeNodeInstrumentation } from '../src/index';
 import { TestMetricReader } from './testMetricsReader';
-import { METRIC_V8JS_MEMORY_HEAP_MAX } from '../src/semconv';
+import { METRIC_V8JS_MEMORY_HEAP_LIMIT } from '../src/semconv';
 
 const MEASUREMENT_INTERVAL = 10;
 
-describe('v8js.memory.heap.max', function () {
+describe('v8js.memory.heap.limit', function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -33,10 +22,11 @@ describe('v8js.memory.heap.max', function () {
     });
   });
 
-  it(`should write ${METRIC_V8JS_MEMORY_HEAP_MAX} after monitoringPrecision`, async function () {
+  it(`should write ${METRIC_V8JS_MEMORY_HEAP_LIMIT} after monitoringPrecision`, async function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
+      captureUncaughtException: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
@@ -52,24 +42,24 @@ describe('v8js.memory.heap.max', function () {
     );
     const scopeMetrics = resourceMetrics.scopeMetrics;
     const metric = scopeMetrics[0].metrics.find(
-      x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_MAX
+      x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_LIMIT
     );
 
     assert.notEqual(
       metric,
       undefined,
-      `${METRIC_V8JS_MEMORY_HEAP_MAX} not found`
+      `${METRIC_V8JS_MEMORY_HEAP_LIMIT} not found`
     );
 
     assert.strictEqual(
       metric!.dataPointType,
-      DataPointType.GAUGE,
-      'expected gauge'
+      DataPointType.SUM,
+      'expected sum (UpDownCounter)'
     );
 
     assert.strictEqual(
       metric!.descriptor.name,
-      METRIC_V8JS_MEMORY_HEAP_MAX,
+      METRIC_V8JS_MEMORY_HEAP_LIMIT,
       'descriptor.name'
     );
   });
@@ -78,6 +68,7 @@ describe('v8js.memory.heap.max', function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
+      captureUncaughtException: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
@@ -89,16 +80,16 @@ describe('v8js.memory.heap.max', function () {
     assert.deepEqual(errors, []);
     const scopeMetrics = resourceMetrics.scopeMetrics;
     const metric = scopeMetrics[0].metrics.find(
-      x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_MAX
+      x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_LIMIT
     );
 
     assert.notEqual(
       metric,
       undefined,
-      `${METRIC_V8JS_MEMORY_HEAP_MAX} not found`
+      `${METRIC_V8JS_MEMORY_HEAP_LIMIT} not found`
     );
 
-    if (metric!.dataPointType === DataPointType.GAUGE) {
+    if (metric!.dataPointType === DataPointType.SUM) {
       assert.strictEqual(
         metric!.dataPoints.length,
         1,
@@ -113,6 +104,7 @@ describe('v8js.memory.heap.max', function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
+      captureUncaughtException: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
@@ -124,17 +116,17 @@ describe('v8js.memory.heap.max', function () {
     assert.deepEqual(errors, []);
     const scopeMetrics = resourceMetrics.scopeMetrics;
     const metric = scopeMetrics[0].metrics.find(
-      x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_MAX
+      x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_LIMIT
     );
 
     assert.notEqual(metric, undefined);
 
-    if (metric!.dataPointType === DataPointType.GAUGE) {
+    if (metric!.dataPointType === DataPointType.SUM) {
       for (const dp of metric!.dataPoints) {
         assert.strictEqual(
           dp.attributes['v8js.heap.space.name'],
           undefined,
-          'v8js.memory.heap.max should not have v8js.heap.space.name attribute'
+          'v8js.memory.heap.limit should not have v8js.heap.space.name attribute'
         );
       }
     }
