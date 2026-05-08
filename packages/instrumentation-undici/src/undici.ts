@@ -447,7 +447,6 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     if (!record) {
       return;
     }
-
     const { span, attributes, startTime } = record;
 
     // End the span
@@ -473,22 +472,30 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     const { span, attributes, startTime } = record;
 
-    // NOTE: in `undici@6.3.0` when request aborted the error type changes from
-    // a custom error (`RequestAbortedError`) to a built-in `DOMException` carrying
-    // some differences:
-    // - `code` is from DOMEXception (ABORT_ERR: 20)
-    // - `message` changes
-    // - stacktrace is smaller and contains node internal frames
-    span.recordException(error);
-    span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: error.message,
-    });
-    span.end();
-    this._recordFromReq.delete(request);
+    // Per OTel HTTP spec: if the request was intentionally cancelled via an
+    // AbortController signal, it SHOULD NOT be treated as an error.
+    // Span status should be left unset and error.type should not be set.
+    // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#http-client
+    const isAbort =
+      error.name === 'AbortError' ||
+      (typeof DOMException !== 'undefined' &&
+        error instanceof DOMException &&
+        error.code === DOMException.ABORT_ERR);
 
-    // Record metrics (with the error)
-    attributes[ATTR_ERROR_TYPE] = error.message;
+    if (isAbort) {
+      span.end();
+    } else {
+      span.recordException(error);
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message,
+      });
+      span.end();
+
+      attributes[ATTR_ERROR_TYPE] = error.message;
+    }
+
+    this._recordFromReq.delete(request);
     this.recordRequestDuration(attributes, startTime);
   }
 

@@ -59,6 +59,11 @@ If the OpenTelemetry SDK is not configured with a Logger provider, then this add
 
 Log sending can be disabled with the `disableLogSending: true` option.
 
+When Bunyan emits a top-level `err` field, for example via
+`logger.error(err, 'msg')`, this instrumentation forwards it through the Logs
+API `exception` field so the SDK can populate standard `exception.*`
+attributes.
+
 ### Log correlation
 
 Bunyan logger calls in the context of a tracing span will have fields
@@ -120,7 +125,8 @@ const logger = bunyan.createLogger({
 
 ## Semantic Conventions
 
-This package does not currently generate any attributes from semantic conventions.
+This package forwards Bunyan `err` fields through the Logs API `exception`
+field, allowing the SDK to populate standard `exception.*` attributes.
 
 ## Useful links
 
