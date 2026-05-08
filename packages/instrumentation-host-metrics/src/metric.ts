@@ -67,9 +67,7 @@ export class HostMetricsInstrumentation extends InstrumentationBase<HostMetricsI
 
   // Called by the SDK when a MeterProvider is set or changed.
   override _updateMetricInstruments() {
-    // The previous meter is gone — clear stale references and re-register on the new meter.
-    this._observables = [];
-    this._batchCallback = undefined;
+    this._doUnregister();
     if (this.isEnabled()) {
       this._doRegister();
     }
