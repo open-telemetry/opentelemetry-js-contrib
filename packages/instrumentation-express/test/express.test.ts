@@ -629,14 +629,24 @@ describe('ExpressInstrumentation', () => {
       await context.with(
         trace.setSpan(context.active(), rootSpan),
         async () => {
-          let clientError: Error | undefined;
-          const clientReq = httpGet(`http://localhost:${port}/slow`);
-          clientReq.on('error', err => {
-            clientError = err;
-          });
+        let clientError: Error | undefined;
+        const clientReq = httpGet(`http://localhost:${port}/slow`);
+
+        clientReq.on('error', err => {
+          clientError = err;
+        });
+
+        clientReq.on('close', () => {
+          if (!clientError) {
+            clientError = new Error('connection closed');
+          }
+        });
+        
           await requestReceivedPromise;
           clientReq.destroy();
           await responseClosedPromise;
+          // wait for client events to fire (needed on Windows)
+          await new Promise(resolve => setTimeout(resolve, 100));
           assert.ok(
             clientError,
             'client should have received an error from the aborted request'
