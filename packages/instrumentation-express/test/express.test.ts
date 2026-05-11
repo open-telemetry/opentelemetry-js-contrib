@@ -610,7 +610,7 @@ describe('ExpressInstrumentation', () => {
           res.status(200).end('ok');
         };
         (handlerRef as any).customProp = 'initial';
-          app.get('/test', handlerRef);
+        app.get('/test', handlerRef);
       });
       server = httpServer.server;
       port = httpServer.port;
@@ -619,11 +619,11 @@ describe('ExpressInstrumentation', () => {
         trace.setSpan(context.active(), rootSpan),
         async () => {
           await httpRequest.get(`http://localhost:${port}/test`);
-          
+
           // set property AFTER request — handler is now patched by OTel
           (handlerRef as any).customProp = 'updated';
           assert.strictEqual((handlerRef as any).customProp, 'updated');
-          
+
           rootSpan.end();
         }
       );
