@@ -63,5 +63,6 @@
   "semanticCommitType": "feat",
   "constraints": {
     "npm": ">=11.6.3"
-  }
+  },
+  "minimumReleaseAge": "1 week"
 }
