@@ -498,7 +498,32 @@ describe('ExpressInstrumentation', () => {
         }
       );
     });
-
+    it('should not overwrite rpcMetadata.route when middleware runs after request handler', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let capturedRoute: string | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.get('/users', (req, res) => {
+          // capture INSIDE the request handler, where context is active
+          capturedRoute = getRPCMetadata(context.active())?.route;
+          res.status(200).end('ok');
+        });
+        // middleware running AFTER request handler - should not overwrite route
+        app.use((req, res, next) => {
+          next();
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/users`);
+          rootSpan.end();
+          assert.strictEqual(capturedRoute, '/users');
+        }
+      );
+    });
     it('should ignore double slashes in routes', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let rpcMetadata: RPCMetadata | undefined;
@@ -631,12 +656,22 @@ describe('ExpressInstrumentation', () => {
         async () => {
           let clientError: Error | undefined;
           const clientReq = httpGet(`http://localhost:${port}/slow`);
+
           clientReq.on('error', err => {
             clientError = err;
           });
+
+          clientReq.on('close', () => {
+            if (!clientError) {
+              clientError = new Error('connection closed');
+            }
+          });
+
           await requestReceivedPromise;
           clientReq.destroy();
           await responseClosedPromise;
+          // wait for client events to fire (needed on Windows)
+          await new Promise(resolve => setTimeout(resolve, 100));
           assert.ok(
             clientError,
             'client should have received an error from the aborted request'

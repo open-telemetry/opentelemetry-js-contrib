@@ -193,7 +193,12 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
 
         const rpcMetadata = getRPCMetadata(context.active());
         if (rpcMetadata?.type === RPCType.HTTP) {
-          rpcMetadata.route = actualMatchedRoute;
+          if (
+            (actualMatchedRoute?.length || 0) >=
+            (rpcMetadata.route?.length || 0)
+          ) {
+            rpcMetadata.route = actualMatchedRoute;
+          }
         }
 
         // verify against the config if the layer should be ignored
