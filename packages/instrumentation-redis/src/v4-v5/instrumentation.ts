@@ -37,7 +37,7 @@ const MULTI_COMMAND_OPTIONS = Symbol(
   'opentelemetry.instrumentation.redis.multi_command_options'
 );
 
-interface MutliCommandInfo {
+interface MultiCommandInfo {
   span: Span;
   commandName: string;
   commandArgs: Array<string | Buffer>;
@@ -454,7 +454,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
       );
     } else {
       const redisClientMultiCommand = res as {
-        [OTEL_OPEN_SPANS]?: Array<MutliCommandInfo>;
+        [OTEL_OPEN_SPANS]?: Array<MultiCommandInfo>;
       };
       redisClientMultiCommand[OTEL_OPEN_SPANS] =
         redisClientMultiCommand[OTEL_OPEN_SPANS] || [];
@@ -468,7 +468,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
   }
 
   private _endSpansWithRedisReplies(
-    openSpans: Array<MutliCommandInfo>,
+    openSpans: Array<MultiCommandInfo>,
     replies: unknown[],
     isPipeline = false
   ) {

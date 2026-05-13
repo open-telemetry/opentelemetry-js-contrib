@@ -1,6 +1,21 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.62.0...instrumentation-amqplib-v0.63.0) (2026-04-29)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3497](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3497)) ([a91133a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a91133aa0aac9486eda26f3338d7673851b8bd69))
+* **instrumentation-amqplib:** add support for amqplib 1.x ([#3491](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3491)) ([f0b31d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f0b31d538e45460cef4198466010a82f9431e27b)), closes [#3487](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3487)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.62.0 to ^0.63.0
+
 ## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.61.0...instrumentation-amqplib-v0.62.0) (2026-04-17)
 
 
