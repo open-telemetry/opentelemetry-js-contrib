@@ -1,6 +1,25 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.66.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.65.0...instrumentation-redis-v0.66.0) (2026-05-13)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3523](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3523)) ([e26a90a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e26a90af6e2fb4666b22388b770add7a60140c9b))
+
+
+### Bug Fixes
+
+* **instrumentation-redis:** add spans for cluster multi/transaction commands   ([#3427](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3427)) ([d696336](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d696336dc6d6292e324413ed78ce37edc3d4e388))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.64.0 to ^0.65.0
+
 ## [0.65.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.64.0...instrumentation-redis-v0.65.0) (2026-05-06)
 
 
