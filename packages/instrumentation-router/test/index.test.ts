@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { context, trace } from '@opentelemetry/api';
+import { context, propagation, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -244,6 +244,68 @@ describe('Router instrumentation', () => {
         assert.strictEqual(parentSpan.name, 'GET /deep/hello/someone');
       } finally {
         testLocalServer.close();
+      }
+    });
+
+    it('should preserve baggage added before next across middleware and handler boundaries', async () => {
+      const router = new Router();
+      const snapshots: Array<Record<string, string> | null> = [];
+
+      const snapshotBaggage = () => {
+        const baggage = propagation.getBaggage(context.active());
+
+        if (!baggage) {
+          return null;
+        }
+
+        return Object.fromEntries(
+          baggage.getAllEntries().map(([key, entry]) => [key, entry.value])
+        );
+      };
+
+      router.use((_req, _res, next) => {
+        const baggage = (
+          propagation.getBaggage(context.active()) ?? propagation.createBaggage()
+        ).setEntry('foo', { value: 'bar' });
+        const nextContext = propagation.setBaggage(context.active(), baggage);
+
+        context.with(nextContext, next);
+      });
+
+      router.use((_req, _res, next) => {
+        snapshots.push(snapshotBaggage());
+
+        const baggage = (
+          propagation.getBaggage(context.active()) ?? propagation.createBaggage()
+        ).setEntry('baz', { value: 'qux' });
+        const nextContext = propagation.setBaggage(context.active(), baggage);
+
+        context.with(nextContext, next);
+      });
+
+      router.get('/baggage', (_req, res) => {
+        snapshots.push(snapshotBaggage());
+        res.end('ok');
+      });
+
+      const server = http.createServer((req, res) => {
+        router(req, res, () => {
+          if (!res.headersSent) {
+            res.statusCode = 404;
+            res.end('not found');
+          }
+        });
+      });
+      await new Promise<void>(resolve => server.listen(0, resolve));
+
+      try {
+        assert.strictEqual(await request('/baggage', server), 'ok');
+        assert.deepStrictEqual(snapshots, [
+          { foo: 'bar' },
+          { foo: 'bar', baz: 'qux' },
+        ]);
+      } finally {
+        server.close();
       }
     });
   });
