@@ -13,6 +13,8 @@ import {
   METRIC_V8JS_RESOURCE_ACTIVE,
 } from '../src/semconv';
 
+import * as net from 'node:net';
+
 const MEASUREMENT_INTERVAL = 10;
 
 describe('v8js.resource.active', function () {
@@ -108,5 +110,55 @@ describe('v8js.resource.active', function () {
     } finally {
       clearTimeout(keepAlive);
     }
+  });
+
+  it(`should write set ${ATTR_V8JS_RESOURCE_TYPE} attribute to zero`, async function () {
+    const instrumentation = new RuntimeNodeInstrumentation({
+      monitoringPrecision: MEASUREMENT_INTERVAL,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    const server = net.createServer((socket: net.Socket) => {
+      socket.on('error', () => {});
+    });
+
+    server.listen(4000, '127.0.0.1', () => {});
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    await metricReader.collect();
+
+    server.close();
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const { resourceMetrics, errors } = await metricReader.collect();
+
+    assert.deepEqual(
+      errors,
+      [],
+      'expected no errors from the callback during collection'
+    );
+    const scopeMetrics = resourceMetrics.scopeMetrics;
+
+    let metric: GaugeMetricData | undefined = undefined;
+
+    const foundMetric = scopeMetrics[0].metrics.find(
+      x => x.descriptor.name === METRIC_V8JS_RESOURCE_ACTIVE
+    );
+
+    if (foundMetric?.dataPointType === DataPointType.GAUGE) {
+      metric = foundMetric;
+    }
+    const typeAttribute = metric?.dataPoints.find(
+      x => x.attributes[ATTR_V8JS_RESOURCE_TYPE] === 'TCPServerWrap'
+    );
+
+    assert.notEqual(
+      typeAttribute,
+      undefined,
+      `${METRIC_V8JS_RESOURCE_ACTIVE} space "${ATTR_V8JS_RESOURCE_TYPE}" not found`
+    );
+    assert.ok(typeAttribute!.value == 0);
   });
 });

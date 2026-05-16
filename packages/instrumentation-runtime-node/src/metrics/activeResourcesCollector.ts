@@ -11,11 +11,11 @@ import {
   METRIC_V8JS_RESOURCE_ACTIVE,
 } from '../semconv';
 
-type DataMap = {
-  [key: string]: number;
-};
+type DataMap = Record<string, number>;
 
 export class ActiveResourcesCollector extends BaseCollector {
+  private _knownTypes: Set<string> = new Set();
+
   updateMetricInstruments(meter: Meter): void {
     const activeResources = meter.createObservableGauge(
       METRIC_V8JS_RESOURCE_ACTIVE,
@@ -40,12 +40,15 @@ export class ActiveResourcesCollector extends BaseCollector {
           } else {
             pdata[type] = 1;
           }
+          this._knownTypes.add(type);
         }
 
-        for (const [key, value] of Object.entries(pdata)) {
-          observableResult.observe(activeResources, value, {
-            [ATTR_V8JS_RESOURCE_TYPE]: key,
-          });
+        for (const key of this._knownTypes) {
+          observableResult.observe(
+            activeResources,
+            Object.hasOwn(pdata, key) ? pdata[key] : 0,
+            { [ATTR_V8JS_RESOURCE_TYPE]: key }
+          );
         }
       },
       [activeResources]
