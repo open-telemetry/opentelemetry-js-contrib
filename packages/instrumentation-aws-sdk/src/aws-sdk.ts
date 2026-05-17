@@ -123,6 +123,21 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
       }
     );
 
+    // Patch for @smithy/core >= 3.24.0: Client class moved from @smithy/smithy-client
+    // into @smithy/core/client bundle. We need to patch Client.prototype.send there too.
+    const v3SmithyCoreClientFile = new InstrumentationNodeModuleFile(
+      '@smithy/core/dist-cjs/submodules/client/index.js',
+      ['>=3.24.0'],
+      this.patchV3SmithyClient.bind(this),
+      this.unpatchV3SmithyClient.bind(this)
+    );
+    const v3SmithyCore = new InstrumentationNodeModuleDefinition(
+      '@smithy/core',
+      ['>=3.24.0'],
+      undefined,
+      undefined,
+      [v3SmithyCoreClientFile]
+    );
     const v3SmithyClient = new InstrumentationNodeModuleDefinition(
       '@aws-sdk/smithy-client',
       ['^3.1.0'],
@@ -141,6 +156,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     return [
       v3MiddlewareStack,
       v3SmithyMiddlewareStack,
+      v3SmithyCore,
       v3SmithyClient,
       v3NewSmithyClient,
     ];
