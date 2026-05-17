@@ -106,6 +106,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     // As of @smithy/middleware-stack@2.1.0 `constructStack` is only available
     // as a getter, so we cannot use `this._wrap()`.
     const self = this;
+    
     const v3SmithyMiddlewareStack = new InstrumentationNodeModuleDefinition(
       '@smithy/middleware-stack',
       ['>=2.0.0'],
@@ -120,6 +121,36 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
         );
         return newExports;
       }
+    );
+
+    // Patch for @smithy/core >= 3.24.0, which moved constructStack out of
+    // @smithy/middleware-stack and into @smithy/core/client (see smithy-lang/smithy-typescript#1991).
+    // AWS SDK v3 clients now require constructStack directly from @smithy/core/client,
+    // so the @smithy/middleware-stack hook no longer fires for these versions.
+  const v3SmithyCoreClientFile = new InstrumentationNodeModuleFile(
+      '@smithy/core/dist-cjs/submodules/client/index.js',
+      ['>=3.24.0'],
+      (moduleExports: any, moduleVersion?: string) => {
+        const newExports = propwrap(
+          moduleExports,
+          'constructStack',
+          (orig: any) => {
+            self._diag.debug(
+              'propwrapping aws-sdk v3 constructStack (@smithy/core/client)'
+            );
+            return self._getV3ConstructStackPatch(moduleVersion, orig);
+          }
+        );
+        return newExports;
+      },
+      (moduleExports: any) => moduleExports
+    );
+    const v3SmithyCore = new InstrumentationNodeModuleDefinition(
+      '@smithy/core',
+      ['>=3.24.0'],
+      undefined,
+      undefined,
+      [v3SmithyCoreClientFile]
     );
 
     const v3SmithyClient = new InstrumentationNodeModuleDefinition(
@@ -140,6 +171,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     return [
       v3MiddlewareStack,
       v3SmithyMiddlewareStack,
+      v3SmithyCore,
       v3SmithyClient,
       v3NewSmithyClient,
     ];
