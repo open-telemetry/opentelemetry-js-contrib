@@ -415,11 +415,7 @@ describe('Host Metrics Instrumentation', () => {
       const metric = await getRecords(reader, 'process.cpu.time');
 
       ensureValue(metric, { [ATTR_CPU_MODE]: 'user' }, 90.71356);
-      ensureValue(
-        metric,
-        { [ATTR_CPU_MODE]: 'system' },
-        63.192629999999994
-      );
+      ensureValue(metric, { [ATTR_CPU_MODE]: 'system' }, 63.192629999999994);
     });
 
     it('should export Process CPU utilization metrics', async () => {

@@ -5,7 +5,8 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export interface HostMetricsInstrumentationConfig extends InstrumentationConfig {
+export interface HostMetricsInstrumentationConfig
+  extends InstrumentationConfig {
   metricGroups?: string[];
 }
 
