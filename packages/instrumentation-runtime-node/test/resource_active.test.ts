@@ -159,6 +159,6 @@ describe('v8js.resource.active', function () {
       undefined,
       `${METRIC_V8JS_RESOURCE_ACTIVE} space "${ATTR_V8JS_RESOURCE_TYPE}" not found`
     );
-    assert.ok(typeAttribute!.value == 0);
+    assert.ok(typeAttribute!.value === 0);
   });
 });
