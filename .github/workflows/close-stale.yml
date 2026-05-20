@@ -32,7 +32,7 @@ jobs:
           days-before-issue-close: 14
           stale-issue-message: 'This package does not have an assigned [component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#component-ownership) and is considered [unmaintained](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#unmaintained). As such this package is in feature-freeze and this issue will be closed with 14 days unless a new owner or a sponsor (a member of @open-telemetry/javascript-approvers) for the feature is found. It is the responsibility of the author to find a sponsor for this feature.
 
-          Are you familiar with this package? Consider [becoming a component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#becoming-a-component-owner).'
+            Are you familiar with this package? Consider [becoming a component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#becoming-a-component-owner).'
           close-issue-message: 'This issue was closed because no owner or sponsor has been found after 14 days'
           stale-issue-label: pkg-status:unmaintained:autoclose-scheduled
           only-labels: pkg-status:unmaintained,feature-request
@@ -44,7 +44,7 @@ jobs:
           days-before-pr-close: 14
           stale-pr-message: 'This package does not have an assigned [component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#component-ownership) and is considered [unmaintained](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#unmaintained). As such this package is in feature-freeze and this PR will be closed with 14 days unless a new owner or a sponsor (a member of @open-telemetry/javascript-approvers) for the feature is found. It is the responsibility of the author to find a sponsor for this feature.
 
-          Are you familiar with this package? Consider [becoming a component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#becoming-a-component-owner).'
+            Are you familiar with this package? Consider [becoming a component owner](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/CONTRIBUTING.md#becoming-a-component-owner).'
           close-pr-message: 'This issue was closed because no owner or sponsor has been found after 14 days'
           stale-pr-label: pkg-status:unmaintained:autoclose-scheduled
           only-labels: pkg-status:unmaintained
