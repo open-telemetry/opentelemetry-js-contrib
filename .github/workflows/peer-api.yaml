@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Install script dependencies
         run: npm ci --ignore-scripts
