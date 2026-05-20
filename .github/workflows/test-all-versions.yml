@@ -28,6 +28,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
       # Use the same Node.js version used for `release-please` workflow.
       - uses: actions/setup-node@v6
         with:
@@ -59,6 +60,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
@@ -77,7 +79,9 @@ jobs:
       - name: Start Test Services
         run: npm run test-services:start
       - name: Run test-all-versions
-        run: npm run --if-present --workspaces test-all-versions ${{ inputs.npm-workspace-args }}
+        run: npm run --if-present --workspaces test-all-versions ${INPUTS_NPM_WORKSPACE_ARGS}
+        env:
+          INPUTS_NPM_WORKSPACE_ARGS: ${{ inputs.npm-workspace-args }}
       - name: Stop Test Services
         if: always()
         run: npm run test-services:stop
