@@ -1,6 +1,9 @@
 name: Lint PR
 
 on:
+  # Using 'pull_request_target' to *not* run changes in the PR branch.
+  # https://docs.zizmor.sh/audits/#dangerous-triggers
+  # zizmor: ignore[dangerous-triggers]
   pull_request_target:
     types:
       - opened
