@@ -265,7 +265,8 @@ describe('Router instrumentation', () => {
 
       router.use((_req, _res, next) => {
         const baggage = (
-          propagation.getBaggage(context.active()) ?? propagation.createBaggage()
+          propagation.getBaggage(context.active()) ??
+          propagation.createBaggage()
         ).setEntry('foo', { value: 'bar' });
         const nextContext = propagation.setBaggage(context.active(), baggage);
 
@@ -276,7 +277,8 @@ describe('Router instrumentation', () => {
         snapshots.push(snapshotBaggage());
 
         const baggage = (
-          propagation.getBaggage(context.active()) ?? propagation.createBaggage()
+          propagation.getBaggage(context.active()) ??
+          propagation.createBaggage()
         ).setEntry('baz', { value: 'qux' });
         const nextContext = propagation.setBaggage(context.active(), baggage);
 
