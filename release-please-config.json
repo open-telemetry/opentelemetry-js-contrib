@@ -49,6 +49,7 @@
     "packages/instrumentation-generic-pool": {},
     "packages/instrumentation-graphql": {},
     "packages/instrumentation-hapi": {},
+    "packages/instrumentation-host-metrics": {},
     "packages/instrumentation-ioredis": {},
     "packages/instrumentation-knex": {},
     "packages/instrumentation-koa": {},
