@@ -40,7 +40,6 @@ jobs:
         with:
           app-id: ${{ vars.OTELBOT_JS_CONTRIB_APP_ID }}
           private-key: ${{ secrets.OTELBOT_JS_CONTRIB_PRIVATE_KEY }}
-          repositories: ${{ github.repository }}
           # Scope to just the permissions required by googleapis/release-please-action.
           permission-contents: write
           permission-issues: write
