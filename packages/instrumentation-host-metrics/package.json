@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.218.0",
-    "systeminformation": "^5.31.1"
+    "systeminformation": "^5.31.6"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-host-metrics#readme"
 }
