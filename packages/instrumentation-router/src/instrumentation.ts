@@ -222,10 +222,13 @@ export class RouterInstrumentation extends InstrumentationBase {
         }
         span.end();
       }
-      if (parent) {
-        return api.context.with(parent, next, undefined, err);
-      }
-      return next(err);
+
+      const activeContext = api.context.active();
+      const nextContext = parentSpan
+        ? api.trace.setSpan(activeContext, parentSpan)
+        : activeContext;
+
+      return api.context.with(nextContext, next, undefined, err);
     };
 
     const ensureFallbackListener = () => {
