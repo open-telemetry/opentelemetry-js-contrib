@@ -50,7 +50,29 @@ registerInstrumentations({
 
 ## Filter Http Transport
 
-If you do not want to trace the socket.io http requests, add the default socket.io route (`/socket.io/`) to the `HttpInstrumentationConfig.ignoreIncomingPaths` array
+If you do not want to trace the socket.io HTTP polling requests, use the
+`ignoreIncomingRequestHook` option from `@opentelemetry/instrumentation-http`
+to filter out requests on the default socket.io route:
+
+```js
+const { HttpInstrumentation } = require("@opentelemetry/instrumentation-http");
+const {
+  SocketIoInstrumentation,
+} = require("@opentelemetry/instrumentation-socket.io");
+const { registerInstrumentations } = require("@opentelemetry/instrumentation");
+
+registerInstrumentations({
+  instrumentations: [
+    new HttpInstrumentation({
+      ignoreIncomingRequestHook(req) {
+        // Ignore socket.io HTTP polling transport requests
+        return !!req.url?.startsWith("/socket.io/");
+      },
+    }),
+    new SocketIoInstrumentation(),
+  ],
+});
+```
 
 ## Semantic Conventions
 
