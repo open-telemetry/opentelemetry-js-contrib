@@ -135,6 +135,33 @@ describe('Knex instrumentation', () => {
       );
     });
 
+    it('should collect connection attributes from dynamic connection settings', async () => {
+      await client.destroy();
+      client = knex({
+        client: 'sqlite3',
+        connection: () => ({
+          filename: ':memory:',
+        }),
+        useNullAsDefault: true,
+      });
+
+      const parentSpan = tracer.startSpan('parentSpan');
+      const statement = "select date('now')";
+
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client.raw(statement);
+          parentSpan.end();
+
+          assertSpans(memoryExporter.getFinishedSpans(), [
+            { statement, op: 'raw', parentSpan },
+            null,
+          ]);
+        }
+      );
+    });
+
     it('should truncate the query', async () => {
       const statement = `select date('now'), "${'long-'.repeat(15)}"`;
       await client.raw(statement);
