@@ -122,13 +122,13 @@ describe('v8js.resource.active', function () {
       socket.on('error', () => {});
     });
 
-    server.listen(4000, '127.0.0.1', () => {});
+    server.listen(0, '127.0.0.1', () => {});
 
     await new Promise(resolve => setTimeout(resolve, 100));
 
     await metricReader.collect();
 
-    server.close();
+    await new Promise(resolve => server.close(resolve));
 
     await new Promise(resolve => setTimeout(resolve, 100));
 
