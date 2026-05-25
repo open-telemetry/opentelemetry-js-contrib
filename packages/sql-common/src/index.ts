@@ -72,7 +72,6 @@ export function addSqlCommenterComment(span: Span, query: string): string {
     return query;
   }
 
-  const propagator = new W3CTraceContextPropagator();
   const headers: { [key: string]: string } = {};
   propagator.inject(
     trace.setSpan(ROOT_CONTEXT, span),

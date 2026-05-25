@@ -499,10 +499,18 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
                 setQuery,
               ] as never);
               if (setResult instanceof Promise) {
-                setResult.catch(() => {});
+                setResult.catch(error => {
+                  plugin._diag.warn(
+                    'Failed to set pg application_name for trace context propagation',
+                    error
+                  );
+                });
               }
-            } catch {
-              // Silently ignore SET failures to avoid breaking user queries
+            } catch (error) {
+              plugin._diag.warn(
+                'Failed to set pg application_name for trace context propagation',
+                error
+              );
             }
           }
         }
