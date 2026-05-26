@@ -227,12 +227,20 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
               originalQuery.call(
                 this,
                 `SET @traceparent = '${traceparent}'`,
-                () => {
-                  // ignore SET result
+                (err?: mysqlTypes.QueryError) => {
+                  if (err) {
+                    thisPlugin._diag.warn(
+                      'Failed to set mysql traceparent session variable for trace context propagation',
+                      err
+                    );
+                  }
                 }
               );
-            } catch {
-              // Silently ignore SET failures to avoid breaking user queries
+            } catch (err) {
+              thisPlugin._diag.warn(
+                'Failed to set mysql traceparent session variable for trace context propagation',
+                err
+              );
             }
           }
         }

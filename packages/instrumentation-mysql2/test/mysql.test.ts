@@ -109,12 +109,16 @@ describe('mysql2', () => {
     let pool: Pool;
     let poolCluster: PoolCluster;
 
-    const getLastQueries = (count: number) =>
-      new Promise<string[]>(res => {
+    const getLastQueries = (count: number) => {
+      const offset = instrumentation.getConfig().enableTraceContextPropagation
+        ? 2
+        : 1;
+
+      return new Promise<string[]>((res, rej) => {
         const queries: string[] = [];
         const query = rootConnection.query({
-          sql: "SELECT * FROM mysql.general_log WHERE command_type = 'Query' ORDER BY event_time DESC LIMIT ? OFFSET 1",
-          values: [count],
+          sql: "SELECT * FROM mysql.general_log WHERE command_type IN ('Query', 'Prepare', 'Execute') ORDER BY event_time DESC LIMIT ? OFFSET ?",
+          values: [count, offset],
         });
 
         query.on('result', (row: { argument: string | Buffer }) => {
@@ -124,8 +128,14 @@ describe('mysql2', () => {
             queries.push(row.argument.toString('utf-8'));
           }
         });
-        query.on('end', () => res(queries));
+        query.on('end', () => {
+          res(queries);
+        });
+        query.on('error', err => {
+          rej(err);
+        });
       });
+    };
 
     before(function (done) {
       if (!shouldTest) {
@@ -1558,11 +1568,12 @@ describe('mysql2', () => {
             assert.strictEqual(res[0].solution, 2);
             const finished = memoryExporter.getFinishedSpans();
             assert.strictEqual(finished.length, 1);
-            getLastQueries(2)
+            getLastQueries(3)
               .then(queries => {
                 // The prepared statement shows up in the general_log as the
                 // formatted SQL with values inlined.
-                assert.strictEqual(queries[1], expectedSet(finished[0]));
+                assert.strictEqual(queries[2], expectedSet(finished[0]));
+                assert.strictEqual(queries[1], sql);
                 assert.match(queries[0], /SELECT 1\+1 as solution/);
                 done();
               })
@@ -1694,9 +1705,10 @@ describe('mysql2', () => {
             assert.strictEqual(res[0].solution, 2);
             const finished = memoryExporter.getFinishedSpans();
             assert.strictEqual(finished.length, 1);
-            getLastQueries(2)
+            getLastQueries(3)
               .then(queries => {
-                assert.strictEqual(queries[1], expectedSet(finished[0]));
+                assert.strictEqual(queries[2], expectedSet(finished[0]));
+                assert.strictEqual(queries[1], sql);
                 assert.match(queries[0], /SELECT 1\+1 as solution/);
                 done();
               })
@@ -1717,6 +1729,33 @@ describe('mysql2', () => {
     let connection: ConnectionAsync;
     let rootConnection: ConnectionAsync;
     let createConnection: typeof createConnectionAsync;
+
+    const expectedSet = (span: ReadableSpan) => {
+      const sc = span.spanContext();
+      const flags = Number(sc.traceFlags || 0)
+        .toString(16)
+        .padStart(2, '0');
+      const traceparent = `00-${sc.traceId}-${sc.spanId}-${flags}`;
+      return `SET @traceparent = '${traceparent}'`;
+    };
+
+    const getLastQueries = async (count: number) => {
+      const offset = instrumentation.getConfig().enableTraceContextPropagation
+        ? 2
+        : 1;
+
+      const [rows] = await rootConnection.query<RowDataPacket[]>({
+        sql: "SELECT * FROM mysql.general_log WHERE command_type IN ('Query', 'Prepare', 'Execute') ORDER BY event_time DESC LIMIT ? OFFSET ?",
+        values: [count, offset],
+      });
+
+      return rows.map(row => {
+        const argument = (row as { argument: string | Buffer }).argument;
+        return typeof argument === 'string'
+          ? argument
+          : argument.toString('utf-8');
+      });
+    };
 
     before(async function () {
       // cleanup cache for 'mysql2'
@@ -1826,6 +1865,28 @@ describe('mysql2', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
           assertSpan(spans[0], sql);
+        });
+      });
+
+      it('should send SET @traceparent before the user query when enabled', async () => {
+        instrumentation.setConfig({
+          enableTraceContextPropagation: true,
+        });
+
+        const span = provider.getTracer('default').startSpan('test span');
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          const sql = 'SELECT 1+1 as solution';
+          const result = await connection.query<Result[]>(sql);
+          const rows = result[0];
+          assert.strictEqual(rows.length, 1);
+          assert.strictEqual(rows[0].solution, 2);
+
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+
+          const queries = await getLastQueries(2);
+          assert.strictEqual(queries[1], expectedSet(spans[0]));
+          assert.strictEqual(queries[0], sql);
         });
       });
     });
