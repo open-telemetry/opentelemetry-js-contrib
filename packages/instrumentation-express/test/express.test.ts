@@ -601,7 +601,33 @@ describe('ExpressInstrumentation', () => {
         }
       );
     });
+    it('should allow setting properties on patched layer handle', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let handlerRef: express.RequestHandler;
 
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        handlerRef = (req: express.Request, res: express.Response) => {
+          res.status(200).end('ok');
+        };
+        (handlerRef as any).customProp = 'initial';
+        app.get('/test', handlerRef);
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/test`);
+
+          // set property AFTER request — handler is now patched by OTel
+          (handlerRef as any).customProp = 'updated';
+          assert.strictEqual((handlerRef as any).customProp, 'updated');
+
+          rootSpan.end();
+        }
+      );
+    });
     it('should end spans when the client aborts the request', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let requestReceived: () => void;

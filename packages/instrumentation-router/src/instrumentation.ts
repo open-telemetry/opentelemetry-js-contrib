@@ -108,13 +108,13 @@ export class RouterInstrumentation extends InstrumentationBase {
       ) {
         return original.call(this, req, res, next);
       }
-      const { context, wrappedNext } = instrumentation._setupSpan(
-        this,
-        req,
-        res,
-        next
-      );
-      return api.context.with(context, original, this, req, res, wrappedNext);
+      const { context, wrappedNext, ensureFallbackListener } =
+        instrumentation._setupSpan(this, req, res, next);
+      try {
+        return api.context.with(context, original, this, req, res, wrappedNext);
+      } finally {
+        ensureFallbackListener();
+      }
     };
   }
 
@@ -136,21 +136,21 @@ export class RouterInstrumentation extends InstrumentationBase {
       ) {
         return original.call(this, error, req, res, next);
       }
-      const { context, wrappedNext } = instrumentation._setupSpan(
-        this,
-        req,
-        res,
-        next
-      );
-      return api.context.with(
-        context,
-        original,
-        this,
-        error,
-        req,
-        res,
-        wrappedNext
-      );
+      const { context, wrappedNext, ensureFallbackListener } =
+        instrumentation._setupSpan(this, req, res, next);
+      try {
+        return api.context.with(
+          context,
+          original,
+          this,
+          error,
+          req,
+          res,
+          wrappedNext
+        );
+      } finally {
+        ensureFallbackListener();
+      }
     };
   }
 
@@ -185,26 +185,60 @@ export class RouterInstrumentation extends InstrumentationBase {
       },
       parent
     ) as types.InstrumentationSpan;
-    const endSpan = utils.once(span.end.bind(span));
 
     utils.renameHttpSpan(parentSpan, layer.method, route);
-    // make sure spans are ended at least when response is finished
-    res.prependOnceListener('finish', endSpan);
+
+    // Span lifecycle:
+    //   - Normal path: the layer calls `next(err?)`, which runs `wrappedNext`,
+    //     ending the span and removing the fallback `close` listener (if one
+    //     was attached).
+    //   - Layer ends the response itself (e.g. `res.send(...)` and never
+    //     calls `next`): the `close` listener fires when the underlying
+    //     connection closes and ends the span.
+    //
+    // The fallback listener is only attached AFTER the original handler
+    // returns, and only if `next` wasn't already called synchronously. For
+    // the overwhelmingly common case (synchronous `next()`) NO listener is
+    // registered at all, so listener count never approaches Node's default
+    // MaxListeners=10 even with dozens of middleware (issue #3458). This
+    // mirrors the pattern adopted by `instrumentation-express` in #3462.
+    let spanEnded = false;
+    let listenerAttached = false;
+    const onClose = () => {
+      if (!spanEnded) {
+        spanEnded = true;
+        span.end();
+      }
+    };
 
     const wrappedNext: Router.NextFunction = err => {
       if (err) {
         span.recordException(err);
       }
-      endSpan();
+      if (!spanEnded) {
+        spanEnded = true;
+        if (listenerAttached) {
+          res.removeListener('close', onClose);
+        }
+        span.end();
+      }
       if (parent) {
         return api.context.with(parent, next, undefined, err);
       }
       return next(err);
     };
 
+    const ensureFallbackListener = () => {
+      if (!spanEnded && !listenerAttached) {
+        listenerAttached = true;
+        res.once('close', onClose);
+      }
+    };
+
     return {
       context: api.trace.setSpan(parent, span),
       wrappedNext,
+      ensureFallbackListener,
     };
   }
 }

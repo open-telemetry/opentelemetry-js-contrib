@@ -81,6 +81,13 @@ describe('Utils', () => {
         false
       );
     });
+    it('should not throw when pattern is unsupported datatype', () => {
+      assert.doesNotThrow(() =>
+        utils.isLayerIgnored('test', ExpressLayerType.MIDDLEWARE, {
+          ignoreLayers: [123 as any],
+        })
+      );
+    });
   });
 
   describe('getLayerMetadata()', () => {
