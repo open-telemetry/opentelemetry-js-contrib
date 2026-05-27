@@ -55,7 +55,6 @@ export type GenAIToolMessageEventBody = {
   id: string;
 };
 
-
 // Modelling output messages JSON schema: https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-output-messages.json
 
 /**

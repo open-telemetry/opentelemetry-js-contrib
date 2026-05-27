@@ -83,7 +83,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
   GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-  ATTR_GEN_AI_SYSTEM_INSTRUCTIONS
+  ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
 } from './semconv';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -223,7 +223,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         const config = self.getConfig();
         const startNow = performance.now();
 
-        let startInfo: ReturnType<OpenAIInstrumentation['_startChatCompletionsSpan']>;
+        let startInfo: ReturnType<
+          OpenAIInstrumentation['_startChatCompletionsSpan']
+        >;
         try {
           startInfo = self._startChatCompletionsSpan(
             params,
@@ -320,8 +322,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       attrs[ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY] = params.frequency_penalty;
     }
     if (typeof params.max_completion_tokens === 'number') {
-      attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] =
-        params.max_completion_tokens;
+      attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = params.max_completion_tokens;
     } else if (typeof params.max_tokens === 'number') {
       // `max_tokens` is deprecated in favour of `max_completion_tokens`.
       attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = params.max_tokens;
@@ -797,7 +798,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         const params = args[0];
         const startNow = performance.now();
 
-        let startInfo: ReturnType<OpenAIInstrumentation['_startEmbeddingsSpan']>;
+        let startInfo: ReturnType<
+          OpenAIInstrumentation['_startEmbeddingsSpan']
+        >;
         try {
           startInfo = self._startEmbeddingsSpan(params, this?._client?.baseURL);
         } catch (err) {
@@ -929,18 +932,22 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         // Streaming.
         if (isStreamPromise(params, apiPromise)) {
           return apiPromise.then(stream => {
-            self._wrap(stream as Stream<ResponseStreamEvent>, Symbol.asyncIterator, origIterator => {
-              return () => {
-                return self._onResponsesStreamIterator(
-                  origIterator.call(stream),
-                  span,
-                  startNow,
-                  config,
-                  commonAttrs,
-                  ctx
-                );
-              };
-            });
+            self._wrap(
+              stream as Stream<ResponseStreamEvent>,
+              Symbol.asyncIterator,
+              origIterator => {
+                return () => {
+                  return self._onResponsesStreamIterator(
+                    origIterator.call(stream),
+                    span,
+                    startNow,
+                    config,
+                    commonAttrs,
+                    ctx
+                  );
+                };
+              }
+            );
             return stream;
           });
         }
@@ -954,7 +961,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
               commonAttrs,
               result as Response,
               config,
-              ctx,
+              ctx
             );
           })
           .catch(
@@ -972,19 +979,25 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     baseURL: string | undefined
   ) {
     // Common attributes for the span, metrics, and log events.
-    const commonAttrs: Attributes = Object.assign({
-      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-      [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
-      [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-      [ATTR_GEN_AI_SYSTEM_INSTRUCTIONS]: params.instructions,
-    }, getAttrsFromBaseURL(baseURL, this._diag));
+    const commonAttrs: Attributes = Object.assign(
+      {
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+        [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+      },
+      getAttrsFromBaseURL(baseURL, this._diag)
+    );
 
     // Span attributes.
-    const attrs: Attributes = Object.assign({
-      [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: params.max_output_tokens ?? undefined,
-      [ATTR_GEN_AI_REQUEST_TEMPERATURE]: params.temperature ?? undefined,
-      [ATTR_GEN_AI_REQUEST_TOP_P]: params.top_p ?? undefined,
-    }, commonAttrs);
+    const attrs: Attributes = Object.assign(
+      {
+        [ATTR_GEN_AI_SYSTEM_INSTRUCTIONS]: params.instructions ?? undefined,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: params.max_output_tokens ?? undefined,
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: params.temperature ?? undefined,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: params.top_p ?? undefined,
+      },
+      commonAttrs
+    );
 
     const span: Span = this.tracer.startSpan(
       `${attrs[ATTR_GEN_AI_OPERATION_NAME]} ${attrs[ATTR_GEN_AI_REQUEST_MODEL]}`,
@@ -995,9 +1008,10 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     );
     const ctx: Context = trace.setSpan(context.active(), span);
 
-    const inputs: InputMessages = new ConvertResponseInputsToInputMessagesUseCase(
-      config.captureMessageContent
-    ).convert(params);
+    const inputs: InputMessages =
+      new ConvertResponseInputsToInputMessagesUseCase(
+        config.captureMessageContent
+      ).convert(params);
 
     // Capture inputs as log events.
     this.logger.emit({
@@ -1007,9 +1021,8 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
       attributes: {
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined // inputs as AnyValue,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: inputs as AnyValue,
       },
-      body: inputs as AnyValue,
     });
 
     return { span, ctx, commonAttrs };
@@ -1025,16 +1038,15 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
   ) {
     const iterable = { [Symbol.asyncIterator]: () => iterator };
     let model: string | undefined;
-    const converter = new ConvertResponseOutputsToOutputMessagesUseCase(config.captureMessageContent);
+    const converter = new ConvertResponseOutputsToOutputMessagesUseCase(
+      config.captureMessageContent
+    );
 
     for await (const event of iterable) {
       yield event;
 
       // Gather telemetry from this chunk.
-      this._diag.debug(
-        'OpenAI.Responses.create stream event: %O',
-        event
-      );
+      this._diag.debug('OpenAI.Responses.create stream event: %O', event);
 
       switch (event.type) {
         case 'response.created': {
@@ -1043,13 +1055,15 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           span.setAttributes({
             [ATTR_GEN_AI_RESPONSE_ID]: response.id,
             [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-            [ATTR_GEN_AI_CONVERSATION_ID]: response.conversation?.id
+            [ATTR_GEN_AI_CONVERSATION_ID]: response.conversation?.id,
           });
           break;
         }
         case 'response.output_item.done': {
           const output = converter.convert([event.item]);
-          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [output[0].finish_reason])
+          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+            output[0].finish_reason,
+          ]);
           this.logger.emit({
             timestamp: Date.now(),
             context: ctx,
@@ -1057,9 +1071,8 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
             attributes: {
               [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined // output as AnyValue,
+              [ATTR_GEN_AI_OUTPUT_MESSAGES]: output as AnyValue,
             },
-            body: output as AnyValue,
           });
           break;
         }
@@ -1105,16 +1118,13 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     commonAttrs: Attributes,
     result: Response,
     config: OpenAIInstrumentationConfig,
-    ctx: Context,
+    ctx: Context
   ) {
     this._diag.debug('OpenAI.Responses.create result: %O', result);
     const { id, model, conversation, output, usage } = result;
     try {
       if (conversation) {
-        span.setAttribute(
-          ATTR_GEN_AI_CONVERSATION_ID,
-          conversation.id
-        );
+        span.setAttribute(ATTR_GEN_AI_CONVERSATION_ID, conversation.id);
       }
       span.setAttribute(ATTR_GEN_AI_RESPONSE_ID, id);
       span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, model);
@@ -1135,10 +1145,12 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       }
 
       const outputs = new ConvertResponseOutputsToOutputMessagesUseCase(
-        config.captureMessageContent,
+        config.captureMessageContent
       ).convert(output);
 
-      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [outputs[0].finish_reason])
+      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+        outputs[0].finish_reason,
+      ]);
 
       // Capture outputs as a log event.
       this.logger.emit({
@@ -1150,7 +1162,6 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
           [ATTR_GEN_AI_OUTPUT_MESSAGES]: outputs as AnyValue,
         },
-        body: outputs as AnyValue,
       });
 
       this._genaiClientOperationDuration.record(
@@ -1171,18 +1182,25 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
 }
 
 class ConvertResponseInputsToInputMessagesUseCase {
-  constructor(private readonly captureMessageContent = false) { }
+  constructor(private readonly captureMessageContent = false) {}
 
   convert(params: ResponseCreateParams): InputMessages {
     const messages: Array<ChatMessage> = [];
 
     if (typeof params.instructions === 'string') {
-      messages.push(this.message({ role: 'system', content: params.instructions }));
+      messages.push(
+        this.message({ role: 'system', content: params.instructions })
+      );
     }
     if (typeof params.input === 'string') {
       messages.push(this.message({ role: 'user', content: params.input }));
     } else if (Array.isArray(params.input)) {
-      messages.push(...params.input.map((input): ChatMessage => this[input.type ?? 'message'](input as never)));
+      messages.push(
+        ...params.input.map(
+          (input): ChatMessage =>
+            (this as any)[input.type ?? 'message'](input as never)
+        )
+      );
     }
 
     return messages;
@@ -1193,7 +1211,7 @@ class ConvertResponseInputsToInputMessagesUseCase {
       | EasyInputMessage
       | ResponseInputItem.Message
       | Responses.ResponseInputMessageItem
-      | ResponseOutputMessage,
+      | ResponseOutputMessage
   ): ChatMessage {
     const parts: Array<MessagePart> = [];
     if (typeof item.content === 'string') {
@@ -1233,19 +1251,19 @@ class ConvertResponseInputsToInputMessagesUseCase {
             break;
           case 'input_image':
             parts.push({
-              ...(this.captureMessageContent ? content : undefined),
+              ...(this.captureMessageContent ? (content as object) : undefined),
               type: 'image',
             } satisfies GenericPart);
             break;
           case 'input_file':
             parts.push({
-              ...(this.captureMessageContent ? content : undefined),
+              ...(this.captureMessageContent ? (content as object) : undefined),
               type: 'file',
             } satisfies GenericPart);
             break;
-          case 'input_audio': {
+          default: {
             parts.push({
-              ...(this.captureMessageContent ? content : undefined),
+              ...(this.captureMessageContent ? (content as object) : undefined),
               type: 'audio',
             } satisfies GenericPart);
             break;
@@ -1344,7 +1362,7 @@ class ConvertResponseInputsToInputMessagesUseCase {
           type: 'tool_call',
           id: item.id,
           name: item.type,
-          // @ts-expect-error: action is missing on Responses.ResponseFunctionWebSearch type
+          // @ts-expect-error: action is missing on older openai versions
           arguments: this.captureMessageContent ? item.action : undefined,
         } satisfies ToolCallRequestPart,
       ],
@@ -1366,7 +1384,9 @@ class ConvertResponseInputsToInputMessagesUseCase {
     } satisfies ChatMessage;
   }
 
-  computer_call_output(item: ResponseInputItem.ComputerCallOutput): ChatMessage {
+  computer_call_output(
+    item: ResponseInputItem.ComputerCallOutput
+  ): ChatMessage {
     return {
       role: 'user',
       parts: [
@@ -1417,7 +1437,7 @@ class ConvertResponseInputsToInputMessagesUseCase {
   image_generation_call(
     item:
       | ResponseInputItem.ImageGenerationCall
-      | ResponseOutputItem.ImageGenerationCall,
+      | ResponseOutputItem.ImageGenerationCall
   ): ChatMessage {
     return {
       role: 'assistant',
@@ -1436,7 +1456,9 @@ class ConvertResponseInputsToInputMessagesUseCase {
     } satisfies ChatMessage;
   }
 
-  function_call_output(item: ResponseInputItem.FunctionCallOutput): ChatMessage {
+  function_call_output(
+    item: ResponseInputItem.FunctionCallOutput
+  ): ChatMessage {
     return {
       role: 'user',
       parts: [
@@ -1451,9 +1473,7 @@ class ConvertResponseInputsToInputMessagesUseCase {
   }
 
   local_shell_call(
-    item:
-      | ResponseInputItem.LocalShellCall
-      | ResponseOutputItem.LocalShellCall,
+    item: ResponseInputItem.LocalShellCall | ResponseOutputItem.LocalShellCall
   ): ChatMessage {
     return {
       role: 'assistant',
@@ -1469,7 +1489,9 @@ class ConvertResponseInputsToInputMessagesUseCase {
     } satisfies ChatMessage;
   }
 
-  local_shell_call_output(item: ResponseInputItem.LocalShellCallOutput): ChatMessage {
+  local_shell_call_output(
+    item: ResponseInputItem.LocalShellCallOutput
+  ): ChatMessage {
     return {
       role: 'user',
       parts: [
@@ -1483,7 +1505,7 @@ class ConvertResponseInputsToInputMessagesUseCase {
   }
 
   mcp_call(
-    item: ResponseInputItem.McpCall | ResponseOutputItem.McpCall,
+    item: ResponseInputItem.McpCall | ResponseOutputItem.McpCall
   ): ChatMessage {
     return {
       role: 'assistant',
@@ -1492,7 +1514,9 @@ class ConvertResponseInputsToInputMessagesUseCase {
           type: 'tool_call',
           id: item.id,
           name: item.type,
-          arguments: this.captureMessageContent ? `${item.name}(${item.arguments})` : undefined,
+          arguments: this.captureMessageContent
+            ? `${item.name}(${item.arguments})`
+            : undefined,
           server: item.server_label,
         } satisfies ToolCallRequestPart,
         {
@@ -1527,7 +1551,9 @@ class ConvertResponseInputsToInputMessagesUseCase {
     } satisfies ChatMessage;
   }
 
-  mcp_approval_request(item: ResponseInputItem.McpApprovalRequest): ChatMessage {
+  mcp_approval_request(
+    item: ResponseInputItem.McpApprovalRequest
+  ): ChatMessage {
     return {
       role: 'assistant',
       parts: [
@@ -1542,7 +1568,9 @@ class ConvertResponseInputsToInputMessagesUseCase {
     } satisfies ChatMessage;
   }
 
-  mcp_approval_response(item: ResponseInputItem.McpApprovalResponse): ChatMessage {
+  mcp_approval_response(
+    item: ResponseInputItem.McpApprovalResponse
+  ): ChatMessage {
     return {
       role: 'user',
       parts: [
@@ -1582,19 +1610,21 @@ class ConvertResponseInputsToInputMessagesUseCase {
 }
 
 class ConvertResponseOutputsToOutputMessagesUseCase {
-  constructor(private readonly captureMessageContent = false) { }
+  constructor(private readonly captureMessageContent = false) {}
 
   convert(responseOutput: Array<ResponseOutputItem>): OutputMessages {
-    const parts: Array<MessagePart> = responseOutput.flatMap((item: ResponseOutputItem) => this[item.type](item as never));
+    const parts: Array<MessagePart> = responseOutput.flatMap(
+      (item: ResponseOutputItem) => (this as any)[item.type](item as never)
+    );
 
     return [
       {
         role: 'assistant',
         parts,
-        finish_reason: parts[parts.length - 1]?.type === 'tool_call' ? 'tool_call' : 'stop',
+        finish_reason:
+          parts[parts.length - 1]?.type === 'tool_call' ? 'tool_call' : 'stop',
       },
     ];
-
   }
 
   message(item: ResponseOutputMessage): Array<MessagePart> {
@@ -1634,7 +1664,7 @@ class ConvertResponseOutputsToOutputMessagesUseCase {
         name: item.name,
         arguments: this.captureMessageContent ? item.arguments : undefined,
         call_id: item.call_id,
-      } satisfies ToolCallRequestPart
+      } satisfies ToolCallRequestPart,
     ];
   }
 
@@ -1646,7 +1676,7 @@ class ConvertResponseOutputsToOutputMessagesUseCase {
         name: item.name,
         arguments: this.captureMessageContent ? item.input : undefined,
         call_id: item.call_id,
-      } satisfies ToolCallRequestPart
+      } satisfies ToolCallRequestPart,
     ];
   }
 
@@ -1677,7 +1707,7 @@ class ConvertResponseOutputsToOutputMessagesUseCase {
         id: item.id,
         name: item.type,
         arguments: this.captureMessageContent ? item.queries : undefined,
-      } satisfies ToolCallRequestPart
+      } satisfies ToolCallRequestPart,
     ];
     for (const result of item.results ?? []) {
       parts.push({
@@ -1696,7 +1726,7 @@ class ConvertResponseOutputsToOutputMessagesUseCase {
         type: 'tool_call',
         id: item.id,
         name: item.type,
-        // @ts-expect-error: action is missing on Responses.ResponseFunctionWebSearch type
+        // @ts-expect-error: action is missing on older openai versions
         arguments: this.captureMessageContent ? item.action : undefined,
       } satisfies ToolCallRequestPart,
     ];
@@ -1714,7 +1744,9 @@ class ConvertResponseOutputsToOutputMessagesUseCase {
     ];
   }
 
-  code_interpreter_call(item: ResponseCodeInterpreterToolCall): Array<MessagePart> {
+  code_interpreter_call(
+    item: ResponseCodeInterpreterToolCall
+  ): Array<MessagePart> {
     const parts: Array<MessagePart> = [
       {
         type: 'tool_call',
@@ -1746,7 +1778,7 @@ class ConvertResponseOutputsToOutputMessagesUseCase {
   }
 
   image_generation_call(
-    item: ResponseOutputItem.ImageGenerationCall,
+    item: ResponseOutputItem.ImageGenerationCall
   ): Array<MessagePart> {
     return [
       {
@@ -1762,7 +1794,9 @@ class ConvertResponseOutputsToOutputMessagesUseCase {
     ];
   }
 
-  local_shell_call(item: ResponseOutputItem.LocalShellCall): Array<MessagePart> {
+  local_shell_call(
+    item: ResponseOutputItem.LocalShellCall
+  ): Array<MessagePart> {
     return [
       {
         type: 'tool_call',
@@ -1780,7 +1814,9 @@ class ConvertResponseOutputsToOutputMessagesUseCase {
         type: 'tool_call',
         id: item.id,
         name: item.name,
-        arguments: this.captureMessageContent ? `${item.name}(${item.arguments})` : undefined,
+        arguments: this.captureMessageContent
+          ? `${item.name}(${item.arguments})`
+          : undefined,
         server: item.server_label,
       } satisfies ToolCallRequestPart,
       {
@@ -1792,7 +1828,7 @@ class ConvertResponseOutputsToOutputMessagesUseCase {
             ? item.output
             : undefined,
         server: item.server_label,
-      } satisfies ToolCallResponsePart
+      } satisfies ToolCallResponsePart,
     ];
   }
 
@@ -1812,7 +1848,7 @@ class ConvertResponseOutputsToOutputMessagesUseCase {
   }
 
   mcp_approval_request(
-    item: ResponseOutputItem.McpApprovalRequest,
+    item: ResponseOutputItem.McpApprovalRequest
   ): Array<MessagePart> {
     return [
       {
@@ -1835,7 +1871,7 @@ function isTextContent(
 function isStreamPromise<
   Params extends { stream?: boolean | null } | undefined,
   Chunk,
-  NonStream
+  NonStream,
 >(
   params: Params,
   value: APIPromise<Stream<Chunk> | NonStream>

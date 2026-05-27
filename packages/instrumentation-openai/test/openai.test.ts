@@ -58,6 +58,7 @@ import {
   ATTR_GEN_AI_RESPONSE_MODEL,
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
+  ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
   ATTR_GEN_AI_TOKEN_TYPE,
   EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
@@ -3331,32 +3332,32 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        }
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [{ type: 'text', content: undefined }],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [{ type: 'text', content: undefined }],
-          finish_reason: 'stop'
-        }
-      ]);
     });
 
     it('records all the client options', async () => {
@@ -3473,32 +3474,32 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        }
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [{ type: 'text', content: undefined }],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [{ type: 'text', content: undefined }],
-          finish_reason: 'stop'
-        }
-      ]);
     });
 
     it('records function calls', async () => {
@@ -3661,58 +3662,58 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'system',
+            parts: [{ type: 'text', content: undefined }],
+          },
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'system',
-          parts: [{ type: 'text', content: undefined }],
-        },
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                id: 'fc_12345xyz',
+                call_id: 'call_12345xyz',
+                type: 'tool_call',
+                name: 'get_weather',
+                arguments: undefined,
+              },
+              {
+                id: 'fc_67890abc',
+                call_id: 'call_67890abc',
+                type: 'tool_call',
+                name: 'get_weather',
+                arguments: undefined,
+              },
+              {
+                id: 'fc_99999def',
+                call_id: 'call_99999def',
+                type: 'tool_call',
+                name: 'send_email',
+                arguments: undefined,
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              'id': 'fc_12345xyz',
-              'call_id': 'call_12345xyz',
-              'type': 'tool_call',
-              'name': 'get_weather',
-              'arguments': undefined
-            },
-            {
-              'id': 'fc_67890abc',
-              'call_id': 'call_67890abc',
-              'type': 'tool_call',
-              'name': 'get_weather',
-              'arguments': undefined
-            },
-            {
-              'id': 'fc_99999def',
-              'call_id': 'call_99999def',
-              'type': 'tool_call',
-              'name': 'send_email',
-              'arguments': undefined
-            }
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
     });
 
     it('records custom tool calls', async () => {
@@ -3833,40 +3834,40 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ctc_6890e975e86c819c9338825b3e1994810694874912ae0ea6',
+                name: 'code_exec',
+                arguments: undefined,
+                call_id: 'call_aGiFQkRWSWAIsMQ19fKqxUgb',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ctc_6890e975e86c819c9338825b3e1994810694874912ae0ea6',
-              name: 'code_exec',
-              arguments: undefined,
-              call_id: 'call_aGiFQkRWSWAIsMQ19fKqxUgb',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
     });
 
     it('records file search calls', async () => {
@@ -3990,48 +3991,48 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fs_67c09ccea8c48191ade9367e3ba71515',
+                name: 'file_search_call',
+                arguments: undefined,
+              },
+              {
+                type: 'tool_call_response',
+                id: 'fs_67c09ccea8c48191ade9367e3ba71515',
+                response: undefined,
+              },
+              {
+                type: 'text',
+                content: undefined,
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'fs_67c09ccea8c48191ade9367e3ba71515',
-              name: 'file_search_call',
-              arguments: undefined,
-            },
-            {
-              type: 'tool_call_response',
-              id: 'fs_67c09ccea8c48191ade9367e3ba71515',
-              response: undefined,
-            },
-            {
-              type: 'text',
-              content: undefined,
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records web search calls', async () => {
@@ -4045,7 +4046,7 @@ describe('OpenAI', function () {
         model,
         input: 'What was a positive news story from today?',
         tools,
-        include: ['web_search_call.action.sources']
+        include: ['web_search_call.action.sources'],
       });
 
       expect(response.output_text).toContain('On March 6, 2025, several news');
@@ -4064,7 +4065,9 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 291,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 23,
       });
-      expect(spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual(['stop']);
+      expect(spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
+        'stop',
+      ]);
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
@@ -4151,43 +4154,43 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ws_67c9fa0502748190b7dd390736892e100be649c1a5ff9609',
+                name: 'web_search_call',
+                arguments: undefined,
+              },
+              {
+                type: 'text',
+                content: undefined,
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ws_67c9fa0502748190b7dd390736892e100be649c1a5ff9609',
-              name: 'web_search_call',
-              arguments: undefined,
-            },
-            {
-              type: 'text',
-              content: undefined,
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records computer use calls', async () => {
@@ -4322,44 +4325,44 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'reasoning',
+                text: undefined,
+              },
+              {
+                type: 'tool_call',
+                id: 'cu_67cc...',
+                name: 'computer_call',
+                arguments: undefined,
+                call_id: 'call_zw3...',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'reasoning',
-              text: undefined,
-            },
-            {
-              type: 'tool_call',
-              id: 'cu_67cc...',
-              name: 'computer_call',
-              arguments: undefined,
-              call_id: 'call_zw3...',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
     });
 
     it('records code interpreter calls', async () => {
@@ -4374,10 +4377,13 @@ describe('OpenAI', function () {
         model,
         tools,
         instructions: null,
-        input: 'Plot and analyse the histogram of the RGB channels for the uploaded image.',
+        input:
+          'Plot and analyse the histogram of the RGB channels for the uploaded image.',
       });
 
-      expect(response.output_text).toContain('Here is the histogram of the RGB channels');
+      expect(response.output_text).toContain(
+        'Here is the histogram of the RGB channels'
+      );
       expect(response.output).toHaveLength(1);
 
       const spans = getTestSpans();
@@ -4480,37 +4486,37 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'text',
+                content: undefined,
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'text',
-              content: undefined,
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records image generation call', async () => {
@@ -4644,58 +4650,58 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ig_123',
+                name: 'image_generation_call',
+              },
+              {
+                type: 'tool_call_response',
+                id: 'ig_123',
+                response: undefined,
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ig_123',
-              name: 'image_generation_call',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'ig_123',
-              response: undefined,
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ig_124',
+                name: 'image_generation_call',
+              },
+              {
+                type: 'tool_call_response',
+                id: 'ig_124',
+                response: undefined,
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ig_124',
-              name: 'image_generation_call',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'ig_124',
-              response: undefined,
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records mcp calls', async () => {
@@ -4703,7 +4709,8 @@ describe('OpenAI', function () {
         {
           type: 'mcp',
           server_label: 'dmcp',
-          server_description: 'A Dungeons and Dragons MCP server to assist with dice rolling.',
+          server_description:
+            'A Dungeons and Dragons MCP server to assist with dice rolling.',
           server_url: 'https://dmcp-server.deno.dev/sse',
           require_approval: 'never',
           allowed_tools: ['roll'],
@@ -4713,48 +4720,48 @@ describe('OpenAI', function () {
       const response = await client.responses.create({
         model,
         tools,
-        input:
-          [
-            {
-              'role': 'user',
-              'content': 'Roll 2d4+1'
-            },
-            {
-              'id': 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
-              'type': 'mcp_list_tools',
-              'server_label': 'dmcp',
-              'tools': [
-                {
-                  'annotations': null,
-                  'description': 'Given a string of text describing a dice roll...',
-                  'input_schema': {
-                    '$schema': 'https://json-schema.org/draft/2020-12/schema',
-                    'type': 'object',
-                    'properties': {
-                      'diceRollExpression': {
-                        'type': 'string'
-                      }
+        input: [
+          {
+            role: 'user',
+            content: 'Roll 2d4+1',
+          },
+          {
+            id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
+            type: 'mcp_list_tools',
+            server_label: 'dmcp',
+            tools: [
+              {
+                annotations: null,
+                description: 'Given a string of text describing a dice roll...',
+                input_schema: {
+                  $schema: 'https://json-schema.org/draft/2020-12/schema',
+                  type: 'object',
+                  properties: {
+                    diceRollExpression: {
+                      type: 'string',
                     },
-                    'required': ['diceRollExpression'],
-                    'additionalProperties': false
                   },
-                  'name': 'roll'
-                }
-              ]
-            },
-            {
-              'id': 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
-              'type': 'mcp_approval_request',
-              'arguments': '{"diceRollExpression":"2d4 + 1"}',
-              'name': 'roll',
-              'server_label': 'dmcp'
-            },
-            {
-              'type': 'mcp_approval_response',
-              'approve': true,
-              'approval_request_id': 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339'
-            }
-          ],
+                  required: ['diceRollExpression'],
+                  additionalProperties: false,
+                },
+                name: 'roll',
+              },
+            ],
+          },
+          {
+            id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
+            type: 'mcp_approval_request',
+            arguments: '{"diceRollExpression":"2d4 + 1"}',
+            name: 'roll',
+            server_label: 'dmcp',
+          },
+          {
+            type: 'mcp_approval_response',
+            approve: true,
+            approval_request_id:
+              'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
+          },
+        ],
       });
 
       expect(response.output_text).toBe('');
@@ -4860,78 +4867,94 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call_response',
+                id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
+                response: undefined,
+                server: 'dmcp',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
+                name: 'mcp_approval_request',
+                arguments: undefined,
+                server: 'dmcp',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'tool_call_response',
+                response: undefined,
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call_response',
-              id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
-              response: undefined,
-              server: 'dmcp',
-            },
-          ],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
-              name: 'mcp_approval_request',
-              arguments: undefined,
-              server: 'dmcp',
-            },
-          ],
-        },
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'tool_call_response',
-              response: undefined,
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
+                name: 'roll',
+                arguments: undefined,
+                server: 'dmcp',
+              },
+              {
+                type: 'tool_call_response',
+                id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
+                response: undefined,
+                server: 'dmcp',
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
-              name: 'roll',
-              arguments: undefined,
-              server: 'dmcp',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
-              response: undefined,
-              server: 'dmcp',
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
+    });
+
+    it('records system instructions', async () => {
+      const response = await client.responses.create({
+        model,
+        input: 'Which ocean contains Bouvet Island?',
+        instructions: 'Answer in up to 3 words.',
+      });
+
+      expect(response.output_text).toEqual('Atlantic Ocean.');
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS]).toEqual(
+        'Answer in up to 3 words.'
+      );
     });
 
     it('handles connection errors without crashing', async () => {
@@ -5003,18 +5026,18 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
     });
   });
 
@@ -5134,33 +5157,38 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content:
+                  'Answer in up to 3 words: Which ocean contains Bouvet Island?',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'Answer in up to 3 words: Which ocean contains Bouvet Island?' }],
-        }
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [{ type: 'text', content: 'Atlantic Ocean.' }],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [{ type: 'text', content: 'Atlantic Ocean.' }],
-          finish_reason: 'stop'
-        }
-
-      ])
     });
 
     it('records function calls', async () => {
@@ -5323,68 +5351,69 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'system',
+            parts: [
+              {
+                type: 'text',
+                content:
+                  'You are a helpful assistant providing weather updates.',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'What is the weather in Paris and Bogotá?',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'system',
-          parts: [
-            {
-              type: 'text',
-              content: 'You are a helpful assistant providing weather updates.',
-            },
-          ],
-        },
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              content: 'What is the weather in Paris and Bogotá?',
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                id: 'fc_12345xyz',
+                call_id: 'call_12345xyz',
+                type: 'tool_call',
+                name: 'get_weather',
+                arguments: '{"location":"Paris, France"}',
+              },
+              {
+                id: 'fc_67890abc',
+                call_id: 'call_67890abc',
+                type: 'tool_call',
+                name: 'get_weather',
+                arguments: '{"location":"Bogotá, Colombia"}',
+              },
+              {
+                id: 'fc_99999def',
+                call_id: 'call_99999def',
+                type: 'tool_call',
+                name: 'send_email',
+                arguments: '{"to":"bob@email.com","body":"Hi bob"}',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              'id': 'fc_12345xyz',
-              'call_id': 'call_12345xyz',
-              'type': 'tool_call',
-              'name': 'get_weather',
-              'arguments': '{"location":"Paris, France"}'
-            },
-            {
-              'id': 'fc_67890abc',
-              'call_id': 'call_67890abc',
-              'type': 'tool_call',
-              'name': 'get_weather',
-              'arguments': '{"location":"Bogotá, Colombia"}'
-            },
-            {
-              'id': 'fc_99999def',
-              'call_id': 'call_99999def',
-              'type': 'tool_call',
-              'name': 'send_email',
-              'arguments': '{"to":"bob@email.com","body":"Hi bob"}'
-            }
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
     });
 
     it('records custom tool calls', async () => {
@@ -5505,45 +5534,46 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content:
+                  'Use the code_exec tool to print hello world to the console.',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              content: 'Use the code_exec tool to print hello world to the console.',
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ctc_6890e975e86c819c9338825b3e1994810694874912ae0ea6',
+                name: 'code_exec',
+                arguments: 'print("hello world")',
+                call_id: 'call_aGiFQkRWSWAIsMQ19fKqxUgb',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ctc_6890e975e86c819c9338825b3e1994810694874912ae0ea6',
-              name: 'code_exec',
-              arguments: 'print("hello world")',
-              call_id: 'call_aGiFQkRWSWAIsMQ19fKqxUgb',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
     });
 
     it('records file search calls', async () => {
@@ -5667,58 +5697,58 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'What is deep research by OpenAI?',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              content: 'What is deep research by OpenAI?',
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fs_67c09ccea8c48191ade9367e3ba71515',
+                name: 'file_search_call',
+                arguments: ['What is deep research?'],
+              },
+              {
+                type: 'tool_call_response',
+                id: 'fs_67c09ccea8c48191ade9367e3ba71515',
+                response: expect.objectContaining({
+                  id: 'file-2dtbBZdjtDKS8eqWxqbgDi',
+                  filename: 'deep_research_blog.pdf',
+                  score: 0.95,
+                  text: expect.stringContaining('Lorem ipsum dolor'),
+                }),
+              },
+              {
+                type: 'text',
+                content: expect.stringContaining('Deep research'),
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'fs_67c09ccea8c48191ade9367e3ba71515',
-              name: 'file_search_call',
-              arguments: ['What is deep research?'],
-            },
-            {
-              type: 'tool_call_response',
-              id: 'fs_67c09ccea8c48191ade9367e3ba71515',
-              response: expect.objectContaining({
-                id: 'file-2dtbBZdjtDKS8eqWxqbgDi',
-                filename: 'deep_research_blog.pdf',
-                score: 0.95,
-                text: expect.stringContaining('Lorem ipsum dolor'),
-              }),
-            },
-            {
-              type: 'text',
-              content: expect.stringContaining('Deep research'),
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records web search calls', async () => {
@@ -5732,7 +5762,7 @@ describe('OpenAI', function () {
         model,
         input: 'What was a positive news story from today?',
         tools,
-        include: ['web_search_call.action.sources']
+        include: ['web_search_call.action.sources'],
       });
 
       expect(response.output_text).toContain('On March 6, 2025, several news');
@@ -5750,7 +5780,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^resp_/),
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 291,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 23,
-        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop']
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
       });
 
       await meterProvider.forceFlush();
@@ -5838,48 +5868,48 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'What was a positive news story from today?',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              content: 'What was a positive news story from today?',
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ws_67c9fa0502748190b7dd390736892e100be649c1a5ff9609',
+                name: 'web_search_call',
+                arguments: 'search',
+              },
+              {
+                type: 'text',
+                content: expect.stringContaining('On March 6, 2025'),
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ws_67c9fa0502748190b7dd390736892e100be649c1a5ff9609',
-              name: 'web_search_call',
-              arguments: 'search',
-            },
-            {
-              type: 'text',
-              content: expect.stringContaining('On March 6, 2025'),
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records computer use calls', async () => {
@@ -6014,54 +6044,54 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'Check the latest OpenAI news on bing.com.',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              content: 'Check the latest OpenAI news on bing.com.',
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
-      });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'reasoning',
-              text: 'Clicking on the browser address bar.',
-            },
-            {
-              type: 'tool_call',
-              id: 'cu_67cc...',
-              name: 'computer_call',
-              arguments: {
-                type: 'click',
-                button: 'left',
-                x: 156,
-                y: 50,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'reasoning',
+                text: 'Clicking on the browser address bar.',
               },
-              call_id: 'call_zw3...',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
+              {
+                type: 'tool_call',
+                id: 'cu_67cc...',
+                name: 'computer_call',
+                arguments: {
+                  type: 'click',
+                  button: 'left',
+                  x: 156,
+                  y: 50,
+                },
+                call_id: 'call_zw3...',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
+      });
     });
 
     it('records code interpreter calls', async () => {
@@ -6076,10 +6106,13 @@ describe('OpenAI', function () {
         model,
         tools,
         instructions: null,
-        input: 'Plot and analyse the histogram of the RGB channels for the uploaded image.',
+        input:
+          'Plot and analyse the histogram of the RGB channels for the uploaded image.',
       });
 
-      expect(response.output_text).toContain('Here is the histogram of the RGB channels');
+      expect(response.output_text).toContain(
+        'Here is the histogram of the RGB channels'
+      );
       expect(response.output).toHaveLength(1);
 
       const spans = getTestSpans();
@@ -6182,42 +6215,45 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content:
+                  'Plot and analyse the histogram of the RGB channels for the uploaded image.',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              content: 'Plot and analyse the histogram of the RGB channels for the uploaded image.',
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'text',
+                content: expect.stringContaining(
+                  'Here is the histogram of the RGB channels for the uploaded image'
+                ),
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'text',
-              content: expect.stringContaining('Here is the histogram of the RGB channels for the uploaded image'),
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records image generation call', async () => {
@@ -6351,63 +6387,63 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'Now make it look realistic',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ig_123',
+                name: 'image_generation_call',
+              },
+              {
+                type: 'tool_call_response',
+                id: 'ig_123',
+                response: undefined,
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              content: 'Now make it look realistic',
-            },
-          ],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ig_123',
-              name: 'image_generation_call',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'ig_123',
-              response: undefined,
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ig_124',
+                name: 'image_generation_call',
+              },
+              {
+                type: 'tool_call_response',
+                id: 'ig_124',
+                response: '...',
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ig_124',
-              name: 'image_generation_call',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'ig_124',
-              response: '...',
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records mcp calls', async () => {
@@ -6415,7 +6451,8 @@ describe('OpenAI', function () {
         {
           type: 'mcp',
           server_label: 'dmcp',
-          server_description: 'A Dungeons and Dragons MCP server to assist with dice rolling.',
+          server_description:
+            'A Dungeons and Dragons MCP server to assist with dice rolling.',
           server_url: 'https://dmcp-server.deno.dev/sse',
           require_approval: 'never',
           allowed_tools: ['roll'],
@@ -6425,48 +6462,48 @@ describe('OpenAI', function () {
       const response = await client.responses.create({
         model,
         tools,
-        input:
-          [
-            {
-              'role': 'user',
-              'content': 'Roll 2d4+1'
-            },
-            {
-              'id': 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
-              'type': 'mcp_list_tools',
-              'server_label': 'dmcp',
-              'tools': [
-                {
-                  'annotations': null,
-                  'description': 'Given a string of text describing a dice roll...',
-                  'input_schema': {
-                    '$schema': 'https://json-schema.org/draft/2020-12/schema',
-                    'type': 'object',
-                    'properties': {
-                      'diceRollExpression': {
-                        'type': 'string'
-                      }
+        input: [
+          {
+            role: 'user',
+            content: 'Roll 2d4+1',
+          },
+          {
+            id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
+            type: 'mcp_list_tools',
+            server_label: 'dmcp',
+            tools: [
+              {
+                annotations: null,
+                description: 'Given a string of text describing a dice roll...',
+                input_schema: {
+                  $schema: 'https://json-schema.org/draft/2020-12/schema',
+                  type: 'object',
+                  properties: {
+                    diceRollExpression: {
+                      type: 'string',
                     },
-                    'required': ['diceRollExpression'],
-                    'additionalProperties': false
                   },
-                  'name': 'roll'
-                }
-              ]
-            },
-            {
-              'id': 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
-              'type': 'mcp_approval_request',
-              'arguments': '{"diceRollExpression":"2d4 + 1"}',
-              'name': 'roll',
-              'server_label': 'dmcp'
-            },
-            {
-              'type': 'mcp_approval_response',
-              'approve': true,
-              'approval_request_id': 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339'
-            }
-          ],
+                  required: ['diceRollExpression'],
+                  additionalProperties: false,
+                },
+                name: 'roll',
+              },
+            ],
+          },
+          {
+            id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
+            type: 'mcp_approval_request',
+            arguments: '{"diceRollExpression":"2d4 + 1"}',
+            name: 'roll',
+            server_label: 'dmcp',
+          },
+          {
+            type: 'mcp_approval_response',
+            approve: true,
+            approval_request_id:
+              'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
+          },
+        ],
       });
 
       expect(response.output_text).toBe('');
@@ -6572,88 +6609,89 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'Roll 2d4+1',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call_response',
+                id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
+                response: expect.arrayContaining([
+                  expect.objectContaining({
+                    name: 'roll',
+                    description:
+                      'Given a string of text describing a dice roll...',
+                  }),
+                ]),
+                server: 'dmcp',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
+                name: 'mcp_approval_request: roll',
+                arguments: '{"diceRollExpression":"2d4 + 1"}',
+                server: 'dmcp',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'tool_call_response',
+                response: true,
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              content: 'Roll 2d4+1',
-            },
-          ],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call_response',
-              id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
-              response: expect.arrayContaining([
-                expect.objectContaining({
-                  name: 'roll',
-                  description: 'Given a string of text describing a dice roll...',
-                }),
-              ]),
-              server: 'dmcp',
-            },
-          ],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
-              name: 'mcp_approval_request: roll',
-              arguments: '{"diceRollExpression":"2d4 + 1"}',
-              server: 'dmcp',
-            },
-          ],
-        },
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'tool_call_response',
-              response: true,
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
+                name: 'roll',
+                arguments: 'roll({"diceRollExpression":"2d4 + 1"})',
+                server: 'dmcp',
+              },
+              {
+                type: 'tool_call_response',
+                id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
+                response: '4',
+                server: 'dmcp',
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
-              name: 'roll',
-              arguments: 'roll({"diceRollExpression":"2d4 + 1"})',
-              server: 'dmcp',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
-              response: '4',
-              server: 'dmcp',
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
   });
 
@@ -6776,32 +6814,32 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        }
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [{ type: 'text', content: undefined }],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [{ type: 'text', content: undefined }],
-          finish_reason: 'stop'
-        }
-      ]);
     });
 
     it('records function calls', async () => {
@@ -6866,8 +6904,12 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(3);
       expect(doneEvents).toHaveLength(3);
@@ -6972,89 +7014,89 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'system',
+            parts: [{ type: 'text', content: undefined }],
+          },
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'system',
-          parts: [{ type: 'text', content: undefined }],
-        },
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fc_12345xyz',
+                name: 'get_weather',
+                arguments: undefined,
+                call_id: 'call_12345xyz',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'fc_12345xyz',
-              name: 'get_weather',
-              arguments: undefined,
-              call_id: 'call_12345xyz',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
       expect(logs[2].spanContext).toEqual(spanCtx);
-      expect(logs[2].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[2].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[2].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fc_67890abc',
+                name: 'get_weather',
+                arguments: undefined,
+                call_id: 'call_67890abc',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[2].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'fc_67890abc',
-              name: 'get_weather',
-              arguments: undefined,
-              call_id: 'call_67890abc',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
       expect(logs[3].spanContext).toEqual(spanCtx);
-      expect(logs[3].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[3].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[3].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fc_99999def',
+                name: 'send_email',
+                arguments: undefined,
+                call_id: 'call_99999def',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[3].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'fc_99999def',
-              name: 'send_email',
-              arguments: undefined,
-              call_id: 'call_99999def',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
     });
 
     it('records custom tool calls', async () => {
@@ -7077,8 +7119,12 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(2);
       expect(doneEvents).toHaveLength(2);
@@ -7183,55 +7229,55 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [],
-          finish_reason: 'stop',
-        },
-      ]);
       expect(logs[2].spanContext).toEqual(spanCtx);
-      expect(logs[2].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[2].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[2].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ctc_6890e975e86c819c9338825b3e1994810694874912ae0ea6',
+                name: 'code_exec',
+                arguments: undefined,
+                call_id: 'call_aGiFQkRWSWAIsMQ19fKqxUgb',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[2].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ctc_6890e975e86c819c9338825b3e1994810694874912ae0ea6',
-              name: 'code_exec',
-              arguments: undefined,
-              call_id: 'call_aGiFQkRWSWAIsMQ19fKqxUgb',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
     });
 
     it('records file search calls', async () => {
@@ -7255,13 +7301,19 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(2);
       expect(doneEvents).toHaveLength(2);
 
-      const messageEvent = doneEvents.find(event => event.item.type === 'message');
+      const messageEvent = doneEvents.find(
+        event => event.item.type === 'message'
+      );
       expect(messageEvent).toBeDefined();
       expect(messageEvent?.item.content[0].text).toEqual(
         expect.stringContaining('Deep research')
@@ -7367,64 +7419,64 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fs_67c09ccea8c48191ade9367e3ba71515',
+                name: 'file_search_call',
+                arguments: undefined,
+              },
+              {
+                type: 'tool_call_response',
+                id: 'fs_67c09ccea8c48191ade9367e3ba71515',
+                response: undefined,
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'fs_67c09ccea8c48191ade9367e3ba71515',
-              name: 'file_search_call',
-              arguments: undefined,
-            },
-            {
-              type: 'tool_call_response',
-              id: 'fs_67c09ccea8c48191ade9367e3ba71515',
-              response: undefined,
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
       expect(logs[2].spanContext).toEqual(spanCtx);
-      expect(logs[2].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[2].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[2].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'text',
+                content: undefined,
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[2].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'text',
-              content: undefined,
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records web search calls', async () => {
@@ -7446,15 +7498,23 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(2);
       expect(doneEvents).toHaveLength(2);
 
-      const messageEvent = doneEvents.find(event => event.item.type === 'message');
+      const messageEvent = doneEvents.find(
+        event => event.item.type === 'message'
+      );
       expect(messageEvent).toBeDefined();
-      expect(messageEvent?.item.content[0].text).toContain('On March 6, 2025, several news');
+      expect(messageEvent?.item.content[0].text).toContain(
+        'On March 6, 2025, several news'
+      );
 
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
@@ -7469,7 +7529,9 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 291,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 23,
       });
-      expect(spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual(['stop']);
+      expect(spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
+        'stop',
+      ]);
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
@@ -7556,59 +7618,59 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ws_67c9fa0502748190b7dd390736892e100be649c1a5ff9609',
+                name: 'web_search_call',
+                arguments: undefined,
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ws_67c9fa0502748190b7dd390736892e100be649c1a5ff9609',
-              name: 'web_search_call',
-              arguments: undefined,
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
       expect(logs[2].spanContext).toEqual(spanCtx);
-      expect(logs[2].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[2].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[2].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'text',
+                content: undefined,
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[2].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'text',
-              content: undefined,
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records computer use calls', async () => {
@@ -7645,8 +7707,12 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(2);
       expect(doneEvents).toHaveLength(2);
@@ -7751,60 +7817,60 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'reasoning',
+                text: undefined,
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'reasoning',
-              text: undefined,
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
       expect(logs[2].spanContext).toEqual(spanCtx);
-      expect(logs[2].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[2].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[2].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'cu_67cc...',
+                name: 'computer_call',
+                arguments: undefined,
+                call_id: 'call_zw3...',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[2].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'cu_67cc...',
-              name: 'computer_call',
-              arguments: undefined,
-              call_id: 'call_zw3...',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
     });
 
     it('records code interpreter calls', async () => {
@@ -7819,7 +7885,8 @@ describe('OpenAI', function () {
         model,
         tools,
         instructions: null,
-        input: 'Plot and analyse the histogram of the RGB channels for the uploaded image.',
+        input:
+          'Plot and analyse the histogram of the RGB channels for the uploaded image.',
       });
 
       const events: Array<any> = [];
@@ -7827,12 +7894,18 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(1);
       expect(doneEvents).toHaveLength(1);
-      expect(doneEvents[0].item.content[0].text).toContain('Here is the histogram of the RGB channels');
+      expect(doneEvents[0].item.content[0].text).toContain(
+        'Here is the histogram of the RGB channels'
+      );
 
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
@@ -7934,37 +8007,37 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'text',
+                content: undefined,
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'text',
-              content: undefined,
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records image generation call', async () => {
@@ -8000,8 +8073,12 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(1);
       expect(doneEvents).toHaveLength(1);
@@ -8106,64 +8183,64 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: undefined,
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ig_123',
+                name: 'image_generation_call',
+                arguments: undefined,
+              },
+              {
+                type: 'tool_call_response',
+                id: 'ig_123',
+                response: undefined,
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              content: undefined,
-            },
-          ],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ig_123',
-              name: 'image_generation_call',
-              arguments: undefined,
-            },
-            {
-              type: 'tool_call_response',
-              id: 'ig_123',
-              response: undefined,
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ig_124',
+                name: 'image_generation_call',
+              },
+              {
+                type: 'tool_call_response',
+                id: 'ig_124',
+                response: undefined,
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ig_124',
-              name: 'image_generation_call',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'ig_124',
-              response: undefined,
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records mcp calls', async () => {
@@ -8171,7 +8248,8 @@ describe('OpenAI', function () {
         {
           type: 'mcp',
           server_label: 'dmcp',
-          server_description: 'A Dungeons and Dragons MCP server to assist with dice rolling.',
+          server_description:
+            'A Dungeons and Dragons MCP server to assist with dice rolling.',
           server_url: 'https://dmcp-server.deno.dev/sse',
           require_approval: 'never',
           allowed_tools: ['roll'],
@@ -8184,7 +8262,7 @@ describe('OpenAI', function () {
         input: [
           {
             role: 'user',
-            content: 'Roll 2d4+1'
+            content: 'Roll 2d4+1',
           },
           {
             id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
@@ -8195,32 +8273,33 @@ describe('OpenAI', function () {
                 annotations: null,
                 description: 'Given a string of text describing a dice roll...',
                 input_schema: {
-                  '$schema': 'https://json-schema.org/draft/2020-12/schema',
+                  $schema: 'https://json-schema.org/draft/2020-12/schema',
                   type: 'object',
                   properties: {
                     diceRollExpression: {
-                      type: 'string'
-                    }
+                      type: 'string',
+                    },
                   },
                   required: ['diceRollExpression'],
-                  additionalProperties: false
+                  additionalProperties: false,
                 },
-                name: 'roll'
-              }
-            ]
+                name: 'roll',
+              },
+            ],
           },
           {
             id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
             type: 'mcp_approval_request',
             arguments: '{"diceRollExpression":"2d4 + 1"}',
             name: 'roll',
-            server_label: 'dmcp'
+            server_label: 'dmcp',
           },
           {
             type: 'mcp_approval_response',
             approve: true,
-            approval_request_id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339'
-          }
+            approval_request_id:
+              'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
+          },
         ],
       });
 
@@ -8229,8 +8308,12 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(1);
       expect(doneEvents).toHaveLength(1);
@@ -8335,79 +8418,124 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call_response',
+                id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
+                response: undefined,
+                server: 'dmcp',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
+                name: 'mcp_approval_request',
+                arguments: undefined,
+                server: 'dmcp',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'tool_call_response',
+                response: undefined,
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call_response',
-              id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
-              response: undefined,
-              server: 'dmcp',
-            },
-          ],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
-              name: 'mcp_approval_request',
-              arguments: undefined,
-              server: 'dmcp',
-            },
-          ],
-        },
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'tool_call_response',
-              response: undefined,
-            },
-          ],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
+                name: 'roll',
+                arguments: undefined,
+                server: 'dmcp',
+              },
+              {
+                type: 'tool_call_response',
+                id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
+                response: undefined,
+                server: 'dmcp',
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
-              name: 'roll',
-              arguments: undefined,
-              server: 'dmcp',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
-              response: undefined,
-              server: 'dmcp',
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
+    });
+
+    it('records usage', async () => {
+      const stream = client.responses.stream({
+        model,
+        input,
+      });
+      let content = '';
+      for await (const event of stream) {
+        if (event.type === 'response.output_text.delta') {
+          content += event.delta;
+        }
+      }
+      expect(content).toEqual('South Atlantic Ocean.');
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS]).toEqual(22);
+      expect(spans[0].attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]).toEqual(4);
+
+      await meterProvider.forceFlush();
+      const [resourceMetrics] = metricExporter.getMetrics();
+      expect(resourceMetrics.scopeMetrics.length).toBe(1);
+      const scopeMetrics = resourceMetrics.scopeMetrics[0];
+      const tokenUsage = scopeMetrics.metrics.filter(
+        m => m.descriptor.name === 'gen_ai.client.token.usage'
+      );
+      expect(tokenUsage.length).toBe(1);
+      expect(tokenUsage[0].dataPoints.length).toBe(2);
+      expect(tokenUsage[0].dataPoints).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            value: expect.objectContaining({ sum: 22 }),
+            attributes: expect.objectContaining({
+              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+            }),
+          }),
+          expect.objectContaining({
+            value: expect.objectContaining({ sum: 4 }),
+            attributes: expect.objectContaining({
+              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+            }),
+          }),
+        ])
+      );
     });
 
     it('does not misbehave with double iteration', async () => {
@@ -8491,32 +8619,32 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: undefined }],
-        }
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [{ type: 'text', content: undefined }],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [{ type: 'text', content: undefined }],
-          finish_reason: 'stop'
-        }
-      ]);
     });
   });
 
@@ -8639,32 +8767,38 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content:
+                  'Answer in up to 3 words: Which ocean contains Bouvet Island?',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'Answer in up to 3 words: Which ocean contains Bouvet Island?' }],
-        }
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [{ type: 'text', content: 'Atlantic Ocean.' }],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [{ type: 'text', content: 'Atlantic Ocean.' }],
-          finish_reason: 'stop'
-        }
-      ]);
     });
 
     it('records function calls', async () => {
@@ -8729,8 +8863,12 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(3);
       expect(doneEvents).toHaveLength(3);
@@ -8835,89 +8973,100 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'system',
+            parts: [
+              {
+                type: 'text',
+                content:
+                  'You are a helpful assistant providing weather updates.',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'What is the weather in Paris and Bogotá?',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'system',
-          parts: [{ type: 'text', content: 'You are a helpful assistant providing weather updates.' }],
-        },
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'What is the weather in Paris and Bogotá?' }],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fc_12345xyz',
+                name: 'get_weather',
+                arguments: '{"location":"Paris, France"}',
+                call_id: 'call_12345xyz',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'fc_12345xyz',
-              name: 'get_weather',
-              arguments: '{"location":"Paris, France"}',
-              call_id: 'call_12345xyz',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
       expect(logs[2].spanContext).toEqual(spanCtx);
-      expect(logs[2].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[2].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[2].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fc_67890abc',
+                name: 'get_weather',
+                arguments: '{"location":"Bogotá, Colombia"}',
+                call_id: 'call_67890abc',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[2].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'fc_67890abc',
-              name: 'get_weather',
-              arguments: '{"location":"Bogotá, Colombia"}',
-              call_id: 'call_67890abc',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
       expect(logs[3].spanContext).toEqual(spanCtx);
-      expect(logs[3].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[3].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[3].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fc_99999def',
+                name: 'send_email',
+                arguments: '{"to":"bob@email.com","body":"Hi bob"}',
+                call_id: 'call_99999def',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[3].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'fc_99999def',
-              name: 'send_email',
-              arguments: '{"to":"bob@email.com","body":"Hi bob"}',
-              call_id: 'call_99999def',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
     });
 
     it('records custom tool calls', async () => {
@@ -8940,8 +9089,12 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(2);
       expect(doneEvents).toHaveLength(2);
@@ -9046,55 +9199,61 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content:
+                  'Use the code_exec tool to print hello world to the console.',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'Use the code_exec tool to print hello world to the console.' }],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [],
-          finish_reason: 'stop',
-        },
-      ]);
       expect(logs[2].spanContext).toEqual(spanCtx);
-      expect(logs[2].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[2].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[2].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ctc_6890e975e86c819c9338825b3e1994810694874912ae0ea6',
+                name: 'code_exec',
+                arguments: 'print("hello world")',
+                call_id: 'call_aGiFQkRWSWAIsMQ19fKqxUgb',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[2].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ctc_6890e975e86c819c9338825b3e1994810694874912ae0ea6',
-              name: 'code_exec',
-              arguments: 'print("hello world")',
-              call_id: 'call_aGiFQkRWSWAIsMQ19fKqxUgb',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
     });
 
     it('records file search calls', async () => {
@@ -9118,13 +9277,19 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(2);
       expect(doneEvents).toHaveLength(2);
 
-      const messageEvent = doneEvents.find(event => event.item.type === 'message');
+      const messageEvent = doneEvents.find(
+        event => event.item.type === 'message'
+      );
       expect(messageEvent).toBeDefined();
       expect(messageEvent?.item.content[0].text).toEqual(
         expect.stringContaining('Deep research')
@@ -9230,64 +9395,71 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              { type: 'text', content: 'What is deep research by OpenAI?' },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'What is deep research by OpenAI?' }],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fs_67c09ccea8c48191ade9367e3ba71515',
+                name: 'file_search_call',
+                arguments: ['What is deep research?'],
+              },
+              {
+                type: 'tool_call_response',
+                id: 'fs_67c09ccea8c48191ade9367e3ba71515',
+                response: {
+                  filename: 'deep_research_blog.pdf',
+                  id: 'file-2dtbBZdjtDKS8eqWxqbgDi',
+                  score: 0.95,
+                  text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl eget aliquam aliquet, nunc nisl aliquet nisl, eget aliquam nisl nisl eget nisl. Sed euismod, nisl eget aliquam aliquet, nunc nisl aliquet nisl, eget aliquam nisl nisl eget nisl.',
+                },
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'fs_67c09ccea8c48191ade9367e3ba71515',
-              name: 'file_search_call',
-              arguments: ['What is deep research?'],
-            },
-            {
-              type: 'tool_call_response',
-              id: 'fs_67c09ccea8c48191ade9367e3ba71515',
-              response: { filename: 'deep_research_blog.pdf', id: 'file-2dtbBZdjtDKS8eqWxqbgDi', score: 0.95, text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl eget aliquam aliquet, nunc nisl aliquet nisl, eget aliquam nisl nisl eget nisl. Sed euismod, nisl eget aliquam aliquet, nunc nisl aliquet nisl, eget aliquam nisl nisl eget nisl.' },
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
       expect(logs[2].spanContext).toEqual(spanCtx);
-      expect(logs[2].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[2].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[2].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'text',
+                content: expect.stringContaining('Deep research'),
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[2].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'text',
-              content: expect.stringContaining('Deep research'),
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records web search calls', async () => {
@@ -9309,15 +9481,23 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(2);
       expect(doneEvents).toHaveLength(2);
 
-      const messageEvent = doneEvents.find(event => event.item.type === 'message');
+      const messageEvent = doneEvents.find(
+        event => event.item.type === 'message'
+      );
       expect(messageEvent).toBeDefined();
-      expect(messageEvent?.item.content[0].text).toContain('On March 6, 2025, several news');
+      expect(messageEvent?.item.content[0].text).toContain(
+        'On March 6, 2025, several news'
+      );
 
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
@@ -9332,7 +9512,9 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 291,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 23,
       });
-      expect(spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual(['stop']);
+      expect(spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
+        'stop',
+      ]);
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
@@ -9419,59 +9601,64 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'What was a positive news story from today?',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'What was a positive news story from today?' }],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ws_67c9fa0502748190b7dd390736892e100be649c1a5ff9609',
+                name: 'web_search_call',
+                arguments: 'search',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ws_67c9fa0502748190b7dd390736892e100be649c1a5ff9609',
-              name: 'web_search_call',
-              arguments: 'search',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
       expect(logs[2].spanContext).toEqual(spanCtx);
-      expect(logs[2].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[2].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[2].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'text',
+                content: 'On March 6, 2025, several news...',
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[2].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'text',
-              content: 'On March 6, 2025, several news...',
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records computer use calls', async () => {
@@ -9508,8 +9695,12 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(2);
       expect(doneEvents).toHaveLength(2);
@@ -9614,60 +9805,65 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'Check the latest OpenAI news on bing.com.',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'Check the latest OpenAI news on bing.com.' }],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'reasoning',
+                text: 'Clicking on the browser address bar.',
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'reasoning',
-              text: 'Clicking on the browser address bar.',
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
       expect(logs[2].spanContext).toEqual(spanCtx);
-      expect(logs[2].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[2].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[2].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'cu_67cc...',
+                name: 'computer_call',
+                arguments: { button: 'left', type: 'click', x: 156, y: 50 },
+                call_id: 'call_zw3...',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
       });
-      expect(logs[2].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'cu_67cc...',
-              name: 'computer_call',
-              arguments: { button: 'left', type: 'click', x: 156, y: 50 },
-              call_id: 'call_zw3...',
-            },
-          ],
-          finish_reason: 'tool_call',
-        },
-      ]);
     });
 
     it('records code interpreter calls', async () => {
@@ -9682,7 +9878,8 @@ describe('OpenAI', function () {
         model,
         tools,
         instructions: null,
-        input: 'Plot and analyse the histogram of the RGB channels for the uploaded image.',
+        input:
+          'Plot and analyse the histogram of the RGB channels for the uploaded image.',
       });
 
       const events: Array<any> = [];
@@ -9690,12 +9887,18 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(1);
       expect(doneEvents).toHaveLength(1);
-      expect(doneEvents[0].item.content[0].text).toContain('Here is the histogram of the RGB channels');
+      expect(doneEvents[0].item.content[0].text).toContain(
+        'Here is the histogram of the RGB channels'
+      );
 
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
@@ -9797,37 +10000,44 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content:
+                  'Plot and analyse the histogram of the RGB channels for the uploaded image.',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'Plot and analyse the histogram of the RGB channels for the uploaded image.' }],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'text',
+                content:
+                  'Here is the histogram of the RGB channels for the uploaded image. Each curve represents the distribution of pixel intensities for the red, green, and blue channels. Peaks toward the high end of the intensity scale (right-hand side) suggest a lot of brightness and strong warm tones, matching the orange and light background in the image. If you want a different style of histogram (e.g., overall intensity, or quantized color groups), let me know!',
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'text',
-              content: 'Here is the histogram of the RGB channels for the uploaded image. Each curve represents the distribution of pixel intensities for the red, green, and blue channels. Peaks toward the high end of the intensity scale (right-hand side) suggest a lot of brightness and strong warm tones, matching the orange and light background in the image. If you want a different style of histogram (e.g., overall intensity, or quantized color groups), let me know!',
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records image generation call', async () => {
@@ -9863,8 +10073,12 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(1);
       expect(doneEvents).toHaveLength(1);
@@ -9969,63 +10183,63 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'Now make it look realistic',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ig_123',
+                name: 'image_generation_call',
+              },
+              {
+                type: 'tool_call_response',
+                id: 'ig_123',
+                response: undefined,
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              content: 'Now make it look realistic',
-            },
-          ],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ig_123',
-              name: 'image_generation_call',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'ig_123',
-              response: undefined,
-            },
-          ],
-        },
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ig_124',
+                name: 'image_generation_call',
+              },
+              {
+                type: 'tool_call_response',
+                id: 'ig_124',
+                response: '...',
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'ig_124',
-              name: 'image_generation_call',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'ig_124',
-              response: '...',
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('records mcp calls', async () => {
@@ -10033,7 +10247,8 @@ describe('OpenAI', function () {
         {
           type: 'mcp',
           server_label: 'dmcp',
-          server_description: 'A Dungeons and Dragons MCP server to assist with dice rolling.',
+          server_description:
+            'A Dungeons and Dragons MCP server to assist with dice rolling.',
           server_url: 'https://dmcp-server.deno.dev/sse',
           require_approval: 'never',
           allowed_tools: ['roll'],
@@ -10046,7 +10261,7 @@ describe('OpenAI', function () {
         input: [
           {
             role: 'user',
-            content: 'Roll 2d4+1'
+            content: 'Roll 2d4+1',
           },
           {
             id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
@@ -10057,32 +10272,33 @@ describe('OpenAI', function () {
                 annotations: null,
                 description: 'Given a string of text describing a dice roll...',
                 input_schema: {
-                  '$schema': 'https://json-schema.org/draft/2020-12/schema',
+                  $schema: 'https://json-schema.org/draft/2020-12/schema',
                   type: 'object',
                   properties: {
                     diceRollExpression: {
-                      type: 'string'
-                    }
+                      type: 'string',
+                    },
                   },
                   required: ['diceRollExpression'],
-                  additionalProperties: false
+                  additionalProperties: false,
                 },
-                name: 'roll'
-              }
-            ]
+                name: 'roll',
+              },
+            ],
           },
           {
             id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
             type: 'mcp_approval_request',
             arguments: '{"diceRollExpression":"2d4 + 1"}',
             name: 'roll',
-            server_label: 'dmcp'
+            server_label: 'dmcp',
           },
           {
             type: 'mcp_approval_response',
             approve: true,
-            approval_request_id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339'
-          }
+            approval_request_id:
+              'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
+          },
         ],
       });
 
@@ -10091,8 +10307,12 @@ describe('OpenAI', function () {
         events.push(event);
       }
 
-      const completedEvent = events.find(event => event.type === 'response.completed');
-      const doneEvents = events.filter(event => event.type === 'response.output_item.done');
+      const completedEvent = events.find(
+        event => event.type === 'response.completed'
+      );
+      const doneEvents = events.filter(
+        event => event.type === 'response.output_item.done'
+      );
 
       expect(completedEvent?.response.output).toHaveLength(1);
       expect(doneEvents).toHaveLength(1);
@@ -10197,79 +10417,93 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(1 + doneEvents.length);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: 'Roll 2d4+1' }],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call_response',
+                id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
+                response: [
+                  {
+                    annotations: null,
+                    description:
+                      'Given a string of text describing a dice roll...',
+                    input_schema: {
+                      $schema: 'https://json-schema.org/draft/2020-12/schema',
+                      type: 'object',
+                      properties: { diceRollExpression: { type: 'string' } },
+                      required: ['diceRollExpression'],
+                      additionalProperties: false,
+                    },
+                    name: 'roll',
+                  },
+                ],
+                server: 'dmcp',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
+                name: 'mcp_approval_request: roll',
+                arguments: '{"diceRollExpression":"2d4 + 1"}',
+                server: 'dmcp',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'tool_call_response',
+                response: true,
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'Roll 2d4+1' }],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call_response',
-              id: 'mcpl_68a6102a4968819c8177b05584dd627b0679e572a900e618',
-              response: [{ annotations: null, description: 'Given a string of text describing a dice roll...', input_schema: { '$schema': 'https://json-schema.org/draft/2020-12/schema', type: 'object', properties: { diceRollExpression: { type: 'string' } }, required: ['diceRollExpression'], additionalProperties: false }, name: 'roll' }],
-              server: 'dmcp',
-            },
-          ],
-        },
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'mcpr_68a619e1d82c8190b50c1ccba7ad18ef0d2d23a86136d339',
-              name: 'mcp_approval_request: roll',
-              arguments: '{"diceRollExpression":"2d4 + 1"}',
-              server: 'dmcp',
-            },
-          ],
-        },
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'tool_call_response',
-              response: true,
-            },
-          ],
-        },
-      ]);
 
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
+                name: 'roll',
+                arguments: 'roll({"diceRollExpression":"2d4 + 1"})',
+                server: 'dmcp',
+              },
+              {
+                type: 'tool_call_response',
+                id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
+                response: '4',
+                server: 'dmcp',
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool_call',
-              id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
-              name: 'roll',
-              arguments: 'roll({"diceRollExpression":"2d4 + 1"})',
-              server: 'dmcp',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'mcp_68a6102d8948819c9b1490d36d5ffa4a0679e572a900e618',
-              response: '4',
-              server: 'dmcp',
-            },
-          ],
-          finish_reason: 'stop',
-        },
-      ]);
     });
 
     it('does not misbehave with double iteration', async () => {
@@ -10353,32 +10587,38 @@ describe('OpenAI', function () {
       const logs = logsExporter.getFinishedLogRecords();
       expect(logs.length).toBe(2);
       expect(logs[0].spanContext).toEqual(spanCtx);
-      expect(logs[0].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[0].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[0].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content:
+                  'Answer in up to 3 words: Which ocean contains Bouvet Island?',
+              },
+            ],
+          },
+        ],
       });
-      expect(logs[0].body).toEqual([
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'Answer in up to 3 words: Which ocean contains Bouvet Island?' }],
-        }
-      ]);
       expect(logs[1].spanContext).toEqual(spanCtx);
-      expect(logs[1].eventName).toEqual(EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS);
+      expect(logs[1].eventName).toEqual(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
       expect(logs[1].attributes).toEqual({
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_OUTPUT_MESSAGES]: undefined
-        // TODO: When test fails, replace undefined with the contents of body, and remove the contents of body from implementation and tests
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [{ type: 'text', content: 'South Atlantic Ocean.' }],
+            finish_reason: 'stop',
+          },
+        ],
       });
-      expect(logs[1].body).toEqual([
-        {
-          role: 'assistant',
-          parts: [{ type: 'text', content: 'South Atlantic Ocean.' }],
-          finish_reason: 'stop'
-        }
-      ]);
     });
   });
 });

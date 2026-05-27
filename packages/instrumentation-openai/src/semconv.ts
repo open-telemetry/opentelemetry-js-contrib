@@ -29,7 +29,8 @@ export const ATTR_EVENT_NAME = 'event.name' as const;
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_AGENT_DESCRIPTION = 'gen_ai.agent.description' as const;
+export const ATTR_GEN_AI_AGENT_DESCRIPTION =
+  'gen_ai.agent.description' as const;
 
 /**
  * The unique identifier of the GenAI agent.
@@ -145,7 +146,8 @@ export const ATTR_GEN_AI_INPUT_MESSAGES = 'gen_ai.input.messages' as const;
  *
  * @deprecated Replaced by `gen_ai.output.type`.
  */
-export const ATTR_GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT = 'gen_ai.openai.request.response_format' as const;
+export const ATTR_GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT =
+  'gen_ai.openai.request.response_format' as const;
 
 /**
  * Enum value "json_object" for attribute {@link ATTR_GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT}.
@@ -154,7 +156,8 @@ export const ATTR_GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT = 'gen_ai.openai.request
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT_VALUE_JSON_OBJECT = 'json_object' as const;
+export const GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT_VALUE_JSON_OBJECT =
+  'json_object' as const;
 
 /**
  * Enum value "json_schema" for attribute {@link ATTR_GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT}.
@@ -163,7 +166,8 @@ export const GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT_VALUE_JSON_OBJECT = 'json_obj
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT_VALUE_JSON_SCHEMA = 'json_schema' as const;
+export const GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT_VALUE_JSON_SCHEMA =
+  'json_schema' as const;
 
 /**
  * Enum value "text" for attribute {@link ATTR_GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT}.
@@ -183,7 +187,8 @@ export const GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT_VALUE_TEXT = 'text' as const;
  *
  * @deprecated Replaced by `gen_ai.request.seed`.
  */
-export const ATTR_GEN_AI_OPENAI_REQUEST_SEED = 'gen_ai.openai.request.seed' as const;
+export const ATTR_GEN_AI_OPENAI_REQUEST_SEED =
+  'gen_ai.openai.request.seed' as const;
 
 /**
  * Deprecated, use `openai.request.service_tier`.
@@ -192,7 +197,8 @@ export const ATTR_GEN_AI_OPENAI_REQUEST_SEED = 'gen_ai.openai.request.seed' as c
  *
  * @deprecated Replaced by `openai.request.service_tier`.
  */
-export const ATTR_GEN_AI_OPENAI_REQUEST_SERVICE_TIER = 'gen_ai.openai.request.service_tier' as const;
+export const ATTR_GEN_AI_OPENAI_REQUEST_SERVICE_TIER =
+  'gen_ai.openai.request.service_tier' as const;
 
 /**
  * Enum value "auto" for attribute {@link ATTR_GEN_AI_OPENAI_REQUEST_SERVICE_TIER}.
@@ -210,7 +216,8 @@ export const GEN_AI_OPENAI_REQUEST_SERVICE_TIER_VALUE_AUTO = 'auto' as const;
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_OPENAI_REQUEST_SERVICE_TIER_VALUE_DEFAULT = 'default' as const;
+export const GEN_AI_OPENAI_REQUEST_SERVICE_TIER_VALUE_DEFAULT =
+  'default' as const;
 
 /**
  * Deprecated, use `openai.response.service_tier`.
@@ -222,7 +229,8 @@ export const GEN_AI_OPENAI_REQUEST_SERVICE_TIER_VALUE_DEFAULT = 'default' as con
  *
  * @deprecated Replaced by `openai.response.service_tier`.
  */
-export const ATTR_GEN_AI_OPENAI_RESPONSE_SERVICE_TIER = 'gen_ai.openai.response.service_tier' as const;
+export const ATTR_GEN_AI_OPENAI_RESPONSE_SERVICE_TIER =
+  'gen_ai.openai.response.service_tier' as const;
 
 /**
  * Deprecated, use `openai.response.system_fingerprint`.
@@ -233,7 +241,8 @@ export const ATTR_GEN_AI_OPENAI_RESPONSE_SERVICE_TIER = 'gen_ai.openai.response.
  *
  * @deprecated Replaced by `openai.response.system_fingerprint`.
  */
-export const ATTR_GEN_AI_OPENAI_RESPONSE_SYSTEM_FINGERPRINT = 'gen_ai.openai.response.system_fingerprint' as const;
+export const ATTR_GEN_AI_OPENAI_RESPONSE_SYSTEM_FINGERPRINT =
+  'gen_ai.openai.response.system_fingerprint' as const;
 
 /**
  * The name of the operation being performed.
@@ -287,7 +296,8 @@ export const GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL = 'execute_tool' as const;
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_OPERATION_NAME_VALUE_GENERATE_CONTENT = 'generate_content' as const;
+export const GEN_AI_OPERATION_NAME_VALUE_GENERATE_CONTENT =
+  'generate_content' as const;
 
 /**
  * Enum value "invoke_agent" for attribute {@link ATTR_GEN_AI_OPERATION_NAME}.
@@ -305,7 +315,8 @@ export const GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT = 'invoke_agent' as const;
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_OPERATION_NAME_VALUE_TEXT_COMPLETION = 'text_completion' as const;
+export const GEN_AI_OPERATION_NAME_VALUE_TEXT_COMPLETION =
+  'text_completion' as const;
 
 /**
  * Messages returned by the model where each message represents a specific model response (choice, candidate).
@@ -456,7 +467,8 @@ export const GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK = 'aws.bedrock' as const;
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE = 'azure.ai.inference' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE =
+  'azure.ai.inference' as const;
 
 /**
  * Enum value "azure.ai.openai" for attribute {@link ATTR_GEN_AI_PROVIDER_NAME}.
@@ -465,7 +477,8 @@ export const GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE = 'azure.ai.inference
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI = 'azure.ai.openai' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI =
+  'azure.ai.openai' as const;
 
 /**
  * Enum value "cohere" for attribute {@link ATTR_GEN_AI_PROVIDER_NAME}.
@@ -510,7 +523,8 @@ export const GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI = 'gcp.gen_ai' as const;
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI = 'gcp.vertex_ai' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI =
+  'gcp.vertex_ai' as const;
 
 /**
  * Enum value "groq" for attribute {@link ATTR_GEN_AI_PROVIDER_NAME}.
@@ -528,7 +542,8 @@ export const GEN_AI_PROVIDER_NAME_VALUE_GROQ = 'groq' as const;
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_PROVIDER_NAME_VALUE_IBM_WATSONX_AI = 'ibm.watsonx.ai' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_IBM_WATSONX_AI =
+  'ibm.watsonx.ai' as const;
 
 /**
  * Enum value "mistral_ai" for attribute {@link ATTR_GEN_AI_PROVIDER_NAME}.
@@ -573,7 +588,8 @@ export const GEN_AI_PROVIDER_NAME_VALUE_X_AI = 'x_ai' as const;
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_REQUEST_CHOICE_COUNT = 'gen_ai.request.choice.count' as const;
+export const ATTR_GEN_AI_REQUEST_CHOICE_COUNT =
+  'gen_ai.request.choice.count' as const;
 
 /**
  * The encoding formats requested in an embeddings operation, if specified.
@@ -585,7 +601,8 @@ export const ATTR_GEN_AI_REQUEST_CHOICE_COUNT = 'gen_ai.request.choice.count' as
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_REQUEST_ENCODING_FORMATS = 'gen_ai.request.encoding_formats' as const;
+export const ATTR_GEN_AI_REQUEST_ENCODING_FORMATS =
+  'gen_ai.request.encoding_formats' as const;
 
 /**
  * The frequency penalty setting for the GenAI request.
@@ -594,7 +611,8 @@ export const ATTR_GEN_AI_REQUEST_ENCODING_FORMATS = 'gen_ai.request.encoding_for
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY = 'gen_ai.request.frequency_penalty' as const;
+export const ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY =
+  'gen_ai.request.frequency_penalty' as const;
 
 /**
  * The maximum number of tokens the model generates for a request.
@@ -603,7 +621,8 @@ export const ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY = 'gen_ai.request.frequency_p
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_REQUEST_MAX_TOKENS = 'gen_ai.request.max_tokens' as const;
+export const ATTR_GEN_AI_REQUEST_MAX_TOKENS =
+  'gen_ai.request.max_tokens' as const;
 
 /**
  * The name of the GenAI model a request is being made to.
@@ -621,7 +640,8 @@ export const ATTR_GEN_AI_REQUEST_MODEL = 'gen_ai.request.model' as const;
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY = 'gen_ai.request.presence_penalty' as const;
+export const ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY =
+  'gen_ai.request.presence_penalty' as const;
 
 /**
  * Requests with same seed value more likely to return same result.
@@ -639,7 +659,8 @@ export const ATTR_GEN_AI_REQUEST_SEED = 'gen_ai.request.seed' as const;
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_REQUEST_STOP_SEQUENCES = 'gen_ai.request.stop_sequences' as const;
+export const ATTR_GEN_AI_REQUEST_STOP_SEQUENCES =
+  'gen_ai.request.stop_sequences' as const;
 
 /**
  * The temperature setting for the GenAI request.
@@ -648,7 +669,8 @@ export const ATTR_GEN_AI_REQUEST_STOP_SEQUENCES = 'gen_ai.request.stop_sequences
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_REQUEST_TEMPERATURE = 'gen_ai.request.temperature' as const;
+export const ATTR_GEN_AI_REQUEST_TEMPERATURE =
+  'gen_ai.request.temperature' as const;
 
 /**
  * The top_k sampling setting for the GenAI request.
@@ -676,7 +698,8 @@ export const ATTR_GEN_AI_REQUEST_TOP_P = 'gen_ai.request.top_p' as const;
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_RESPONSE_FINISH_REASONS = 'gen_ai.response.finish_reasons' as const;
+export const ATTR_GEN_AI_RESPONSE_FINISH_REASONS =
+  'gen_ai.response.finish_reasons' as const;
 
 /**
  * The unique identifier for the completion.
@@ -748,7 +771,8 @@ export const GEN_AI_SYSTEM_VALUE_AZ_AI_OPENAI = 'az.ai.openai' as const;
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_SYSTEM_VALUE_AZURE_AI_INFERENCE = 'azure.ai.inference' as const;
+export const GEN_AI_SYSTEM_VALUE_AZURE_AI_INFERENCE =
+  'azure.ai.inference' as const;
 
 /**
  * Enum value "azure.ai.openai" for attribute {@link ATTR_GEN_AI_SYSTEM}.
@@ -926,7 +950,8 @@ export const GEN_AI_SYSTEM_VALUE_XAI = 'xai' as const;
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_SYSTEM_INSTRUCTIONS = 'gen_ai.system_instructions' as const;
+export const ATTR_GEN_AI_SYSTEM_INSTRUCTIONS =
+  'gen_ai.system_instructions' as const;
 
 /**
  * The type of token being counted.
@@ -1020,7 +1045,8 @@ export const ATTR_GEN_AI_TOOL_TYPE = 'gen_ai.tool.type' as const;
  *
  * @deprecated Replaced by `gen_ai.usage.output_tokens`.
  */
-export const ATTR_GEN_AI_USAGE_COMPLETION_TOKENS = 'gen_ai.usage.completion_tokens' as const;
+export const ATTR_GEN_AI_USAGE_COMPLETION_TOKENS =
+  'gen_ai.usage.completion_tokens' as const;
 
 /**
  * The number of tokens used in the GenAI input (prompt).
@@ -1029,7 +1055,8 @@ export const ATTR_GEN_AI_USAGE_COMPLETION_TOKENS = 'gen_ai.usage.completion_toke
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_USAGE_INPUT_TOKENS = 'gen_ai.usage.input_tokens' as const;
+export const ATTR_GEN_AI_USAGE_INPUT_TOKENS =
+  'gen_ai.usage.input_tokens' as const;
 
 /**
  * The number of tokens used in the GenAI response (completion).
@@ -1038,7 +1065,8 @@ export const ATTR_GEN_AI_USAGE_INPUT_TOKENS = 'gen_ai.usage.input_tokens' as con
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS = 'gen_ai.usage.output_tokens' as const;
+export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS =
+  'gen_ai.usage.output_tokens' as const;
 
 /**
  * Deprecated, use `gen_ai.usage.input_tokens` instead.
@@ -1049,7 +1077,8 @@ export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS = 'gen_ai.usage.output_tokens' as c
  *
  * @deprecated Replaced by `gen_ai.usage.input_tokens`.
  */
-export const ATTR_GEN_AI_USAGE_PROMPT_TOKENS = 'gen_ai.usage.prompt_tokens' as const;
+export const ATTR_GEN_AI_USAGE_PROMPT_TOKENS =
+  'gen_ai.usage.prompt_tokens' as const;
 
 /**
  * This event describes the assistant message passed to GenAI system.
@@ -1058,7 +1087,8 @@ export const ATTR_GEN_AI_USAGE_PROMPT_TOKENS = 'gen_ai.usage.prompt_tokens' as c
  *
  * @deprecated Chat history is reported on `gen_ai.input.messages` attribute on spans or `gen_ai.client.inference.operation.details` event.
  */
-export const EVENT_GEN_AI_ASSISTANT_MESSAGE = 'gen_ai.assistant.message' as const;
+export const EVENT_GEN_AI_ASSISTANT_MESSAGE =
+  'gen_ai.assistant.message' as const;
 
 /**
  * This event describes the Gen AI response message.
@@ -1076,7 +1106,8 @@ export const EVENT_GEN_AI_CHOICE = 'gen_ai.choice' as const;
  *
  * @experimental This event is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS = 'gen_ai.client.inference.operation.details' as const;
+export const EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS =
+  'gen_ai.client.inference.operation.details' as const;
 
 /**
  * This event describes the system instructions passed to the GenAI model.
@@ -1110,32 +1141,37 @@ export const EVENT_GEN_AI_USER_MESSAGE = 'gen_ai.user.message' as const;
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_GEN_AI_CLIENT_OPERATION_DURATION = 'gen_ai.client.operation.duration' as const;
+export const METRIC_GEN_AI_CLIENT_OPERATION_DURATION =
+  'gen_ai.client.operation.duration' as const;
 
 /**
  * Number of input and output tokens used.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_GEN_AI_CLIENT_TOKEN_USAGE = 'gen_ai.client.token.usage' as const;
+export const METRIC_GEN_AI_CLIENT_TOKEN_USAGE =
+  'gen_ai.client.token.usage' as const;
 
 /**
  * Generative AI server request duration such as time-to-last byte or last output token.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_GEN_AI_SERVER_REQUEST_DURATION = 'gen_ai.server.request.duration' as const;
+export const METRIC_GEN_AI_SERVER_REQUEST_DURATION =
+  'gen_ai.server.request.duration' as const;
 
 /**
  * Time per output token generated after the first token for successful responses.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_GEN_AI_SERVER_TIME_PER_OUTPUT_TOKEN = 'gen_ai.server.time_per_output_token' as const;
+export const METRIC_GEN_AI_SERVER_TIME_PER_OUTPUT_TOKEN =
+  'gen_ai.server.time_per_output_token' as const;
 
 /**
  * Time to generate first token for successful responses.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_GEN_AI_SERVER_TIME_TO_FIRST_TOKEN = 'gen_ai.server.time_to_first_token' as const;
+export const METRIC_GEN_AI_SERVER_TIME_TO_FIRST_TOKEN =
+  'gen_ai.server.time_to_first_token' as const;
