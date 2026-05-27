@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { context } from '@opentelemetry/api';
@@ -44,24 +33,24 @@ import { diag } from '@opentelemetry/api';
  */
 
 export class AwsEksDetector implements ResourceDetector {
-  readonly K8S_SVC_URL = 'kubernetes.default.svc';
-  readonly K8S_TOKEN_PATH =
+  public readonly K8S_SVC_URL = 'kubernetes.default.svc';
+  public readonly K8S_TOKEN_PATH =
     '/var/run/secrets/kubernetes.io/serviceaccount/token';
-  readonly K8S_CERT_PATH =
+  public readonly K8S_CERT_PATH =
     '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt';
-  readonly AUTH_CONFIGMAP_PATH =
+  public readonly AUTH_CONFIGMAP_PATH =
     '/api/v1/namespaces/kube-system/configmaps/aws-auth';
-  readonly CW_CONFIGMAP_PATH =
+  public readonly CW_CONFIGMAP_PATH =
     '/api/v1/namespaces/amazon-cloudwatch/configmaps/cluster-info';
-  readonly CONTAINER_ID_LENGTH = 64;
-  readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
-  readonly TIMEOUT_MS = 2000;
-  readonly UTF8_UNICODE = 'utf8';
+  public readonly CONTAINER_ID_LENGTH = 64;
+  public readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
+  public readonly TIMEOUT_MS = 2000;
+  public readonly UTF8_UNICODE = 'utf8';
 
   private static readFileAsync = util.promisify(fs.readFile);
   private static fileAccessAsync = util.promisify(fs.access);
 
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     const dataPromise = context.with(suppressTracing(context.active()), () =>
       this._gatherData()
     );

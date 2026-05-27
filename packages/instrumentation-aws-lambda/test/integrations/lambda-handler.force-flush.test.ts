@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // We access through node_modules to allow it to be patched.
@@ -100,19 +89,7 @@ describe('force flush', () => {
     provider.forceFlush = forceFlush;
     initializeHandlerTracing('lambda-test/sync.handler', provider);
 
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(forceFlushed, true);
   });
@@ -133,19 +110,7 @@ describe('force flush', () => {
     nodeTracerProvider.forceFlush = forceFlush;
     initializeHandlerTracing('lambda-test/sync.handler', provider);
 
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(forceFlushed, true);
   });
@@ -165,24 +130,12 @@ describe('force flush', () => {
     provider.forceFlush = forceFlush;
     initializeHandlerMetrics('lambda-test/sync.handler', provider);
 
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(forceFlushed, true);
   });
 
-  it('should callback once after force flush providers', async () => {
+  it('should complete handler after force flush providers', async () => {
     const nodeTracerProvider = new NodeTracerProvider({
       spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
     });
@@ -216,24 +169,9 @@ describe('force flush', () => {
     instrumentation.setTracerProvider(tracerProvider);
     instrumentation.setMeterProvider(meterProvider);
 
-    let callbackCount = 0;
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          callbackCount++;
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(tracerForceFlushed, true);
     assert.strictEqual(meterForceFlushed, true);
-    assert.strictEqual(callbackCount, 1);
   });
 });

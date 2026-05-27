@@ -1,0 +1,158 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+// By default, tests run with both old and stable semconv. Some test cases
+// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
+
+import { MongoDBInstrumentation } from '../src';
+
+import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
+import { TestMetricReader } from '@opentelemetry/contrib-test-utils';
+
+const reader = new TestMetricReader();
+const otelTestingMeterProvider = new MeterProvider({
+  readers: [reader],
+});
+
+import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
+const instrumentation = registerInstrumentationTesting(
+  new MongoDBInstrumentation()
+);
+
+import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
+import type { MongoClient, Collection } from 'mongodb';
+import * as assert from 'assert';
+
+describe('MongoDBInstrumentation-Metrics-v4+', () => {
+  // For these tests, mongo must be running. Add RUN_MONGODB_TESTS to run
+  // these tests.
+  const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
+  let shouldTest = true;
+  if (!RUN_MONGODB_TESTS) {
+    console.log('Skipping test-mongodb. Run MongoDB to test');
+    shouldTest = false;
+  }
+
+  const HOST = process.env.MONGODB_HOST || DEFAULT_MONGO_HOST;
+  const PORT = process.env.MONGODB_PORT || 27017;
+  const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-metrics';
+  const COLLECTION_NAME = 'test-metrics';
+  const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
+
+  let client: MongoClient;
+  let collection: Collection;
+
+  before(done => {
+    instrumentation?.setMeterProvider(otelTestingMeterProvider);
+
+    shouldTest = true;
+    accessCollection(URL, DB_NAME, COLLECTION_NAME)
+      .then(result => {
+        client = result.client;
+        collection = result.collection;
+        done();
+      })
+      .catch((err: Error) => {
+        console.log('Skipping test-mongodb. ' + err.message);
+        shouldTest = false;
+        done();
+      });
+  });
+
+  beforeEach(function mongoBeforeEach(done) {
+    // Skipping all tests in beforeEach() is a workaround. Mocha does not work
+    // properly when skipping tests in before() on nested describe() calls.
+    // https://github.com/mochajs/mocha/issues/2819
+    if (!shouldTest) {
+      this.skip();
+    }
+
+    done();
+  });
+
+  it('Should add connection usage metrics', async () => {
+    const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
+    await collection.insertMany(insertData);
+    await collection.deleteMany({});
+
+    // collect
+    const result = await reader.collect();
+
+    assert.strictEqual(
+      result.errors.length,
+      0,
+      'Expected no errors during metric collection, got: ' +
+        result.errors.toString()
+    );
+    const metrics = result.resourceMetrics.scopeMetrics[0].metrics;
+    assert.strictEqual(metrics.length, 1);
+    assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
+
+    assert.strictEqual(
+      metrics[0].descriptor.description,
+      'The number of connections that are currently in state described by the state attribute.'
+    );
+    assert.strictEqual(metrics[0].descriptor.unit, '{connection}');
+    assert.strictEqual(
+      metrics[0].descriptor.name,
+      'db.client.connections.usage'
+    );
+
+    // Checking dataPoints
+    const dataPoints = metrics[0].dataPoints;
+    assert.strictEqual(dataPoints.length, 2);
+    assert.strictEqual(dataPoints[0].value, 0);
+    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
+    assert.strictEqual(
+      dataPoints[0].attributes['pool.name'],
+      `mongodb://${HOST}:${PORT}/${DB_NAME}`
+    );
+
+    assert.strictEqual(dataPoints[1].value, 1);
+    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
+    assert.strictEqual(
+      dataPoints[1].attributes['pool.name'],
+      `mongodb://${HOST}:${PORT}/${DB_NAME}`
+    );
+  });
+
+  it('Should add disconnection usage metrics', async () => {
+    await client.close();
+
+    const result = await reader.collect();
+
+    assert.strictEqual(
+      result.errors.length,
+      0,
+      'Expected no errors during metric collection, got: ' +
+        result.errors.toString()
+    );
+    const metrics = result.resourceMetrics.scopeMetrics[0].metrics;
+    assert.strictEqual(metrics.length, 1);
+    assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
+
+    assert.strictEqual(
+      metrics[0].descriptor.description,
+      'The number of connections that are currently in state described by the state attribute.'
+    );
+
+    // Checking dataPoints
+    const dataPoints = metrics[0].dataPoints;
+    assert.strictEqual(dataPoints.length, 2);
+    assert.strictEqual(dataPoints[0].value, 0);
+    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
+    assert.strictEqual(
+      dataPoints[0].attributes['pool.name'],
+      `mongodb://${HOST}:${PORT}/${DB_NAME}`
+    );
+    assert.strictEqual(dataPoints[1].value, 0);
+    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
+    assert.strictEqual(
+      dataPoints[1].attributes['pool.name'],
+      `mongodb://${HOST}:${PORT}/${DB_NAME}`
+    );
+  });
+});

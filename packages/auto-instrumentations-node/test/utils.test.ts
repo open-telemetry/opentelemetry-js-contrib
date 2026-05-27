@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { diag } from '@opentelemetry/api';
@@ -31,7 +20,7 @@ describe('utils', () => {
         return (
           depName.startsWith('@opentelemetry/instrumentation-') &&
           depName !== '@opentelemetry/instrumentation-fs' &&
-          depName !== '@opentelemetry/instrumentation-fastify'
+          depName !== '@opentelemetry/instrumentation-host-metrics'
         );
       });
 
@@ -171,6 +160,92 @@ describe('utils', () => {
       );
 
       spy.restore();
+    });
+
+    it('should enable fs instrumentation when explicitly enabled and OTEL_NODE_ENABLED_INSTRUMENTATIONS is not set', () => {
+      const instrumentations = getNodeAutoInstrumentations({
+        '@opentelemetry/instrumentation-fs': {
+          enabled: true,
+        },
+      });
+      const fsInstrumentation = instrumentations.find(
+        instr =>
+          instr.instrumentationName === '@opentelemetry/instrumentation-fs'
+      );
+      assert.notStrictEqual(
+        fsInstrumentation,
+        undefined,
+        'fs instrumentation should be included when explicitly enabled in config and env var is not set'
+      );
+    });
+
+    it('should respect programmatic config over OTEL_NODE_ENABLED_INSTRUMENTATIONS - user config overrides env var', () => {
+      process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS = 'fs,http';
+      try {
+        const instrumentations = getNodeAutoInstrumentations({
+          '@opentelemetry/instrumentation-fs': {
+            enabled: false, // User explicitly disables - should override env var
+          },
+          '@opentelemetry/instrumentation-express': {
+            enabled: true, // User explicitly enables - should override env var
+          },
+        });
+
+        const fsInstrumentation = instrumentations.find(
+          instr =>
+            instr.instrumentationName === '@opentelemetry/instrumentation-fs'
+        );
+        const httpInstrumentation = instrumentations.find(
+          instr =>
+            instr.instrumentationName === '@opentelemetry/instrumentation-http'
+        );
+        const expressInstrumentation = instrumentations.find(
+          instr =>
+            instr.instrumentationName ===
+            '@opentelemetry/instrumentation-express'
+        );
+
+        assert.strictEqual(
+          fsInstrumentation,
+          undefined,
+          'fs should be disabled by user config despite env var'
+        );
+        assert.notStrictEqual(
+          httpInstrumentation,
+          undefined,
+          'http should be enabled by env var (no user override)'
+        );
+        assert.notStrictEqual(
+          expressInstrumentation,
+          undefined,
+          'express should be enabled by user config despite not being in env var list'
+        );
+      } finally {
+        delete process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
+      }
+    });
+
+    it('should respect programmatic config over OTEL_NODE_DISABLED_INSTRUMENTATIONS - user config overrides env var', () => {
+      process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS = 'http';
+      try {
+        const instrumentations = getNodeAutoInstrumentations({
+          '@opentelemetry/instrumentation-http': {
+            enabled: true, // User explicitly enables - should override env var
+          },
+        });
+        const httpInstrumentation = instrumentations.find(
+          instr =>
+            instr.instrumentationName === '@opentelemetry/instrumentation-http'
+        );
+
+        assert.notStrictEqual(
+          httpInstrumentation,
+          undefined,
+          'http instrumentation should be enabled by user config despite OTEL_NODE_DISABLED_INSTRUMENTATIONS'
+        );
+      } finally {
+        delete process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS;
+      }
     });
   });
 

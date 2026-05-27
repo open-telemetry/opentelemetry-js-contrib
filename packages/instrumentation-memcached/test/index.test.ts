@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
@@ -299,7 +288,10 @@ describe('memcached@2.x', () => {
 
       const span = instrumentationSpans[1]; // get operation
       // old `db.*`
-      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MEMCACHED);
+      assert.strictEqual(
+        span.attributes[ATTR_DB_SYSTEM],
+        DB_SYSTEM_VALUE_MEMCACHED
+      );
       assert.strictEqual(span.attributes[ATTR_DB_OPERATION], 'get');
       // stable `db.*`
       assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], undefined);
@@ -332,7 +324,10 @@ describe('memcached@2.x', () => {
       assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], undefined);
       assert.strictEqual(span.attributes[ATTR_DB_OPERATION], undefined);
       // stable `db.*`
-      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], DB_SYSTEM_NAME_VALUE_MEMCACHED);
+      assert.strictEqual(
+        span.attributes[ATTR_DB_SYSTEM_NAME],
+        DB_SYSTEM_NAME_VALUE_MEMCACHED
+      );
       assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'get');
 
       // old `net.*`

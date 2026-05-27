@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import {
   isWrapped,
@@ -46,7 +35,10 @@ import {
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
-import { addSqlCommenterComment } from '@opentelemetry/sql-common';
+import {
+  addSqlCommenterComment,
+  buildTraceparent,
+} from '@opentelemetry/sql-common';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
@@ -77,10 +69,14 @@ function extractModuleExports(module: any) {
     : module; // CommonJS
 }
 
+const INTERNAL_SET_QUERY = Symbol(
+  'opentelemetry.instrumentation-pg.internal-set-query'
+);
+
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
-  private declare _operationDuration: Histogram;
-  private declare _connectionsCount: UpDownCounter;
-  private declare _connectionPendingRequests: UpDownCounter;
+  declare private _operationDuration: Histogram;
+  declare private _connectionsCount: UpDownCounter;
+  declare private _connectionPendingRequests: UpDownCounter;
   // Pool events connect, acquire, release and remove can be called
   // multiple times without changing the values of total, idle and waiting
   // connections. The _connectionsCounter is used to keep track of latest
@@ -249,7 +245,12 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     const plugin = this;
     return (original: PgClientConnect) => {
       return function connect(this: pgTypes.Client, callback?: Function) {
-        if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
+        const config = plugin.getConfig();
+
+        if (
+          utils.shouldSkipInstrumentation(config) ||
+          config.ignoreConnectSpans
+        ) {
           return original.call(this, callback);
         }
 
@@ -313,6 +314,15 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     return (original: typeof pgTypes.Client.prototype.query) => {
       this._diag.debug('Patching pg.Client.prototype.query');
       return function query(this: PgClientExtended, ...args: unknown[]) {
+        // Skip our own internal SET application_name queries
+        if (
+          typeof args[0] === 'object' &&
+          args[0] !== null &&
+          (args[0] as any)[INTERNAL_SET_QUERY]
+        ) {
+          return original.apply(this, args as never);
+        }
+
         if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
           return original.apply(this, args as never);
         }
@@ -341,6 +351,8 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           : firstArgIsQueryObjectWithText
             ? {
                 ...(arg0 as any),
+                name: arg0.name,
+                text: arg0.text,
                 values:
                   (arg0 as any).values ??
                   (Array.isArray(args[1]) ? args[1] : undefined),
@@ -470,6 +482,39 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           );
         }
 
+        // Inject trace context via SET application_name if enabled.
+        // The SET is pushed synchronously into pg's internal FIFO queue
+        // before the user's query, guaranteeing correct ordering. Note that
+        // pg processes one query at a time (readyForQuery gate), so the SET
+        // completes a full round-trip before the user's query is dispatched.
+        if (instrumentationConfig.enableTraceContextPropagation) {
+          const traceparent = buildTraceparent(span);
+          if (traceparent) {
+            const setQuery = {
+              text: `SET application_name = '${traceparent}'`,
+              [INTERNAL_SET_QUERY]: true,
+            };
+            try {
+              const setResult: unknown = original.apply(this, [
+                setQuery,
+              ] as never);
+              if (setResult instanceof Promise) {
+                setResult.catch(error => {
+                  plugin._diag.warn(
+                    'Failed to set pg application_name for trace context propagation',
+                    error
+                  );
+                });
+              }
+            } catch (error) {
+              plugin._diag.warn(
+                'Failed to set pg application_name for trace context propagation',
+                error
+              );
+            }
+          }
+        }
+
         let result: unknown;
         try {
           result = original.apply(this, args as never);
@@ -569,7 +614,16 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
-        if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
+        const config = plugin.getConfig();
+
+        if (utils.shouldSkipInstrumentation(config)) {
+          return originalConnect.call(this, callback as any);
+        }
+
+        // Still set up event listeners for metrics even when skipping spans
+        plugin._setPoolConnectEventListeners(this);
+
+        if (config.ignoreConnectSpans) {
           return originalConnect.call(this, callback as any);
         }
 
@@ -581,8 +635,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             plugin._semconvStability
           ),
         });
-
-        plugin._setPoolConnectEventListeners(this);
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());

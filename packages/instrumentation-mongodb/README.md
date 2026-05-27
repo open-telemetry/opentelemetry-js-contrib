@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-mongodb
 
 ### Supported Versions
 
-- [`mongodb`](https://www.npmjs.com/package/mongodb) version `>=3.3.0 <7`
+- [`mongodb`](https://www.npmjs.com/package/mongodb) version `>=3.3.0 <8`
 
 ## Usage
 
@@ -49,28 +49,44 @@ See [`examples/mongodb`](https://github.com/open-telemetry/opentelemetry-js-cont
 
 Mongodb instrumentation has few options available to choose from. You can set the following:
 
-| Options | Type | Description |
-| ------- | ---- | ----------- |
-| [`enhancedDatabaseReporting`](./src/types.ts#L32) | `string` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
-| `responseHook` | `MongoDBInstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
-| `dbStatementSerializer` | `DbStatementSerializer` (function) | Custom serializer function for the db.statement tag |
-| `requireParentSpan` | `boolean` | Require a parent span in order to create mongodb spans, default when unset is `true` |
+| Options                     | Type     | Description |
+| --------------------------- | -------- | ----------- |
+| `enhancedDatabaseReporting` | boolean  | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations. |
+| `responseHook`              | function | Function for adding custom attributes from db response. See type `MongoDBInstrumentationExecutionResponseHook`. |
+| `dbStatementSerializer`     | function | Custom serializer function for the `db.statement` / `db.query.text` span attribute. See type `DbStatementSerializer`. |
+| `requireParentSpan`         | boolean  | Require a parent span in order to create mongodb spans, default when unset is `true`. |
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This instrumentation implements Semantic Conventions (semconv) v1.7.0. Since then, networking (in semconv v1.23.1) and database (in semconv v1.33.0) semantic conventions were stabilized. As of `@opentelemetry/instrumentation-mongodb@0.63.0` support has been added for migrating to the stable semantic conventions using the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable as follows:
 
-Attributes collected:
+1. Upgrade to the latest version of this instrumentation package.
+2. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup,database/dup` to emit both old and stable semantic conventions. (The `http` token is used to control the `net.*` attributes, the `database` token to control to `db.*` attributes.)
+3. Modify alerts, dashboards, metrics, and other processes in your Observability system to use the stable semantic conventions.
+4. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http,database` to emit only the stable semantic conventions.
 
-| Attribute               | Short Description                                                              |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| `db.system`             | An identifier for the database management system (DBMS) product being used.    |
-| `db.connection_string`  | The connection string used to connect to the database.                         |
-| `db.name`               | This attribute is used to report the name of the database being accessed.      |
-| `db.operation`          | The name of the operation being executed.                                      |
-| `db.mongodb.collection` | The collection being accessed within the database stated in `db.name`.         |
-| `net.peer.name`         | Remote hostname or similar.                                                    |
-| `net.peer.port`         | Remote port number.                                                            |
+By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` includes neither of the above tokens, the old v1.7.0 semconv is used.
+The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new database and networking semconv, after which a new minor version will use the new semconv by default and drop support for the old semconv.
+See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/) and the [database migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/) for details.
+
+Span attributes:
+
+| Old semconv             | Stable semconv       | Description |
+| ----------------------- | -------------------- | ----------- |
+| `db.system`             | `db.system.name`     | 'mongodb'   |
+| `db.name`               | `db.namespace`       | The MongoDB database name. |
+| `db.connection_string`  | Removed              |             |
+| `db.operation`          | `db.operation.name`  | The name of the MongoDB command being executed. |
+| `db.mongodb.collection` | `db.collection.name` | The MongoDB collection being accessed within the database stated in `db.namespace`. |
+| `db.statement`          | `db.query.text`      | The database query being executed. |
+| `net.peer.name`         | `server.address`     | Remote hostname or similar. |
+| `net.peer.port`         | `server.port`        | Remote port number. |
+
+Metrics collected:
+
+- [`db.client.connections.usage`](https://github.com/open-telemetry/semantic-conventions/blob/v1.24.0/docs/database/database-metrics.md#metric-dbclientconnectionsusage) - The number of connections currently in a given state.
+
+  Note: While `db.client.connections.usage` has been deprecated in favor of `db.client.connection.count` in the [semconv database migration](https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/#database-client-connection-count), the new metric is still unstable, so cannot be enabled via `OTEL_SEMCONV_STABILITY_OPT_IN=database`. There is ongoing work to provide an opt-in setting to select the latest experimental semconv.
 
 ## Useful links
 

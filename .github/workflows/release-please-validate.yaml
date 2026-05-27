@@ -16,7 +16,9 @@ jobs:
       image: node:22
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Ensure Release Please Config and Manifest are in sync with the repository
         run: node scripts/check-release-please.mjs

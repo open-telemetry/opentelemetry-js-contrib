@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -275,19 +264,19 @@ describe('pg', () => {
     });
 
     it('should return a promise if callback is not provided', done => {
-      const resPromise = connClient.connect();
-      resPromise
-        .then(res => {
-          assert.equal(res, undefined);
+      connClient
+        .connect()
+        .then(() => {
+          // Note: pg's documented Promise return type is `Promise<void>`, but
+          // some pg versions resolve with the client itself. We only assert
+          // the connect span was created.
           assert.deepStrictEqual(
             memoryExporter.getFinishedSpans()[0].name,
             'pg.connect'
           );
           done();
         })
-        .catch((err: Error) => {
-          assert.ok(false, err.message);
-        });
+        .catch(done);
     });
 
     it('should throw on failure', done => {
@@ -1038,6 +1027,275 @@ describe('pg', () => {
         assert.strictEqual(spans.length, 0);
         done();
       });
+    });
+
+    it('should generate traces for SQL template literal objects ', async () => {
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        // Mock SQLStatement from sql-template-strings library
+        class SQLStatement {
+          strings: string[];
+          values: any[];
+
+          constructor(strings: string[], values: any[]) {
+            this.strings = strings;
+            this.values = values;
+          }
+
+          get text(): string {
+            return this.strings.reduce(
+              (prev: string, curr: string, i: number) => prev + '$' + i + curr
+            );
+          }
+        }
+
+        const name = 'pg_tables';
+        const sqlQuery = new SQLStatement(
+          ['SELECT * FROM information_schema.tables WHERE table_name = ', ''],
+          [name]
+        );
+        const resPromise = await client.query(sqlQuery);
+        assert.ok(resPromise);
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 1);
+        const pgSpan = spans[0];
+
+        assert.strictEqual(pgSpan.name, 'pg.query:SELECT otel_pg_database');
+        assert.strictEqual(
+          pgSpan.attributes[ATTR_DB_STATEMENT],
+          'SELECT * FROM information_schema.tables WHERE table_name = $1'
+        );
+
+        const executedQueries = getExecutedQueries();
+        assert.ok(executedQueries.length > 0);
+        assert.strictEqual(
+          executedQueries[executedQueries.length - 1].text,
+          'SELECT * FROM information_schema.tables WHERE table_name = $1'
+        );
+      });
+    });
+
+    it('should generate traces for SQL template literals with added comments', async () => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      });
+
+      const span = tracer.startSpan('test span');
+
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        // Mock SQLStatement from sql-template-strings library
+        class SQLStatement {
+          strings: string[];
+          values: any[];
+
+          constructor(strings: string[], values: any[]) {
+            this.strings = strings;
+            this.values = values;
+          }
+
+          get text(): string {
+            return this.strings.reduce(
+              (prev: string, curr: string, i: number) => prev + '$' + i + curr
+            );
+          }
+        }
+        const tableName = 'pg_tables';
+        const sqlQuery = new SQLStatement(
+          ['SELECT * FROM information_schema.tables WHERE table_name = ', ''],
+          [tableName]
+        );
+
+        const res = await client.query(sqlQuery);
+        assert.ok(res);
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 1);
+        const pgSpan = spans[0];
+
+        const commentedQuery = addSqlCommenterComment(
+          trace.wrapSpanContext(pgSpan.spanContext()),
+          sqlQuery.text
+        );
+        const executedQueries = getExecutedQueries();
+        assert.ok(executedQueries.length > 0);
+        const lastQuery = executedQueries[executedQueries.length - 1];
+        assert.strictEqual(lastQuery.text, commentedQuery);
+      });
+    });
+  });
+
+  describe('enableTraceContextPropagation', () => {
+    function expectedSetApplicationName(span: { spanContext(): any }) {
+      const sc = span.spanContext();
+      const traceparent = `00-${sc.traceId}-${sc.spanId}-0${Number(sc.traceFlags || 0).toString(16)}`;
+      return `SET application_name = '${traceparent}'`;
+    }
+
+    it('should not send SET application_name when enableTraceContextPropagation is not specified', async () => {
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const query = 'SELECT NOW()';
+        const res = await client.query(query);
+        assert.ok(res);
+
+        const executedQueries = getExecutedQueries();
+        assert.equal(executedQueries.length, 1);
+        assert.equal(executedQueries[0].text, query);
+      });
+    });
+
+    it('should send SET application_name before the user query when enableTraceContextPropagation=true', async () => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const query = 'SELECT NOW()';
+        const res = await client.query(query);
+        assert.ok(res);
+
+        const executedQueries = getExecutedQueries();
+        assert.equal(
+          executedQueries.length,
+          2,
+          'Expected 2 queries: SET application_name + user query'
+        );
+
+        const [querySpan] = memoryExporter.getFinishedSpans();
+
+        assert.equal(
+          executedQueries[0].text,
+          expectedSetApplicationName(querySpan),
+          'SET application_name should contain the exact traceparent of the query span'
+        );
+
+        assert.equal(executedQueries[1].text, query);
+      });
+    });
+
+    it('should set application_name for prepared statements', async () => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const res = await client.query({
+          name: 'prepared-trace-ctx',
+          text: 'SELECT $1::text',
+          values: ['hello'],
+        });
+        assert.ok(res);
+
+        const executedQueries = getExecutedQueries();
+        assert.equal(
+          executedQueries.length,
+          2,
+          'Expected 2 queries: SET application_name + prepared statement'
+        );
+        const [querySpan] = memoryExporter.getFinishedSpans();
+        assert.equal(
+          executedQueries[0].text,
+          expectedSetApplicationName(querySpan),
+          'SET application_name should contain exact traceparent before prepared statement'
+        );
+        assert.equal(executedQueries[1].text, 'SELECT $1::text');
+      });
+    });
+
+    it('should work together with addSqlCommenterCommentToQueries', async () => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+        addSqlCommenterCommentToQueries: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const query = 'SELECT NOW()';
+        const res = await client.query(query);
+        assert.ok(res);
+
+        const executedQueries = getExecutedQueries();
+        assert.equal(
+          executedQueries.length,
+          2,
+          'Expected 2 queries: SET application_name + commented query'
+        );
+
+        const [querySpan] = memoryExporter.getFinishedSpans();
+        assert.equal(
+          executedQueries[0].text,
+          expectedSetApplicationName(querySpan),
+          'First query should be SET application_name with exact traceparent'
+        );
+
+        // Second should have SQL Commenter comment appended
+        assert.ok(
+          executedQueries[1].text?.includes('/*'),
+          'User query should have SQL Commenter comment'
+        );
+        assert.ok(
+          executedQueries[1].text?.startsWith('SELECT NOW()'),
+          'User query should start with original text'
+        );
+      });
+    });
+
+    it('should set correct application_name for concurrent queries on the same connection', async () => {
+      instrumentation.setConfig({
+        enableTraceContextPropagation: true,
+      });
+
+      // Fire 3 queries concurrently without awaiting each individually.
+      // All 6 items (3x SET + 3x query) are pushed synchronously into
+      // pg's queryQueue, and we verify they are correctly paired.
+      const results = await Promise.all([
+        context.with(
+          trace.setSpan(context.active(), tracer.startSpan('span-A')),
+          () => client.query('SELECT 1 AS a')
+        ),
+        context.with(
+          trace.setSpan(context.active(), tracer.startSpan('span-B')),
+          () => client.query('SELECT 2 AS b')
+        ),
+        context.with(
+          trace.setSpan(context.active(), tracer.startSpan('span-C')),
+          () => client.query('SELECT 3 AS c')
+        ),
+      ]);
+
+      assert.ok(results[0]);
+      assert.ok(results[1]);
+      assert.ok(results[2]);
+
+      const executedQueries = getExecutedQueries();
+      assert.equal(
+        executedQueries.length,
+        6,
+        'Expected 6 queries: 3x SET + 3x user query'
+      );
+
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      assert.equal(finishedSpans.length, 3, 'Expected 3 query spans');
+
+      // Verify correct pairing: SET-A, Q-A, SET-B, Q-B, SET-C, Q-C
+      // Each SET should match the exact traceparent of its corresponding query span.
+      for (let i = 0; i < 3; i++) {
+        const setQuery = executedQueries[i * 2];
+        const userQuery = executedQueries[i * 2 + 1];
+
+        assert.equal(
+          setQuery.text,
+          expectedSetApplicationName(finishedSpans[i]),
+          `Query ${i * 2} should be SET application_name with exact traceparent for span ${i}`
+        );
+        assert.ok(
+          !userQuery.text?.startsWith('SET application_name'),
+          `Query ${i * 2 + 1} should be the user query, not SET`
+        );
+      }
     });
   });
 

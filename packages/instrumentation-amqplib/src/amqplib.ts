@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import {
   context,
@@ -36,6 +25,8 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
+  SemconvStability,
+  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import { ATTR_MESSAGING_OPERATION } from './semconv';
 import {
@@ -79,11 +70,22 @@ import {
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
-const supportedVersions = ['>=0.5.5 <1'];
+const supportedVersions = ['>=0.5.5 <2'];
 
 export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumentationConfig> {
+  private _netSemconvStability!: SemconvStability;
+
   constructor(config: AmqplibInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+    this._setSemconvStabilityFromEnv();
+  }
+
+  // Used for testing.
+  private _setSemconvStabilityFromEnv() {
+    this._netSemconvStability = semconvStabilityFromStr(
+      'http',
+      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
+    );
   }
 
   override setConfig(config: AmqplibInstrumentationConfig = {}) {
@@ -245,6 +247,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
       openCallback: (err: any, connection: Connection) => void
     ) => Connection
   ) {
+    const self = this;
     return function patchedConnect(
       this: unknown,
       url: string | Options.Connect,
@@ -257,7 +260,10 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
         socketOptions,
         function (this: unknown, err, conn: InstrumentationConnection) {
           if (err == null) {
-            const urlAttributes = getConnectionAttributesFromUrl(url);
+            const urlAttributes = getConnectionAttributesFromUrl(
+              url,
+              self._netSemconvStability
+            );
             const serverAttributes = getConnectionAttributesFromServer(conn);
             conn[CONNECTION_ATTRIBUTES] = {
               ...urlAttributes,
@@ -692,8 +698,8 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
                 requeue === true
                   ? ' with requeue'
                   : requeue === false
-                  ? ' without requeue'
-                  : ''
+                    ? ' without requeue'
+                    : ''
               }`
             : operation,
       });

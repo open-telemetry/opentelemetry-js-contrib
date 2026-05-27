@@ -6,7 +6,7 @@
 [component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @abhee11
 
 Resource detector for container id.
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+Compatible with OpenTelemetry JS SDK `2.0+`.
 
 ## Installation
 
@@ -35,7 +35,7 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 Populates `container.id` for processes running on containers supporting : docker( cgroup v1 or v2 ) or with containerd
 
 | Resource Attribute |  Description                                                                                                                             |
-|--------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `container.id`     | Value parsed from file `/proc/self/cgroup` (cgroup v1). If it doesn't exist, parse the value from file `/proc/self/mountinfo` (cgroup v2)|
 
 ## Useful links

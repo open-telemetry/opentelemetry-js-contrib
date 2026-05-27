@@ -1,22 +1,11 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /// <reference types="zone.js" />
 
-import { isWrapped, InstrumentationBase } from '@opentelemetry/instrumentation';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
 import * as api from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
@@ -53,8 +42,13 @@ function defaultShouldPreventSpanCreation() {
 export class UserInteractionInstrumentation extends InstrumentationBase<UserInteractionInstrumentationConfig> {
   readonly version = PACKAGE_VERSION;
   readonly moduleName: string = 'user-interaction';
+  // NOTE: `_enabled` is a private property of the base class for nodejs platform
+  // but not for browser so we cannot access it. TS complains if we use it because
+  // we get the types of the nodejs implementation (we cannot override)
+  // As a workaround we use a new flag until types are fixed or design is updated
+  declare private _isEnabled?: boolean;
+  declare private _zonePatched?: boolean;
   private _spansData = new WeakMap<api.Span, SpanData>();
-  private declare _zonePatched?: boolean;
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
     Function | EventListenerObject,
@@ -119,6 +113,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     eventName: EventName,
     parentSpan?: api.Span
   ): api.Span | undefined {
+    if (!this._isEnabled) {
+      return undefined;
+    }
     if (!(element instanceof HTMLElement)) {
       return undefined;
     }
@@ -378,8 +375,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * Patches the history api
    */
   _patchHistoryApi() {
-    this._unpatchHistoryApi();
-
+    if (!this._isEnabled) return;
     this._wrap(history, 'replaceState', this._patchHistoryMethod());
     this._wrap(history, 'pushState', this._patchHistoryMethod());
     this._wrap(history, 'back', this._patchHistoryMethod());
@@ -394,6 +390,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     const plugin = this;
     return (original: any) => {
       return function patchHistoryMethod(this: History, ...args: unknown[]) {
+        if (!plugin._isEnabled) {
+          return original.apply(this, args);
+        }
         const url = `${location.pathname}${location.hash}${location.search}`;
         const result = original.apply(this, args);
         const urlAfter = `${location.pathname}${location.hash}${location.search}`;
@@ -403,17 +402,6 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
         return result;
       };
     };
-  }
-
-  /**
-   * unpatch the history api methods
-   */
-  _unpatchHistoryApi() {
-    if (isWrapped(history.replaceState)) this._unwrap(history, 'replaceState');
-    if (isWrapped(history.pushState)) this._unwrap(history, 'pushState');
-    if (isWrapped(history.back)) this._unwrap(history, 'back');
-    if (isWrapped(history.forward)) this._unwrap(history, 'forward');
-    if (isWrapped(history.go)) this._unwrap(history, 'go');
   }
 
   /**
@@ -575,6 +563,15 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * implements enable function
    */
   override enable() {
+    // Early return if already enabled or patched
+    if (this._isEnabled) {
+      return;
+    }
+    this._isEnabled = true;
+    if (typeof this._zonePatched === 'boolean') {
+      return;
+    }
+
     const ZoneWithPrototype = this._getZoneWithPrototype();
     this._diag.debug(
       'applying patch to',
@@ -584,19 +581,6 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
       !!ZoneWithPrototype
     );
     if (ZoneWithPrototype) {
-      if (isWrapped(ZoneWithPrototype.prototype.runTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'runTask');
-        this._diag.debug('removing previous patch from method runTask');
-      }
-      if (isWrapped(ZoneWithPrototype.prototype.scheduleTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'scheduleTask');
-        this._diag.debug('removing previous patch from method scheduleTask');
-      }
-      if (isWrapped(ZoneWithPrototype.prototype.cancelTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
-        this._diag.debug('removing previous patch from method cancelTask');
-      }
-
       this._zonePatched = true;
       this._wrap(
         ZoneWithPrototype.prototype,
@@ -617,18 +601,6 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
       this._zonePatched = false;
       const targets = this._getPatchableEventTargets();
       targets.forEach(target => {
-        if (isWrapped(target.addEventListener)) {
-          this._unwrap(target, 'addEventListener');
-          this._diag.debug(
-            'removing previous patch from method addEventListener'
-          );
-        }
-        if (isWrapped(target.removeEventListener)) {
-          this._unwrap(target, 'removeEventListener');
-          this._diag.debug(
-            'removing previous patch from method removeEventListener'
-          );
-        }
         this._wrap(target, 'addEventListener', this._patchAddEventListener());
         this._wrap(
           target,
@@ -645,36 +617,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * implements unpatch function
    */
   override disable() {
-    const ZoneWithPrototype = this._getZoneWithPrototype();
-    this._diag.debug(
-      'removing patch from',
-      this.moduleName,
-      this.version,
-      'zone:',
-      !!ZoneWithPrototype
-    );
-    if (ZoneWithPrototype && this._zonePatched) {
-      if (isWrapped(ZoneWithPrototype.prototype.runTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'runTask');
-      }
-      if (isWrapped(ZoneWithPrototype.prototype.scheduleTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'scheduleTask');
-      }
-      if (isWrapped(ZoneWithPrototype.prototype.cancelTask)) {
-        this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
-      }
-    } else {
-      const targets = this._getPatchableEventTargets();
-      targets.forEach(target => {
-        if (isWrapped(target.addEventListener)) {
-          this._unwrap(target, 'addEventListener');
-        }
-        if (isWrapped(target.removeEventListener)) {
-          this._unwrap(target, 'removeEventListener');
-        }
-      });
+    if (!this._isEnabled) {
+      return;
     }
-    this._unpatchHistoryApi();
+    this._isEnabled = false;
   }
 
   /**

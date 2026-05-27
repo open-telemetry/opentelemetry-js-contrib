@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { SpanStatusCode, context } from '@opentelemetry/api';
@@ -21,6 +10,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 import * as assert from 'assert';
 import * as tls from 'tls';
 import { NetInstrumentation } from '../src';
@@ -32,6 +22,10 @@ import {
   TLS_SERVER_KEY,
   PORT,
 } from './utils';
+
+// By default tests run with both old and stable semconv.
+process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup';
+const DEFAULT_NET_SEMCONV_STABILITY = SemconvStability.DUPLICATE;
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider({
@@ -95,7 +89,11 @@ describe('NetInstrumentation', () => {
           },
         },
         () => {
-          assertTLSSpan(getTLSSpans(), tlsSocket);
+          assertTLSSpan(
+            getTLSSpans(),
+            tlsSocket,
+            DEFAULT_NET_SEMCONV_STABILITY
+          );
           done();
         }
       );
@@ -112,7 +110,7 @@ describe('NetInstrumentation', () => {
         c.end();
       });
       tlsSocket.once('end', () => {
-        assertTLSSpan(getTLSSpans(), tlsSocket);
+        assertTLSSpan(getTLSSpans(), tlsSocket, DEFAULT_NET_SEMCONV_STABILITY);
         done();
       });
     });
@@ -128,7 +126,11 @@ describe('NetInstrumentation', () => {
           },
         },
         () => {
-          assertTLSSpan(getTLSSpans(), tlsSocket);
+          assertTLSSpan(
+            getTLSSpans(),
+            tlsSocket,
+            DEFAULT_NET_SEMCONV_STABILITY
+          );
           done();
         }
       );

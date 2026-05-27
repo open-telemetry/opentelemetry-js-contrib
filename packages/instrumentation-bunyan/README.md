@@ -59,6 +59,11 @@ If the OpenTelemetry SDK is not configured with a Logger provider, then this add
 
 Log sending can be disabled with the `disableLogSending: true` option.
 
+When Bunyan emits a top-level `err` field, for example via
+`logger.error(err, 'msg')`, this instrumentation forwards it through the Logs
+API `exception` field so the SDK can populate standard `exception.*`
+attributes.
+
 ### Log correlation
 
 Bunyan logger calls in the context of a tracing span will have fields
@@ -84,12 +89,12 @@ Log injection can be disabled with the `disableLogCorrelation: true` option.
 
 ### Bunyan instrumentation options
 
-| Option                  | Type              | Description |
-| ----------------------- | ----------------- | ----------- |
-| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
+| Option                  | Type              | Description                                                                                                                                                |
+|-------------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`.                                                                                           |
 | `logSeverity`           | `SeverityNumber`  | Control severity level for [log sending](#log-sending). Default `SeverityNumber.UNSPECIFIED`, it will use Bunnyan Logger's current level when unspecified. |
-| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
-| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |
+| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`.                                                                                   |
+| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false.         |
 
 ### Using OpenTelemetryBunyanStream without instrumentation
 
@@ -120,7 +125,8 @@ const logger = bunyan.createLogger({
 
 ## Semantic Conventions
 
-This package does not currently generate any attributes from semantic conventions.
+This package forwards Bunyan `err` fields through the Logs API `exception`
+field, allowing the SDK to populate standard `exception.*` attributes.
 
 ## Useful links
 

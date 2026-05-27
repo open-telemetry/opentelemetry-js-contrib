@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -47,12 +36,15 @@ export interface GlobalErrorsInstrumentationConfig
 }
 
 export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsInstrumentationConfig> {
+  declare private _onErrorHandler?: (
+    event: ErrorEvent | PromiseRejectionEvent
+  ) => void;
+
   constructor(config: GlobalErrorsInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this.onError = this.onError.bind(this);
   }
 
-  init() { }
+  init() {}
 
   onError(event: ErrorEvent | PromiseRejectionEvent) {
     const EXCEPTION_EVENT_NAME = 'exception';
@@ -96,12 +88,17 @@ export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsIn
   }
 
   override disable(): void {
-    window.removeEventListener('error', this.onError);
-    window.removeEventListener('unhandledrejection', this.onError);
+    if (this._onErrorHandler) {
+      window.removeEventListener('error', this._onErrorHandler);
+      window.removeEventListener('unhandledrejection', this._onErrorHandler);
+    }
   }
 
   override enable(): void {
-    window.addEventListener('error', this.onError);
-    window.addEventListener('unhandledrejection', this.onError);
+    if (!this._onErrorHandler) {
+      this._onErrorHandler = this.onError.bind(this);
+    }
+    window.addEventListener('error', this._onErrorHandler);
+    window.addEventListener('unhandledrejection', this._onErrorHandler);
   }
 }

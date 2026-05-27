@@ -11,9 +11,9 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Status
 
-| Maturity                                              | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
-| ----------------------------------------------------- | -------------------------------------------------------- | --------------------- |
-| [Unmaintained](../../CONTRIBUTING.md#unmaintained) | N/A                                                      | API 1.0+<br/>SDK 1.0+ |
+| Maturity                                           | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
+|----------------------------------------------------|-------------------------------------------------------|-----------------------|
+| [Unmaintained](../../CONTRIBUTING.md#unmaintained) | N/A                                                   | API 1.0+<br/>SDK 1.0+ |
 
 ## Installation
 
@@ -37,7 +37,7 @@ To load the instrumentation, specify it in the Node Tracer's configuration:
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
-const { ConnectInstrumentation } = require('@opentelemetry/instrumentation-connnect');
+const { ConnectInstrumentation } = require('@opentelemetry/instrumentation-connect');
 
 const provider = new NodeTracerProvider();
 provider.register();
@@ -60,7 +60,7 @@ This package implements Semantic Convention v1.33.1.
 Attributes collected:
 
 | Attribute    | Short Description                  |
-| ------------ | ---------------------------------- |
+|--------------|------------------------------------|
 | `http.route` | The matched route (path template). |
 
 ## Useful links

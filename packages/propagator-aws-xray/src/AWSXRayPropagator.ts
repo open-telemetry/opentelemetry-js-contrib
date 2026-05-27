@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -58,7 +47,7 @@ const NOT_SAMPLED = '0';
  * X-Amzn-Trace-Id: Root=1-5759e988-bd862e3fe1be46a994272793;Parent=53995c3f42cd8ad8;Sampled=1
  */
 export class AWSXRayPropagator implements TextMapPropagator {
-  inject(context: Context, carrier: unknown, setter: TextMapSetter) {
+  public inject(context: Context, carrier: unknown, setter: TextMapSetter) {
     const spanContext = trace.getSpan(context)?.spanContext();
     if (!spanContext || !isSpanContextValid(spanContext)) return;
 
@@ -77,14 +66,24 @@ export class AWSXRayPropagator implements TextMapPropagator {
     setter.set(carrier, AWSXRAY_TRACE_ID_HEADER, traceHeader);
   }
 
-  extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
+  public extract(
+    context: Context,
+    carrier: unknown,
+    getter: TextMapGetter
+  ): Context {
     const spanContext = this.getSpanContextFromHeader(carrier, getter);
     if (!isSpanContextValid(spanContext)) return context;
 
+    // If a previous propagator already set the trace state, ensure it's propagated
+    const existingSpan = trace.getSpan(context);
+    const existingTraceState = existingSpan?.spanContext()?.traceState;
+    if (existingTraceState) {
+      spanContext.traceState = existingTraceState;
+    }
     return trace.setSpan(context, trace.wrapSpanContext(spanContext));
   }
 
-  fields(): string[] {
+  public fields(): string[] {
     return [AWSXRAY_TRACE_ID_HEADER];
   }
 

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as api from '@opentelemetry/api';
@@ -36,8 +25,8 @@ import {
  * This class is the base component for a React component with lifecycle instrumentation
  */
 export class BaseOpenTelemetryComponent extends React.Component {
-  readonly component: string = 'react-load';
-  moduleName = this.component;
+  public readonly component: string = 'react-load';
+  public moduleName = this.component;
   private _parentSpanMap: WeakMap<React.Component, api.Span>;
   private static _tracer: api.Tracer;
   private static _logger: api.DiagLogger = api.diag;
@@ -56,7 +45,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * @param name Name of tracer
    * @param version Version of tracer, this is optional. When not provided it will use the latest.
    */
-  static setTracer(name: string, version?: string): void {
+  public static setTracer(name: string, version?: string): void {
     BaseOpenTelemetryComponent._tracer = api.trace.getTracer(
       name,
       version ? version : PACKAGE_VERSION
@@ -67,7 +56,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * Sets the logger for all components being instrumented
    * @param logger
    */
-  static setLogger(logger: api.DiagLogger): void {
+  public static setLogger(logger: api.DiagLogger): void {
     api.diag.setLogger(logger);
     BaseOpenTelemetryComponent._logger = logger;
   }

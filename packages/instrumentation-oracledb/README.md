@@ -49,12 +49,13 @@ Caveats with  ``oracledb`` Thick mode:
 ### Oracle Instrumentation Options
 
 | Options | Type | Default | Description |
-| ------- | ---- | --------| ----------- |
+| ------- | ---- | ------- | ----------- |
 | `enhancedDatabaseReporting` | `boolean` | `false` | If true, details about the sql statement's bind values (being set on parameters ``db.operation.parameter.<key>``) and the sql string (being set on parameter ``db.query.text``) will be attached to the spans generated |
 | `dbStatementDump` | `boolean` | `false` | If true, ``db.query.text`` will contain the sql string in the spans generated |
 | `requestHook` | `OracleInstrumentationExecutionRequestHook` (function) | | Function for adding custom span attributes using information about the data for the sql statement being executed |
 | `responseHook` | `OracleInstrumentationExecutionResponseHook` (function) | | Function for adding custom span attributes from the db response |
 | `requireParentSpan` | `boolean` | `false` | If true, requires a parent span to create new spans |
+| `propagateTraceContextToSessionAction` | `boolean` | `false` | If true, injects the W3C Trace Context into the Oracle V$SESSION.ACTION field. This allows the OpenTelemetry Collector to correlate application traces with database server spans. |
 
 ## Useful links
 

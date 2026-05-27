@@ -1,25 +1,11 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 const originalSetTimeout = window.setTimeout;
 
 import { trace } from '@opentelemetry/api';
-import {
-  registerInstrumentations,
-  isWrapped,
-} from '@opentelemetry/instrumentation';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/sdk-trace-base';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
@@ -664,77 +650,13 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should handle disable', () => {
-      assert.strictEqual(
-        isWrapped(HTMLElement.prototype.addEventListener),
-        true,
-        'addEventListener should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(HTMLElement.prototype.removeEventListener),
-        true,
-        'removeEventListener should be wrapped'
-      );
-
-      assert.strictEqual(
-        isWrapped(history.replaceState),
-        true,
-        'replaceState should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.pushState),
-        true,
-        'pushState should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.back),
-        true,
-        'back should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.forward),
-        true,
-        'forward should be wrapped'
-      );
-      assert.strictEqual(isWrapped(history.go), true, 'go should be wrapped');
-
+      const element = createButton();
+      element.addEventListener('click', () => {});
+      element.click();
       userInteractionInstrumentation.disable();
+      element.click();
 
-      assert.strictEqual(
-        isWrapped(HTMLElement.prototype.addEventListener),
-        false,
-        'addEventListener should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(HTMLElement.prototype.removeEventListener),
-        false,
-        'removeEventListener should be unwrapped'
-      );
-
-      assert.strictEqual(
-        isWrapped(history.replaceState),
-        false,
-        'replaceState should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.pushState),
-        false,
-        'pushState should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.back),
-        false,
-        'back should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.forward),
-        false,
-        'forward should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.go),
-        false,
-        'go should be unwrapped'
-      );
+      assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
     });
 
     describe('simulate IE', () => {

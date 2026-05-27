@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as assert from 'assert';
@@ -22,7 +11,12 @@ import * as sinon from 'sinon';
 import { INVALID_SPAN_CONTEXT, context, trace, Span } from '@opentelemetry/api';
 import { diag, DiagLogLevel } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
-import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_EXCEPTION_MESSAGE,
+  ATTR_EXCEPTION_STACKTRACE,
+  ATTR_EXCEPTION_TYPE,
+  ATTR_SERVICE_NAME,
+} from '@opentelemetry/semantic-conventions';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
   InMemorySpanExporter,
@@ -545,6 +539,37 @@ describe('PinoInstrumentation', () => {
       assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.TRACE);
       assert.strictEqual(logRecords[2].severityText, 'trace');
       assert.strictEqual(logRecords[2].body, 'second msg at trace');
+    });
+
+    it('emits exceptions using the Logs API "exception" field', () => {
+      const err = new TypeError('boom');
+      logger.error(err, 'error happened');
+
+      const logRecords = memExporter.getFinishedLogRecords();
+      const rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.body, 'error happened');
+      assert.strictEqual(rec.attributes[ATTR_EXCEPTION_TYPE], 'TypeError');
+      assert.strictEqual(rec.attributes[ATTR_EXCEPTION_MESSAGE], 'boom');
+      assert.ok(rec.attributes[ATTR_EXCEPTION_STACKTRACE]);
+
+      // The original pino error field should not be emitted as a regular attribute.
+      assert.strictEqual(rec.attributes.err, undefined);
+    });
+
+    it('uses custom errorKey with the Logs API "exception" field', () => {
+      logger = pino({ errorKey: 'myErr' }, stream);
+      logger.error(new Error('custom key error'), 'error with custom key');
+
+      const logRecords = memExporter.getFinishedLogRecords();
+      const rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.body, 'error with custom key');
+      assert.strictEqual(rec.attributes[ATTR_EXCEPTION_TYPE], 'Error');
+      assert.strictEqual(
+        rec.attributes[ATTR_EXCEPTION_MESSAGE],
+        'custom key error'
+      );
+      assert.ok(rec.attributes[ATTR_EXCEPTION_STACKTRACE]);
+      assert.strictEqual(rec.attributes.myErr, undefined);
     });
 
     it('emits log records from child logger at lower level', () => {

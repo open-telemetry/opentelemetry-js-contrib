@@ -45,7 +45,7 @@ registerInstrumentations({
 You can set the following:
 
 | Options        | Type                                   | Description                                                                                              |
-| -------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+|----------------|----------------------------------------|----------------------------------------------------------------------------------------------------------|
 | `producerHook` | `KafkaProducerCustomAttributeFunction` | Function called before a producer message is sent. Allows for adding custom attributes to the span.      |
 | `consumerHook` | `KafkaConsumerCustomAttributeFunction` | Function called before a consumer message is processed. Allows for adding custom attributes to the span. |
 
@@ -56,7 +56,7 @@ This package uses `@opentelemetry/semantic-conventions` version `1.30+`, which i
 ### Spans Emitted
 
 | KafkaJS Object | Action                     | Span Kind | Span Name                  | Operation Type / Name |
-| -------------- | -------------------------- | --------- | -------------------------- | --------------------- |
+|----------------|----------------------------|-----------|----------------------------|-----------------------|
 | Consumer       | `eachBatch`                | Client    | `poll <topic-name>`        | `receive` / `poll`    |
 | Consumer       | `eachBatch`, `eachMessage` | Consumer  | `process <topic-name>` [1] | `process` / `process` |
 | Producer       | `send`                     | Producer  | `send <topic-name>`        | `send` / `send`       |
@@ -65,12 +65,12 @@ This package uses `@opentelemetry/semantic-conventions` version `1.30+`, which i
 
 ### Metrics Emitted
 
-| KafkaJS Object        | Metric Name                           | Short Description                                            |
-| --------------------- | ------------------------------------- | ------------------------------------------------------------ |
-| Consumer              | `messaging.process.duration`          | Duration of processing operation. [1]                        |
-| Consumer              | `messaging.client.consumed.messages`  | Number of messages that were delivered to the application.   |
-| Consumer and Producer | `messaging.client.operation.duration` | Number of messages that were delivered to the application. (Only emitted for kafkajs@1.5.0 and later.)   |
-| Producer              | `messaging.client.sent.messages`      | Number of messages producer attempted to send to the broker. |
+| KafkaJS Object        | Metric Name                           | Short Description                                                                                      |
+|-----------------------|---------------------------------------|--------------------------------------------------------------------------------------------------------|
+| Consumer              | `messaging.process.duration`          | Duration of processing operation. [1]                                                                  |
+| Consumer              | `messaging.client.consumed.messages`  | Number of messages that were delivered to the application.                                             |
+| Consumer and Producer | `messaging.client.operation.duration` | Number of messages that were delivered to the application. (Only emitted for kafkajs@1.5.0 and later.) |
+| Producer              | `messaging.client.sent.messages`      | Number of messages producer attempted to send to the broker.                                           |
 
 **[1] `messaging.process.duration`:** In the context of `eachBatch`, this metric will be emitted once for each message but the value reflects the duration of the entire batch.
 
@@ -79,7 +79,7 @@ This package uses `@opentelemetry/semantic-conventions` version `1.30+`, which i
 These attributes are added to both spans and metrics, where possible.
 
 | Attribute                            | Short Description                                                                                                                                                  |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|--------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `messaging.system`                   | An identifier for the messaging system being used (i.e. `"kafka"`).                                                                                                |
 | `messaging.destination.name`         | The message destination name.                                                                                                                                      |
 | `messaging.operation.type`           | A string identifying the type of messaging operation.                                                                                                              |

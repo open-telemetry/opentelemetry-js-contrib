@@ -5,11 +5,10 @@
 
 Resource detector for Google Cloud Platform.
 
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+Compatible with OpenTelemetry JS API `1.0+` and SDK `2.0+`.
 
 ## Installation
 
-The GCP resource detector requires Node.JS 10+ due to a dependency on [`gcp-metadata`][] which uses features only available in Node.JS 10+.
 
 ```bash
 npm install --save @opentelemetry/resource-detector-gcp
@@ -29,21 +28,24 @@ const tracerProvider = new NodeTracerProvider({ resource });
 
 ## Available detectors
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This package implements Semantic Convention [Version 1.39.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.39.0/docs/README.md)
 
 ### GCP Detector
 
-| Resource Attribute      | Description                                                   |
-|-------------------------|---------------------------------------------------------------|
-| cloud.account.id        | Value of `project-id` from GCP Metadata project               |
-| cloud.availability_zone | Value of `zone` from GCP Metadata instance                    |
-| cloud.provider          | The cloud provider. In this context, it's always "gcp"        |
-| container.name          | Value of Environment Variable `CONTAINER_NAME`                |
-| host.id                 | Value of `id` from GCP Metadata instance                      |
-| host.name               | Value of `hostname` from GCP Metadata instance                |
-| k8s.cluster.name        | Value of `attributes/cluster-name` from GCP Metadata instance |
-| k8s.namespace.name      | Value of Environment Variable `NAMESPACE`                     |
-| k8s.pod.name            | Value of Environment Variable `HOSTNAME`                      |
+| Resource Attribute      | Description                                                           |
+|-------------------------|-----------------------------------------------------------------------|
+| cloud.account.id        | Value of `project-id` from GCP Metadata project.                      |
+| cloud.availability_zone | Value of `zone` from GCP Metadata instance (parsed from full path).   |
+| cloud.platform          | The GCP platform where the application is running.                    |
+| cloud.provider          | The cloud provider. In this context, it's always `gcp`                |
+| cloud.region            | Value of `region` from GCP Metadata instance (parsed from full path). |
+| faas.instance           | Value of `id` from GCP Metadata instance.                             |
+| faas.name               | Value of Environment Variable `K_SERVICE`.                            |
+| faas.version            | Value of Environment Variable `K_REVISION`.                           |
+| host.id                 | Value of `id` from GCP Metadata instance.                             |
+| host.name               | Value of `name` from GCP Metadata instance.                           |
+| host.type               | Value of `machine-type` from GCP Metadata instance.                   |
+| k8s.cluster.name        | Value of `attributes/cluster-name` from GCP Metadata instance.        |
 
 ## Useful links
 
@@ -56,7 +58,6 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
-[`gcp-metadata`]: https://www.npmjs.com/package/gcp-metadata
 [GCP Metadata Documentation]: https://cloud.google.com/compute/docs/metadata/overview
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE

@@ -9,8 +9,8 @@ Resource detector for Amazon Web Services.
 
 ## Status
 
-| Maturity                                  | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
-| ----------------------------------------- | ----------------------------------------------------- | --------------------- |
+| Maturity                               | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
+|----------------------------------------|-------------------------------------------------------|-----------------------|
 | [Stable](../../CONTRIBUTING.md#stable) | @jj22ee                                               | API 1.0+<br/>SDK 1.0+ |
 
 ## Installation
@@ -67,26 +67,26 @@ Populates `cloud` and `host` for processes running on [Amazon EC2](https://aws.a
 
 Populates `container` for containers running on [Amazon ECS](https://aws.amazon.com/ecs/).
 
-| Resource Attribute      | Description                                                                            |
-|-------------------------|----------------------------------------------------------------------------------------|
-| aws.ecs.container.arn   | Value of `ContainerARN` from the request to the metadata Uri. The Metadata Uri is stored on the Environment Variable `ECS_CONTAINER_METADATA_URI_V4`  |
-| aws.ecs.cluster.arn     | Value in the format `${baseArn}:cluster/${cluster}`, with `baseArn` and `cluster` from a `ECS_CONTAINER_METADATA_URI_V4/task` request, with values from `TaskARN` and `Cluster` respectively |
-| aws.ecs.launchtype      | Value of `LaunchType` from `ECS_CONTAINER_METADATA_URI_V4/task` request                |
-| aws.ecs.task.arn        | Value of `TaskARN` from `ECS_CONTAINER_METADATA_URI_V4/task` request                   |
-| aws.ecs.task.family     | Value of `Family` from `ECS_CONTAINER_METADATA_URI_V4/task` request                    |
-| aws.ecs.task.revision   | Value of `Revision` from `ECS_CONTAINER_METADATA_URI_V4/task` request                  |
+| Resource Attribute      | Description                                                                                                                                                                                                                                                                                                                                             |
+|-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| aws.ecs.container.arn   | Value of `ContainerARN` from the request to the metadata Uri. The Metadata Uri is stored on the Environment Variable `ECS_CONTAINER_METADATA_URI_V4`                                                                                                                                                                                                    |
+| aws.ecs.cluster.arn     | Value in the format `${baseArn}:cluster/${cluster}`, with `baseArn` and `cluster` from a `ECS_CONTAINER_METADATA_URI_V4/task` request, with values from `TaskARN` and `Cluster` respectively                                                                                                                                                            |
+| aws.ecs.launchtype      | Value of `LaunchType` from `ECS_CONTAINER_METADATA_URI_V4/task` request                                                                                                                                                                                                                                                                                 |
+| aws.ecs.task.arn        | Value of `TaskARN` from `ECS_CONTAINER_METADATA_URI_V4/task` request                                                                                                                                                                                                                                                                                    |
+| aws.ecs.task.family     | Value of `Family` from `ECS_CONTAINER_METADATA_URI_V4/task` request                                                                                                                                                                                                                                                                                     |
+| aws.ecs.task.revision   | Value of `Revision` from `ECS_CONTAINER_METADATA_URI_V4/task` request                                                                                                                                                                                                                                                                                   |
 | aws.log.group.arns      | Value on format `arn:aws:logs:${logsRegion}:${awsAccount}:log-group:${logsGroupName}`, with `logsRegions` and `logsGroupName` from logs metadata, values of `awslogs-region` and `awslogs-group` respectively, and `awsAccount` parsed value from the `TaskARN`. Logs metadata values come from `LogOptions` on `ECS_CONTAINER_METADATA_URI_V4` request |
-| aws.log.group.names     | Value of `awslogs-group` from logs metadata. Logs metadata values come from `LogOptions` on `ECS_CONTAINER_METADATA_URI_V4` request |
-| aws.log.stream.arns     | Value on format `arn:aws:logs:${logsRegion}:${awsAccount}:log-group:${logsGroupName}:log-stream:${logsStreamName}`, with `logsRegions`, `logsGroupName` and `logsStreamName` from logs metadata, values of `awslogs-region`, `awslogs-group` and `awslogs-stream` respectively, and `awsAccount` parsed value from the `TaskARN` |
-| aws.log.stream.names    | Value of `awslogs-stream` from logs metadata |
-| cloud.account.id        | Parsed value from the `TaskARN` |
-| cloud.availability_zone | Value of `AvailabilityZone` from `ECS_CONTAINER_METADATA_URI_V4/task` request. This value is not available in all Fargate runtimes |
-| cloud.platform          | The cloud platform. In this context, it's always "aws_ecs"                             |
-| cloud.provider          | The cloud provider. In this context, it's always "aws"                                 |
-| cloud.region            | Parsed value from the `TaskARN`                                                        |
-| cloud.resource_id       | Value of `ContainerARN` from `ECS_CONTAINER_METADATA_URI_V4/task` request              |
-| container.id            | Value from file `/proc/self/cgroup`                                                    |
-| container.name          | The hostname of the operating system                                                   |
+| aws.log.group.names     | Value of `awslogs-group` from logs metadata. Logs metadata values come from `LogOptions` on `ECS_CONTAINER_METADATA_URI_V4` request                                                                                                                                                                                                                     |
+| aws.log.stream.arns     | Value on format `arn:aws:logs:${logsRegion}:${awsAccount}:log-group:${logsGroupName}:log-stream:${logsStreamName}`, with `logsRegions`, `logsGroupName` and `logsStreamName` from logs metadata, values of `awslogs-region`, `awslogs-group` and `awslogs-stream` respectively, and `awsAccount` parsed value from the `TaskARN`                        |
+| aws.log.stream.names    | Value of `awslogs-stream` from logs metadata                                                                                                                                                                                                                                                                                                            |
+| cloud.account.id        | Parsed value from the `TaskARN`                                                                                                                                                                                                                                                                                                                         |
+| cloud.availability_zone | Value of `AvailabilityZone` from `ECS_CONTAINER_METADATA_URI_V4/task` request. This value is not available in all Fargate runtimes                                                                                                                                                                                                                      |
+| cloud.platform          | The cloud platform. In this context, it's always "aws_ecs"                                                                                                                                                                                                                                                                                              |
+| cloud.provider          | The cloud provider. In this context, it's always "aws"                                                                                                                                                                                                                                                                                                  |
+| cloud.region            | Parsed value from the `TaskARN`                                                                                                                                                                                                                                                                                                                         |
+| cloud.resource_id       | Value of `ContainerARN` from `ECS_CONTAINER_METADATA_URI_V4/task` request                                                                                                                                                                                                                                                                               |
+| container.id            | Value from file `/proc/self/cgroup`                                                                                                                                                                                                                                                                                                                     |
+| container.name          | The hostname of the operating system                                                                                                                                                                                                                                                                                                                    |
 
 ### AWS EKS Detector
 

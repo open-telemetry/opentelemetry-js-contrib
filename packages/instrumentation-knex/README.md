@@ -76,7 +76,7 @@ This will cause both the old and new semantic conventions to be emitted during t
 Attributes collected:
 
 | v1.7.0 semconv  | v1.23.0 semconv      | Short Description                                                           |
-|-----------------|----------------------|-----------------------------------------------------------------------------|
+| --------------- | -------------------- | --------------------------------------------------------------------------- |
 | `db.name`       | `db.namespace`       | This attribute is used to report the name of the database being accessed.   |
 | `db.operation`  | `db.operation.name`  | The name of the operation being executed.                                   |
 | `db.sql.table`  | `db.collection.name` | The name of the primary table that the operation is acting upon.            |

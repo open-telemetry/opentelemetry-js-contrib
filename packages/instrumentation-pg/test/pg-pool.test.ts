@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -326,6 +315,77 @@ describe('pg-pool', () => {
       }
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
+    });
+
+    it('should not create connect spans when ignoreConnectSpans=true', async () => {
+      const newPool = new pgPool(CONFIG);
+      create({
+        ignoreConnectSpans: true,
+      });
+      const span = provider.getTracer('test-pg-pool').startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const client = await newPool.connect();
+        try {
+          await client.query('SELECT NOW()');
+        } finally {
+          client.release();
+        }
+      });
+      await newPool.end();
+
+      const spans = memoryExporter.getFinishedSpans();
+      const poolConnectSpans = spans.filter(s => s.name === 'pg-pool.connect');
+      const clientConnectSpans = spans.filter(s => s.name === 'pg.connect');
+      const querySpans = spans.filter(s => s.name.startsWith('pg.query'));
+
+      assert.strictEqual(
+        poolConnectSpans.length,
+        0,
+        'Expected no pg-pool.connect spans'
+      );
+      assert.strictEqual(
+        clientConnectSpans.length,
+        0,
+        'Expected no pg.connect spans'
+      );
+      assert.ok(querySpans.length > 0, 'Expected query spans to be created');
+
+      // Reset config for subsequent tests
+      create({});
+    });
+
+    it('should still record pool metrics when ignoreConnectSpans=true', async () => {
+      const metricReader = testUtils.initMeterProvider(instrumentation);
+      const newPool = new pgPool(CONFIG);
+      create({
+        ignoreConnectSpans: true,
+      });
+
+      const client = await newPool.connect();
+      try {
+        await client.query('SELECT NOW()');
+      } finally {
+        client.release();
+      }
+
+      const { resourceMetrics, errors } = await metricReader.collect();
+      assert.deepEqual(
+        errors,
+        [],
+        'expected no errors during metric collection'
+      );
+
+      const metrics = resourceMetrics.scopeMetrics[0].metrics;
+      assert.strictEqual(
+        metrics[1].descriptor.name,
+        METRIC_DB_CLIENT_CONNECTION_COUNT,
+        'Expected connection count metric'
+      );
+
+      await newPool.end();
+
+      // Reset config for subsequent tests
+      create({});
     });
   });
 

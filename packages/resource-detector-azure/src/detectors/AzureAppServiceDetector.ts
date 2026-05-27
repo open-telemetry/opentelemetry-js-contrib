@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
@@ -36,7 +25,11 @@ import {
   ATTR_CLOUD_PLATFORM,
   CLOUD_PLATFORM_VALUE_AZURE_APP_SERVICE,
 } from '../semconv';
-import { getAzureResourceUri, isAzureFunction } from '../utils';
+import {
+  getAzureResourceUri,
+  isAzureContainerApps,
+  isAzureFunction,
+} from '../utils';
 
 const APP_SERVICE_ATTRIBUTE_ENV_VARS = {
   [ATTR_CLOUD_REGION]: REGION_NAME,
@@ -51,10 +44,10 @@ const APP_SERVICE_ATTRIBUTE_ENV_VARS = {
  * @returns a {@link Resource} populated with data about the environment or an empty Resource if detection fails.
  */
 class AzureAppServiceDetector implements ResourceDetector {
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     let attributes = {};
     const websiteSiteName = process.env[WEBSITE_SITE_NAME];
-    if (websiteSiteName && !isAzureFunction()) {
+    if (websiteSiteName && !isAzureFunction() && !isAzureContainerApps()) {
       attributes = {
         ...attributes,
         [ATTR_SERVICE_NAME]: websiteSiteName,

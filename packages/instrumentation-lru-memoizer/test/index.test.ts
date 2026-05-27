@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import { LruMemoizerInstrumentation } from '../src';
 import { trace, context } from '@opentelemetry/api';
@@ -34,6 +23,7 @@ describe('lru-memoizer instrumentation', () => {
 
       let memoizerLoadCallback: MemoizerTestCallback;
       const memoizedFoo = memoizer({
+        max: 10,
         load: (_param: unknown, callback: MemoizerTestCallback) => {
           memoizerLoadCallback = callback;
         },
@@ -61,6 +51,7 @@ describe('lru-memoizer instrumentation', () => {
       const ongoingMemoizerLoads: Function[] = [];
 
       const memoizedFoo = memoizer({
+        max: 10,
         load: (_param: unknown, callback: MemoizerTestCallback) => {
           // don't call the cb yet, first invoke another call,
           // to let it go into the internal "pendingLoad" queue
@@ -89,6 +80,7 @@ describe('lru-memoizer instrumentation', () => {
 
     it('should not throw when last argument is not callback', () => {
       const memoizedFoo = memoizer({
+        max: 10,
         load: (callback: MemoizerTestCallback) => {
           return 'foo';
         },
@@ -103,6 +95,7 @@ describe('lru-memoizer instrumentation', () => {
   describe('sync', () => {
     it('should not break sync memoizer', () => {
       const memoizedFoo = memoizer.sync({
+        max: 10,
         load: (_params: any) => 'foo',
         hash: () => 'bar',
       } as any);
@@ -117,6 +110,7 @@ describe('lru-memoizer instrumentation', () => {
         .getTracer('lru-memoize-testing');
 
       const memoizedFoo = memoizer.sync({
+        max: 10,
         load: (_params: any) => Promise.resolve('foo'),
         hash: () => 'bar',
       } as any);

@@ -66,7 +66,7 @@ You can set the following:
 ## Semantic Conventions
 
 | Attribute            | Short Description                                                           |
-| ---------------------| --------------------------------------------------------------------------- |
+| -------------------- | --------------------------------------------------------------------------- |
 | `db.namespace`       | The name of the database being accessed.                                    |
 | `db.operation.name`  | The name of the operation being executed (e.g. the SQL keyword).            |
 | `db.collection.name` | The name of the table being accessed.                                       |

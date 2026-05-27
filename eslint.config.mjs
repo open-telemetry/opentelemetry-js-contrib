@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import eslint from '@eslint/js';
@@ -19,22 +8,12 @@ import tseslint from 'typescript-eslint';
 import globals from 'globals';
 import nodePlugin from 'eslint-plugin-n';
 import yalhPlugin from 'eslint-plugin-yet-another-license-header';
+import baselinePlugin from 'eslint-plugin-baseline-js';
 
 const defaultLicense = `
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 `;
 
@@ -46,7 +25,7 @@ const defaultLicense = `
 //    Copyright <someone>
 //    Copyright <another someone>
 const licensePattern =
-  /^\/\*\n \* Copyright The OpenTelemetry Authors(?:, [^\n]+)*\n(?: \* Copyright [^\n]+\n)* \*\n \* Licensed under the Apache License, Version 2.0 \(the "License"\);\n \* you may not use this file except in compliance with the License.\n \* You may obtain a copy of the License at\n \*\n \* {6}https:\/\/www.apache.org\/licenses\/LICENSE-2.0\n \*\n \* Unless required by applicable law or agreed to in writing, software\n \* distributed under the License is distributed on an "AS IS" BASIS,\n \* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n \* See the License for the specific language governing permissions and\n \* limitations under the License.\n \*\/$/;
+  /^\/\*\n \* Copyright The OpenTelemetry Authors(?:, [^\n]+)*\n(?: \* Copyright [^\n]+\n)* \* SPDX-License-Identifier: Apache-2.0\n \*\/$/;
 
 const baseConfig = tseslint.config(
   {
@@ -156,6 +135,15 @@ const baseConfig = tseslint.config(
       '@typescript-eslint/no-empty-function': ['off'],
       '@typescript-eslint/no-shadow': ['warn'],
       'prefer-rest-params': 'off',
+      '@typescript-eslint/explicit-member-accessibility': [
+        'error',
+        {
+          overrides: {
+            // `constructor` is public by default.
+            constructors: 'no-public',
+          },
+        },
+      ],
     },
   },
 
@@ -184,6 +172,7 @@ const baseConfig = tseslint.config(
         'warn',
         { argsIgnorePattern: '^_' },
       ],
+      '@typescript-eslint/explicit-member-accessibility': 'off',
       'no-empty': 'off',
     },
   },
@@ -201,10 +190,19 @@ const baseConfig = tseslint.config(
     files: [
       '**/examples/web/**/*',
       '**/packages/**/browser/**/*',
-      '**/packages/instrumentation-user-interaction/**/*',
+      '**/packages/auto-instrumentations-web/**/*',
       '**/packages/instrumentation-document-load/**/*',
       '**/packages/instrumentation-long-task/**/*',
+      '**/packages/instrumentation-user-interaction/**/*',
+      '**/packages/instrumentation-web-exception/**/*',
       '**/packages/plugin-react-load/**/*',
+    ],
+    plugins: { 'baseline-js': baselinePlugin },
+    extends: [
+      baselinePlugin.configs['recommended-ts']({
+        available: 'widely',
+        level: 'error',
+      }),
     ],
     languageOptions: {
       globals: {
@@ -212,6 +210,14 @@ const baseConfig = tseslint.config(
         Zone: 'readonly',
         Task: 'readonly',
       },
+    },
+  },
+
+  // Gradual adoption of explicit-member-accessibility
+  {
+    files: ['**/packages/instrumentation-*/**'],
+    rules: {
+      '@typescript-eslint/explicit-member-accessibility': 'off',
     },
   }
 );

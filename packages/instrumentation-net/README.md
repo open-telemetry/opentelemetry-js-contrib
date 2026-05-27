@@ -41,18 +41,28 @@ registerInstrumentations({
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This instrumentation implements Semantic Conventions (semconv) v1.7.0. Since then, many networking-related semantic conventions (in semconv v1.21.0 and v1.23.1) were stabilized. As of `@opentelemetry/instrumentation-net@0.53.0` support has been added for migrating to the stable semantic conventions using the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable as follows:
 
-Attributes added to `connect` spans:
+1. Upgrade to the latest version of this instrumentation package.
+2. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` to emit both old and stable semantic conventions. (The [`http` token is used to control the `net.*` attributes](https://github.com/open-telemetry/opentelemetry-js/issues/5663#issuecomment-3349204546).)
+3. Modify alerts, dashboards, metrics, and other processes in your Observability system to use the stable semantic conventions.
+4. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http` to emit only the stable semantic conventions.
 
-| Attribute                 | Short Description                                                        |
-|---------------------------|--------------------------------------------------------------------------|
-| `net.transport`           | `IP.TCP`, `pipe` or `Unix`                                               |
-| `net.peer.name`           | Host name or the IPC file path                                           |
-| `net.peer.ip` (for TCP)   | Remote address of the peer (dotted decimal for IPv4 or RFC5952 for IPv6) |
-| `net.peer.port` (for TCP) | Remote port number                                                       |
-| `net.host.ip` (for TCP)   | Like net.peer.ip but for the host IP. Useful in case of a multi-IP host  |
-| `net.host.port` (for TCP) | Like net.peer.port but for the host port                                 |
+By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` is not set or does not include `http`, then the old v1.7.0 semconv is used.
+The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new networking semconv, after which a new minor version will use the new semconv by default and drop support for the old semconv.
+See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/) and [deprecated network attributes](https://opentelemetry.io/docs/specs/semconv/registry/attributes/network/#deprecated-network-attributes) for details.
+
+Attributes collected:
+
+| Old semconv     | Stable semconv          | Description                                                                       |
+| --------------- | ----------------------- | --------------------------------------------------------------------------------- |
+| `net.transport` | `network.transport`     | One of `pipe`, `unix`, `ip_tcp` (old) or `tcp` (stable)                           |
+| `net.peer.name` | `server.address`        | Host name or the IPC file path                                                    |
+| `net.peer.port` | `server.port`           | Remote port number                                                                |
+| `net.peer.ip`   | `network.peer.address`  | Peer address of the network connection - IP address or Unix domain socket name.   |
+| `net.host.ip`   | `network.local.address` | Local address of the network connection - IP address or Unix domain socket name.  |
+| `net.host.port` | `network.local.port`    | Local port number of the network connection.                                      |
+
 
 ## Useful links
 

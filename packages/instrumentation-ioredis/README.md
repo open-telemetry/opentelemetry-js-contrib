@@ -46,12 +46,12 @@ registerInstrumentations({
 
 IORedis instrumentation has few options available to choose from. You can set the following:
 
-| Options                 | Type                                              | Description                                                                                                       |
-|-------------------------|---------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| `dbStatementSerializer` | `DbStatementSerializer`                           | IORedis instrumentation will serialize db.statement using the specified function.                                 |
+| Options                 | Type                                              | Description |
+| ----------------------- | ------------------------------------------------- | ----------- |
+| `dbStatementSerializer` | `DbStatementSerializer`                           | IORedis instrumentation will serialize db.statement using the specified function. |
 | `requestHook`           | `RedisRequestCustomAttributeFunction` (function)  | Function for adding custom attributes on db request. Receives params: `span, { moduleVersion, cmdName, cmdArgs }` |
-| `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response                                                              |
-| `requireParentSpan`     | `boolean`                                         | Require parent to create ioredis span, default when unset is true                                                 |
+| `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response |
+| `requireParentSpan`     | `boolean`                                         | Require parent to create ioredis span, default when unset is true |
 
 #### Custom db.statement Serializer
 
@@ -100,17 +100,27 @@ requestHook: function (
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This instrumentation implements Semantic Conventions (semconv) v1.7.0. Since then, networking (in semconv v1.23.1) and database (in semconv v1.33.0) semantic conventions were stabilized. As of `@opentelemetry/instrumentation-ioredis@0.57.0` support has been added for migrating to the stable semantic conventions using the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable as follows:
+
+1. Upgrade to the latest version of this instrumentation package.
+2. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup,database/dup` to emit both old and stable semantic conventions. (The `http` token is used to control the `net.*` attributes, the `database` token to control to `db.*` attributes.)
+3. Modify alerts, dashboards, metrics, and other processes in your Observability system to use the stable semantic conventions.
+4. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http,database` to emit only the stable semantic conventions.
+
+By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` includes neither of the above tokens, the old v1.7.0 semconv is used.
+The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new database and networking semconv, after which a new minor version will use the new semconv by default and drop support for the old semconv.
+See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/) and the [database migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/) for details.
 
 Attributes collected:
 
-| Attribute              | Short Description                                                           |
-|------------------------|-----------------------------------------------------------------------------|
-| `db.connection_string` | The connection string used to connect to the database.                      |
-| `db.statement`         | The database statement being executed.                                      |
-| `db.system`            | An identifier for the database management system (DBMS) product being used. |
-| `net.peer.name`        | Remote hostname or similar.                                                 |
-| `net.peer.port`        | Remote port number.                                                         |
+| Old semconv            | Stable semconv   | Description |
+| ---------------------- | ---------------- | ----------- |
+| `db.connection_string` | Removed          |             |
+| `db.system`            | `db.system.name` | 'redis'     |
+| `db.statement`         | `db.query.text`  | The database query being executed. |
+| `net.peer.port`        | `server.port`    | Remote port number. |
+| `net.peer.name`        | `server.address` | Remote hostname or similar. |
+
 
 ## Useful links
 

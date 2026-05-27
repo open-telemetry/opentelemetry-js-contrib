@@ -44,12 +44,12 @@ registerInstrumentations({
 
 You can set the following instrumentation options:
 
-| Options | Type | Description |
-| ------- | ---- | ----------- |
-| `responseHook` | `MySQL2InstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
-| `addSqlCommenterCommentToQueries` | `boolean` | If true, adds [sqlcommenter](https://github.com/open-telemetry/opentelemetry-sqlcommenter) specification compliant comment to queries with tracing context (default false). _NOTE: A comment will not be added to queries that already contain `--` or `/* ... */` in them, even if these are not actually part of comments_ |
-| `maskStatement` | `boolean` | If true, masks the `db.statement` attribute in spans (default false) with the `maskStatementHook` |
-| `maskStatementHook` | `MySQL2InstrumentationMaskStatementHook` (function) | Function for masking the `db.statement` attribute in spans  Default: `return query.replace(/\b\d+\b/g, '?').replac(/(["'])(?:(?=(\\?))\2.)*?\1/g, '?');`|
+| Options                           | Type                                                    | Description                                                                                                                                                                                                                                                                                                                  |
+|-----------------------------------|---------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `responseHook`                    | `MySQL2InstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response                                                                                                                                                                                                                                                                       |
+| `addSqlCommenterCommentToQueries` | `boolean`                                               | If true, adds [sqlcommenter](https://github.com/open-telemetry/opentelemetry-sqlcommenter) specification compliant comment to queries with tracing context (default false). _NOTE: A comment will not be added to queries that already contain `--` or `/* ... */` in them, even if these are not actually part of comments_ |
+| `maskStatement`                   | `boolean`                                               | If true, masks the `db.statement` attribute in spans (default false) with the `maskStatementHook`                                                                                                                                                                                                                            |
+| `maskStatementHook`               | `MySQL2InstrumentationMaskStatementHook` (function)     | Function for masking the `db.statement` attribute in spans  Default: `return query.replace(/\b\d+\b/g, '?').replac(/(["'])(?:(?=(\\?))\2.)*?\1/g, '?');`                                                                                                                                                                     |
 
 
 ## Semantic Conventions
@@ -67,16 +67,16 @@ See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-n
 
 Attributes collected:
 
-| Old semconv            | Stable semconv   | Description |
-| ---------------------- | ---------------- | ----------- |
-| `db.connection_string` | Removed          | The connection string used to connect to the database. |
-| `db.name`              | Removed, integrated into the new `db.namespace` | The name of the database. |
-| `db.system`            | `db.system.name` | 'mysql' |
-| `db.statement`         | `db.query.text`  | The database query being executed. |
-| `db.user`              | Removed          | User used to connect to the database. |
-| (not included)         | `db.namespace`   | The name of the database, fully qualified within the server address and port. |
-| `net.peer.port`        | `server.port`    | Remote port number. |
-| `net.peer.name`        | `server.address` | Remote hostname or similar. |
+| Old semconv            | Stable semconv                                  | Description                                                                   |
+|------------------------|-------------------------------------------------|-------------------------------------------------------------------------------|
+| `db.connection_string` | Removed                                         | The connection string used to connect to the database.                        |
+| `db.name`              | Removed, integrated into the new `db.namespace` | The name of the database.                                                     |
+| `db.system`            | `db.system.name`                                | 'mysql'                                                                       |
+| `db.statement`         | `db.query.text`                                 | The database query being executed.                                            |
+| `db.user`              | Removed                                         | User used to connect to the database.                                         |
+| (not included)         | `db.namespace`                                  | The name of the database, fully qualified within the server address and port. |
+| `net.peer.port`        | `server.port`                                   | Remote port number.                                                           |
+| `net.peer.name`        | `server.address`                                | Remote hostname or similar.                                                   |
 
 
 ## Useful links

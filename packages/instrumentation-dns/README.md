@@ -11,9 +11,9 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Status
 
-| Maturity                                              | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
-| ----------------------------------------------------- | -------------------------------------------------------- | --------------------- |
-| [Unmaintained](../../CONTRIBUTING.md#unmaintained) | N/A                                                      | API 1.0+<br/>SDK 1.0+ |
+| Maturity                                           | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
+|----------------------------------------------------|-------------------------------------------------------|-----------------------|
+| [Unmaintained](../../CONTRIBUTING.md#unmaintained) | N/A                                                   | API 1.0+<br/>SDK 1.0+ |
 
 ## Installation
 

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // avoids a dependency on @opentelemetry/core for hrTime utilities
@@ -256,22 +245,33 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           // want to wrap that iteration to gather telemetry. Instead of wrapping
           // `Symbol.asyncIterator`, which would be nice, we wrap the `iterator`
           // method because it is used internally by `Stream#tee()`.
-          return apiPromise.then(stream => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            self._wrap(stream as any, 'iterator', origIterator => {
-              return () => {
-                return self._onChatCompletionsStreamIterator(
-                  origIterator(),
-                  span,
-                  startNow,
-                  config,
-                  commonAttrs,
-                  ctx
-                );
-              };
-            });
-            return stream;
-          });
+          apiPromise
+            .then(stream => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              self._wrap(stream as any, 'iterator', origIterator => {
+                return () => {
+                  return self._onChatCompletionsStreamIterator(
+                    origIterator(),
+                    span,
+                    startNow,
+                    config,
+                    commonAttrs,
+                    ctx
+                  );
+                };
+              });
+              return stream;
+            })
+            .catch(
+              self._createAPIPromiseRejectionHandler(
+                startNow,
+                span,
+                commonAttrs
+              )
+            );
+          // We have to return the original `APIPromise` instance, because it is
+          // a customized subclass of `Promise`.
+          return apiPromise;
         }
 
         // Non-streaming.
@@ -299,7 +299,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * Start a span for this chat-completion API call. This also emits log events
    * as appropriate for the request params.
    */
-  _startChatCompletionsSpan(
+  private _startChatCompletionsSpan(
     params: ChatCompletionCreateParams,
     config: OpenAIInstrumentationConfig,
     baseURL: string | undefined
@@ -650,7 +650,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     span.end();
   }
 
-  _onChatCompletionsCreateResult(
+  private _onChatCompletionsCreateResult(
     span: Span,
     startNow: number,
     commonAttrs: Attributes,
@@ -748,7 +748,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     span.end();
   }
 
-  _createAPIPromiseRejectionHandler(
+  private _createAPIPromiseRejectionHandler(
     startNow: number,
     span: Span,
     commonAttrs: Attributes
@@ -825,7 +825,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
    * Start a span for this chat-completion API call. This also emits log events
    * as appropriate for the request params.
    */
-  _startEmbeddingsSpan(
+  private _startEmbeddingsSpan(
     params: EmbeddingCreateParams,
     baseURL: string | undefined
   ) {
@@ -857,7 +857,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     return { span, ctx, commonAttrs };
   }
 
-  _onEmbeddingsCreateResult(
+  private _onEmbeddingsCreateResult(
     span: Span,
     startNow: number,
     commonAttrs: Attributes,
