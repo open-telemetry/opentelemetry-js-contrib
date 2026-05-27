@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-langchain-v0.5.0...instrumentation-langchain-v0.6.0) (2026-05-13)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3450](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3450)) ([c8df394](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c8df394f02d68ae48a79a50258682c09dac13b8b))
+* **deps:** update deps matching '@opentelemetry/*' ([#3479](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3479)) ([8891261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8891261cb590efcb661bd9f8afec4d1adf885ad8))
+* **deps:** update deps matching '@opentelemetry/*' ([#3497](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3497)) ([a91133a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a91133aa0aac9486eda26f3338d7673851b8bd69))
+* **deps:** update deps matching '@opentelemetry/*' ([#3507](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3507)) ([e1ef3d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e1ef3d1b14f177afd738f1c967018c1dc6fc900e))
+* **deps:** update deps matching '@opentelemetry/*' ([#3523](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3523)) ([e26a90a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e26a90af6e2fb4666b22388b770add7a60140c9b))
+* **instrumentation-langchain:** add initial package skeleton for instrumentation-langchain ([#3132](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3132)) ([58285c4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/58285c468dee1bd9bf780e519cf2d45efef0dd55))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.64.0 to ^0.65.0
+
 ## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-langchain-v0.4.0...instrumentation-langchain-v0.5.0) (2026-05-06)
 
 

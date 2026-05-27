@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.36.0...resource-detector-instana-v0.37.0) (2026-05-13)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3523](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3523)) ([e26a90a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e26a90af6e2fb4666b22388b770add7a60140c9b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.64.0 to ^0.65.0
+
 ## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.35.0...resource-detector-instana-v0.36.0) (2026-05-06)
 
 

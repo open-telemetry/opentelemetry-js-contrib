@@ -131,9 +131,10 @@ export const METRIC_NODEJS_EVENTLOOP_UTILIZATION =
 export const METRIC_V8JS_GC_DURATION = 'v8js.gc.duration' as const;
 
 /**
- * Total heap memory size pre-allocated.
+ * Maximum heap size allowed by the V8 engine.
  *
- * @note The value can be retrieved from value `space_size` of [`v8.getHeapSpaceStatistics()`](https://nodejs.org/api/v8.html#v8getheapspacestatistics)
+ * @note The value can be retrieved from value `heap_size_limit` of [`v8.getHeapStatistics()`](https://nodejs.org/api/v8.html#v8getheapstatistics).
+ * This represents the absolute ceiling the heap can grow to, controlled by `--max-old-space-size` or V8 defaults.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
@@ -185,3 +186,13 @@ export const NODEJS_EVENTLOOP_STATE_VALUE_ACTIVE = 'active' as const;
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const NODEJS_EVENTLOOP_STATE_VALUE_IDLE = 'idle' as const;
+
+/**
+ * Total heap memory size pre-allocated for a heap space.
+ *
+ * @note The value can be retrieved from value `space_size` of [`v8.getHeapSpaceStatistics()`](https://nodejs.org/api/v8.html#v8getheapspacestatistics)
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_V8JS_MEMORY_HEAP_SPACE_SIZE =
+  'v8js.memory.heap.space.size' as const;

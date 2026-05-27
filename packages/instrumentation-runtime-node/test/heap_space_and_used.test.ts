@@ -5,12 +5,12 @@
 
 import * as assert from 'assert';
 import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
-import { GaugeMetricData } from '@opentelemetry/sdk-metrics/build/src/export/MetricData';
 import { RuntimeNodeInstrumentation } from '../src/index';
 import { TestMetricReader } from './testMetricsReader';
 import {
   ATTR_V8JS_HEAP_SPACE_NAME,
   METRIC_V8JS_MEMORY_HEAP_LIMIT,
+  METRIC_V8JS_MEMORY_HEAP_SPACE_SIZE,
   METRIC_V8JS_MEMORY_HEAP_USED,
   METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
   METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE,
@@ -29,13 +29,28 @@ describe('v8js.memory.heap.*', function () {
     });
   });
 
-  const metricNames = [
-    METRIC_V8JS_MEMORY_HEAP_LIMIT,
-    METRIC_V8JS_MEMORY_HEAP_USED,
-    METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
-    METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE,
+  const metrics: Array<{
+    name: string;
+    expectedDataPointType: DataPointType;
+  }> = [
+    {
+      name: METRIC_V8JS_MEMORY_HEAP_SPACE_SIZE,
+      expectedDataPointType: DataPointType.SUM,
+    },
+    {
+      name: METRIC_V8JS_MEMORY_HEAP_USED,
+      expectedDataPointType: DataPointType.GAUGE,
+    },
+    {
+      name: METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
+      expectedDataPointType: DataPointType.GAUGE,
+    },
+    {
+      name: METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE,
+      expectedDataPointType: DataPointType.GAUGE,
+    },
   ];
-  for (const metricName of metricNames) {
+  for (const { name: metricName, expectedDataPointType } of metrics) {
     it(`should write ${metricName} after monitoringPrecision`, async function () {
       // arrange
       const instrumentation = new RuntimeNodeInstrumentation({
@@ -65,8 +80,8 @@ describe('v8js.memory.heap.*', function () {
 
       assert.strictEqual(
         metric!.dataPointType,
-        DataPointType.GAUGE,
-        'expected gauge'
+        expectedDataPointType,
+        `expected ${DataPointType[expectedDataPointType]}`
       );
 
       assert.strictEqual(
@@ -106,16 +121,18 @@ describe('v8js.memory.heap.*', function () {
           'expected no errors from the callback during collection'
         );
         const scopeMetrics = resourceMetrics.scopeMetrics;
-        let metric: GaugeMetricData | undefined = undefined;
         const foundMetric = scopeMetrics[0].metrics.find(
           x => x.descriptor.name === metricName
         );
-        if (foundMetric?.dataPointType === DataPointType.GAUGE) {
-          metric = foundMetric;
+        let spaceAttribute;
+        if (
+          foundMetric?.dataPointType === DataPointType.GAUGE ||
+          foundMetric?.dataPointType === DataPointType.SUM
+        ) {
+          spaceAttribute = foundMetric.dataPoints.find(
+            x => x.attributes[ATTR_V8JS_HEAP_SPACE_NAME] === space
+          );
         }
-        const spaceAttribute = metric?.dataPoints.find(
-          x => x.attributes[ATTR_V8JS_HEAP_SPACE_NAME] === space
-        );
 
         assert.notEqual(
           spaceAttribute,
@@ -125,4 +142,114 @@ describe('v8js.memory.heap.*', function () {
       });
     }
   }
+
+  it(`should write ${METRIC_V8JS_MEMORY_HEAP_LIMIT} after monitoringPrecision`, async function () {
+    // arrange
+    const instrumentation = new RuntimeNodeInstrumentation({
+      monitoringPrecision: MEASUREMENT_INTERVAL,
+      captureUncaughtException: false,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    // act
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
+    const { resourceMetrics, errors } = await metricReader.collect();
+
+    // assert
+    assert.deepEqual(
+      errors,
+      [],
+      'expected no errors from the callback during collection'
+    );
+    const scopeMetrics = resourceMetrics.scopeMetrics;
+    const metric = scopeMetrics[0].metrics.find(
+      x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_LIMIT
+    );
+
+    assert.notEqual(
+      metric,
+      undefined,
+      `${METRIC_V8JS_MEMORY_HEAP_LIMIT} not found`
+    );
+
+    assert.strictEqual(
+      metric!.dataPointType,
+      DataPointType.SUM,
+      'expected sum (UpDownCounter)'
+    );
+
+    assert.strictEqual(
+      metric!.descriptor.name,
+      METRIC_V8JS_MEMORY_HEAP_LIMIT,
+      'descriptor.name'
+    );
+  });
+
+  it(`${METRIC_V8JS_MEMORY_HEAP_LIMIT} should have a positive value representing the heap size limit`, async function () {
+    // arrange
+    const instrumentation = new RuntimeNodeInstrumentation({
+      monitoringPrecision: MEASUREMENT_INTERVAL,
+      captureUncaughtException: false,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    // act
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
+    const { resourceMetrics, errors } = await metricReader.collect();
+
+    // assert
+    assert.deepEqual(errors, []);
+    const scopeMetrics = resourceMetrics.scopeMetrics;
+    const metric = scopeMetrics[0].metrics.find(
+      x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_LIMIT
+    );
+
+    assert.notEqual(
+      metric,
+      undefined,
+      `${METRIC_V8JS_MEMORY_HEAP_LIMIT} not found`
+    );
+
+    if (metric!.dataPointType === DataPointType.SUM) {
+      assert.strictEqual(
+        metric!.dataPoints.length,
+        1,
+        'expected exactly one data point (global, not per-space)'
+      );
+      const value = metric!.dataPoints[0].value as number;
+      assert.ok(value > 0, `expected positive heap_size_limit, got ${value}`);
+    }
+  });
+
+  it(`${METRIC_V8JS_MEMORY_HEAP_LIMIT} should not have ${ATTR_V8JS_HEAP_SPACE_NAME} attribute (global metric)`, async function () {
+    // arrange
+    const instrumentation = new RuntimeNodeInstrumentation({
+      monitoringPrecision: MEASUREMENT_INTERVAL,
+      captureUncaughtException: false,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    // act
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
+    const { resourceMetrics, errors } = await metricReader.collect();
+
+    // assert
+    assert.deepEqual(errors, []);
+    const scopeMetrics = resourceMetrics.scopeMetrics;
+    const metric = scopeMetrics[0].metrics.find(
+      x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_LIMIT
+    );
+
+    assert.notEqual(metric, undefined);
+
+    if (metric!.dataPointType === DataPointType.SUM) {
+      for (const dp of metric!.dataPoints) {
+        assert.strictEqual(
+          dp.attributes[ATTR_V8JS_HEAP_SPACE_NAME],
+          undefined,
+          `${METRIC_V8JS_MEMORY_HEAP_LIMIT} should not have ${ATTR_V8JS_HEAP_SPACE_NAME} attribute`
+        );
+      }
+    }
+  });
 });

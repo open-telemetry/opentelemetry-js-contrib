@@ -1,6 +1,18 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.61.0...instrumentation-router-v0.62.0) (2026-05-13)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3523](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3523)) ([e26a90a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e26a90af6e2fb4666b22388b770add7a60140c9b))
+
+
+### Bug Fixes
+
+* **instrumentation-router:** fix MaxListenersExceededWarning ([#3495](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3495)) ([9a0bf88](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9a0bf882bfdf3087a0cb71f6b2f407da6a7d9d0a))
+
 ## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.60.0...instrumentation-router-v0.61.0) (2026-05-06)
 
 
