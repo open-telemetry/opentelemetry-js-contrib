@@ -5,3 +5,9 @@
 import { Handler, StreamifyHandler } from 'aws-lambda';
 
 export type LambdaModule = Record<string, Handler | StreamifyHandler>;
+
+export type SqsQueueArnParts = {
+  region: string;
+  accountId: string;
+  queueName: string;
+};
