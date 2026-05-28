@@ -15,6 +15,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
+import { SemconvStability } from '@opentelemetry/instrumentation';
 import * as assert from 'assert';
 
 import { KnexInstrumentation } from '../src';
@@ -160,6 +161,33 @@ describe('Knex instrumentation', () => {
           ]);
         }
       );
+    });
+
+    it('should collect stable connection attributes from dynamic connection settings', async () => {
+      const originalSemconvStability = (plugin as any)._semconvStability;
+      (plugin as any)._semconvStability = SemconvStability.STABLE;
+      await client.destroy();
+      client = knex({
+        client: 'sqlite3',
+        connection: () => ({
+          filename: ':memory:',
+        }),
+        useNullAsDefault: true,
+      });
+
+      const statement = "select date('now')";
+
+      try {
+        await client.raw(statement);
+
+        const [span] = memoryExporter.getFinishedSpans();
+        assert.strictEqual(span.attributes['db.system.name'], 'sqlite');
+        assert.strictEqual(span.attributes['db.namespace'], ':memory:');
+        assert.strictEqual(span.attributes['db.operation.name'], 'raw');
+        assert.strictEqual(span.attributes['db.query.text'], statement);
+      } finally {
+        (plugin as any)._semconvStability = originalSemconvStability;
+      }
     });
 
     it('should truncate the query', async () => {
