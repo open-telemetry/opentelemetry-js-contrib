@@ -11,8 +11,6 @@ import { Histogram, ValueType } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
 import { ATTR_V8JS_GC_TYPE, METRIC_V8JS_GC_DURATION } from '../semconv';
 
-// Use latency-style second buckets so sub-second GC pauses do not all collapse
-// into the `<=1s` bucket in histogram-based backends.
 const DEFAULT_GC_DURATION_BUCKETS = [
   0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10,
 ];
