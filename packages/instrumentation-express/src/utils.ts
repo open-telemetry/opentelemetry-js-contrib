@@ -212,10 +212,7 @@ export function getConstructedRoute(req: {
     : [];
 
   const meaningfulPaths = layersStore.filter(
-    path =>
-      path !== '/' &&
-      path !== '/*' &&
-      !/^\/\{[*][^}]*\}$/.test(path)
+    path => path !== '/' && path !== '/*' && !/^\/\{[*][^}]*\}$/.test(path)
   );
 
   if (meaningfulPaths.length === 1 && meaningfulPaths[0] === '*') {
