@@ -680,6 +680,68 @@ describe('ExpressInstrumentation', () => {
         }
       );
     });
+    it('should not include Express v5 wildcard fragments in http.route', async () => {
+      // /{*path} syntax is Express v5 only, no point running this on v4
+      if (!isExpressV5) {
+        return;
+      }
+
+      const rootSpan = tracer.startSpan('rootSpan');
+      let rpcMetadata: RPCMetadata | undefined;
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use((req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+          next();
+        });
+
+        // mount a couple of catch-all wildcard middlewares using the new v5 syntax
+        // these should be stripped out when building the http.route, same as /* was in v4
+        const passthroughMiddleware: express.RequestHandler = (
+          _req,
+          _res,
+          next
+        ) => next();
+        app.use('/{*path}', passthroughMiddleware);
+        app.use('/{*wildcard}', passthroughMiddleware);
+      });
+
+      server = httpServer.server;
+      port = httpServer.port;
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/toto/tata`
+          );
+          assert.strictEqual(response, 'tata');
+          rootSpan.end();
+
+          // route should still resolve correctly despite the wildcard middlewares
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('request handler'));
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
+            '/toto/:id'
+          );
+          assert.strictEqual(rpcMetadata?.route, '/toto/:id');
+
+          // double-check that no span ended up with a raw wildcard fragment as its route
+          for (const span of memoryExporter.getFinishedSpans()) {
+            const route = span.attributes[ATTR_HTTP_ROUTE] as
+              | string
+              | undefined;
+            assert.ok(
+              !route || !/\/\{[*][^}]*\}/.test(route),
+              `span "${span.name}" still has a wildcard fragment in http.route: ${route}`
+            );
+          }
+        }
+      );
+    });
   });
 
   describe('Baggage propagation through middleware', () => {
