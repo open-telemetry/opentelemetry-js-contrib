@@ -450,6 +450,34 @@ describe('Utils', () => {
         assert.strictEqual(result, '/');
       });
 
+      it('should filter out Express v5 dynamic path fragment /{*path}', () => {
+        const req = createMockRequest('/api/users', [
+          '/',
+          '/{*path}',
+          '/api',
+          '/users',
+        ]);
+        const result = utils.getActualMatchedRoute(req);
+        assert.strictEqual(result, '/api/users');
+      });
+
+      it('should treat standalone /{*path} wildcard same as /* (returns /)', () => {
+        const req = createMockRequest('/test', ['/', '/{*path}']);
+        const result = utils.getActualMatchedRoute(req);
+        assert.strictEqual(result, '/');
+      });
+
+      it('should filter out /{*path} with any parameter name', () => {
+        const req = createMockRequest('/users/123', [
+          '/',
+          '/{*wildcard}',
+          '/users',
+          '/:id',
+        ]);
+        const result = utils.getActualMatchedRoute(req);
+        assert.strictEqual(result, '/users/:id');
+      });
+
       it('should handle complex nested routes', () => {
         const req = createMockRequest('/api/v2/users/123/posts/456/comments', [
           '/',

@@ -212,7 +212,13 @@ export function getConstructedRoute(req: {
     : [];
 
   const meaningfulPaths = layersStore.filter(
-    path => path !== '/' && path !== '/*'
+    path =>
+      path !== '/' &&
+      path !== '/*' &&
+      // Express v5 uses /{*param} wildcard syntax (path-to-regexp v8).
+      // These catch-all fragments are meaningless for route identification,
+      // the same as '/*' was in Express v4.
+      !/^\/\{\*[^}]*\}$/.test(path)
   );
 
   if (meaningfulPaths.length === 1 && meaningfulPaths[0] === '*') {

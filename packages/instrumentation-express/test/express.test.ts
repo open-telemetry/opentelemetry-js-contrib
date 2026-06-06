@@ -499,6 +499,61 @@ describe('ExpressInstrumentation', () => {
       );
     });
 
+    it('should filter out Express v5 dynamic path fragments (/{*path})', async () => {
+      if (!isExpressV5) {
+        // /{*path} is an Express v5 wildcard syntax; skip on Express v4
+        return;
+      }
+      const rootSpan = tracer.startSpan('rootSpan');
+      let rpcMetadata: RPCMetadata | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use((req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+          next();
+        });
+        // Express v5 wildcard middleware — /{*path} should not pollute http.route
+        const wildcardMiddleware: express.RequestHandler = (_req, _res, next) => {
+          next();
+        };
+        app.use('/{*path}', wildcardMiddleware);
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/toto/tata`
+          );
+          assert.strictEqual(response, 'tata');
+          rootSpan.end();
+
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('request handler'));
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
+            '/toto/:id'
+          );
+          assert.strictEqual(rpcMetadata?.route, '/toto/:id');
+
+          // The wildcard fragment must not appear in any span's http.route
+          const spanWithWildcardFragment = memoryExporter
+            .getFinishedSpans()
+            .find(
+              span => span.attributes[ATTR_HTTP_ROUTE] === '/{*path}'
+            );
+          assert.strictEqual(
+            spanWithWildcardFragment,
+            undefined,
+            'Express v5 wildcard path fragment "/{*path}" must not appear in http.route'
+          );
+        }
+      );
+    });
+
     it('should ignore double slashes in routes', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let rpcMetadata: RPCMetadata | undefined;
