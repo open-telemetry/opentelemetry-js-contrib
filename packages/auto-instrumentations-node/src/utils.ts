@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { diag } from '@opentelemetry/api';
@@ -27,12 +16,12 @@ import { CucumberInstrumentation } from '@opentelemetry/instrumentation-cucumber
 import { DataloaderInstrumentation } from '@opentelemetry/instrumentation-dataloader';
 import { DnsInstrumentation } from '@opentelemetry/instrumentation-dns';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
-import { FastifyInstrumentation } from '@opentelemetry/instrumentation-fastify';
 import { FsInstrumentation } from '@opentelemetry/instrumentation-fs';
 import { GenericPoolInstrumentation } from '@opentelemetry/instrumentation-generic-pool';
 import { GraphQLInstrumentation } from '@opentelemetry/instrumentation-graphql';
 import { GrpcInstrumentation } from '@opentelemetry/instrumentation-grpc';
 import { HapiInstrumentation } from '@opentelemetry/instrumentation-hapi';
+import { HostMetricsInstrumentation } from '@opentelemetry/instrumentation-host-metrics';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
 import { KafkaJsInstrumentation } from '@opentelemetry/instrumentation-kafkajs';
@@ -106,12 +95,12 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-dataloader': DataloaderInstrumentation,
   '@opentelemetry/instrumentation-dns': DnsInstrumentation,
   '@opentelemetry/instrumentation-express': ExpressInstrumentation,
-  '@opentelemetry/instrumentation-fastify': FastifyInstrumentation,
   '@opentelemetry/instrumentation-fs': FsInstrumentation,
   '@opentelemetry/instrumentation-generic-pool': GenericPoolInstrumentation,
   '@opentelemetry/instrumentation-graphql': GraphQLInstrumentation,
   '@opentelemetry/instrumentation-grpc': GrpcInstrumentation,
   '@opentelemetry/instrumentation-hapi': HapiInstrumentation,
+  '@opentelemetry/instrumentation-host-metrics': HostMetricsInstrumentation,
   '@opentelemetry/instrumentation-http': HttpInstrumentation,
   '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
   '@opentelemetry/instrumentation-kafkajs': KafkaJsInstrumentation,
@@ -141,7 +130,7 @@ const InstrumentationMap = {
 
 const defaultExcludedInstrumentations = [
   '@opentelemetry/instrumentation-fs',
-  '@opentelemetry/instrumentation-fastify',
+  '@opentelemetry/instrumentation-host-metrics',
 ];
 
 // Config types inferred automatically from the first argument of the constructor
@@ -298,7 +287,6 @@ export function getResourceDetectorsFromEnv(): Array<ResourceDetector> {
     ResourceDetector | ResourceDetector[]
   >([
     [RESOURCE_DETECTOR_CONTAINER, containerDetector],
-    [RESOURCE_DETECTOR_ENVIRONMENT, envDetector],
     [RESOURCE_DETECTOR_HOST, hostDetector],
     [RESOURCE_DETECTOR_OS, osDetector],
     [RESOURCE_DETECTOR_SERVICE_INSTANCE_ID, serviceInstanceIdDetector],
@@ -319,6 +307,7 @@ export function getResourceDetectorsFromEnv(): Array<ResourceDetector> {
       RESOURCE_DETECTOR_AZURE,
       [azureAppServiceDetector, azureFunctionsDetector, azureVmDetector],
     ],
+    [RESOURCE_DETECTOR_ENVIRONMENT, envDetector],
   ]);
 
   const resourceDetectorsFromEnv =

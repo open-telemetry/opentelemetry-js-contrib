@@ -1,20 +1,9 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import { context, trace } from '@opentelemetry/api';
+import { context, propagation, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -257,6 +246,70 @@ describe('Router instrumentation', () => {
         testLocalServer.close();
       }
     });
+
+    it('should preserve baggage added before next across middleware and handler boundaries', async () => {
+      const router = new Router();
+      const snapshots: Array<Record<string, string> | null> = [];
+
+      const snapshotBaggage = () => {
+        const baggage = propagation.getBaggage(context.active());
+
+        if (!baggage) {
+          return null;
+        }
+
+        return Object.fromEntries(
+          baggage.getAllEntries().map(([key, entry]) => [key, entry.value])
+        );
+      };
+
+      router.use((_req, _res, next) => {
+        const baggage = (
+          propagation.getBaggage(context.active()) ??
+          propagation.createBaggage()
+        ).setEntry('foo', { value: 'bar' });
+        const nextContext = propagation.setBaggage(context.active(), baggage);
+
+        context.with(nextContext, next);
+      });
+
+      router.use((_req, _res, next) => {
+        snapshots.push(snapshotBaggage());
+
+        const baggage = (
+          propagation.getBaggage(context.active()) ??
+          propagation.createBaggage()
+        ).setEntry('baz', { value: 'qux' });
+        const nextContext = propagation.setBaggage(context.active(), baggage);
+
+        context.with(nextContext, next);
+      });
+
+      router.get('/baggage', (_req, res) => {
+        snapshots.push(snapshotBaggage());
+        res.end('ok');
+      });
+
+      const server = http.createServer((req, res) => {
+        router(req, res, () => {
+          if (!res.headersSent) {
+            res.statusCode = 404;
+            res.end('not found');
+          }
+        });
+      });
+      await new Promise<void>(resolve => server.listen(0, resolve));
+
+      try {
+        assert.strictEqual(await request('/baggage', server), 'ok');
+        assert.deepStrictEqual(snapshots, [
+          { foo: 'bar' },
+          { foo: 'bar', baz: 'qux' },
+        ]);
+      } finally {
+        server.close();
+      }
+    });
   });
 
   describe('Disabling instrumentation', () => {
@@ -264,6 +317,49 @@ describe('Router instrumentation', () => {
       plugin.disable();
       await request('/hello/nobody');
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    });
+  });
+
+  describe('Response listener management (issue #3458)', () => {
+    it('does not emit MaxListenersExceededWarning with many sync middleware', async () => {
+      const router = new Router();
+
+      for (let i = 0; i < 20; i++) {
+        router.use((_req, _res, next) => next());
+      }
+
+      router.get('/ping', (_req, res) => {
+        res.end('pong');
+      });
+
+      const server = http.createServer((req, res) => {
+        router(req, res, () => {
+          if (!res.headersSent) {
+            res.statusCode = 404;
+            res.end('not found');
+          }
+        });
+      });
+      await new Promise<void>(resolve => server.listen(0, resolve));
+
+      const warnings: Error[] = [];
+      const onWarning = (w: Error) => warnings.push(w);
+      process.on('warning', onWarning);
+
+      try {
+        assert.strictEqual(await request('/ping', server), 'pong');
+        const maxListenersWarn = warnings.find(
+          w => w.name === 'MaxListenersExceededWarning'
+        );
+        assert.strictEqual(
+          maxListenersWarn,
+          undefined,
+          `unexpected warning: ${maxListenersWarn?.message}`
+        );
+      } finally {
+        process.removeListener('warning', onWarning);
+        server.close();
+      }
     });
   });
 });

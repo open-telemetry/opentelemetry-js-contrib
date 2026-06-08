@@ -2,6 +2,7 @@
 
 We'd love your help!
 
+- [OpenTelemetry JS SIG](#opentelemetry-js-sig)
 - [Development Quick Start](#development-quick-start)
 - [Report a bug or requesting feature](#report-a-bug-or-requesting-feature)
 - [How to contribute](#how-to-contribute)
@@ -12,6 +13,7 @@ We'd love your help!
   - [Tools used](#tools-used)
   - [General guidance](#general-guidance)
   - [CHANGELOG](#changelog)
+  - [Testing](#testing)
   - [Benchmarks](#benchmarks)
 - [Component Ownership](#component-ownership)
   - [Becoming a Component Owner](#becoming-a-component-owner)
@@ -29,6 +31,20 @@ We'd love your help!
   - [Removing Vendor Components](#removing-vendor-components)
 - [New Instrumentation](#new-instrumentation)
 
+## OpenTelemetry JS SIG
+
+The JavaScript special interest group (SIG) meets regularly. See the
+OpenTelemetry [community](https://github.com/open-telemetry/community#implementation-sigs)
+repo for information on this and other language SIGs.
+
+See the [public meeting notes](https://docs.google.com/document/d/1tCyoQK49WVcE-x8oryZOTTToFm7sIeUhxFPm9g-qL1k)
+for a summary description of past meetings.
+
+The meeting is open for all to join. We invite everyone to join our meeting,
+regardless of your experience level. Whether you're a seasoned OpenTelemetry
+developer, just starting your journey, or simply curious about the work we do,
+you're more than welcome to participate!
+
 ## Development Quick Start
 
 To get the project started quickly, you can follow these steps. For more
@@ -39,8 +55,13 @@ git clone https://github.com/open-telemetry/opentelemetry-js-contrib.git
 cd opentelemetry-js-contrib
 npm ci
 npm run compile
-npm test
+
+npm run test-services:start
+npm run test:with-services-env
+npm run test-services:stop
 ```
+
+See [Testing](#testing) below for more details on testing.
 
 ## Report a bug or requesting feature
 
@@ -151,7 +172,7 @@ npm run test:with-services-env # runs 'npm test' with envvars from test/test-ser
 npm run test-services:stop     # stops services in Docker
 ```
 
-If you only want to test a single package that dfepends on a service (e.g. the `instrumentation-mongodb`) you can `cd` into it and
+If you only want to test a single package that depends on a service (e.g. the `instrumentation-mongodb`) you can `cd` into it and
 use the same scripts for testing. In this case the script will only start the services needed to test the package.
 
 ```sh
@@ -159,6 +180,12 @@ cd packages/instrumentation-mongodb # get into the instrumenation folder
 npm run test-services:start         # start the MongoDB service in Docker
 npm run test:with-services-env      # runs 'npm test' with envvars from test/test-services.env
 npm run test-services:stop          # stop MongoDB service in Docker
+```
+
+**Browser** tests are run via:
+
+```sh
+npm run test:browser
 ```
 
 ### Benchmarks
@@ -195,7 +222,7 @@ Ways do to so may be by providing proof of:
 - current or prior involvement with a community that develops systems with similar concepts
   - **Example:** A person previously working on a MySQL requesting ownership of a instrumentation package that instruments another database client library instrumentation.
 - current or prior extensive use of the instrumented package in other project they are involved in
-  - **Example:** A person working at a company that makes extensive use of the `fastify` library requesting ownership of the `@opentelemetry/instrumentation-fastify` package.
+  - **Example:** A person working at a company that makes extensive use of the `Pino` library requesting ownership of the `@opentelemetry/instrumentation-pino` package.
 - a vested interest in the telemetry being emitted from that instrumentation
   - **Example:** A person employed at an observability vendor that relies on the continued maintenance of the instrumentation
 

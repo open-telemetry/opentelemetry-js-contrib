@@ -1,18 +1,7 @@
 /*
  * Copyright The OpenTelemetry Authors
  * Copyright (c) 2025, Oracle and/or its affiliates.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -36,6 +25,7 @@ import {
 import * as assert from 'assert';
 import { OracleInstrumentation } from '../src';
 import { SpanNames } from '../src/constants';
+import { buildTraceparent } from '../src/OracleTelemetryTraceHandler';
 
 import {
   ATTR_DB_NAMESPACE,
@@ -524,6 +514,7 @@ describe('oracledb', () => {
     instrumentation.setConfig({
       enhancedDatabaseReporting: false,
       dbStatementDump: false,
+      propagateTraceContextToSessionAction: false,
     });
   });
 
@@ -973,6 +964,26 @@ describe('oracledb', () => {
         }
         span.end();
       });
+    });
+
+    it('should propagate trace context via connection.action when enabled', async () => {
+      instrumentation.setConfig({ propagateTraceContextToSessionAction: true });
+      const result = await connection.execute(
+        "select sys_context('USERENV', 'ACTION') as action from dual",
+        [],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
+      );
+      const row = result.rows?.[0] as Record<string, string> | undefined;
+      const actionValue = row?.ACTION;
+      const spans = memoryExporter.getFinishedSpans();
+      const executeSpan = spans[spans.length - 1];
+      assert.ok(executeSpan, 'expected span to verify trace propagation');
+      assert.ok(
+        executeSpan.name.startsWith(SpanNames.EXECUTE),
+        `expected execute span, got ${executeSpan.name}`
+      );
+      const expectedTraceparent = buildTraceparent(executeSpan.spanContext());
+      assert.strictEqual(actionValue, expectedTraceparent);
     });
 
     it('should intercept connection.execute(sql, values) bind-by-name', async () => {

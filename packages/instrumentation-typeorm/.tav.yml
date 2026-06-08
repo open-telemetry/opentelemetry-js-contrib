@@ -1,5 +1,5 @@
 typeorm:
   versions:
-    include: ">=0.3.0"
+    include: ">=0.3.0 <1"
     mode: max-7
   commands: npm run test

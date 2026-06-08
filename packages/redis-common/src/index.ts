@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
@@ -28,16 +17,23 @@ const serializationSubsets = [
     args: 0,
   },
   {
-    regex: /^(LPUSH|MSET|PFA|PUBLISH|RPUSH|SADD|SET|SPUBLISH|XADD|ZADD)/i,
+    regex:
+      /^(GETSET|LPUSH|MSET|PFA|PSETEX|PUBLISH|RPUSH|SADD|SET|SPUBLISH|XADD|ZADD)/i,
     args: 1,
   },
   {
     regex: /^(HSET|HMSET|LSET|LINSERT)/i,
     args: 2,
   },
+  // ACL and CONFIG subcommands may contain sensitive data (e.g. passwords),
+  // so only serialize the subcommand name (first argument).
+  {
+    regex: /^(ACL|CONFIG)/i,
+    args: 1,
+  },
   {
     regex:
-      /^(ACL|BIT|B[LRZ]|CLIENT|CLUSTER|CONFIG|COMMAND|DECR|DEL|EVAL|EX|FUNCTION|GEO|GET|HINCR|HMGET|HSCAN|INCR|L[TRLM]|MEMORY|P[EFISTU]|RPOP|S[CDIMORSU]|XACK|X[CDGILPRT]|Z[CDILMPRS])/i,
+      /^(BIT|B[LRZ]|CLIENT|CLUSTER|COMMAND|DECR|DEL|EVAL|EX|FUNCTION|GEO|GET|HINCR|HMGET|HSCAN|INCR|L[TRLM]|MEMORY|P[EFISTU]|RPOP|S[CDIMORSU]|XACK|X[CDGILPRT]|Z[CDILMPRS])/i,
     args: -1,
   },
 ];

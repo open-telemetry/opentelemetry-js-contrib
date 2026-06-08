@@ -1,6 +1,56 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.62.0...instrumentation-bunyan-v0.63.0) (2026-05-13)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3523](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3523)) ([e26a90a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e26a90af6e2fb4666b22388b770add7a60140c9b))
+
+## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.61.0...instrumentation-bunyan-v0.62.0) (2026-05-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3507](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3507)) ([e1ef3d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e1ef3d1b14f177afd738f1c967018c1dc6fc900e))
+* **instrumentation-bunyan:** use Logs API exception field when translating bunyan error records ([#3431](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3431)) ([9053dfe](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9053dfefe8ec20450dc467b0b23a7e45470029dc))
+
+## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.60.0...instrumentation-bunyan-v0.61.0) (2026-04-29)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3497](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3497)) ([a91133a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a91133aa0aac9486eda26f3338d7673851b8bd69))
+
+## [0.60.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.59.0...instrumentation-bunyan-v0.60.0) (2026-04-17)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3479](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3479)) ([8891261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8891261cb590efcb661bd9f8afec4d1adf885ad8))
+
+## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.58.0...instrumentation-bunyan-v0.59.0) (2026-03-25)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3450](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3450)) ([c8df394](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c8df394f02d68ae48a79a50258682c09dac13b8b))
+
+## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.57.0...instrumentation-bunyan-v0.58.0) (2026-03-04)
+
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3411](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3411)) ([7f4b776](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7f4b776abbe22aa38d2e9f36c22aa293a9e31687))
+
+## [0.57.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.56.0...instrumentation-bunyan-v0.57.0) (2026-02-16)
+
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3383](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3383)) ([d3ac785](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3ac7851d69d0781c2c631012937a73998b744e1))
+
 ## [0.56.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.55.0...instrumentation-bunyan-v0.56.0) (2026-01-21)
 
 

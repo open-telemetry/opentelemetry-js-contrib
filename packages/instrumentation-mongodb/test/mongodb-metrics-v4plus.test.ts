@@ -1,45 +1,20 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-// By default tests run with both old and stable semconv. Some test cases
+// By default, tests run with both old and stable semconv. Some test cases
 // specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
 process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
 
 import { MongoDBInstrumentation } from '../src';
 
-// TODO: use test-utils after the new package has released.
-import {
-  AggregationTemporality,
-  DataPointType,
-  InMemoryMetricExporter,
-  MeterProvider,
-  PeriodicExportingMetricReader,
-  ResourceMetrics,
-} from '@opentelemetry/sdk-metrics';
+import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
+import { TestMetricReader } from '@opentelemetry/contrib-test-utils';
 
-const inMemoryMetricsExporter = new InMemoryMetricExporter(
-  AggregationTemporality.CUMULATIVE
-);
-const metricReader = new PeriodicExportingMetricReader({
-  exporter: inMemoryMetricsExporter,
-  exportIntervalMillis: 100,
-  exportTimeoutMillis: 100,
-});
+const reader = new TestMetricReader();
 const otelTestingMeterProvider = new MeterProvider({
-  readers: [metricReader],
+  readers: [reader],
 });
 
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
@@ -50,24 +25,6 @@ const instrumentation = registerInstrumentationTesting(
 import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import type { MongoClient, Collection } from 'mongodb';
 import * as assert from 'assert';
-
-async function waitForNumberOfExports(
-  exporter: InMemoryMetricExporter,
-  numberOfExports: number
-): Promise<ResourceMetrics[]> {
-  if (numberOfExports <= 0) {
-    throw new Error('numberOfExports must be greater than or equal to 0');
-  }
-
-  let totalExports = 0;
-  while (totalExports < numberOfExports) {
-    await new Promise(resolve => setTimeout(resolve, 20));
-    const exportedMetrics = exporter.getMetrics();
-    totalExports = exportedMetrics.length;
-  }
-
-  return exporter.getMetrics();
-}
 
 describe('MongoDBInstrumentation-Metrics-v4+', () => {
   // For these tests, mongo must be running. Add RUN_MONGODB_TESTS to run
@@ -113,7 +70,6 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
       this.skip();
     }
 
-    inMemoryMetricsExporter.reset();
     done();
   });
 
@@ -121,13 +77,17 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
     await collection.insertMany(insertData);
     await collection.deleteMany({});
-    const exportedMetrics = await waitForNumberOfExports(
-      inMemoryMetricsExporter,
-      1
-    );
 
-    assert.strictEqual(exportedMetrics.length, 1);
-    const metrics = exportedMetrics[0].scopeMetrics[0].metrics;
+    // collect
+    const result = await reader.collect();
+
+    assert.strictEqual(
+      result.errors.length,
+      0,
+      'Expected no errors during metric collection, got: ' +
+        result.errors.toString()
+    );
+    const metrics = result.resourceMetrics.scopeMetrics[0].metrics;
     assert.strictEqual(metrics.length, 1);
     assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
@@ -162,12 +122,15 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
   it('Should add disconnection usage metrics', async () => {
     await client.close();
 
-    const exportedMetrics = await waitForNumberOfExports(
-      inMemoryMetricsExporter,
-      2
+    const result = await reader.collect();
+
+    assert.strictEqual(
+      result.errors.length,
+      0,
+      'Expected no errors during metric collection, got: ' +
+        result.errors.toString()
     );
-    assert.strictEqual(exportedMetrics.length, 2);
-    const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
+    const metrics = result.resourceMetrics.scopeMetrics[0].metrics;
     assert.strictEqual(metrics.length, 1);
     assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
