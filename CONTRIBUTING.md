@@ -2,6 +2,7 @@
 
 We'd love your help!
 
+- [OpenTelemetry JS SIG](#opentelemetry-js-sig)
 - [Development Quick Start](#development-quick-start)
 - [Report a bug or requesting feature](#report-a-bug-or-requesting-feature)
 - [How to contribute](#how-to-contribute)
@@ -29,6 +30,20 @@ We'd love your help!
   - [Adding a New Vendor Component](#adding-a-new-vendor-component)
   - [Removing Vendor Components](#removing-vendor-components)
 - [New Instrumentation](#new-instrumentation)
+
+## OpenTelemetry JS SIG
+
+The JavaScript special interest group (SIG) meets regularly. See the
+OpenTelemetry [community](https://github.com/open-telemetry/community#implementation-sigs)
+repo for information on this and other language SIGs.
+
+See the [public meeting notes](https://docs.google.com/document/d/1tCyoQK49WVcE-x8oryZOTTToFm7sIeUhxFPm9g-qL1k)
+for a summary description of past meetings.
+
+The meeting is open for all to join. We invite everyone to join our meeting,
+regardless of your experience level. Whether you're a seasoned OpenTelemetry
+developer, just starting your journey, or simply curious about the work we do,
+you're more than welcome to participate!
 
 ## Development Quick Start
 

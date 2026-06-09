@@ -81,6 +81,7 @@ export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentation
             );
             const otelStream = new OTelPinoStream({
               messageKey: logger[moduleExports.symbols.messageKeySym],
+              errorKey: logger[moduleExports.symbols.errorKeySym],
               levels: logger.levels,
               otelTimestampFromTime,
             });
