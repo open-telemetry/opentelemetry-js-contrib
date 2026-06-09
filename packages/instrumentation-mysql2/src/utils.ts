@@ -3,14 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  Attributes,
-  defaultTextMapSetter,
-  ROOT_CONTEXT,
-  Span,
-  trace,
-} from '@opentelemetry/api';
-import { W3CTraceContextPropagator } from '@opentelemetry/core';
+import { Attributes } from '@opentelemetry/api';
 import {
   ATTR_DB_CONNECTION_STRING,
   ATTR_DB_NAME,
@@ -191,30 +184,6 @@ export const once = (fn: Function) => {
     return fn(...args);
   };
 };
-
-const traceContextPropagator = new W3CTraceContextPropagator();
-const TRACE_PARENT_HEADER = 'traceparent';
-
-/**
- * Builds a W3C traceparent string from a span. Returns undefined if the
- * span context is invalid or trace propagation is suppressed.
- *
- * Note: This helper mirrors the one PR #3454 adds to
- * `@opentelemetry/sql-common`. Once that PR lands we can switch to the
- * shared export and remove this duplicate.
- *
- * Format: `00-{traceId}-{spanId}-{flags}`
- * See: https://www.w3.org/TR/trace-context/#traceparent-header
- */
-export function buildTraceparent(span: Span): string | undefined {
-  const carrier: Record<string, string> = {};
-  traceContextPropagator.inject(
-    trace.setSpan(ROOT_CONTEXT, span),
-    carrier,
-    defaultTextMapSetter
-  );
-  return carrier[TRACE_PARENT_HEADER];
-}
 
 export function getConnectionPrototypeToInstrument(connection: any) {
   const connectionPrototype = connection.prototype;

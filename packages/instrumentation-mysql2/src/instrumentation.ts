@@ -18,11 +18,13 @@ import {
   ATTR_DB_STATEMENT,
   ATTR_DB_SYSTEM,
 } from './semconv';
-import { addSqlCommenterComment } from '@opentelemetry/sql-common';
+import {
+  addSqlCommenterComment,
+  buildTraceparent,
+} from '@opentelemetry/sql-common';
 import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationConfig } from './types';
 import {
-  buildTraceparent,
   getConnectionAttributes,
   getConnectionPrototypeToInstrument,
   getQueryText,
