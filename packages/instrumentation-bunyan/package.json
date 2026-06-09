@@ -50,12 +50,12 @@
     "@opentelemetry/sdk-logs": "^0.219.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "@opentelemetry/semantic-conventions": "^1.27.0",
     "bunyan": "1.8.15"
   },
   "dependencies": {
     "@opentelemetry/api-logs": "^0.219.0",
     "@opentelemetry/instrumentation": "^0.219.0",
+    "@opentelemetry/semantic-conventions": "^1.41.1",
     "@types/bunyan": "1.8.11"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-bunyan#readme"

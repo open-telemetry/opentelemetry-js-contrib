@@ -12,6 +12,7 @@ import {
 import type { LogLevelString } from 'bunyan';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-conventions';
 
 const DEFAULT_INSTRUMENTATION_SCOPE_NAME = PACKAGE_NAME;
 const DEFAULT_INSTRUMENTATION_SCOPE_VERSION = PACKAGE_VERSION;
@@ -136,6 +137,7 @@ export class OpenTelemetryBunyanStream {
       trace_id, // eslint-disable-line @typescript-eslint/no-unused-vars
       span_id, // eslint-disable-line @typescript-eslint/no-unused-vars
       trace_flags, // eslint-disable-line @typescript-eslint/no-unused-vars
+      [ATTR_OTEL_EVENT_NAME]: eventName,
       ...fields
     } = rec;
     let timestamp = undefined;
@@ -144,6 +146,9 @@ export class OpenTelemetryBunyanStream {
     } else {
       fields.time = time; // Expose non-Date "time" field on attributes.
     }
+    const normalizedEventName =
+      typeof eventName === 'string' ? eventName : undefined;
+
     const otelRec: LogRecord = {
       timestamp,
       observedTimestamp: timestamp,
@@ -151,6 +156,9 @@ export class OpenTelemetryBunyanStream {
       severityText: nameFromLevel[level],
       body: msg,
       attributes: fields,
+      ...(normalizedEventName !== undefined
+        ? { eventName: normalizedEventName }
+        : {}),
     };
     if (err !== undefined) {
       otelRec.exception = err;
