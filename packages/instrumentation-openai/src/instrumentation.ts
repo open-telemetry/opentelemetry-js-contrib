@@ -1362,7 +1362,6 @@ class ConvertResponseInputsToInputMessagesUseCase {
           type: 'tool_call',
           id: item.id,
           name: item.type,
-          // @ts-expect-error: action is missing on older openai versions
           arguments: this.captureMessageContent ? item.action : undefined,
         } satisfies ToolCallRequestPart,
       ],
@@ -1726,7 +1725,6 @@ class ConvertResponseOutputsToOutputMessagesUseCase {
         type: 'tool_call',
         id: item.id,
         name: item.type,
-        // @ts-expect-error: action is missing on older openai versions
         arguments: this.captureMessageContent ? item.action : undefined,
       } satisfies ToolCallRequestPart,
     ];
