@@ -154,11 +154,13 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             'create',
             this._getPatchedEmbeddingsCreate()
           );
-          this._wrap(
-            modExports.OpenAI.Responses.prototype,
-            'create',
-            this._getPatchedResponsesCreate()
-          );
+          if (modExports.OpenAI.Responses) {
+            this._wrap(
+              modExports.OpenAI.Responses.prototype,
+              'create',
+              this._getPatchedResponsesCreate()
+            );
+          }
 
           return modExports;
         },
@@ -169,7 +171,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
               : module; // CommonJS
           this._unwrap(modExports.OpenAI.Chat.Completions.prototype, 'create');
           this._unwrap(modExports.OpenAI.Embeddings.prototype, 'create');
-          this._unwrap(modExports.OpenAI.Responses.prototype, 'create');
+          if (modExports.OpenAI.Responses) {
+            this._unwrap(modExports.OpenAI.Responses.prototype, 'create');
+          }
         }
       ),
     ];
