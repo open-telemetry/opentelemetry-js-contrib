@@ -112,6 +112,7 @@ describe('OpenAI', function () {
   });
 
   const client = new OpenAI({ apiKey });
+  const describeResponses = client.responses ? describe : describe.skip;
   const model = 'gpt-4o-mini';
   const input = 'Answer in up to 3 words: Which ocean contains Bouvet Island?';
 
@@ -3216,7 +3217,7 @@ describe('OpenAI', function () {
     });
   });
 
-  (client.responses ? describe : describe.skip)('responses', function () {
+  describeResponses('responses', function () {
     this.beforeEach(() => {
       instrumentation.enable();
     });
@@ -5041,7 +5042,7 @@ describe('OpenAI', function () {
     });
   });
 
-  (client.responses ? describe : describe.skip)('responses with content capture', function () {
+  describeResponses('responses with content capture', function () {
     this.beforeEach(() => {
       contentCaptureInstrumentation.enable();
     });
@@ -6695,7 +6696,7 @@ describe('OpenAI', function () {
     });
   });
 
-  (client.responses ? describe : describe.skip)('streaming responses', function () {
+  describeResponses('streaming responses', function () {
     this.beforeEach(() => {
       instrumentation.enable();
     });
@@ -8648,7 +8649,7 @@ describe('OpenAI', function () {
     });
   });
 
-  (client.responses ? describe : describe.skip)('streaming responses with content capture', function () {
+  describeResponses('streaming responses with content capture', function () {
     this.beforeEach(() => {
       contentCaptureInstrumentation.enable();
     });
