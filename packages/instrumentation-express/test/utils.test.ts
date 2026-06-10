@@ -90,6 +90,14 @@ describe('Utils', () => {
     });
   });
 
+  describe('storeLayerPath()', () => {
+    it('should return isLayerPathStored false when no value is provided', () => {
+      const req = {} as PatchedRequest;
+      const result = utils.storeLayerPath(req);
+      assert.deepEqual(result, { isLayerPathStored: false });
+    });
+  });
+
   describe('getLayerMetadata()', () => {
     it('should return router metadata', () => {
       assert.deepEqual(
