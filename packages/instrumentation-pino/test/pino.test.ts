@@ -837,64 +837,79 @@ describe('PinoInstrumentation', () => {
       const pinoRec = JSON.parse(writeSpy.firstCall.args[0].toString());
       assert.equal((pinoRec as any).mymsg, 'using messageKey');
     });
-  });
 
-  describe('otel.event.name support', () => {
-    let logger: Pino.Logger;
+    describe('otel.event.name support', () => {
+      let eventLogger: Pino.Logger;
 
-    beforeEach(() => {
-      instrumentation.setConfig({});
-      memExporter.getFinishedLogRecords().length = 0;
-      logger = pino({ level: 'debug' });
-    });
+      beforeEach(() => {
+        instrumentation.setConfig({});
+        memExporter.getFinishedLogRecords().length = 0;
+        eventLogger = pino({ level: 'debug' });
+      });
 
-    it('sets eventName on the LogRecord when otel.event.name is present', () => {
-      logger.info({ 'otel.event.name': 'my-event', foo: 'bar' }, 'hi');
-      const logRecords = memExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].eventName, 'my-event');
-    });
+      it('sets eventName on the LogRecord when otel.event.name is present', () => {
+        eventLogger.info({ 'otel.event.name': 'my-event', foo: 'bar' }, 'hi');
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, 'my-event');
+      });
 
-    it('does not pass otel.event.name through as an attribute', () => {
-      logger.info({ 'otel.event.name': 'my-event', foo: 'bar' }, 'hi');
-      const logRecords = memExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].eventName, 'my-event');
-      assert.strictEqual(logRecords[0].attributes[ATTR_OTEL_EVENT_NAME], undefined);
-      assert.strictEqual(logRecords[0].attributes['foo'], 'bar');
-      assert.strictEqual(logRecords[0].body, 'hi');
-      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO);
-    });
+      it('does not pass otel.event.name through as an attribute', () => {
+        eventLogger.info({ 'otel.event.name': 'my-event', foo: 'bar' }, 'hi');
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, 'my-event');
+        assert.strictEqual(
+          logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+          undefined
+        );
+        assert.strictEqual(logRecords[0].attributes['foo'], 'bar');
+        assert.strictEqual(logRecords[0].body, 'hi');
+        assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO);
+      });
 
-    it('leaves eventName undefined when otel.event.name is absent', () => {
-      logger.info({ foo: 'bar' }, 'hi');
-      const logRecords = memExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].eventName, undefined);
-    });
+      it('leaves eventName undefined when otel.event.name is absent', () => {
+        eventLogger.info({ foo: 'bar' }, 'hi');
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, undefined);
+      });
 
-    it('ignores otel.event.name when value is a number', () => {
-      logger.info({ 'otel.event.name': 123, foo: 'bar' }, 'hi');
-      const logRecords = memExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].eventName, undefined);
-      assert.strictEqual(logRecords[0].attributes[ATTR_OTEL_EVENT_NAME], undefined);
-    });
+      it('ignores otel.event.name when value is a number', () => {
+        eventLogger.info({ 'otel.event.name': 123, foo: 'bar' }, 'hi');
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, undefined);
+        assert.strictEqual(
+          logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+          undefined
+        );
+      });
 
-    it('ignores otel.event.name when value is an object', () => {
-      logger.info({ 'otel.event.name': { bad: true }, foo: 'bar' }, 'hi');
-      const logRecords = memExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].eventName, undefined);
-      assert.strictEqual(logRecords[0].attributes[ATTR_OTEL_EVENT_NAME], undefined);
-    });
+      it('ignores otel.event.name when value is an object', () => {
+        eventLogger.info(
+          { 'otel.event.name': { bad: true }, foo: 'bar' },
+          'hi'
+        );
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, undefined);
+        assert.strictEqual(
+          logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+          undefined
+        );
+      });
 
-    it('promotes otel.event.name to eventName when value is empty string', () => {
-      logger.info({ 'otel.event.name': '', foo: 'bar' }, 'hi');
-      const logRecords = memExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].eventName, '');
-      assert.strictEqual(logRecords[0].attributes[ATTR_OTEL_EVENT_NAME], undefined);
+      it('promotes otel.event.name to eventName when value is empty string', () => {
+        eventLogger.info({ 'otel.event.name': '', foo: 'bar' }, 'hi');
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, '');
+        assert.strictEqual(
+          logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+          undefined
+        );
+      });
     });
   });
 

@@ -583,7 +583,10 @@ describe('otel.event.name support', () => {
     const logRecords = memExporter.getFinishedLogRecords();
     assert.strictEqual(logRecords.length, 1);
     assert.strictEqual(logRecords[0].eventName, 'my-event');
-    assert.strictEqual(logRecords[0].attributes[ATTR_OTEL_EVENT_NAME], undefined);
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
     assert.strictEqual(logRecords[0].attributes['foo'], 'bar');
     assert.strictEqual(logRecords[0].body, 'hi');
     assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO);
@@ -609,7 +612,10 @@ describe('otel.event.name support', () => {
     const logRecords = memExporter.getFinishedLogRecords();
     assert.strictEqual(logRecords.length, 1);
     assert.strictEqual(logRecords[0].eventName, undefined);
-    assert.strictEqual(logRecords[0].attributes[ATTR_OTEL_EVENT_NAME], undefined);
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
   });
 
   it('ignores otel.event.name when value is an object', () => {
@@ -621,7 +627,10 @@ describe('otel.event.name support', () => {
     const logRecords = memExporter.getFinishedLogRecords();
     assert.strictEqual(logRecords.length, 1);
     assert.strictEqual(logRecords[0].eventName, undefined);
-    assert.strictEqual(logRecords[0].attributes[ATTR_OTEL_EVENT_NAME], undefined);
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
   });
 
   it('promotes otel.event.name to eventName when value is empty string', () => {
@@ -633,6 +642,9 @@ describe('otel.event.name support', () => {
     const logRecords = memExporter.getFinishedLogRecords();
     assert.strictEqual(logRecords.length, 1);
     assert.strictEqual(logRecords[0].eventName, '');
-    assert.strictEqual(logRecords[0].attributes[ATTR_OTEL_EVENT_NAME], undefined);
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
   });
 });
