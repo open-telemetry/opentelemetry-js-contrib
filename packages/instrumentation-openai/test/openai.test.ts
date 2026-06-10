@@ -3216,7 +3216,7 @@ describe('OpenAI', function () {
     });
   });
 
-  describe('responses', function () {
+  (client.responses ? describe : describe.skip)('responses', function () {
     this.beforeEach(() => {
       instrumentation.enable();
     });
@@ -5041,7 +5041,7 @@ describe('OpenAI', function () {
     });
   });
 
-  describe('responses with content capture', function () {
+  (client.responses ? describe : describe.skip)('responses with content capture', function () {
     this.beforeEach(() => {
       contentCaptureInstrumentation.enable();
     });
@@ -6695,7 +6695,7 @@ describe('OpenAI', function () {
     });
   });
 
-  describe('streaming responses', function () {
+  (client.responses ? describe : describe.skip)('streaming responses', function () {
     this.beforeEach(() => {
       instrumentation.enable();
     });
@@ -8648,7 +8648,7 @@ describe('OpenAI', function () {
     });
   });
 
-  describe('streaming responses with content capture', function () {
+  (client.responses ? describe : describe.skip)('streaming responses with content capture', function () {
     this.beforeEach(() => {
       contentCaptureInstrumentation.enable();
     });
