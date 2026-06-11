@@ -43,7 +43,7 @@
     "@opentelemetry/core": "^2.0.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.218.0",
+    "@opentelemetry/instrumentation": "^0.219.0",
     "@opentelemetry/instrumentation-amqplib": "^0.65.0",
     "@opentelemetry/instrumentation-aws-lambda": "^0.70.0",
     "@opentelemetry/instrumentation-aws-sdk": "^0.73.0",
@@ -57,10 +57,10 @@
     "@opentelemetry/instrumentation-fs": "^0.37.0",
     "@opentelemetry/instrumentation-generic-pool": "^0.61.0",
     "@opentelemetry/instrumentation-graphql": "^0.66.0",
-    "@opentelemetry/instrumentation-grpc": "^0.218.0",
+    "@opentelemetry/instrumentation-grpc": "^0.219.0",
     "@opentelemetry/instrumentation-hapi": "^0.64.0",
     "@opentelemetry/instrumentation-host-metrics": "^0.1.0",
-    "@opentelemetry/instrumentation-http": "^0.218.0",
+    "@opentelemetry/instrumentation-http": "^0.219.0",
     "@opentelemetry/instrumentation-ioredis": "^0.66.0",
     "@opentelemetry/instrumentation-kafkajs": "^0.27.0",
     "@opentelemetry/instrumentation-knex": "^0.62.0",
@@ -91,7 +91,7 @@
     "@opentelemetry/resource-detector-container": "^0.8.9",
     "@opentelemetry/resource-detector-gcp": "^0.53.0",
     "@opentelemetry/resources": "^2.0.0",
-    "@opentelemetry/sdk-node": "^0.218.0"
+    "@opentelemetry/sdk-node": "^0.219.0"
   },
   "files": [
     "build/src/**/*.js",
