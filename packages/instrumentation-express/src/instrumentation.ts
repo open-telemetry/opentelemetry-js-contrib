@@ -198,7 +198,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
 
         // verify against the config if the layer should be ignored
         if (isLayerIgnored(metadata.name, type, instrumentation.getConfig())) {
-          if (type === ExpressLayerType.MIDDLEWARE) {
+          if (type === ExpressLayerType.MIDDLEWARE && isLayerPathStored) {
             (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
           }
           return original.apply(this, arguments);
