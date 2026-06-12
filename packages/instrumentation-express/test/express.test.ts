@@ -629,37 +629,33 @@ describe('ExpressInstrumentation', () => {
       await context.with(
         trace.setSpan(context.active(), rootSpan),
         async () => {
-          let clientError: Error | undefined;
           const clientReq = httpGet(`http://localhost:${port}/slow`);
 
-          clientReq.on('error', err => {
-            clientError = err;
-          });
-
-          clientReq.on('close', () => {
-            if (!clientError) {
-              clientError = new Error('connection closed');
+          // Resolves with the error from the aborted request, whether it
+          // arrives via 'error' (typical on Linux/Mac) or 'close' (can
+          // happen on Windows when 'error' is not emitted).
+          const clientErrorPromise = new Promise<Error | undefined>(
+            resolve => {
+              clientReq.once('error', err => resolve(err));
+              clientReq.once('close', () =>
+                resolve(new Error('connection closed'))
+              );
             }
-          });
+          );
 
           await requestReceivedPromise;
           clientReq.destroy();
           await responseClosedPromise;
-          // Wait for client-side 'error'/'close' events to fire. On
-          // Linux/Mac these are typically already set by this point, so
-          // this resolves immediately. On Windows they can fire slightly
-          // later, so poll for up to 200ms.
-          await new Promise<void>(resolve => {
-            const deadline = Date.now() + 200;
-            const check = () => {
-              if (clientError || Date.now() >= deadline) {
-                resolve();
-              } else {
-                setTimeout(check, 10);
-              }
-            };
-            check();
-          });
+
+          // Wait for the client-side 'error'/'close' event, capped at
+          // 200ms in case neither fires.
+          const clientError = await Promise.race([
+            clientErrorPromise,
+            new Promise<undefined>(resolve =>
+              setTimeout(() => resolve(undefined), 200)
+            ),
+          ]);
+
           assert.ok(
             clientError,
             'client should have received an error from the aborted request'
