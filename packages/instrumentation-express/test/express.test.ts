@@ -634,14 +634,12 @@ describe('ExpressInstrumentation', () => {
           // Resolves with the error from the aborted request, whether it
           // arrives via 'error' (typical on Linux/Mac) or 'close' (can
           // happen on Windows when 'error' is not emitted).
-          const clientErrorPromise = new Promise<Error | undefined>(
-            resolve => {
-              clientReq.once('error', err => resolve(err));
-              clientReq.once('close', () =>
-                resolve(new Error('connection closed'))
-              );
-            }
-          );
+          const clientErrorPromise = new Promise<Error | undefined>(resolve => {
+            clientReq.once('error', err => resolve(err));
+            clientReq.once('close', () =>
+              resolve(new Error('connection closed'))
+            );
+          });
 
           await requestReceivedPromise;
           clientReq.destroy();
