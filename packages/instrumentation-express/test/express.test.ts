@@ -645,8 +645,21 @@ describe('ExpressInstrumentation', () => {
           await requestReceivedPromise;
           clientReq.destroy();
           await responseClosedPromise;
-          // wait for client events to fire (needed on Windows)
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Wait for client-side 'error'/'close' events to fire. On
+          // Linux/Mac these are typically already set by this point, so
+          // this resolves immediately. On Windows they can fire slightly
+          // later, so poll for up to 200ms.
+          await new Promise<void>(resolve => {
+            const deadline = Date.now() + 200;
+            const check = () => {
+              if (clientError || Date.now() >= deadline) {
+                resolve();
+              } else {
+                setTimeout(check, 10);
+              }
+            };
+            check();
+          });
           assert.ok(
             clientError,
             'client should have received an error from the aborted request'
