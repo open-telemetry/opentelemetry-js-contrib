@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-web-exception-v0.11.0...instrumentation-web-exception-v0.12.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+
 ## [0.11.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-web-exception-v0.10.0...instrumentation-web-exception-v0.11.0) (2026-05-13)
 
 

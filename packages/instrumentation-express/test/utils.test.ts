@@ -90,6 +90,14 @@ describe('Utils', () => {
     });
   });
 
+  describe('storeLayerPath()', () => {
+    it('should return isLayerPathStored false when no value is provided', () => {
+      const req = {} as PatchedRequest;
+      const result = utils.storeLayerPath(req);
+      assert.deepEqual(result, { isLayerPathStored: false });
+    });
+  });
+
   describe('getLayerMetadata()', () => {
     it('should return router metadata', () => {
       assert.deepEqual(
@@ -466,6 +474,27 @@ describe('Utils', () => {
           result,
           '/api/v2/users/:userId/posts/:postId/comments'
         );
+      });
+      it('should filter out Express v5 wildcard paths like /{*path}', () => {
+        const req = createMockRequest('/api/users', [
+          '/',
+          '/{*path}',
+          '/api',
+          '/users',
+        ]);
+        const result = utils.getActualMatchedRoute(req);
+        assert.strictEqual(result, '/api/users');
+      });
+
+      it('should filter out Express v5 wildcard paths like /{*}', () => {
+        const req = createMockRequest('/api/users', [
+          '/',
+          '/{*}',
+          '/api',
+          '/users',
+        ]);
+        const result = utils.getActualMatchedRoute(req);
+        assert.strictEqual(result, '/api/users');
       });
     });
 

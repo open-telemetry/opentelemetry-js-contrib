@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.61.0...instrumentation-connect-v0.62.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+
 ## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.60.0...instrumentation-connect-v0.61.0) (2026-05-13)
 
 
