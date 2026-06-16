@@ -212,6 +212,7 @@ export function getConstructedRoute(req: {
     : [];
 
   const meaningfulPaths = layersStore.filter(
+    // Exclude root path, wildcard '/*', and Express v5 wildcard segments like /{*param} or /{**param}
     path => path !== '/' && path !== '/*' && !/^\/\{[*][^}]*\}$/.test(path)
   );
 
