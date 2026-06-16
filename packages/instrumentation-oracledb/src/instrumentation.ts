@@ -12,7 +12,7 @@ import type * as oracleDBTypes from 'oracledb';
 import { OracleInstrumentationConfig } from './types';
 import * as metrics from './metricUtils';
 import { MeterProvider } from '@opentelemetry/api';
-import { getOracleTelemetryTraceMetricHandlerClass } from './OracleTelemetryTraceHandler';
+import { getOracleTelemetryTraceMetricHandlerClass } from './OracleTelemetryTraceMetricHandler';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -71,7 +71,7 @@ export class OracleInstrumentation extends InstrumentationBase {
   override setConfig(config: OracleInstrumentationConfig = {}) {
     super.setConfig(config);
 
-    // update the config in OracleTelemetryTraceHandler obj.
+    // update the config in OracleTelemetryTraceMetricHandler obj.
     this._tmHandler?.setInstrumentConfig(this._config);
   }
 }
