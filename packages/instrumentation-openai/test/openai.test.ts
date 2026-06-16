@@ -4979,6 +4979,198 @@ describe('OpenAI', function () {
       });
     });
 
+    it('records code interpreter calls with outputs', async () => {
+      const tools: OpenAI.Responses.Tool[] = [
+        {
+          type: 'code_interpreter',
+          container: 'cfile_682e0e8a43c88191a7978f477a09bdf5',
+        },
+      ];
+
+      const response = await client.responses.create({
+        model,
+        tools,
+        instructions: null,
+        input:
+          'Plot and analyse the histogram of the RGB channels for the uploaded image.',
+      });
+
+      expect(response.output).toHaveLength(1);
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes).toEqual({
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^resp_/),
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 291,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 23,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
+      });
+
+      const spanCtx = spans[0].spanContext();
+
+      await loggerProvider.forceFlush();
+      const logs = logsExporter.getFinishedLogRecords();
+      expect(logs.length).toBe(2);
+      expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].attributes).toEqual({
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ci_68a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5',
+                name: 'code_interpreter_call',
+                arguments: undefined,
+              },
+              {
+                type: 'tool_call_response',
+                id: 'ci_68a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5',
+                response: undefined,
+              },
+              {
+                type: 'tool_call_response',
+                id: 'ci_68a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5',
+                response: undefined,
+              },
+            ],
+            finish_reason: 'stop',
+          },
+        ],
+      });
+    });
+
+    it('records local shell calls', async () => {
+      const tools: OpenAI.Responses.Tool[] = [
+        {
+          type: 'local_shell' as any,
+        },
+      ];
+
+      const response = await client.responses.create({
+        model,
+        tools,
+        input: 'List the files in the current directory',
+      });
+
+      expect(response.output).toHaveLength(1);
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes).toEqual({
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^resp_/),
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 291,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 23,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_call'],
+      });
+
+      const spanCtx = spans[0].spanContext();
+
+      await loggerProvider.forceFlush();
+      const logs = logsExporter.getFinishedLogRecords();
+      expect(logs.length).toBe(2);
+      expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].attributes).toEqual({
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'ls_69b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6',
+                name: 'local_shell_call',
+                arguments: undefined,
+                call_id: 'call_ls_001',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
+      });
+    });
+
+    it('records mcp list tools and approval', async () => {
+      const tools: OpenAI.Responses.Tool[] = [
+        {
+          type: 'mcp',
+          server_label: 'dmcp',
+          server_description:
+            'A Dungeons and Dragons MCP server to assist with dice rolling.',
+          server_url: 'https://dmcp-server.deno.dev/sse',
+          require_approval: 'always',
+          allowed_tools: ['roll'],
+        },
+      ];
+
+      const response = await client.responses.create({
+        model,
+        tools,
+        input: 'Roll 2d4+1',
+      });
+
+      expect(response.output).toHaveLength(2);
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes).toEqual({
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
+        [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^resp_/),
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 291,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 23,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_call'],
+      });
+
+      const spanCtx = spans[0].spanContext();
+
+      await loggerProvider.forceFlush();
+      const logs = logsExporter.getFinishedLogRecords();
+      expect(logs.length).toBe(2);
+      expect(logs[1].spanContext).toEqual(spanCtx);
+      expect(logs[1].attributes).toEqual({
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call_response',
+                id: 'mcpl_70c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7',
+                response: undefined,
+                server: 'dmcp',
+              },
+              {
+                type: 'tool_call',
+                id: 'mcpr_70c3d4e5f6a7b8c9d0e1f2a3b4c5d6e8',
+                name: 'mcp_approval_request',
+                arguments: undefined,
+                server: 'dmcp',
+              },
+            ],
+            finish_reason: 'tool_call',
+          },
+        ],
+      });
+    });
+
     it('records system instructions', async () => {
       const response = await client.responses.create({
         model,
