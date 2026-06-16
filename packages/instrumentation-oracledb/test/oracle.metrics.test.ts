@@ -726,7 +726,7 @@ describe('oracledb-metrics', () => {
       const metrics = await getMetrics();
       checkDurationMetrics(metrics, 'BATCH INSERT');
 
-      conn.execute('DROP TABLE test_temp PURGE');
+      await conn.execute('DROP TABLE test_temp PURGE');
       await conn.commit();
 
       await conn.close();
@@ -758,7 +758,7 @@ describe('oracledb-metrics', () => {
       const metrics = await getMetrics();
       checkDurationMetrics(metrics, 'BATCH PLSQL');
 
-      conn.execute('DROP TABLE test_temp PURGE');
+      await conn.execute('DROP TABLE test_temp PURGE');
       await conn.commit();
 
       await conn.close();
