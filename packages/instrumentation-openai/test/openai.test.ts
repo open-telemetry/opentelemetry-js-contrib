@@ -5269,6 +5269,134 @@ describe('OpenAI', function () {
         ],
       });
     });
+
+    it('records function call outputs', async () => {
+      const response = await client.responses.create({
+        model,
+        input: [
+          {
+            role: 'user',
+            content: 'What is the weather in Paris?',
+          },
+          {
+            type: 'function_call',
+            id: 'fc_12345xyz',
+            call_id: 'call_12345xyz',
+            name: 'get_weather',
+            arguments: '{"location":"Paris, France"}',
+          },
+          {
+            type: 'function_call_output',
+            call_id: 'call_12345xyz',
+            output: '{"temperature":22,"condition":"sunny"}',
+          },
+        ] as OpenAI.Responses.ResponseInput,
+        tools: [
+          {
+            type: 'function',
+            name: 'get_weather',
+            description: 'Get the current weather in a given location',
+            parameters: {
+              type: 'object',
+              properties: { location: { type: 'string' } },
+              required: ['location'],
+            },
+            strict: true,
+          },
+        ],
+      });
+
+      expect(response.output_text).toEqual(
+        'The weather in Paris is 22°C and sunny.'
+      );
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+
+      const spanCtx = spans[0].spanContext();
+
+      await loggerProvider.forceFlush();
+      const logs = logsExporter.getFinishedLogRecords();
+      expect(logs.length).toBe(2);
+      expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].attributes).toEqual({
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fc_12345xyz',
+                name: 'get_weather',
+                arguments: undefined,
+                call_id: 'call_12345xyz',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'tool_call_response',
+                id: undefined,
+                response: undefined,
+                call_id: 'call_12345xyz',
+              },
+            ],
+          },
+        ],
+      });
+    });
+
+    it('records multimodal input', async () => {
+      const response = await client.responses.create({
+        model,
+        input: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'input_text',
+                text: 'What is in this image?',
+              },
+              {
+                type: 'input_image',
+                image_url: 'https://example.com/image.png',
+              },
+            ],
+          },
+        ],
+      });
+
+      expect(response.output_text).toEqual('A cat.');
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+
+      const spanCtx = spans[0].spanContext();
+
+      await loggerProvider.forceFlush();
+      const logs = logsExporter.getFinishedLogRecords();
+      expect(logs.length).toBe(2);
+      expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].attributes).toEqual({
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              { type: 'text', content: undefined },
+              { type: 'image' },
+            ],
+          },
+        ],
+      });
+    });
   });
 
   describeResponses('responses with content capture', function () {
@@ -6919,6 +7047,145 @@ describe('OpenAI', function () {
               },
             ],
             finish_reason: 'stop',
+          },
+        ],
+      });
+    });
+
+    it('records function call outputs', async () => {
+      const response = await client.responses.create({
+        model,
+        input: [
+          {
+            role: 'user',
+            content: 'What is the weather in Paris?',
+          },
+          {
+            type: 'function_call',
+            id: 'fc_12345xyz',
+            call_id: 'call_12345xyz',
+            name: 'get_weather',
+            arguments: '{"location":"Paris, France"}',
+          },
+          {
+            type: 'function_call_output',
+            call_id: 'call_12345xyz',
+            output: '{"temperature":22,"condition":"sunny"}',
+          },
+        ] as OpenAI.Responses.ResponseInput,
+        tools: [
+          {
+            type: 'function',
+            name: 'get_weather',
+            description: 'Get the current weather in a given location',
+            parameters: {
+              type: 'object',
+              properties: { location: { type: 'string' } },
+              required: ['location'],
+            },
+            strict: true,
+          },
+        ],
+      });
+
+      expect(response.output_text).toEqual(
+        'The weather in Paris is 22°C and sunny.'
+      );
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+
+      const spanCtx = spans[0].spanContext();
+
+      await loggerProvider.forceFlush();
+      const logs = logsExporter.getFinishedLogRecords();
+      expect(logs.length).toBe(2);
+      expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].attributes).toEqual({
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'What is the weather in Paris?',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fc_12345xyz',
+                name: 'get_weather',
+                arguments: '{"location":"Paris, France"}',
+                call_id: 'call_12345xyz',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'tool_call_response',
+                id: undefined,
+                response: '{"temperature":22,"condition":"sunny"}',
+                call_id: 'call_12345xyz',
+              },
+            ],
+          },
+        ],
+      });
+    });
+
+    it('records multimodal input', async () => {
+      const response = await client.responses.create({
+        model,
+        input: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'input_text',
+                text: 'What is in this image?',
+              },
+              {
+                type: 'input_image',
+                image_url: 'https://example.com/image.png',
+              },
+            ],
+          },
+        ],
+      });
+
+      expect(response.output_text).toEqual('A cat.');
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+
+      const spanCtx = spans[0].spanContext();
+
+      await loggerProvider.forceFlush();
+      const logs = logsExporter.getFinishedLogRecords();
+      expect(logs.length).toBe(2);
+      expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].attributes).toEqual({
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'What is in this image?',
+              },
+              {
+                type: 'image',
+                image_url: 'https://example.com/image.png',
+              },
+            ],
           },
         ],
       });
@@ -8872,6 +9139,97 @@ describe('OpenAI', function () {
             role: 'assistant',
             parts: [{ type: 'text', content: undefined }],
             finish_reason: 'stop',
+          },
+        ],
+      });
+    });
+
+    it('records function call outputs', async () => {
+      const stream = await client.responses.create({
+        model,
+        input: [
+          {
+            role: 'user',
+            content: 'What is the weather in Paris?',
+          },
+          {
+            type: 'function_call',
+            id: 'fc_12345xyz',
+            call_id: 'call_12345xyz',
+            name: 'get_weather',
+            arguments: '{"location":"Paris, France"}',
+          },
+          {
+            type: 'function_call_output',
+            call_id: 'call_12345xyz',
+            output: '{"temperature":22,"condition":"sunny"}',
+          },
+        ] as OpenAI.Responses.ResponseInput,
+        tools: [
+          {
+            type: 'function',
+            name: 'get_weather',
+            description: 'Get the current weather in a given location',
+            parameters: {
+              type: 'object',
+              properties: { location: { type: 'string' } },
+              required: ['location'],
+            },
+            strict: true,
+          },
+        ],
+        stream: true,
+      });
+
+      let text = '';
+      for await (const event of stream) {
+        if (
+          event.type === 'response.output_text.delta' &&
+          'delta' in event
+        ) {
+          text += event.delta;
+        }
+      }
+      expect(text).toEqual('The weather in Paris is 22°C and sunny.');
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+
+      const spanCtx = spans[0].spanContext();
+
+      await loggerProvider.forceFlush();
+      const logs = logsExporter.getFinishedLogRecords();
+      expect(logs.length).toBe(2);
+      expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].attributes).toEqual({
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: undefined }],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fc_12345xyz',
+                name: 'get_weather',
+                arguments: undefined,
+                call_id: 'call_12345xyz',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'tool_call_response',
+                id: undefined,
+                response: undefined,
+                call_id: 'call_12345xyz',
+              },
+            ],
           },
         ],
       });
@@ -10846,6 +11204,102 @@ describe('OpenAI', function () {
             role: 'assistant',
             parts: [{ type: 'text', content: 'South Atlantic Ocean.' }],
             finish_reason: 'stop',
+          },
+        ],
+      });
+    });
+
+    it('records function call outputs', async () => {
+      const stream = await client.responses.create({
+        model,
+        input: [
+          {
+            role: 'user',
+            content: 'What is the weather in Paris?',
+          },
+          {
+            type: 'function_call',
+            id: 'fc_12345xyz',
+            call_id: 'call_12345xyz',
+            name: 'get_weather',
+            arguments: '{"location":"Paris, France"}',
+          },
+          {
+            type: 'function_call_output',
+            call_id: 'call_12345xyz',
+            output: '{"temperature":22,"condition":"sunny"}',
+          },
+        ] as OpenAI.Responses.ResponseInput,
+        tools: [
+          {
+            type: 'function',
+            name: 'get_weather',
+            description: 'Get the current weather in a given location',
+            parameters: {
+              type: 'object',
+              properties: { location: { type: 'string' } },
+              required: ['location'],
+            },
+            strict: true,
+          },
+        ],
+        stream: true,
+      });
+
+      let text = '';
+      for await (const event of stream) {
+        if (
+          event.type === 'response.output_text.delta' &&
+          'delta' in event
+        ) {
+          text += event.delta;
+        }
+      }
+      expect(text).toEqual('The weather in Paris is 22°C and sunny.');
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+
+      const spanCtx = spans[0].spanContext();
+
+      await loggerProvider.forceFlush();
+      const logs = logsExporter.getFinishedLogRecords();
+      expect(logs.length).toBe(2);
+      expect(logs[0].spanContext).toEqual(spanCtx);
+      expect(logs[0].attributes).toEqual({
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                content: 'What is the weather in Paris?',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool_call',
+                id: 'fc_12345xyz',
+                name: 'get_weather',
+                arguments: '{"location":"Paris, France"}',
+                call_id: 'call_12345xyz',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'tool_call_response',
+                id: undefined,
+                response: '{"temperature":22,"condition":"sunny"}',
+                call_id: 'call_12345xyz',
+              },
+            ],
           },
         ],
       });

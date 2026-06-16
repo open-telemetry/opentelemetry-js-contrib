@@ -1,0 +1,53 @@
+[
+	{
+		"scope": "https://api.openai.com:443",
+		"method": "POST",
+		"path": "/v1/responses",
+		"body": {
+			"model": "gpt-4o-mini",
+			"input": [
+				{
+					"role": "user",
+					"content": "What is the weather in Paris?"
+				},
+				{
+					"type": "function_call",
+					"id": "fc_12345xyz",
+					"call_id": "call_12345xyz",
+					"name": "get_weather",
+					"arguments": "{\"location\":\"Paris, France\"}"
+				},
+				{
+					"type": "function_call_output",
+					"call_id": "call_12345xyz",
+					"output": "{\"temperature\":22,\"condition\":\"sunny\"}"
+				}
+			],
+			"tools": [
+				{
+					"type": "function",
+					"name": "get_weather",
+					"description": "Get the current weather in a given location",
+					"parameters": {
+						"type": "object",
+						"properties": {
+							"location": {
+								"type": "string"
+							}
+						},
+						"required": ["location"]
+					},
+					"strict": true
+				}
+			],
+			"stream": true
+		},
+		"status": 200,
+		"response": "data: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_fn_output_001\",\"object\":\"response\",\"created_at\":1741476542,\"model\":\"gpt-4o-mini-2024-07-18\",\"status\":\"in_progress\",\"output\":[]}}\n\ndata: {\"type\":\"response.output_item.added\",\"output_index\":0,\"item\":{\"id\":\"msg_fn_output_001\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"in_progress\",\"content\":[{\"type\":\"output_text\",\"text\":\"\",\"annotations\":[]}]}}\n\ndata: {\"type\":\"response.output_text.delta\",\"output_index\":0,\"content_index\":0,\"delta\":\"The weather \",\"item_id\":\"msg_fn_output_001\",\"sequence_number\":3}\n\ndata: {\"type\":\"response.output_text.delta\",\"output_index\":0,\"content_index\":0,\"delta\":\"in Paris is 22°C and sunny.\",\"item_id\":\"msg_fn_output_001\",\"sequence_number\":4}\n\ndata: {\"type\":\"response.output_item.done\",\"output_index\":0,\"item\":{\"id\":\"msg_fn_output_001\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"The weather in Paris is 22°C and sunny.\",\"annotations\":[]}]},\"sequence_number\":5}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_fn_output_001\",\"object\":\"response\",\"created_at\":1741476542,\"model\":\"gpt-4o-mini-2024-07-18\",\"status\":\"completed\",\"output\":[{\"id\":\"msg_fn_output_001\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"The weather in Paris is 22°C and sunny.\",\"annotations\":[]}]}],\"usage\":{\"input_tokens\":50,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":12,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":62}}}\n\n",
+		"rawHeaders": {
+			"content-type": "text/event-stream; charset=utf-8",
+			"date": "Thu, 17 Jul 2025 07:27:49 GMT"
+		},
+		"responseIsBinary": false
+	}
+]
