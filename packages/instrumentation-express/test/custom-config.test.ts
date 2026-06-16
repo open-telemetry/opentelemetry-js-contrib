@@ -61,7 +61,9 @@ describe('ExpressInstrumentation', () => {
 
     afterEach(() => {
       server.close();
-      instrumentation.setConfig({ ignoreLayersType: [ExpressLayerType.MIDDLEWARE] });
+      instrumentation.setConfig({
+        ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
+      });
     });
 
     it('should ignore specific middlewares based on config', async () => {
@@ -215,6 +217,7 @@ describe('ExpressInstrumentation', () => {
       });
 
       const api = express.Router();
+      // path-less middleware — this is the trigger for the bug
       api.use((req, res, next) => next());
       api.get('/leaf', (req, res) => res.send('ok'));
       api.get('/p/:id', (req, res) => res.send('ok'));
