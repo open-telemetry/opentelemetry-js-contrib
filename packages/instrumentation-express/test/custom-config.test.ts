@@ -61,9 +61,6 @@ describe('ExpressInstrumentation', () => {
 
     afterEach(() => {
       server.close();
-      instrumentation.setConfig({
-        ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
-      });
     });
 
     it('should ignore specific middlewares based on config', async () => {
@@ -202,6 +199,9 @@ describe('ExpressInstrumentation', () => {
     // mount path contributed by the enclosing router and causing http.route to be missing for
     // non-parameterized routes and prefix-stripped for parameterized routes.
     it('should preserve http.route when ignoreLayersType includes middleware and a path-less middleware is present', async () => {
+      instrumentation.setConfig({
+        ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
+      });
       let rpcMetadata: RPCMetadata | undefined;
       const rootSpan = tracer.startSpan('rootSpan');
 
