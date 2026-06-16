@@ -470,7 +470,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         'OpenAI.Chat.Completions.create stream chunk: %O',
         chunk
       );
-      const idx = chunk.choices[0]?.index ?? 0;
+      const idx = chunk.choices?.[0]?.index ?? 0;
       if (!choices[idx]) {
         choices[idx] = {} as {
           content: string;
@@ -478,7 +478,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         };
       }
       if (config.captureMessageContent) {
-        const contentPart = chunk.choices[0]?.delta?.content;
+        const contentPart = chunk.choices?.[0]?.delta?.content;
         if (contentPart) {
           if (!choices[idx].content) {
             choices[idx].content = '';
@@ -487,7 +487,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         }
       }
       // Assume delta.tool_calls, if exists, is an array of length 1.
-      const toolCallPart = chunk.choices[0]?.delta?.tool_calls?.[0];
+      const toolCallPart = chunk.choices?.[0]?.delta?.tool_calls?.[0];
       if (toolCallPart) {
         if (!choices[idx].toolCalls) {
           choices[idx].toolCalls = [];
@@ -524,7 +524,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, model);
       }
       if (!finishReasons[idx]) {
-        const finishReason = chunk.choices[0]?.finish_reason;
+        const finishReason = chunk.choices?.[0]?.finish_reason;
         if (finishReason) {
           finishReasons[idx] = finishReason;
         }

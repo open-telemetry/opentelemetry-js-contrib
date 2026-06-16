@@ -1,6 +1,21 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.62.0...instrumentation-winston-v0.63.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+* **instrumentation-winston:** use Logs API exception field when translating winston error records ([#3441](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3441)) ([1940b77](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1940b77bd9611a1258a8b0021f531efa4b5d8eb7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/winston-transport bumped from ^0.28.0 to ^0.29.0
+
 ## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.61.0...instrumentation-winston-v0.62.0) (2026-05-13)
 
 

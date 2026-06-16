@@ -1,6 +1,14 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.71.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.70.0...instrumentation-aws-lambda-v0.71.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+* **opentelemetry-instrumentation-aws-lambda:** Add sqs context propagation ([#2981](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2981)) ([03c6ed0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/03c6ed0b340cffd346ea06fe9d715a7ad919f426))
+
 ## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.69.0...instrumentation-aws-lambda-v0.70.0) (2026-05-13)
 
 

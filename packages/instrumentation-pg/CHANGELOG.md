@@ -1,6 +1,23 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.71.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.70.0...instrumentation-pg-v0.71.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+* **instrumentation-pg:** propagate context using set application_name ([#3454](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3454)) ([0a1f464](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0a1f4648ceb11d9a2a8b4bccab4b8a2a28546b09))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/sql-common bumped from ^0.41.2 to ^0.42.0
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.65.0 to ^0.66.0
+
 ## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.69.0...instrumentation-pg-v0.70.0) (2026-05-13)
 
 
