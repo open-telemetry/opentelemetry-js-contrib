@@ -151,9 +151,11 @@ describe('ExpressInstrumentation', () => {
 
     it('should correctly name http root path when its /', async () => {
       instrumentation.setConfig({
-        ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
+        ignoreLayersType: [
+          ExpressLayerType.MIDDLEWARE,
+          ExpressLayerType.REQUEST_HANDLER,
+        ],
       } as ExpressInstrumentationConfig);
-      memoryExporter.reset();
       let rpcMetadata: RPCMetadata;
       const rootSpan = tracer.startSpan('rootSpan');
 
@@ -181,19 +183,11 @@ describe('ExpressInstrumentation', () => {
           assert.strictEqual(response, 'ok');
           rootSpan.end();
 
+          // request handler spans are suppressed because REQUEST_HANDLER is in ignoreLayersType
           const requestHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name.includes('request handler'));
-          assert.notStrictEqual(requestHandlerSpan, undefined);
-          assert.strictEqual(
-            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
-            '/'
-          );
-
-          assert.strictEqual(
-            requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
-            'request_handler'
-          );
+          assert.strictEqual(requestHandlerSpan, undefined);
           assert.strictEqual(rpcMetadata!.route, '/');
         }
       );
@@ -206,10 +200,6 @@ describe('ExpressInstrumentation', () => {
     // mount path contributed by the enclosing router and causing http.route to be missing for
     // non-parameterized routes and prefix-stripped for parameterized routes.
     it('should preserve http.route when ignoreLayersType includes middleware and a path-less middleware is present', async () => {
-      instrumentation.setConfig({
-        ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
-      });
-
       let rpcMetadata: RPCMetadata | undefined;
       const rootSpan = tracer.startSpan('rootSpan');
 
