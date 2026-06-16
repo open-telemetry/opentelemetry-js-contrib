@@ -15,6 +15,8 @@ import {
   diag,
   TraceFlags,
   SpanContext,
+  Attributes,
+  HrTime,
 } from '@opentelemetry/api';
 import {
   ATTR_DB_NAMESPACE,
