@@ -42,19 +42,6 @@ let _connectionHits!: Counter;
 let _connectionMisses!: Counter;
 let _connectionsCounter: Record<string, PoolConnectionsCounter> = {};
 
-// It returns db.namespace as mentioned in semantic conventions
-// Ex: ORCL1|PDB1|db_high.adb.oraclecloud.com
-export function getDBNameSpace(
-  instanceName?: string,
-  pdbName?: string,
-  serviceName?: string
-): string | undefined {
-  if (instanceName == null && pdbName == null && serviceName == null) {
-    return undefined;
-  }
-  return `${instanceName ?? ''}|${pdbName ?? ''}|${serviceName ?? ''}`;
-}
-
 // To be discussed
 export function getPoolName(pool: any):string{
   if (pool.poolAlias) return pool.poolAlias;

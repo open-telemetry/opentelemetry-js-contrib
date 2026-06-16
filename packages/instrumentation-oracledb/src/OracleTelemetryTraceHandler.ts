@@ -294,7 +294,7 @@ export function getOracleTelemetryTraceMetricHandlerClass(
       }
 
       const { instanceName, pdbName, serviceName } = connectLevelConfig;
-      const dbName = metricsUtils.getDBNameSpace(instanceName, pdbName, serviceName);
+      const dbName = this._getDBNameSpace(instanceName, pdbName, serviceName);
       const sqlCommand =
         callLevelConfig?.statement?.split(' ')[0].toUpperCase() || '';
       userContext.span.updateName(

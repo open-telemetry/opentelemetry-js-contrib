@@ -1,20 +1,7 @@
 /*
-* Copyright The OpenTelemetry Authors
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      https://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-* Copyright (c) 2025, Oracle and/or its affiliates.
-* */
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 import {
   AggregationTemporality,
   DataPoint,
@@ -234,7 +221,7 @@ describe('oracledb-metrics', () => {
         ]);
 
         results.forEach((res, i) => {
-          if (res.status === "fulfilled") {
+          if (res.status === 'fulfilled') {
             res.value.close(); // release if somehow it succeeds
           } else {
             errors.push(res.reason)
@@ -250,7 +237,7 @@ describe('oracledb-metrics', () => {
         checkPoolConnMetrics(metrics, pool, pool.poolMin, 0);
       });
 
-      it(`1.1.2 Getting new connection by closing other connection before queueTimeout from a Pool that is full initially`, async () => {
+      it('1.1.2 Getting new connection by closing other connection before queueTimeout from a Pool that is full initially', async () => {
         const conns: any = [];
         for (let i = 0; i < pool.poolMax; i++)
           conns.push(await pool.getConnection());
@@ -455,7 +442,7 @@ describe('oracledb-metrics', () => {
         await pool.getConnection();
         await new Promise((resolve) => setTimeout(resolve, queueTimeout*pool.poolIncrement));
         await pool.getConnection();
-        let metrics = await getMetrics();
+        const metrics = await getMetrics();
         checkConnHitsMisses(metrics,1,pool.poolMin+1);
       })
 
@@ -463,7 +450,7 @@ describe('oracledb-metrics', () => {
         const conn = await pool.getConnection();
         await conn.close()
         await pool.getConnection();
-        let metrics = await getMetrics();
+        const metrics = await getMetrics();
         checkConnHitsMisses(metrics,1,1);
       })
 
@@ -508,10 +495,10 @@ describe('oracledb-metrics', () => {
         assert.strictEqual(metrics[0].dataPoints.length, 4);
 
         if (metrics[0].dataPoints[0].attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME] === poolName2) {
-          let temp = poolName1
+          const temp = poolName1
           poolName1 = poolName2;
           poolName2 = temp;
-          let tempp = newPool1
+          const tempp = newPool1
           newPool1 = newPool2;
           newPool2 = tempp;
         }
@@ -695,7 +682,7 @@ describe('oracledb-metrics', () => {
         b: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
       })
       const metrics = await getMetrics();
-      checkDurationMetrics(metrics, "PLSQL");
+      checkDurationMetrics(metrics, 'PLSQL');
 
       await conn.close()
     })
@@ -710,7 +697,7 @@ describe('oracledb-metrics', () => {
       await conn.execute(createTableSql);
 
       // Define DML statement (INSERT)
-      const sql = `INSERT INTO test_temp (id, name) VALUES (:id, :name)`;
+      const sql = 'INSERT INTO test_temp (id, name) VALUES (:id, :name)';
 
       // Define binds (array of objects)
       const binds = [
@@ -724,9 +711,9 @@ describe('oracledb-metrics', () => {
       await conn.executeMany(sql, binds, options);
       await conn.commit();
       const metrics = await getMetrics();
-      checkDurationMetrics(metrics, "BATCH INSERT");
+      checkDurationMetrics(metrics, 'BATCH INSERT');
 
-      conn.execute(`DROP TABLE test_temp PURGE`)
+      conn.execute('DROP TABLE test_temp PURGE')
       await conn.commit();
 
       await conn.close()
@@ -747,18 +734,18 @@ describe('oracledb-metrics', () => {
                      END;`;
 
       const binds = [
-        { id: 1, name: "Alice" },
-        { id: 2, name: "Bob" },
-        { id: 3, name: "Charlie" },
+        { id: 1, name: 'Alice' },
+        { id: 2, name: 'Bob' },
+        { id: 3, name: 'Charlie' },
       ];
 
       instrumentation.enable();
       await conn.executeMany(plsql, binds);
       await conn.commit();
       const metrics = await getMetrics();
-      checkDurationMetrics(metrics, "BATCH PLSQL");
+      checkDurationMetrics(metrics, 'BATCH PLSQL');
       
-      conn.execute(`DROP TABLE test_temp PURGE`)
+      conn.execute('DROP TABLE test_temp PURGE')
       await conn.commit();
 
       await conn.close()

@@ -67,9 +67,9 @@ let numExecSpans = 2; // Default number of Spans created for Execute API in thin
 let numConnSpans = 2; // Default number of spans created during connection establishment.
 let poolMinSpanCount = 1; // number of spans created for createPool considering poolMin.
 const CONFIG = {
-  user: process.env.ORACLE_USER || 'scott',
-  password: process.env.ORACLE_PASSWORD || 'tiger',
-  connectString: process.env.ORACLE_CONNECTSTRING || 'localhost:1521/FREEPDB1',
+  user: process.env.ORACLE_USER || 'demo',
+  password: process.env.ORACLE_PASSWORD || 'demo',
+  connectString: process.env.ORACLE_CONNECTSTRING || 'localhost:1521/freepdb1',
 };
 const POOL_CONFIG = {
   ...CONFIG,
@@ -796,7 +796,7 @@ describe('oracledb', () => {
         attrList.push(connAttrList[connAttrList.length - 1]);
 
         await conn.close();
-        const spanNamesList : string[]= [];
+        const spanNamesList = [];
         spanNamesList.push(SpanNames.LOGOFF_MSG);
         spanNamesList.push(SpanNames.CONNECT_CLOSE);
         verifySpans(span, attrList, spanNamesList);
