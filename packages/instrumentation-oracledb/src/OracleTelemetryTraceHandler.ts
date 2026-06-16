@@ -1,18 +1,7 @@
 /*
  * Copyright The OpenTelemetry Authors
  * Copyright (c) 2025, Oracle and/or its affiliates.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
@@ -24,8 +13,8 @@ import {
   SpanKind,
   trace,
   diag,
-  HrTime,
-  Attributes,
+  TraceFlags,
+  SpanContext,
 } from '@opentelemetry/api';
 import {
   ATTR_DB_NAMESPACE,
@@ -68,6 +57,12 @@ function getTraceHandlerBaseClass(
     diag.error('Failed to load oracledb module.', err);
     return null;
   }
+}
+
+export function buildTraceparent(spanContext: SpanContext): string | undefined {
+  return `00-${spanContext.traceId}-${spanContext.spanId}-0${Number(
+    spanContext.traceFlags || TraceFlags.NONE
+  ).toString(16)}`;
 }
 
 export function getOracleTelemetryTraceMetricHandlerClass(
@@ -401,6 +396,27 @@ export function getOracleTelemetryTraceMetricHandlerClass(
       };
 
       if (traceContext.fn) {
+        if (
+          this._instrumentConfig.propagateTraceContextToSessionAction &&
+          (traceContext.operation === SpanNames.EXECUTE ||
+            traceContext.operation === SpanNames.EXECUTE_MANY)
+        ) {
+          const connection = traceContext.additionalConfig?.self;
+          const traceparent = buildTraceparent(
+            traceContext.userContext.span.spanContext()
+          );
+          if (connection && 'action' in connection && traceparent) {
+            try {
+              connection.action = traceparent;
+            } catch (err) {
+              diag.debug(
+                'Failed to set connection.action for trace propagation',
+                err
+              );
+            }
+          }
+        }
+
         // wrap the active span context to the exported function.
         traceContext.fn = context.bind(
           trace.setSpan(context.active(), traceContext.userContext.span),

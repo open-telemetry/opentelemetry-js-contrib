@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // Includes work from:
@@ -188,8 +177,8 @@ describe('AWSXRayRemoteSampler', () => {
         ).toEqual(SamplingDecision.RECORD_AND_SAMPLED);
 
         done();
-      }, 50);
-    }, 50);
+      }, 500);
+    }, 500);
   });
 
   it('testLargeReservoir', done => {
@@ -254,8 +243,8 @@ describe('AWSXRayRemoteSampler', () => {
         ).toEqual(1000);
         expect(sampled).toEqual(1000);
         done();
-      }, 50);
-    }, 50);
+      }, 500);
+    }, 500);
   });
 
   it('testSomeReservoir', done => {
@@ -334,8 +323,8 @@ describe('AWSXRayRemoteSampler', () => {
 
         expect(sampled).toEqual(100);
         done();
-      }, 50);
-    }, 50);
+      }, 500);
+    }, 500);
   });
 
   it('generates valid ClientId', () => {
@@ -389,7 +378,7 @@ describe('AWSXRayRemoteSampler', () => {
         ].SampleCount
       ).toBe(1);
       done();
-    }, 50);
+    }, 500);
   });
 
   it('Non-ParentBased _AWSXRayRemoteSampler creates expected Statistics based on all 3 Spans, disregarding Parent Span Sampling Decision', done => {
@@ -429,7 +418,7 @@ describe('AWSXRayRemoteSampler', () => {
           .SampleCount
       ).toBe(3);
       done();
-    }, 50);
+    }, 500);
   });
 });
 

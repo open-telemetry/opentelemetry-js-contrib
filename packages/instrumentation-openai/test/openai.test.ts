@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
@@ -1781,6 +1770,43 @@ describe('OpenAI', function () {
         finish_reason: 'stop',
         index: 0,
         message: {},
+      });
+    });
+
+    it('copes with chunks missing a choices array', async () => {
+      // Regression test for #3554. Some OpenAI-compatible backends (e.g.
+      // Gemini 2.5 via a gateway) stream a chunk that omits the `choices`
+      // array entirely. The stream iterator must not throw on such a chunk;
+      // previously `chunk.choices[0]` threw "Cannot read properties of
+      // undefined (reading '0')", which propagated into the caller's
+      // `for await` loop and failed the request.
+      const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+        {
+          role: 'user',
+          content: input,
+        },
+      ];
+      const stream = await client.chat.completions.create({
+        model,
+        messages,
+        stream: true,
+      });
+      let content = '';
+      for await (const part of stream) {
+        content += part.choices?.[0]?.delta?.content || '';
+      }
+      expect(content).toEqual('Atlantic Ocean.');
+
+      // The span is still produced and finished cleanly despite the
+      // choices-less chunk.
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
       });
     });
 

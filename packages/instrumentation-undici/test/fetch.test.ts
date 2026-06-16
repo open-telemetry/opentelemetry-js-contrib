@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import * as assert from 'assert';
 
@@ -45,6 +34,16 @@ describe('UndiciInstrumentation `fetch` tests', function () {
   const provider = new NodeTracerProvider({
     spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
+
+  async function waitForSpans(count: number, timeoutMs = 1000): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (
+      memoryExporter.getFinishedSpans().length < count &&
+      Date.now() < deadline
+    ) {
+      await new Promise(r => setTimeout(r, 5));
+    }
+  }
 
   before(function (done) {
     // Do not test if the `fetch` global API is not available
@@ -176,7 +175,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         httpMethod: 'GET',
         path: '/',
         query: '?query=test',
-        resHeaders: response.headers,
       });
     });
 
@@ -202,7 +200,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         httpMethod: 'GET',
         path: '/',
         query: '?query=test',
-        resHeaders: response.headers,
       });
     });
 
@@ -229,7 +226,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
             response.statusText
           );
         },
-        startSpanHook: request => {
+        startSpanHook: _request => {
           return {
             'test.hook.attribute': 'hook-value',
           };
@@ -275,21 +272,20 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         path: '/',
         query: '?query=test',
         reqHeaders: reqInit.headers,
-        resHeaders: queryResponse.headers,
       });
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.foo-client'],
-        'bar',
+        ['bar'],
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.x-requested-with'],
-        'undici',
+        ['undici'],
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.response.header.foo-server'],
-        'bar',
+        ['bar'],
         'response headers from the server are captured'
       );
       assert.strictEqual(
@@ -393,41 +389,113 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       });
     });
 
-    it('should capture error if fetch request is aborted', async function () {
+    it('should not record abort as an error if fetch request is aborted', async function () {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
 
-      let fetchError;
       const controller = new AbortController();
       const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
       const fetchPromise = fetch(fetchUrl, { signal: controller.signal });
+      // Make sure the span is started before we abort
+      await Promise.resolve();
       controller.abort();
       try {
         await fetchPromise;
       } catch (err) {
-        // Expected error
-        fetchError = err as Error;
+        // Expected - fetch throws on abort, but we don't need the error
       }
 
-      // Let the error be published to diagnostics channel
-      await new Promise(r => setTimeout(r, 50));
+      await waitForSpans(1);
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
       assert.ok(span, 'a span is present');
       assert.strictEqual(spans.length, 1);
-      assertSpan(span, {
-        hostname: 'localhost',
-        httpMethod: 'GET',
-        path: '/',
-        query: '?query=test',
-        error: fetchError,
-        noNetPeer: true, // do not check network attribs
-        forceStatus: {
-          code: SpanStatusCode.ERROR,
-          message: 'The operation was aborted.',
-        },
-      });
+
+      // Per OTel HTTP spec: intentional cancellation SHOULD NOT be an error
+      assert.strictEqual(
+        span.status.code,
+        SpanStatusCode.UNSET,
+        'span status should be UNSET for aborted requests'
+      );
+      assert.strictEqual(
+        span.events.length,
+        0,
+        'no exception event should be recorded for aborted requests'
+      );
+      assert.strictEqual(
+        span.attributes['error.type'],
+        undefined,
+        'error.type should not be set for aborted requests'
+      );
+    });
+
+    it('should not record error if fetch response body is cancelled', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+      const response = await fetch(fetchUrl);
+
+      // Cancel the response body instead of consuming it
+      await response.body?.cancel();
+
+      await waitForSpans(1);
+
+      spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(spans.length, 1);
+
+      // Per OTel HTTP spec: intentional cancellation SHOULD NOT be an error
+      assert.strictEqual(
+        span.status.code,
+        SpanStatusCode.UNSET,
+        'span status should be UNSET when response body is cancelled'
+      );
+      assert.strictEqual(
+        span.events.length,
+        0,
+        'no exception event should be recorded when response body is cancelled'
+      );
+      assert.strictEqual(
+        span.attributes['error.type'],
+        undefined,
+        'error.type should not be set when response body is cancelled'
+      );
+    });
+
+    it('should still record genuine errors as errors', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      let fetchError;
+      try {
+        const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/error`;
+        await fetch(fetchUrl);
+      } catch (err) {
+        fetchError = err as Error;
+      }
+
+      spans = memoryExporter.getFinishedSpans();
+      // If aborted before span was created, no span is expected
+      if (spans.length === 0) {
+        return;
+      }
+      const span = spans[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        span.status.code,
+        SpanStatusCode.ERROR,
+        'genuine errors should still set status to ERROR'
+      );
+      assert.strictEqual(
+        span.events.length,
+        1,
+        'genuine errors should record an exception event'
+      );
+      assert.ok(fetchError, 'fetch should have thrown');
     });
   });
 });

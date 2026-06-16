@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
@@ -19,6 +8,15 @@
  * used by this package.
  * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
  */
+
+/**
+ * The URL of the AWS SQS Queue. It's a unique identifier for a queue in Amazon Simple Queue Service (SQS) and is used to access the queue and perform actions on it.
+ *
+ * @example https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_SQS_QUEUE_URL = 'aws.sqs.queue.url' as const;
 
 /**
  * The cloud account ID the resource is assigned to.
@@ -63,3 +61,104 @@ export const ATTR_FAAS_COLDSTART = 'faas.coldstart' as const;
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_FAAS_NAME = 'faas.name' as const;
+
+/**
+ * Type of the trigger which caused this function invocation.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_FAAS_TRIGGER = 'faas.trigger' as const;
+
+/**
+ * The number of messages sent, received, or processed in the scope of the batching operation.
+ *
+ * @example 0
+ * @example 1
+ * @example 2
+ *
+ * @note Instrumentations **SHOULD NOT** set `messaging.batch.message_count` on spans that operate with a single message. When a messaging client library supports both batch and single-message API for the same operation, instrumentations **SHOULD** use `messaging.batch.message_count` for batching APIs and **SHOULD NOT** use it for single-message APIs.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_BATCH_MESSAGE_COUNT =
+  'messaging.batch.message_count' as const;
+
+/**
+ * The message destination name
+ *
+ * @example MyQueue
+ * @example MyTopic
+ *
+ * @note Destination name **SHOULD** uniquely identify a specific queue, topic or other entity within the broker. If
+ * the broker doesn't have such notion, the destination name **SHOULD** uniquely identify the broker.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_DESTINATION_NAME =
+  'messaging.destination.name' as const;
+
+/**
+ * A value used by the messaging system as an identifier for the message, represented as a string.
+ *
+ * @example "452a7c7c7c7048c2f887f61572b18fc2"
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_MESSAGE_ID = 'messaging.message.id' as const;
+
+/**
+ * The system-specific name of the messaging operation.
+ *
+ * @example ack
+ * @example nack
+ * @example send
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_OPERATION_NAME =
+  'messaging.operation.name' as const;
+
+/**
+ * A string identifying the type of the messaging operation.
+ *
+ * @note If a custom value is used, it **MUST** be of low cardinality.
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_OPERATION_TYPE =
+  'messaging.operation.type' as const;
+
+/**
+ * The messaging system as identified by the client instrumentation.
+ *
+ * @note The actual messaging system may differ from the one known by the client. For example, when using Kafka client libraries to communicate with Azure Event Hubs, the `messaging.system` is set to `kafka` based on the instrumentation's best knowledge.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_SYSTEM = 'messaging.system' as const;
+
+/**
+ * Enum value "pubsub" for attribute {@link ATTR_FAAS_TRIGGER}.
+ *
+ * A function is set to be executed when messages are sent to a messaging system
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const FAAS_TRIGGER_VALUE_PUBSUB = 'pubsub' as const;
+
+/**
+ * Enum value "process" for attribute {@link ATTR_MESSAGING_OPERATION_TYPE}.
+ *
+ * One or more messages are processed by a consumer.
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const MESSAGING_OPERATION_TYPE_VALUE_PROCESS = 'process' as const;
+
+/**
+ * Enum value "aws_sqs" for attribute {@link ATTR_MESSAGING_SYSTEM}.
+ *
+ * Amazon Simple Queue Service (SQS)
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const MESSAGING_SYSTEM_VALUE_AWS_SQS = 'aws_sqs' as const;

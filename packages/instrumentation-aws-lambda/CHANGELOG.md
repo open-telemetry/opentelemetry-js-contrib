@@ -1,6 +1,63 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.71.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.70.0...instrumentation-aws-lambda-v0.71.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+* **opentelemetry-instrumentation-aws-lambda:** Add sqs context propagation ([#2981](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2981)) ([03c6ed0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/03c6ed0b340cffd346ea06fe9d715a7ad919f426))
+
+## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.69.0...instrumentation-aws-lambda-v0.70.0) (2026-05-13)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3523](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3523)) ([e26a90a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e26a90af6e2fb4666b22388b770add7a60140c9b))
+
+## [0.69.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.68.0...instrumentation-aws-lambda-v0.69.0) (2026-05-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3507](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3507)) ([e1ef3d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e1ef3d1b14f177afd738f1c967018c1dc6fc900e))
+
+## [0.68.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.67.0...instrumentation-aws-lambda-v0.68.0) (2026-04-29)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3497](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3497)) ([a91133a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a91133aa0aac9486eda26f3338d7673851b8bd69))
+
+## [0.67.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.66.0...instrumentation-aws-lambda-v0.67.0) (2026-04-17)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3479](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3479)) ([8891261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8891261cb590efcb661bd9f8afec4d1adf885ad8))
+
+## [0.66.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.65.0...instrumentation-aws-lambda-v0.66.0) (2026-03-25)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3450](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3450)) ([c8df394](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c8df394f02d68ae48a79a50258682c09dac13b8b))
+
+## [0.65.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.64.0...instrumentation-aws-lambda-v0.65.0) (2026-03-04)
+
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3411](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3411)) ([7f4b776](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7f4b776abbe22aa38d2e9f36c22aa293a9e31687))
+
+## [0.64.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.63.0...instrumentation-aws-lambda-v0.64.0) (2026-02-16)
+
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3383](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3383)) ([d3ac785](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3ac7851d69d0781c2c631012937a73998b744e1))
+
 ## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.62.0...instrumentation-aws-lambda-v0.63.0) (2026-01-21)
 
 
