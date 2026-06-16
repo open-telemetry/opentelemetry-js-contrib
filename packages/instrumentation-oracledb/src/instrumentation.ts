@@ -29,13 +29,13 @@ export class OracleInstrumentation extends InstrumentationBase {
   }
 
   protected override _updateMetricInstruments(): void {
-    metrics._setMetricInstruments(this.meter)
+    metrics._setMetricInstruments(this.meter);
   }
 
   protected init() {
     const moduleOracleDB = new InstrumentationNodeModuleDefinition(
       'oracledb',
-      [">=6.0.0"],
+      ['>=6.0.0'],
       (moduleExports: typeof oracleDBTypes) => {
         if (!moduleExports) {
           return;
@@ -46,7 +46,8 @@ export class OracleInstrumentation extends InstrumentationBase {
           this._tmHandler = null;
         }
         const config = this.getConfig();
-        const thClass = getOracleTelemetryTraceMetricHandlerClass(moduleExports);
+        const thClass =
+          getOracleTelemetryTraceMetricHandlerClass(moduleExports);
         if (thClass) {
           const obj = new thClass(() => this.tracer, config);
           obj.enable();

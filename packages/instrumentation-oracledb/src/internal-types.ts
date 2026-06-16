@@ -12,7 +12,7 @@ import { SpanConnectionConfig } from './types';
 // received in onExitFn to end the span.
 export interface InstrumentationContext {
   span: api.Span;
-  startTime?:api.HrTime;
+  startTime?: api.HrTime;
 }
 
 // Captures the entire span data.

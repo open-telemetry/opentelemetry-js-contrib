@@ -33,9 +33,7 @@ import {
   ATTR_DB_OPERATION_PARAMETER,
   DB_SYSTEM_NAME_VALUE_ORACLE_DB,
 } from './semconv';
-import {
-  hrTime
-} from '@opentelemetry/core';
+import { hrTime } from '@opentelemetry/core';
 
 import type * as oracleDBTypes from 'oracledb';
 type TraceHandlerBaseCtor = new () => any;
@@ -334,20 +332,26 @@ export function getOracleTelemetryTraceMetricHandlerClass(
       }
     }
 
-    private _getExecOperationAttributes(
-      traceContext: TraceSpanData
-    ) {
+    private _getExecOperationAttributes(traceContext: TraceSpanData) {
       const isBatch = traceContext.operation === SpanNames.EXECUTE_MANY;
-      const connAttrs = this._getConnectionSpanAttributes(traceContext.connectLevelConfig);
+      const connAttrs = this._getConnectionSpanAttributes(
+        traceContext.connectLevelConfig
+      );
       let attributes: Attributes = {
         [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
         [ATTR_DB_NAMESPACE]: connAttrs[ATTR_DB_NAMESPACE],
         [ATTR_SERVER_PORT]: connAttrs[ATTR_SERVER_PORT],
         [ATTR_SERVER_ADDRESS]: connAttrs[ATTR_SERVER_ADDRESS],
-        [ATTR_DB_OPERATION_NAME]: metricsUtils.getOperationName(traceContext.callLevelConfig?.statement, isBatch)
+        [ATTR_DB_OPERATION_NAME]: metricsUtils.getOperationName(
+          traceContext.callLevelConfig?.statement,
+          isBatch
+        ),
       };
       if (traceContext.error)
-        attributes = { ...attributes, [ATTR_ERROR_TYPE]: traceContext.error.code }
+        attributes = {
+          ...attributes,
+          [ATTR_ERROR_TYPE]: traceContext.error.code,
+        };
       const metricsAttributes: Attributes = {};
       const keysToCopy: string[] = [
         ATTR_DB_NAMESPACE,
@@ -368,9 +372,9 @@ export function getOracleTelemetryTraceMetricHandlerClass(
       traceContext: TraceSpanData,
       startExecTime: HrTime | undefined
     ) {
-      if(startExecTime === undefined) return;
+      if (startExecTime === undefined) return;
       const attributes = this._getExecOperationAttributes(traceContext);
-      metricsUtils.recordOperationDuration(attributes, startExecTime)
+      metricsUtils.recordOperationDuration(attributes, startExecTime);
     }
 
     setInstrumentConfig(config: OracleInstrumentationConfig = {}) {
@@ -393,8 +397,8 @@ export function getOracleTelemetryTraceMetricHandlerClass(
         span: this._getTracer().startSpan(spanName, {
           kind: SpanKind.CLIENT,
           attributes: spanAttributes,
-        }), 
-        startTime: hrTime()
+        }),
+        startTime: hrTime(),
       };
 
       if (traceContext.fn) {
@@ -535,7 +539,6 @@ export function getOracleTelemetryTraceMetricHandlerClass(
     onPoolClose(pool: oracleDBTypes.Pool) {
       metricsUtils.updateCounter(pool);
     }
-
   }
   return OracleTelemetryTraceMetricHandler;
 }

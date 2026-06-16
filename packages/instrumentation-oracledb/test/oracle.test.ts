@@ -1565,7 +1565,7 @@ describe('oracledb', () => {
       beforeEach(async () => {
         instrumentation.setConfig({
           enhancedDatabaseReporting: true,
-          requestHook: (span, requestInfo) => {
+          requestHook: (_span, _requestInfo) => {
             throw 'Failed!';
           },
         });
@@ -1654,7 +1654,7 @@ describe('oracledb', () => {
       beforeEach(async () => {
         instrumentation.setConfig({
           enhancedDatabaseReporting: true,
-          responseHook: (span, responseInfo) => {
+          responseHook: (_span, _responseInfo) => {
             throw 'Failure!';
           },
         });
