@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-amqplib
 
 ## Supported Versions
 
-- [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <2`
+- [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <3`
 
 ## Usage
 
