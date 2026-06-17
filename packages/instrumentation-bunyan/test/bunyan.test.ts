@@ -21,6 +21,7 @@ import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
+  ATTR_OTEL_EVENT_NAME,
   ATTR_SERVICE_NAME,
 } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
@@ -552,5 +553,98 @@ describe('OpenTelemetryBunyanStream', () => {
 
       span.end();
     });
+  });
+});
+
+describe('otel.event.name support', () => {
+  const stream = new OpenTelemetryBunyanStream();
+
+  beforeEach(() => {
+    memExporter.getFinishedLogRecords().length = 0;
+  });
+
+  it('sets eventName on the LogRecord when otel.event.name is present', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ 'otel.event.name': 'my-event', foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, 'my-event');
+  });
+
+  it('does not pass otel.event.name through as an attribute', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ 'otel.event.name': 'my-event', foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, 'my-event');
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
+    assert.strictEqual(logRecords[0].attributes['foo'], 'bar');
+    assert.strictEqual(logRecords[0].body, 'hi');
+    assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO);
+  });
+
+  it('leaves eventName undefined when otel.event.name is absent', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, undefined);
+  });
+
+  it('ignores otel.event.name when value is a number', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ 'otel.event.name': 123, foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, undefined);
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
+  });
+
+  it('ignores otel.event.name when value is an object', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ 'otel.event.name': { bad: true }, foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, undefined);
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
+  });
+
+  it('promotes otel.event.name to eventName when value is empty string', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ 'otel.event.name': '', foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, '');
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
   });
 });
