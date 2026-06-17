@@ -5370,7 +5370,7 @@ describe('OpenAI', function () {
               },
             ],
           },
-        ],
+        ] as OpenAI.Responses.ResponseInput,
       });
 
       expect(response.output_text).toEqual('A cat.');
@@ -5389,10 +5389,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_INPUT_MESSAGES]: [
           {
             role: 'user',
-            parts: [
-              { type: 'text', content: undefined },
-              { type: 'image' },
-            ],
+            parts: [{ type: 'text', content: undefined }, { type: 'image' }],
           },
         ],
       });
@@ -7157,7 +7154,7 @@ describe('OpenAI', function () {
               },
             ],
           },
-        ],
+        ] as OpenAI.Responses.ResponseInput,
       });
 
       expect(response.output_text).toEqual('A cat.');
@@ -9183,10 +9180,7 @@ describe('OpenAI', function () {
 
       let text = '';
       for await (const event of stream) {
-        if (
-          event.type === 'response.output_text.delta' &&
-          'delta' in event
-        ) {
+        if (event.type === 'response.output_text.delta' && 'delta' in event) {
           text += event.delta;
         }
       }
@@ -11248,10 +11242,7 @@ describe('OpenAI', function () {
 
       let text = '';
       for await (const event of stream) {
-        if (
-          event.type === 'response.output_text.delta' &&
-          'delta' in event
-        ) {
+        if (event.type === 'response.output_text.delta' && 'delta' in event) {
           text += event.delta;
         }
       }
