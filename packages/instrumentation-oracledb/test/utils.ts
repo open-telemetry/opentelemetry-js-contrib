@@ -22,7 +22,7 @@ export const POOL_CONFIG = {
 
 export async function waitForCreatePool(pool: oracledb.Pool, time: number) {
   let retryCount = 5; // counter to wait for new connections to appear
-  while (pool.connectionsOpen !== pool.poolMin) {
+  while (pool.connectionsOpen < pool.poolMin) {
     // Let background thread complete poolMin conns.
     await new Promise(r => setTimeout(r, time));
     retryCount -= 1;

@@ -125,14 +125,17 @@ export function updateCounter(pool: oracleDBTypes.Pool) {
     timeouts: 0,
   };
 
-  // fetch stats values from pool
-  const metrics =
+  const statistics =
+    pool.status === oracleDBTypes.POOL_STATUS_OPEN
+      ? pool.getStatistics()
+      : undefined;
+  const metrics: PoolConnectionsCounter =
     pool.status === oracleDBTypes.POOL_STATUS_OPEN
       ? {
           used: pool.connectionsInUse,
           idle: pool.connectionsOpen - pool.connectionsInUse,
-          pending: pool.getStatistics()?.currentQueueLength,
-          timeouts: pool.getStatistics()?.requestTimeouts,
+          pending: statistics?.currentQueueLength ?? 0,
+          timeouts: statistics?.requestTimeouts ?? 0,
         }
       : { used: 0, idle: 0, pending: 0, timeouts: 0 };
 
@@ -141,7 +144,7 @@ export function updateCounter(pool: oracleDBTypes.Pool) {
     used: metrics.used - latest.used,
     idle: metrics.idle - latest.idle,
     pending: metrics.pending - latest.pending,
-    timeouts: metrics.timeouts - latest.timeouts,
+    timeouts: Math.max(metrics.timeouts - latest.timeouts, 0),
   };
 
   // apply deltas & update counters
