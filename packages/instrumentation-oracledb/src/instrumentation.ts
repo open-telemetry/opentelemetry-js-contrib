@@ -11,7 +11,6 @@ import {
 import type * as oracleDBTypes from 'oracledb';
 import { OracleInstrumentationConfig } from './types';
 import * as metrics from './metricUtils';
-import { MeterProvider } from '@opentelemetry/api';
 import { getOracleTelemetryTraceMetricHandlerClass } from './OracleTelemetryTraceMetricHandler';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -22,10 +21,6 @@ export class OracleInstrumentation extends InstrumentationBase {
   constructor(config: OracleInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
     metrics._setMetricInstruments(this.meter);
-  }
-
-  override setMeterProvider(meterProvider: MeterProvider) {
-    super.setMeterProvider(meterProvider);
   }
 
   protected override _updateMetricInstruments(): void {
