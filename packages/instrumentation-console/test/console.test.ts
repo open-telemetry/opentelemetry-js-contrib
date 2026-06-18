@@ -45,7 +45,7 @@ describe('ConsoleInstrumentation', () => {
       assert.strictEqual(logRecords.length, 1);
       assert.strictEqual(logRecords[0].body, 'hello world');
       assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO);
-      assert.strictEqual(logRecords[0].severityText, 'INFO');
+      assert.strictEqual(logRecords[0].severityText, 'info');
     });
 
     it('emits LogRecord for console.info', () => {
@@ -54,7 +54,7 @@ describe('ConsoleInstrumentation', () => {
       assert.strictEqual(logRecords.length, 1);
       assert.strictEqual(logRecords[0].body, 'info message');
       assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO);
-      assert.strictEqual(logRecords[0].severityText, 'INFO');
+      assert.strictEqual(logRecords[0].severityText, 'info');
     });
 
     it('emits LogRecord for console.warn', () => {
@@ -63,7 +63,7 @@ describe('ConsoleInstrumentation', () => {
       assert.strictEqual(logRecords.length, 1);
       assert.strictEqual(logRecords[0].body, 'warning message');
       assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.WARN);
-      assert.strictEqual(logRecords[0].severityText, 'WARN');
+      assert.strictEqual(logRecords[0].severityText, 'warn');
     });
 
     it('emits LogRecord for console.error', () => {
@@ -72,7 +72,7 @@ describe('ConsoleInstrumentation', () => {
       assert.strictEqual(logRecords.length, 1);
       assert.strictEqual(logRecords[0].body, 'error message');
       assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.ERROR);
-      assert.strictEqual(logRecords[0].severityText, 'ERROR');
+      assert.strictEqual(logRecords[0].severityText, 'error');
     });
 
     it('emits LogRecord for console.debug', () => {
@@ -81,7 +81,7 @@ describe('ConsoleInstrumentation', () => {
       assert.strictEqual(logRecords.length, 1);
       assert.strictEqual(logRecords[0].body, 'debug message');
       assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
-      assert.strictEqual(logRecords[0].severityText, 'DEBUG');
+      assert.strictEqual(logRecords[0].severityText, 'debug');
     });
 
     it('emits LogRecord for console.trace', () => {
@@ -90,7 +90,7 @@ describe('ConsoleInstrumentation', () => {
       assert.strictEqual(logRecords.length, 1);
       assert.strictEqual(logRecords[0].body, 'trace message');
       assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.TRACE);
-      assert.strictEqual(logRecords[0].severityText, 'TRACE');
+      assert.strictEqual(logRecords[0].severityText, 'trace');
     });
 
     it('formats multiple arguments', () => {
@@ -109,20 +109,14 @@ describe('ConsoleInstrumentation', () => {
   });
 
   describe('trace context correlation', () => {
-    it('includes trace context in attributes when span is active', () => {
+    it('associates active span context with the LogRecord', () => {
       const span = tracer.startSpan('test-span');
       context.with(trace.setSpan(context.active(), span), () => {
         const { traceId, spanId, traceFlags } = span.spanContext();
         console.log('in span');
         const logRecords = memExporter.getFinishedLogRecords();
         assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(logRecords[0].attributes['trace_id'], traceId);
-        assert.strictEqual(logRecords[0].attributes['span_id'], spanId);
-        assert.strictEqual(
-          logRecords[0].attributes['trace_flags'],
-          `0${traceFlags.toString(16)}`
-        );
-        // spanContext is auto-populated by the OTel SDK
+        // spanContext is populated by the OTel SDK from the emitted context
         assert.strictEqual(logRecords[0].spanContext?.traceId, traceId);
         assert.strictEqual(logRecords[0].spanContext?.spanId, spanId);
         assert.strictEqual(logRecords[0].spanContext?.traceFlags, traceFlags);
@@ -130,33 +124,11 @@ describe('ConsoleInstrumentation', () => {
       span.end();
     });
 
-    it('does not include trace context when no span is active', () => {
+    it('does not associate span context when no span is active', () => {
       console.log('no span');
       const logRecords = memExporter.getFinishedLogRecords();
       assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].attributes['trace_id'], undefined);
-      assert.strictEqual(logRecords[0].attributes['span_id'], undefined);
-      assert.strictEqual(logRecords[0].attributes['trace_flags'], undefined);
       assert.strictEqual(logRecords[0].spanContext, undefined);
-    });
-
-    it('does not inject trace context when disableLogCorrelation=true', () => {
-      instrumentation.setConfig({ disableLogCorrelation: true });
-      const span = tracer.startSpan('test-span');
-      context.with(trace.setSpan(context.active(), span), () => {
-        console.log('no correlation');
-        const logRecords = memExporter.getFinishedLogRecords();
-        assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(logRecords[0].attributes['trace_id'], undefined);
-        assert.strictEqual(logRecords[0].attributes['span_id'], undefined);
-        assert.strictEqual(logRecords[0].attributes['trace_flags'], undefined);
-        // SDK still populates spanContext since emit happens in active context
-        assert.strictEqual(
-          logRecords[0].spanContext?.traceId,
-          span.spanContext().traceId
-        );
-      });
-      span.end();
     });
   });
 
@@ -177,75 +149,6 @@ describe('ConsoleInstrumentation', () => {
       assert.strictEqual(logRecords.length, 2);
       assert.strictEqual(logRecords[0].body, 'warn log');
       assert.strictEqual(logRecords[1].body, 'error log');
-    });
-
-    it('calls logHook and includes returned attributes', () => {
-      instrumentation.setConfig({
-        logHook: (_span, record) => {
-          record['custom.field'] = 'test-value';
-        },
-      });
-      const span = tracer.startSpan('test-span');
-      context.with(trace.setSpan(context.active(), span), () => {
-        console.warn('test hook');
-        const logRecords = memExporter.getFinishedLogRecords();
-        assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(
-          logRecords[0].attributes['custom.field'],
-          'test-value'
-        );
-      });
-      span.end();
-    });
-
-    it('does not call logHook when no span is active', () => {
-      let hookCalled = false;
-      instrumentation.setConfig({
-        logHook: () => {
-          hookCalled = true;
-        },
-      });
-      console.log('no span');
-      assert.strictEqual(hookCalled, false);
-    });
-
-    it('does not call logHook when disableLogCorrelation=true', () => {
-      let hookCalled = false;
-      instrumentation.setConfig({
-        disableLogCorrelation: true,
-        logHook: () => {
-          hookCalled = true;
-        },
-      });
-      const span = tracer.startSpan('test-span');
-      context.with(trace.setSpan(context.active(), span), () => {
-        console.log('no hook');
-        assert.strictEqual(hookCalled, false);
-        // Log sending still works
-        assert.strictEqual(memExporter.getFinishedLogRecords().length, 1);
-      });
-      span.end();
-    });
-
-    it('does not propagate exceptions from logHook', () => {
-      instrumentation.setConfig({
-        logHook: () => {
-          throw new Error('hook error');
-        },
-      });
-      const span = tracer.startSpan('test-span');
-      context.with(trace.setSpan(context.active(), span), () => {
-        console.log('test');
-        const logRecords = memExporter.getFinishedLogRecords();
-        assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(logRecords[0].body, 'test');
-        // Trace context still populated despite hook error
-        assert.strictEqual(
-          logRecords[0].attributes['trace_id'],
-          span.spanContext().traceId
-        );
-      });
-      span.end();
     });
   });
 

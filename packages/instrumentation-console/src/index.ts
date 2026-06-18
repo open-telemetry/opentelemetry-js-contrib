@@ -4,4 +4,4 @@
  */
 
 export { ConsoleInstrumentation } from './instrumentation';
-export type { ConsoleInstrumentationConfig, LogHookFunction } from './types';
+export type { ConsoleInstrumentationConfig } from './types';

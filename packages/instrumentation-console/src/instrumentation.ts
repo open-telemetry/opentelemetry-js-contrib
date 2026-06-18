@@ -3,23 +3,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
-import { logs, Logger, LogAttributes } from '@opentelemetry/api-logs';
-import {
-  InstrumentationBase,
-  safeExecuteInTheMiddle,
-} from '@opentelemetry/instrumentation';
-import {
-  ConsoleInstrumentationConfig,
-  CONSOLE_METHODS,
-  CONSOLE_SEVERITY_TEXT,
-} from './types';
+import { context } from '@opentelemetry/api';
+import { logs, Logger, SeverityNumber } from '@opentelemetry/api-logs';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
+import { ConsoleInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const DEFAULT_CONFIG: ConsoleInstrumentationConfig = {
   disableLogSending: false,
-  disableLogCorrelation: false,
+};
+
+/** Console methods to instrument and their severity mappings. */
+const CONSOLE_METHODS: Record<string, SeverityNumber> = {
+  trace: SeverityNumber.TRACE,
+  debug: SeverityNumber.DEBUG,
+  log: SeverityNumber.INFO,
+  info: SeverityNumber.INFO,
+  warn: SeverityNumber.WARN,
+  error: SeverityNumber.ERROR,
+  dir: SeverityNumber.INFO,
+};
+
+/** Severity text labels for console methods. */
+const CONSOLE_SEVERITY_TEXT: Record<string, string> = {
+  trace: 'trace',
+  debug: 'debug',
+  log: 'info',
+  info: 'info',
+  warn: 'warn',
+  error: 'error',
+  dir: 'info',
 };
 
 export class ConsoleInstrumentation extends InstrumentationBase<ConsoleInstrumentationConfig> {
@@ -83,24 +97,6 @@ export class ConsoleInstrumentation extends InstrumentationBase<ConsoleInstrumen
     this._originals.clear();
   }
 
-  private _callHook(span: Span, record: Record<string, any>) {
-    const { logHook } = this.getConfig();
-
-    if (typeof logHook !== 'function') {
-      return;
-    }
-
-    safeExecuteInTheMiddle(
-      () => logHook(span, record),
-      err => {
-        if (err) {
-          this._diag.error('error calling logHook', err);
-        }
-      },
-      true
-    );
-  }
-
   private _createPatchedMethod(
     methodName: string,
     original: (...args: unknown[]) => void
@@ -130,27 +126,6 @@ export class ConsoleInstrumentation extends InstrumentationBase<ConsoleInstrumen
 
       const message = formatArgs(args);
 
-      const attributes: LogAttributes = {};
-
-      // Add trace context to attributes for log correlation
-      // The OTel SDK also auto-populates spanContext on the LogRecord
-      // from the active context, so these attributes are for additional
-      // correlation in the log output itself.
-      if (!config.disableLogCorrelation) {
-        const span = trace.getSpan(context.active());
-        if (span) {
-          const spanContext = span.spanContext();
-          if (isSpanContextValid(spanContext)) {
-            attributes['trace_id'] = spanContext.traceId;
-            attributes['span_id'] = spanContext.spanId;
-            attributes['trace_flags'] =
-              `0${spanContext.traceFlags.toString(16)}`;
-
-            instrumentation._callHook(span, attributes);
-          }
-        }
-      }
-
       // Set the re-entrancy guard before emitting to the OTel logger.
       // This prevents infinite loops when an exporter (e.g. ConsoleLogRecordExporter)
       // calls console.log() to export the record we just created.
@@ -158,13 +133,15 @@ export class ConsoleInstrumentation extends InstrumentationBase<ConsoleInstrumen
       try {
         const otelLogger = instrumentation._getOTelLogger();
         const timestamp = Date.now();
+        // Pass the active context so the Logs SDK can associate the
+        // LogRecord with the currently active span (trace context).
         otelLogger.emit({
           timestamp,
           observedTimestamp: timestamp,
           severityNumber,
           severityText: CONSOLE_SEVERITY_TEXT[methodName],
           body: message,
-          attributes,
+          context: context.active(),
         });
 
         return original.apply(this, args);

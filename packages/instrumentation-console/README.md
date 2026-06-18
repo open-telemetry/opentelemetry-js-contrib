@@ -36,36 +36,27 @@ console.error('Something bad');  // severity: ERROR
 
 | Console Method   | Severity Number | Severity Text |
 | ---------------- | --------------- | ------------- |
-| `console.trace`  | TRACE           | TRACE         |
-| `console.debug`  | DEBUG           | DEBUG         |
-| `console.log`    | INFO            | INFO          |
-| `console.info`   | INFO            | INFO          |
-| `console.warn`   | WARN            | WARN          |
-| `console.error`  | ERROR           | ERROR         |
-| `console.dir`    | INFO            | INFO          |
+| `console.trace`  | TRACE           | trace         |
+| `console.debug`  | DEBUG           | debug         |
+| `console.log`    | INFO            | info          |
+| `console.info`   | INFO            | info          |
+| `console.warn`   | WARN            | warn          |
+| `console.error`  | ERROR           | error         |
+| `console.dir`    | INFO            | info          |
 
 ## Configuration
 
 | Option                  | Type                  | Default | Description                                                        |
 | ----------------------- | --------------------- | ------- | ------------------------------------------------------------------ |
 | `disableLogSending`     | `boolean`             | `false` | Disable sending log records to the OTel Logs SDK                   |
-| `disableLogCorrelation` | `boolean`             | `false` | Disable injecting trace context fields into log record attributes  |
 | `logSeverity`           | `SeverityNumber`      | —       | Minimum severity level; only logs at or above this level are sent  |
-| `logHook`               | `LogHookFunction`     | —       | Hook to inject additional fields into log records                  |
-
-### logHook Example
-
-```javascript
-new ConsoleInstrumentation({
-  logHook: (span, record) => {
-    record['custom.field'] = 'value';
-  },
-});
-```
 
 ## Trace Context Correlation
 
-When a console method is called within an active span context, the resulting LogRecord will automatically include `trace_id`, `span_id`, and `trace_flags` attributes for log correlation.
+When a console method is called within an active span context, the emitted
+LogRecord is associated with that context. The OpenTelemetry Logs SDK uses this
+to populate the LogRecord's `spanContext` (trace ID, span ID, and trace flags),
+so exported log records can be correlated with their originating trace.
 
 ## Important: Infinite Loop Prevention
 
