@@ -52,7 +52,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
     Function | EventListenerObject,
-    Map<string, Map<HTMLElement, Function>>
+    Map<string, WeakMap<HTMLElement, Function>>
   >();
   // for event bubbling
   private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<
@@ -216,7 +216,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     }
     let element2patched = listener2Type.get(type);
     if (!element2patched) {
-      element2patched = new Map();
+      element2patched = new WeakMap();
       listener2Type.set(type, element2patched);
     }
     if (element2patched.has(on)) {
@@ -245,12 +245,6 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     const patched = element2patched.get(on);
     if (patched) {
       element2patched.delete(on);
-      if (element2patched.size === 0) {
-        listener2Type.delete(type);
-        if (listener2Type.size === 0) {
-          this._wrappedListeners.delete(listener);
-        }
-      }
     }
     return patched;
   }
