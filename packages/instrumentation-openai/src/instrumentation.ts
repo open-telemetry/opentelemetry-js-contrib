@@ -1034,59 +1034,63 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     for await (const event of iterable) {
       yield event;
 
-      // Gather telemetry from this chunk.
-      this._diag.debug('OpenAI.Responses.create stream event: %O', event);
+      try {
+        // Gather telemetry from this chunk.
+        this._diag.debug('OpenAI.Responses.create stream event: %O', event);
 
-      switch (event.type) {
-        case 'response.created': {
-          const response = event.response;
-          model = response.model;
-          span.setAttributes({
-            [ATTR_GEN_AI_RESPONSE_ID]: response.id,
-            [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-            [ATTR_GEN_AI_CONVERSATION_ID]: response.conversation?.id,
-          });
-          break;
-        }
-        case 'response.output_item.done': {
-          const output = converter.convert([event.item]);
-          span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
-            output[0].finish_reason,
-          ]);
-          this.logger.emit({
-            timestamp: Date.now(),
-            context: ctx,
-            severityNumber: SeverityNumber.INFO,
-            eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
-            attributes: {
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OUTPUT_MESSAGES]: output as AnyValue,
-            },
-          });
-          break;
-        }
-        case 'response.completed': {
-          const usage = event.response.usage;
-          span.setAttributes({
-            [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: usage?.input_tokens,
-            [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: usage?.output_tokens,
-          });
-          if (usage?.input_tokens) {
-            this._genaiClientTokenUsage.record(usage?.input_tokens, {
-              ...commonAttrs,
+        switch (event.type) {
+          case 'response.created': {
+            const response = event.response;
+            model = response.model;
+            span.setAttributes({
+              [ATTR_GEN_AI_RESPONSE_ID]: response.id,
               [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+              [ATTR_GEN_AI_CONVERSATION_ID]: response.conversation?.id,
             });
+            break;
           }
-          if (usage?.output_tokens) {
-            this._genaiClientTokenUsage.record(usage?.output_tokens, {
-              ...commonAttrs,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+          case 'response.output_item.done': {
+            const output = converter.convert([event.item]);
+            span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+              output[0].finish_reason,
+            ]);
+            this.logger.emit({
+              timestamp: Date.now(),
+              context: ctx,
+              severityNumber: SeverityNumber.INFO,
+              eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
+              attributes: {
+                [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+                [ATTR_GEN_AI_OUTPUT_MESSAGES]: output as AnyValue,
+              },
             });
+            break;
           }
-          break;
+          case 'response.completed': {
+            const usage = event.response.usage;
+            span.setAttributes({
+              [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: usage?.input_tokens,
+              [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: usage?.output_tokens,
+            });
+            if (usage?.input_tokens) {
+              this._genaiClientTokenUsage.record(usage?.input_tokens, {
+                ...commonAttrs,
+                [ATTR_GEN_AI_RESPONSE_MODEL]: model,
+                [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+              });
+            }
+            if (usage?.output_tokens) {
+              this._genaiClientTokenUsage.record(usage?.output_tokens, {
+                ...commonAttrs,
+                [ATTR_GEN_AI_RESPONSE_MODEL]: model,
+                [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+              });
+            }
+            break;
+          }
         }
+      } catch (e) {
+        this._diag.error('Error processing response stream event telemetry', e);
       }
     }
 
