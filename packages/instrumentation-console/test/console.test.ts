@@ -100,11 +100,18 @@ describe('ConsoleInstrumentation', () => {
       assert.strictEqual(logRecords[0].body, 'hello world 42');
     });
 
-    it('formats object arguments as JSON', () => {
+    it('formats object arguments with util.inspect', () => {
       console.log('data:', { key: 'value' });
       const logRecords = memExporter.getFinishedLogRecords();
       assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].body, 'data: {"key":"value"}');
+      assert.strictEqual(logRecords[0].body, "data: { key: 'value' }");
+    });
+
+    it('handles format specifiers', () => {
+      console.log('num: %d, str: %s', 42, 'hello');
+      const logRecords = memExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 1);
+      assert.strictEqual(logRecords[0].body, 'num: 42, str: hello');
     });
   });
 
@@ -133,13 +140,6 @@ describe('ConsoleInstrumentation', () => {
   });
 
   describe('configuration', () => {
-    it('does not emit LogRecords when disableLogSending is true', () => {
-      instrumentation.setConfig({ disableLogSending: true });
-      console.log('should not be sent');
-      const logRecords = memExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 0);
-    });
-
     it('respects logSeverity filter', () => {
       instrumentation.setConfig({ logSeverity: SeverityNumber.WARN });
       console.log('info log');

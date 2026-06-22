@@ -8,13 +8,6 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export interface ConsoleInstrumentationConfig extends InstrumentationConfig {
   /**
-   * Whether to disable the automatic sending of log records to the
-   * OpenTelemetry Logs SDK.
-   * @default false
-   */
-  disableLogSending?: boolean;
-
-  /**
    * Control minimum severity level for log sending. Logs will be sent for the
    * specified severity and higher.
    * @default SeverityNumber.UNSPECIFIED (send all)

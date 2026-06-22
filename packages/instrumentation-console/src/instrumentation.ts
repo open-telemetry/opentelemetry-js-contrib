@@ -6,13 +6,10 @@
 import { context } from '@opentelemetry/api';
 import { logs, Logger, SeverityNumber } from '@opentelemetry/api-logs';
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
+import { format } from 'util';
 import { ConsoleInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-
-const DEFAULT_CONFIG: ConsoleInstrumentationConfig = {
-  disableLogSending: false,
-};
 
 /** Console methods to instrument and their severity mappings. */
 const CONSOLE_METHODS: Record<string, SeverityNumber> = {
@@ -42,7 +39,7 @@ export class ConsoleInstrumentation extends InstrumentationBase<ConsoleInstrumen
   private _originals: Map<string, (...args: unknown[]) => void> = new Map();
 
   constructor(config: ConsoleInstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   private _getOTelLogger(): Logger {
@@ -53,7 +50,7 @@ export class ConsoleInstrumentation extends InstrumentationBase<ConsoleInstrumen
   }
 
   override setConfig(config: ConsoleInstrumentationConfig = {}) {
-    super.setConfig({ ...DEFAULT_CONFIG, ...config });
+    super.setConfig(config);
   }
 
   // console is a global object, not a require'd module, so we don't use
@@ -108,11 +105,7 @@ export class ConsoleInstrumentation extends InstrumentationBase<ConsoleInstrumen
     ): void {
       const config = instrumentation.getConfig();
 
-      if (
-        !instrumentation.isEnabled() ||
-        config.disableLogSending ||
-        instrumentation._isEmitting
-      ) {
+      if (!instrumentation.isEnabled() || instrumentation._isEmitting) {
         return original.apply(this, args);
       }
 
@@ -153,18 +146,9 @@ export class ConsoleInstrumentation extends InstrumentationBase<ConsoleInstrumen
 }
 
 /**
- * Format console arguments into a string, similar to how Node.js console does it.
+ * Format console arguments into a string using Node.js util.format,
+ * which handles %s/%d/%j format codes and util.inspect-style object output.
  */
 function formatArgs(args: unknown[]): string {
-  if (args.length === 0) return '';
-  return args
-    .map(arg => {
-      if (typeof arg === 'string') return arg;
-      try {
-        return JSON.stringify(arg);
-      } catch {
-        return String(arg);
-      }
-    })
-    .join(' ');
+  return format(...args);
 }

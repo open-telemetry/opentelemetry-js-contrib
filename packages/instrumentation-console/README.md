@@ -48,7 +48,6 @@ console.error('Something bad');  // severity: ERROR
 
 | Option                  | Type                  | Default | Description                                                        |
 | ----------------------- | --------------------- | ------- | ------------------------------------------------------------------ |
-| `disableLogSending`     | `boolean`             | `false` | Disable sending log records to the OTel Logs SDK                   |
 | `logSeverity`           | `SeverityNumber`      | —       | Minimum severity level; only logs at or above this level are sent  |
 
 ## Trace Context Correlation
