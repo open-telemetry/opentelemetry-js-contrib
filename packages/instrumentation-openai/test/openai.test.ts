@@ -114,8 +114,7 @@ describe('OpenAI', function () {
 
   const client = new OpenAI({ apiKey });
   // Responses API was added in openai v4.87.0
-  const describeResponses =
-    VERSION >= '4.87.0' ? describe : describe.skip;
+  const describeResponses = VERSION >= '4.87.0' ? describe : describe.skip;
   const model = 'gpt-4o-mini';
   const input = 'Answer in up to 3 words: Which ocean contains Bouvet Island?';
 
