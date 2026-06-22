@@ -36,6 +36,7 @@ import {
 import { expect } from 'expect';
 import { type Definition, back as nockBack } from 'nock';
 import { OpenAI } from 'openai';
+import { VERSION } from 'openai/version';
 import * as path from 'node:path';
 
 import {
@@ -112,6 +113,9 @@ describe('OpenAI', function () {
   });
 
   const client = new OpenAI({ apiKey });
+  // Responses API was added in openai v4.87.0
+  const describeResponses =
+    VERSION >= '4.87.0' ? describe : describe.skip;
   const model = 'gpt-4o-mini';
   const input = 'Answer in up to 3 words: Which ocean contains Bouvet Island?';
 
@@ -3253,7 +3257,7 @@ describe('OpenAI', function () {
     });
   });
 
-  describe('responses', function () {
+  describeResponses('responses', function () {
     this.beforeEach(() => {
       instrumentation.enable();
     });
@@ -5395,7 +5399,7 @@ describe('OpenAI', function () {
     });
   });
 
-  describe('responses with content capture', function () {
+  describeResponses('responses with content capture', function () {
     this.beforeEach(() => {
       contentCaptureInstrumentation.enable();
     });
@@ -5546,7 +5550,7 @@ describe('OpenAI', function () {
     });
   });
 
-  describe('streaming responses', function () {
+  describeResponses('streaming responses', function () {
     this.beforeEach(() => {
       instrumentation.enable();
     });
@@ -5848,7 +5852,7 @@ describe('OpenAI', function () {
     });
   });
 
-  describe('streaming responses with content capture', function () {
+  describeResponses('streaming responses with content capture', function () {
     this.beforeEach(() => {
       contentCaptureInstrumentation.enable();
     });
