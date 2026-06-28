@@ -27,12 +27,13 @@ export const getMiddlewareMetadata = (
       name: context._matchedRouteName || `router - ${layerPath}`,
     };
   } else {
+    const middlewareName = layer.name || 'middleware';
     return {
       attributes: {
-        [AttributeNames.KOA_NAME]: layer.name ?? 'middleware',
+        [AttributeNames.KOA_NAME]: middlewareName,
         [AttributeNames.KOA_TYPE]: KoaLayerType.MIDDLEWARE,
       },
-      name: `middleware - ${layer.name}`,
+      name: `middleware - ${middlewareName}`,
     };
   }
 };

@@ -450,6 +450,43 @@ describe('Koa Instrumentation', function () {
       );
     });
 
+    it('should use fallback name for anonymous middleware', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      // Arrow functions passed as arguments have .name === '' in JS (no name inference).
+      // The context-setting middleware below is one such case.
+      app.use((_ctx, next) =>
+        context.with(trace.setSpan(context.active(), rootSpan), next)
+      );
+      app.use(simpleResponse());
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}`);
+          rootSpan.end();
+
+          // With the fix, anonymous middlewares must produce the fallback name
+          // rather than an empty 'middleware - ' span name.
+          const anonymousSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'middleware - middleware');
+          assert.notStrictEqual(
+            anonymousSpan,
+            undefined,
+            'Expected a span named "middleware - middleware" for the anonymous middleware'
+          );
+          assert.strictEqual(
+            anonymousSpan?.attributes[AttributeNames.KOA_NAME],
+            'middleware'
+          );
+          assert.strictEqual(
+            anonymousSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.MIDDLEWARE
+          );
+        }
+      );
+    });
+
     it('should not create span if there is no parent span', async () => {
       app.use(customMiddleware());
       app.use(simpleResponse());
