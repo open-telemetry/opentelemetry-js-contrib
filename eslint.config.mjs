@@ -43,9 +43,7 @@ const baseConfig = tseslint.config(
       'yet-another-license-header': yalhPlugin,
       n: nodePlugin,
     },
-    extends: [
-      eslint.configs.recommended,
-    ],
+    extends: [eslint.configs.recommended],
     languageOptions: {
       ecmaVersion: 2022,
       globals: {
