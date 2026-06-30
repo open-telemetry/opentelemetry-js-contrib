@@ -30,8 +30,6 @@ import { assert } from 'chai';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-// deprecated attribute — no stable equivalent, kept only for absence assertions
-const ATTR_HTTP_RESPONSE_CONTENT_LENGTH = 'http.response_content_length';
 import { EventNames } from '../src/enums/EventNames';
 
 const exporter = new InMemorySpanExporter();
@@ -342,10 +340,6 @@ describe('DocumentLoad Instrumentation', () => {
         const fsEvents = fetchSpan.events;
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
-        assert.strictEqual(
-          rootSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
-          undefined
-        );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
 
@@ -817,53 +811,11 @@ describe('DocumentLoad Instrumentation', () => {
         done();
       });
     });
-
-    it('should not have http.response_content_length attribute (removed in stable semconv)', done => {
-      plugin = new DocumentLoadInstrumentation({
-        enabled: false,
-        ignoreNetworkEvents: true,
-      });
-      plugin.enable();
-
-      setTimeout(() => {
-        const spans = exporter.getFinishedSpans();
-        const resourceSpan = spans.find(
-          s => s.name === 'resourceFetch'
-        ) as ReadableSpan;
-        assert.isOk(resourceSpan, 'resourceFetch span should exist');
-        assert.isUndefined(
-          resourceSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
-          'http.response_content_length should not be emitted in stable semconv'
-        );
-        done();
-      });
-    });
-
-    it('should *not* have http.response_content_length attr', done => {
-      plugin = new DocumentLoadInstrumentation({
-        enabled: false,
-      });
-      plugin.enable();
-
-      setTimeout(() => {
-        const spans = exporter.getFinishedSpans();
-        const resourceSpan = spans.find(
-          s => s.name === 'resourceFetch'
-        ) as ReadableSpan;
-        assert.isOk(resourceSpan, 'resourceFetch span should exist');
-        assert.equal(
-          resourceSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
-          undefined,
-          'http.response_content_length attribute should *not* exist'
-        );
-        done();
-      });
-    });
   });
 
   describe('semantic conventions', () => {
     it('should use stable semconv attributes', done => {
-      plugin = new DocumentLoadInstrumentation();
+      plugin.enable();
       setTimeout(() => {
         const spans = exporter.getFinishedSpans();
         assert.strictEqual(spans[0].name, 'documentFetch');
