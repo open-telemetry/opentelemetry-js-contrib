@@ -22,7 +22,7 @@ const instrumentation = registerInstrumentationTesting(
 
 import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
-import { ATTR_DB_STATEMENT } from '../src/semconv';
+import { ATTR_DB_QUERY_TEXT } from '@opentelemetry/semantic-conventions';
 
 describe('MongoDBInstrumentation-Tracing-v4', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -343,7 +343,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
                 '@opentelemetry/instrumentation-mongodb'
             );
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
             );
             assert.strictEqual(dbStatement[key], '?');
             done();
@@ -380,7 +380,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
                 '@opentelemetry/instrumentation-mongodb'
             );
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
             );
             assert.deepEqual(dbStatement, {
               aggregate: '?',
@@ -435,7 +435,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
                   '@opentelemetry/instrumentation-mongodb'
               );
               const dbStatement = JSON.parse(
-                mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+                mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
               );
               assert.strictEqual(dbStatement[key], value);
               done();

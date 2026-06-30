@@ -6,15 +6,6 @@
 import * as semver from 'semver';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import {
-  DB_SYSTEM_VALUE_MYSQL,
-  ATTR_DB_NAME,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from '../src/semconv';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   BasicTracerProvider,
@@ -211,7 +202,7 @@ describe('mysql2', () => {
           query.on('end', () => {
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans[0].name, 'SELECT');
-            assert.strictEqual(spans[0].attributes[ATTR_DB_STATEMENT], sql);
+            assert.strictEqual(spans[0].attributes[ATTR_DB_QUERY_TEXT], sql);
             done();
           });
         });
@@ -229,7 +220,7 @@ describe('mysql2', () => {
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans[0].name, 'SELECT');
             assert.strictEqual(
-              spans[0].attributes[ATTR_DB_STATEMENT],
+              spans[0].attributes[ATTR_DB_QUERY_TEXT],
               query.sql
             );
             done();
@@ -1565,21 +1556,12 @@ function assertSpan(
   values?: any,
   errorMessage?: string
 ) {
-  // Assert both old and stable `db.*` semconv.
-  assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MYSQL);
-  assert.strictEqual(span.attributes[ATTR_DB_NAME], database);
-  assert.strictEqual(span.attributes[ATTR_DB_USER], user);
-  assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], format(sql, values));
   assert.strictEqual(
     span.attributes[ATTR_DB_SYSTEM_NAME],
     DB_SYSTEM_NAME_VALUE_MYSQL
   );
   assert.strictEqual(span.attributes[ATTR_DB_NAMESPACE], database);
   assert.strictEqual(span.attributes[ATTR_DB_QUERY_TEXT], format(sql, values));
-
-  // Assert both old and stable `net.*` semconv.
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], host);
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], port);
   assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], host);
   assert.strictEqual(span.attributes[ATTR_SERVER_PORT], port);
 

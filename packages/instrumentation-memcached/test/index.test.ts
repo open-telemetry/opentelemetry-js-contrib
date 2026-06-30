@@ -20,14 +20,7 @@ import type * as Memcached from 'memcached';
 import * as assert from 'assert';
 import { MemcachedInstrumentation } from '../src';
 import { ATTR_EXCEPTION_MESSAGE } from '@opentelemetry/semantic-conventions';
-import {
-  DB_SYSTEM_VALUE_MEMCACHED,
-  DB_SYSTEM_NAME_VALUE_MEMCACHED,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_OPERATION,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from '../src/semconv';
+import { DB_SYSTEM_NAME_VALUE_MEMCACHED } from '../src/semconv';
 import {
   ATTR_DB_SYSTEM_NAME,
   ATTR_DB_OPERATION_NAME,
@@ -48,11 +41,6 @@ const CONFIG = {
 };
 
 const ATTRIBUTES: Attributes = {
-  // Old semconv
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MEMCACHED,
-  [ATTR_NET_PEER_NAME]: CONFIG.host,
-  [ATTR_NET_PEER_PORT]: CONFIG.port,
-  // Stable semconv
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_MEMCACHED,
   [ATTR_SERVER_ADDRESS]: CONFIG.host,
   [ATTR_SERVER_PORT]: CONFIG.port,
@@ -291,8 +279,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
         assert.strictEqual(span.attributes[attr], ATTRIBUTES[attr]);
       }
 
-      // Verify db.operation (old) and db.operation.name (stable)
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION], expected.op);
+      // Verify db.operation.name (stable)
       assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], expected.op);
 
       // Verify db.statement (old) and db.query.text (stable) if statement is expected

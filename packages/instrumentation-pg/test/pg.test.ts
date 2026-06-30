@@ -35,17 +35,13 @@ import {
   ATTR_DB_OPERATION_NAME,
   ATTR_ERROR_TYPE,
   METRIC_DB_CLIENT_OPERATION_DURATION,
+  ATTR_DB_SYSTEM_NAME,
+  DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+  ATTR_DB_NAMESPACE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  ATTR_DB_QUERY_TEXT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_DB_SYSTEM,
-  ATTR_DB_NAME,
-  ATTR_DB_USER,
-  DB_SYSTEM_VALUE_POSTGRESQL,
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_NET_PEER_PORT,
-  ATTR_NET_PEER_NAME,
-  ATTR_DB_STATEMENT,
-} from '../src/semconv';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -61,12 +57,10 @@ const CONFIG = {
 };
 
 const DEFAULT_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
-  [ATTR_DB_NAME]: CONFIG.database,
-  [ATTR_NET_PEER_NAME]: CONFIG.host,
-  [ATTR_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-  [ATTR_NET_PEER_PORT]: CONFIG.port,
-  [ATTR_DB_USER]: CONFIG.user,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+  [ATTR_DB_NAMESPACE]: CONFIG.database,
+  [ATTR_SERVER_ADDRESS]: CONFIG.host,
+  [ATTR_SERVER_PORT]: CONFIG.port,
 };
 
 const unsetStatus: SpanStatus = {
@@ -353,7 +347,7 @@ describe('pg', () => {
     it('should intercept client.query(text, callback)', done => {
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: 'SELECT NOW()',
+        [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -373,7 +367,7 @@ describe('pg', () => {
       const values = ['0'];
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: query,
+        [ATTR_DB_QUERY_TEXT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -392,7 +386,7 @@ describe('pg', () => {
       const query = 'SELECT NOW()';
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: query,
+        [ATTR_DB_QUERY_TEXT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -414,7 +408,7 @@ describe('pg', () => {
       const query = 'SELECT NOW()';
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: query,
+        [ATTR_DB_QUERY_TEXT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -434,7 +428,7 @@ describe('pg', () => {
       const values = ['0'];
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: query,
+        [ATTR_DB_QUERY_TEXT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -454,7 +448,7 @@ describe('pg', () => {
       const values = ['0'];
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: query,
+        [ATTR_DB_QUERY_TEXT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -479,7 +473,7 @@ describe('pg', () => {
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
         [AttributeNames.PG_PLAN]: name,
-        [ATTR_DB_STATEMENT]: query,
+        [ATTR_DB_QUERY_TEXT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -503,7 +497,7 @@ describe('pg', () => {
       const query = 'SELECT NOW()';
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: query,
+        [ATTR_DB_QUERY_TEXT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -542,7 +536,7 @@ describe('pg', () => {
 
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: query,
+        [ATTR_DB_QUERY_TEXT]: query,
         [AttributeNames.PG_VALUES]: [
           'Hello,World',
           'abc',
@@ -580,7 +574,7 @@ describe('pg', () => {
 
         const expectedAttributes = {
           ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: queryConfig.text,
+          [ATTR_DB_QUERY_TEXT]: queryConfig.text,
           [AttributeNames.PG_PLAN]: queryConfig.name,
           [AttributeNames.PG_VALUES]: values,
         };
@@ -602,12 +596,12 @@ describe('pg', () => {
               const recordedAttributes = pgSpan.attributes;
 
               assert.strictEqual(
-                recordedAttributes[ATTR_DB_STATEMENT],
+                recordedAttributes[ATTR_DB_QUERY_TEXT],
                 queryConfig.text
               );
 
               assert.ok(
-                !recordedAttributes[ATTR_DB_STATEMENT].includes(values[0]),
+                !(recordedAttributes[ATTR_DB_QUERY_TEXT] as string).includes(values[0]),
                 'Query text should NOT contain parameter value'
               );
 
@@ -634,7 +628,7 @@ describe('pg', () => {
       // span if there is no requestHook.
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: query,
+        [ATTR_DB_QUERY_TEXT]: query,
       };
 
       // These are the attributes we expect on the span after the requestHook
@@ -727,7 +721,7 @@ describe('pg', () => {
       describe('AND valid responseHook', () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: query,
+          [ATTR_DB_QUERY_TEXT]: query,
           [dataAttributeName]: '{"rowCount":1}',
         };
         beforeEach(async () => {
@@ -760,7 +754,7 @@ describe('pg', () => {
         it('should attach response hook data to resulting spans for query returning a Promise', async () => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [ATTR_DB_STATEMENT]: query,
+            [ATTR_DB_QUERY_TEXT]: query,
             [dataAttributeName]: '{"rowCount":1}',
           };
 
@@ -785,7 +779,7 @@ describe('pg', () => {
       describe('AND invalid responseHook', () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: query,
+          [ATTR_DB_QUERY_TEXT]: query,
         };
 
         beforeEach(async () => {
@@ -1063,7 +1057,7 @@ describe('pg', () => {
 
         assert.strictEqual(pgSpan.name, 'pg.query:SELECT otel_pg_database');
         assert.strictEqual(
-          pgSpan.attributes[ATTR_DB_STATEMENT],
+          pgSpan.attributes[ATTR_DB_QUERY_TEXT],
           'SELECT * FROM information_schema.tables WHERE table_name = $1'
         );
 
@@ -1386,8 +1380,8 @@ describe('pg', () => {
         );
         const dataPoint = metrics[0].dataPoints[0];
         assert.strictEqual(
-          dataPoint.attributes[ATTR_DB_SYSTEM],
-          DB_SYSTEM_VALUE_POSTGRESQL
+          dataPoint.attributes[ATTR_DB_SYSTEM_NAME],
+          DB_SYSTEM_NAME_VALUE_POSTGRESQL
         );
         assert.strictEqual(
           dataPoint.attributes[ATTR_DB_OPERATION_NAME],
@@ -1433,8 +1427,8 @@ describe('pg', () => {
         );
         const dataPoint = metrics[0].dataPoints[0];
         assert.strictEqual(
-          dataPoint.attributes[ATTR_DB_SYSTEM],
-          DB_SYSTEM_VALUE_POSTGRESQL
+          dataPoint.attributes[ATTR_DB_SYSTEM_NAME],
+          DB_SYSTEM_NAME_VALUE_POSTGRESQL
         );
         assert.strictEqual(
           dataPoint.attributes[ATTR_DB_OPERATION_NAME],

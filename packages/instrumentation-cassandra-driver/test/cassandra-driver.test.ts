@@ -27,15 +27,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  DB_SYSTEM_VALUE_CASSANDRA,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-  DB_SYSTEM_NAME_VALUE_CASSANDRA,
-} from '../src/semconv';
+import { DB_SYSTEM_NAME_VALUE_CASSANDRA } from '../src/semconv';
 import * as assert from 'assert';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import type * as CassandraDriver from 'cassandra-driver';
@@ -57,18 +49,8 @@ const cassandraContactPoint = process.env.CASSANDRA_HOST
   ? '127.0.0.1'
   : 'cassandra';
 
-const DEFAULT_OLD_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_CASSANDRA,
-  [ATTR_DB_USER]: 'cassandra',
-};
-
 const DEFAULT_STABLE_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_CASSANDRA,
-};
-
-const NET_OLD_ATTRIBUTES = {
-  [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-  [ATTR_NET_PEER_PORT]: 9042,
 };
 
 const NET_STABLE_ATTRIBUTES = {
@@ -85,15 +67,12 @@ function assertSpan(
   includeAddressAttrs = true
 ) {
   const attributes: Attributes = {
-    ...DEFAULT_OLD_ATTRIBUTES,
     ...DEFAULT_STABLE_ATTRIBUTES,
-    ...(includeAddressAttrs ? NET_OLD_ATTRIBUTES : {}),
     ...(includeAddressAttrs ? NET_STABLE_ATTRIBUTES : {}),
     ...customAttributes,
   };
 
   if (query !== undefined) {
-    attributes[ATTR_DB_STATEMENT] = query;
     attributes[ATTR_DB_QUERY_TEXT] = query;
   }
 
@@ -138,15 +117,12 @@ function assertErrorSpan(
   const [span] = spans;
 
   const attributes: Attributes = {
-    ...DEFAULT_OLD_ATTRIBUTES,
     ...DEFAULT_STABLE_ATTRIBUTES,
-    ...(includeAddressAttrs ? NET_OLD_ATTRIBUTES : {}),
     ...(includeAddressAttrs ? NET_STABLE_ATTRIBUTES : {}),
     ...customAttributes,
   };
 
   if (query !== undefined) {
-    attributes[ATTR_DB_STATEMENT] = query;
     attributes[ATTR_DB_QUERY_TEXT] = query;
   }
 

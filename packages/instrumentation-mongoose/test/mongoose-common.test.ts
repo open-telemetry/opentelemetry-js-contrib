@@ -7,11 +7,11 @@ import * as assert from 'assert';
 import { expect } from 'expect';
 import { context, ROOT_CONTEXT } from '@opentelemetry/api';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
-import {
-  ATTR_DB_OPERATION,
-  ATTR_DB_STATEMENT,
-} from '../src/semconv';
 import { MongooseInstrumentation } from '../src';
+import {
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+} from '@opentelemetry/semantic-conventions';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -122,7 +122,7 @@ describe('mongoose instrumentation [common]', () => {
       assertSpan(
         spans[0] as ReadableSpan
       );
-      expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('save');
+      expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('save');
       const statement = getStatement(
         spans[0] as ReadableSpan
       );
@@ -143,7 +143,7 @@ describe('mongoose instrumentation [common]', () => {
       assertSpan(
         spans[0] as ReadableSpan
       );
-      expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('save');
+      expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('save');
       const statement = getStatement(
         spans[0] as ReadableSpan
       );
@@ -163,7 +163,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('find');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('find');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -184,12 +184,12 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[1] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('find');
-    expect(spans[0].attributes[ATTR_DB_STATEMENT]).toMatch(
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('find');
+    expect(spans[0].attributes[ATTR_DB_QUERY_TEXT]).toMatch(
       /.*{"id":"_test[1-2]"}.*/g
     );
-    expect(spans[1].attributes[ATTR_DB_OPERATION]).toBe('find');
-    expect(spans[1].attributes[ATTR_DB_STATEMENT]).toMatch(
+    expect(spans[1].attributes[ATTR_DB_OPERATION_NAME]).toBe('find');
+    expect(spans[1].attributes[ATTR_DB_QUERY_TEXT]).toMatch(
       /.*{"id":"_test[1-2]"}.*/g
     );
   });
@@ -202,7 +202,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('find');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('find');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -222,7 +222,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('deleteOne');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('deleteOne');
   });
 
   it('instrumenting updateOne operation on models', async () => {
@@ -234,7 +234,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[1] as ReadableSpan
     );
-    expect(spans[1].attributes[ATTR_DB_OPERATION]).toBe('updateOne');
+    expect(spans[1].attributes[ATTR_DB_OPERATION_NAME]).toBe('updateOne');
 
     // Note: In mongoose@9, Document.prototype.updateOne returns empty condition/updates/options
     // in the statement. The important thing is that we properly capture the operation span.
@@ -256,7 +256,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('updateOne');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('updateOne');
 
     const statement = getStatement(
       spans[0] as ReadableSpan
@@ -274,7 +274,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('countDocuments');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('countDocuments');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -290,7 +290,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe(
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe(
       'estimatedDocumentCount'
     );
     const statement = getStatement(
@@ -308,7 +308,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('deleteMany');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('deleteMany');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -324,7 +324,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('findOne');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('findOne');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -340,7 +340,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('updateOne');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('updateOne');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -357,7 +357,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('updateMany');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('updateMany');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -374,7 +374,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('findOneAndDelete');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('findOneAndDelete');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -395,7 +395,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('save');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('save');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -423,7 +423,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('insertMany');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('insertMany');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -472,7 +472,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('bulkWrite');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('bulkWrite');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -523,7 +523,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('aggregate');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('aggregate');
     const statement = getStatement(
       spans[0] as ReadableSpan
     );
@@ -563,7 +563,7 @@ describe('mongoose instrumentation [common]', () => {
     assertSpan(
       spans[0] as ReadableSpan
     );
-    expect(spans[0].attributes[ATTR_DB_STATEMENT]).toBe(undefined);
+    expect(spans[0].attributes[ATTR_DB_QUERY_TEXT]).toBe(undefined);
   });
 
   it('projection is sent to serializer', async () => {
@@ -583,7 +583,7 @@ describe('mongoose instrumentation [common]', () => {
       spans[0] as ReadableSpan
     );
     const reqPayload = JSON.parse(
-      spans[0].attributes[ATTR_DB_STATEMENT] as string
+      spans[0].attributes[ATTR_DB_QUERY_TEXT] as string
     );
     expect(reqPayload.fields).toStrictEqual(projection);
   });

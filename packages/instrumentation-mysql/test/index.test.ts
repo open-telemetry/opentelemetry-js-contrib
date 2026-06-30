@@ -14,7 +14,6 @@ import {
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 
-import { ATTR_DB_SYSTEM } from '../src/semconv';
 import { MySQLInstrumentation, MySQLInstrumentationConfig } from '../src';
 import { AttributeNames } from '../src/AttributeNames';
 
@@ -851,7 +850,7 @@ function assertSpan(
   values?: any,
   errorMessage?: string
 ) {
-  assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], undefined);
+  assert.strictEqual(span.attributes['db.system'], undefined);
   assert.strictEqual(
     span.attributes[ATTR_DB_SYSTEM_NAME],
     DB_SYSTEM_NAME_VALUE_MYSQL

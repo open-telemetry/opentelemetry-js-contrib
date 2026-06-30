@@ -4,10 +4,6 @@
  */
 
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import {
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-} from '../src/semconv';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import type { MongoClient, MongoClientOptions, Collection } from 'mongodb';
@@ -87,7 +83,6 @@ export function assertSpans(
     mongoSpan.name,
     `${expectedOperation} ${expectedCollection}`
   );
-  assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM], undefined);
   assert.strictEqual(
     mongoSpan.attributes[ATTR_DB_OPERATION_NAME],
     expectedOperation
@@ -103,9 +98,7 @@ export function assertSpans(
   );
 
   if (isEnhancedDatabaseReportingEnabled) {
-    const dbQueryText =
-      mongoSpan.attributes[ATTR_DB_QUERY_TEXT] ||
-      mongoSpan.attributes[ATTR_DB_STATEMENT];
+    const dbQueryText = mongoSpan.attributes[ATTR_DB_QUERY_TEXT];
     const dbStatement = JSON.parse(dbQueryText as string);
     for (const key in dbStatement) {
       assert.notStrictEqual(dbStatement[key], '?');

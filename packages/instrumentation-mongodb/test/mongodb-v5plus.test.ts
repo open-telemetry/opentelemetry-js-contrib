@@ -14,7 +14,7 @@ import {
 } from '@opentelemetry/contrib-test-utils';
 import * as semver from 'semver';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
-import { ATTR_DB_STATEMENT } from '../src/semconv';
+import { ATTR_DB_QUERY_TEXT } from '@opentelemetry/semantic-conventions';
 import {
   MongoDBInstrumentation,
   MongoDBInstrumentationConfig,
@@ -355,7 +355,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
                 '@opentelemetry/instrumentation-mongodb'
             );
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
             );
             assert.strictEqual(dbStatement[key], '?');
             done();
@@ -392,7 +392,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
                 '@opentelemetry/instrumentation-mongodb'
             );
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
             );
             assert.deepEqual(dbStatement, {
               aggregate: '?',
@@ -447,7 +447,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
                   '@opentelemetry/instrumentation-mongodb'
               );
               const dbStatement = JSON.parse(
-                mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+                mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
               );
               assert.strictEqual(dbStatement[key], value);
               done();

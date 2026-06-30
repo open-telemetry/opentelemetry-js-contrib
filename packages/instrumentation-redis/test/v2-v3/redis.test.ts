@@ -22,11 +22,6 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_NET_PEER_NAME,
-} from '../../src/semconv';
 
 const instrumentation = testUtils.registerInstrumentationTesting(
   new RedisInstrumentation()
@@ -174,9 +169,9 @@ describe('redis v2-v3', () => {
             );
             assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
 
-            assert.ok(!(ATTR_DB_SYSTEM in span.attributes));
-            assert.ok(!(ATTR_DB_STATEMENT in span.attributes));
-            assert.ok(!(ATTR_NET_PEER_NAME in span.attributes));
+            assert.ok(!('db.system' in span.attributes));
+            assert.ok(!('db.statement' in span.attributes));
+            assert.ok(!('net.peer.name' in span.attributes));
             done();
           });
         });

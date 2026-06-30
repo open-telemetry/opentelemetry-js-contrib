@@ -29,10 +29,9 @@ import {
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
-import {
-  ATTR_HTTP_RESPONSE_CONTENT_LENGTH,
-  ATTR_HTTP_URL,
-} from '../src/semconv';
+import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
+// deprecated attribute — no stable equivalent, kept only for absence assertions
+const ATTR_HTTP_RESPONSE_CONTENT_LENGTH = 'http.response_content_length';
 import { EventNames } from '../src/enums/EventNames';
 
 const exporter = new InMemorySpanExporter();
@@ -343,8 +342,9 @@ describe('DocumentLoad Instrumentation', () => {
         const fsEvents = fetchSpan.events;
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
-        assert.ok(
-          (rootSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH] as number) > 0
+        assert.strictEqual(
+          rootSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
+          undefined
         );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
@@ -444,11 +444,11 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.attributes[ATTR_HTTP_URL],
+          spanResource1.attributes[ATTR_URL_FULL],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.attributes[ATTR_HTTP_URL],
+          spanResource2.attributes[ATTR_URL_FULL],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -480,7 +480,7 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.attributes[ATTR_HTTP_URL],
+          spanResource1.attributes[ATTR_URL_FULL],
           'http://localhost:8090/bundle.js'
         );
 
@@ -818,7 +818,7 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
-    it('should have http.response_content_length attribute even if ignoreNetworkEvents is true', done => {
+    it('should not have http.response_content_length attribute (removed in stable semconv)', done => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         ignoreNetworkEvents: true,
@@ -831,9 +831,9 @@ describe('DocumentLoad Instrumentation', () => {
           s => s.name === 'resourceFetch'
         ) as ReadableSpan;
         assert.isOk(resourceSpan, 'resourceFetch span should exist');
-        assert.exists(
+        assert.isUndefined(
           resourceSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
-          'http.response_content_length attribute should exist'
+          'http.response_content_length should not be emitted in stable semconv'
         );
         done();
       });

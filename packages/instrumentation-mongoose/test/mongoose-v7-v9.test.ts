@@ -4,8 +4,8 @@
  */
 import 'mocha';
 import { expect } from 'expect';
-import { ATTR_DB_OPERATION } from '../src/semconv';
 import { MongooseInstrumentation } from '../src';
+import { ATTR_DB_OPERATION_NAME } from '@opentelemetry/semantic-conventions';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -88,7 +88,7 @@ describe('mongoose instrumentation [v7/v8/v9]', () => {
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
     assertSpan(spans[0] as ReadableSpan);
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('findOneAndUpdate');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('findOneAndUpdate');
     const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });

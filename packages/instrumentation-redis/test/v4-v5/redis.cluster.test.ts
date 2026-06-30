@@ -11,7 +11,6 @@ import * as assert from 'assert';
 import { context } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import { SpanStatusCode } from '@opentelemetry/api';
-import { ATTR_DB_STATEMENT } from '../../src/semconv';
 import {
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_OPERATION_NAME,
@@ -66,7 +65,7 @@ describe('redis v4-v5 cluster', () => {
       );
       assert.strictEqual(zremSpan.attributes['db.system'], 'redis');
       assert.ok(
-        (zremSpan.attributes[ATTR_DB_STATEMENT] as string)?.startsWith(
+        (zremSpan.attributes['db.statement'] as string)?.startsWith(
           'ZREMRANGEBYSCORE'
         )
       );
@@ -78,7 +77,7 @@ describe('redis v4-v5 cluster', () => {
       assert.strictEqual(zremSpan.attributes[ATTR_DB_OPERATION_NAME], 'MULTI');
       assert.strictEqual(zcardSpan.attributes['db.system'], 'redis');
       assert.ok(
-        (zcardSpan.attributes[ATTR_DB_STATEMENT] as string)?.startsWith('ZCARD')
+        (zcardSpan.attributes['db.statement'] as string)?.startsWith('ZCARD')
       );
       assert.ok(
         (zcardSpan.attributes[ATTR_DB_QUERY_TEXT] as string)?.startsWith(
@@ -99,7 +98,7 @@ describe('redis v4-v5 cluster', () => {
       assert.ok(setSpan, 'Expected redis-SET span');
       assert.strictEqual(setSpan.attributes['db.system'], 'redis');
       assert.ok(
-        (setSpan.attributes[ATTR_DB_STATEMENT] as string)?.startsWith('SET')
+        (setSpan.attributes['db.statement'] as string)?.startsWith('SET')
       );
     });
     it('should handle errors in cluster multi commands', async () => {

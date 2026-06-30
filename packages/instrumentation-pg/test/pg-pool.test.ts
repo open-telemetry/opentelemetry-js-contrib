@@ -29,19 +29,19 @@ import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { TimedEvent } from './types';
-import { METRIC_DB_CLIENT_OPERATION_DURATION } from '@opentelemetry/semantic-conventions';
+import {
+  METRIC_DB_CLIENT_OPERATION_DURATION,
+  ATTR_DB_NAMESPACE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+} from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_CLIENT_CONNECTION_STATE,
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_NAME,
-  ATTR_DB_USER,
-  DB_SYSTEM_VALUE_POSTGRESQL,
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_NET_PEER_PORT,
-  ATTR_NET_PEER_NAME,
-  ATTR_DB_STATEMENT,
 } from '../src/semconv';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -60,23 +60,19 @@ const CONFIG = {
 };
 
 const DEFAULT_PGPOOL_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
-  [ATTR_DB_NAME]: CONFIG.database,
-  [ATTR_NET_PEER_NAME]: CONFIG.host,
-  [ATTR_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-  [ATTR_NET_PEER_PORT]: CONFIG.port,
-  [ATTR_DB_USER]: CONFIG.user,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+  [ATTR_DB_NAMESPACE]: CONFIG.database,
+  [ATTR_SERVER_ADDRESS]: CONFIG.host,
+  [ATTR_SERVER_PORT]: CONFIG.port,
   [AttributeNames.MAX_CLIENT]: CONFIG.maxClient,
   [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
 };
 
 const DEFAULT_PG_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
-  [ATTR_DB_NAME]: CONFIG.database,
-  [ATTR_NET_PEER_NAME]: CONFIG.host,
-  [ATTR_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-  [ATTR_NET_PEER_PORT]: CONFIG.port,
-  [ATTR_DB_USER]: CONFIG.user,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+  [ATTR_DB_NAMESPACE]: CONFIG.database,
+  [ATTR_SERVER_ADDRESS]: CONFIG.host,
+  [ATTR_SERVER_PORT]: CONFIG.port,
 };
 
 const unsetStatus: SpanStatus = {
@@ -175,7 +171,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: 'SELECT NOW()',
+        [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
@@ -209,12 +205,10 @@ describe('pg-pool', () => {
       });
 
       const expectedAttributes = {
-        [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
-        [ATTR_DB_NAME]: CONFIG.database,
-        [ATTR_NET_PEER_NAME]: CONFIG.host,
-        [ATTR_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-        [ATTR_NET_PEER_PORT]: CONFIG.port,
-        [ATTR_DB_USER]: CONFIG.user,
+        [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+        [ATTR_DB_NAMESPACE]: CONFIG.database,
+        [ATTR_SERVER_ADDRESS]: CONFIG.host,
+        [ATTR_SERVER_PORT]: CONFIG.port,
         [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
       };
 
@@ -237,7 +231,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: 'SELECT NOW()',
+        [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const parentSpan = provider
@@ -382,7 +376,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: 'SELECT NOW()',
+        [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
@@ -401,7 +395,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: 'SELECT NOW()',
+        [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const parentSpan = provider
@@ -438,7 +432,7 @@ describe('pg-pool', () => {
         };
         const pgAttributes = {
           ...DEFAULT_PG_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: query,
+          [ATTR_DB_QUERY_TEXT]: query,
           [dataAttributeName]: '{"rowCount":1}',
         };
 
@@ -520,7 +514,7 @@ describe('pg-pool', () => {
         };
         const pgAttributes = {
           ...DEFAULT_PG_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: query,
+          [ATTR_DB_QUERY_TEXT]: query,
         };
 
         beforeEach(async () => {
@@ -590,8 +584,8 @@ describe('pg-pool', () => {
 
           const querySpan = spans.find(
             s =>
-              s.attributes?.[ATTR_DB_STATEMENT] &&
-              String(s.attributes[ATTR_DB_STATEMENT]).includes(
+              s.attributes?.[ATTR_DB_QUERY_TEXT] &&
+              String(s.attributes[ATTR_DB_QUERY_TEXT]).includes(
                 'nonexistent_table'
               )
           );
@@ -651,8 +645,8 @@ describe('pg-pool', () => {
 
             const querySpan = spans.find(
               s =>
-                s.attributes?.[ATTR_DB_STATEMENT] &&
-                String(s.attributes[ATTR_DB_STATEMENT]).includes(
+                s.attributes?.[ATTR_DB_QUERY_TEXT] &&
+                String(s.attributes[ATTR_DB_QUERY_TEXT]).includes(
                   'nonexistent_table'
                 )
             );

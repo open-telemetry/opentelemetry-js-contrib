@@ -21,10 +21,10 @@ const instrumentation = registerInstrumentationTesting(
 import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import {
-  ATTR_DB_STATEMENT,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from '../src/semconv';
+  ATTR_DB_QUERY_TEXT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
 describe('MongoDBInstrumentation-Tracing-v3', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -307,7 +307,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
                 '@opentelemetry/instrumentation-mongodb'
             );
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
             );
             assert.strictEqual(dbStatement[key], '?');
             done();
@@ -344,7 +344,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
                 '@opentelemetry/instrumentation-mongodb'
             );
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
             );
             assert.deepEqual(dbStatement, {
               aggregate: '?',
@@ -399,7 +399,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
                   '@opentelemetry/instrumentation-mongodb'
               );
               const dbStatement = JSON.parse(
-                mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+                mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
               );
               assert.strictEqual(dbStatement[key], value);
               done();
@@ -634,11 +634,11 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             (err, address) => {
               if (err) return done(err);
               assert.strictEqual(
-                mongoSpan.attributes[ATTR_NET_PEER_NAME],
+                mongoSpan.attributes[ATTR_SERVER_ADDRESS],
                 address
               );
               assert.strictEqual(
-                mongoSpan.attributes[ATTR_NET_PEER_PORT],
+                mongoSpan.attributes[ATTR_SERVER_PORT],
                 process.env.MONGODB_PORT
                   ? parseInt(process.env.MONGODB_PORT)
                   : 27017
