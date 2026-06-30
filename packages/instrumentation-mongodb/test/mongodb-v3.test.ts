@@ -105,7 +105,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .insertMany(insertData)
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'insert', COLLECTION_NAME, undefined);
+            assertSpans(getTestSpans(), 'insert', COLLECTION_NAME);
             done();
           })
           .catch(err => {
@@ -121,7 +121,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .updateOne({ a: 2 }, { $set: { b: 1 } })
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'update', COLLECTION_NAME, undefined);
+            assertSpans(getTestSpans(), 'update', COLLECTION_NAME);
             done();
           })
           .catch(err => {
@@ -137,7 +137,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .deleteOne({ a: 3 })
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'remove', COLLECTION_NAME, undefined);
+            assertSpans(getTestSpans(), 'remove', COLLECTION_NAME);
             done();
           })
           .catch(err => {
@@ -157,7 +157,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .toArray()
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'find', COLLECTION_NAME, undefined);
+            assertSpans(getTestSpans(), 'find', COLLECTION_NAME);
             done();
           })
           .catch(err => {
@@ -183,8 +183,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
                   span => !span.name.includes(`getMore ${COLLECTION_NAME}`)
                 ),
                 'find',
-                COLLECTION_NAME,
-                undefined
+                COLLECTION_NAME
               );
               // assert that we correctly got the first as a find
               assertSpans(
@@ -192,8 +191,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
                   span => !span.name.includes(`find ${COLLECTION_NAME}`)
                 ),
                 'getMore',
-                COLLECTION_NAME,
-                undefined
+                COLLECTION_NAME
               );
               done();
             })
@@ -214,7 +212,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .createIndex({ a: 1 })
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'createIndexes', '$cmd', undefined);
+            assertSpans(getTestSpans(), 'createIndexes', '$cmd');
             done();
           })
           .catch(err => {
@@ -234,7 +232,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .toArray()
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'aggregate', '$cmd', undefined);
+            assertSpans(getTestSpans(), 'aggregate', '$cmd');
             done();
           })
           .catch(err => {
@@ -267,7 +265,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
               spans,
               'insert',
               COLLECTION_NAME,
-              undefined,
               false,
               false
             );
@@ -300,7 +297,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .then(() => {
             span.end();
             const spans = getTestSpans();
-            assertSpans(spans, 'aggregate', '$cmd', undefined, false, false);
+            assertSpans(spans, 'aggregate', '$cmd', false, false);
             const mongoSpan = spans.find(
               s =>
                 s.instrumentationScope.name ===
@@ -352,7 +349,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
                 spans,
                 'insert',
                 COLLECTION_NAME,
-                undefined,
                 false,
                 true
               );
@@ -392,7 +388,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(spans, 'insert', COLLECTION_NAME, undefined);
+              assertSpans(spans, 'insert', COLLECTION_NAME);
               done();
             })
             .catch(err => {
@@ -489,7 +485,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(spans, 'find', COLLECTION_NAME, undefined);
+              assertSpans(spans, 'find', COLLECTION_NAME);
               done();
             })
             .catch(err => {
@@ -511,7 +507,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             const spans = getTestSpans();
             const mainSpan = spans[spans.length - 1];
-            assertSpans(spans, 'insert', COLLECTION_NAME, undefined);
+            assertSpans(spans, 'insert', COLLECTION_NAME);
             resetMemoryExporter();
 
             collection
@@ -521,7 +517,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
                 const spans2 = getTestSpans();
                 spans2.push(mainSpan);
 
-                assertSpans(spans2, 'find', COLLECTION_NAME, undefined);
+                assertSpans(spans2, 'find', COLLECTION_NAME);
                 assert.strictEqual(
                   mainSpan.spanContext().spanId,
                   spans2[0].parentSpanContext?.spanId

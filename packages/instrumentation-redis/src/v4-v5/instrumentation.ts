@@ -433,7 +433,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     return function connectWrapper(original: Function) {
       return function patchedConnect(this: any): Promise<void> {
         const options = this.options;
-        const attributes = getClientAttributes(plugin._diag, options);
+        const attributes = getClientAttributes(options);
 
         const span = plugin.tracer.startSpan(
           `${RedisInstrumentationV4_V5.COMPONENT}-connect`,
@@ -484,7 +484,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     const dbStatementSerializer =
       this.getConfig().dbStatementSerializer || defaultDbStatementSerializer;
 
-    const attributes = getClientAttributes(this._diag, clientOptions);
+    const attributes = getClientAttributes(clientOptions);
     attributes[ATTR_DB_OPERATION_NAME] = commandName;
     try {
       const dbStatement = dbStatementSerializer(commandName, commandArgs);

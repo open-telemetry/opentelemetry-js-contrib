@@ -63,7 +63,6 @@ export function assertSpans(
   spans: ReadableSpan[],
   expectedOperation: string,
   expectedCollection: string,
-  expectedConnString: string | undefined,
   log = false,
   isEnhancedDatabaseReportingEnabled = false
 ) {
