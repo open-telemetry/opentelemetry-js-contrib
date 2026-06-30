@@ -47,10 +47,6 @@ import {
   DB_SYSTEM_NAME_VALUE_REDIS,
 } from '../src/semconv';
 
-// By default tests run with both old and stable semconv. Some test cases
-// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
-
 const memoryExporter = new InMemorySpanExporter();
 
 const CONFIG = {
@@ -1129,81 +1125,6 @@ describe('ioredis', () => {
           });
         });
       });
-    });
-  });
-
-  describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
-    // use a random part in key names because redis instance is used for parallel running tests
-    const randomId = ((Math.random() * 2 ** 32) >>> 0).toString(16);
-    const testKeyName = `test-semconv-stability-${randomId}`;
-
-    const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-    after(() => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
-    });
-
-    it('OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
-      // Arrange
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-      memoryExporter.reset();
-
-      const client = new ioredis(REDIS_URL);
-      try {
-        // Act
-        const tracer = provider.getTracer('ioredis-test');
-        await tracer.startActiveSpan('parent', async parentSpan => {
-          await client.set(testKeyName, 'aValue');
-          parentSpan.end();
-        });
-
-        // Assert
-        const spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans.length, 2);
-        testUtils.assertSpan(
-          spans[0],
-          SpanKind.CLIENT,
-          {
-            ...DEFAULT_OLD_ATTRIBUTES,
-            [ATTR_DB_STATEMENT]: `set ${testKeyName} [1 other arguments]`,
-          },
-          [],
-          unsetStatus
-        );
-      } finally {
-        await client.quit();
-      }
-    });
-
-    it('OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
-      // Arrange
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
-      memoryExporter.reset();
-
-      const client = new ioredis(REDIS_URL);
-      try {
-        // Act
-        const tracer = provider.getTracer('ioredis-test');
-        await tracer.startActiveSpan('parent', async parentSpan => {
-          await client.set(testKeyName, 'aValue');
-          parentSpan.end();
-        });
-
-        // Assert
-        const spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans.length, 2);
-        testUtils.assertSpan(
-          spans[0],
-          SpanKind.CLIENT,
-          {
-            ...DEFAULT_STABLE_ATTRIBUTES,
-            [ATTR_DB_QUERY_TEXT]: `set ${testKeyName} [1 other arguments]`,
-          },
-          [],
-          unsetStatus
-        );
-      } finally {
-        await client.quit();
-      }
     });
   });
 

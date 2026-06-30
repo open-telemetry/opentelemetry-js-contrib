@@ -3,10 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// By default, tests run with both old and stable semconv. Some test cases
-// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
-
 import { MongoDBInstrumentation } from '../src';
 
 import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';

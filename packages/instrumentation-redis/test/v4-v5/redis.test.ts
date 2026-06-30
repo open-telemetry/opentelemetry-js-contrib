@@ -14,7 +14,6 @@ import * as assert from 'assert';
 
 import { redisTestConfig, redisTestUrl, shouldTest } from './utils';
 
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
 const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
 );
@@ -45,7 +44,6 @@ import {
 } from '../../src/semconv';
 import { RedisResponseCustomAttributeFunction } from '../../src/types';
 import { hrTimeToMilliseconds, suppressTracing } from '@opentelemetry/core';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 
 describe('redis v4-v5', () => {
   before(function () {
@@ -421,8 +419,6 @@ describe('redis v4-v5', () => {
 
   describe('Redis client connect with malformed URL', () => {
     it('malformed URL should trigger diag error and reject connection', async () => {
-      instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
-
       const diagErrors: any[] = [];
       diag.setLogger(
         {
@@ -810,81 +806,6 @@ describe('redis v4-v5', () => {
     });
   });
 
-  describe('semconv stability configuration', () => {
-    async function getSpan(client: RedisClientType) {
-      await client.set('key', 'value');
-      const spans = getTestSpans();
-      return spans.find(s => s.name.includes('SET'));
-    }
-
-    it('should emit only old attributes when semconvStability is OLD', async () => {
-      instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
-      const setSpan = await getSpan(client);
-      assert.ok(setSpan);
-
-      assert.strictEqual(setSpan.attributes[ATTR_DB_SYSTEM], 'redis');
-      assert.strictEqual(
-        setSpan.attributes[ATTR_DB_STATEMENT],
-        'SET key [1 other arguments]'
-      );
-      assert.strictEqual(
-        setSpan.attributes[ATTR_NET_PEER_NAME],
-        redisTestConfig.host
-      );
-
-      assert.ok(!(ATTR_DB_SYSTEM_NAME in setSpan.attributes));
-      assert.ok(!(ATTR_DB_QUERY_TEXT in setSpan.attributes));
-      assert.ok(!(ATTR_SERVER_ADDRESS in setSpan.attributes));
-    });
-
-    it('should emit only new attributes when semconvStability is STABLE', async () => {
-      instrumentation.setConfig({ semconvStability: SemconvStability.STABLE });
-      const setSpan = await getSpan(client);
-      assert.ok(setSpan);
-
-      assert.strictEqual(setSpan.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
-      assert.strictEqual(
-        setSpan.attributes[ATTR_DB_QUERY_TEXT],
-        'SET key [1 other arguments]'
-      );
-      assert.strictEqual(
-        setSpan.attributes[ATTR_SERVER_ADDRESS],
-        redisTestConfig.host
-      );
-
-      assert.ok(!(ATTR_DB_SYSTEM in setSpan.attributes));
-      assert.ok(!(ATTR_DB_STATEMENT in setSpan.attributes));
-      assert.ok(!(ATTR_NET_PEER_NAME in setSpan.attributes));
-    });
-
-    it('should emit both old and new attributes when semconvStability is DUPLICATE', async () => {
-      instrumentation.setConfig({
-        semconvStability: SemconvStability.DUPLICATE,
-      });
-      const setSpan = await getSpan(client);
-      assert.ok(setSpan);
-
-      assert.strictEqual(setSpan.attributes[ATTR_DB_SYSTEM], 'redis');
-      assert.strictEqual(
-        setSpan.attributes[ATTR_DB_STATEMENT],
-        'SET key [1 other arguments]'
-      );
-      assert.strictEqual(
-        setSpan.attributes[ATTR_NET_PEER_NAME],
-        redisTestConfig.host
-      );
-
-      assert.strictEqual(setSpan.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
-      assert.strictEqual(
-        setSpan.attributes[ATTR_DB_QUERY_TEXT],
-        'SET key [1 other arguments]'
-      );
-      assert.strictEqual(
-        setSpan.attributes[ATTR_SERVER_ADDRESS],
-        redisTestConfig.host
-      );
-    });
-  });
   describe('pipeline commands', () => {
     it('should trace all commands in a pipeline with a mixed set of commands', async () => {
       await client.set('another-key', 'another-value');

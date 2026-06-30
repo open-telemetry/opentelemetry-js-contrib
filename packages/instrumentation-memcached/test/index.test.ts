@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
-
 import {
   Attributes,
   context,
@@ -263,81 +261,6 @@ describe('memcached@2.x', () => {
           key: KEY,
         },
       ]);
-    });
-  });
-
-  describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
-    // Restore OTEL_SEMCONV_STABILITY_OPT_IN after we are done.
-    const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-    after(() => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-    });
-
-    it('OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-
-      const client = getClient(`${CONFIG.host}:${CONFIG.port}`, { retries: 0 });
-      await client.setPromise(KEY, VALUE, 10);
-      const value = await client.getPromise(KEY);
-
-      assert.strictEqual(value, VALUE);
-      const instrumentationSpans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(instrumentationSpans.length, 2);
-
-      const span = instrumentationSpans[1]; // get operation
-      // old `db.*`
-      assert.strictEqual(
-        span.attributes[ATTR_DB_SYSTEM],
-        DB_SYSTEM_VALUE_MEMCACHED
-      );
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION], 'get');
-      // stable `db.*`
-      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], undefined);
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], undefined);
-
-      // old `net.*`
-      assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], CONFIG.host);
-      assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], CONFIG.port);
-      // stable `net.*`
-      assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], undefined);
-      assert.strictEqual(span.attributes[ATTR_SERVER_PORT], undefined);
-
-      client.end();
-    });
-
-    it('OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-
-      const client = getClient(`${CONFIG.host}:${CONFIG.port}`, { retries: 0 });
-      await client.setPromise(KEY, VALUE, 10);
-      const value = await client.getPromise(KEY);
-
-      assert.strictEqual(value, VALUE);
-      const instrumentationSpans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(instrumentationSpans.length, 2);
-
-      const span = instrumentationSpans[1]; // get operation
-      // old `db.*`
-      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], undefined);
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION], undefined);
-      // stable `db.*`
-      assert.strictEqual(
-        span.attributes[ATTR_DB_SYSTEM_NAME],
-        DB_SYSTEM_NAME_VALUE_MEMCACHED
-      );
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'get');
-
-      // old `net.*`
-      assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], undefined);
-      assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], undefined);
-      // stable `net.*`
-      assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], CONFIG.host);
-      assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
-
-      client.end();
     });
   });
 });

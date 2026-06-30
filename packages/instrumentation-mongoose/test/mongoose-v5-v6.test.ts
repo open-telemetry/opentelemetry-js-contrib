@@ -2,14 +2,10 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-// By default tests run with both old and stable semconv. Some test cases
-// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
 
 import 'mocha';
 import { expect } from 'expect';
 import { ATTR_DB_OPERATION } from '../src/semconv';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 import { MongooseInstrumentation } from '../src';
 import {
   getTestSpans,
@@ -118,16 +114,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
       user.save({ wtimeout: 42 }, async () => {
         const spans = getTestSpans();
         expect(spans.length).toBe(1);
-        assertSpan(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        assertSpan(spans[0] as ReadableSpan);
         expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('save');
-        const statement = getStatement(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.document).toEqual(expect.objectContaining(document));
         expect(statement.options.wtimeout).toEqual(42);
 
@@ -153,16 +142,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
         const spans = getTestSpans();
 
         expect(spans.length).toBe(1);
-        assertSpan(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        assertSpan(spans[0] as ReadableSpan);
         expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('save');
-        const statement = getStatement(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.document).toEqual(expect.objectContaining(document));
         done();
       });
@@ -181,16 +163,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
         const spans = getTestSpans();
 
         expect(spans.length).toBe(1);
-        assertSpan(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        assertSpan(spans[0] as ReadableSpan);
         expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('save');
-        const statement = getStatement(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.document).toEqual(expect.objectContaining(document));
         done();
       });
@@ -216,16 +191,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
       User.insertMany(documents, { ordered: true }, () => {
         const spans = getTestSpans();
         expect(spans.length).toBe(1);
-        assertSpan(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        assertSpan(spans[0] as ReadableSpan);
         expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('insertMany');
-        const statement = getStatement(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.documents).toEqual(documents);
         expect(statement.options.ordered).toEqual(true);
         done();
@@ -250,16 +218,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
       User.insertMany(documents, () => {
         const spans = getTestSpans();
         expect(spans.length).toBe(1);
-        assertSpan(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        assertSpan(spans[0] as ReadableSpan);
         expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('insertMany');
-        const statement = getStatement(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.documents).toEqual(documents);
         done();
       });
@@ -275,11 +236,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
 
       const spans = getTestSpans();
       expect(spans.length).toBe(2);
-      assertSpan(
-        spans[1] as ReadableSpan,
-        SemconvStability.OLD | SemconvStability.STABLE,
-        SemconvStability.OLD | SemconvStability.STABLE
-      );
+      assertSpan(spans[1] as ReadableSpan);
       expect(spans[1].attributes[ATTR_DB_OPERATION]).toBe('remove');
     });
 
@@ -290,17 +247,10 @@ describe('mongoose instrumentation [v5/v6]', () => {
         user!.remove({ overwrite: true }, () => {
           const spans = getTestSpans();
           expect(spans.length).toBe(2);
-          assertSpan(
-            spans[1] as ReadableSpan,
-            SemconvStability.OLD | SemconvStability.STABLE,
-            SemconvStability.OLD | SemconvStability.STABLE
-          );
+          assertSpan(spans[1] as ReadableSpan);
           expect(spans[1].attributes[ATTR_DB_OPERATION]).toBe('remove');
           expect(
-            getStatement(
-              spans[1] as ReadableSpan,
-              SemconvStability.OLD | SemconvStability.STABLE
-            ).options
+            getStatement(spans[1] as ReadableSpan).options
           ).toEqual({
             overwrite: true,
           });
@@ -317,16 +267,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan,
-      SemconvStability.OLD | SemconvStability.STABLE,
-      SemconvStability.OLD | SemconvStability.STABLE
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('count');
-    const statement = getStatement(
-      spans[0] as ReadableSpan,
-      SemconvStability.OLD | SemconvStability.STABLE
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({});
   });
@@ -341,16 +284,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan,
-      SemconvStability.OLD | SemconvStability.STABLE,
-      SemconvStability.OLD | SemconvStability.STABLE
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('update');
-    const statement = getStatement(
-      spans[0] as ReadableSpan,
-      SemconvStability.OLD | SemconvStability.STABLE
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
     expect(statement.updates).toEqual({ email: 'john.doe2@example.com' });
@@ -364,22 +300,11 @@ describe('mongoose instrumentation [v5/v6]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(2);
-    assertSpan(
-      spans[0] as ReadableSpan,
-      SemconvStability.OLD | SemconvStability.STABLE,
-      SemconvStability.OLD | SemconvStability.STABLE
-    );
-    assertSpan(
-      spans[1] as ReadableSpan,
-      SemconvStability.OLD | SemconvStability.STABLE,
-      SemconvStability.OLD | SemconvStability.STABLE
-    );
+    assertSpan(spans[0] as ReadableSpan);
+    assertSpan(spans[1] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('findOne');
     expect(spans[1].attributes[ATTR_DB_OPERATION]).toBe('findOneAndUpdate');
-    const statement = getStatement(
-      spans[1] as ReadableSpan,
-      SemconvStability.OLD | SemconvStability.STABLE
-    );
+    const statement = getStatement(spans[1] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
     expect(statement.updates).toEqual({ isUpdated: true });
@@ -392,16 +317,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan,
-      SemconvStability.OLD | SemconvStability.STABLE,
-      SemconvStability.OLD | SemconvStability.STABLE
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('findOneAndRemove');
-    const statement = getStatement(
-      spans[0] as ReadableSpan,
-      SemconvStability.OLD | SemconvStability.STABLE
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
   });
@@ -415,16 +333,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
       () => {
         const spans = getTestSpans();
         expect(spans.length).toBe(1);
-        assertSpan(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        assertSpan(spans[0] as ReadableSpan);
         expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('aggregate');
-        const statement = getStatement(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.aggregatePipeline).toEqual([
           { $match: { firstName: 'John' } },
           { $group: { _id: 'John', total: { $sum: '$amount' } } },
@@ -454,11 +365,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
       User.deleteOne({ email: 'john.doe@example.com' }, { lean: 1 }, () => {
         const spans = getTestSpans();
         expect(spans.length).toBe(1);
-        assertSpan(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        assertSpan(spans[0] as ReadableSpan);
         expect(
           JSON.parse(spans[0].attributes[RESPONSE] as string)
         ).toMatchObject({
@@ -480,11 +387,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
       user.save((_err, createdUser) => {
         const spans = getTestSpans();
         expect(spans.length).toBe(1);
-        assertSpan(
-          spans[0] as ReadableSpan,
-          SemconvStability.OLD | SemconvStability.STABLE,
-          SemconvStability.OLD | SemconvStability.STABLE
-        );
+        assertSpan(spans[0] as ReadableSpan);
         expect(spans[0].attributes[RESPONSE]).toEqual(
           JSON.stringify(createdUser)
         );
@@ -501,11 +404,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
         () => {
           const spans = getTestSpans();
           expect(spans.length).toBe(1);
-          assertSpan(
-            spans[0] as ReadableSpan,
-            SemconvStability.OLD | SemconvStability.STABLE,
-            SemconvStability.OLD | SemconvStability.STABLE
-          );
+          assertSpan(spans[0] as ReadableSpan);
           expect(JSON.parse(spans[0].attributes[RESPONSE] as string)).toEqual([
             { _id: 'John', total: 0 },
           ]);

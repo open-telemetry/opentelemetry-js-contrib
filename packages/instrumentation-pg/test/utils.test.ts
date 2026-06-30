@@ -5,10 +5,7 @@
 
 import { context, trace } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import {
-  InstrumentationConfig,
-  SemconvStability,
-} from '@opentelemetry/instrumentation';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,
@@ -176,7 +173,6 @@ describe('utils.ts', () => {
         client,
         tracer,
         instrumentationConfig,
-        SemconvStability.STABLE,
         queryConfig
       );
       querySpan.end();
@@ -196,7 +192,6 @@ describe('utils.ts', () => {
         client,
         tracer,
         extPluginConfig,
-        SemconvStability.STABLE,
         queryConfig
       );
       querySpan.end();
@@ -215,7 +210,6 @@ describe('utils.ts', () => {
           {
             port: Infinity,
           },
-          SemconvStability.STABLE
         )[ATTR_SERVER_PORT],
         undefined
       );
@@ -224,7 +218,6 @@ describe('utils.ts', () => {
           {
             port: -Infinity,
           },
-          SemconvStability.STABLE
         )[ATTR_SERVER_PORT],
         undefined
       );
@@ -233,7 +226,6 @@ describe('utils.ts', () => {
           {
             port: NaN,
           },
-          SemconvStability.STABLE
         )[ATTR_SERVER_PORT],
         undefined
       );
@@ -242,7 +234,6 @@ describe('utils.ts', () => {
           {
             port: 1.234,
           },
-          SemconvStability.STABLE
         )[ATTR_SERVER_PORT],
         undefined
       );
@@ -254,7 +245,6 @@ describe('utils.ts', () => {
           {
             port: 1234,
           },
-          SemconvStability.STABLE
         )[ATTR_SERVER_PORT],
         1234
       );
@@ -263,7 +253,6 @@ describe('utils.ts', () => {
           {
             port: Number.MAX_VALUE,
           },
-          SemconvStability.STABLE
         )[ATTR_SERVER_PORT],
         Number.MAX_VALUE
       );

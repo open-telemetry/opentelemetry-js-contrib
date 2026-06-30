@@ -235,7 +235,6 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
       openCallback: (err: any, connection: Connection) => void
     ) => Connection
   ) {
-    const self = this;
     return function patchedConnect(
       this: unknown,
       url: string | Options.Connect,

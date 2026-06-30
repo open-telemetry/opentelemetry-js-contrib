@@ -45,10 +45,6 @@ import {
 } from '../src';
 import { ResponseHookInfo } from '../src/types';
 
-// By default tests run with both old and stable semconv. Some test cases
-// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
-
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider({
   spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
@@ -428,51 +424,4 @@ describe('CassandraDriverInstrumentation', () => {
     });
   });
 
-  describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
-    const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-
-    after(() => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
-    });
-
-    it('uses old attributes when OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-      memoryExporter.reset();
-
-      await client.execute('select * from ot.test');
-
-      const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 1);
-      testUtils.assertSpan(
-        spans[0],
-        SpanKind.CLIENT,
-        {
-          ...DEFAULT_OLD_ATTRIBUTES,
-          ...NET_OLD_ATTRIBUTES,
-        },
-        [],
-        { code: SpanStatusCode.UNSET }
-      );
-    });
-
-    it('uses stable attributes when OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
-      memoryExporter.reset();
-
-      await client.execute('select * from ot.test');
-
-      const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 1);
-      testUtils.assertSpan(
-        spans[0],
-        SpanKind.CLIENT,
-        {
-          ...DEFAULT_STABLE_ATTRIBUTES,
-          ...NET_STABLE_ATTRIBUTES,
-        },
-        [],
-        { code: SpanStatusCode.UNSET }
-      );
-    });
-  });
 });

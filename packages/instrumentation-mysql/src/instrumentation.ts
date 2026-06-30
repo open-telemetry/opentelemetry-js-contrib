@@ -300,7 +300,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         }
 
         const attributes: Attributes = {};
-        const { host, port, database, user } = getConfig(connection.config);
+        const { host, port, database } = getConfig(connection.config);
         const portNumber = parseInt(port, 10);
         const dbQueryText = getDbQueryText(query);
 

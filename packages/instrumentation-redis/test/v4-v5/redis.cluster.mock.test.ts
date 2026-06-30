@@ -16,7 +16,6 @@ import {
   ATTR_DB_OPERATION_NAME,
 } from '@opentelemetry/semantic-conventions';
 
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
 registerInstrumentationTesting(new RedisInstrumentation());
 
 // Use require() so we can gracefully handle redis@4.0.x which uses

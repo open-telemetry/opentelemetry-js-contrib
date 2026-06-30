@@ -16,7 +16,6 @@ import {
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_OPERATION_NAME,
 } from '@opentelemetry/semantic-conventions';
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
 registerInstrumentationTesting(new RedisInstrumentation());
 import { createCluster } from 'redis';
 import type { RedisClusterType } from 'redis';

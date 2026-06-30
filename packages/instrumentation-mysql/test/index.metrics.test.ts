@@ -7,22 +7,14 @@ import * as assert from 'assert';
 import { promisify } from 'util';
 import {
   AggregationTemporality,
-  DataPointType,
   InMemoryMetricExporter,
   MeterProvider,
   PeriodicExportingMetricReader,
   ResourceMetrics,
   MetricData,
 } from '@opentelemetry/sdk-metrics';
-import { SemconvStability } from '@opentelemetry/instrumentation';
-import { METRIC_DB_CLIENT_CONNECTIONS_USAGE } from '../src/semconv';
 import { MySQLInstrumentation } from '../src';
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
-
-// By default tests run with both old and stable semconv. Some test cases
-// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
-const DEFAULT_SEMCONV_STABILITY = SemconvStability.DUPLICATE;
 
 const instrumentation = registerInstrumentationTesting(
   new MySQLInstrumentation()
@@ -233,45 +225,9 @@ function assertMetrics(
     expectedConnCountIdle: number;
     expectedConnCountUsed: number;
     poolName?: string;
-    semconvStability?: SemconvStability;
   }
 ) {
-  const semconvStability = opts.semconvStability ?? DEFAULT_SEMCONV_STABILITY;
-  const expectedConnCountIdle = opts.expectedConnCountIdle ?? 0;
-  const expectedConnCountUsed = opts.expectedConnCountUsed ?? 0;
-
-  if (semconvStability & SemconvStability.OLD) {
-    // db.client.connections.usage
-    const md = metrics.filter(
-      md => md.descriptor.name === METRIC_DB_CLIENT_CONNECTIONS_USAGE
-    )[0];
-    assert.ok(md);
-    assert.strictEqual(md.dataPointType, DataPointType.SUM);
-    assert.strictEqual(
-      md.descriptor.description,
-      'The number of connections that are currently in state described by the state attribute.'
-    );
-    assert.strictEqual(md.descriptor.unit, '{connection}');
-    assert.strictEqual(md.dataPoints.length, 2);
-    const poolNameOld =
-      opts.poolName ??
-      `host: '${host}', port: ${port}, database: '${database}', user: '${user}'`;
-
-    assert.strictEqual(md.dataPoints[0].attributes['state'], 'idle');
-    assert.strictEqual(md.dataPoints[0].value, expectedConnCountIdle);
-    assert.strictEqual(md.dataPoints[0].attributes['name'], poolNameOld);
-
-    assert.strictEqual(md.dataPoints[1].attributes['state'], 'used');
-    assert.strictEqual(md.dataPoints[1].value, expectedConnCountUsed);
-    assert.strictEqual(md.dataPoints[1].attributes['name'], poolNameOld);
-  } else {
-    // Assert that the non-stable `db.client.connections.usage` metric
-    // is *not* generated if only stable semconv is selected.
-    assert.strictEqual(
-      metrics.filter(
-        md => md.descriptor.name === METRIC_DB_CLIENT_CONNECTIONS_USAGE
-      ).length,
-      0
-    );
-  }
+  // The non-stable `db.client.connections.usage` metric is not generated
+  // with stable semconv.
+  assert.strictEqual(metrics.length, 0);
 }

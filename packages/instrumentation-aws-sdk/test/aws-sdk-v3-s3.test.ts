@@ -68,9 +68,6 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       expect(span.kind).toEqual(SpanKind.CLIENT);
       expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
 
-      // We also expect the stable `http.response.status_code` because
-      // `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` has been set before creating
-      // the instrumentation.
       expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
     });
 

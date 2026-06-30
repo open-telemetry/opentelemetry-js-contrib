@@ -157,7 +157,6 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
 
   private _getPatchedSendOnConnection() {
     return (original: (...args: unknown[]) => unknown) => {
-      const plugin = this;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return function patchedSendOnConnection(this: any, ...args: unknown[]) {
         const span = trace.getSpan(context.active());

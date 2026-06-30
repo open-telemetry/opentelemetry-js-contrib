@@ -3,13 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// By default tests run with both old and stable semconv. Some test cases
-// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
-
 import { context, trace, Span } from '@opentelemetry/api';
 import * as assert from 'assert';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 import { MongoDBInstrumentation, MongoDBInstrumentationConfig } from '../src';
 import { MongoResponseHookInformation } from '../src';
 import {
@@ -112,7 +107,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'insert',
               COLLECTION_NAME,
               undefined
@@ -134,7 +128,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'update',
               COLLECTION_NAME,
               undefined
@@ -156,7 +149,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'remove',
               COLLECTION_NAME,
               undefined
@@ -182,7 +174,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'find',
               COLLECTION_NAME,
               undefined
@@ -211,7 +202,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
                 getTestSpans().filter(
                   span => !span.name.includes(`getMore ${COLLECTION_NAME}`)
                 ),
-                SemconvStability.DUPLICATE,
                 'find',
                 COLLECTION_NAME,
                 undefined
@@ -221,7 +211,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
                 getTestSpans().filter(
                   span => !span.name.includes(`find ${COLLECTION_NAME}`)
                 ),
-                SemconvStability.DUPLICATE,
                 'getMore',
                 COLLECTION_NAME,
                 undefined
@@ -247,7 +236,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'createIndexes',
               '$cmd',
               undefined
@@ -273,7 +261,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'aggregate',
               '$cmd',
               undefined
@@ -308,7 +295,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             const spans = getTestSpans();
             assertSpans(
               spans,
-              SemconvStability.DUPLICATE,
               'insert',
               COLLECTION_NAME,
               undefined,
@@ -346,7 +332,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             const spans = getTestSpans();
             assertSpans(
               spans,
-              SemconvStability.DUPLICATE,
               'aggregate',
               '$cmd',
               undefined,
@@ -402,7 +387,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
               const spans = getTestSpans();
               assertSpans(
                 spans,
-                SemconvStability.DUPLICATE,
                 'insert',
                 COLLECTION_NAME,
                 undefined,
@@ -447,7 +431,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
               const spans = getTestSpans();
               assertSpans(
                 spans,
-                SemconvStability.DUPLICATE,
                 'insert',
                 COLLECTION_NAME,
                 undefined
@@ -550,7 +533,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
               const spans = getTestSpans();
               assertSpans(
                 spans,
-                SemconvStability.DUPLICATE,
                 'find',
                 COLLECTION_NAME,
                 undefined
@@ -578,7 +560,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             const mainSpan = spans[spans.length - 1];
             assertSpans(
               spans,
-              SemconvStability.DUPLICATE,
               'insert',
               COLLECTION_NAME,
               undefined
@@ -594,7 +575,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
 
                 assertSpans(
                   spans2,
-                  SemconvStability.DUPLICATE,
                   'find',
                   COLLECTION_NAME,
                   undefined

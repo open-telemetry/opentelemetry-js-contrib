@@ -3,10 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// By default tests run with both old and stable semconv. Some test cases
-// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
-
 import { context, trace, Span } from '@opentelemetry/api';
 import * as assert from 'assert';
 import {
@@ -17,7 +13,6 @@ import {
   getPackageVersion,
 } from '@opentelemetry/contrib-test-utils';
 import * as semver from 'semver';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { ATTR_DB_STATEMENT } from '../src/semconv';
 import {
@@ -114,7 +109,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'insert',
               COLLECTION_NAME,
               URL
@@ -136,7 +130,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'update',
               COLLECTION_NAME,
               URL
@@ -158,7 +151,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'delete',
               COLLECTION_NAME,
               URL
@@ -184,7 +176,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'find',
               COLLECTION_NAME,
               URL
@@ -213,7 +204,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
                 getTestSpans().filter(
                   span => !span.name.includes(`getMore ${COLLECTION_NAME}`)
                 ),
-                SemconvStability.DUPLICATE,
                 'find',
                 COLLECTION_NAME,
                 URL
@@ -223,7 +213,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
                 getTestSpans().filter(
                   span => !span.name.includes(`find ${COLLECTION_NAME}`)
                 ),
-                SemconvStability.DUPLICATE,
                 'getMore',
                 COLLECTION_NAME,
                 URL
@@ -289,7 +278,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'createIndexes',
               // mongodb versions before 6.19.0 would set the `ns.collection`
               // to the internal `$cmd` database name. My guess is this is due
@@ -321,7 +309,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              SemconvStability.DUPLICATE,
               'aggregate',
               '$cmd',
               undefined
@@ -356,7 +343,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             const spans = getTestSpans();
             assertSpans(
               spans,
-              SemconvStability.DUPLICATE,
               'insert',
               COLLECTION_NAME,
               URL,
@@ -394,7 +380,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             const spans = getTestSpans();
             assertSpans(
               spans,
-              SemconvStability.DUPLICATE,
               'aggregate',
               '$cmd',
               undefined,
@@ -450,7 +435,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
               const spans = getTestSpans();
               assertSpans(
                 spans,
-                SemconvStability.DUPLICATE,
                 'insert',
                 COLLECTION_NAME,
                 URL,
@@ -495,7 +479,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
               const spans = getTestSpans();
               assertSpans(
                 spans,
-                SemconvStability.DUPLICATE,
                 'insert',
                 COLLECTION_NAME,
                 URL
@@ -616,7 +599,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
               const spans = getTestSpans();
               assertSpans(
                 spans,
-                SemconvStability.DUPLICATE,
                 'find',
                 COLLECTION_NAME,
                 URL
@@ -644,7 +626,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             const mainSpan = spans[spans.length - 1];
             assertSpans(
               spans,
-              SemconvStability.DUPLICATE,
               'insert',
               COLLECTION_NAME,
               URL
@@ -659,7 +640,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
                 spans2.push(mainSpan);
                 assertSpans(
                   spans2,
-                  SemconvStability.DUPLICATE,
                   'find',
                   COLLECTION_NAME,
                   URL
@@ -715,66 +695,6 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
           .insertOne({ a: 1 })
           .then(() => {
             assert.strictEqual(getTestSpans().length, 1);
-            done();
-          })
-          .catch(err => {
-            done(err);
-          });
-      });
-    });
-  });
-
-  describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
-    const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-    after(() => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-    });
-
-    it('OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', done => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-
-      const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-      const span = trace.getTracer('default').startSpan('insertRootSpan');
-      context.with(trace.setSpan(context.active(), span), () => {
-        collection
-          .insertMany(insertData)
-          .then(() => {
-            span.end();
-            assertSpans(
-              getTestSpans(),
-              SemconvStability.OLD,
-              'insert',
-              COLLECTION_NAME,
-              URL
-            );
-            done();
-          })
-          .catch(err => {
-            done(err);
-          });
-      });
-    });
-
-    it('OTEL_SEMCONV_STABILITY_OPT_IN=http,database', done => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-
-      const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-      const span = trace.getTracer('default').startSpan('insertRootSpan');
-      context.with(trace.setSpan(context.active(), span), () => {
-        collection
-          .insertMany(insertData)
-          .then(() => {
-            span.end();
-            assertSpans(
-              getTestSpans(),
-              SemconvStability.STABLE,
-              'insert',
-              COLLECTION_NAME,
-              URL
-            );
             done();
           })
           .catch(err => {
