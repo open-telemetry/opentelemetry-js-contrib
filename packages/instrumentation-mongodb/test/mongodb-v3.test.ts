@@ -261,13 +261,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .then(() => {
             span.end();
             const spans = getTestSpans();
-            assertSpans(
-              spans,
-              'insert',
-              COLLECTION_NAME,
-              false,
-              false
-            );
+            assertSpans(spans, 'insert', COLLECTION_NAME, false, false);
             const mongoSpan = spans.find(
               s =>
                 s.instrumentationScope.name ===
@@ -345,13 +339,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(
-                spans,
-                'insert',
-                COLLECTION_NAME,
-                false,
-                true
-              );
+              assertSpans(spans, 'insert', COLLECTION_NAME, false, true);
               const mongoSpan = spans.find(
                 s =>
                   s.instrumentationScope.name ===

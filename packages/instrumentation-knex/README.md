@@ -49,7 +49,7 @@ registerInstrumentations({
 
 | Options | Type | Example | Description |
 | ------- | ---- | ------- | ----------- |
-| `maxQueryLength` | `number` | `100` | Truncate `db.query.text` attribute to a maximum length. If the statement is truncated `'..'` is added to it's end. Default `1022`. `-1` leaves `db.query.text` untouched. |
+| `maxQueryLength` | `number` | `100` | Truncate `db.query.text` attribute to a maximum length. If the statement is truncated `'..'` is added to its end. Default `1022`. `-1` leaves `db.query.text` untouched. |
 | `requireParentSpan` | `boolean` | `false` | Don't create spans unless they are part of an existing trace. Default is `false`. |
 
 ## Semantic Conventions
