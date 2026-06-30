@@ -80,10 +80,6 @@ describe('redis v4-v5', () => {
       assert.strictEqual(setSpan?.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
       assert.strictEqual(setSpan?.attributes['db.system'], undefined);
       assert.strictEqual(
-        setSpan?.attributes['db.statement'],
-        'SET key [1 other arguments]'
-      );
-      assert.strictEqual(
         setSpan?.attributes[ATTR_DB_QUERY_TEXT],
         'SET key [1 other arguments]'
       );
@@ -104,7 +100,6 @@ describe('redis v4-v5', () => {
       assert.strictEqual(getSpan?.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
       assert.strictEqual(getSpan?.attributes[ATTR_DB_QUERY_TEXT], 'GET key');
       assert.strictEqual(getSpan?.attributes['db.system'], undefined);
-      assert.strictEqual(getSpan?.attributes['db.statement'], 'GET key');
       assert.strictEqual(
         getSpan?.attributes[ATTR_SERVER_ADDRESS],
         redisTestConfig.host
@@ -122,10 +117,6 @@ describe('redis v4-v5', () => {
       const [setSpan] = getTestSpans();
 
       assert.ok(setSpan);
-      assert.strictEqual(
-        setSpan?.attributes['db.statement'],
-        'SET key [1 other arguments]'
-      );
       assert.strictEqual(
         setSpan?.attributes[ATTR_DB_QUERY_TEXT],
         'SET key [1 other arguments]'
@@ -165,26 +156,18 @@ describe('redis v4-v5', () => {
     });
 
     describe('sensitive command sanitization', function () {
-      it('redacts CONFIG SET arguments in db.statement', async function () {
+      it('redacts CONFIG SET arguments in db.query.text', async function () {
         await client.sendCommand(['CONFIG', 'SET', 'hz', '15']);
         const [span] = getTestSpans();
-        assert.strictEqual(
-          span?.attributes['db.statement'],
-          'CONFIG SET [2 other arguments]'
-        );
         assert.strictEqual(
           span?.attributes[ATTR_DB_QUERY_TEXT],
           'CONFIG SET [2 other arguments]'
         );
       });
 
-      it('redacts ACL SETUSER arguments in db.statement', async function () {
+      it('redacts ACL SETUSER arguments in db.query.text', async function () {
         await client.sendCommand(['ACL', 'SETUSER', 'testuser']);
         const [span] = getTestSpans();
-        assert.strictEqual(
-          span?.attributes['db.statement'],
-          'ACL SETUSER [1 other arguments]'
-        );
         assert.strictEqual(
           span?.attributes[ATTR_DB_QUERY_TEXT],
           'ACL SETUSER [1 other arguments]'
@@ -197,7 +180,7 @@ describe('redis v4-v5', () => {
         );
       });
 
-      it('redacts GETSET value in db.statement', async function () {
+      it('redacts GETSET value in db.query.text', async function () {
         await context.with(
           suppressTracing(context.active()),
           async function () {
@@ -207,22 +190,14 @@ describe('redis v4-v5', () => {
         await client.sendCommand(['GETSET', 'key', 'secret-value']);
         const [span] = getTestSpans();
         assert.strictEqual(
-          span?.attributes['db.statement'],
-          'GETSET key [1 other arguments]'
-        );
-        assert.strictEqual(
           span?.attributes[ATTR_DB_QUERY_TEXT],
           'GETSET key [1 other arguments]'
         );
       });
 
-      it('redacts PSETEX value in db.statement', async function () {
+      it('redacts PSETEX value in db.query.text', async function () {
         await client.sendCommand(['PSETEX', 'key', '60000', 'secret-value']);
         const [span] = getTestSpans();
-        assert.strictEqual(
-          span?.attributes['db.statement'],
-          'PSETEX key [2 other arguments]'
-        );
         assert.strictEqual(
           span?.attributes[ATTR_DB_QUERY_TEXT],
           'PSETEX key [2 other arguments]'
@@ -408,10 +383,6 @@ describe('redis v4-v5', () => {
       assert.ok(multiSetSpan);
       assert.strictEqual(multiSetSpan.name, 'redis-SET');
       assert.strictEqual(
-        multiSetSpan.attributes['db.statement'],
-        'SET key [1 other arguments]'
-      );
-      assert.strictEqual(
         multiSetSpan.attributes[ATTR_DB_QUERY_TEXT],
         'SET key [1 other arguments]'
       );
@@ -430,10 +401,6 @@ describe('redis v4-v5', () => {
 
       assert.ok(multiGetSpan);
       assert.strictEqual(multiGetSpan.name, 'redis-GET');
-      assert.strictEqual(
-        multiGetSpan.attributes['db.statement'],
-        'GET another-key'
-      );
       assert.strictEqual(
         multiGetSpan.attributes[ATTR_DB_QUERY_TEXT],
         'GET another-key'
@@ -461,10 +428,6 @@ describe('redis v4-v5', () => {
 
       const [multiSetSpan] = getTestSpans();
       assert.ok(multiSetSpan);
-      assert.strictEqual(
-        multiSetSpan.attributes['db.statement'],
-        'SET key [1 other arguments]'
-      );
       assert.strictEqual(
         multiSetSpan.attributes[ATTR_DB_QUERY_TEXT],
         'SET key [1 other arguments]'
@@ -624,7 +587,6 @@ describe('redis v4-v5', () => {
         instrumentation.setConfig({ dbStatementSerializer });
         await client.set('key', 'value');
         const [span] = getTestSpans();
-        assert.strictEqual(span.attributes['db.statement'], 'SET key value');
         assert.strictEqual(
           span.attributes[ATTR_DB_QUERY_TEXT],
           'SET key value'
@@ -724,10 +686,6 @@ describe('redis v4-v5', () => {
       assert.ok(pipelineSetSpan);
       assert.strictEqual(pipelineSetSpan.name, 'redis-SET');
       assert.strictEqual(
-        pipelineSetSpan.attributes['db.statement'],
-        'SET key [1 other arguments]'
-      );
-      assert.strictEqual(
         pipelineSetSpan.attributes[ATTR_DB_QUERY_TEXT],
         'SET key [1 other arguments]'
       );
@@ -738,10 +696,6 @@ describe('redis v4-v5', () => {
 
       assert.ok(pipelineGetSpan);
       assert.strictEqual(pipelineGetSpan.name, 'redis-GET');
-      assert.strictEqual(
-        pipelineGetSpan.attributes['db.statement'],
-        'GET another-key'
-      );
       assert.strictEqual(
         pipelineGetSpan.attributes[ATTR_DB_QUERY_TEXT],
         'GET another-key'
@@ -762,10 +716,6 @@ describe('redis v4-v5', () => {
 
       const [pipelineSetSpan] = getTestSpans();
       assert.ok(pipelineSetSpan);
-      assert.strictEqual(
-        pipelineSetSpan.attributes['db.statement'],
-        'SET key [1 other arguments]'
-      );
       assert.strictEqual(
         pipelineSetSpan.attributes[ATTR_DB_QUERY_TEXT],
         'SET key [1 other arguments]'

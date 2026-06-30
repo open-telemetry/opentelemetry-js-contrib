@@ -282,15 +282,13 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       // Verify db.operation.name (stable)
       assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], expected.op);
 
-      // Verify db.statement (old) and db.query.text (stable) if statement is expected
+      // Verify db.query.text (stable) if statement is expected
       if (expected.statement !== undefined) {
-        assert.strictEqual(span.attributes['db.statement'], expected.statement);
         assert.strictEqual(
           span.attributes[ATTR_DB_QUERY_TEXT],
           expected.statement
         );
       } else {
-        assert.strictEqual(span.attributes['db.statement'], undefined);
         assert.strictEqual(span.attributes[ATTR_DB_QUERY_TEXT], undefined);
       }
 

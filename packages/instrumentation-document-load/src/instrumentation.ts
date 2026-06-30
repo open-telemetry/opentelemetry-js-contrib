@@ -122,7 +122,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
       });
 
       rootSpan.setAttribute(ATTR_URL_FULL, location.href);
-        rootSpan.setAttribute(ATTR_USER_AGENT_ORIGINAL, navigator.userAgent);
+      rootSpan.setAttribute(ATTR_USER_AGENT_ORIGINAL, navigator.userAgent);
 
       this._addResourcesSpans(rootSpan);
 

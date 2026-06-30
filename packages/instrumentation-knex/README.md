@@ -49,14 +49,14 @@ registerInstrumentations({
 
 | Options | Type | Example | Description |
 | ------- | ---- | ------- | ----------- |
-| `maxQueryLength` | `number` | `100` | Truncate `db.statement` attribute to a maximum length. If the statement is truncated `'..'` is added to it's end. Default `1022`. `-1` leaves `db.statement` untouched. |
+| `maxQueryLength` | `number` | `100` | Truncate `db.query.text` attribute to a maximum length. If the statement is truncated `'..'` is added to it's end. Default `1022`. `-1` leaves `db.query.text` untouched. |
 | `requireParentSpan` | `boolean` | `false` | Don't create spans unless they are part of an existing trace. Default is `false`. |
 
 ## Semantic Conventions
 
 This instrumentation creates spans with database-related attributes.
 
-The `instrumentation-knex` versions 0.64.0 and later emit the stable v1.23.0+ semantic conventions.
+The `instrumentation-knex` versions 0.64.0 and later emit the stable v1.33.0+ semantic conventions.
 
 | Attribute              | Short Description                                                           |
 | ---------------------- | --------------------------------------------------------------------------- |

@@ -7,12 +7,14 @@ import * as assert from 'assert';
 import { promisify } from 'util';
 import {
   AggregationTemporality,
+  DataPointType,
   InMemoryMetricExporter,
   MeterProvider,
   PeriodicExportingMetricReader,
   ResourceMetrics,
   MetricData,
 } from '@opentelemetry/sdk-metrics';
+import { METRIC_DB_CLIENT_CONNECTIONS_USAGE } from '../src/semconv';
 import { MySQLInstrumentation } from '../src';
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 
@@ -206,10 +208,11 @@ describe('mysql@2.x-Metrics', () => {
   });
 });
 
-function assertMetrics(
-  metrics: MetricData[]
-) {
-  // The non-stable `db.client.connections.usage` metric is not generated
-  // with stable semconv.
-  assert.strictEqual(metrics.length, 0);
+function assertMetrics(metrics: MetricData[]) {
+  assert.strictEqual(
+    metrics.filter(
+      m => m.descriptor.name === METRIC_DB_CLIENT_CONNECTIONS_USAGE
+    ).length,
+    0
+  );
 }
