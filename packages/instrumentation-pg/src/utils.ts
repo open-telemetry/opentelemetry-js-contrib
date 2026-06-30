@@ -139,7 +139,7 @@ export function getSemanticAttributesFromConnection(
 ) {
   const attributes: Attributes = {
     [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
-    [ATTR_DB_NAMESPACE]: params.namespace,
+    [ATTR_DB_NAMESPACE]: params.database,
     [ATTR_SERVER_ADDRESS]: params.host,
     [ATTR_SERVER_PORT]: getPort(params.port),
   };
@@ -162,7 +162,7 @@ export function getSemanticAttributesFromPoolConnection(
     [AttributeNames.IDLE_TIMEOUT_MILLIS]: params.idleTimeoutMillis,
     [AttributeNames.MAX_CLIENT]: params.maxClient,
     [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
-    [ATTR_DB_NAMESPACE]: params.namespace,
+    [ATTR_DB_NAMESPACE]: url?.pathname.slice(1) ?? params.database,
     [ATTR_SERVER_ADDRESS]: url?.hostname ?? params.host,
     [ATTR_SERVER_PORT]: Number(url?.port) || getPort(params.port),
   };
