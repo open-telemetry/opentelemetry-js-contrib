@@ -120,10 +120,7 @@ describe('mysql@2.x-Metrics', () => {
         2
       );
       assert.strictEqual(exportedMetrics.length, 2);
-      assertMetrics(exportedMetrics[1].scopeMetrics[0].metrics, {
-        expectedConnCountIdle: 1,
-        expectedConnCountUsed: 0,
-      });
+      assertMetrics(exportedMetrics[1].scopeMetrics[0].metrics);
     });
 
     it('Pool - Create 2 connection, release only 1', async () => {
@@ -144,10 +141,7 @@ describe('mysql@2.x-Metrics', () => {
         2
       );
       assert.strictEqual(exportedMetrics.length, 2);
-      assertMetrics(exportedMetrics[1].scopeMetrics[0].metrics, {
-        expectedConnCountIdle: 1,
-        expectedConnCountUsed: 1,
-      });
+      assertMetrics(exportedMetrics[1].scopeMetrics[0].metrics);
     });
 
     it('Pool - use pool.query', async () => {
@@ -159,10 +153,7 @@ describe('mysql@2.x-Metrics', () => {
         2
       );
       assert.strictEqual(exportedMetrics.length, 2);
-      assertMetrics(exportedMetrics[1].scopeMetrics[0].metrics, {
-        expectedConnCountIdle: 1,
-        expectedConnCountUsed: 0,
-      });
+      assertMetrics(exportedMetrics[1].scopeMetrics[0].metrics);
     });
   });
 
@@ -208,11 +199,7 @@ describe('mysql@2.x-Metrics', () => {
         2
       );
       assert.strictEqual(exportedMetrics.length, 2);
-      assertMetrics(exportedMetrics[1].scopeMetrics[0].metrics, {
-        poolName,
-        expectedConnCountIdle: 0,
-        expectedConnCountUsed: 1,
-      });
+      assertMetrics(exportedMetrics[1].scopeMetrics[0].metrics);
 
       conn.release();
     });
@@ -220,12 +207,7 @@ describe('mysql@2.x-Metrics', () => {
 });
 
 function assertMetrics(
-  metrics: MetricData[],
-  opts: {
-    expectedConnCountIdle: number;
-    expectedConnCountUsed: number;
-    poolName?: string;
-  }
+  metrics: MetricData[]
 ) {
   // The non-stable `db.client.connections.usage` metric is not generated
   // with stable semconv.

@@ -25,7 +25,6 @@ process.env.AWS_SECRET_ACCESS_KEY = 'testing';
 import 'mocha';
 import { SpanStatusCode, Span } from '@opentelemetry/api';
 import {
-  ATTR_HTTP_STATUS_CODE,
   ATTR_RPC_METHOD,
   ATTR_RPC_SERVICE,
   ATTR_RPC_SYSTEM,
@@ -66,8 +65,6 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
       expect(span.kind).toEqual(SpanKind.CLIENT);
-      expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
-
       expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
     });
 
@@ -94,7 +91,6 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
         );
         expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
         expect(span.name).toEqual('S3.PutObject');
-        expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
         expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
         done();
       });
@@ -124,7 +120,6 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       );
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
-      expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
       expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
     });
 
@@ -159,7 +154,6 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
         expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
           'invalid-bucket-name'
         );
-        expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(403);
         expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(403);
         expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
         expect(span.attributes[AttributeNames.AWS_REQUEST_ID]).toEqual(

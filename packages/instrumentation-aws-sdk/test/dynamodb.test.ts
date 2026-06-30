@@ -21,11 +21,7 @@ import {
   ATTR_DB_SYSTEM_NAME,
 } from '@opentelemetry/semantic-conventions';
 import {
-  ATTR_DB_NAME,
-  ATTR_DB_OPERATION,
-  ATTR_DB_SYSTEM,
   DB_SYSTEM_NAME_VALUE_DYNAMODB,
-  DB_SYSTEM_VALUE_DYNAMODB,
 } from '../src/semconv';
 import { expect } from 'expect';
 
@@ -47,7 +43,7 @@ describe('DynamoDB - v3', () => {
   });
 
   describe('GetItem', () => {
-    it('Request span attributes - emits both old and stable DB semconv', async () => {
+    it('Request span attributes - emits stable DB semconv', async () => {
       const tableName = 'test-table';
 
       nock(`https://dynamodb.${region}.amazonaws.com/`)
@@ -72,10 +68,6 @@ describe('DynamoDB - v3', () => {
       const span = dynamoDbSpans[0];
       expect(span.kind).toBe(SpanKind.CLIENT);
 
-      expect(span.attributes[ATTR_DB_SYSTEM]).toBe(DB_SYSTEM_VALUE_DYNAMODB);
-      expect(span.attributes[ATTR_DB_NAME]).toBe(tableName);
-      expect(span.attributes[ATTR_DB_OPERATION]).toBe('GetItem');
-
       expect(span.attributes[ATTR_DB_SYSTEM_NAME]).toBe(
         DB_SYSTEM_NAME_VALUE_DYNAMODB
       );
@@ -85,7 +77,7 @@ describe('DynamoDB - v3', () => {
   });
 
   describe('PutItem', () => {
-    it('Request span attributes - emits both old and stable DB semconv', async () => {
+    it('Request span attributes - emits stable DB semconv', async () => {
       const tableName = 'another-table';
 
       nock(`https://dynamodb.${region}.amazonaws.com/`)
@@ -110,10 +102,6 @@ describe('DynamoDB - v3', () => {
       expect(dynamoDbSpans.length).toBe(1);
       const span = dynamoDbSpans[0];
       expect(span.kind).toBe(SpanKind.CLIENT);
-
-      expect(span.attributes[ATTR_DB_SYSTEM]).toBe(DB_SYSTEM_VALUE_DYNAMODB);
-      expect(span.attributes[ATTR_DB_NAME]).toBe(tableName);
-      expect(span.attributes[ATTR_DB_OPERATION]).toBe('PutItem');
 
       expect(span.attributes[ATTR_DB_SYSTEM_NAME]).toBe(
         DB_SYSTEM_NAME_VALUE_DYNAMODB

@@ -10,7 +10,6 @@ import {
 import { RedisInstrumentation } from '../../src/index';
 import * as assert from 'assert';
 import { SpanStatusCode } from '@opentelemetry/api';
-import { ATTR_DB_STATEMENT } from '../../src/semconv';
 import {
   ATTR_DB_QUERY_TEXT,
   ATTR_DB_OPERATION_NAME,
@@ -74,10 +73,7 @@ describe('redis v4-v5 cluster mock (no live Redis required)', () => {
         getSpan,
         `Expected redis-GET span, got: ${spans.map((s: any) => s.name).join(', ')}`
       );
-      assert.strictEqual(getSpan!.attributes['db.system'], 'redis');
-      assert.ok(
-        (getSpan!.attributes[ATTR_DB_STATEMENT] as string)?.startsWith('GET')
-      );
+      assert.strictEqual(getSpan!.attributes['db.system.name'], 'redis');
       assert.ok(
         (getSpan!.attributes[ATTR_DB_QUERY_TEXT] as string)?.startsWith('GET')
       );
@@ -102,10 +98,7 @@ describe('redis v4-v5 cluster mock (no live Redis required)', () => {
         setSpan,
         `Expected redis-SET span, got: ${spans.map((s: any) => s.name).join(', ')}`
       );
-      assert.strictEqual(setSpan!.attributes['db.system'], 'redis');
-      assert.ok(
-        (setSpan!.attributes[ATTR_DB_STATEMENT] as string)?.startsWith('SET')
-      );
+      assert.strictEqual(setSpan!.attributes['db.system.name'], 'redis');
       assert.ok(
         (setSpan!.attributes[ATTR_DB_QUERY_TEXT] as string)?.startsWith('SET')
       );
