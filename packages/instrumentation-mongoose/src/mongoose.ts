@@ -15,15 +15,10 @@ import {
   InstrumentationBase,
   InstrumentationModuleDefinition,
   InstrumentationNodeModuleDefinition,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
-  ATTR_DB_OPERATION,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
   DB_SYSTEM_NAME_VALUE_MONGODB,
 } from './semconv';
 import {
@@ -108,24 +103,9 @@ export const _ALREADY_INSTRUMENTED: unique symbol = Symbol(
 );
 
 export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrumentationConfig> {
-  private _netSemconvStability!: SemconvStability;
-  private _dbSemconvStability!: SemconvStability;
 
   constructor(config: MongooseInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._setSemconvStabilityFromEnv();
-  }
-
-  // Used for testing.
-  private _setSemconvStabilityFromEnv() {
-    this._netSemconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
-    this._dbSemconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   protected init(): InstrumentationModuleDefinition {
@@ -276,12 +256,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
             options: this.options,
             aggregatePipeline: this._pipeline,
           });
-          if (self._dbSemconvStability & SemconvStability.OLD) {
-            attributes[ATTR_DB_STATEMENT] = statement;
-          }
-          if (self._dbSemconvStability & SemconvStability.STABLE) {
-            attributes[ATTR_DB_QUERY_TEXT] = statement;
-          }
+          attributes[ATTR_DB_QUERY_TEXT] = statement;
         }
 
         const span = self._startSpan(
@@ -331,12 +306,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
             options: this.getOptions?.() ?? this.options,
             fields: this._fields,
           });
-          if (self._dbSemconvStability & SemconvStability.OLD) {
-            attributes[ATTR_DB_STATEMENT] = statement;
-          }
-          if (self._dbSemconvStability & SemconvStability.STABLE) {
-            attributes[ATTR_DB_QUERY_TEXT] = statement;
-          }
+          attributes[ATTR_DB_QUERY_TEXT] = statement;
         }
         const span = self._startSpan(
           this.mongooseCollection,
@@ -377,12 +347,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
           const statement = dbStatementSerializer(op, serializePayload);
-          if (self._dbSemconvStability & SemconvStability.OLD) {
-            attributes[ATTR_DB_STATEMENT] = statement;
-          }
-          if (self._dbSemconvStability & SemconvStability.STABLE) {
-            attributes[ATTR_DB_QUERY_TEXT] = statement;
-          }
+          attributes[ATTR_DB_QUERY_TEXT] = statement;
         }
         const span = self._startSpan(
           this.constructor.collection,
@@ -451,12 +416,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
             updates: actualUpdate,
             options: actualOptions,
           });
-          if (self._dbSemconvStability & SemconvStability.OLD) {
-            attributes[ATTR_DB_STATEMENT] = statement;
-          }
-          if (self._dbSemconvStability & SemconvStability.STABLE) {
-            attributes[ATTR_DB_QUERY_TEXT] = statement;
-          }
+          attributes[ATTR_DB_QUERY_TEXT] = statement;
         }
 
         const span = self._startSpan(
@@ -525,12 +485,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
         const { dbStatementSerializer } = self.getConfig();
         if (dbStatementSerializer) {
           const statement = dbStatementSerializer(op, serializePayload);
-          if (self._dbSemconvStability & SemconvStability.OLD) {
-            attributes[ATTR_DB_STATEMENT] = statement;
-          }
-          if (self._dbSemconvStability & SemconvStability.STABLE) {
-            attributes[ATTR_DB_QUERY_TEXT] = statement;
-          }
+          attributes[ATTR_DB_QUERY_TEXT] = statement;
         }
 
         const span = self._startSpan(
@@ -592,25 +547,14 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
     const finalAttributes: Attributes = {
       ...attributes,
       ...getAttributesFromCollection(
-        collection,
-        this._dbSemconvStability,
-        this._netSemconvStability
+        collection
       ),
     };
 
-    if (this._dbSemconvStability & SemconvStability.OLD) {
-      finalAttributes[ATTR_DB_OPERATION] = operation;
-      finalAttributes[ATTR_DB_SYSTEM] = 'mongoose'; // keep for backwards compatibility
-    }
-    if (this._dbSemconvStability & SemconvStability.STABLE) {
-      finalAttributes[ATTR_DB_OPERATION_NAME] = operation;
-      finalAttributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MONGODB; // actual db system name
-    }
+    finalAttributes[ATTR_DB_OPERATION_NAME] = operation;
+    finalAttributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MONGODB; // actual db system name
 
-    const spanName =
-      this._dbSemconvStability & SemconvStability.STABLE
-        ? `${operation} ${collection.name}`
-        : `mongoose.${modelName}.${operation}`;
+    const spanName = `${operation} ${collection.name}`;
 
     return this.tracer.startSpan(
       spanName,

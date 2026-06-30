@@ -433,12 +433,10 @@ describe('CassandraDriverInstrumentation', () => {
 
     after(() => {
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
-      (instrumentation as any)._setSemconvStabilityFromEnv();
     });
 
     it('uses old attributes when OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
       memoryExporter.reset();
 
       await client.execute('select * from ot.test');
@@ -459,7 +457,6 @@ describe('CassandraDriverInstrumentation', () => {
 
     it('uses stable attributes when OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
       memoryExporter.reset();
 
       await client.execute('select * from ot.test');

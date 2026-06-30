@@ -17,8 +17,6 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   ATTR_DB_COLLECTION_NAME,
@@ -30,16 +28,7 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_DB_MONGODB_COLLECTION,
-  ATTR_DB_NAME,
-  ATTR_DB_OPERATION,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
   DB_SYSTEM_NAME_VALUE_MONGODB,
-  DB_SYSTEM_VALUE_MONGODB,
   METRIC_DB_CLIENT_CONNECTIONS_USAGE,
 } from './semconv';
 import { MongoDBInstrumentationConfig, CommandResult } from './types';
@@ -65,26 +54,11 @@ const DEFAULT_CONFIG: MongoDBInstrumentationConfig = {
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumentationConfig> {
-  private _netSemconvStability!: SemconvStability;
-  private _dbSemconvStability!: SemconvStability;
   declare private _connectionsUsage: UpDownCounter;
   declare private _poolName: string;
 
   constructor(config: MongoDBInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
-    this._setSemconvStabilityFromEnv();
-  }
-
-  // Used for testing.
-  private _setSemconvStabilityFromEnv() {
-    this._netSemconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
-    this._dbSemconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   override setConfig(config: MongoDBInstrumentationConfig = {}) {
@@ -935,36 +909,16 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   ): Attributes {
     const attributes: Attributes = {};
 
-    if (this._dbSemconvStability & SemconvStability.OLD) {
-      attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MONGODB;
-      attributes[ATTR_DB_NAME] = dbName;
-      attributes[ATTR_DB_MONGODB_COLLECTION] = dbCollection;
-      attributes[ATTR_DB_OPERATION] = operation;
-      attributes[ATTR_DB_CONNECTION_STRING] =
-        `mongodb://${host}:${port}/${dbName}`;
-    }
-    if (this._dbSemconvStability & SemconvStability.STABLE) {
-      attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MONGODB;
-      attributes[ATTR_DB_NAMESPACE] = dbName;
-      attributes[ATTR_DB_OPERATION_NAME] = operation;
-      attributes[ATTR_DB_COLLECTION_NAME] = dbCollection;
-    }
+    attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MONGODB;
+    attributes[ATTR_DB_NAMESPACE] = dbName;
+    attributes[ATTR_DB_OPERATION_NAME] = operation;
+    attributes[ATTR_DB_COLLECTION_NAME] = dbCollection;
 
     if (host && port) {
-      if (this._netSemconvStability & SemconvStability.OLD) {
-        attributes[ATTR_NET_PEER_NAME] = host;
-      }
-      if (this._netSemconvStability & SemconvStability.STABLE) {
-        attributes[ATTR_SERVER_ADDRESS] = host;
-      }
+      attributes[ATTR_SERVER_ADDRESS] = host;
       const portNumber = parseInt(port, 10);
       if (!isNaN(portNumber)) {
-        if (this._netSemconvStability & SemconvStability.OLD) {
-          attributes[ATTR_NET_PEER_PORT] = portNumber;
-        }
-        if (this._netSemconvStability & SemconvStability.STABLE) {
-          attributes[ATTR_SERVER_PORT] = portNumber;
-        }
+        attributes[ATTR_SERVER_PORT] = portNumber;
       }
     }
 
@@ -979,12 +933,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       safeExecuteInTheMiddle(
         () => {
           const query = dbStatementSerializer(commandObj);
-          if (this._dbSemconvStability & SemconvStability.OLD) {
-            attributes[ATTR_DB_STATEMENT] = query;
-          }
-          if (this._dbSemconvStability & SemconvStability.STABLE) {
-            attributes[ATTR_DB_QUERY_TEXT] = query;
-          }
+          attributes[ATTR_DB_QUERY_TEXT] = query;
         },
         err => {
           if (err) {
@@ -999,19 +948,14 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   }
 
   private _spanNameFromAttrs(attributes: Attributes): string {
-    let spanName;
-    if (this._dbSemconvStability & SemconvStability.STABLE) {
-      // https://opentelemetry.io/docs/specs/semconv/database/database-spans/#name
-      spanName =
-        [
-          attributes[ATTR_DB_OPERATION_NAME],
-          attributes[ATTR_DB_COLLECTION_NAME],
-        ]
-          .filter(attr => attr)
-          .join(' ') || DB_SYSTEM_NAME_VALUE_MONGODB;
-    } else {
-      spanName = `mongodb.${attributes[ATTR_DB_OPERATION] || 'command'}`;
-    }
+    // https://opentelemetry.io/docs/specs/semconv/database/database-spans/#name
+    const spanName =
+      [
+        attributes[ATTR_DB_OPERATION_NAME],
+        attributes[ATTR_DB_COLLECTION_NAME],
+      ]
+        .filter(attr => attr)
+        .join(' ') || DB_SYSTEM_NAME_VALUE_MONGODB;
     return spanName;
   }
 

@@ -9,7 +9,6 @@ import {
   SpanKind,
   Tracer,
 } from '@opentelemetry/api';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 import {
   ATTR_DB_NAMESPACE,
   ATTR_DB_OPERATION_NAME,
@@ -39,12 +38,7 @@ import {
   ATTR_AWS_DYNAMODB_TABLE_COUNT,
   ATTR_AWS_DYNAMODB_TABLE_NAMES,
   ATTR_AWS_DYNAMODB_TOTAL_SEGMENTS,
-  ATTR_DB_NAME,
-  ATTR_DB_OPERATION,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
   DB_SYSTEM_NAME_VALUE_DYNAMODB,
-  DB_SYSTEM_VALUE_DYNAMODB,
 } from '../semconv';
 import {
   AwsSdkInstrumentationConfig,
@@ -60,8 +54,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
   requestPreSpanHook(
     normalizedRequest: NormalizedRequest,
     config: AwsSdkInstrumentationConfig,
-    diag: DiagLogger,
-    dbSemconvStability?: SemconvStability
+    diag: DiagLogger
   ): RequestMetadata {
     const spanKind: SpanKind = SpanKind.CLIENT;
     let spanName: string | undefined;
@@ -70,23 +63,9 @@ export class DynamodbServiceExtension implements ServiceExtension {
     const tableName = normalizedRequest.commandInput?.TableName;
 
     const spanAttributes: Attributes = {};
-
-    if (
-      dbSemconvStability === undefined ||
-      dbSemconvStability & SemconvStability.OLD
-    ) {
-      spanAttributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_DYNAMODB;
-      spanAttributes[ATTR_DB_NAME] = tableName;
-      spanAttributes[ATTR_DB_OPERATION] = operation;
-    }
-    if (
-      dbSemconvStability !== undefined &&
-      dbSemconvStability & SemconvStability.STABLE
-    ) {
-      spanAttributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_DYNAMODB;
-      spanAttributes[ATTR_DB_NAMESPACE] = tableName;
-      spanAttributes[ATTR_DB_OPERATION_NAME] = operation;
-    }
+    spanAttributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_DYNAMODB;
+    spanAttributes[ATTR_DB_NAMESPACE] = tableName;
+    spanAttributes[ATTR_DB_OPERATION_NAME] = operation;
 
     if (config.dynamoDBStatementSerializer) {
       try {
@@ -96,18 +75,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
         );
 
         if (typeof sanitizedStatement === 'string') {
-          if (
-            dbSemconvStability === undefined ||
-            dbSemconvStability & SemconvStability.OLD
-          ) {
-            spanAttributes[ATTR_DB_STATEMENT] = sanitizedStatement;
-          }
-          if (
-            dbSemconvStability !== undefined &&
-            dbSemconvStability & SemconvStability.STABLE
-          ) {
-            spanAttributes[ATTR_DB_QUERY_TEXT] = sanitizedStatement;
-          }
+          spanAttributes[ATTR_DB_QUERY_TEXT] = sanitizedStatement;
         }
       } catch (err) {
         diag.error('failed to sanitize DynamoDB statement', err);

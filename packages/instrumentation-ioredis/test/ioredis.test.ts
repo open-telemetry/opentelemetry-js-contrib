@@ -1140,13 +1140,11 @@ describe('ioredis', () => {
     const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
     after(() => {
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
-      (instrumentation as any)._setSemconvStabilityFromEnv();
     });
 
     it('OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
       // Arrange
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
       memoryExporter.reset();
 
       const client = new ioredis(REDIS_URL);
@@ -1179,7 +1177,6 @@ describe('ioredis', () => {
     it('OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
       // Arrange
       process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
       memoryExporter.reset();
 
       const client = new ioredis(REDIS_URL);

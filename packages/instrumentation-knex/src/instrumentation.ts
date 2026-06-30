@@ -12,8 +12,6 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import * as utils from './utils';
 import { KnexInstrumentationConfig } from './types';
@@ -26,17 +24,6 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_DB_NAME,
-  ATTR_DB_OPERATION,
-  ATTR_DB_SQL_TABLE,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-  ATTR_NET_TRANSPORT,
-} from './semconv';
 
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
 const DEFAULT_CONFIG: KnexInstrumentationConfig = {
@@ -45,15 +32,9 @@ const DEFAULT_CONFIG: KnexInstrumentationConfig = {
 };
 
 export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentationConfig> {
-  private _semconvStability: SemconvStability;
 
   constructor(config: KnexInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
-
-    this._semconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   override setConfig(config: KnexInstrumentationConfig = {}) {
@@ -150,50 +131,24 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
         const attributes: api.Attributes = {
           'knex.version': moduleVersion,
         };
-        const transport =
-          config?.connection?.filename === ':memory:' ? 'inproc' : undefined;
 
-        if (instrumentation._semconvStability & SemconvStability.OLD) {
-          Object.assign(attributes, {
-            [ATTR_DB_SYSTEM]: utils.mapSystem(this.client.driverName),
-            [ATTR_DB_SQL_TABLE]: table,
-            [ATTR_DB_OPERATION]: operation,
-            [ATTR_DB_USER]: config?.connection?.user,
-            [ATTR_DB_NAME]: name,
-            // Fall back to parsing host and port from connectionString if not explicitly set.
-            [ATTR_NET_PEER_NAME]:
-              config?.connection?.host ??
-              utils.extractHostFromConnectionString(connectionString),
-            [ATTR_NET_PEER_PORT]:
-              config?.connection?.port ??
-              utils.extractPortFromConnectionString(connectionString),
-            [ATTR_NET_TRANSPORT]: transport,
-          });
-        }
-        if (instrumentation._semconvStability & SemconvStability.STABLE) {
-          Object.assign(attributes, {
-            [ATTR_DB_SYSTEM_NAME]: utils.mapSystem(this.client.driverName),
-            [ATTR_DB_COLLECTION_NAME]: table,
-            [ATTR_DB_OPERATION_NAME]: operation,
-            [ATTR_DB_NAMESPACE]: name,
-            // Fall back to parsing host and port from connectionString if not explicitly set.
-            [ATTR_SERVER_ADDRESS]:
-              config?.connection?.host ??
-              utils.extractHostFromConnectionString(connectionString),
-            [ATTR_SERVER_PORT]:
-              config?.connection?.port ??
-              utils.extractPortFromConnectionString(connectionString),
-          });
-        }
+        Object.assign(attributes, {
+          [ATTR_DB_SYSTEM_NAME]: utils.mapSystem(this.client.driverName),
+          [ATTR_DB_COLLECTION_NAME]: table,
+          [ATTR_DB_OPERATION_NAME]: operation,
+          [ATTR_DB_NAMESPACE]: name,
+          // Fall back to parsing host and port from connectionString if not explicitly set.
+          [ATTR_SERVER_ADDRESS]:
+            config?.connection?.host ??
+            utils.extractHostFromConnectionString(connectionString),
+          [ATTR_SERVER_PORT]:
+            config?.connection?.port ??
+            utils.extractPortFromConnectionString(connectionString),
+        });
         if (maxQueryLength) {
           // filters both undefined and 0
           const queryText = utils.limitLength(query?.sql, maxQueryLength);
-          if (instrumentation._semconvStability & SemconvStability.STABLE) {
-            attributes[ATTR_DB_QUERY_TEXT] = queryText;
-          }
-          if (instrumentation._semconvStability & SemconvStability.OLD) {
-            attributes[ATTR_DB_STATEMENT] = queryText;
-          }
+          attributes[ATTR_DB_QUERY_TEXT] = queryText;
         }
 
         const parentContext =

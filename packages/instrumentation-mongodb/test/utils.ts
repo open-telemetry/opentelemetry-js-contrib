@@ -5,17 +5,12 @@
 
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import {
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_DB_MONGODB_COLLECTION,
-  ATTR_DB_OPERATION,
   ATTR_DB_STATEMENT,
   ATTR_DB_SYSTEM,
-  ATTR_NET_PEER_NAME,
 } from '../src/semconv';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import type { MongoClient, MongoClientOptions, Collection } from 'mongodb';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 import {
   ATTR_DB_COLLECTION_NAME,
   ATTR_DB_OPERATION_NAME,
@@ -70,7 +65,6 @@ export function accessCollection(
 
 export function assertSpans(
   spans: ReadableSpan[],
-  semconvStability: SemconvStability,
   expectedOperation: string,
   expectedCollection: string,
   expectedConnString: string | undefined,
@@ -89,56 +83,24 @@ export function assertSpans(
   assert.strictEqual(mongoSpan.kind, SpanKind.CLIENT);
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
 
-  if (semconvStability & SemconvStability.STABLE) {
-    assert.strictEqual(
-      mongoSpan.name,
-      `${expectedOperation} ${expectedCollection}`
-    );
-  } else {
-    assert.strictEqual(mongoSpan.name, `mongodb.${expectedOperation}`);
-  }
-
-  if (semconvStability & SemconvStability.OLD) {
-    assert.strictEqual(
-      mongoSpan.attributes[ATTR_DB_OPERATION],
-      expectedOperation
-    );
-    assert.strictEqual(
-      mongoSpan.attributes[ATTR_DB_MONGODB_COLLECTION],
-      expectedCollection
-    );
-    assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM], 'mongodb');
-    assert.strictEqual(
-      mongoSpan.attributes[ATTR_NET_PEER_NAME],
-      process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
-    );
-    if (expectedConnString) {
-      assert.strictEqual(
-        mongoSpan.attributes[ATTR_DB_CONNECTION_STRING],
-        expectedConnString
-      );
-    }
-  } else {
-    assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM], undefined);
-  }
-
-  if (semconvStability & SemconvStability.STABLE) {
-    assert.strictEqual(
-      mongoSpan.attributes[ATTR_DB_OPERATION_NAME],
-      expectedOperation
-    );
-    assert.strictEqual(
-      mongoSpan.attributes[ATTR_DB_COLLECTION_NAME],
-      expectedCollection
-    );
-    assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM_NAME], 'mongodb');
-    assert.strictEqual(
-      mongoSpan.attributes[ATTR_SERVER_ADDRESS],
-      process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
-    );
-  } else {
-    assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM_NAME], undefined);
-  }
+  assert.strictEqual(
+    mongoSpan.name,
+    `${expectedOperation} ${expectedCollection}`
+  );
+  assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM], undefined);
+  assert.strictEqual(
+    mongoSpan.attributes[ATTR_DB_OPERATION_NAME],
+    expectedOperation
+  );
+  assert.strictEqual(
+    mongoSpan.attributes[ATTR_DB_COLLECTION_NAME],
+    expectedCollection
+  );
+  assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM_NAME], 'mongodb');
+  assert.strictEqual(
+    mongoSpan.attributes[ATTR_SERVER_ADDRESS],
+    process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
+  );
 
   if (isEnhancedDatabaseReportingEnabled) {
     const dbQueryText =

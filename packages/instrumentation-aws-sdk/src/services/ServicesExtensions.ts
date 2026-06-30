@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { Tracer, Span, DiagLogger, Meter, HrTime } from '@opentelemetry/api';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 import { ServiceExtension, RequestMetadata } from './ServiceExtension';
 import { SqsServiceExtension } from './sqs';
 import {
@@ -42,8 +41,7 @@ export class ServicesExtensions implements ServiceExtension {
   requestPreSpanHook(
     request: NormalizedRequest,
     config: AwsSdkInstrumentationConfig,
-    diag: DiagLogger,
-    dbSemconvStability?: SemconvStability
+    diag: DiagLogger
   ): RequestMetadata {
     const serviceExtension = this.services.get(request.serviceName);
     if (!serviceExtension)
@@ -53,8 +51,7 @@ export class ServicesExtensions implements ServiceExtension {
     return serviceExtension.requestPreSpanHook(
       request,
       config,
-      diag,
-      dbSemconvStability
+      diag
     );
   }
 

@@ -16,8 +16,6 @@ import {
   InstrumentationNodeModuleDefinition,
   isWrapped,
   safeExecuteInTheMiddle,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   ATTR_NETWORK_LOCAL_ADDRESS,
@@ -28,20 +26,10 @@ import {
   ATTR_SERVER_PORT,
   NETWORK_TRANSPORT_VALUE_TCP,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_NET_HOST_IP,
-  ATTR_NET_HOST_PORT,
-  ATTR_NET_PEER_IP,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-  ATTR_NET_TRANSPORT,
-  NET_TRANSPORT_VALUE_IP_TCP,
-} from './semconv';
 import { TLSAttributes } from './types';
 import { NormalizedOptions, SocketEvent } from './internal-types';
 import {
   getNormalizedArgs,
-  OLD_IPC_TRANSPORT_VALUE,
   STABLE_IPC_TRANSPORT_VALUE,
 } from './utils';
 /** @knipignore */
@@ -51,19 +39,9 @@ import { TLSSocket } from 'tls';
 import type * as net from 'net';
 
 export class NetInstrumentation extends InstrumentationBase {
-  private _netSemconvStability!: SemconvStability;
 
   constructor(config: InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._setSemconvStabilityFromEnv();
-  }
-
-  // Used for testing.
-  private _setSemconvStabilityFromEnv() {
-    this._netSemconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   init(): InstrumentationNodeModuleDefinition[] {
@@ -203,43 +181,30 @@ export class NetInstrumentation extends InstrumentationBase {
   private _startGenericSpan(socket: Socket) {
     const span = this.tracer.startSpan('connect');
 
-    registerListeners(socket, span, false, this._netSemconvStability);
+    registerListeners(socket, span, false);
 
     return span;
   }
 
   private _startIpcSpan(options: NormalizedOptions, socket: Socket) {
     const attributes: Attributes = {};
-    if (this._netSemconvStability & SemconvStability.OLD) {
-      attributes[ATTR_NET_TRANSPORT] = OLD_IPC_TRANSPORT_VALUE;
-      attributes[ATTR_NET_PEER_NAME] = options.path;
-    }
-    if (this._netSemconvStability & SemconvStability.STABLE) {
-      attributes[ATTR_NETWORK_TRANSPORT] = STABLE_IPC_TRANSPORT_VALUE;
-      attributes[ATTR_SERVER_ADDRESS] = options.path;
-    }
+    attributes[ATTR_NETWORK_TRANSPORT] = STABLE_IPC_TRANSPORT_VALUE;
+    attributes[ATTR_SERVER_ADDRESS] = options.path;
     const span = this.tracer.startSpan('ipc.connect', { attributes });
 
-    registerListeners(socket, span, false, this._netSemconvStability);
+    registerListeners(socket, span, false);
 
     return span;
   }
 
   private _startTcpSpan(options: NormalizedOptions, socket: Socket) {
     const attributes: Attributes = {};
-    if (this._netSemconvStability & SemconvStability.OLD) {
-      attributes[ATTR_NET_TRANSPORT] = NET_TRANSPORT_VALUE_IP_TCP;
-      attributes[ATTR_NET_PEER_NAME] = options.host;
-      attributes[ATTR_NET_PEER_PORT] = options.port;
-    }
-    if (this._netSemconvStability & SemconvStability.STABLE) {
-      attributes[ATTR_NETWORK_TRANSPORT] = NETWORK_TRANSPORT_VALUE_TCP;
-      attributes[ATTR_SERVER_ADDRESS] = options.host;
-      attributes[ATTR_SERVER_PORT] = options.port;
-    }
+    attributes[ATTR_NETWORK_TRANSPORT] = NETWORK_TRANSPORT_VALUE_TCP;
+    attributes[ATTR_SERVER_ADDRESS] = options.host;
+    attributes[ATTR_SERVER_PORT] = options.port;
     const span = this.tracer.startSpan('tcp.connect', { attributes });
 
-    registerListeners(socket, span, true, this._netSemconvStability);
+    registerListeners(socket, span, true);
 
     return span;
   }
@@ -269,24 +234,16 @@ function spanErrorHandler(span: Span) {
 function registerListeners(
   socket: Socket,
   span: Span,
-  hostAttributes: boolean,
-  netSemconvStability: SemconvStability
+  hostAttributes: boolean
 ) {
   const setSpanError = spanErrorHandler(span);
   const setSpanEnd = spanEndHandler(span);
 
   const setHostAttributes = () => {
     const attributes: Attributes = {};
-    if (netSemconvStability & SemconvStability.OLD) {
-      attributes[ATTR_NET_PEER_IP] = socket.remoteAddress;
-      attributes[ATTR_NET_HOST_IP] = socket.localAddress;
-      attributes[ATTR_NET_HOST_PORT] = socket.localPort;
-    }
-    if (netSemconvStability & SemconvStability.STABLE) {
-      attributes[ATTR_NETWORK_PEER_ADDRESS] = socket.remoteAddress;
-      attributes[ATTR_NETWORK_LOCAL_ADDRESS] = socket.localAddress;
-      attributes[ATTR_NETWORK_LOCAL_PORT] = socket.localPort;
-    }
+    attributes[ATTR_NETWORK_PEER_ADDRESS] = socket.remoteAddress;
+    attributes[ATTR_NETWORK_LOCAL_ADDRESS] = socket.localAddress;
+    attributes[ATTR_NETWORK_LOCAL_PORT] = socket.localPort;
     span.setAttributes(attributes);
   };
 

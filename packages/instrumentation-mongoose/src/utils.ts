@@ -7,15 +7,7 @@ import type { Collection } from 'mongoose';
 import { MongooseResponseCustomAttributesFunction } from './types';
 import {
   safeExecuteInTheMiddle,
-  SemconvStability,
 } from '@opentelemetry/instrumentation';
-import {
-  ATTR_DB_MONGODB_COLLECTION,
-  ATTR_DB_NAME,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from './semconv';
 import {
   ATTR_DB_COLLECTION_NAME,
   ATTR_DB_NAMESPACE,
@@ -24,31 +16,14 @@ import {
 } from '@opentelemetry/semantic-conventions';
 
 export function getAttributesFromCollection(
-  collection: Collection,
-  dbSemconvStability: SemconvStability,
-  netSemconvStability: SemconvStability
+  collection: Collection
 ): Attributes {
   const attrs: Attributes = {};
 
-  if (dbSemconvStability & SemconvStability.OLD) {
-    attrs[ATTR_DB_MONGODB_COLLECTION] = collection.name;
-    attrs[ATTR_DB_NAME] = collection.conn.name;
-    attrs[ATTR_DB_USER] = collection.conn.user;
-  }
-  if (dbSemconvStability & SemconvStability.STABLE) {
-    attrs[ATTR_DB_COLLECTION_NAME] = collection.name;
-    attrs[ATTR_DB_NAMESPACE] = collection.conn.name;
-    // db.user has no stable replacement
-  }
-
-  if (netSemconvStability & SemconvStability.OLD) {
-    attrs[ATTR_NET_PEER_NAME] = collection.conn.host;
-    attrs[ATTR_NET_PEER_PORT] = collection.conn.port;
-  }
-  if (netSemconvStability & SemconvStability.STABLE) {
-    attrs[ATTR_SERVER_ADDRESS] = collection.conn.host;
-    attrs[ATTR_SERVER_PORT] = collection.conn.port;
-  }
+  attrs[ATTR_DB_COLLECTION_NAME] = collection.name;
+  attrs[ATTR_DB_NAMESPACE] = collection.conn.name;
+  attrs[ATTR_SERVER_ADDRESS] = collection.conn.host;
+  attrs[ATTR_SERVER_PORT] = collection.conn.port;
 
   return attrs;
 }

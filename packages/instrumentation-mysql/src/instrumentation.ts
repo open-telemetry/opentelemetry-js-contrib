@@ -16,8 +16,6 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   ATTR_DB_NAMESPACE,
@@ -28,14 +26,6 @@ import {
   DB_SYSTEM_NAME_VALUE_MYSQL,
 } from '@opentelemetry/semantic-conventions';
 import {
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_DB_NAME,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-  DB_SYSTEM_VALUE_MYSQL,
   METRIC_DB_CLIENT_CONNECTIONS_USAGE,
 } from './semconv';
 import type * as mysqlTypes from 'mysql';
@@ -45,7 +35,6 @@ import {
   getConfig,
   getDbQueryText,
   getDbValues,
-  getJDBCString,
   getSpanName,
   getPoolNameOld,
 } from './utils';
@@ -59,25 +48,10 @@ type getConnectionCallbackType = (
 ) => void;
 
 export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentationConfig> {
-  private _netSemconvStability!: SemconvStability;
-  private _dbSemconvStability!: SemconvStability;
   declare private _connectionsUsageOld: UpDownCounter;
 
   constructor(config: MySQLInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._setSemconvStabilityFromEnv();
-  }
-
-  // Used for testing.
-  private _setSemconvStabilityFromEnv() {
-    this._netSemconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
-    this._dbSemconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   protected override _updateMetricInstruments() {
@@ -329,34 +303,16 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const { host, port, database, user } = getConfig(connection.config);
         const portNumber = parseInt(port, 10);
         const dbQueryText = getDbQueryText(query);
-        if (thisPlugin._dbSemconvStability & SemconvStability.OLD) {
-          attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MYSQL;
-          attributes[ATTR_DB_CONNECTION_STRING] = getJDBCString(
-            host,
-            port,
-            database
-          );
-          attributes[ATTR_DB_NAME] = database;
-          attributes[ATTR_DB_USER] = user;
-          attributes[ATTR_DB_STATEMENT] = dbQueryText;
+
+
+        attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MYSQL;
+        attributes[ATTR_DB_NAMESPACE] = database;
+        attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
+        attributes[ATTR_SERVER_ADDRESS] = host;
+        if (!isNaN(portNumber)) {
+          attributes[ATTR_SERVER_PORT] = portNumber;
         }
-        if (thisPlugin._dbSemconvStability & SemconvStability.STABLE) {
-          attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MYSQL;
-          attributes[ATTR_DB_NAMESPACE] = database;
-          attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
-        }
-        if (thisPlugin._netSemconvStability & SemconvStability.OLD) {
-          attributes[ATTR_NET_PEER_NAME] = host;
-          if (!isNaN(portNumber)) {
-            attributes[ATTR_NET_PEER_PORT] = portNumber;
-          }
-        }
-        if (thisPlugin._netSemconvStability & SemconvStability.STABLE) {
-          attributes[ATTR_SERVER_ADDRESS] = host;
-          if (!isNaN(portNumber)) {
-            attributes[ATTR_SERVER_PORT] = portNumber;
-          }
-        }
+
         const span = thisPlugin.tracer.startSpan(getSpanName(query), {
           kind: SpanKind.CLIENT,
           attributes,
