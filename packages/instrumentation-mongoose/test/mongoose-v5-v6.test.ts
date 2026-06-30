@@ -249,9 +249,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
           expect(spans.length).toBe(2);
           assertSpan(spans[1] as ReadableSpan);
           expect(spans[1].attributes[ATTR_DB_OPERATION_NAME]).toBe('remove');
-          expect(
-            getStatement(spans[1] as ReadableSpan).options
-          ).toEqual({
+          expect(getStatement(spans[1] as ReadableSpan).options).toEqual({
             overwrite: true,
           });
           done();
@@ -303,7 +301,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
     assertSpan(spans[0] as ReadableSpan);
     assertSpan(spans[1] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('findOne');
-    expect(spans[1].attributes[ATTR_DB_OPERATION_NAME]).toBe('findOneAndUpdate');
+    expect(spans[1].attributes[ATTR_DB_OPERATION_NAME]).toBe(
+      'findOneAndUpdate'
+    );
     const statement = getStatement(spans[1] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
@@ -318,7 +318,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
     assertSpan(spans[0] as ReadableSpan);
-    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('findOneAndRemove');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe(
+      'findOneAndRemove'
+    );
     const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });

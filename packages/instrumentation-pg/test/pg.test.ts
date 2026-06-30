@@ -601,7 +601,9 @@ describe('pg', () => {
               );
 
               assert.ok(
-                !(recordedAttributes[ATTR_DB_QUERY_TEXT] as string).includes(values[0]),
+                !(recordedAttributes[ATTR_DB_QUERY_TEXT] as string).includes(
+                  values[0]
+                ),
                 'Query text should NOT contain parameter value'
               );
 

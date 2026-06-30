@@ -12,9 +12,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_MESSAGING_SYSTEM,
-} from '../src/semconv';
+import { ATTR_MESSAGING_SYSTEM } from '../src/semconv';
 import {
   ATTR_MESSAGING_PROTOCOL,
   ATTR_MESSAGING_PROTOCOL_VERSION,
@@ -76,9 +74,7 @@ describe('utils', () => {
     });
 
     it('only protocol', () => {
-      const attributes = getConnectionAttributesFromUrl(
-        'amqp://'
-      );
+      const attributes = getConnectionAttributesFromUrl('amqp://');
       expect(attributes).toStrictEqual({
         [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
@@ -89,9 +85,7 @@ describe('utils', () => {
     });
 
     it('empty username and password', () => {
-      const attributes = getConnectionAttributesFromUrl(
-        'amqp://:@/'
-      );
+      const attributes = getConnectionAttributesFromUrl('amqp://:@/');
       expect(attributes).toStrictEqual({
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
         [ATTR_MESSAGING_URL]: 'amqp://:***@/',
@@ -99,9 +93,7 @@ describe('utils', () => {
     });
 
     it('username and no password', () => {
-      const attributes = getConnectionAttributesFromUrl(
-        'amqp://user@'
-      );
+      const attributes = getConnectionAttributesFromUrl('amqp://user@');
       expect(attributes).toStrictEqual({
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
         [ATTR_MESSAGING_URL]: 'amqp://user@',
@@ -109,9 +101,7 @@ describe('utils', () => {
     });
 
     it('username and password, no host', () => {
-      const attributes = getConnectionAttributesFromUrl(
-        'amqp://user:pass@'
-      );
+      const attributes = getConnectionAttributesFromUrl('amqp://user:pass@');
       expect(attributes).toStrictEqual({
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
         [ATTR_MESSAGING_URL]: 'amqp://user:***@',
@@ -119,9 +109,7 @@ describe('utils', () => {
     });
 
     it('host only', () => {
-      const attributes = getConnectionAttributesFromUrl(
-        'amqp://host'
-      );
+      const attributes = getConnectionAttributesFromUrl('amqp://host');
       expect(attributes).toStrictEqual({
         [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
@@ -132,9 +120,7 @@ describe('utils', () => {
     });
 
     it('vhost only', () => {
-      const attributes = getConnectionAttributesFromUrl(
-        'amqp:///vhost'
-      );
+      const attributes = getConnectionAttributesFromUrl('amqp:///vhost');
       expect(attributes).toStrictEqual({
         [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
@@ -145,9 +131,7 @@ describe('utils', () => {
     });
 
     it('host only, trailing slash', () => {
-      const attributes = getConnectionAttributesFromUrl(
-        'amqp://host/'
-      );
+      const attributes = getConnectionAttributesFromUrl('amqp://host/');
       expect(attributes).toStrictEqual({
         [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
@@ -158,9 +142,7 @@ describe('utils', () => {
     });
 
     it('vhost encoded', () => {
-      const attributes = getConnectionAttributesFromUrl(
-        'amqp://host/%2f'
-      );
+      const attributes = getConnectionAttributesFromUrl('amqp://host/%2f');
       expect(attributes).toStrictEqual({
         [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
@@ -171,9 +153,7 @@ describe('utils', () => {
     });
 
     it('IPv6 host', () => {
-      const attributes = getConnectionAttributesFromUrl(
-        'amqp://[::1]'
-      );
+      const attributes = getConnectionAttributesFromUrl('amqp://[::1]');
       expect(attributes).toStrictEqual({
         [ATTR_MESSAGING_PROTOCOL]: 'AMQP',
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
@@ -193,13 +173,11 @@ describe('utils', () => {
       });
 
       it('emits server.* attributes with url object', () => {
-        const attributes = getConnectionAttributesFromUrl(
-          {
-            protocol: 'amqp',
-            hostname: 'testhost',
-            port: 5673,
-          }
-        );
+        const attributes = getConnectionAttributesFromUrl({
+          protocol: 'amqp',
+          hostname: 'testhost',
+          port: 5673,
+        });
         expect(attributes[ATTR_SERVER_ADDRESS]).toEqual('testhost');
         expect(attributes[ATTR_SERVER_PORT]).toEqual(5673);
       });

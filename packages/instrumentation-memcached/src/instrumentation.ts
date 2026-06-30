@@ -10,9 +10,7 @@ import {
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 import type * as Memcached from 'memcached';
-import {
-  DB_SYSTEM_NAME_VALUE_MEMCACHED,
-} from './semconv';
+import { DB_SYSTEM_NAME_VALUE_MEMCACHED } from './semconv';
 import {
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
@@ -131,11 +129,7 @@ export class MemcachedInstrumentation extends InstrumentationBase<Instrumentatio
       const attributes: api.Attributes = {
         'db.memcached.key': query.key,
         'db.memcached.lifetime': query.lifetime,
-        ...utils.getPeerAttributes(
-          client,
-          server,
-          query
-        ),
+        ...utils.getPeerAttributes(client, server, query),
       };
 
       attributes[ATTR_DB_OPERATION_NAME] = query.type;

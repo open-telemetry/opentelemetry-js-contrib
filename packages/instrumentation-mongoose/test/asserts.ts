@@ -17,9 +17,7 @@ import { SerializerPayload } from '../src';
 import { DB_NAME, MONGO_HOST, MONGO_PORT } from './config';
 import User from './user';
 
-export const assertSpan = (
-  span: ReadableSpan
-) => {
+export const assertSpan = (span: ReadableSpan) => {
   expect(span.status.code).toBe(SpanStatusCode.UNSET);
   expect(span.attributes['db.system']).toBeUndefined();
   expect(span.attributes['db.mongodb.collection']).toBeUndefined();
@@ -33,11 +31,8 @@ export const assertSpan = (
   expect(span.attributes['net.peer.port']).toBeUndefined();
   expect(span.attributes[ATTR_SERVER_ADDRESS]).toEqual(MONGO_HOST);
   expect(span.attributes[ATTR_SERVER_PORT]).toEqual(MONGO_PORT);
-
 };
 
-export const getStatement = (
-  span: ReadableSpan
-): SerializerPayload => {
+export const getStatement = (span: ReadableSpan): SerializerPayload => {
   return JSON.parse(span.attributes[ATTR_DB_QUERY_TEXT] as string);
 };

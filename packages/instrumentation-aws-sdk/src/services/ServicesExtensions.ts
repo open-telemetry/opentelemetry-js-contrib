@@ -48,11 +48,7 @@ export class ServicesExtensions implements ServiceExtension {
       return {
         isIncoming: false,
       };
-    return serviceExtension.requestPreSpanHook(
-      request,
-      config,
-      diag
-    );
+    return serviceExtension.requestPreSpanHook(request, config, diag);
   }
 
   requestPostSpanHook(request: NormalizedRequest) {

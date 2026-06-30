@@ -75,10 +75,7 @@ export class NestInstrumentation extends InstrumentationBase {
         this.ensureWrapped(
           RouterExecutionContext.RouterExecutionContext.prototype,
           'create',
-          createWrapCreateHandler(
-            this.tracer,
-            moduleVersion
-          )
+          createWrapCreateHandler(this.tracer, moduleVersion)
         );
         return RouterExecutionContext;
       },

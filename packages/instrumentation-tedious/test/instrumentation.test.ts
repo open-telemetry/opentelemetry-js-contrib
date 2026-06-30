@@ -383,10 +383,7 @@ const assertRejects = (
     });
 };
 
-function assertSpan(
-  span: ReadableSpan,
-  expected: any
-) {
+function assertSpan(span: ReadableSpan, expected: any) {
   assert.ok(span);
   assert.strictEqual(span.name, expected.name);
   assert.strictEqual(span.kind, SpanKind.CLIENT);
@@ -409,10 +406,7 @@ function assertSpan(
   // "db.statement"
   if (expected.sql) {
     if (expected.sql instanceof RegExp) {
-      assert.match(
-        span.attributes[ATTR_DB_QUERY_TEXT] as string,
-        expected.sql
-      );
+      assert.match(span.attributes[ATTR_DB_QUERY_TEXT] as string, expected.sql);
     } else {
       assert.strictEqual(
         span.attributes[ATTR_DB_QUERY_TEXT],

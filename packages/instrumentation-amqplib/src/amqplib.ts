@@ -71,7 +71,6 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 const supportedVersions = ['>=0.5.5 <3'];
 
 export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumentationConfig> {
-
   constructor(config: AmqplibInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
   }
@@ -247,9 +246,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
         socketOptions,
         function (this: unknown, err, conn: InstrumentationConnection) {
           if (err == null) {
-            const urlAttributes = getConnectionAttributesFromUrl(
-              url
-            );
+            const urlAttributes = getConnectionAttributesFromUrl(url);
             const serverAttributes = getConnectionAttributesFromServer(conn);
             conn[CONNECTION_ATTRIBUTES] = {
               ...urlAttributes,

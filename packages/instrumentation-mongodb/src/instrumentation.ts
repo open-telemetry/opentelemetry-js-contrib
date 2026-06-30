@@ -950,10 +950,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   private _spanNameFromAttrs(attributes: Attributes): string {
     // https://opentelemetry.io/docs/specs/semconv/database/database-spans/#name
     const spanName =
-      [
-        attributes[ATTR_DB_OPERATION_NAME],
-        attributes[ATTR_DB_COLLECTION_NAME],
-      ]
+      [attributes[ATTR_DB_OPERATION_NAME], attributes[ATTR_DB_COLLECTION_NAME]]
         .filter(attr => attr)
         .join(' ') || DB_SYSTEM_NAME_VALUE_MONGODB;
     return spanName;

@@ -119,13 +119,9 @@ describe('mongoose instrumentation [common]', () => {
 
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
-      assertSpan(
-        spans[0] as ReadableSpan
-      );
+      assertSpan(spans[0] as ReadableSpan);
       expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('save');
-      const statement = getStatement(
-        spans[0] as ReadableSpan
-      );
+      const statement = getStatement(spans[0] as ReadableSpan);
       expect(statement.document).toEqual(expect.objectContaining(document));
     });
 
@@ -140,13 +136,9 @@ describe('mongoose instrumentation [common]', () => {
 
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
-      assertSpan(
-        spans[0] as ReadableSpan
-      );
+      assertSpan(spans[0] as ReadableSpan);
       expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('save');
-      const statement = getStatement(
-        spans[0] as ReadableSpan
-      );
+      const statement = getStatement(spans[0] as ReadableSpan);
       expect(statement.document).toEqual(expect.objectContaining(document));
       expect(statement.options.wtimeout).toEqual(42);
 
@@ -160,13 +152,9 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('find');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.condition).toEqual({ id: '_test' });
   });
 
@@ -178,12 +166,8 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(2);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
-    assertSpan(
-      spans[1] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
+    assertSpan(spans[1] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('find');
     expect(spans[0].attributes[ATTR_DB_QUERY_TEXT]).toMatch(
       /.*{"id":"_test[1-2]"}.*/g
@@ -199,13 +183,9 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('find');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.condition).toEqual({ id: '_test' });
     expect(statement.options).toEqual({
       skip: 1,
@@ -219,9 +199,7 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('deleteOne');
   });
 
@@ -231,16 +209,12 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(2);
-    assertSpan(
-      spans[1] as ReadableSpan
-    );
+    assertSpan(spans[1] as ReadableSpan);
     expect(spans[1].attributes[ATTR_DB_OPERATION_NAME]).toBe('updateOne');
 
     // Note: In mongoose@9, Document.prototype.updateOne returns empty condition/updates/options
     // in the statement. The important thing is that we properly capture the operation span.
-    const statement = getStatement(
-      spans[1] as ReadableSpan
-    );
+    const statement = getStatement(spans[1] as ReadableSpan);
     expect(statement).toBeDefined();
   });
 
@@ -253,14 +227,10 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('updateOne');
 
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({ skip: 0 });
     expect(statement.updates).toEqual({ $inc: { age: 1 } });
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
@@ -271,13 +241,9 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('countDocuments');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
   });
@@ -287,15 +253,11 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe(
       'estimatedDocumentCount'
     );
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({});
   });
@@ -305,13 +267,9 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('deleteMany');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({});
   });
@@ -321,13 +279,9 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('findOne');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
   });
@@ -337,13 +291,9 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('updateOne');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
     expect(statement.updates).toEqual({ age: 55 });
@@ -354,13 +304,9 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('updateMany');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ age: 18 });
     expect(statement.updates).toEqual({ isDeleted: true });
@@ -371,13 +317,11 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
+    assertSpan(spans[0] as ReadableSpan);
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe(
+      'findOneAndDelete'
     );
-    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('findOneAndDelete');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
   });
@@ -392,13 +336,9 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('save');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.document).toEqual(expect.objectContaining(document));
   });
@@ -420,13 +360,9 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('insertMany');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.documents).toEqual(documents);
   });
 
@@ -469,13 +405,9 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('bulkWrite');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.operations).toEqual([
       {
         insertOne: {
@@ -520,13 +452,9 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('aggregate');
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.aggregatePipeline).toEqual([
       { $match: { firstName: 'John' } },
       { $group: { _id: 'John', total: { $sum: '$amount' } } },
@@ -538,12 +466,8 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
-    const statement = getStatement(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
+    const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.condition).toEqual({ id: '_test' });
     expect(statement.options).toEqual({
       skip: 1,
@@ -560,9 +484,7 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     expect(spans[0].attributes[ATTR_DB_QUERY_TEXT]).toBe(undefined);
   });
 
@@ -579,9 +501,7 @@ describe('mongoose instrumentation [common]', () => {
 
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
-    assertSpan(
-      spans[0] as ReadableSpan
-    );
+    assertSpan(spans[0] as ReadableSpan);
     const reqPayload = JSON.parse(
       spans[0].attributes[ATTR_DB_QUERY_TEXT] as string
     );
@@ -603,9 +523,7 @@ describe('mongoose instrumentation [common]', () => {
       await User.deleteOne({ email: 'john.doe@example.com' });
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
-      assertSpan(
-        spans[0] as ReadableSpan
-      );
+      assertSpan(spans[0] as ReadableSpan);
       expect(JSON.parse(spans[0].attributes[RESPONSE] as string)).toMatchObject(
         {
           deletedCount: 1,
@@ -623,9 +541,7 @@ describe('mongoose instrumentation [common]', () => {
       const createdUser = await user.save();
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
-      assertSpan(
-        spans[0] as ReadableSpan
-      );
+      assertSpan(spans[0] as ReadableSpan);
       expect(spans[0].attributes[RESPONSE]).toEqual(
         JSON.stringify(createdUser)
       );
@@ -639,9 +555,7 @@ describe('mongoose instrumentation [common]', () => {
 
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
-      assertSpan(
-        spans[0] as ReadableSpan
-      );
+      assertSpan(spans[0] as ReadableSpan);
       expect(JSON.parse(spans[0].attributes[RESPONSE] as string)).toEqual([
         { _id: 'John', total: 0 },
       ]);
@@ -658,9 +572,7 @@ describe('mongoose instrumentation [common]', () => {
       await User.deleteOne({ email: 'john.doe@example.com' });
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
-      assertSpan(
-        spans[0] as ReadableSpan
-      );
+      assertSpan(spans[0] as ReadableSpan);
       expect(spans[0].attributes[RESPONSE]).toBe(undefined);
     });
   });
@@ -680,9 +592,7 @@ describe('mongoose instrumentation [common]', () => {
       await User.deleteOne({ email: 'john.doe@example.com' });
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
-      assertSpan(
-        spans[0] as ReadableSpan
-      );
+      assertSpan(spans[0] as ReadableSpan);
       expect(spans[0].attributes[VERSION_ATTR]).toMatch(
         /\d{1,4}\.\d{1,4}\.\d{1,5}.*/
       );
@@ -698,9 +608,7 @@ describe('mongoose instrumentation [common]', () => {
       await user.save();
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
-      assertSpan(
-        spans[0] as ReadableSpan
-      );
+      assertSpan(spans[0] as ReadableSpan);
       expect(spans[0].attributes[VERSION_ATTR]).toMatch(
         /\d{1,4}\.\d{1,4}\.\d{1,5}.*/
       );
@@ -714,9 +622,7 @@ describe('mongoose instrumentation [common]', () => {
 
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
-      assertSpan(
-        spans[0] as ReadableSpan
-      );
+      assertSpan(spans[0] as ReadableSpan);
       expect(spans[0].attributes[VERSION_ATTR]).toMatch(
         /\d{1,4}\.\d{1,4}\.\d{1,5}.*/
       );

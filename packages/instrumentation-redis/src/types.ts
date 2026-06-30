@@ -4,9 +4,7 @@
  */
 
 import { Span } from '@opentelemetry/api';
-import {
-  InstrumentationConfig,
-} from '@opentelemetry/instrumentation';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 /**
  * Function that can be used to serialize the db.query.text attribute

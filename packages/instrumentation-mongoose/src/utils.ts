@@ -5,9 +5,7 @@
 import { Attributes, SpanStatusCode, diag, Span } from '@opentelemetry/api';
 import type { Collection } from 'mongoose';
 import { MongooseResponseCustomAttributesFunction } from './types';
-import {
-  safeExecuteInTheMiddle,
-} from '@opentelemetry/instrumentation';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
   ATTR_DB_COLLECTION_NAME,
   ATTR_DB_NAMESPACE,

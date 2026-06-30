@@ -44,9 +44,7 @@ interface Config {
  *
  * @param config ConnectionConfig
  */
-export function getConnectionAttributes(
-  config: Config
-): Attributes {
+export function getConnectionAttributes(config: Config): Attributes {
   const { host, port, database } = getConfig(config);
 
   const attrs: Attributes = {};

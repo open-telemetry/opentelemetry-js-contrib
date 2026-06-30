@@ -7,7 +7,6 @@ import * as assert from 'assert';
 import { promisify } from 'util';
 import {
   AggregationTemporality,
-  DataPointType,
   InMemoryMetricExporter,
   MeterProvider,
   PeriodicExportingMetricReader,

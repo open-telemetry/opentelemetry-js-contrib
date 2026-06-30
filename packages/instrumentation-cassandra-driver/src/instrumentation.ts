@@ -19,9 +19,7 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { CassandraDriverInstrumentationConfig, ResultSet } from './types';
-import {
-  DB_SYSTEM_NAME_VALUE_CASSANDRA,
-} from './semconv';
+import { DB_SYSTEM_NAME_VALUE_CASSANDRA } from './semconv';
 import {
   ATTR_DB_NAMESPACE,
   ATTR_DB_QUERY_TEXT,
@@ -37,7 +35,6 @@ import type * as CassandraDriver from 'cassandra-driver';
 const supportedVersions = ['>=4.4.0 <5'];
 
 export class CassandraDriverInstrumentation extends InstrumentationBase<CassandraDriverInstrumentationConfig> {
-
   constructor(config: CassandraDriverInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }

@@ -32,7 +32,6 @@ const DEFAULT_CONFIG: KnexInstrumentationConfig = {
 };
 
 export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentationConfig> {
-
   constructor(config: KnexInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
   }

@@ -213,7 +213,6 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
         // TODO(3290): can `db.query.summary` reliably be calculated?
         // TODO(3290): `db.stored_procedure.name`
 
-
         attributes[ATTR_SERVER_ADDRESS] = this.config?.server;
         attributes[ATTR_SERVER_PORT] = this.config?.options?.port;
         const span = thisPlugin.tracer.startSpan(

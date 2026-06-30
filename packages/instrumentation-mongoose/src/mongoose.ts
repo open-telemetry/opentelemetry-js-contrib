@@ -18,9 +18,7 @@ import {
 } from '@opentelemetry/instrumentation';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import {
-  DB_SYSTEM_NAME_VALUE_MONGODB,
-} from './semconv';
+import { DB_SYSTEM_NAME_VALUE_MONGODB } from './semconv';
 import {
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
@@ -103,7 +101,6 @@ export const _ALREADY_INSTRUMENTED: unique symbol = Symbol(
 );
 
 export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrumentationConfig> {
-
   constructor(config: MongooseInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -546,9 +543,7 @@ export class MongooseInstrumentation extends InstrumentationBase<MongooseInstrum
   ): Span {
     const finalAttributes: Attributes = {
       ...attributes,
-      ...getAttributesFromCollection(
-        collection
-      ),
+      ...getAttributesFromCollection(collection),
     };
 
     finalAttributes[ATTR_DB_OPERATION_NAME] = operation;

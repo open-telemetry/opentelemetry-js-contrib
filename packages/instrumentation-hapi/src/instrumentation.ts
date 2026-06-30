@@ -39,7 +39,6 @@ import {
 
 /** Hapi instrumentation for OpenTelemetry */
 export class HapiInstrumentation extends InstrumentationBase {
-
   constructor(config: InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -377,10 +376,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         if (rpcMetadata?.type === RPCType.HTTP) {
           rpcMetadata.route = route.path;
         }
-        const metadata = getRouteMetadata(
-          route,
-          pluginName
-        );
+        const metadata = getRouteMetadata(route, pluginName);
         const span = instrumentation.tracer.startSpan(metadata.name, {
           attributes: metadata.attributes,
         });

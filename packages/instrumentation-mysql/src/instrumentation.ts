@@ -25,9 +25,7 @@ import {
   ATTR_SERVER_PORT,
   DB_SYSTEM_NAME_VALUE_MYSQL,
 } from '@opentelemetry/semantic-conventions';
-import {
-  METRIC_DB_CLIENT_CONNECTIONS_USAGE,
-} from './semconv';
+import { METRIC_DB_CLIENT_CONNECTIONS_USAGE } from './semconv';
 import type * as mysqlTypes from 'mysql';
 import { AttributeNames } from './AttributeNames';
 import { MySQLInstrumentationConfig } from './types';
@@ -303,7 +301,6 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const { host, port, database } = getConfig(connection.config);
         const portNumber = parseInt(port, 10);
         const dbQueryText = getDbQueryText(query);
-
 
         attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MYSQL;
         attributes[ATTR_DB_NAMESPACE] = database;

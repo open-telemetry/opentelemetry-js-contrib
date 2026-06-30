@@ -841,7 +841,6 @@ describe('mysql@2.x-Tracing', () => {
       });
     });
   });
-
 });
 
 function assertSpan(

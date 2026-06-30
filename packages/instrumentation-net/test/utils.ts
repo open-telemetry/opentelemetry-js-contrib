@@ -18,9 +18,7 @@ import * as assert from 'assert';
 import * as path from 'path';
 import * as os from 'os';
 import { Socket } from 'net';
-import {
-  STABLE_IPC_TRANSPORT_VALUE,
-} from '../src/utils';
+import { STABLE_IPC_TRANSPORT_VALUE } from '../src/utils';
 import { TLSAttributes } from '../src/types';
 import * as fs from 'fs';
 
@@ -31,10 +29,7 @@ export const IPC_PATH =
     ? path.join(os.tmpdir(), 'otel-js-net-test-ipc')
     : '\\\\.\\pipe\\otel-js-net-test-ipc';
 
-export function assertTcpSpan(
-  span: ReadableSpan,
-  socket: Socket
-) {
+export function assertTcpSpan(span: ReadableSpan, socket: Socket) {
   assertSpanKind(span);
 
   const attributes: Attributes = {};
@@ -48,9 +43,7 @@ export function assertTcpSpan(
   assert.deepEqual(span.attributes, attributes);
 }
 
-export function assertIpcSpan(
-  span: ReadableSpan
-) {
+export function assertIpcSpan(span: ReadableSpan) {
   assertSpanKind(span);
   const attributes: Attributes = {};
   attributes[ATTR_NETWORK_TRANSPORT] = STABLE_IPC_TRANSPORT_VALUE;

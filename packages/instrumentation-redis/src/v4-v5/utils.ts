@@ -8,9 +8,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  DB_SYSTEM_NAME_VALUE_REDIS,
-} from '../semconv';
+import { DB_SYSTEM_NAME_VALUE_REDIS } from '../semconv';
 
 export function getClientAttributes(
   diag: DiagLogger,
@@ -18,10 +16,10 @@ export function getClientAttributes(
 ): Attributes {
   const attributes: Attributes = {};
   Object.assign(attributes, {
-      [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_REDIS,
-      [ATTR_SERVER_ADDRESS]: options?.socket?.host,
-      [ATTR_SERVER_PORT]: options?.socket?.port,
-    });
+    [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_REDIS,
+    [ATTR_SERVER_ADDRESS]: options?.socket?.host,
+    [ATTR_SERVER_PORT]: options?.socket?.port,
+  });
 
   return attributes;
 }

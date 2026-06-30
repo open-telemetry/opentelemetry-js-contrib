@@ -206,54 +206,42 @@ describe('utils.ts', () => {
   describe('.getSemanticAttributesFromConnection()', () => {
     it('should set port attribute to undefined when port is not an integer', () => {
       assert.strictEqual(
-        utils.getSemanticAttributesFromConnection(
-          {
-            port: Infinity,
-          },
-        )[ATTR_SERVER_PORT],
+        utils.getSemanticAttributesFromConnection({
+          port: Infinity,
+        })[ATTR_SERVER_PORT],
         undefined
       );
       assert.strictEqual(
-        utils.getSemanticAttributesFromConnection(
-          {
-            port: -Infinity,
-          },
-        )[ATTR_SERVER_PORT],
+        utils.getSemanticAttributesFromConnection({
+          port: -Infinity,
+        })[ATTR_SERVER_PORT],
         undefined
       );
       assert.strictEqual(
-        utils.getSemanticAttributesFromConnection(
-          {
-            port: NaN,
-          },
-        )[ATTR_SERVER_PORT],
+        utils.getSemanticAttributesFromConnection({
+          port: NaN,
+        })[ATTR_SERVER_PORT],
         undefined
       );
       assert.strictEqual(
-        utils.getSemanticAttributesFromConnection(
-          {
-            port: 1.234,
-          },
-        )[ATTR_SERVER_PORT],
+        utils.getSemanticAttributesFromConnection({
+          port: 1.234,
+        })[ATTR_SERVER_PORT],
         undefined
       );
     });
 
     it('should set port attribute when port is an integer', () => {
       assert.strictEqual(
-        utils.getSemanticAttributesFromConnection(
-          {
-            port: 1234,
-          },
-        )[ATTR_SERVER_PORT],
+        utils.getSemanticAttributesFromConnection({
+          port: 1234,
+        })[ATTR_SERVER_PORT],
         1234
       );
       assert.strictEqual(
-        utils.getSemanticAttributesFromConnection(
-          {
-            port: Number.MAX_VALUE,
-          },
-        )[ATTR_SERVER_PORT],
+        utils.getSemanticAttributesFromConnection({
+          port: Number.MAX_VALUE,
+        })[ATTR_SERVER_PORT],
         Number.MAX_VALUE
       );
     });

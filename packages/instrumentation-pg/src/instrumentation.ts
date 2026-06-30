@@ -248,9 +248,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
         const span = plugin.tracer.startSpan(SpanNames.CONNECT, {
           kind: SpanKind.CLIENT,
-          attributes: utils.getSemanticAttributesFromConnection(
-            this
-          ),
+          attributes: utils.getSemanticAttributesFromConnection(this),
         });
 
         if (callback) {

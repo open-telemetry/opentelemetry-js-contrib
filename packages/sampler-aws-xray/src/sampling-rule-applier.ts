@@ -121,8 +121,7 @@ export class SamplingRuleApplier {
       httpUrl = attributes[ATTR_URL_FULL];
       httpMethod = attributes[ATTR_HTTP_REQUEST_METHOD];
       httpHost =
-        attributes[ATTR_SERVER_ADDRESS] ??
-        attributes[ATTR_CLIENT_ADDRESS];
+        attributes[ATTR_SERVER_ADDRESS] ?? attributes[ATTR_CLIENT_ADDRESS];
     }
 
     let serviceType: AttributeValue | undefined = undefined;

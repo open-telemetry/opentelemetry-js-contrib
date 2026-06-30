@@ -15,9 +15,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_MESSAGING_SYSTEM,
-} from './semconv';
+import { ATTR_MESSAGING_SYSTEM } from './semconv';
 import {
   ATTR_MESSAGING_PROTOCOL,
   ATTR_MESSAGING_PROTOCOL_VERSION,

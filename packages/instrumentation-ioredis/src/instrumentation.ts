@@ -35,7 +35,6 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
 };
 
 export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumentationConfig> {
-
   constructor(config: IORedisInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
   }

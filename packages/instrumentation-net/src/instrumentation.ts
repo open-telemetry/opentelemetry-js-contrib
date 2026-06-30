@@ -28,10 +28,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { TLSAttributes } from './types';
 import { NormalizedOptions, SocketEvent } from './internal-types';
-import {
-  getNormalizedArgs,
-  STABLE_IPC_TRANSPORT_VALUE,
-} from './utils';
+import { getNormalizedArgs, STABLE_IPC_TRANSPORT_VALUE } from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { Socket } from 'net';
@@ -39,7 +36,6 @@ import { TLSSocket } from 'tls';
 import type * as net from 'net';
 
 export class NetInstrumentation extends InstrumentationBase {
-
   constructor(config: InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }

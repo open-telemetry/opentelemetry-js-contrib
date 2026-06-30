@@ -34,7 +34,6 @@ type formatType = typeof mysqlTypes.format;
 const supportedVersions = ['>=1.4.2 <4'];
 
 export class MySQL2Instrumentation extends InstrumentationBase<MySQL2InstrumentationConfig> {
-
   constructor(config: MySQL2InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -126,9 +125,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         const { maskStatement, maskStatementHook, responseHook } =
           thisPlugin.getConfig();
 
-        const attributes: api.Attributes = getConnectionAttributes(
-          this.config
-        );
+        const attributes: api.Attributes = getConnectionAttributes(this.config);
         const dbQueryText = getQueryText(
           query,
           format,

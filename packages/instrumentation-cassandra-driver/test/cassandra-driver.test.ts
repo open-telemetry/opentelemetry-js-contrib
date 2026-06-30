@@ -399,5 +399,4 @@ describe('CassandraDriverInstrumentation', () => {
       });
     });
   });
-
 });

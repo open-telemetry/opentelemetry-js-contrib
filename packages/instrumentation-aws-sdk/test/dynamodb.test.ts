@@ -20,9 +20,7 @@ import {
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_SYSTEM_NAME,
 } from '@opentelemetry/semantic-conventions';
-import {
-  DB_SYSTEM_NAME_VALUE_DYNAMODB,
-} from '../src/semconv';
+import { DB_SYSTEM_NAME_VALUE_DYNAMODB } from '../src/semconv';
 import { expect } from 'expect';
 
 // set aws environment variables, so tests in non aws environment are able to run

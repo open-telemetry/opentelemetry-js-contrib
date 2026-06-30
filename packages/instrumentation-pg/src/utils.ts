@@ -40,9 +40,7 @@ import {
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
-import {
-  safeExecuteInTheMiddle,
-} from '@opentelemetry/instrumentation';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { SpanNames } from './enums/SpanNames';
 
 /**
@@ -196,9 +194,7 @@ export function handleConfigQuery(
   const spanName = getQuerySpanName(dbName, queryConfig);
   const span = tracer.startSpan(spanName, {
     kind: SpanKind.CLIENT,
-    attributes: getSemanticAttributesFromConnection(
-      connectionParameters
-    ),
+    attributes: getSemanticAttributesFromConnection(connectionParameters),
   });
 
   if (!queryConfig) {

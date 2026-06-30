@@ -107,12 +107,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
           .insertMany(insertData)
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'insert',
-              COLLECTION_NAME,
-              URL
-            );
+            assertSpans(getTestSpans(), 'insert', COLLECTION_NAME, URL);
             done();
           })
           .catch(err => {
@@ -128,12 +123,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
           .updateOne({ a: 2 }, { $set: { b: 1 } })
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'update',
-              COLLECTION_NAME,
-              URL
-            );
+            assertSpans(getTestSpans(), 'update', COLLECTION_NAME, URL);
             done();
           })
           .catch(err => {
@@ -149,12 +139,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
           .deleteOne({ a: 3 })
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'delete',
-              COLLECTION_NAME,
-              URL
-            );
+            assertSpans(getTestSpans(), 'delete', COLLECTION_NAME, URL);
             done();
           })
           .catch(err => {
@@ -174,12 +159,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
           .toArray()
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'find',
-              COLLECTION_NAME,
-              URL
-            );
+            assertSpans(getTestSpans(), 'find', COLLECTION_NAME, URL);
             done();
           })
           .catch(err => {
@@ -307,12 +287,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
           .toArray()
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'aggregate',
-              '$cmd',
-              undefined
-            );
+            assertSpans(getTestSpans(), 'aggregate', '$cmd', undefined);
             done();
           })
           .catch(err => {
@@ -341,14 +316,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
           .then(() => {
             span.end();
             const spans = getTestSpans();
-            assertSpans(
-              spans,
-              'insert',
-              COLLECTION_NAME,
-              URL,
-              false,
-              false
-            );
+            assertSpans(spans, 'insert', COLLECTION_NAME, URL, false, false);
             const mongoSpan = spans.find(
               s =>
                 s.instrumentationScope.name ===
@@ -378,14 +346,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
           .then(() => {
             span.end();
             const spans = getTestSpans();
-            assertSpans(
-              spans,
-              'aggregate',
-              '$cmd',
-              undefined,
-              false,
-              false
-            );
+            assertSpans(spans, 'aggregate', '$cmd', undefined, false, false);
             const mongoSpan = spans.find(
               s =>
                 s.instrumentationScope.name ===
@@ -433,14 +394,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(
-                spans,
-                'insert',
-                COLLECTION_NAME,
-                URL,
-                false,
-                true
-              );
+              assertSpans(spans, 'insert', COLLECTION_NAME, URL, false, true);
               const mongoSpan = spans.find(
                 s =>
                   s.instrumentationScope.name ===
@@ -477,12 +431,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(
-                spans,
-                'insert',
-                COLLECTION_NAME,
-                URL
-              );
+              assertSpans(spans, 'insert', COLLECTION_NAME, URL);
               done();
             })
             .catch(err => {
@@ -597,12 +546,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(
-                spans,
-                'find',
-                COLLECTION_NAME,
-                URL
-              );
+              assertSpans(spans, 'find', COLLECTION_NAME, URL);
               done();
             })
             .catch(err => {
@@ -624,12 +568,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
             span.end();
             const spans = getTestSpans();
             const mainSpan = spans[spans.length - 1];
-            assertSpans(
-              spans,
-              'insert',
-              COLLECTION_NAME,
-              URL
-            );
+            assertSpans(spans, 'insert', COLLECTION_NAME, URL);
             resetMemoryExporter();
 
             collection
@@ -638,12 +577,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
               .then(() => {
                 const spans2 = getTestSpans();
                 spans2.push(mainSpan);
-                assertSpans(
-                  spans2,
-                  'find',
-                  COLLECTION_NAME,
-                  URL
-                );
+                assertSpans(spans2, 'find', COLLECTION_NAME, URL);
                 assert.strictEqual(
                   mainSpan.spanContext().spanId,
                   spans2[0].parentSpanContext?.spanId

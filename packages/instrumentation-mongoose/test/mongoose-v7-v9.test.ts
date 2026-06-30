@@ -88,7 +88,9 @@ describe('mongoose instrumentation [v7/v8/v9]', () => {
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
     assertSpan(spans[0] as ReadableSpan);
-    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('findOneAndUpdate');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe(
+      'findOneAndUpdate'
+    );
     const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
