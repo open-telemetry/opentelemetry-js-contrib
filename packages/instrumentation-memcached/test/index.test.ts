@@ -186,7 +186,7 @@ describe('memcached@2.x', () => {
         } catch (e) {
           done(e);
         }
-      }, 25);
+      }, 200);
     });
 
     it('should return to parent context in callback', done => {

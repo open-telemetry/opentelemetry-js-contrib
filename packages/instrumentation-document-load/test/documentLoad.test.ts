@@ -29,7 +29,10 @@ import {
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
-import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_URL_FULL,
+  ATTR_USER_AGENT_ORIGINAL,
+} from '@opentelemetry/semantic-conventions';
 import { EventNames } from '../src/enums/EventNames';
 
 const exporter = new InMemorySpanExporter();
@@ -529,17 +532,20 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.name, 'documentLoad');
 
         assert.isOk(
-          (fetchSpan.attributes['http.url'] as string).startsWith(
+          (fetchSpan.attributes[ATTR_URL_FULL] as string).startsWith(
             'http://localhost:8000/?wtr-session-id='
           )
         );
 
         assert.isOk(
-          (rootSpan.attributes['http.url'] as string).startsWith(
+          (rootSpan.attributes[ATTR_URL_FULL] as string).startsWith(
             'http://localhost:8000/?wtr-session-id='
           )
         );
-        assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
+        assert.strictEqual(
+          rootSpan.attributes[ATTR_USER_AGENT_ORIGINAL],
+          userAgent
+        );
 
         ensureNetworkEventsExists(fsEvents);
         assert.strictEqual(fsEvents.length, 9);
