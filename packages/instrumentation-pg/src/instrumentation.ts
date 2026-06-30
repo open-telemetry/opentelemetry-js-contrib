@@ -57,7 +57,7 @@ import {
 import {
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
-  DB_SYSTEM_VALUE_POSTGRESQL,
+  DB_SYSTEM_NAME_VALUE_POSTGRESQL,
 } from './semconv';
 
 function extractModuleExports(module: any) {
@@ -346,7 +346,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             : undefined;
 
         const attributes: Attributes = {
-          [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_VALUE_POSTGRESQL,
+          [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
           [ATTR_DB_NAMESPACE]: this.database,
           [ATTR_SERVER_PORT]: this.connectionParameters.port,
           [ATTR_SERVER_ADDRESS]: this.connectionParameters.host,

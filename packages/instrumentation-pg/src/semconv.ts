@@ -41,8 +41,14 @@ export const DB_CLIENT_CONNECTION_STATE_VALUE_USED = 'used' as const;
 
 /**
  * Enum value "postgresql" for attribute `db.system`.
+ * @deprecated Use DB_SYSTEM_NAME_VALUE_POSTGRESQL instead.
  */
 export const DB_SYSTEM_VALUE_POSTGRESQL = 'postgresql' as const;
+
+/**
+ * Enum value "postgresql" for attribute `db.system.name`.
+ */
+export const DB_SYSTEM_NAME_VALUE_POSTGRESQL = 'postgresql' as const;
 
 /**
  * The number of connections that are currently in state described by the `state` attribute
