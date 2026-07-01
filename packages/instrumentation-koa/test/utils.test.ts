@@ -11,7 +11,7 @@ import { KoaContext, KoaMiddleware } from '../src/internal-types';
 
 describe('Utils', () => {
   describe('getMiddlewareMetadata()', () => {
-    it('should fall back to "middleware" when the middleware function has no name', () => {
+    it('should fall back to "anonymous" when the middleware function has no name', () => {
       // Inline arrow functions passed as arguments have an empty .name in JS
       // We simulate that directly via the layer object.
       const layer = { name: '' } as unknown as KoaMiddleware;
@@ -19,9 +19,9 @@ describe('Utils', () => {
 
       const result = utils.getMiddlewareMetadata(ctx, layer, false);
 
-      assert.strictEqual(result.attributes[AttributeNames.KOA_NAME], 'middleware');
+      assert.strictEqual(result.attributes[AttributeNames.KOA_NAME], 'anonymous');
       assert.strictEqual(result.attributes[AttributeNames.KOA_TYPE], KoaLayerType.MIDDLEWARE);
-      assert.strictEqual(result.name, 'middleware - middleware');
+      assert.strictEqual(result.name, 'middleware - anonymous');
     });
 
     it('should use the function name when the middleware is named', () => {

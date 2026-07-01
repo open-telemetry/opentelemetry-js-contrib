@@ -469,15 +469,15 @@ describe('Koa Instrumentation', function () {
           // rather than an empty 'middleware - ' span name.
           const anonymousSpan = memoryExporter
             .getFinishedSpans()
-            .find(span => span.name === 'middleware - middleware');
+            .find(span => span.name === 'middleware - anonymous');
           assert.notStrictEqual(
             anonymousSpan,
             undefined,
-            'Expected a span named "middleware - middleware" for the anonymous middleware'
+            'Expected a span named "middleware - anonymous" for the anonymous middleware'
           );
           assert.strictEqual(
             anonymousSpan?.attributes[AttributeNames.KOA_NAME],
-            'middleware'
+            'anonymous'
           );
           assert.strictEqual(
             anonymousSpan?.attributes[AttributeNames.KOA_TYPE],

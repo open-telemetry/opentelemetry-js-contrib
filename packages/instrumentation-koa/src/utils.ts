@@ -27,7 +27,7 @@ export const getMiddlewareMetadata = (
       name: context._matchedRouteName || `router - ${layerPath}`,
     };
   } else {
-    const middlewareName = layer.name || 'middleware';
+    const middlewareName = layer.name || 'anonymous';
     return {
       attributes: {
         [AttributeNames.KOA_NAME]: middlewareName,
