@@ -40,13 +40,9 @@ export const DB_CLIENT_CONNECTION_STATE_VALUE_IDLE = 'idle' as const;
 export const DB_CLIENT_CONNECTION_STATE_VALUE_USED = 'used' as const;
 
 /**
- * Enum value "postgresql" for attribute `db.system`.
- * @deprecated Use DB_SYSTEM_NAME_VALUE_POSTGRESQL instead.
- */
-export const DB_SYSTEM_VALUE_POSTGRESQL = 'postgresql' as const;
-
-/**
- * Enum value "postgresql" for attribute `db.system.name`.
+ * Enum value "postgresql" for attribute {@link ATTR_DB_SYSTEM_NAME}.
+ *
+ * [PostgreSQL](https://www.postgresql.org/)
  */
 export const DB_SYSTEM_NAME_VALUE_POSTGRESQL = 'postgresql' as const;
 
