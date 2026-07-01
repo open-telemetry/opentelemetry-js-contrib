@@ -19,8 +19,14 @@ describe('Utils', () => {
 
       const result = utils.getMiddlewareMetadata(ctx, layer, false);
 
-      assert.strictEqual(result.attributes[AttributeNames.KOA_NAME], 'anonymous');
-      assert.strictEqual(result.attributes[AttributeNames.KOA_TYPE], KoaLayerType.MIDDLEWARE);
+      assert.strictEqual(
+        result.attributes[AttributeNames.KOA_NAME],
+        'anonymous'
+      );
+      assert.strictEqual(
+        result.attributes[AttributeNames.KOA_TYPE],
+        KoaLayerType.MIDDLEWARE
+      );
       assert.strictEqual(result.name, 'middleware - anonymous');
     });
 
@@ -30,8 +36,14 @@ describe('Utils', () => {
 
       const result = utils.getMiddlewareMetadata(ctx, layer, false);
 
-      assert.strictEqual(result.attributes[AttributeNames.KOA_NAME], 'myHandler');
-      assert.strictEqual(result.attributes[AttributeNames.KOA_TYPE], KoaLayerType.MIDDLEWARE);
+      assert.strictEqual(
+        result.attributes[AttributeNames.KOA_NAME],
+        'myHandler'
+      );
+      assert.strictEqual(
+        result.attributes[AttributeNames.KOA_TYPE],
+        KoaLayerType.MIDDLEWARE
+      );
       assert.strictEqual(result.name, 'middleware - myHandler');
     });
   });

@@ -452,11 +452,17 @@ describe('Koa Instrumentation', function () {
 
     it('should use fallback name for anonymous middleware', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      // Arrow functions passed as arguments have .name === '' in JS (no name inference).
-      // The context-setting middleware below is one such case.
-      app.use((_ctx, next) =>
+      // Sets rootSpan as active context for subsequent middlewares.
+      // This middleware itself runs with no parent so it won't get a span.
+      app.use((ctx, next) =>
         context.with(trace.setSpan(context.active(), rootSpan), next)
       );
+      // Anonymous arrow function (no name inference for function arguments in JS).
+      // Runs after context is set, so the instrumentation will have a parent span
+      // and will create a span for it with the 'anonymous' fallback name.
+      app.use(async (_ctx, next) => {
+        await next();
+      });
       app.use(simpleResponse());
 
       await context.with(
@@ -465,8 +471,6 @@ describe('Koa Instrumentation', function () {
           await httpRequest.get(`http://localhost:${port}`);
           rootSpan.end();
 
-          // With the fix, anonymous middlewares must produce the fallback name
-          // rather than an empty 'middleware - ' span name.
           const anonymousSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'middleware - anonymous');
