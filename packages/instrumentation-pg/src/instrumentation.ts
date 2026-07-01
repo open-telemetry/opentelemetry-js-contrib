@@ -390,10 +390,13 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         if (instrumentationConfig.addSqlCommenterCommentToQueries) {
           if (firstArgIsString) {
             args[0] = addSqlCommenterComment(span, arg0);
-          } else if (firstArgIsQueryObjectWithText && !('name' in arg0)) {
-            // In the case of a query object, we need to ensure there's no name field
-            // as this indicates a prepared query, where the comment would remain the same
-            // for every invocation and contain an outdated trace context.
+          } else if (
+            firstArgIsQueryObjectWithText &&
+            (!('name' in arg0) || arg0.name === undefined)
+          ) {
+            // In the case of a query object, only skip when there is an actual
+            // prepared statement name. The comment would remain the same for
+            // every invocation and contain an outdated trace context.
             args[0] = {
               ...arg0,
               text: addSqlCommenterComment(span, arg0.text),

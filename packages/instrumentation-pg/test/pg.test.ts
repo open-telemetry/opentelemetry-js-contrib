@@ -988,6 +988,37 @@ describe('pg', () => {
       });
     });
 
+    it('should add sqlcommenter comment when addSqlCommenterCommentToQueries=true is specified with name undefined', async () => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        try {
+          const query = 'SELECT NOW()';
+          const resPromise = await client.query({
+            text: query,
+            name: undefined,
+          });
+          assert.ok(resPromise);
+
+          const [span] = memoryExporter.getFinishedSpans();
+          const commentedQuery = addSqlCommenterComment(
+            trace.wrapSpanContext(span.spanContext()),
+            query
+          );
+
+          const executedQueries = getExecutedQueries();
+          assert.equal(executedQueries.length, 1);
+          assert.equal(executedQueries[0].text, commentedQuery);
+          assert.notEqual(query, commentedQuery);
+        } catch (e: any) {
+          assert.ok(false, e.message);
+        }
+      });
+    });
+
     it('should not add sqlcommenter comment when addSqlCommenterCommentToQueries=true is specified with a prepared statement', async () => {
       instrumentation.setConfig({
         addSqlCommenterCommentToQueries: true,
