@@ -132,18 +132,20 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
 
     return function wrapQuery(original: (...args: any[]) => any) {
       return function wrapped_logging_method(this: any, query: any) {
-        const config = this.client.config;
-
         const table = utils.extractTableName(this.builder);
         // `method` actually refers to the knex API method - Not exactly "operation"
         // in the spec sense, but matches most of the time.
         const operation = query?.method;
+        // Use connectionSettings rather than config.connection so that function-based
+        // connection configs (e.g. `connection: async () => ({ host, user, ... })`) are
+        // resolved to their actual values before we read them.
+        const connectionSettings = this.client.connectionSettings;
         // Knex can be configured with a connectionString instead of explicit fields.
         // Fall back to parsing the connectionString if filename and database are not set.
-        const connectionString = config?.connection?.connectionString;
+        const connectionString = connectionSettings?.connectionString;
         const name =
-          config?.connection?.filename ||
-          config?.connection?.database ||
+          connectionSettings?.filename ||
+          connectionSettings?.database ||
           utils.extractDatabaseFromConnectionString(connectionString);
         const { maxQueryLength } = instrumentation.getConfig();
 
@@ -151,21 +153,21 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
           'knex.version': moduleVersion,
         };
         const transport =
-          config?.connection?.filename === ':memory:' ? 'inproc' : undefined;
+          connectionSettings?.filename === ':memory:' ? 'inproc' : undefined;
 
         if (instrumentation._semconvStability & SemconvStability.OLD) {
           Object.assign(attributes, {
             [ATTR_DB_SYSTEM]: utils.mapSystem(this.client.driverName),
             [ATTR_DB_SQL_TABLE]: table,
             [ATTR_DB_OPERATION]: operation,
-            [ATTR_DB_USER]: config?.connection?.user,
+            [ATTR_DB_USER]: connectionSettings?.user,
             [ATTR_DB_NAME]: name,
             // Fall back to parsing host and port from connectionString if not explicitly set.
             [ATTR_NET_PEER_NAME]:
-              config?.connection?.host ??
+              connectionSettings?.host ??
               utils.extractHostFromConnectionString(connectionString),
             [ATTR_NET_PEER_PORT]:
-              config?.connection?.port ??
+              connectionSettings?.port ??
               utils.extractPortFromConnectionString(connectionString),
             [ATTR_NET_TRANSPORT]: transport,
           });
@@ -178,10 +180,10 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
             [ATTR_DB_NAMESPACE]: name,
             // Fall back to parsing host and port from connectionString if not explicitly set.
             [ATTR_SERVER_ADDRESS]:
-              config?.connection?.host ??
+              connectionSettings?.host ??
               utils.extractHostFromConnectionString(connectionString),
             [ATTR_SERVER_PORT]:
-              config?.connection?.port ??
+              connectionSettings?.port ??
               utils.extractPortFromConnectionString(connectionString),
           });
         }

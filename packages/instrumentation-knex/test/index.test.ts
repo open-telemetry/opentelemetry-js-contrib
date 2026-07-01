@@ -145,6 +145,35 @@ describe('Knex instrumentation', () => {
       assert.ok(statement.startsWith(limitedStatement.substring(0, 50)));
     });
 
+    it('should read connection attributes when connection is configured as a function', async () => {
+      const functionClient = knex({
+        client: 'sqlite3',
+        connection: () => ({ filename: ':memory:' }),
+        useNullAsDefault: true,
+      });
+
+      try {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await functionClient.raw("select date('now')");
+            parentSpan.end();
+
+            const [span] = memoryExporter.getFinishedSpans();
+            assert.ok(span, 'expected a span');
+            assert.strictEqual(
+              span.attributes['db.name'],
+              ':memory:',
+              'db.name should be populated from function-based connection'
+            );
+          }
+        );
+      } finally {
+        await functionClient.destroy();
+      }
+    });
+
     it("should correctly capture the DB's system name even with custom client implementations", async () => {
       client = knex({
         client: BetterSqlite3Dialect,
