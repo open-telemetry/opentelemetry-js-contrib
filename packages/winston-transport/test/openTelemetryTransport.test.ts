@@ -16,7 +16,7 @@ import { OpenTelemetryTransportV3 } from '../src';
 
 const memoryLogExporter = new InMemoryLogRecordExporter();
 const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor(memoryLogExporter)],
+  processors: [new SimpleLogRecordProcessor({ exporter: memoryLogExporter })],
 });
 logs.setGlobalLoggerProvider(loggerProvider);
 

@@ -25,7 +25,7 @@ describe('BaggageLogRecordProcessor with all keys', () => {
   it('onEmit adds current Baggage entries to a log record as attributes', () => {
     const exporter = new InMemoryLogRecordExporter();
     const loggerProvider = new LoggerProvider({
-      processors: [baggageProcessor, new SimpleLogRecordProcessor(exporter)],
+      processors: [baggageProcessor, new SimpleLogRecordProcessor({ exporter })],
     });
 
     const logger = loggerProvider.getLogger('my-logger');
@@ -65,7 +65,7 @@ describe('BaggageLogRecordProcessor startWith key filter', () => {
   it('onEmit adds current filtered by startWith Baggage entries to a log record as attributes', () => {
     const exporter = new InMemoryLogRecordExporter();
     const loggerProvider = new LoggerProvider({
-      processors: [baggageProcessor, new SimpleLogRecordProcessor(exporter)],
+      processors: [baggageProcessor, new SimpleLogRecordProcessor({ exporter })],
     });
     const logger = loggerProvider.getLogger('my-logger');
     const ctx = propagation.setBaggage(ROOT_CONTEXT, bag);
@@ -102,7 +102,7 @@ describe('BaggageLogRecordProcessor with regex key filter', () => {
   it('onEmit adds current filtered by regex Baggage entries to a log record as attributes', () => {
     const exporter = new InMemoryLogRecordExporter();
     const loggerProvider = new LoggerProvider({
-      processors: [baggageProcessor, new SimpleLogRecordProcessor(exporter)],
+      processors: [baggageProcessor, new SimpleLogRecordProcessor({ exporter })],
     });
     const logger = loggerProvider.getLogger('my-logger');
     const ctx = propagation.setBaggage(ROOT_CONTEXT, bag);
