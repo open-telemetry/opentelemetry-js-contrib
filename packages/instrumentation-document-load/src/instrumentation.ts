@@ -201,7 +201,6 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
         span,
         resource,
         this.getConfig().ignoreNetworkEvents,
-        undefined
       );
       this._addCustomAttributesOnResourceSpan(
         span,
