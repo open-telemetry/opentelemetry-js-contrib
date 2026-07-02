@@ -156,3 +156,104 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     );
   });
 });
+
+describe('MongoDBInstrumentation-Metrics-v4+ (stable semconv only)', () => {
+  // db.client.connections.usage is pre-stable. It must not be emitted
+  // when only the stable semconv is opted into (no OLD bit).
+  // reader2/instrumentation2 are deliberately constructed inside before()
+  // rather than at the describe() body level. Mocha collects all describe()
+  // bodies synchronously up front, before any suite's tests run — so
+  // constructing a second MongoDBInstrumentation() at the top level would
+  // patch the mongodb module a second time before suite 1's tests even
+  // start, risking double-patching. Deferring to before() ensures this
+  // instance is only created after suite 1 has finished running.
+  const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
+  let shouldTest = true;
+  if (!RUN_MONGODB_TESTS) {
+    console.log('Skipping test-mongodb. Run MongoDB to test');
+    shouldTest = false;
+  }
+
+  const HOST = process.env.MONGODB_HOST || DEFAULT_MONGO_HOST;
+  const PORT = process.env.MONGODB_PORT || 27017;
+  const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-metrics';
+  const COLLECTION_NAME = 'test-metrics';
+  const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
+
+  let client: MongoClient;
+  let collection: Collection;
+  let reader2: TestMetricReader;
+
+  before(done => {
+    process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database';
+
+    reader2 = new TestMetricReader();
+    const otelTestingMeterProvider2 = new MeterProvider({
+      readers: [reader2],
+    });
+    const instrumentation2 = registerInstrumentationTesting(
+      new MongoDBInstrumentation()
+    );
+    instrumentation2?.setMeterProvider(otelTestingMeterProvider2);
+
+    shouldTest = true;
+    accessCollection(URL, DB_NAME, COLLECTION_NAME)
+      .then(result => {
+        client = result.client;
+        collection = result.collection;
+        done();
+      })
+      .catch((err: Error) => {
+        console.log('Skipping test-mongodb. ' + err.message);
+        shouldTest = false;
+        done();
+      });
+  });
+
+  beforeEach(function mongoBeforeEach(done) {
+    if (!shouldTest) {
+      this.skip();
+    }
+    done();
+  });
+
+  it('should not add connection usage metrics', async () => {
+    const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
+    await collection.insertMany(insertData);
+    await collection.deleteMany({});
+
+    const result = await reader2.collect();
+    assert.strictEqual(
+      result.errors.length,
+      0,
+      'Expected no errors during metric collection, got: ' +
+        result.errors.toString()
+    );
+
+    const metrics = result.resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    assert.strictEqual(
+      metrics.length,
+      0,
+      'db.client.connections.usage should not be emitted without OLD semconv opt-in'
+    );
+  });
+
+  it('should not add disconnection usage metrics', async () => {
+    await client.close();
+
+    const result = await reader2.collect();
+    assert.strictEqual(
+      result.errors.length,
+      0,
+      'Expected no errors during metric collection, got: ' +
+        result.errors.toString()
+    );
+
+    const metrics = result.resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    assert.strictEqual(
+      metrics.length,
+      0,
+      'db.client.connections.usage should not be emitted without OLD semconv opt-in'
+    );
+  });
+});

@@ -81,14 +81,16 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
   }
 
   protected override _updateMetricInstruments() {
-    this._connectionsUsageOld = this.meter.createUpDownCounter(
-      METRIC_DB_CLIENT_CONNECTIONS_USAGE,
-      {
-        description:
-          'The number of connections that are currently in state described by the state attribute.',
-        unit: '{connection}',
-      }
-    );
+    if (this._dbSemconvStability & SemconvStability.OLD) {
+      this._connectionsUsageOld = this.meter.createUpDownCounter(
+        METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+        {
+          description:
+            'The number of connections that are currently in state described by the state attribute.',
+          unit: '{connection}',
+        }
+      );
+    }
   }
 
   /**

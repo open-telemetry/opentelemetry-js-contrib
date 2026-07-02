@@ -92,14 +92,16 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   }
 
   override _updateMetricInstruments() {
-    this._connectionsUsage = this.meter.createUpDownCounter(
-      METRIC_DB_CLIENT_CONNECTIONS_USAGE,
-      {
-        description:
-          'The number of connections that are currently in state described by the state attribute.',
-        unit: '{connection}',
-      }
-    );
+    if (this._dbSemconvStability & SemconvStability.OLD) {
+      this._connectionsUsage = this.meter.createUpDownCounter(
+        METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+        {
+          description:
+            'The number of connections that are currently in state described by the state attribute.',
+          unit: '{connection}',
+        }
+      );
+    }
   }
 
   /**
@@ -1105,6 +1107,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       });
     };
   }
+
   private setPoolName(options: any) {
     const host = options.hostAddress?.host;
     const port = options.hostAddress?.port;
