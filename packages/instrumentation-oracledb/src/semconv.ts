@@ -48,8 +48,7 @@ export const ATTR_ORACLE_DB_DOMAIN = 'oracle.db.domain' as const;
  * The instance name associated with the connection in an Oracle Real
  * Application Clusters environment.
  */
-export const ATTR_ORACLE_DB_INSTANCE_NAME =
-  'oracle.db.instance.name' as const;
+export const ATTR_ORACLE_DB_INSTANCE_NAME = 'oracle.db.instance.name' as const;
 
 /**
  * The database name associated with the connection.

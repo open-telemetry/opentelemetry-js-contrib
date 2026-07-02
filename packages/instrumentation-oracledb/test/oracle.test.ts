@@ -94,7 +94,9 @@ function createTestTraceHandlerForSemconvTests(
 const VER_23_4 = 2304000000;
 const hostname = 'localhost';
 const pno = 1521;
-const serviceName = 'FREEPDB1';
+const configuredConnectString =
+  process.env.ORACLE_CONNECTSTRING || 'localhost:1521/freepdb1';
+const serviceName = configuredConnectString.split('/').pop() || 'freepdb1';
 
 function isOracleDB610(): boolean {
   return oracledb.version === 61000;
@@ -123,7 +125,7 @@ let poolMinSpanCount = 1; // number of spans created for createPool considering 
 const CONFIG = {
   user: process.env.ORACLE_USER || 'demo',
   password: process.env.ORACLE_PASSWORD || 'demo',
-  connectString: process.env.ORACLE_CONNECTSTRING || 'localhost:1521/freepdb1',
+  connectString: configuredConnectString,
 };
 const POOL_CONFIG = {
   ...CONFIG,
@@ -246,10 +248,12 @@ function updateAttrSpanList(connection: oracledb.Connection) {
     connectSpanAttributes[ATTR_ORACLE_DB_NAME] = connection.dbName;
   }
   if (extendedConnection.domainName) {
-    connectSpanAttributes[ATTR_ORACLE_DB_DOMAIN] = extendedConnection.domainName;
+    connectSpanAttributes[ATTR_ORACLE_DB_DOMAIN] =
+      extendedConnection.domainName;
   }
   if (hasDbUniqueName() && extendedConnection.dbUniqueName) {
-    connectSpanAttributes[ATTR_DB_NAMESPACE] = `${extendedConnection.dbUniqueName}`;
+    connectSpanAttributes[ATTR_DB_NAMESPACE] =
+      `${extendedConnection.dbUniqueName}`;
   }
 
   // initialize the span attributes list.
@@ -485,9 +489,7 @@ describe('DB semconv migration', () => {
   };
 
   it('keeps old db.namespace semantics and db.user by default', () => {
-    const handler = createTestTraceHandlerForSemconvTests(
-      SemconvStability.OLD
-    );
+    const handler = createTestTraceHandlerForSemconvTests(SemconvStability.OLD);
     const attributes = (handler as any)._getConnectionSpanAttributes(
       connectionConfig
     );
