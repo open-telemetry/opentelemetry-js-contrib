@@ -39,7 +39,7 @@ const sdk = new NodeSDK({
     new tracing.ConsoleSpanExporter()
   ),
   logRecordProcessor: new logs.SimpleLogRecordProcessor({
-    exporter: new logs.ConsoleLogRecordExporter()
+    exporter: new logs.ConsoleLogRecordExporter(),
   }),
   instrumentations: [new BunyanInstrumentation()],
 });

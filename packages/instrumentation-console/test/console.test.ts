@@ -26,7 +26,7 @@ const tracer = tracerProvider.getTracer('default');
 
 const memExporter = new InMemoryLogRecordExporter();
 const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor({exporter: memExporter})],
+  processors: [new SimpleLogRecordProcessor({ exporter: memExporter })],
 });
 logs.setGlobalLoggerProvider(loggerProvider);
 
