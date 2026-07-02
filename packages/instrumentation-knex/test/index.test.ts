@@ -163,9 +163,9 @@ describe('Knex instrumentation', () => {
             const [span] = memoryExporter.getFinishedSpans();
             assert.ok(span, 'expected a span');
             assert.strictEqual(
-              span.attributes['db.name'],
+              span.attributes['db.namespace'],
               ':memory:',
-              'db.name should be populated from function-based connection'
+              'db.namespace should be populated from function-based connection'
             );
           }
         );
