@@ -208,7 +208,7 @@ describe('mysql@2.x-Metrics', () => {
 });
 
 function assertMetrics(metrics: MetricData[]) {
-  // TODO: `db.client.connections.usage` is pre-stable and should be removed
+  // TODO(3590): `db.client.connections.usage` is pre-stable and should be removed
   // in a follow-up PR. The emission is not gated on semconv stability so it
   // is still produced and no stable is being sent; assert its presence until it is explicitly removed.
   assert.ok(
