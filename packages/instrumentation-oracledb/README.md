@@ -30,6 +30,7 @@ npm install --save @opentelemetry/instrumentation-oracledb
 - [`oracledb`](https://www.npmjs.com/package/oracledb) versions `>=6.7.0 <8`
 
 ## Usage
+
 OpenTelemetry OracleInstrumentation allows the user to automatically collect trace data and export them to the backend of choice, to give observability to distributed systems when working with [oracledb](https://www.npmjs.com/package/oracledb). This module works with both Thin and Thick modes of the oracledb
 package, although there may be some caveats with Thick Mode now, which are listed in a later paragraph.
 
@@ -142,7 +143,7 @@ Attributes affected by `OTEL_SEMCONV_STABILITY_OPT_IN=database`:
 | Default / old mode | Stable mode | Short Description |
 | ------------------ | ----------- | ----------------- |
 | `db.user` | Removed | Database user name |
-| `db.namespace="<instance>\|<pdb>\|<service>"` | `db.namespace="<dbUniqueName>"` | Oracle database identifier. Default / old mode uses a concatenated `instance|pdb|service` value; stable mode uses `DB_UNIQUE_NAME`. |
+| `db.namespace` | `db.namespace` | Oracle database identifier. Default / old mode uses a concatenated `instance`, `pdb`, and `service` value. Stable mode uses `DB_UNIQUE_NAME`. |
 
 Attributes emitted independently of the `database` opt-in:
 
