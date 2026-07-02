@@ -59,7 +59,7 @@
     "@opentelemetry/contrib-test-utils": "^0.66.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
-    "oracledb": "^6.7.0"
+    "oracledb": "^6.10.0"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.219.0",
