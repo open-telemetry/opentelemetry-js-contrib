@@ -38,7 +38,8 @@ describe('MongoDBInstrumentation-Metrics-v4+ (stable semconv only)', () => {
 
   const HOST = process.env.MONGODB_HOST || DEFAULT_MONGO_HOST;
   const PORT = process.env.MONGODB_PORT || 27017;
-  const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-metrics-stable';
+  const DB_NAME =
+    process.env.MONGODB_DB || 'opentelemetry-tests-metrics-stable';
   const COLLECTION_NAME = 'test-metrics-stable';
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
 
