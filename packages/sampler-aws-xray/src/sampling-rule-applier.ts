@@ -30,10 +30,6 @@ import {
   ATTR_SERVICE_NAME,
 } from '@opentelemetry/semantic-conventions';
 import {
-  ATTR_HTTP_HOST,
-  ATTR_HTTP_METHOD,
-  ATTR_HTTP_URL,
-  ATTR_HTTP_TARGET,
   ATTR_CLOUD_PLATFORM,
   ATTR_AWS_ECS_CLUSTER_ARN,
   ATTR_AWS_ECS_CONTAINER_ARN,
@@ -121,14 +117,11 @@ export class SamplingRuleApplier {
     let serviceName: AttributeValue | undefined = undefined;
 
     if (attributes) {
-      httpTarget = attributes[ATTR_HTTP_TARGET] ?? attributes[ATTR_URL_PATH];
-      httpUrl = attributes[ATTR_HTTP_URL] ?? attributes[ATTR_URL_FULL];
-      httpMethod =
-        attributes[ATTR_HTTP_METHOD] ?? attributes[ATTR_HTTP_REQUEST_METHOD];
+      httpTarget = attributes[ATTR_URL_PATH];
+      httpUrl = attributes[ATTR_URL_FULL];
+      httpMethod = attributes[ATTR_HTTP_REQUEST_METHOD];
       httpHost =
-        attributes[ATTR_HTTP_HOST] ??
-        attributes[ATTR_SERVER_ADDRESS] ??
-        attributes[ATTR_CLIENT_ADDRESS];
+        attributes[ATTR_SERVER_ADDRESS] ?? attributes[ATTR_CLIENT_ADDRESS];
     }
 
     let serviceType: AttributeValue | undefined = undefined;

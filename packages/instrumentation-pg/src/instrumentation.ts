@@ -8,8 +8,6 @@ import {
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
   InstrumentationNodeModuleFile,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   context,
@@ -59,8 +57,7 @@ import {
 import {
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
-  ATTR_DB_SYSTEM,
-  DB_SYSTEM_VALUE_POSTGRESQL,
+  DB_SYSTEM_NAME_VALUE_POSTGRESQL,
 } from './semconv';
 
 function extractModuleExports(module: any) {
@@ -87,14 +84,9 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     idle: 0,
     pending: 0,
   };
-  private _semconvStability: SemconvStability;
 
   constructor(config: PgInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._semconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   override _updateMetricInstruments() {
@@ -256,10 +248,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
         const span = plugin.tracer.startSpan(SpanNames.CONNECT, {
           kind: SpanKind.CLIENT,
-          attributes: utils.getSemanticAttributesFromConnection(
-            this,
-            plugin._semconvStability
-          ),
+          attributes: utils.getSemanticAttributesFromConnection(this),
         });
 
         if (callback) {
@@ -291,12 +280,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       ATTR_SERVER_ADDRESS,
       ATTR_DB_OPERATION_NAME,
     ];
-    if (this._semconvStability & SemconvStability.OLD) {
-      keysToCopy.push(ATTR_DB_SYSTEM);
-    }
-    if (this._semconvStability & SemconvStability.STABLE) {
-      keysToCopy.push(ATTR_DB_SYSTEM_NAME);
-    }
+    keysToCopy.push(ATTR_DB_SYSTEM_NAME);
 
     keysToCopy.forEach(key => {
       if (key in attributes) {
@@ -360,7 +344,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             : undefined;
 
         const attributes: Attributes = {
-          [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
+          [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
           [ATTR_DB_NAMESPACE]: this.database,
           [ATTR_SERVER_PORT]: this.connectionParameters.port,
           [ATTR_SERVER_ADDRESS]: this.connectionParameters.host,
@@ -381,7 +365,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           this,
           plugin.tracer,
           instrumentationConfig,
-          plugin._semconvStability,
           queryConfig
         );
 
@@ -631,8 +614,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         const span = plugin.tracer.startSpan(SpanNames.POOL_CONNECT, {
           kind: SpanKind.CLIENT,
           attributes: utils.getSemanticAttributesFromPoolConnection(
-            this.options,
-            plugin._semconvStability
+            this.options
           ),
         });
 

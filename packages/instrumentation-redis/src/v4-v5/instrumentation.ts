@@ -15,8 +15,6 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import { getClientAttributes } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
@@ -27,7 +25,6 @@ import {
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_DB_STATEMENT } from '../semconv';
 import type { MultiErrorReply } from './internal-types';
 
 const OTEL_OPEN_SPANS = Symbol(
@@ -45,26 +42,13 @@ interface MultiCommandInfo {
 
 export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
-  private _semconvStability: SemconvStability;
 
   constructor(config: RedisInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._semconvStability = config.semconvStability
-      ? config.semconvStability
-      : semconvStabilityFromStr(
-          'database',
-          process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-        );
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
     super.setConfig(config);
-    this._semconvStability = config.semconvStability
-      ? config.semconvStability
-      : semconvStabilityFromStr(
-          'database',
-          process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-        );
   }
 
   protected init() {
@@ -449,11 +433,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     return function connectWrapper(original: Function) {
       return function patchedConnect(this: any): Promise<void> {
         const options = this.options;
-        const attributes = getClientAttributes(
-          plugin._diag,
-          options,
-          plugin._semconvStability
-        );
+        const attributes = getClientAttributes(options);
 
         const span = plugin.tracer.startSpan(
           `${RedisInstrumentationV4_V5.COMPONENT}-connect`,
@@ -504,23 +484,12 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     const dbStatementSerializer =
       this.getConfig().dbStatementSerializer || defaultDbStatementSerializer;
 
-    const attributes = getClientAttributes(
-      this._diag,
-      clientOptions,
-      this._semconvStability
-    );
-    if (this._semconvStability & SemconvStability.STABLE) {
-      attributes[ATTR_DB_OPERATION_NAME] = commandName;
-    }
+    const attributes = getClientAttributes(clientOptions);
+    attributes[ATTR_DB_OPERATION_NAME] = commandName;
     try {
       const dbStatement = dbStatementSerializer(commandName, commandArgs);
       if (dbStatement != null) {
-        if (this._semconvStability & SemconvStability.OLD) {
-          attributes[ATTR_DB_STATEMENT] = dbStatement;
-        }
-        if (this._semconvStability & SemconvStability.STABLE) {
-          attributes[ATTR_DB_QUERY_TEXT] = dbStatement;
-        }
+        attributes[ATTR_DB_QUERY_TEXT] = dbStatement;
       }
     } catch (e) {
       this._diag.error('dbStatementSerializer throw an exception', e, {
@@ -603,9 +572,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
           ? [null, currCommandRes]
           : [currCommandRes, undefined];
 
-      if (this._semconvStability & SemconvStability.STABLE) {
-        span.setAttribute(ATTR_DB_OPERATION_NAME, operationName);
-      }
+      span.setAttribute(ATTR_DB_OPERATION_NAME, operationName);
 
       this._endSpanWithResponse(span, allCommands[i], commandArgs, res, err);
     }

@@ -24,7 +24,6 @@ import {
   ATTR_URL_FULL,
 } from '@opentelemetry/semantic-conventions';
 import {
-  ATTR_HTTP_STATUS_CODE,
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_MESSAGE_ID,
@@ -86,7 +85,6 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
     expect(span.attributes[ATTR_MESSAGING_MESSAGE_ID]).toEqual(
       response.MessageId
     );
-    expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
     expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
   });
 
@@ -137,7 +135,6 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
       'otel-demo-aws-sdk'
     );
     expect(span.attributes[ATTR_URL_FULL]).toEqual(params.QueueUrl);
-    expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
     expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
   });
 
@@ -171,7 +168,6 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
       expect(span.attributes[ATTR_RPC_METHOD]).toEqual('ReceiveMessage');
       expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('SQS');
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
-      expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
       expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
       expect(span.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT]).toEqual(2);
       expect(span.links.length).toBe(2);

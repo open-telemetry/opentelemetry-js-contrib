@@ -11,16 +11,11 @@ import {
   Attributes,
   AttributeValue,
 } from '@opentelemetry/api';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_MESSAGING_SYSTEM,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from './semconv';
+import { ATTR_MESSAGING_SYSTEM } from './semconv';
 import {
   ATTR_MESSAGING_PROTOCOL,
   ATTR_MESSAGING_PROTOCOL_VERSION,
@@ -132,8 +127,7 @@ export const getConnectionAttributesFromServer = (
 };
 
 export const getConnectionAttributesFromUrl = (
-  url: string | amqp.Options.Connect,
-  netSemconvStability: SemconvStability
+  url: string | amqp.Options.Connect
 ): Attributes => {
   const attributes: Attributes = {
     [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1', // this is the only protocol supported by the instrumented library
@@ -154,40 +148,20 @@ export const getConnectionAttributesFromUrl = (
     });
 
     const hostname = getHostname(connectOptions?.hostname);
-    if (netSemconvStability & SemconvStability.OLD) {
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          url,
-          ATTR_NET_PEER_NAME,
-          hostname,
-          'hostname'
-        ),
-      });
-    }
-    if (netSemconvStability & SemconvStability.STABLE) {
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
-          url,
-          ATTR_SERVER_ADDRESS,
-          hostname,
-          'hostname'
-        ),
-      });
-    }
+    Object.assign(attributes, {
+      ...extractConnectionAttributeOrLog(
+        url,
+        ATTR_SERVER_ADDRESS,
+        hostname,
+        'hostname'
+      ),
+    });
 
     const port = getPort(connectOptions.port, protocol);
-    if (netSemconvStability & SemconvStability.OLD) {
-      Object.assign(
-        attributes,
-        extractConnectionAttributeOrLog(url, ATTR_NET_PEER_PORT, port, 'port')
-      );
-    }
-    if (netSemconvStability & SemconvStability.STABLE) {
-      Object.assign(
-        attributes,
-        extractConnectionAttributeOrLog(url, ATTR_SERVER_PORT, port, 'port')
-      );
-    }
+    Object.assign(
+      attributes,
+      extractConnectionAttributeOrLog(url, ATTR_SERVER_PORT, port, 'port')
+    );
   } else {
     const censoredUrl = censorPassword(url);
     attributes[ATTR_MESSAGING_URL] = censoredUrl;
@@ -205,53 +179,28 @@ export const getConnectionAttributesFromUrl = (
       });
 
       const hostname = getHostname(urlParts.hostname);
-      if (netSemconvStability & SemconvStability.OLD) {
-        Object.assign(attributes, {
-          ...extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_NET_PEER_NAME,
-            hostname,
-            'hostname'
-          ),
-        });
-      }
-      if (netSemconvStability & SemconvStability.STABLE) {
-        Object.assign(attributes, {
-          ...extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_SERVER_ADDRESS,
-            hostname,
-            'hostname'
-          ),
-        });
-      }
+      Object.assign(attributes, {
+        ...extractConnectionAttributeOrLog(
+          censoredUrl,
+          ATTR_SERVER_ADDRESS,
+          hostname,
+          'hostname'
+        ),
+      });
 
       const port = getPort(
         urlParts.port ? parseInt(urlParts.port) : undefined,
         protocol
       );
-      if (netSemconvStability & SemconvStability.OLD) {
-        Object.assign(
-          attributes,
-          extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_NET_PEER_PORT,
-            port,
-            'port'
-          )
-        );
-      }
-      if (netSemconvStability & SemconvStability.STABLE) {
-        Object.assign(
-          attributes,
-          extractConnectionAttributeOrLog(
-            censoredUrl,
-            ATTR_SERVER_PORT,
-            port,
-            'port'
-          )
-        );
-      }
+      Object.assign(
+        attributes,
+        extractConnectionAttributeOrLog(
+          censoredUrl,
+          ATTR_SERVER_PORT,
+          port,
+          'port'
+        )
+      );
     } catch (err) {
       diag.error(
         'amqplib instrumentation: error while extracting connection details from connection url',
