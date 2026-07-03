@@ -53,7 +53,7 @@ const resource = resourceFromAttributes({
 const memExporter = new InMemoryLogRecordExporter();
 const loggerProvider = new LoggerProvider({
   resource,
-  processors: [new SimpleLogRecordProcessor(memExporter)],
+  processors: [new SimpleLogRecordProcessor({ exporter: memExporter })],
 });
 logs.setGlobalLoggerProvider(loggerProvider);
 

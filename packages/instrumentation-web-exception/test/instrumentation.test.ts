@@ -24,7 +24,7 @@ const STRING_ERROR = 'Some error string.';
 
 describe('ExceptionInstrumentation', () => {
   const exporter = new InMemoryLogRecordExporter();
-  const logRecordProcessor = new SimpleLogRecordProcessor(exporter);
+  const logRecordProcessor = new SimpleLogRecordProcessor({ exporter });
   const loggerProvider = new LoggerProvider({
     processors: [logRecordProcessor],
   });
