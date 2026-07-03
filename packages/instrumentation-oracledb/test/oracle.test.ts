@@ -650,6 +650,9 @@ describe('oracledb', () => {
   }
 
   before(async function () {
+    // Give the database up to 60 seconds to register its service
+    this.timeout(60000);
+
     const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -661,7 +664,28 @@ describe('oracledb', () => {
       skip();
     }
 
-    connection = await oracledb.getConnection(CONFIG);
+    // Retry connection mechanism for intermittent service registration (NJS-518)
+    const maxRetries = 15;
+    const delayMs = 3000;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        connection = await oracledb.getConnection(CONFIG);
+        break; // Successfully connected! Break out of the retry loop.
+      } catch (err: any) {
+        const isNotRegistered = err?.message?.includes('NJS-518');
+        const isLastRetry = i === maxRetries - 1;
+
+        if (isNotRegistered && !isLastRetry) {
+          console.log(
+            `[Oracle Test Setup] Service not registered yet (NJS-518). Retrying in ${delayMs / 1000}s... (${i + 1}/${maxRetries})`
+          );
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        } else {
+          throw err; // Fail completely if it's a different error or we ran out of attempts
+        }
+      }
+    }
     await doSetup();
     updateAttrSpanList(connection);
     contextManager = new AsyncLocalStorageContextManager().enable();
