@@ -30,7 +30,7 @@ describe('Browser Navigation Instrumentation', () => {
   const sandbox = sinon.createSandbox();
 
   const exporter = new InMemoryLogRecordExporter();
-  const logRecordProcessor = new SimpleLogRecordProcessor(exporter);
+  const logRecordProcessor = new SimpleLogRecordProcessor({ exporter });
   const provider = new LoggerProvider({
     processors: [logRecordProcessor],
   });

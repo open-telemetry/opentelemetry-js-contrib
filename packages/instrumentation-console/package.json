@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-console",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OpenTelemetry instrumentation for Node.js `console`",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -45,13 +45,13 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/sdk-logs": "^0.219.0",
+    "@opentelemetry/sdk-logs": "^0.220.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0"
   },
   "dependencies": {
-    "@opentelemetry/api-logs": "^0.219.0",
-    "@opentelemetry/instrumentation": "^0.219.0"
+    "@opentelemetry/api-logs": "^0.220.0",
+    "@opentelemetry/instrumentation": "^0.220.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-console#readme"
 }

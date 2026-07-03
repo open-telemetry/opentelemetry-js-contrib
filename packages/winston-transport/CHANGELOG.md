@@ -1,6 +1,14 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.29.0...winston-transport-v0.30.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+* **logging:** support otel.event.name in log bridges ([#3561](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3561)) ([d2aab2f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d2aab2ffd26e2c3541a648fdb71d7cb1a88ececd))
+
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.28.0...winston-transport-v0.29.0) (2026-06-11)
 
 
