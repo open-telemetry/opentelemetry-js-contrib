@@ -90,7 +90,9 @@ const incompatVersions =
     semver.gte(tediousVersion, '17.0.0')) ||
   // tedious@19 removed support for node <18.17.0 https://github.com/tediousjs/tedious/releases/tag/v19.0.0
   (semver.lt(processVersion, '18.17.0') &&
-    semver.gte(tediousVersion, '19.0.0'));
+    semver.gte(tediousVersion, '19.0.0')) ||
+  // tedious@20 removed support for node <22 https://github.com/tediousjs/tedious/releases/tag/v20.0.0
+  (semver.lt(processVersion, '22.0.0') && semver.gte(tediousVersion, '20.0.0'));
 
 describe('tedious', () => {
   let tedious: any;
