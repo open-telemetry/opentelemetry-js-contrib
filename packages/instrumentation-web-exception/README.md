@@ -23,7 +23,9 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
 // Set up the logger provider with a processor
 const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())]
+  processors: [
+    new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() })
+  ]
 });
 logs.setGlobalLoggerProvider(loggerProvider);
 

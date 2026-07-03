@@ -29,11 +29,49 @@ export const ATTR_AWS_SQS_QUEUE_URL = 'aws.sqs.queue.url' as const;
 export const ATTR_CLOUD_ACCOUNT_ID = 'cloud.account.id' as const;
 
 /**
+ * Cloud provider-specific native identifier of the monitored cloud resource (e.g. an [ARN](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html) on AWS, a [fully qualified resource ID](https://learn.microsoft.com/rest/api/resources/resources/get-by-id) on Azure, a [full resource name](https://google.aip.dev/122#full-resource-names) on GCP)
+ *
+ * @example arn:aws:lambda:REGION:ACCOUNT_ID:function:my-function
+ * @example //run.googleapis.com/projects/PROJECT_ID/locations/LOCATION_ID/services/SERVICE_ID
+ * @example /subscriptions/<SUBSCRIPTION_GUID>/resourceGroups/<RG>/providers/Microsoft.Web/sites/<FUNCAPP>/functions/<FUNC>
+ *
+ * @note On some cloud providers, it may not be possible to determine the full ID at startup,
+ * so it may be necessary to set `cloud.resource_id` as a span attribute instead.
+ *
+ * The exact value to use for `cloud.resource_id` depends on the cloud provider.
+ * The following well-known definitions **MUST** be used if you set this attribute and they apply:
+ *
+ *   - **AWS Lambda:** The function [ARN](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html).
+ *     Take care not to use the "invoked ARN" directly but replace any
+ *     [alias suffix](https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html)
+ *     with the resolved function version, as the same runtime instance may be invocable with
+ *     multiple different aliases.
+ *   - **GCP:** The [URI of the resource](https://cloud.google.com/iam/docs/full-resource-names)
+ *   - **Azure:** The [Fully Qualified Resource ID](https://learn.microsoft.com/rest/api/resources/resources/get-by-id) of the invoked function,
+ *     *not* the function app, having the form
+ *     `/subscriptions/<SUBSCRIPTION_GUID>/resourceGroups/<RG>/providers/Microsoft.Web/sites/<FUNCAPP>/functions/<FUNC>`.
+ *     This means that a span attribute **MUST** be used, as an Azure function app can host multiple functions that would usually share
+ *     a TracerProvider.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_CLOUD_RESOURCE_ID = 'cloud.resource_id' as const;
+
+/**
  * A boolean that is true if the serverless function is executed for the first time (aka cold-start).
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_FAAS_COLDSTART = 'faas.coldstart' as const;
+
+/**
+ * The invocation ID of the current function invocation.
+ *
+ * @example "af9d5aa4-a685-4c5f-a22b-444f80b3cc28"
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_FAAS_INVOCATION_ID = 'faas.invocation_id' as const;
 
 /**
  * The name of the single function that this runtime instance executes.

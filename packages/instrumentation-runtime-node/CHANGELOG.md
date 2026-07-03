@@ -1,6 +1,14 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.32.0...instrumentation-runtime-node-v0.33.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+* **instrumentation-runtime-node:** add active resource gauge ([#3361](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3361)) ([f3d38e2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f3d38e25cdb7a158a47c24fc344cb4e9c6f24252))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.31.0...instrumentation-runtime-node-v0.32.0) (2026-06-11)
 
 

@@ -31,7 +31,9 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_AWS_SQS_QUEUE_URL,
+  ATTR_CLOUD_RESOURCE_ID,
   ATTR_FAAS_COLDSTART,
+  ATTR_FAAS_INVOCATION_ID,
   ATTR_FAAS_NAME,
   ATTR_FAAS_TRIGGER,
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
@@ -44,7 +46,6 @@ import {
   MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
   MESSAGING_SYSTEM_VALUE_AWS_SQS,
 } from '../../src/semconv';
-import { ATTR_FAAS_EXECUTION } from '../../src/semconv-obsolete';
 import {
   Context as OtelContext,
   context,
@@ -67,8 +68,11 @@ const memoryExporter = new InMemorySpanExporter();
 export const assertSpanSuccess = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
   assert.strictEqual(span.name, 'my_function');
-  assert.strictEqual(span.attributes[ATTR_FAAS_EXECUTION], 'aws_request_id');
-  assert.strictEqual(span.attributes['faas.id'], 'my_arn');
+  assert.strictEqual(
+    span.attributes[ATTR_FAAS_INVOCATION_ID],
+    'aws_request_id'
+  );
+  assert.strictEqual(span.attributes[ATTR_CLOUD_RESOURCE_ID], 'my_arn');
   assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
   assert.strictEqual(span.status.message, undefined);
 };
@@ -76,8 +80,11 @@ export const assertSpanSuccess = (span: ReadableSpan) => {
 const assertSpanFailure = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
   assert.strictEqual(span.name, 'my_function');
-  assert.strictEqual(span.attributes[ATTR_FAAS_EXECUTION], 'aws_request_id');
-  assert.strictEqual(span.attributes['faas.id'], 'my_arn');
+  assert.strictEqual(
+    span.attributes[ATTR_FAAS_INVOCATION_ID],
+    'aws_request_id'
+  );
+  assert.strictEqual(span.attributes[ATTR_CLOUD_RESOURCE_ID], 'my_arn');
   assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
   assert.strictEqual(span.status.message, 'handler error');
   assert.strictEqual(span.events.length, 1);

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-host-metrics",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OpenTelemetry Host Metrics instrumentation for Node.js",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -47,7 +47,7 @@
     "@opentelemetry/sdk-metrics": "^2.0.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.219.0",
+    "@opentelemetry/instrumentation": "^0.220.0",
     "systeminformation": "^5.31.6"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-host-metrics#readme"
