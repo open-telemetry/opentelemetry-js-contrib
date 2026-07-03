@@ -27,8 +27,23 @@ import * as assert from 'assert';
 import {
   ATTR_URL_FULL,
   ATTR_EXCEPTION_MESSAGE,
+  ATTR_SERVER_ADDRESS,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_FAAS_COLDSTART, ATTR_FAAS_NAME } from '../../src/semconv';
+import {
+  ATTR_AWS_SQS_QUEUE_URL,
+  ATTR_FAAS_COLDSTART,
+  ATTR_FAAS_NAME,
+  ATTR_FAAS_TRIGGER,
+  ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_OPERATION_NAME,
+  ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_SYSTEM,
+  FAAS_TRIGGER_VALUE_PUBSUB,
+  MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+  MESSAGING_SYSTEM_VALUE_AWS_SQS,
+} from '../../src/semconv';
 import { ATTR_FAAS_EXECUTION } from '../../src/semconv-obsolete';
 import {
   Context as OtelContext,
@@ -45,6 +60,7 @@ import {
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { AWSXRayLambdaPropagator } from '@opentelemetry/propagator-aws-xray-lambda';
+import { sqsContextGetter } from '../../src/instrumentation';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -1207,6 +1223,337 @@ describe('lambda handler', () => {
           'highWaterMark symbol should be preserved after instrumentation'
         );
       });
+    });
+  });
+
+  describe('sqs context propagation (default: AWSTraceHeader)', () => {
+    it('creates process span with span link (sync handler)', async () => {
+      initializeHandler('lambda-test/sync.handler');
+      const sqsEvent = {
+        Records: [
+          {
+            messageId: 'msg-001',
+            attributes: {
+              AWSTraceHeader: sampledAwsHeader,
+              ApproximateReceiveCount: '1',
+              SentTimestamp: '1234567890',
+              SenderId: 'sender',
+              ApproximateFirstReceiveTimestamp: '1234567890',
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/sync').handler(sqsEvent, ctx);
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+      const [processSpan, invocationSpan] = spans;
+
+      assert.strictEqual(
+        processSpan.parentSpanContext?.traceId,
+        invocationSpan.spanContext().traceId
+      );
+      assert.strictEqual(
+        processSpan.parentSpanContext?.spanId,
+        invocationSpan.spanContext().spanId
+      );
+      assert.strictEqual(
+        processSpan.links[0]?.context.traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(
+        processSpan.links[0]?.context.spanId,
+        sampledAwsSpanContext.spanId
+      );
+
+      assert.strictEqual(
+        processSpan.links[0]?.attributes?.[ATTR_MESSAGING_MESSAGE_ID],
+        'msg-001'
+      );
+      assert.strictEqual(processSpan.kind, SpanKind.CONSUMER);
+      assert.strictEqual(processSpan.name, 'process test-queue');
+      assert.strictEqual(
+        processSpan.attributes[ATTR_FAAS_TRIGGER],
+        FAAS_TRIGGER_VALUE_PUBSUB
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_OPERATION_NAME],
+        'process'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_OPERATION_TYPE],
+        MESSAGING_OPERATION_TYPE_VALUE_PROCESS
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_SYSTEM],
+        MESSAGING_SYSTEM_VALUE_AWS_SQS
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME],
+        'test-queue'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_SERVER_ADDRESS],
+        'sqs.eu-central-1.amazonaws.com'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_AWS_SQS_QUEUE_URL],
+        'https://sqs.eu-central-1.amazonaws.com/783764587482/test-queue'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT],
+        undefined
+      );
+      assert.strictEqual(
+        invocationSpan.attributes[ATTR_FAAS_TRIGGER],
+        FAAS_TRIGGER_VALUE_PUBSUB
+      );
+    });
+
+    it('creates process span with span link (async handler)', async () => {
+      initializeHandler('lambda-test/async.handler');
+      const sqsEvent = {
+        Records: [
+          {
+            messageId: 'msg-001',
+            attributes: {
+              AWSTraceHeader: sampledAwsHeader,
+              ApproximateReceiveCount: '1',
+              SentTimestamp: '1234567890',
+              SenderId: 'sender',
+              ApproximateFirstReceiveTimestamp: '1234567890',
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/async').handler(sqsEvent, ctx);
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+      const [processSpan, invocationSpan] = spans;
+
+      assert.strictEqual(
+        processSpan.parentSpanContext?.traceId,
+        invocationSpan.spanContext().traceId
+      );
+      assert.strictEqual(
+        processSpan.parentSpanContext?.spanId,
+        invocationSpan.spanContext().spanId
+      );
+      assert.strictEqual(
+        processSpan.links[0]?.context.traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(
+        processSpan.links[0]?.context.spanId,
+        sampledAwsSpanContext.spanId
+      );
+
+      assert.strictEqual(
+        processSpan.links[0]?.attributes?.[ATTR_MESSAGING_MESSAGE_ID],
+        'msg-001'
+      );
+      assert.strictEqual(processSpan.kind, SpanKind.CONSUMER);
+      assert.strictEqual(processSpan.name, 'process test-queue');
+      assert.strictEqual(
+        processSpan.attributes[ATTR_FAAS_TRIGGER],
+        FAAS_TRIGGER_VALUE_PUBSUB
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_OPERATION_NAME],
+        'process'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_OPERATION_TYPE],
+        MESSAGING_OPERATION_TYPE_VALUE_PROCESS
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_SYSTEM],
+        MESSAGING_SYSTEM_VALUE_AWS_SQS
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME],
+        'test-queue'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_SERVER_ADDRESS],
+        'sqs.eu-central-1.amazonaws.com'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_AWS_SQS_QUEUE_URL],
+        'https://sqs.eu-central-1.amazonaws.com/783764587482/test-queue'
+      );
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT],
+        undefined
+      );
+      assert.strictEqual(
+        invocationSpan.attributes[ATTR_FAAS_TRIGGER],
+        FAAS_TRIGGER_VALUE_PUBSUB
+      );
+    });
+
+    it('sets batch message count attribute for events with more than 1 record', async () => {
+      initializeHandler('lambda-test/async.handler');
+      const sqsEvent = {
+        Records: [
+          {
+            messageId: 'msg-001',
+            attributes: {
+              AWSTraceHeader: sampledAwsHeader,
+              ApproximateReceiveCount: '1',
+              SentTimestamp: '1234567890',
+              SenderId: 'sender',
+              ApproximateFirstReceiveTimestamp: '1234567890',
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+          },
+          {
+            messageId: 'msg-002',
+            attributes: {
+              AWSTraceHeader: sampledAwsHeader,
+              ApproximateReceiveCount: '1',
+              SentTimestamp: '1234567890',
+              SenderId: 'sender',
+              ApproximateFirstReceiveTimestamp: '1234567890',
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/async').handler(sqsEvent, ctx);
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+      const [processSpan] = spans;
+
+      assert.strictEqual(
+        processSpan.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT],
+        2
+      );
+      assert.strictEqual(processSpan.links.length, 2);
+      assert.strictEqual(
+        processSpan.links[0]?.attributes?.[ATTR_MESSAGING_MESSAGE_ID],
+        'msg-001'
+      );
+      assert.strictEqual(
+        processSpan.links[1]?.attributes?.[ATTR_MESSAGING_MESSAGE_ID],
+        'msg-002'
+      );
+    });
+  });
+
+  describe('sqs context propagation (experimental: messageAttributes)', () => {
+    it('creates process span with span link (sync handler)', async () => {
+      initializeHandler('lambda-test/sync.handler', {
+        useGlobalPropagatorForSqsExtraction: true,
+      });
+      const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
+      const producerSpanId = '83b7424a259945cb';
+      const sqsEvent = {
+        Records: [
+          {
+            messageAttributes: {
+              traceparent: {
+                stringValue: `00-${producerTraceId}-${producerSpanId}-01`,
+                dataType: 'String',
+              },
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/sync').handler(sqsEvent, ctx);
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+      assert.strictEqual(
+        spans[0].parentSpanContext?.traceId,
+        spans[1].spanContext().traceId
+      );
+      assert.strictEqual(
+        spans[0].parentSpanContext?.spanId,
+        spans[1].spanContext().spanId
+      );
+      assert.strictEqual(spans[0].links[0]?.context.traceId, producerTraceId);
+      assert.strictEqual(spans[0].links[0].context.spanId, producerSpanId);
+    });
+
+    it('creates process span with span link (async handler)', async () => {
+      initializeHandler('lambda-test/async.handler', {
+        useGlobalPropagatorForSqsExtraction: true,
+      });
+      const producerTraceId = '1df415edd0ad7f83e573f6504381dcec';
+      const producerSpanId = '83b7424a259945cb';
+      const sqsEvent = {
+        Records: [
+          {
+            messageAttributes: {
+              traceparent: {
+                stringValue: `00-${producerTraceId}-${producerSpanId}-01`,
+                dataType: 'String',
+              },
+            },
+            eventSource: 'aws:sqs',
+            eventSourceARN: 'arn:aws:sqs:eu-central-1:783764587482:test-queue',
+          },
+        ],
+      };
+
+      await lambdaRequire('lambda-test/async').handler(sqsEvent, ctx);
+      const spans = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(spans.length, 2);
+      assert.strictEqual(
+        spans[0].parentSpanContext?.traceId,
+        spans[1].spanContext().traceId
+      );
+      assert.strictEqual(
+        spans[0].parentSpanContext?.spanId,
+        spans[1].spanContext().spanId
+      );
+      assert.strictEqual(spans[0].links[0]?.context.traceId, producerTraceId);
+      assert.strictEqual(spans[0].links[0].context.spanId, producerSpanId);
+    });
+  });
+
+  describe('sqsContextGetter', () => {
+    it('returns the keys for a given message attributes carrier', () => {
+      const carrier = {
+        'x-amzn-trace-id': {
+          stringValue: 'dummy',
+          stringListValues: [],
+          binaryListValues: [],
+          dataType: 'String',
+        },
+        traceparent: {
+          stringValue: 'dummy',
+          stringListValues: [],
+          binaryListValues: [],
+          dataType: 'String',
+        },
+      };
+
+      const keys = sqsContextGetter.keys(carrier);
+      assert.deepEqual(keys, ['x-amzn-trace-id', 'traceparent']);
+    });
+
+    it('returns empty array for null or undefined carrier', () => {
+      const keysNull = sqsContextGetter.keys(null);
+      const keysUndefined = sqsContextGetter.keys(undefined);
+      assert.deepEqual(keysNull, []);
+      assert.deepEqual(keysUndefined, []);
     });
   });
 });

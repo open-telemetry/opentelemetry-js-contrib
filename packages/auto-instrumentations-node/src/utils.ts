@@ -21,6 +21,7 @@ import { GenericPoolInstrumentation } from '@opentelemetry/instrumentation-gener
 import { GraphQLInstrumentation } from '@opentelemetry/instrumentation-graphql';
 import { GrpcInstrumentation } from '@opentelemetry/instrumentation-grpc';
 import { HapiInstrumentation } from '@opentelemetry/instrumentation-hapi';
+import { HostMetricsInstrumentation } from '@opentelemetry/instrumentation-host-metrics';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
 import { KafkaJsInstrumentation } from '@opentelemetry/instrumentation-kafkajs';
@@ -99,6 +100,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-graphql': GraphQLInstrumentation,
   '@opentelemetry/instrumentation-grpc': GrpcInstrumentation,
   '@opentelemetry/instrumentation-hapi': HapiInstrumentation,
+  '@opentelemetry/instrumentation-host-metrics': HostMetricsInstrumentation,
   '@opentelemetry/instrumentation-http': HttpInstrumentation,
   '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
   '@opentelemetry/instrumentation-kafkajs': KafkaJsInstrumentation,
@@ -126,7 +128,10 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
 };
 
-const defaultExcludedInstrumentations = ['@opentelemetry/instrumentation-fs'];
+const defaultExcludedInstrumentations = [
+  '@opentelemetry/instrumentation-fs',
+  '@opentelemetry/instrumentation-host-metrics',
+];
 
 // Config types inferred automatically from the first argument of the constructor
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;

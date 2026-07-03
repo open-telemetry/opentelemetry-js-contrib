@@ -33,4 +33,5 @@ export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
   lambdaHandler?: string;
   payloadSizeLimit?: number;
   lambdaStartTime?: number;
+  useGlobalPropagatorForSqsExtraction?: boolean;
 }

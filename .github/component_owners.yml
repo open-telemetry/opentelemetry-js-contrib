@@ -108,6 +108,8 @@ components:
     - obecny
   packages/instrumentation-hapi: []
     # Unmaintained
+  packages/instrumentation-host-metrics:
+    - legendecas
   packages/instrumentation-ioredis:
     - blumamir
     - naseemkullah

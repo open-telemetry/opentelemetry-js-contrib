@@ -62,6 +62,18 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   },
 };
 
+export const sqsContextGetter: TextMapGetter = {
+  keys(carrier): string[] {
+    if (carrier == null) {
+      return [];
+    }
+    return Object.keys(carrier);
+  },
+  get(carrier, key: string) {
+    return carrier?.[key]?.stringValue || carrier?.[key]?.value;
+  },
+};
+
 export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
 export const xForwardProto = 'X-Forwarded-Proto';
 const SPAN_STATE_ATTRIBUTE = 'cx.internal.span.state';
