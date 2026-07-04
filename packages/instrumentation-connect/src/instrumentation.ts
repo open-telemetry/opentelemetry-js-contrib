@@ -133,6 +133,7 @@ export class ConnectInstrumentation extends InstrumentationBase {
       const span = instrumentation._startSpan(routeName, middleWare);
       instrumentation._diag.debug('start span', spanName);
       let spanFinished = false;
+      let listenerAttached = false;
 
       function finishSpan() {
         if (!spanFinished) {
@@ -144,15 +145,22 @@ export class ConnectInstrumentation extends InstrumentationBase {
             `span ${(span as any).name} - already finished`
           );
         }
-        res.removeListener('close', finishSpan);
+        if (listenerAttached) {
+          res.removeListener('close', finishSpan);
+        }
       }
 
-      res.addListener('close', finishSpan);
       arguments[nextArgIdx] = instrumentation._patchNext(next, finishSpan);
 
-      return (middleWare as any).apply(this, arguments);
+      try {
+        return (middleWare as any).apply(this, arguments);
+      } finally {
+        if (!spanFinished && !listenerAttached) {
+          listenerAttached = true;
+          res.once('close', finishSpan);
+        }
+      }
     }
-
     Object.defineProperty(patchedMiddleware, 'length', {
       value: middleWare.length,
       writable: false,

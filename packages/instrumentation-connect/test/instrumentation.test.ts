@@ -315,5 +315,29 @@ describe('connect', () => {
 
       assert.strictEqual(rpcMetadata.route, '/foo/bar/test');
     });
+
+    it('should not leak close listeners across multiple synchronous middleware layers', async () => {
+      let listenerCountBeforeEnd = -1;
+      const numLayers = 15; // exceeds Node's default MaxListeners of 10
+
+      for (let i = 0; i < numLayers; i++) {
+        app.use((req, res, next) => {
+          next();
+        });
+      }
+
+      app.use((req, res, _next) => {
+        listenerCountBeforeEnd = res.listenerCount('close');
+        res.end('ok');
+      });
+
+      await httpRequest.get(`http://localhost:${PORT}/`);
+
+      assert.strictEqual(
+        listenerCountBeforeEnd,
+        0,
+        'expected no close listeners to accumulate across synchronous middleware layers'
+      );
+    });
   });
 });
