@@ -27,7 +27,9 @@ describe("LongTaskInstrumentation doesn't throw in unsupported environments", ()
   before(() => {
     dummySpanExporter = new DummySpanExporter();
     webTracerProvider = new WebTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor({ exporter: dummySpanExporter })],
+      spanProcessors: [
+        new SimpleSpanProcessor({ exporter: dummySpanExporter }),
+      ],
     });
     webTracerProvider.register();
   });

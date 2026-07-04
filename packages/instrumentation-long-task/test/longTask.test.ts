@@ -52,7 +52,9 @@ describe('LongTaskInstrumentation', () => {
     dummySpanExporter = new DummySpanExporter();
     exportSpy = sandbox.stub(dummySpanExporter, 'export');
     webTracerProvider = new WebTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor({ exporter: dummySpanExporter })],
+      spanProcessors: [
+        new SimpleSpanProcessor({ exporter: dummySpanExporter }),
+      ],
     });
     webTracerProvider.register();
 

@@ -25,10 +25,14 @@ export const registerInstrumentationTestingProvider = (
 
   setTestMemoryExporter(new InMemorySpanExporter());
 
-  spanProcessors.push(new SimpleSpanProcessor({ exporter: getTestMemoryExporter()! }));
+  spanProcessors.push(
+    new SimpleSpanProcessor({ exporter: getTestMemoryExporter()! })
+  );
 
   if (process.env.OTEL_EXPORTER_JAEGER_AGENT_HOST) {
-    spanProcessors.push(new SimpleSpanProcessor({ exporter: new JaegerExporter() }));
+    spanProcessors.push(
+      new SimpleSpanProcessor({ exporter: new JaegerExporter() })
+    );
   }
 
   const otelTestingProvider = new NodeTracerProvider({

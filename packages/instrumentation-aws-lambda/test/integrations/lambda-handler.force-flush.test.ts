@@ -77,7 +77,9 @@ describe('force flush', () => {
 
   it('should force flush NodeTracerProvider', async () => {
     const provider = new NodeTracerProvider({
-      spanProcessors: [new BatchSpanProcessor({ exporter: traceMemoryExporter })],
+      spanProcessors: [
+        new BatchSpanProcessor({ exporter: traceMemoryExporter }),
+      ],
     });
     provider.register();
     let forceFlushed = false;

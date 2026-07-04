@@ -36,7 +36,9 @@ import type * as BunyanLogger from 'bunyan';
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
 const tracerProvider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() })],
+  spanProcessors: [
+    new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() }),
+  ],
 });
 tracerProvider.register();
 const tracer = tracerProvider.getTracer('default');

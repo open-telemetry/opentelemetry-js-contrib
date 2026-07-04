@@ -80,7 +80,9 @@ describe('UserInteractionInstrumentation', () => {
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');
       webTracerProvider = new WebTracerProvider({
-        spanProcessors: [new tracing.SimpleSpanProcessor({ exporter: dummySpanExporter })],
+        spanProcessors: [
+          new tracing.SimpleSpanProcessor({ exporter: dummySpanExporter }),
+        ],
       });
       webTracerProvider.register();
 

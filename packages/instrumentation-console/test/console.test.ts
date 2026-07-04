@@ -19,7 +19,9 @@ import * as assert from 'assert';
 import { ConsoleInstrumentation } from '../src';
 
 const tracerProvider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() })],
+  spanProcessors: [
+    new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() }),
+  ],
 });
 tracerProvider.register();
 const tracer = tracerProvider.getTracer('default');

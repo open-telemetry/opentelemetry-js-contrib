@@ -41,7 +41,9 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from '../src/version';
 import type { pino as Pino } from 'pino';
 
 const tracerProvider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() })],
+  spanProcessors: [
+    new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() }),
+  ],
 });
 tracerProvider.register();
 const tracer = tracerProvider.getTracer('default');
