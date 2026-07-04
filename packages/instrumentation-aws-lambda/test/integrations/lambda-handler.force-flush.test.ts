@@ -98,7 +98,9 @@ describe('force flush', () => {
 
   it('should force flush ProxyTracerProvider with NodeTracerProvider', async () => {
     const nodeTracerProvider = new NodeTracerProvider({
-      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+      spanProcessors: [
+        new BatchSpanProcessor({ exporter: traceMemoryExporter }),
+      ],
     });
     nodeTracerProvider.register();
     const provider = new ProxyTracerProvider();
@@ -139,7 +141,9 @@ describe('force flush', () => {
 
   it('should complete handler after force flush providers', async () => {
     const nodeTracerProvider = new NodeTracerProvider({
-      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+      spanProcessors: [
+        new BatchSpanProcessor({ exporter: traceMemoryExporter }),
+      ],
     });
     nodeTracerProvider.register();
     const tracerProvider = new ProxyTracerProvider();
