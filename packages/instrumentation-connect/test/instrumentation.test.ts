@@ -339,5 +339,27 @@ describe('connect', () => {
         'expected no close listeners to accumulate across synchronous middleware layers'
       );
     });
+
+    it('should attach a fallback close listener and finish the span for asynchronous middleware', async () => {
+      let listenerCountDuringAsyncWork = -1;
+
+      app.use((req, res, next) => {
+        // simulate async work before calling next()
+        setImmediate(() => {
+          listenerCountDuringAsyncWork = res.listenerCount('close');
+          next();
+        });
+      });
+
+      await httpRequest.get(`http://localhost:${PORT}/`);
+
+      // a fallback listener should have been attached while the span
+      // was still open, since next() wasn't called synchronously
+      assert.strictEqual(listenerCountDuringAsyncWork, 1);
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.ok(spans[0].endTime, 'span should have finished');
+    });
   });
 });

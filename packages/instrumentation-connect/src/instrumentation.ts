@@ -152,6 +152,15 @@ export class ConnectInstrumentation extends InstrumentationBase {
 
       arguments[nextArgIdx] = instrumentation._patchNext(next, finishSpan);
 
+      // Attach the fallback 'close' listener only after the middleware
+      // returns, and only if the span hasn't already finished. When
+      // middleware calls next() synchronously, finishSpan already ran by
+      // this point, so spanFinished is true and no listener is attached at
+      // all — this is what avoids listener accumulation across many
+      // synchronous middleware layers. For async middleware (or middleware
+      // that ends the response itself without calling next), the span
+      // isn't finished yet, so we attach a one-time fallback that finishes
+      // it when the response closes.
       try {
         return (middleWare as any).apply(this, arguments);
       } finally {
@@ -161,6 +170,7 @@ export class ConnectInstrumentation extends InstrumentationBase {
         }
       }
     }
+
     Object.defineProperty(patchedMiddleware, 'length', {
       value: middleWare.length,
       writable: false,
