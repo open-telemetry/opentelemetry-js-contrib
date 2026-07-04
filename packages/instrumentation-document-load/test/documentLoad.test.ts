@@ -15,11 +15,11 @@ import {
   TRACE_PARENT_HEADER,
 } from '@opentelemetry/core';
 import {
-  BasicTracerProvider,
+  TracerProvider,
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import {
   PerformanceTimingNames as PTN,
   StackContextManager,
@@ -36,8 +36,8 @@ import {
 import { EventNames } from '../src/enums/EventNames';
 
 const exporter = new InMemorySpanExporter();
-const spanProcessor = new SimpleSpanProcessor(exporter);
-const provider = new BasicTracerProvider({
+const spanProcessor = new SimpleSpanProcessor({ exporter });
+const provider = new TracerProvider({
   spanProcessors: [spanProcessor],
 });
 trace.setGlobalTracerProvider(provider);

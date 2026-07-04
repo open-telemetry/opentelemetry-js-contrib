@@ -9,7 +9,7 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { detectResources } from '@opentelemetry/resources';
 import { TestMetricReader } from '@opentelemetry/contrib-test-utils';
@@ -19,7 +19,7 @@ describe('[Integration] AlibabaCloudEcsDetector', () => {
     const memoryExporter = new InMemorySpanExporter();
     const sdk = new NodeSDK({
       instrumentations: [new HttpInstrumentation()],
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+      spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
       metricReaders: [new TestMetricReader()],
     });
 

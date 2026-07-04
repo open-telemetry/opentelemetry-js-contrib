@@ -10,7 +10,7 @@ import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-ho
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 
 import { RestifyInstrumentation } from '../src';
 import * as types from '../src/internal-types';
@@ -107,7 +107,7 @@ const createServer = async (setupRoutes?: Function) => {
 
 describe('Restify Instrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
   const provider = new NodeTracerProvider({
     spanProcessors: [spanProcessor],
   });

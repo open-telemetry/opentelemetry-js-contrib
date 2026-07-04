@@ -5,7 +5,7 @@
 
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 import { SpanKind } from '@opentelemetry/api';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   ATTR_AWS_STEP_FUNCTIONS_ACTIVITY_ARN,
   ATTR_AWS_STEP_FUNCTIONS_STATE_MACHINE_ARN,

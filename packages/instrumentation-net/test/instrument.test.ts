@@ -6,7 +6,7 @@
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import * as assert from 'assert';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -17,7 +17,7 @@ import { HOST, PORT } from './utils';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
 });
 const tracer = provider.getTracer('default');
 

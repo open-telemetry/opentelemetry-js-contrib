@@ -48,9 +48,9 @@
     "@cucumber/cucumber": "^12.0.0",
     "@cucumber/messages": "^32.0.0",
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@opentelemetry/sdk-trace-node": "^2.0.0"
+    "@opentelemetry/core": "^2.9.0",
+    "@opentelemetry/sdk-trace": "^2.9.0",
+    "@opentelemetry/sdk-trace-node": "^2.9.0"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.220.0",

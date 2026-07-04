@@ -15,7 +15,7 @@ import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-ho
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 
 import { UndiciInstrumentation } from '../src/undici';
@@ -32,7 +32,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
   const mockServer = new MockServer();
   const memoryExporter = new InMemorySpanExporter();
   const provider = new NodeTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
 
   async function waitForSpans(count: number, timeoutMs = 1000): Promise<void> {

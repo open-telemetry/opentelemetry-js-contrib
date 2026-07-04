@@ -22,14 +22,14 @@ npm install --save @opentelemetry/instrumentation-generic-pool
 ## Usage
 
 ```js
-const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace');
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { GenericPoolInstrumentation } = require('@opentelemetry/instrumentation-generic-pool');
 
 const provider = new NodeTracerProvider({
   spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
   ],
 });
 

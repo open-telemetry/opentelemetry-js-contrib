@@ -10,7 +10,7 @@ import {
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import {
   getTestMemoryExporter,
   setTestMemoryExporter,
@@ -25,10 +25,10 @@ export const registerInstrumentationTestingProvider = (
 
   setTestMemoryExporter(new InMemorySpanExporter());
 
-  spanProcessors.push(new SimpleSpanProcessor(getTestMemoryExporter()!));
+  spanProcessors.push(new SimpleSpanProcessor({ exporter: getTestMemoryExporter()! }));
 
   if (process.env.OTEL_EXPORTER_JAEGER_AGENT_HOST) {
-    spanProcessors.push(new SimpleSpanProcessor(new JaegerExporter()));
+    spanProcessors.push(new SimpleSpanProcessor({ exporter: new JaegerExporter() }));
   }
 
   const otelTestingProvider = new NodeTracerProvider({

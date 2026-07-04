@@ -136,7 +136,7 @@ const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumenta
 const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
 const { resourceFromAttributes } = require('@opentelemetry/resources');
 const { ATTR_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
-const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const exporter = new CollectorTraceExporter();
@@ -145,7 +145,7 @@ const provider = new NodeTracerProvider({
     [ATTR_SERVICE_NAME]: 'basic-service',
   }),
   spanProcessors: [
-    new SimpleSpanProcessor(exporter),
+    new SimpleSpanProcessor({ exporter }),
   ],
 });
 provider.register();

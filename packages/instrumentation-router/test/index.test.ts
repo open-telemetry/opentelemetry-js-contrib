@@ -9,7 +9,7 @@ import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-ho
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 
 import { RouterInstrumentation } from '../src';
 import { InstrumentationSpan } from '../src/internal-types';
@@ -140,7 +140,7 @@ const spans = {
 
 describe('Router instrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
   const provider = new NodeTracerProvider({
     spanProcessors: [spanProcessor],
   });

@@ -6,7 +6,7 @@
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { context, INVALID_SPAN_CONTEXT, trace } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
@@ -36,7 +36,7 @@ import type * as BunyanLogger from 'bunyan';
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
 const tracerProvider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(new InMemorySpanExporter())],
+  spanProcessors: [new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() })],
 });
 tracerProvider.register();
 const tracer = tracerProvider.getTracer('default');

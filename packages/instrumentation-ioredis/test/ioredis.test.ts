@@ -18,7 +18,7 @@ import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as ioredisTypes from 'ioredis';
@@ -74,7 +74,7 @@ const sanitizeEventForAssertion = (span: ReadableSpan) => {
 
 describe('ioredis', () => {
   const provider = new NodeTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   let ioredis: typeof ioredisTypes.default;
   let instrumentation: IORedisInstrumentation;

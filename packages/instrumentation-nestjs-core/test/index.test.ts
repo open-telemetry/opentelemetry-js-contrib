@@ -11,7 +11,7 @@ import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-ho
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import { NestInstrumentation } from '../src';
 import { getRequester, setup, App } from './setup';
@@ -28,7 +28,7 @@ util.inspect.defaultOptions.breakLength = 200;
 
 describe('nestjs-core', () => {
   const provider = new NodeTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   instrumentation.setTracerProvider(provider);
   let contextManager: AsyncLocalStorageContextManager;

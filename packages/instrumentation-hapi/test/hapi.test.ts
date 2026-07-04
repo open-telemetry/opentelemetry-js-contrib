@@ -10,7 +10,7 @@ import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-ho
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import {
   runTestFixture,
   TestCollector,
@@ -35,7 +35,7 @@ function getTestSpanAttr(span: TestSpan, name: string) {
 
 describe('Hapi Instrumentation - Core Tests', () => {
   const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
   const provider = new NodeTracerProvider({
     spanProcessors: [spanProcessor],
   });

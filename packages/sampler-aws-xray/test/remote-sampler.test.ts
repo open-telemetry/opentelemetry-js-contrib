@@ -21,7 +21,7 @@ import {
   Link,
   Context,
 } from '@opentelemetry/api';
-import { SamplingDecision } from '@opentelemetry/sdk-trace-base';
+import { SamplingDecision } from '@opentelemetry/sdk-trace';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { expect } from 'expect';

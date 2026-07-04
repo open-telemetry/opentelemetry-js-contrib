@@ -20,7 +20,7 @@ import {
   BatchSpanProcessor,
   InMemorySpanExporter,
   ReadableSpan,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
@@ -129,7 +129,7 @@ describe('lambda handler', () => {
     process.env._HANDLER = handler;
 
     const provider = new NodeTracerProvider({
-      spanProcessors: [new BatchSpanProcessor(memoryExporter)],
+      spanProcessors: [new BatchSpanProcessor({ exporter: memoryExporter })],
     });
     provider.register();
 

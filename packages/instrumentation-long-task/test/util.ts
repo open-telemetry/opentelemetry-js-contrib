@@ -2,10 +2,10 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-import * as tracing from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace';
 
-export class DummySpanExporter implements tracing.SpanExporter {
-  export(_spans: tracing.ReadableSpan[]) {}
+export class DummySpanExporter implements SpanExporter {
+  export(_spans: ReadableSpan[]) {}
 
   shutdown() {
     return Promise.resolve();

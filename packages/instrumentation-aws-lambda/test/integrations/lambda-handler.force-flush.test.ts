@@ -11,7 +11,7 @@ import { AwsLambdaInstrumentation } from '../../src';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
@@ -77,7 +77,7 @@ describe('force flush', () => {
 
   it('should force flush NodeTracerProvider', async () => {
     const provider = new NodeTracerProvider({
-      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+      spanProcessors: [new BatchSpanProcessor({ exporter: traceMemoryExporter })],
     });
     provider.register();
     let forceFlushed = false;

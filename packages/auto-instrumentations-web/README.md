@@ -17,7 +17,7 @@ npm install --save @opentelemetry/auto-instrumentations-web
 const { WebTracerProvider } = require('@opentelemetry/sdk-trace-web');
 const { getWebAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-web');
 const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
-const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { ZoneContextManager } = require('@opentelemetry/context-zone');
 const { B3Propagator } = require('@opentelemetry/propagator-b3');
@@ -28,7 +28,7 @@ const exporter = new CollectorTraceExporter({
 
 const provider = new WebTracerProvider({
   spanProcessors: [
-    new SimpleSpanProcessor(exporter),
+    new SimpleSpanProcessor({ exporter }),
   ],
 });
 provider.register({

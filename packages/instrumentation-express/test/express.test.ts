@@ -14,7 +14,7 @@ import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-ho
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import * as semver from 'semver';
 import { AttributeNames } from '../src/enums/AttributeNames';
@@ -36,7 +36,7 @@ const isExpressV5 = semver.satisfies(LIB_VERSION, '>=5.0.0');
 
 describe('ExpressInstrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
   const provider = new NodeTracerProvider({
     spanProcessors: [spanProcessor],
   });

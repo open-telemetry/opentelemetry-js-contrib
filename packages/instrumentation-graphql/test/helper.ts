@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import { SpanNames } from '../src/enum';
 import { AttributeNames } from '../src/enums/AttributeNames';

@@ -22,7 +22,7 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
@@ -41,7 +41,7 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from '../src/version';
 import type { pino as Pino } from 'pino';
 
 const tracerProvider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(new InMemorySpanExporter())],
+  spanProcessors: [new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() })],
 });
 tracerProvider.register();
 const tracer = tracerProvider.getTracer('default');

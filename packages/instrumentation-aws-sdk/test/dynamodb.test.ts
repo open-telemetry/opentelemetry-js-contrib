@@ -14,7 +14,7 @@ import {
 import * as nock from 'nock';
 
 import { SpanKind } from '@opentelemetry/api';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   ATTR_DB_NAMESPACE,
   ATTR_DB_OPERATION_NAME,

@@ -5,7 +5,7 @@
 
 import * as assert from 'assert';
 import { Attributes, SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { CollectionResult, DataPointType } from '@opentelemetry/sdk-metrics';
 
 import {

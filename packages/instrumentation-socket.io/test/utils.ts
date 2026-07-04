@@ -7,7 +7,7 @@ import * as http from 'http';
 import { AddressInfo } from 'net';
 
 import { ATTR_MESSAGING_SYSTEM } from '../src/semconv';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 
 import expect from 'expect';

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { IdGenerator } from '@opentelemetry/sdk-trace-base';
+import { IdGenerator } from '@opentelemetry/sdk-trace';
 
 import {
   generateTraceId,

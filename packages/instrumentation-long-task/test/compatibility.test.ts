@@ -4,7 +4,7 @@
  */
 import { trace } from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import * as tracing from '@opentelemetry/sdk-trace-base';
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { LongTaskInstrumentation } from '../src';
 import { DummySpanExporter } from './util';
@@ -27,7 +27,7 @@ describe("LongTaskInstrumentation doesn't throw in unsupported environments", ()
   before(() => {
     dummySpanExporter = new DummySpanExporter();
     webTracerProvider = new WebTracerProvider({
-      spanProcessors: [new tracing.SimpleSpanProcessor(dummySpanExporter)],
+      spanProcessors: [new SimpleSpanProcessor({ exporter: dummySpanExporter })],
     });
     webTracerProvider.register();
   });
