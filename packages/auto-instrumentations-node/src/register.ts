@@ -3,20 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import * as opentelemetry from '@opentelemetry/sdk-node';
-import { diag, DiagConsoleLogger } from '@opentelemetry/api';
-import { getStringFromEnv, diagLogLevelFromString } from '@opentelemetry/core';
+import { diag } from '@opentelemetry/api';
 import {
   getNodeAutoInstrumentations,
   getResourceDetectorsFromEnv,
 } from './utils';
 
-const logLevel = getStringFromEnv('OTEL_LOG_LEVEL');
-if (logLevel != null) {
-  diag.setLogger(new DiagConsoleLogger(), {
-    logLevel: diagLogLevelFromString(logLevel),
-  });
-}
-
+// `NodeSDK` already registers a `DiagConsoleLogger` based on `OTEL_LOG_LEVEL`
+// internally, so doing it here as well only results in the "Current logger
+// will be overwritten" warning being logged on every start.
 const sdk = new opentelemetry.NodeSDK({
   instrumentations: getNodeAutoInstrumentations(),
   resourceDetectors: getResourceDetectorsFromEnv(),

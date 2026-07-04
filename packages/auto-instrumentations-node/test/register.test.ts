@@ -58,7 +58,7 @@ describe('Register', function () {
   it('can load auto instrumentation from command line', async () => {
     const runPromise = runWithRegister('./test-app/app.js');
     const { child } = runPromise;
-    const { stdout } = await runPromise;
+    const { stdout, stderr } = await runPromise;
     assert.equal(child.exitCode, 0, `child.exitCode (${child.exitCode})`);
     assert.equal(
       child.signalCode,
@@ -79,6 +79,14 @@ describe('Register', function () {
 
     // Check a span has been generated for the GET request done in app.js
     assert.ok(stdout.includes("name: 'GET'"), 'console span output in stdout');
+
+    // register.js used to set up its own diag logger and then let NodeSDK
+    // set up an equivalent one again, causing this warning to be logged
+    // on every single start.
+    assert.ok(
+      !stderr.includes('Current logger will be overwritten'),
+      `Process should not log a diag logger override warning, got stderr:\n${stderr}`
+    );
   });
 
   it('shuts down the NodeSDK when SIGTERM is received', async () => {
