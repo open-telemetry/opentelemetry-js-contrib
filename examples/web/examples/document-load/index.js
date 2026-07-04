@@ -9,7 +9,7 @@ import { context, trace } from '@opentelemetry/api';
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
@@ -29,8 +29,8 @@ const provider = new WebTracerProvider({
     [ATTR_SERVICE_NAME]: 'web-service-dl',
   }),
   spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
-    new SimpleSpanProcessor(new OTLPTraceExporter()),
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
+    new SimpleSpanProcessor({ exporter: new OTLPTraceExporter() }),
   ],
 });
 
