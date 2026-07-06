@@ -110,42 +110,34 @@ For Thin mode, additional internal round-trip spans will be emitted, such as:
 
 ## Semantic Conventions
 
-Prior to stable Database semantic conventions, this instrumentation used older
-database attributes such as `db.user`, `db.statement`, and an Oracle-specific
-`db.namespace` meaning that combined multiple connection properties.
+This instrumentation now emits the current Oracle database semantic
+conventions directly.
 
-Database semantic conventions were stabilized in v1.34.0, and a
-[migration process](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/db-migration.md)
-was defined. `@opentelemetry/instrumentation-oracledb` supports migration using
-the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable.
-The intent is to provide an approximate 6 month time window for users of this
-instrumentation to migrate to the new Database semconv, after which a new minor
-version will use the new semconv by default and drop support for the old
-semconv.
+This includes:
 
-To select which semconv version(s) are emitted from this instrumentation, use:
+- `db.namespace` using Oracle `DB_UNIQUE_NAME`
+- removal of `db.user`
+- Oracle-specific attributes such as `oracle.db.domain`,
+  `oracle.db.instance.name`, `oracle.db.name`, `oracle.db.pdb`, and
+  `oracle.db.service` when available
 
-- `database`: emit the new stable Database semantic conventions
-- `database/dup`: emit both old and stable Database semantic conventions where possible
-- By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` includes neither token, the old semconv is used
+This is a breaking semantic change from the older OracleDB instrumentation
+behavior, where `db.namespace` used a concatenated
+`<instance>|<pdb>|<service>` value and `db.user` was emitted.
 
-`OTEL_SEMCONV_STABILITY_OPT_IN=database` enables the stable database migration
-behavior for core DB attributes. When available, this instrumentation also
-emits Oracle-specific `oracle.db.*` attributes such as
-`oracle.db.domain`, `oracle.db.instance.name`, `oracle.db.name`,
-`oracle.db.pdb`, and `oracle.db.service`; these Oracle-specific attributes are
-currently Release Candidate in the semantic conventions.
+The Oracle-specific `oracle.db.*` attributes are currently Release Candidate in
+the semantic conventions.
 
 ### Attributes collected
 
-Attributes affected by `OTEL_SEMCONV_STABILITY_OPT_IN=database`:
+Breaking semantic changes:
 
-| Default / old mode | Stable mode | Short Description |
-| ------------------ | ----------- | ----------------- |
+| Previous behavior | Current behavior | Short Description |
+| ----------------- | ---------------- | ----------------- |
 | `db.user` | Removed | Database user name |
-| `db.namespace` | `db.namespace` | Oracle database identifier. Default / old mode uses a concatenated `instance`, `pdb`, and `service` value. Stable mode uses `DB_UNIQUE_NAME`. |
+| `db.namespace="<instance>\|<pdb>\|<service>"` | `db.namespace="<dbUniqueName>"` | Oracle database identifier now uses `DB_UNIQUE_NAME`. |
 
-Attributes emitted independently of the `database` opt-in:
+Other emitted attributes:
 
 | Attribute | Short Description |
 | --------- | ----------------- |
@@ -155,8 +147,6 @@ Attributes emitted independently of the `database` opt-in:
 | `server.port` | Remote database port |
 | `db.query.text` | SQL text when `dbStatementDump` or `enhancedDatabaseReporting` is enabled |
 
-Oracle-specific attributes emitted with `database` / `database/dup` when available:
-
 | Attribute | Short Description |
 | --------- | ----------------- |
 | `oracle.db.name` | Database name |
@@ -164,35 +154,6 @@ Oracle-specific attributes emitted with `database` / `database/dup` when availab
 | `oracle.db.pdb` | Pluggable database name |
 | `oracle.db.domain` | Database domain |
 | `oracle.db.service` | Effective Oracle service name |
-
-### `db.namespace` migration note
-
-OracleDB has a special migration constraint: both the old and stable
-definitions use the same `db.namespace` key with different meanings.
-
-- Old meaning: a concatenated value derived from instance name, PDB name, and
-  service name
-- Stable meaning: the Oracle database unique identifier (`DB_UNIQUE_NAME`)
-
-Because a span cannot carry two different values for the same attribute key,
-`OTEL_SEMCONV_STABILITY_OPT_IN=database/dup` keeps the old `db.namespace`
-meaning while also emitting the new `oracle.db.*` attributes. To switch
-`db.namespace` itself to the stable meaning, use:
-
-```bash
-OTEL_SEMCONV_STABILITY_OPT_IN=database
-```
-
-### Upgrading Semantic Conventions
-
-When upgrading to the stable semantic conventions, it is recommended to do so
-in the following order:
-
-1. Upgrade `@opentelemetry/instrumentation-oracledb` to the latest version
-2. Set `OTEL_SEMCONV_STABILITY_OPT_IN=database/dup`
-3. Update dashboards, alerts, processors, and queries to understand the new
-   `oracle.db.*` attributes and the eventual `db.namespace` change
-4. Set `OTEL_SEMCONV_STABILITY_OPT_IN=database`
 
 ## Useful links
 

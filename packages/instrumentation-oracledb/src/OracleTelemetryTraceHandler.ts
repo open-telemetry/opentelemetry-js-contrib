@@ -4,10 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  safeExecuteInTheMiddle,
-  SemconvStability,
-} from '@opentelemetry/instrumentation';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
   Span,
   SpanStatusCode,
@@ -30,7 +27,6 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_OPERATION_PARAMETER,
-  ATTR_DB_USER,
   ATTR_ORACLE_DB_DOMAIN,
   ATTR_ORACLE_DB_INSTANCE_NAME,
   ATTR_ORACLE_DB_NAME,
@@ -100,35 +96,9 @@ export function getOracleTelemetryTraceHandlerClass(
       );
     }
 
-    private get _stability(): SemconvStability {
-      return this._instrumentConfig.dbSemconvStability ?? SemconvStability.OLD;
-    }
-
-    private _usesOldDbSemconv() {
-      return Boolean(this._stability & SemconvStability.OLD);
-    }
-
-    private _usesStableDbSemconv() {
-      return Boolean(this._stability & SemconvStability.STABLE);
-    }
-
-    private _getOldDbNamespace(
-      instanceName?: string,
-      pdbName?: string,
-      serviceName?: string
-    ): string | undefined {
-      if (instanceName == null && pdbName == null && serviceName == null) {
-        return undefined;
-      }
-      return `${instanceName ?? ''}|${pdbName ?? ''}|${serviceName ?? ''}`;
-    }
-
     // Returns the connection related Attributes for
     // semantic standards and module custom keys.
     private _getConnectionSpanAttributes(config: SpanConnectionConfig) {
-      // These attributes are emitted independently of the db semconv opt-in.
-      // The db semconv migration in this instrumentation is centered on
-      // db.user removal, db.namespace meaning, and Oracle-specific split attrs.
       const attributes: Record<string, string | number | undefined> = {
         [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
         [ATTR_NETWORK_TRANSPORT]: config.protocol,
@@ -136,41 +106,23 @@ export function getOracleTelemetryTraceHandlerClass(
         [ATTR_SERVER_PORT]: config.port,
       };
 
-      if (this._usesOldDbSemconv()) {
-        if (config.user) {
-          attributes[ATTR_DB_USER] = config.user;
-        }
-        const oldDbNamespace = this._getOldDbNamespace(
-          config.instanceName,
-          config.pdbName,
-          config.serviceName
-        );
-        if (oldDbNamespace && oldDbNamespace !== '||') {
-          attributes[ATTR_DB_NAMESPACE] = oldDbNamespace;
-        }
+      if (config.dbUniqueName) {
+        attributes[ATTR_DB_NAMESPACE] = config.dbUniqueName;
       }
-
-      if (this._usesStableDbSemconv()) {
-        // In database/dup mode, db.namespace keeps the old meaning because
-        // both meanings cannot coexist on the same span under one key.
-        if (!this._usesOldDbSemconv() && config.dbUniqueName) {
-          attributes[ATTR_DB_NAMESPACE] = config.dbUniqueName;
-        }
-        if (config.dbName) {
-          attributes[ATTR_ORACLE_DB_NAME] = config.dbName;
-        }
-        if (config.domainName) {
-          attributes[ATTR_ORACLE_DB_DOMAIN] = config.domainName;
-        }
-        if (config.pdbName) {
-          attributes[ATTR_ORACLE_DB_PDB] = config.pdbName;
-        }
-        if (config.instanceName) {
-          attributes[ATTR_ORACLE_DB_INSTANCE_NAME] = config.instanceName;
-        }
-        if (config.serviceName) {
-          attributes[ATTR_ORACLE_DB_SERVICE] = config.serviceName;
-        }
+      if (config.dbName) {
+        attributes[ATTR_ORACLE_DB_NAME] = config.dbName;
+      }
+      if (config.domainName) {
+        attributes[ATTR_ORACLE_DB_DOMAIN] = config.domainName;
+      }
+      if (config.pdbName) {
+        attributes[ATTR_ORACLE_DB_PDB] = config.pdbName;
+      }
+      if (config.instanceName) {
+        attributes[ATTR_ORACLE_DB_INSTANCE_NAME] = config.instanceName;
+      }
+      if (config.serviceName) {
+        attributes[ATTR_ORACLE_DB_SERVICE] = config.serviceName;
       }
 
       return attributes;
@@ -348,13 +300,7 @@ export function getOracleTelemetryTraceHandlerClass(
         (typeof traceContext.args?.[0] === 'string'
           ? traceContext.args[0]
           : undefined);
-      const dbName = this._usesStableDbSemconv()
-        ? connectLevelConfig.dbUniqueName
-        : this._getOldDbNamespace(
-            connectLevelConfig.instanceName,
-            connectLevelConfig.pdbName,
-            connectLevelConfig.serviceName
-          );
+      const dbName = connectLevelConfig.dbUniqueName;
       // Prefer the SQL text for the verb. When the trace payload omits the
       // statement, the fallback above uses the original SQL argument.
       const sqlCommand = sqlStatement?.split(' ')[0].toUpperCase() || '';

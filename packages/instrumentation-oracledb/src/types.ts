@@ -5,10 +5,7 @@
  */
 
 import type * as api from '@opentelemetry/api';
-import {
-  InstrumentationConfig,
-  SemconvStability,
-} from '@opentelemetry/instrumentation';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 // Captures connection related span data
 export interface SpanConnectionConfig {
@@ -47,16 +44,6 @@ export interface OracleInstrumentationExecutionResponseHook {
 }
 
 export interface OracleInstrumentationConfig extends InstrumentationConfig {
-  /**
-   * Internal-only override for DB semconv migration mode.
-   *
-   * users should control semconv selection with
-   * OTEL_SEMCONV_STABILITY_OPT_IN env.
-   *
-   * @internal
-   */
-  dbSemconvStability?: SemconvStability;
-
   /**
    * If true, an attribute containing the execute method
    * bind values will be attached the spans generated.

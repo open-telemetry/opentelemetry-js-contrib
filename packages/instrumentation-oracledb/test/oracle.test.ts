@@ -15,7 +15,6 @@ import {
 } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,
@@ -62,23 +61,13 @@ const provider = new BasicTracerProvider({
 });
 const tracer = provider.getTracer('external');
 
-// We create instrumentation with stability as 'database' and restore the env.
-const oldDbSemconvOptIn = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database';
 const instrumentation = new OracleInstrumentation();
-if (oldDbSemconvOptIn === undefined) {
-  delete process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-} else {
-  process.env.OTEL_SEMCONV_STABILITY_OPT_IN = oldDbSemconvOptIn;
-}
 instrumentation.enable();
 instrumentation.disable();
 
 import * as oracledb from 'oracledb';
 
-function createTestTraceHandlerForSemconvTests(
-  dbSemconvStability: SemconvStability
-) {
+function createTestTraceHandlerForSemconvTests() {
   const TraceHandler = getOracleTelemetryTraceHandlerClass({
     traceHandler: {
       TraceHandlerBase: class {
@@ -86,9 +75,7 @@ function createTestTraceHandlerForSemconvTests(
       },
     },
   } as any);
-  return new TraceHandler(() => tracer, {
-    dbSemconvStability,
-  });
+  return new TraceHandler(() => tracer, {});
 }
 
 const VER_23_4 = 2304000000;
@@ -459,22 +446,7 @@ const sqlCreateTable = async function (
   await conn.execute(plsql);
 };
 
-describe('DB semconv migration', () => {
-  let oldEnv: string | undefined;
-
-  before(() => {
-    oldEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-    process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database';
-  });
-
-  after(() => {
-    if (oldEnv === undefined) {
-      delete process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-    } else {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = oldEnv;
-    }
-  });
-
+describe('DB semantic conventions', () => {
   const connectionConfig = {
     user: 'vector',
     protocol: 'TCP',
@@ -488,30 +460,8 @@ describe('DB semconv migration', () => {
     dbUniqueName: 'ORCL1_UNIQUE',
   };
 
-  it('keeps old db.namespace semantics and db.user by default', () => {
-    const handler = createTestTraceHandlerForSemconvTests(SemconvStability.OLD);
-    const attributes = (handler as any)._getConnectionSpanAttributes(
-      connectionConfig
-    );
-
-    assert.strictEqual(attributes[ATTR_DB_USER], 'vector');
-    assert.strictEqual(
-      attributes[ATTR_DB_SYSTEM_NAME],
-      DB_SYSTEM_NAME_VALUE_ORACLE_DB
-    );
-    assert.strictEqual(attributes[ATTR_DB_NAMESPACE], 'ORCL1|PDB1|svc');
-    assert.strictEqual(attributes[ATTR_NETWORK_TRANSPORT], 'TCP');
-    assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], 'localhost');
-    assert.strictEqual(attributes[ATTR_SERVER_PORT], 1521);
-    assert.strictEqual(attributes[ATTR_ORACLE_DB_NAME], undefined);
-    assert.strictEqual(attributes[ATTR_ORACLE_DB_PDB], undefined);
-    assert.strictEqual(attributes[ATTR_ORACLE_DB_DOMAIN], undefined);
-  });
-
-  it('emits new db.namespace semantics and removes db.user in stable mode', () => {
-    const handler = createTestTraceHandlerForSemconvTests(
-      SemconvStability.STABLE
-    );
+  it('emits db.namespace as DB_UNIQUE_NAME and omits db.user', () => {
+    const handler = createTestTraceHandlerForSemconvTests();
     const attributes = (handler as any)._getConnectionSpanAttributes(
       connectionConfig
     );
@@ -522,30 +472,6 @@ describe('DB semconv migration', () => {
       DB_SYSTEM_NAME_VALUE_ORACLE_DB
     );
     assert.strictEqual(attributes[ATTR_DB_NAMESPACE], 'ORCL1_UNIQUE');
-    assert.strictEqual(attributes[ATTR_NETWORK_TRANSPORT], 'TCP');
-    assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], 'localhost');
-    assert.strictEqual(attributes[ATTR_SERVER_PORT], 1521);
-    assert.strictEqual(attributes[ATTR_ORACLE_DB_NAME], 'ORCL');
-    assert.strictEqual(attributes[ATTR_ORACLE_DB_INSTANCE_NAME], 'ORCL1');
-    assert.strictEqual(attributes[ATTR_ORACLE_DB_PDB], 'PDB1');
-    assert.strictEqual(attributes[ATTR_ORACLE_DB_DOMAIN], 'example.com');
-    assert.strictEqual(attributes[ATTR_ORACLE_DB_SERVICE], 'svc');
-  });
-
-  it('keeps old db.namespace in dup mode while emitting new oracle.db attributes', () => {
-    const handler = createTestTraceHandlerForSemconvTests(
-      SemconvStability.OLD | SemconvStability.STABLE
-    );
-    const attributes = (handler as any)._getConnectionSpanAttributes(
-      connectionConfig
-    );
-
-    assert.strictEqual(attributes[ATTR_DB_USER], 'vector');
-    assert.strictEqual(
-      attributes[ATTR_DB_SYSTEM_NAME],
-      DB_SYSTEM_NAME_VALUE_ORACLE_DB
-    );
-    assert.strictEqual(attributes[ATTR_DB_NAMESPACE], 'ORCL1|PDB1|svc');
     assert.strictEqual(attributes[ATTR_NETWORK_TRANSPORT], 'TCP');
     assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], 'localhost');
     assert.strictEqual(attributes[ATTR_SERVER_PORT], 1521);
@@ -673,16 +599,20 @@ describe('oracledb', () => {
         connection = await oracledb.getConnection(CONFIG);
         break; // Successfully connected! Break out of the retry loop.
       } catch (err: any) {
-        const isNotRegistered = err?.message?.includes('NJS-518');
+        // NJS-518: Listener service not registered yet
+        // ORA-01017: User/credentials don't exist yet while startup scripts run
+        const isStartupError =
+          err?.message?.includes('NJS-518') ||
+          err?.message?.includes('ORA-01017');
         const isLastRetry = i === maxRetries - 1;
 
-        if (isNotRegistered && !isLastRetry) {
+        if (isStartupError && !isLastRetry) {
           console.log(
-            `[Oracle Test Setup] Service not registered yet (NJS-518). Retrying in ${delayMs / 1000}s... (${i + 1}/${maxRetries})`
+            `[Oracle Test Setup] Database initialization in progress (${err.message.split(':')[0]}). Retrying in ${delayMs / 1000}s... (${i + 1}/${maxRetries})`
           );
           await new Promise(resolve => setTimeout(resolve, delayMs));
         } else {
-          throw err; // Fail completely if it's a different error or we ran out of attempts
+          throw err;
         }
       }
     }
