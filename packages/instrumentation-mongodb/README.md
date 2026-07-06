@@ -58,35 +58,25 @@ Mongodb instrumentation has few options available to choose from. You can set th
 
 ## Semantic Conventions
 
-This instrumentation implements Semantic Conventions (semconv) v1.7.0. Since then, networking (in semconv v1.23.1) and database (in semconv v1.33.0) semantic conventions were stabilized. As of `@opentelemetry/instrumentation-mongodb@0.63.0` support has been added for migrating to the stable semantic conventions using the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable as follows:
+This instrumentation creates spans with database and network attributes following the OpenTelemetry Semantic Conventions.
 
-1. Upgrade to the latest version of this instrumentation package.
-2. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup,database/dup` to emit both old and stable semantic conventions. (The `http` token is used to control the `net.*` attributes, the `database` token to control to `db.*` attributes.)
-3. Modify alerts, dashboards, metrics, and other processes in your Observability system to use the stable semantic conventions.
-4. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http,database` to emit only the stable semantic conventions.
-
-By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` includes neither of the above tokens, the old v1.7.0 semconv is used.
-The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new database and networking semconv, after which a new minor version will use the new semconv by default and drop support for the old semconv.
-See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/) and the [database migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/) for details.
+The `instrumentation-mongodb` versions 0.73.0 and later emit the stable v1.33.0+ semantic conventions.
 
 Span attributes:
 
-| Old semconv             | Stable semconv       | Description |
-| ----------------------- | -------------------- | ----------- |
-| `db.system`             | `db.system.name`     | 'mongodb'   |
-| `db.name`               | `db.namespace`       | The MongoDB database name. |
-| `db.connection_string`  | Removed              |             |
-| `db.operation`          | `db.operation.name`  | The name of the MongoDB command being executed. |
-| `db.mongodb.collection` | `db.collection.name` | The MongoDB collection being accessed within the database stated in `db.namespace`. |
-| `db.statement`          | `db.query.text`      | The database query being executed. |
-| `net.peer.name`         | `server.address`     | Remote hostname or similar. |
-| `net.peer.port`         | `server.port`        | Remote port number. |
+| Attribute            | Description |
+| -------------------- | ----------- |
+| `db.system.name`     | `'mongodb'` |
+| `db.namespace`       | The MongoDB database name. |
+| `db.operation.name`  | The name of the MongoDB command being executed. |
+| `db.collection.name` | The MongoDB collection being accessed within the database stated in `db.namespace`. |
+| `db.query.text`      | The database query being executed. |
+| `server.address`     | Remote hostname or similar. |
+| `server.port`        | Remote port number. |
 
 Metrics collected:
 
 - [`db.client.connections.usage`](https://github.com/open-telemetry/semantic-conventions/blob/v1.24.0/docs/database/database-metrics.md#metric-dbclientconnectionsusage) - The number of connections currently in a given state.
-
-  Note: While `db.client.connections.usage` has been deprecated in favor of `db.client.connection.count` in the [semconv database migration](https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/#database-client-connection-count), the new metric is still unstable, so cannot be enabled via `OTEL_SEMCONV_STABILITY_OPT_IN=database`. There is ongoing work to provide an opt-in setting to select the latest experimental semconv.
 
 ## Useful links
 

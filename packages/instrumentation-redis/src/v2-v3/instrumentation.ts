@@ -8,8 +8,6 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   endSpan,
@@ -28,39 +26,18 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-  DB_SYSTEM_NAME_VALUE_REDIS,
-  DB_SYSTEM_VALUE_REDIS,
-} from '../semconv';
+import { DB_SYSTEM_NAME_VALUE_REDIS } from '../semconv';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 
 export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
-  private _semconvStability: SemconvStability;
 
   constructor(config: RedisInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._semconvStability = config.semconvStability
-      ? config.semconvStability
-      : semconvStabilityFromStr(
-          'database',
-          process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-        );
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
     super.setConfig(config);
-    this._semconvStability = config.semconvStability
-      ? config.semconvStability
-      : semconvStabilityFromStr(
-          'database',
-          process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-        );
   }
 
   protected init() {
@@ -145,21 +122,11 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
           config?.dbStatementSerializer || defaultDbStatementSerializer;
 
         const attributes: Attributes = {};
-
-        if (instrumentation._semconvStability & SemconvStability.OLD) {
-          Object.assign(attributes, {
-            [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_REDIS,
-            [ATTR_DB_STATEMENT]: dbStatementSerializer(cmd.command, cmd.args),
-          });
-        }
-
-        if (instrumentation._semconvStability & SemconvStability.STABLE) {
-          Object.assign(attributes, {
-            [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_REDIS,
-            [ATTR_DB_OPERATION_NAME]: cmd.command,
-            [ATTR_DB_QUERY_TEXT]: dbStatementSerializer(cmd.command, cmd.args),
-          });
-        }
+        Object.assign(attributes, {
+          [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_REDIS,
+          [ATTR_DB_OPERATION_NAME]: cmd.command,
+          [ATTR_DB_QUERY_TEXT]: dbStatementSerializer(cmd.command, cmd.args),
+        });
 
         const span = instrumentation.tracer.startSpan(
           `${RedisInstrumentationV2_V3.COMPONENT}-${cmd.command}`,
@@ -172,32 +139,12 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
         // Set attributes for not explicitly typed RedisPluginClientTypes
         if (this.connection_options) {
           const connectionAttributes: Attributes = {};
-
-          if (instrumentation._semconvStability & SemconvStability.OLD) {
-            Object.assign(connectionAttributes, {
-              [ATTR_NET_PEER_NAME]: this.connection_options.host,
-              [ATTR_NET_PEER_PORT]: this.connection_options.port,
-            });
-          }
-
-          if (instrumentation._semconvStability & SemconvStability.STABLE) {
-            Object.assign(connectionAttributes, {
-              [ATTR_SERVER_ADDRESS]: this.connection_options.host,
-              [ATTR_SERVER_PORT]: this.connection_options.port,
-            });
-          }
+          Object.assign(connectionAttributes, {
+            [ATTR_SERVER_ADDRESS]: this.connection_options.host,
+            [ATTR_SERVER_PORT]: this.connection_options.port,
+          });
 
           span.setAttributes(connectionAttributes);
-        }
-
-        if (
-          this.address &&
-          instrumentation._semconvStability & SemconvStability.OLD
-        ) {
-          span.setAttribute(
-            ATTR_DB_CONNECTION_STRING,
-            `redis://${this.address}`
-          );
         }
 
         const originalCallback = arguments[0].callback;

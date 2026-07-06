@@ -41,12 +41,9 @@ const baseConfig = tseslint.config(
     files: ['**/*.{js,ts,mjs}'],
     plugins: {
       'yet-another-license-header': yalhPlugin,
-      node: nodePlugin,
+      n: nodePlugin,
     },
-    extends: [
-      eslint.configs.recommended,
-      // nodePlugin.configs['flat/recommended'],
-    ],
+    extends: [eslint.configs.recommended],
     languageOptions: {
       ecmaVersion: 2022,
       globals: {
@@ -54,7 +51,7 @@ const baseConfig = tseslint.config(
       },
     },
     settings: {
-      node: {
+      n: {
         tryExtensions: ['.js', '.json', '.node', '.ts', '.tsx'],
       },
     },
@@ -73,7 +70,7 @@ const baseConfig = tseslint.config(
 
       // new rules
       'no-unused-vars': 'warn',
-      'node/no-deprecated-api': 'warn',
+      'n/no-deprecated-api': 'warn',
     },
   },
 
@@ -93,7 +90,7 @@ const baseConfig = tseslint.config(
       },
     },
     rules: {
-      // 'node/no-missing-import': 'off',
+      // 'n/no-missing-import': 'off',
 
       // things that should be repaired
       '@typescript-eslint/no-explicit-any': 'warn',

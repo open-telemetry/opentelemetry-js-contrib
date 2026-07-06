@@ -140,7 +140,7 @@ describe('Knex instrumentation', () => {
       await client.raw(statement);
 
       const [span] = memoryExporter.getFinishedSpans();
-      const limitedStatement = span?.attributes?.['db.statement'] as string;
+      const limitedStatement = span?.attributes?.['db.query.text'] as string;
       assert.strictEqual(limitedStatement.length, 52);
       assert.ok(statement.startsWith(limitedStatement.substring(0, 50)));
     });
@@ -163,9 +163,9 @@ describe('Knex instrumentation', () => {
             const [span] = memoryExporter.getFinishedSpans();
             assert.ok(span, 'expected a span');
             assert.strictEqual(
-              span.attributes['db.name'],
+              span.attributes['db.namespace'],
               ':memory:',
-              'db.name should be populated from function-based connection'
+              'db.namespace should be populated from function-based connection'
             );
           }
         );
@@ -720,18 +720,18 @@ const assertSpans = (
       assertMatch(span.name, new RegExp(expected.op));
       assertMatch(span.name, new RegExp(':memory:'));
       assert.strictEqual(
-        span.attributes['db.system'],
+        span.attributes['db.system.name'],
         customAssertOptions.dbSystem
       );
-      assert.strictEqual(span.attributes['db.name'], ':memory:');
-      assert.strictEqual(span.attributes['db.sql.table'], expected.table);
-      assert.strictEqual(span.attributes['db.statement'], expected.statement);
+      assert.strictEqual(span.attributes['db.namespace'], ':memory:');
+      assert.strictEqual(span.attributes['db.collection.name'], expected.table);
+      assert.strictEqual(span.attributes['db.query.text'], expected.statement);
       assert.strictEqual(
         typeof span.attributes['knex.version'],
         'string',
         'knex.version not specified'
       );
-      assert.strictEqual(span.attributes['db.operation'], expected.op);
+      assert.strictEqual(span.attributes['db.operation.name'], expected.op);
       assert.strictEqual(
         span.parentSpanContext?.spanId,
         expected.parentSpan?.spanContext().spanId

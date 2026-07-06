@@ -29,14 +29,6 @@ import {
   ATTR_DB_CLIENT_CONNECTION_STATE,
   DB_CLIENT_CONNECTION_STATE_VALUE_USED,
   DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_NAME,
-  ATTR_DB_USER,
-  DB_SYSTEM_VALUE_POSTGRESQL,
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_NET_PEER_PORT,
-  ATTR_NET_PEER_NAME,
-  ATTR_DB_STATEMENT,
 } from './semconv';
 import {
   PgClientExtended,
@@ -48,10 +40,7 @@ import {
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
-import {
-  safeExecuteInTheMiddle,
-  SemconvStability,
-} from '@opentelemetry/instrumentation';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { SpanNames } from './enums/SpanNames';
 
 /**
@@ -146,38 +135,20 @@ function getPort(port: number | undefined): number | undefined {
 }
 
 export function getSemanticAttributesFromConnection(
-  params: PgParsedConnectionParams,
-  semconvStability: SemconvStability
+  params: PgParsedConnectionParams
 ) {
-  let attributes: Attributes = {};
-
-  if (semconvStability & SemconvStability.OLD) {
-    attributes = {
-      ...attributes,
-      [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
-      [ATTR_DB_NAME]: params.database,
-      [ATTR_DB_CONNECTION_STRING]: getConnectionString(params),
-      [ATTR_DB_USER]: params.user,
-      [ATTR_NET_PEER_NAME]: params.host, // required
-      [ATTR_NET_PEER_PORT]: getPort(params.port),
-    };
-  }
-  if (semconvStability & SemconvStability.STABLE) {
-    attributes = {
-      ...attributes,
-      [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
-      [ATTR_DB_NAMESPACE]: params.namespace,
-      [ATTR_SERVER_ADDRESS]: params.host,
-      [ATTR_SERVER_PORT]: getPort(params.port),
-    };
-  }
+  const attributes: Attributes = {
+    [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+    [ATTR_DB_NAMESPACE]: params.database,
+    [ATTR_SERVER_ADDRESS]: params.host,
+    [ATTR_SERVER_PORT]: getPort(params.port),
+  };
 
   return attributes;
 }
 
 export function getSemanticAttributesFromPoolConnection(
-  params: PgPoolOptionsParams,
-  semconvStability: SemconvStability
+  params: PgPoolOptionsParams
 ) {
   let url: URL | undefined;
   try {
@@ -187,31 +158,14 @@ export function getSemanticAttributesFromPoolConnection(
   } catch (e) {
     url = undefined;
   }
-  let attributes: Attributes = {
+  const attributes: Attributes = {
     [AttributeNames.IDLE_TIMEOUT_MILLIS]: params.idleTimeoutMillis,
     [AttributeNames.MAX_CLIENT]: params.maxClient,
+    [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+    [ATTR_DB_NAMESPACE]: url?.pathname.slice(1) ?? params.database,
+    [ATTR_SERVER_ADDRESS]: url?.hostname ?? params.host,
+    [ATTR_SERVER_PORT]: Number(url?.port) || getPort(params.port),
   };
-
-  if (semconvStability & SemconvStability.OLD) {
-    attributes = {
-      ...attributes,
-      [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
-      [ATTR_DB_NAME]: url?.pathname.slice(1) ?? params.database,
-      [ATTR_DB_CONNECTION_STRING]: getConnectionString(params),
-      [ATTR_NET_PEER_NAME]: url?.hostname ?? params.host,
-      [ATTR_NET_PEER_PORT]: Number(url?.port) || getPort(params.port),
-      [ATTR_DB_USER]: url?.username ?? params.user,
-    };
-  }
-  if (semconvStability & SemconvStability.STABLE) {
-    attributes = {
-      ...attributes,
-      [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
-      [ATTR_DB_NAMESPACE]: params.namespace,
-      [ATTR_SERVER_ADDRESS]: url?.hostname ?? params.host,
-      [ATTR_SERVER_PORT]: Number(url?.port) || getPort(params.port),
-    };
-  }
 
   return attributes;
 }
@@ -231,7 +185,6 @@ export function handleConfigQuery(
   this: PgClientExtended,
   tracer: Tracer,
   instrumentationConfig: PgInstrumentationConfig,
-  semconvStability: SemconvStability,
   queryConfig?: { text: string; values?: unknown; name?: unknown }
 ) {
   // Create child span.
@@ -241,10 +194,7 @@ export function handleConfigQuery(
   const spanName = getQuerySpanName(dbName, queryConfig);
   const span = tracer.startSpan(spanName, {
     kind: SpanKind.CLIENT,
-    attributes: getSemanticAttributesFromConnection(
-      connectionParameters,
-      semconvStability
-    ),
+    attributes: getSemanticAttributesFromConnection(connectionParameters),
   });
 
   if (!queryConfig) {
@@ -253,12 +203,7 @@ export function handleConfigQuery(
 
   // Set attributes
   if (queryConfig.text) {
-    if (semconvStability & SemconvStability.OLD) {
-      span.setAttribute(ATTR_DB_STATEMENT, queryConfig.text);
-    }
-    if (semconvStability & SemconvStability.STABLE) {
-      span.setAttribute(ATTR_DB_QUERY_TEXT, queryConfig.text);
-    }
+    span.setAttribute(ATTR_DB_QUERY_TEXT, queryConfig.text);
   }
 
   if (
