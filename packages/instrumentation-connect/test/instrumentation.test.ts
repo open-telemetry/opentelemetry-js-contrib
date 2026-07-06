@@ -315,5 +315,51 @@ describe('connect', () => {
 
       assert.strictEqual(rpcMetadata.route, '/foo/bar/test');
     });
+
+    it('should not leak close listeners across multiple synchronous middleware layers', async () => {
+      let listenerCountBeforeEnd = -1;
+      const numLayers = 15; // exceeds Node's default MaxListeners of 10
+
+      for (let i = 0; i < numLayers; i++) {
+        app.use((req, res, next) => {
+          next();
+        });
+      }
+
+      app.use((req, res, _next) => {
+        listenerCountBeforeEnd = res.listenerCount('close');
+        res.end('ok');
+      });
+
+      await httpRequest.get(`http://localhost:${PORT}/`);
+
+      assert.strictEqual(
+        listenerCountBeforeEnd,
+        0,
+        'expected no close listeners to accumulate across synchronous middleware layers'
+      );
+    });
+
+    it('should attach a fallback close listener and finish the span for asynchronous middleware', async () => {
+      let listenerCountDuringAsyncWork = -1;
+
+      app.use((req, res, next) => {
+        // simulate async work before calling next()
+        setImmediate(() => {
+          listenerCountDuringAsyncWork = res.listenerCount('close');
+          next();
+        });
+      });
+
+      await httpRequest.get(`http://localhost:${PORT}/`);
+
+      // a fallback listener should have been attached while the span
+      // was still open, since next() wasn't called synchronously
+      assert.strictEqual(listenerCountDuringAsyncWork, 1);
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.ok(spans[0].endTime, 'span should have finished');
+    });
   });
 });
