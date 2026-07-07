@@ -46,7 +46,7 @@ export const setupTracing = (serviceName: string) => {
   // flushed on process shutdown (e.g. for `npm run client`).
   process.once('beforeExit', async () => {
     await provider.shutdown();
-  })
+  });
 
   return trace.getTracer(serviceName);
 };
