@@ -25,7 +25,7 @@ import {
   ATTR_SERVER_PORT,
   DB_SYSTEM_NAME_VALUE_MYSQL,
 } from '@opentelemetry/semantic-conventions';
-import { METRIC_DB_CLIENT_CONNECTIONS_USAGE } from './semconv';
+import { METRIC_DB_CLIENT_CONNECTION_COUNT } from './semconv';
 import type * as mysqlTypes from 'mysql';
 import { AttributeNames } from './AttributeNames';
 import { MySQLInstrumentationConfig } from './types';
@@ -46,15 +46,15 @@ type getConnectionCallbackType = (
 ) => void;
 
 export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentationConfig> {
-  declare private _connectionsUsageOld: UpDownCounter;
+  declare private _connectionsCount: UpDownCounter;
 
   constructor(config: MySQLInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected override _updateMetricInstruments() {
-    this._connectionsUsageOld = this.meter.createUpDownCounter(
-      METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+    this._connectionsCount = this.meter.createUpDownCounter(
+      METRIC_DB_CLIENT_CONNECTION_COUNT,
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',
@@ -64,12 +64,10 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
   }
 
   /**
-   * Convenience function for updating the `db.client.connections.usage` metric.
-   * The name "count" comes from the eventually replacement for this metric per
-   * https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/#database-client-connection-count
+   * Convenience function for updating the `db.client.connection.count` metric.
    */
   private _connCountAdd(n: number, poolNameOld: string, state: string) {
-    this._connectionsUsageOld?.add(n, { state, name: poolNameOld });
+    this._connectionsCount?.add(n, { state, name: poolNameOld });
   }
 
   protected init() {

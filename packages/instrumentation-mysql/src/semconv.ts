@@ -10,11 +10,9 @@
  */
 
 /**
- * Deprecated, use `db.client.connection.count` instead.
+ * The number of connections that are currently in state described by the `state` attribute
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.client.connection.count`.
  */
-export const METRIC_DB_CLIENT_CONNECTIONS_USAGE =
-  'db.client.connections.usage' as const;
+export const METRIC_DB_CLIENT_CONNECTION_COUNT =
+  'db.client.connection.count' as const;

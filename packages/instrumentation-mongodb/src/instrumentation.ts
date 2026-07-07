@@ -29,7 +29,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import {
   DB_SYSTEM_NAME_VALUE_MONGODB,
-  METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
 } from './semconv';
 import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
@@ -54,7 +54,7 @@ const DEFAULT_CONFIG: MongoDBInstrumentationConfig = {
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumentationConfig> {
-  declare private _connectionsUsage: UpDownCounter;
+  declare private _connectionsCount: UpDownCounter;
   declare private _poolName: string;
 
   constructor(config: MongoDBInstrumentationConfig = {}) {
@@ -66,8 +66,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   }
 
   override _updateMetricInstruments() {
-    this._connectionsUsage = this.meter.createUpDownCounter(
-      METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+    this._connectionsCount = this.meter.createUpDownCounter(
+      METRIC_DB_CLIENT_CONNECTION_COUNT,
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',
@@ -77,12 +77,10 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   }
 
   /**
-   * Convenience function for updating the `db.client.connections.usage` metric.
-   * The name "count" comes from the eventual replacement for this metric per
-   * https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/#database-client-connection-count
+   * Convenience function for updating the `db.client.connection.count` metric.
    */
   private _connCountAdd(n: number, poolName: string, state: string) {
-    this._connectionsUsage?.add(n, { 'pool.name': poolName, state });
+    this._connectionsCount?.add(n, { 'pool.name': poolName, state });
   }
 
   init() {

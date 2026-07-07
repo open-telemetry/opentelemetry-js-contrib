@@ -69,7 +69,7 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     done();
   });
 
-  it('Should add connection usage metrics', async () => {
+  it('Should add connection count metrics', async () => {
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
     await collection.insertMany(insertData);
     await collection.deleteMany({});
@@ -94,7 +94,7 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     assert.strictEqual(metrics[0].descriptor.unit, '{connection}');
     assert.strictEqual(
       metrics[0].descriptor.name,
-      'db.client.connections.usage'
+      'db.client.connection.count'
     );
 
     // Checking dataPoints
@@ -115,7 +115,7 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     );
   });
 
-  it('Should add disconnection usage metrics', async () => {
+  it('Should add disconnection count metrics', async () => {
     await client.close();
 
     const result = await reader.collect();
