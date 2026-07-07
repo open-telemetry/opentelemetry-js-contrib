@@ -107,7 +107,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
 
     const multiCommanderModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/client/multi-command.js`,
-      ['^1.0.0', '^5.0.0'],
+      ['^1.0.0', '^5.0.0', '^6.0.0'],
       (moduleExports: any) => {
         const redisClientMultiCommandPrototype =
           moduleExports?.default?.prototype;
@@ -154,7 +154,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
 
     const clientIndexModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/client/index.js`,
-      ['^1.0.0', '^5.0.0'],
+      ['^1.0.0', '^5.0.0', '^6.0.0'],
       (moduleExports: any) => {
         const redisClientPrototype = moduleExports?.default?.prototype;
 
@@ -217,7 +217,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
 
     const clusterIndexModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/cluster/index.js`,
-      ['^1.0.0', '^5.0.0'],
+      ['^1.0.0', '^5.0.0', '^6.0.0'],
       (moduleExports: any) => {
         const redisClusterPrototype = moduleExports?.default?.prototype;
 
@@ -246,7 +246,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
 
     const clusterMultiCommanderModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/cluster/multi-command.js`,
-      ['^1.0.0', '^5.0.0'],
+      ['^1.0.0', '^5.0.0', '^6.0.0'],
       (moduleExports: any) => {
         const redisClusterMultiCommandPrototype =
           moduleExports?.default?.prototype;
@@ -285,7 +285,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
 
     return new InstrumentationNodeModuleDefinition(
       basePackageName,
-      ['^1.0.0', '^5.0.0'],
+      ['^1.0.0', '^5.0.0', '^6.0.0'],
       (moduleExports: any) => {
         return moduleExports;
       },
