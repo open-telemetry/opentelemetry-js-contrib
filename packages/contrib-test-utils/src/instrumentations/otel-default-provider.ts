@@ -22,7 +22,7 @@ import {
   setTestMemoryExporter,
 } from './otel-provider-api';
 
-export function registerInstrumentationTestingProvider(config: {
+export function registerInstrumentationTestingProvider(config?: {
   resource: Resource;
 }): TracerProvider {
   const spanProcessors = [];
