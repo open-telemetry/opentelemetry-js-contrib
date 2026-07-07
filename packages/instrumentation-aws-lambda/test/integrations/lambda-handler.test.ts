@@ -20,8 +20,8 @@ import {
   BatchSpanProcessor,
   InMemorySpanExporter,
   ReadableSpan,
+  TracerProvider,
 } from '@opentelemetry/sdk-trace';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
@@ -58,6 +58,7 @@ import {
   ROOT_CONTEXT,
   defaultTextMapGetter,
 } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { AWSXRayLambdaPropagator } from '@opentelemetry/propagator-aws-xray-lambda';
@@ -128,10 +129,11 @@ describe('lambda handler', () => {
   ) => {
     process.env._HANDLER = handler;
 
-    const provider = new NodeTracerProvider({
+    context.setGlobalContextManager(new AsyncLocalStorageContextManager());
+
+    const provider = new TracerProvider({
       spanProcessors: [new BatchSpanProcessor({ exporter: memoryExporter })],
     });
-    provider.register();
 
     instrumentation = new AwsLambdaInstrumentation(config);
     instrumentation.setTracerProvider(provider);
