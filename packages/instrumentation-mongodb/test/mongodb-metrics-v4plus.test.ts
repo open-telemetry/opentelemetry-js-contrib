@@ -20,7 +20,16 @@ const instrumentation = registerInstrumentationTesting(
 
 import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import type { MongoClient, Collection } from 'mongodb';
+import type { DataPoint } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
+
+// Data point order is not guaranteed, so look up by the `state` attribute
+// rather than relying on array index.
+function getDataPoint(dataPoints: DataPoint<number>[], state: string) {
+  const dataPoint = dataPoints.find(dp => dp.attributes['state'] === state);
+  assert.ok(dataPoint, `Expected a data point for state "${state}"`);
+  return dataPoint;
+}
 
 describe('MongoDBInstrumentation-Metrics-v4+', () => {
   // For these tests, mongo must be running. Add RUN_MONGODB_TESTS to run
@@ -100,19 +109,14 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     // Checking dataPoints
     const dataPoints = metrics[0].dataPoints;
     assert.strictEqual(dataPoints.length, 2);
-    assert.strictEqual(dataPoints[0].value, 0);
-    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
-    assert.strictEqual(
-      dataPoints[0].attributes['pool.name'],
-      `mongodb://${HOST}:${PORT}/${DB_NAME}`
-    );
 
-    assert.strictEqual(dataPoints[1].value, 1);
-    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
-    assert.strictEqual(
-      dataPoints[1].attributes['pool.name'],
-      `mongodb://${HOST}:${PORT}/${DB_NAME}`
-    );
+    const usedDataPoint = getDataPoint(dataPoints, 'used');
+    assert.strictEqual(usedDataPoint.value, 0);
+    assert.strictEqual(usedDataPoint.attributes['pool.name'], `${HOST}:${PORT}`);
+
+    const idleDataPoint = getDataPoint(dataPoints, 'idle');
+    assert.strictEqual(idleDataPoint.value, 1);
+    assert.strictEqual(idleDataPoint.attributes['pool.name'], `${HOST}:${PORT}`);
   });
 
   it('Should add disconnection usage metrics', async () => {
@@ -138,17 +142,13 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     // Checking dataPoints
     const dataPoints = metrics[0].dataPoints;
     assert.strictEqual(dataPoints.length, 2);
-    assert.strictEqual(dataPoints[0].value, 0);
-    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
-    assert.strictEqual(
-      dataPoints[0].attributes['pool.name'],
-      `mongodb://${HOST}:${PORT}/${DB_NAME}`
-    );
-    assert.strictEqual(dataPoints[1].value, 0);
-    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
-    assert.strictEqual(
-      dataPoints[1].attributes['pool.name'],
-      `mongodb://${HOST}:${PORT}/${DB_NAME}`
-    );
+
+    const usedDataPoint = getDataPoint(dataPoints, 'used');
+    assert.strictEqual(usedDataPoint.value, 0);
+    assert.strictEqual(usedDataPoint.attributes['pool.name'], `${HOST}:${PORT}`);
+
+    const idleDataPoint = getDataPoint(dataPoints, 'idle');
+    assert.strictEqual(idleDataPoint.value, 0);
+    assert.strictEqual(idleDataPoint.attributes['pool.name'], `${HOST}:${PORT}`);
   });
 });

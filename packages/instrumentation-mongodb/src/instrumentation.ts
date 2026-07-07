@@ -34,7 +34,6 @@ import {
 import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
   CursorState,
-  ServerSession,
   MongodbCommandType,
   MongoInternalCommand,
   MongodbNamespace,
@@ -42,9 +41,10 @@ import {
   WireProtocolInternal,
   V4Connection,
   V4ConnectionPool,
+  V4ConnectionPoolConstructor,
+  V4ConnectionPoolEvent,
   Replacer,
 } from './internal-types';
-import { V4Connect, V4Session } from './internal-types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -55,7 +55,10 @@ const DEFAULT_CONFIG: MongoDBInstrumentationConfig = {
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumentationConfig> {
   declare private _connectionsUsage: UpDownCounter;
-  declare private _poolName: string;
+  // Cleanup callbacks for CMAP listeners attached to live ConnectionPool
+  // instances, invoked on unpatch so disable() doesn't leave dangling
+  // listeners on pools that outlive the instrumentation.
+  private _connectionPoolCleanups = new Set<() => void>();
 
   constructor(config: MongoDBInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
@@ -91,7 +94,6 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       v3UnpatchConnection: v3UnpatchConnection,
     } = this._getV3ConnectionPatches();
 
-    const { v4PatchConnect, v4UnpatchConnect } = this._getV4ConnectPatches();
     const {
       v4PatchConnectionCallback,
       v4PatchConnectionPromise,
@@ -99,7 +101,6 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     } = this._getV4ConnectionPatches();
     const { v4PatchConnectionPool, v4UnpatchConnectionPool } =
       this._getV4ConnectionPoolPatches();
-    const { v4PatchSessions, v4UnpatchSessions } = this._getV4SessionsPatches();
 
     return [
       new InstrumentationNodeModuleDefinition(
@@ -136,21 +137,9 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection_pool.js',
-            ['>=4.0.0 <6.4'],
+            ['>=4.0.0 <8'],
             v4PatchConnectionPool,
             v4UnpatchConnectionPool
-          ),
-          new InstrumentationNodeModuleFile(
-            'mongodb/lib/cmap/connect.js',
-            ['>=4.0.0 <8'],
-            v4PatchConnect,
-            v4UnpatchConnect
-          ),
-          new InstrumentationNodeModuleFile(
-            'mongodb/lib/sessions.js',
-            ['>=4.0.0 <8'],
-            v4PatchSessions,
-            v4UnpatchSessions
           ),
         ]
       ),
@@ -216,74 +205,6 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     };
   }
 
-  private _getV4SessionsPatches<T extends V4Session>() {
-    return {
-      v4PatchSessions: (moduleExports: any) => {
-        if (isWrapped(moduleExports.acquire)) {
-          this._unwrap(moduleExports, 'acquire');
-        }
-        this._wrap(
-          moduleExports.ServerSessionPool.prototype,
-          'acquire',
-          this._getV4AcquireCommand()
-        );
-
-        if (isWrapped(moduleExports.release)) {
-          this._unwrap(moduleExports, 'release');
-        }
-        this._wrap(
-          moduleExports.ServerSessionPool.prototype,
-          'release',
-          this._getV4ReleaseCommand()
-        );
-        return moduleExports;
-      },
-      v4UnpatchSessions: (moduleExports?: T) => {
-        if (moduleExports === undefined) return;
-        if (isWrapped(moduleExports.acquire)) {
-          this._unwrap(moduleExports, 'acquire');
-        }
-        if (isWrapped(moduleExports.release)) {
-          this._unwrap(moduleExports, 'release');
-        }
-      },
-    };
-  }
-
-  private _getV4AcquireCommand() {
-    const instrumentation = this;
-    return (original: V4Session['acquire']) => {
-      return function patchAcquire(this: any) {
-        const nSessionsBeforeAcquire = this.sessions.length;
-        const session = original.call(this);
-        const nSessionsAfterAcquire = this.sessions.length;
-
-        if (nSessionsBeforeAcquire === nSessionsAfterAcquire) {
-          //no session in the pool. a new session was created and used
-          instrumentation._connCountAdd(1, instrumentation._poolName, 'used');
-        } else if (nSessionsBeforeAcquire - 1 === nSessionsAfterAcquire) {
-          //a session was already in the pool. remove it from the pool and use it.
-          instrumentation._connCountAdd(-1, instrumentation._poolName, 'idle');
-          instrumentation._connCountAdd(1, instrumentation._poolName, 'used');
-        }
-        return session;
-      };
-    };
-  }
-
-  private _getV4ReleaseCommand() {
-    const instrumentation = this;
-    return (original: V4Session['release']) => {
-      return function patchRelease(this: any, session: ServerSession) {
-        const cmdPromise = original.call(this, session);
-
-        instrumentation._connCountAdd(-1, instrumentation._poolName, 'used');
-        instrumentation._connCountAdd(1, instrumentation._poolName, 'idle');
-        return cmdPromise;
-      };
-    };
-  }
-
   private _getV4ConnectionPoolPatches<T extends V4ConnectionPool>() {
     return {
       v4PatchConnectionPool: (moduleExports: any) => {
@@ -298,30 +219,31 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
           'checkOut',
           this._getV4ConnectionPoolCheckOut()
         );
+
+        if (isWrapped(moduleExports.ConnectionPool)) {
+          this._unwrap(moduleExports, 'ConnectionPool');
+        }
+
+        this._wrap(
+          moduleExports,
+          'ConnectionPool',
+          this._getV4ConnectionPoolConstructor()
+        );
+
         return moduleExports;
       },
       v4UnpatchConnectionPool: (moduleExports?: any) => {
         if (moduleExports === undefined) return;
 
+        // Unwrap the class first so `.prototype` below resolves back to the
+        // original prototype object that `checkOut` was wrapped on.
+        this._unwrap(moduleExports, 'ConnectionPool');
         this._unwrap(moduleExports.ConnectionPool.prototype, 'checkOut');
-      },
-    };
-  }
 
-  private _getV4ConnectPatches<T extends V4Connect>() {
-    return {
-      v4PatchConnect: (moduleExports: any) => {
-        if (isWrapped(moduleExports.connect)) {
-          this._unwrap(moduleExports, 'connect');
+        for (const detach of this._connectionPoolCleanups) {
+          detach();
         }
-
-        this._wrap(moduleExports, 'connect', this._getV4ConnectCommand());
-        return moduleExports;
-      },
-      v4UnpatchConnect: (moduleExports?: T) => {
-        if (moduleExports === undefined) return;
-
-        this._unwrap(moduleExports, 'connect');
+        this._connectionPoolCleanups.clear();
       },
     };
   }
@@ -337,51 +259,66 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     };
   }
 
-  private _getV4ConnectCommand() {
+  // Wraps the `ConnectionPool` class so every pool instance gets its CMAP
+  // event listeners attached right after construction.
+  private _getV4ConnectionPoolConstructor() {
     const instrumentation = this;
-
-    return (
-      original: V4Connect['connectCallback'] | V4Connect['connectPromise']
-    ) => {
-      return function patchedConnect(
-        this: unknown,
-        options: any,
-        callback: any
-      ) {
-        // from v6.4 `connect` method only accepts an options param and returns a promise
-        // with the connection
-        if (original.length === 1) {
-          const result = (original as V4Connect['connectPromise']).call(
-            this,
-            options
-          );
-          if (result && typeof result.then === 'function') {
-            result.then(
-              () => instrumentation.setPoolName(options),
-              // this handler is set to pass the lint rules
-              () => undefined
-            );
-          }
-          return result;
+    return (OriginalConnectionPool: V4ConnectionPoolConstructor) => {
+      return class ConnectionPool extends OriginalConnectionPool {
+        constructor(...args: any[]) {
+          super(...args);
+          instrumentation._instrumentConnectionPool(this);
         }
-
-        // Earlier versions expects a callback param and return void
-        const patchedCallback = function (err: any, conn: any) {
-          if (err || !conn) {
-            callback(err, conn);
-            return;
-          }
-          instrumentation.setPoolName(options);
-          callback(err, conn);
-        };
-
-        return (original as V4Connect['connectCallback']).call(
-          this,
-          options,
-          patchedCallback
-        );
       };
     };
+  }
+
+  /**
+   * Tracks `db.client.connections.usage` for a single connection pool using
+   * the pool's own CMAP events instead of the driver's logical session pool,
+   * so idle/pruned/cleared connections are reflected in the metric.
+   * Connection ids are only unique within one pool, so state is kept in a
+   * map private to this pool instance rather than shared across pools.
+   */
+  private _instrumentConnectionPool(pool: V4ConnectionPool) {
+    const instrumentation = this;
+    const poolName = pool.address;
+    const connectionStates = new Map<unknown, 'used' | 'idle'>();
+
+    const onConnectionReady = (event: V4ConnectionPoolEvent) => {
+      connectionStates.set(event.connectionId, 'idle');
+      instrumentation._connCountAdd(1, poolName, 'idle');
+    };
+    const onConnectionCheckedOut = (event: V4ConnectionPoolEvent) => {
+      connectionStates.set(event.connectionId, 'used');
+      instrumentation._connCountAdd(-1, poolName, 'idle');
+      instrumentation._connCountAdd(1, poolName, 'used');
+    };
+    const onConnectionCheckedIn = (event: V4ConnectionPoolEvent) => {
+      connectionStates.set(event.connectionId, 'idle');
+      instrumentation._connCountAdd(-1, poolName, 'used');
+      instrumentation._connCountAdd(1, poolName, 'idle');
+    };
+    const onConnectionClosed = (event: V4ConnectionPoolEvent) => {
+      // Unknown id (e.g. handshake failed before `connectionReady`, or the
+      // listener was attached after the fact) -- never guess, just skip.
+      const state = connectionStates.get(event.connectionId);
+      if (state === undefined) return;
+      connectionStates.delete(event.connectionId);
+      instrumentation._connCountAdd(-1, poolName, state);
+    };
+
+    pool.on('connectionReady', onConnectionReady);
+    pool.on('connectionCheckedOut', onConnectionCheckedOut);
+    pool.on('connectionCheckedIn', onConnectionCheckedIn);
+    pool.on('connectionClosed', onConnectionClosed);
+
+    this._connectionPoolCleanups.add(() => {
+      pool.off('connectionReady', onConnectionReady);
+      pool.off('connectionCheckedOut', onConnectionCheckedOut);
+      pool.off('connectionCheckedIn', onConnectionCheckedIn);
+      pool.off('connectionClosed', onConnectionClosed);
+    });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1005,13 +942,14 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
    * Ends a created span.
    * @param span The created span to end.
    * @param resultHandler A callback function.
-   * @param connectionId: The connection ID of the Command response.
    */
   private _patchEnd(
     span: Span | undefined,
     resultHandler: Function,
-    connectionId?: number,
-    commandType?: string
+    // Kept for call-site compatibility with the command patches below;
+    // no longer used since connection-usage tracking moved to CMAP events.
+    _connectionId?: number,
+    _commandType?: string
   ): Function {
     // mongodb is using "tick" when calling a callback, this way the context
     // in final callback (resultHandler) is lost
@@ -1035,23 +973,12 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
           }
           span.end();
         }
-
-        if (commandType === 'endSessions') {
-          instrumentation._connCountAdd(-1, instrumentation._poolName, 'idle');
-        }
       }
 
       return context.with(activeContext, () => {
         return resultHandler.apply(this, args);
       });
     };
-  }
-  private setPoolName(options: any) {
-    const host = options.hostAddress?.host;
-    const port = options.hostAddress?.port;
-    const database = options.dbName;
-    const poolName = `mongodb://${host}:${port}/${database}`;
-    this._poolName = poolName;
   }
 
   private _checkSkipInstrumentation(currentSpan: Span | undefined) {

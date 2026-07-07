@@ -376,32 +376,6 @@ describe('_patchEnd', () => {
       assert.strictEqual(resultHandlerCallCount, 3);
     });
 
-    it('should only update metrics once for endSessions command', () => {
-      const mockSpan = createMockSpan();
-      let metricsAddCallCount = 0;
-
-      (instrumentation as any)._connectionsUsage = {
-        add: () => {
-          metricsAddCallCount++;
-        },
-      };
-      (instrumentation as any)._poolName = 'mongodb://localhost:27017/test';
-
-      const patchedEnd = (instrumentation as any)._patchEnd(
-        mockSpan,
-        () => 'result',
-        123,
-        'endSessions'
-      );
-
-      patchedEnd(null, { ok: 1 });
-      patchedEnd(null, { ok: 1 });
-      patchedEnd(null, { ok: 1 });
-
-      assert.strictEqual(metricsAddCallCount, 1);
-      assert.strictEqual(mockSpan.getEndCallCount(), 1);
-    });
-
     it('should handle mixed success and error calls correctly', () => {
       const mockSpan = createMockSpan();
       let resultHandlerCallCount = 0;

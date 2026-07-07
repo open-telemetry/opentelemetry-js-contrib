@@ -54,13 +54,6 @@ export type MongoInternalCommand = {
   u?: Record<string, unknown>;
 };
 
-export type ServerSession = {
-  id: any;
-  lastUse: number;
-  txnNumber: number;
-  isDirty: boolean;
-};
-
 export type CursorState = { cmd: MongoInternalCommand } & Record<
   string,
   unknown
@@ -195,26 +188,29 @@ export type V4Connection = {
 
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection_pool.ts
 export type V4ConnectionPool = {
+  // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection_pool.ts#L64
+  address: string;
+  on: (
+    event: string,
+    listener: (ev: V4ConnectionPoolEvent) => void
+  ) => unknown;
+  off: (
+    event: string,
+    listener: (ev: V4ConnectionPoolEvent) => void
+  ) => unknown;
   // Instrumentation just cares about carrying the async context so
   // types of callback params are not needed
   checkOut: (callback: (error: any, connection: any) => void) => void;
 };
 
-export type V4Connect = {
-  connect: Function;
-  // From version 6.4.0 the method does not expect a callback and returns a promise
-  // https://github.com/mongodb/node-mongodb-native/blob/v6.4.0/src/cmap/connect.ts
-  connectPromise: (options: any) => Promise<any>;
-  // Earlier versions expect a callback param and return void
-  // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connect.ts
-  connectCallback: (options: any, callback: any) => void;
+// https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection_pool_events.ts
+export type V4ConnectionPoolEvent = {
+  connectionId: unknown;
 };
 
-// https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/sessions.ts
-export type V4Session = {
-  acquire: () => ServerSession;
-  release: (session: ServerSession) => void;
-};
+export type V4ConnectionPoolConstructor = new (
+  ...args: any[]
+) => V4ConnectionPool;
 
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#replacer
