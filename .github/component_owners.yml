@@ -42,11 +42,6 @@ components:
     - legendecas
   packages/id-generator-aws-xray:
     - jj22ee
-  packages/propagation-utils:
-    - dyladan
-    - pichlermarc
-    - legendecas
-    - blumamir
   packages/redis-common: []
     # Unmaintained
   packages/contrib-test-utils:
