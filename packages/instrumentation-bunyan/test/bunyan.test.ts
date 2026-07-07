@@ -51,7 +51,6 @@ const tracerProvider = new TracerProvider({
 trace.setGlobalTracerProvider(tracerProvider);
 const tracer = tracerProvider.getTracer('default');
 
-
 const memExporter = new InMemoryLogRecordExporter();
 const loggerProvider = new LoggerProvider({
   resource,

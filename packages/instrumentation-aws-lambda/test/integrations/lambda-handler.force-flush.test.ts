@@ -15,7 +15,10 @@ import {
 } from '@opentelemetry/sdk-trace';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
-import { ProxyTracerProvider, TracerProvider as ApiTracerProvider } from '@opentelemetry/api';
+import {
+  ProxyTracerProvider,
+  TracerProvider as ApiTracerProvider,
+} from '@opentelemetry/api';
 import {
   AggregationTemporality,
   InMemoryMetricExporter,
