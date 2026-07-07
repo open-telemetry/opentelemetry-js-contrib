@@ -23,21 +23,18 @@ npm install --save @opentelemetry/instrumentation-mysql2
 
 OpenTelemetry MySQL2 Instrumentation allows the user to automatically collect trace data and export them to the backend of choice, to give observability to distributed systems when working with [mysql2](https://github.com/sidorares/node-mysql2).
 
-To load a specific plugin (**MySQL2** in this case), specify it in the registerInstrumentations's configuration
+To enable a specific instrumentation (**MySQL2** in this case), pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { MySQL2Instrumentation } = require('@opentelemetry/instrumentation-mysql2');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new MySQL2Instrumentation(),
   ],
-})
+});
 ```
 
 ### MySQL2 Instrumentation Options
