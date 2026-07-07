@@ -22,14 +22,15 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
+  TracerProvider,
 } from '@opentelemetry/sdk-trace';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,
   InMemoryLogRecordExporter,
 } from '@opentelemetry/sdk-logs';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   runTestFixture,
   TestCollector,
@@ -40,12 +41,12 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from '../src/version';
 
 import type { pino as Pino } from 'pino';
 
-const tracerProvider = new NodeTracerProvider({
+context.setGlobalContextManager(new AsyncLocalStorageContextManager());
+const tracerProvider = new TracerProvider({
   spanProcessors: [
     new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() }),
   ],
 });
-tracerProvider.register();
 const tracer = tracerProvider.getTracer('default');
 
 // Setup LoggerProvider for "log sending" tests.
