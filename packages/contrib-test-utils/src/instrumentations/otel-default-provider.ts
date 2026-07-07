@@ -3,25 +3,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
-import {
-  NodeTracerProvider,
-  NodeTracerConfig,
-} from '@opentelemetry/sdk-trace-node';
+import { context, propagation, trace } from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
+  TracerProvider,
 } from '@opentelemetry/sdk-trace';
+import {
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
+import type { Resource } from '@opentelemetry/resources';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+
 import {
   getTestMemoryExporter,
   setTestMemoryExporter,
 } from './otel-provider-api';
 
-export const registerInstrumentationTestingProvider = (
-  config?: NodeTracerConfig
-): NodeTracerProvider => {
-  const spanProcessors = config?.spanProcessors
-    ? [...config.spanProcessors]
-    : [];
+export function registerInstrumentationTestingProvider(config: {
+  resource: Resource;
+}): TracerProvider {
+  const spanProcessors = [];
 
   setTestMemoryExporter(new InMemorySpanExporter());
 
@@ -35,11 +39,18 @@ export const registerInstrumentationTestingProvider = (
     );
   }
 
-  const otelTestingProvider = new NodeTracerProvider({
+  const tracerProvider = new TracerProvider({
     ...config,
     spanProcessors,
   });
+  trace.setGlobalTracerProvider(tracerProvider);
 
-  otelTestingProvider.register();
-  return otelTestingProvider;
-};
+  context.setGlobalContextManager(new AsyncLocalStorageContextManager());
+
+  const propagator = new CompositePropagator({
+    propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
+  });
+  propagation.setGlobalPropagator(propagator);
+
+  return tracerProvider;
+}
