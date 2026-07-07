@@ -22,12 +22,18 @@ npm install --save @opentelemetry/instrumentation-bunyan
 ## Usage
 
 ```js
-const { NodeSDK, tracing, logs, api } = require('@opentelemetry/sdk-node');
+const { trace } = require('@opentelemetry/api');
+const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/sdk-trace');
+const { SimpleLogRecordProcessor, ConsoleLogRecordExporter } = require('@opentelemetry/sdk-logs');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { BunyanInstrumentation } = require('@opentelemetry/instrumentation-bunyan');
+
 const sdk = new NodeSDK({
-  spanProcessor: new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter()),
+  spanProcessors: [
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+  ],
   logRecordProcessors: [
-    new logs.SimpleLogRecordProcessor({ exporter: new logs.ConsoleLogRecordExporter() }),
+    new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
   ],
   instrumentations: [
     new BunyanInstrumentation({
@@ -44,7 +50,7 @@ logger.info('hi');
 // 1. Log records will be sent to the SDK-registered log record processor, if any.
 //    This is called "log sending".
 
-const tracer = api.trace.getTracer('example');
+const tracer = trace.getTracer('example');
 tracer.startActiveSpan('manual-span', span => {
   logger.info('in a span');
   // 2. Fields identifying the current span will be added to log records:
