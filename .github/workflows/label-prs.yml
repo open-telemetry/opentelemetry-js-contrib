@@ -1,6 +1,10 @@
 name: "Label PR"
 on:
-  - pull_request_target
+  # Using 'pull_request_target' for permission to add labels to the PR.
+  # https://docs.zizmor.sh/audits/#dangerous-triggers
+  # zizmor: ignore[dangerous-triggers]
+  pull_request_target:
+    branches: [main]
 
 permissions:
   contents: read
@@ -13,9 +17,9 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: actions/labeler@v6
+      - uses: actions/labeler@f27b608878404679385c85cfa523b85ccb86e213 # v6.1.0
         with:
           configuration-path: '.github/component-label-map.yml'

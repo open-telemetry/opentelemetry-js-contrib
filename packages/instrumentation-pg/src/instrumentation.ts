@@ -8,8 +8,6 @@ import {
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
   InstrumentationNodeModuleFile,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   context,
@@ -35,7 +33,10 @@ import {
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
-import { addSqlCommenterComment } from '@opentelemetry/sql-common';
+import {
+  addSqlCommenterComment,
+  buildTraceparent,
+} from '@opentelemetry/sql-common';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
@@ -56,8 +57,7 @@ import {
 import {
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
-  ATTR_DB_SYSTEM,
-  DB_SYSTEM_VALUE_POSTGRESQL,
+  DB_SYSTEM_NAME_VALUE_POSTGRESQL,
 } from './semconv';
 
 function extractModuleExports(module: any) {
@@ -65,6 +65,10 @@ function extractModuleExports(module: any) {
     ? module.default // ESM
     : module; // CommonJS
 }
+
+const INTERNAL_SET_QUERY = Symbol(
+  'opentelemetry.instrumentation-pg.internal-set-query'
+);
 
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   declare private _operationDuration: Histogram;
@@ -80,14 +84,9 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     idle: 0,
     pending: 0,
   };
-  private _semconvStability: SemconvStability;
 
   constructor(config: PgInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._semconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   override _updateMetricInstruments() {
@@ -249,10 +248,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
 
         const span = plugin.tracer.startSpan(SpanNames.CONNECT, {
           kind: SpanKind.CLIENT,
-          attributes: utils.getSemanticAttributesFromConnection(
-            this,
-            plugin._semconvStability
-          ),
+          attributes: utils.getSemanticAttributesFromConnection(this),
         });
 
         if (callback) {
@@ -284,12 +280,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       ATTR_SERVER_ADDRESS,
       ATTR_DB_OPERATION_NAME,
     ];
-    if (this._semconvStability & SemconvStability.OLD) {
-      keysToCopy.push(ATTR_DB_SYSTEM);
-    }
-    if (this._semconvStability & SemconvStability.STABLE) {
-      keysToCopy.push(ATTR_DB_SYSTEM_NAME);
-    }
+    keysToCopy.push(ATTR_DB_SYSTEM_NAME);
 
     keysToCopy.forEach(key => {
       if (key in attributes) {
@@ -307,6 +298,15 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
     return (original: typeof pgTypes.Client.prototype.query) => {
       this._diag.debug('Patching pg.Client.prototype.query');
       return function query(this: PgClientExtended, ...args: unknown[]) {
+        // Skip our own internal SET application_name queries
+        if (
+          typeof args[0] === 'object' &&
+          args[0] !== null &&
+          (args[0] as any)[INTERNAL_SET_QUERY]
+        ) {
+          return original.apply(this, args as never);
+        }
+
         if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
           return original.apply(this, args as never);
         }
@@ -344,7 +344,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             : undefined;
 
         const attributes: Attributes = {
-          [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
+          [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
           [ATTR_DB_NAMESPACE]: this.database,
           [ATTR_SERVER_PORT]: this.connectionParameters.port,
           [ATTR_SERVER_ADDRESS]: this.connectionParameters.host,
@@ -365,7 +365,6 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           this,
           plugin.tracer,
           instrumentationConfig,
-          plugin._semconvStability,
           queryConfig
         );
 
@@ -374,10 +373,13 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         if (instrumentationConfig.addSqlCommenterCommentToQueries) {
           if (firstArgIsString) {
             args[0] = addSqlCommenterComment(span, arg0);
-          } else if (firstArgIsQueryObjectWithText && !('name' in arg0)) {
-            // In the case of a query object, we need to ensure there's no name field
-            // as this indicates a prepared query, where the comment would remain the same
-            // for every invocation and contain an outdated trace context.
+          } else if (
+            firstArgIsQueryObjectWithText &&
+            (!('name' in arg0) || arg0.name === undefined)
+          ) {
+            // In the case of a query object, only skip when there is an actual
+            // prepared statement name. The comment would remain the same for
+            // every invocation and contain an outdated trace context.
             args[0] = {
               ...arg0,
               text: addSqlCommenterComment(span, arg0.text),
@@ -464,6 +466,39 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             },
             true
           );
+        }
+
+        // Inject trace context via SET application_name if enabled.
+        // The SET is pushed synchronously into pg's internal FIFO queue
+        // before the user's query, guaranteeing correct ordering. Note that
+        // pg processes one query at a time (readyForQuery gate), so the SET
+        // completes a full round-trip before the user's query is dispatched.
+        if (instrumentationConfig.enableTraceContextPropagation) {
+          const traceparent = buildTraceparent(span);
+          if (traceparent) {
+            const setQuery = {
+              text: `SET application_name = '${traceparent}'`,
+              [INTERNAL_SET_QUERY]: true,
+            };
+            try {
+              const setResult: unknown = original.apply(this, [
+                setQuery,
+              ] as never);
+              if (setResult instanceof Promise) {
+                setResult.catch(error => {
+                  plugin._diag.warn(
+                    'Failed to set pg application_name for trace context propagation',
+                    error
+                  );
+                });
+              }
+            } catch (error) {
+              plugin._diag.warn(
+                'Failed to set pg application_name for trace context propagation',
+                error
+              );
+            }
+          }
         }
 
         let result: unknown;
@@ -582,8 +617,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         const span = plugin.tracer.startSpan(SpanNames.POOL_CONNECT, {
           kind: SpanKind.CLIENT,
           attributes: utils.getSemanticAttributesFromPoolConnection(
-            this.options,
-            plugin._semconvStability
+            this.options
           ),
         });
 

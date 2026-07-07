@@ -1,6 +1,25 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.64.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.63.0...instrumentation-knex-v0.64.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+
+
+### Bug Fixes
+
+* **instrumentation-knex:** use connectionSettings to support function-based connection configs ([#3584](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3584)) ([2353bd7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2353bd7fbb75ae682c8dde42f32caa10a82bc315))
+
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.62.0...instrumentation-knex-v0.63.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+
 ## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.61.0...instrumentation-knex-v0.62.0) (2026-05-13)
 
 

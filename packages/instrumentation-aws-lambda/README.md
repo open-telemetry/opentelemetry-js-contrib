@@ -97,12 +97,13 @@ In your Lambda function configuration, add or update the `NODE_OPTIONS` environm
 
 ## AWS Lambda Instrumentation Options
 
-| Options                 | Type                               | Description                                                                                                                                                                                                                                                                                                   |
-|-------------------------|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `requestHook`           | `RequestHook` (function)           | Hook for adding custom attributes before lambda starts handling the request. Receives params: `span, { event, context }`                                                                                                                                                                                      |
-| `responseHook`          | `ResponseHook` (function)          | Hook for adding custom attributes before lambda returns the response. Receives params: `span, { err?, res? }`                                                                                                                                                                                                 |
-| `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway).                                                                                                                                       |
-| `lambdaHandler`         | `string`                           | By default, this instrumentation automatically determines the Lambda handler function to instrument. This option is used to override that behavior by explicitly specifying the Lambda handler to instrument. See [Specifying the Lambda Handler](#specifying-the-lambda-handler) for additional information. |
+| Options | Type | Description |
+|---------|------|-------------|
+| `requestHook` | `RequestHook` (function) | Hook for adding custom attributes before lambda starts handling the request. Receives params: `span, { event, context }` |
+| `responseHook` | `ResponseHook` (function) | Hook for adding custom attributes before lambda returns the response. Receives params: `span, { err?, res? }` |
+| `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway). |
+| `lambdaHandler` | `string` | By default, this instrumentation automatically determines the Lambda handler function to instrument. This option is used to override that behavior by explicitly specifying the Lambda handler to instrument. See [Specifying the Lambda Handler](#specifying-the-lambda-handler) for additional information. |
+| `useGlobalPropagatorForSqsExtraction` | `boolean` | By default for SQS messages, this instrumentation uses the AWS X-Ray propagator to extract context from `systemAttributes` which is spec-compliant. This option can be set to `true` to override that behavior, meaning context will be extracted from `messageAttributes` using the configured propagator. The latter deviates from the spec but can be useful when your producer injects context into `messageAttributes`. |
 
 ### Hooks Usage Example
 
@@ -188,17 +189,46 @@ Alternatively, use the `auto-configuration-package` as in example #1 and set the
 
 For additional information, see the [documentation for lambda semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/faas/aws-lambda.md#aws-x-ray-active-tracing-considerations).
 
+### SQS Event Context Extraction
+
+When your Lambda function is triggered by SQS, the instrumentation creates a CONSUMER span with span links to the producer trace contexts extracted from the SQS messages.
+
+By default, context is extracted from the `AWSTraceHeader` system attribute using the AWS X-Ray propagator, as defined by the [OpenTelemetry semantic conventions for AWS Lambda](https://opentelemetry.io/docs/specs/semconv/faas/aws-lambda/#sqs-event). This works when AWS X-Ray active tracing is enabled on the SQS queue.
+
+If your SQS producers inject trace context into message attributes using the globally configured propagator (as `@opentelemetry/instrumentation-aws-sdk` does by default with W3C traceparent), set `useGlobalPropagatorForSqsExtraction: true`:
+
+```js
+new AwsLambdaInstrumentation({
+    useGlobalPropagatorForSqsExtraction: true,
+})
+```
+
 ## Semantic Conventions
 
 This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
-Attributes collected:
+Attributes collected on the invocation (SERVER) span:
 
 | Attribute          | Short Description                                                         |
 |--------------------|---------------------------------------------------------------------------|
 | `cloud.account.id` | The cloud account ID the resource is assigned to.                         |
 | `faas.execution`   | The execution ID of the current function execution.                       |
 | `faas.id`          | The unique ID of the single function that this runtime instance executes. |
+| `faas.coldstart`   | Whether the invocation is a cold start.                                   |
+| `faas.trigger`     | Type of the trigger (`pubsub` for SQS events).                           |
+
+Additional attributes collected on the SQS process (CONSUMER) span:
+
+| Attribute                        | Short Description                                                  |
+|----------------------------------|--------------------------------------------------------------------|
+| `faas.trigger`                   | Type of the trigger (`pubsub`).                                    |
+| `messaging.operation.name`       | The name of the messaging operation (`process`).                   |
+| `messaging.operation.type`       | The type of the messaging operation (`process`).                   |
+| `messaging.system`               | The messaging system (`aws_sqs`).                                  |
+| `messaging.destination.name`     | The queue name extracted from the event source ARN.                |
+| `messaging.batch.message_count`  | The number of messages in the batch.                               |
+| `aws.sqs.queue.url`              | The reconstructed SQS queue URL.                                   |
+| `server.address`                 | The SQS regional domain name.                                      |
 
 ## Useful links
 

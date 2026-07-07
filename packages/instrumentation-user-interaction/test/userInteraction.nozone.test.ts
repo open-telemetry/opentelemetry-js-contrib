@@ -133,6 +133,42 @@ describe('UserInteractionInstrumentation', () => {
       assert.strictEqual(called, false);
     });
 
+    it('should not retain detached elements in listener bookkeeping when removeEventListener is never called', () => {
+      // Simulates the SPA framework pattern (Vue's createFnInvoker, React's
+      // bound handlers) where the same listener function is reused across
+      // many elements, and removeEventListener is never called on unmount -
+      // cleanup is expected to happen via garbage collection of the element
+      // instead. See open-telemetry/opentelemetry-js-contrib#3539.
+      const sharedListener = function () {};
+      const elements: HTMLElement[] = [];
+      for (let i = 0; i < 50; i++) {
+        const element = createButton();
+        elements.push(element);
+        element.addEventListener('click', sharedListener);
+      }
+
+      const instrumentationAny = userInteractionInstrumentation as any;
+      const wrappedListeners = instrumentationAny._wrappedListeners;
+
+      const listener2Type = wrappedListeners.get(sharedListener);
+      assert.ok(listener2Type, 'listener should be tracked');
+      const element2patched = listener2Type.get('click');
+      assert.ok(element2patched, 'click bookkeeping should exist');
+
+      // The bug: the per-element bookkeeping is a plain Map keyed by the
+      // HTMLElement itself, so every element added above is strongly
+      // retained here even though none of them were ever attached to the
+      // document and nothing else in the test references them anymore.
+      assert.ok(
+        element2patched instanceof WeakMap,
+        'per-element listener bookkeeping should be a WeakMap so detached ' +
+          'elements are not strongly retained (#3539)'
+      );
+
+      // Drop the only other reference we held.
+      elements.length = 0;
+    });
+
     it('should not double-register a listener', () => {
       let callCount = 0;
       const listener = function () {

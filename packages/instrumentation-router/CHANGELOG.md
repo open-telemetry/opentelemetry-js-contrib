@@ -1,6 +1,25 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.64.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.63.0...instrumentation-router-v0.64.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.62.0...instrumentation-router-v0.63.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+
+
+### Bug Fixes
+
+* **instrumentation-router:** preserve baggage across next() for Express v5 ([#3528](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3528)) ([911cb51](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/911cb5125f068ef85961b823d5ca7d9bb092d8f1))
+
 ## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.61.0...instrumentation-router-v0.62.0) (2026-05-13)
 
 

@@ -102,6 +102,10 @@ pkg:instrumentation-hapi:
       - any-glob-to-any-file:
           - packages/instrumentation-hapi/**
           - packages/contrib-test-utils/**
+pkg:instrumentation-host-metrics:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/instrumentation-host-metrics/**
 pkg:instrumentation-ioredis:
   - changed-files:
       - any-glob-to-any-file:

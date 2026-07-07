@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-redis
 
 ### Supported Versions
 
-- [`redis`](https://www.npmjs.com/package/redis) versions `>=2.6.0 <6`
+- [`redis`](https://www.npmjs.com/package/redis) versions `>=2.6.0 <7`
 
 ## Usage
 
@@ -75,34 +75,15 @@ const redisInstrumentation = new RedisInstrumentation({
 
 ## Semantic Conventions
 
+The `instrumentation-redis` versions 0.68.0 and later emit the stable v1.33.0+ semantic conventions.
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md) ("old" conventions).
-
-It also supports the new stable semantic conventions introduced in [Version 1.33.0]
-By default, old semantic conventions are used. Use the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable to control which version to emit.
-
-Attributes collected:
-
-### Old Semantic Conventions (default)
-
-| Attribute              | Short Description                                            |
-|------------------------|--------------------------------------------------------------|
-| `db.connection_string` | URL to Redis server address, of the form `redis://host:port` |
-| `db.statement`         | Executed Redis statement                                     |
-| `db.system`            | Database identifier; always `redis`                          |
-| `net.peer.name`        | Hostname or IP of the connected Redis server                 |
-| `net.peer.port`        | Port of the connected Redis server                           |
-
-### Stable Semantic Conventions (v1.33.0)
-
-| Attribute                 | Short Description                                      |
-|---------------------------|--------------------------------------------------------|
-| `db.operation.name`       | Redis command name                                     |
-| `db.operation.batch.size` | Number of commands in a Redis `MULTI/EXEC` transaction |
-| `db.query.text`           | The database query being executed                      |
-| `db.system.name`          | Database identifier; always `redis`                    |
-| `server.address`          | Hostname or IP of the connected Redis server           |
-| `server.port`             | Port of the connected Redis server                     |
+| Attribute           | Short Description                                    |
+|---------------------|------------------------------------------------------|
+| `db.operation.name` | Redis command name                                   |
+| `db.query.text`     | The database query being executed                    |
+| `db.system.name`    | Database identifier; always `redis`                  |
+| `server.address`    | Hostname or IP of the connected Redis server         |
+| `server.port`       | Port of the connected Redis server                   |
 
 ## Useful links
 

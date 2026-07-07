@@ -30,9 +30,9 @@ import { assert } from 'chai';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
 import {
-  ATTR_HTTP_RESPONSE_CONTENT_LENGTH,
-  ATTR_HTTP_URL,
-} from '../src/semconv';
+  ATTR_URL_FULL,
+  ATTR_USER_AGENT_ORIGINAL,
+} from '@opentelemetry/semantic-conventions';
 import { EventNames } from '../src/enums/EventNames';
 
 const exporter = new InMemorySpanExporter();
@@ -343,9 +343,6 @@ describe('DocumentLoad Instrumentation', () => {
         const fsEvents = fetchSpan.events;
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
-        assert.ok(
-          (rootSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH] as number) > 0
-        );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
 
@@ -444,11 +441,11 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.attributes[ATTR_HTTP_URL],
+          spanResource1.attributes[ATTR_URL_FULL],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.attributes[ATTR_HTTP_URL],
+          spanResource2.attributes[ATTR_URL_FULL],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -480,7 +477,7 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.attributes[ATTR_HTTP_URL],
+          spanResource1.attributes[ATTR_URL_FULL],
           'http://localhost:8090/bundle.js'
         );
 
@@ -535,17 +532,20 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.name, 'documentLoad');
 
         assert.isOk(
-          (fetchSpan.attributes['http.url'] as string).startsWith(
+          (fetchSpan.attributes[ATTR_URL_FULL] as string).startsWith(
             'http://localhost:8000/?wtr-session-id='
           )
         );
 
         assert.isOk(
-          (rootSpan.attributes['http.url'] as string).startsWith(
+          (rootSpan.attributes[ATTR_URL_FULL] as string).startsWith(
             'http://localhost:8000/?wtr-session-id='
           )
         );
-        assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
+        assert.strictEqual(
+          rootSpan.attributes[ATTR_USER_AGENT_ORIGINAL],
+          userAgent
+        );
 
         ensureNetworkEventsExists(fsEvents);
         assert.strictEqual(fsEvents.length, 9);
@@ -817,96 +817,15 @@ describe('DocumentLoad Instrumentation', () => {
         done();
       });
     });
-
-    it('should have http.response_content_length attribute even if ignoreNetworkEvents is true', done => {
-      plugin = new DocumentLoadInstrumentation({
-        enabled: false,
-        ignoreNetworkEvents: true,
-      });
-      plugin.enable();
-
-      setTimeout(() => {
-        const spans = exporter.getFinishedSpans();
-        const resourceSpan = spans.find(
-          s => s.name === 'resourceFetch'
-        ) as ReadableSpan;
-        assert.isOk(resourceSpan, 'resourceFetch span should exist');
-        assert.exists(
-          resourceSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
-          'http.response_content_length attribute should exist'
-        );
-        done();
-      });
-    });
-
-    it('should *not* have http.response_content_length attr if semconvStabilityOptIn=http', done => {
-      plugin = new DocumentLoadInstrumentation({
-        enabled: false,
-        semconvStabilityOptIn: 'http',
-      });
-      plugin.enable();
-
-      setTimeout(() => {
-        const spans = exporter.getFinishedSpans();
-        const resourceSpan = spans.find(
-          s => s.name === 'resourceFetch'
-        ) as ReadableSpan;
-        assert.isOk(resourceSpan, 'resourceFetch span should exist');
-        assert.equal(
-          resourceSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
-          undefined,
-          'http.response_content_length attribute should *not* exist'
-        );
-        done();
-      });
-    });
   });
 
-  describe('semconvStabilityOptIn', () => {
-    it('(empty) should use old semconv attributes', done => {
-      plugin = new DocumentLoadInstrumentation();
-      setTimeout(() => {
-        const spans = exporter.getFinishedSpans();
-        assert.strictEqual(spans[0].name, 'documentFetch');
-        assert.isOk(
-          (spans[0].attributes['http.url'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
-          )
-        );
-        assert.equal(spans[0].attributes['url.full'], undefined);
-        done();
-      });
-    });
-
-    it('"http" should use new semconv attributes', done => {
-      plugin = new DocumentLoadInstrumentation({
-        semconvStabilityOptIn: 'http',
-      });
+  describe('semantic conventions', () => {
+    it('should use stable semconv attributes', done => {
+      plugin.enable();
       setTimeout(() => {
         const spans = exporter.getFinishedSpans();
         assert.strictEqual(spans[0].name, 'documentFetch');
         assert.equal(spans[0].attributes['http.url'], undefined);
-        assert.isOk(
-          (spans[0].attributes['url.full'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
-          )
-        );
-        done();
-      });
-    });
-
-    it('"http/dup" should use old and new semconv attributes', done => {
-      plugin = new DocumentLoadInstrumentation({
-        semconvStabilityOptIn: 'http/dup',
-      });
-      setTimeout(() => {
-        const spans = exporter.getFinishedSpans();
-        assert.strictEqual(spans[0].name, 'documentFetch');
-        assert.isOk(
-          (spans[0].attributes['http.url'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
-          )
-        );
         assert.isOk(
           (spans[0].attributes['url.full'] as string).startsWith(
             'http://localhost:8000/?wtr-session-id='

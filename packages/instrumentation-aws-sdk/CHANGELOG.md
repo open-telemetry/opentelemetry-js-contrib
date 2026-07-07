@@ -1,6 +1,39 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.75.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.74.0...instrumentation-aws-sdk-v0.75.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.66.0 to ^0.67.0
+
+## [0.74.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.73.0...instrumentation-aws-sdk-v0.74.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+
+
+### Bug Fixes
+
+* **instrumentation-aws-sdk:** patch middlewareStack via Client.send for @smithy/core&gt;=3.24.0 ([#3530](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3530)) ([e4e61fc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e4e61fc6092265d7002fb8ecd658a794d3f25f01)), closes [#3514](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3514)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.65.0 to ^0.66.0
+
 ## [0.73.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.72.0...instrumentation-aws-sdk-v0.73.0) (2026-05-13)
 
 

@@ -1,6 +1,26 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.32.0...instrumentation-runtime-node-v0.33.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+* **instrumentation-runtime-node:** add active resource gauge ([#3361](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3361)) ([f3d38e2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f3d38e25cdb7a158a47c24fc344cb4e9c6f24252))
+
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.31.0...instrumentation-runtime-node-v0.32.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+
+
+### Bug Fixes
+
+* **instrumentation-runtime-node:** use finer GC duration buckets ([#3537](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3537)) ([275725f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/275725f27b4c9fecf8d731a94eb06df1616fe164))
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.30.0...instrumentation-runtime-node-v0.31.0) (2026-05-13)
 
 

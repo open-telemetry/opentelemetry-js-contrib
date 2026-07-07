@@ -17,9 +17,19 @@ if (logLevel != null) {
   });
 }
 
+const instrumentations = getNodeAutoInstrumentations();
+const resourceDetectors = getResourceDetectorsFromEnv();
+
+// `NodeSDK` registers its own `DiagConsoleLogger` based on `OTEL_LOG_LEVEL`
+// internally, so disable the logger set up above to avoid the "Current
+// logger will be overwritten" warning being logged on every start.
+if (logLevel != null) {
+  diag.disable();
+}
+
 const sdk = new opentelemetry.NodeSDK({
-  instrumentations: getNodeAutoInstrumentations(),
-  resourceDetectors: getResourceDetectorsFromEnv(),
+  instrumentations,
+  resourceDetectors,
 });
 
 try {

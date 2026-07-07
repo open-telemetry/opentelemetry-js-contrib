@@ -1,6 +1,40 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.18.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.17.0...instrumentation-openai-v0.18.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+* **instrumentation-openai:** support Responses API ([#3194](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3194)) ([ace2461](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ace24616169799942a4cdb904ca1b2e878da3394))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.66.0 to ^0.67.0
+
+## [0.17.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.16.0...instrumentation-openai-v0.17.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+
+
+### Bug Fixes
+
+* **instrumentation-openai:** guard stream iterator against chunks missing a choices array ([#3555](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3555)) ([683da10](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/683da10ad170d29e962c87d12c8fc71bcb0115c6))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.65.0 to ^0.66.0
+
 ## [0.16.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.15.0...instrumentation-openai-v0.16.0) (2026-05-13)
 
 

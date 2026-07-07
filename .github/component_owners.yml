@@ -89,6 +89,9 @@ components:
     - trentm
   packages/instrumentation-cassandra-driver:
     - seemk
+  packages/instrumentation-console:
+    - jacksonweber
+    - hectorhdzg
   packages/instrumentation-connect: []
     # Unmaintained
   packages/instrumentation-dns: []
@@ -103,6 +106,8 @@ components:
     - obecny
   packages/instrumentation-hapi: []
     # Unmaintained
+  packages/instrumentation-host-metrics:
+    - legendecas
   packages/instrumentation-ioredis:
     - blumamir
     - naseemkullah
