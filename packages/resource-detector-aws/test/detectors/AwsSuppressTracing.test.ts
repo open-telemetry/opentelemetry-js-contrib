@@ -61,7 +61,7 @@ describe('[Integration] Internal tracing', () => {
       awsEc2Detector,
       awsEcsDetector,
       awsEksDetector,
-      awsLambdaDetector,
+      AwsLambdaDetector,
     } = require('../../build/src');
 
     // NOTE: the require process makes use of the fs API so spans are being exported.
@@ -74,7 +74,9 @@ describe('[Integration] Internal tracing', () => {
       awsEc2Detector,
       awsEcsDetector,
       awsEksDetector,
-      awsLambdaDetector,
+      // Opt into the availability-zone fetch so the Lambda metadata HTTP path is
+      // exercised here and asserted to not emit internal spans.
+      new AwsLambdaDetector({ fetchAvailabilityZone: true }),
     ] as ResourceDetector[];
 
     for (const d of detectors) {

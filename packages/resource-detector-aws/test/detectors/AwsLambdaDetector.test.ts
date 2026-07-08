@@ -18,7 +18,7 @@ import * as assert from 'assert';
 import * as nock from 'nock';
 import { detectResources } from '@opentelemetry/resources';
 import { assertEmptyResource } from '@opentelemetry/contrib-test-utils';
-import { awsLambdaDetector } from '../../src';
+import { awsLambdaDetector, AwsLambdaDetector } from '../../src';
 import {
   ATTR_AWS_LOG_GROUP_NAMES,
   ATTR_CLOUD_AVAILABILITY_ZONE,
@@ -52,7 +52,7 @@ describe('awsLambdaDetector', () => {
   });
 
   describe('on lambda', () => {
-    it('fills resource', async () => {
+    it('fills resource and fetches the availability zone when enabled', async () => {
       process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
       process.env.AWS_REGION = 'us-east-1';
       process.env.AWS_LAMBDA_FUNCTION_NAME = 'name';
@@ -63,17 +63,18 @@ describe('awsLambdaDetector', () => {
       process.env.AWS_LAMBDA_METADATA_API = AWS_LAMBDA_METADATA_API;
       process.env.AWS_LAMBDA_METADATA_TOKEN = AWS_LAMBDA_METADATA_TOKEN;
 
+      const detector = new AwsLambdaDetector({ fetchAvailabilityZone: true });
       const scope = nock(AWS_LAMBDA_METADATA_HOST)
-        .get(awsLambdaDetector.AWS_LAMBDA_EXECUTION_ENVIRONMENT_METADATA_PATH)
+        .get(detector.AWS_LAMBDA_EXECUTION_ENVIRONMENT_METADATA_PATH)
         .matchHeader(
-          awsLambdaDetector.AWS_LAMBDA_METADATA_AUTH_HEADER,
+          detector.AWS_LAMBDA_METADATA_AUTH_HEADER,
           `Bearer ${AWS_LAMBDA_METADATA_TOKEN}`
         )
         .reply(200, {
           AvailabilityZoneID: 'use1-az1',
         });
 
-      const resource = detectResources({ detectors: [awsLambdaDetector] });
+      const resource = detectResources({ detectors: [detector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();
@@ -106,6 +107,38 @@ describe('awsLambdaDetector', () => {
       ]);
     });
 
+    it('does not fetch the availability zone by default', async () => {
+      process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
+      process.env.AWS_REGION = 'us-east-1';
+      process.env.AWS_LAMBDA_FUNCTION_NAME = 'name';
+      process.env.AWS_LAMBDA_FUNCTION_VERSION = 'v1';
+      process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE = '128';
+      // Lambda sets these in every execution environment, so their presence must
+      // not be enough to trigger the metadata request on its own.
+      process.env.AWS_LAMBDA_METADATA_API = AWS_LAMBDA_METADATA_API;
+      process.env.AWS_LAMBDA_METADATA_TOKEN = AWS_LAMBDA_METADATA_TOKEN;
+
+      const scope = nock(AWS_LAMBDA_METADATA_HOST)
+        .get(awsLambdaDetector.AWS_LAMBDA_EXECUTION_ENVIRONMENT_METADATA_PATH)
+        .reply(200, {
+          AvailabilityZoneID: 'use1-az1',
+        });
+
+      const resource = detectResources({ detectors: [awsLambdaDetector] });
+      await resource.waitForAsyncAttributes?.();
+
+      assert.ok(
+        !scope.isDone(),
+        'metadata endpoint must not be called when fetchAvailabilityZone is disabled'
+      );
+      assert.strictEqual(
+        resource.attributes[ATTR_CLOUD_AVAILABILITY_ZONE],
+        undefined
+      );
+      assert.strictEqual(resource.attributes[ATTR_CLOUD_REGION], 'us-east-1');
+      assert.strictEqual(resource.attributes[ATTR_FAAS_NAME], 'name');
+    });
+
     it('keeps env-based attributes when metadata endpoint request fails', async () => {
       process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
       process.env.AWS_REGION = 'us-east-1';
@@ -115,15 +148,16 @@ describe('awsLambdaDetector', () => {
       process.env.AWS_LAMBDA_METADATA_API = AWS_LAMBDA_METADATA_API;
       process.env.AWS_LAMBDA_METADATA_TOKEN = AWS_LAMBDA_METADATA_TOKEN;
 
+      const detector = new AwsLambdaDetector({ fetchAvailabilityZone: true });
       const scope = nock(AWS_LAMBDA_METADATA_HOST)
-        .get(awsLambdaDetector.AWS_LAMBDA_EXECUTION_ENVIRONMENT_METADATA_PATH)
+        .get(detector.AWS_LAMBDA_EXECUTION_ENVIRONMENT_METADATA_PATH)
         .matchHeader(
-          awsLambdaDetector.AWS_LAMBDA_METADATA_AUTH_HEADER,
+          detector.AWS_LAMBDA_METADATA_AUTH_HEADER,
           `Bearer ${AWS_LAMBDA_METADATA_TOKEN}`
         )
         .reply(500);
 
-      const resource = detectResources({ detectors: [awsLambdaDetector] });
+      const resource = detectResources({ detectors: [detector] });
       await resource.waitForAsyncAttributes?.();
 
       scope.done();

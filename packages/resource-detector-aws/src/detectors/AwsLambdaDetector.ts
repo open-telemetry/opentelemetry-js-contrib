@@ -41,6 +41,24 @@ interface LambdaExecutionEnvironmentMetadata {
 }
 
 /**
+ * Configuration options for {@link AwsLambdaDetector}.
+ */
+export interface AwsLambdaDetectorConfig {
+  /**
+   * Whether to populate `cloud.availability_zone` from the AWS Lambda metadata
+   * endpoint.
+   *
+   * Reading the availability zone requires an HTTP request to the
+   * Lambda-provided metadata endpoint on the initialization (cold-start) path.
+   * To avoid adding that cost for consumers that do not need the attribute, it
+   * is opt-in and disabled by default.
+   *
+   * @default false
+   */
+  fetchAvailabilityZone?: boolean;
+}
+
+/**
  * The AwsLambdaDetector can be used to detect if a process is running in AWS Lambda
  * and return a {@link Resource} populated with data about the environment.
  * Returns an empty Resource if detection fails.
@@ -50,6 +68,12 @@ export class AwsLambdaDetector implements ResourceDetector {
     '/2026-01-15/metadata/execution-environment';
   public readonly AWS_LAMBDA_METADATA_AUTH_HEADER = 'Authorization';
   public readonly MILLISECOND_TIME_OUT = 1000;
+
+  private readonly _shouldFetchAvailabilityZone: boolean;
+
+  constructor(config: AwsLambdaDetectorConfig = {}) {
+    this._shouldFetchAvailabilityZone = config.fetchAvailabilityZone ?? false;
+  }
 
   public detect(): DetectedResource {
     // Check if running inside AWS Lambda environment
@@ -85,13 +109,20 @@ export class AwsLambdaDetector implements ResourceDetector {
       attributes[ATTR_FAAS_INSTANCE] = logStreamName;
     }
 
-    const metadataApi = process.env.AWS_LAMBDA_METADATA_API;
-    const metadataToken = process.env.AWS_LAMBDA_METADATA_TOKEN;
-    if (metadataApi && metadataToken) {
-      attributes[ATTR_CLOUD_AVAILABILITY_ZONE] = context.with(
-        suppressTracing(context.active()),
-        () => this._fetchAvailabilityZone(metadataApi, metadataToken)
-      );
+    // Populating `cloud.availability_zone` requires an HTTP request to the
+    // Lambda metadata endpoint on the cold-start path, so it is opt-in via the
+    // `fetchAvailabilityZone` option. The `AWS_LAMBDA_METADATA_API` and
+    // `AWS_LAMBDA_METADATA_TOKEN` environment variables are set automatically by
+    // Lambda and provide the metadata endpoint address and auth token.
+    if (this._shouldFetchAvailabilityZone) {
+      const metadataApi = process.env.AWS_LAMBDA_METADATA_API;
+      const metadataToken = process.env.AWS_LAMBDA_METADATA_TOKEN;
+      if (metadataApi && metadataToken) {
+        attributes[ATTR_CLOUD_AVAILABILITY_ZONE] = context.with(
+          suppressTracing(context.active()),
+          () => this._fetchAvailabilityZone(metadataApi, metadataToken)
+        );
+      }
     }
 
     return { attributes };
@@ -101,6 +132,11 @@ export class AwsLambdaDetector implements ResourceDetector {
     metadataApi: string,
     metadataToken: string
   ): Promise<string | undefined> {
+    // Lambda's metadata endpoint only exposes the AZ ID (e.g. `use1-az1`), not the AZ name.
+    // This is recorded best-effort. Other AWS resource detectors (EC2 and ECS) in this package
+    // populate `cloud.availability_zone` with the AZ name (e.g. `us-east-1a`), so this value
+    // is not directly comparable across detectors. Translating to a name would require
+    // `ec2:DescribeAvailabilityZones` and is intentionally not done here.
     try {
       const metadata = await this._fetchExecutionEnvironmentMetadata(
         metadataApi,
