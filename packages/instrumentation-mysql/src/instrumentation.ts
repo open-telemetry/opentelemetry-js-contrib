@@ -25,7 +25,11 @@ import {
   ATTR_SERVER_PORT,
   DB_SYSTEM_NAME_VALUE_MYSQL,
 } from '@opentelemetry/semantic-conventions';
-import { METRIC_DB_CLIENT_CONNECTION_COUNT } from './semconv';
+import {
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
+  ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
+  ATTR_DB_CLIENT_CONNECTION_STATE,
+} from './semconv';
 import type * as mysqlTypes from 'mysql';
 import { AttributeNames } from './AttributeNames';
 import { MySQLInstrumentationConfig } from './types';
@@ -66,8 +70,11 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
   /**
    * Convenience function for updating the `db.client.connection.count` metric.
    */
-  private _connCountAdd(n: number, poolNameOld: string, state: string) {
-    this._connectionsCount?.add(n, { state, name: poolNameOld });
+  private _connCountAdd(n: number, poolName: string, state: string) {
+    this._connectionsCount?.add(n, {
+      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
+      [ATTR_DB_CLIENT_CONNECTION_STATE]: state,
+    });
   }
 
   protected init() {
@@ -165,9 +172,9 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const nAll = (pool as any)._allConnections.length;
         const nFree = (pool as any)._freeConnections.length;
         const nUsed = nAll - nFree;
-        const poolNameOld = getPoolNameOld(pool);
-        thisPlugin._connCountAdd(-nUsed, poolNameOld, 'used');
-        thisPlugin._connCountAdd(-nFree, poolNameOld, 'idle');
+        const poolName = getPoolNameOld(pool);
+        thisPlugin._connCountAdd(-nUsed, poolName, 'used');
+        thisPlugin._connCountAdd(-nFree, poolName, 'idle');
         originalPoolEnd.apply(pool, arguments);
       };
     };
@@ -390,20 +397,20 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
   }
 
   private _setPoolCallbacks(pool: mysqlTypes.Pool, id: string) {
-    const poolNameOld = id || getPoolNameOld(pool);
+    const poolName = id || getPoolNameOld(pool);
 
     pool.on('connection', _connection => {
-      this._connCountAdd(1, poolNameOld, 'idle');
+      this._connCountAdd(1, poolName, 'idle');
     });
 
     pool.on('acquire', _connection => {
-      this._connCountAdd(-1, poolNameOld, 'idle');
-      this._connCountAdd(1, poolNameOld, 'used');
+      this._connCountAdd(-1, poolName, 'idle');
+      this._connCountAdd(1, poolName, 'used');
     });
 
     pool.on('release', _connection => {
-      this._connCountAdd(1, poolNameOld, 'idle');
-      this._connCountAdd(-1, poolNameOld, 'used');
+      this._connCountAdd(1, poolName, 'idle');
+      this._connCountAdd(-1, poolName, 'used');
     });
   }
 }

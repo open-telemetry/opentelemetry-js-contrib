@@ -101,16 +101,22 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     const dataPoints = metrics[0].dataPoints;
     assert.strictEqual(dataPoints.length, 2);
     assert.strictEqual(dataPoints[0].value, 0);
-    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
-      dataPoints[0].attributes['pool.name'],
+      dataPoints[0].attributes['db.client.connection.state'],
+      'used'
+    );
+    assert.strictEqual(
+      dataPoints[0].attributes['db.client.connection.pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
 
     assert.strictEqual(dataPoints[1].value, 1);
-    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
-      dataPoints[1].attributes['pool.name'],
+      dataPoints[1].attributes['db.client.connection.state'],
+      'idle'
+    );
+    assert.strictEqual(
+      dataPoints[1].attributes['db.client.connection.pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
   });
@@ -139,15 +145,21 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     const dataPoints = metrics[0].dataPoints;
     assert.strictEqual(dataPoints.length, 2);
     assert.strictEqual(dataPoints[0].value, 0);
-    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
-      dataPoints[0].attributes['pool.name'],
+      dataPoints[0].attributes['db.client.connection.state'],
+      'used'
+    );
+    assert.strictEqual(
+      dataPoints[0].attributes['db.client.connection.pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
     assert.strictEqual(dataPoints[1].value, 0);
-    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
-      dataPoints[1].attributes['pool.name'],
+      dataPoints[1].attributes['db.client.connection.state'],
+      'idle'
+    );
+    assert.strictEqual(
+      dataPoints[1].attributes['db.client.connection.pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
   });

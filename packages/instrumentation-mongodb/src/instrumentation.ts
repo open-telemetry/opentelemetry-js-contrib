@@ -30,6 +30,8 @@ import {
 import {
   DB_SYSTEM_NAME_VALUE_MONGODB,
   METRIC_DB_CLIENT_CONNECTION_COUNT,
+  ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
+  ATTR_DB_CLIENT_CONNECTION_STATE,
 } from './semconv';
 import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
@@ -80,7 +82,10 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
    * Convenience function for updating the `db.client.connection.count` metric.
    */
   private _connCountAdd(n: number, poolName: string, state: string) {
-    this._connectionsCount?.add(n, { 'pool.name': poolName, state });
+    this._connectionsCount?.add(n, {
+      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
+      [ATTR_DB_CLIENT_CONNECTION_STATE]: state,
+    });
   }
 
   init() {
