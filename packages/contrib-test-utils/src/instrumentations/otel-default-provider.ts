@@ -2,7 +2,7 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
+
 import { context, propagation, trace } from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
@@ -32,12 +32,6 @@ export function registerInstrumentationTestingProvider(config?: {
   spanProcessors.push(
     new SimpleSpanProcessor({ exporter: getTestMemoryExporter()! })
   );
-
-  if (process.env.OTEL_EXPORTER_JAEGER_AGENT_HOST) {
-    spanProcessors.push(
-      new SimpleSpanProcessor({ exporter: new JaegerExporter() })
-    );
-  }
 
   const tracerProvider = new TracerProvider({
     ...config,

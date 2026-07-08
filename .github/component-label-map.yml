@@ -248,11 +248,6 @@ pkg:plugin-react-load:
   - changed-files:
       - any-glob-to-any-file:
           - packages/plugin-react-load/**
-pkg:propagation-utils:
-  - changed-files:
-      - any-glob-to-any-file:
-          - packages/propagation-utils/**
-          - packages/contrib-test-utils/**
 pkg:propagator-aws-xray:
   - changed-files:
       - any-glob-to-any-file:

@@ -20,7 +20,6 @@
     "packages/baggage-log-record-processor": {},
     "packages/host-metrics": {},
     "packages/id-generator-aws-xray": {},
-    "packages/propagation-utils": {},
     "packages/redis-common": {},
     "packages/sampler-aws-xray": {},
     "packages/sql-common": {},
