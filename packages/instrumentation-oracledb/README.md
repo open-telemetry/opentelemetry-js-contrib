@@ -88,12 +88,12 @@ For Thin mode, additional internal round-trip spans will be emitted, such as:
 
 | Options | Type | Default | Description |
 | ------- | ---- | ------- | ----------- |
-| [`enhancedDatabaseReporting`](./src/types.ts) | `boolean` | `false` | If true, adds SQL bind values as `db.operation.parameter.<key>` attributes. When enabled, it also records `db.query.text`. This can capture sensitive data and should be used with care. |
-| [`dbStatementDump`](./src/types.ts) | `boolean` | `false` | If true, records the SQL statement as `db.query.text`. |
-| [`requestHook`](./src/types.ts) | `OracleInstrumentationExecutionRequestHook` | `undefined` | Hook for adding custom span attributes based on the query input and connection metadata. |
-| [`responseHook`](./src/types.ts) | `OracleInstrumentationExecutionResponseHook` | `undefined` | Hook for adding custom span attributes based on the database response. |
-| [`requireParentSpan`](./src/types.ts) | `boolean` | `false` | If true, only creates spans when there is an active parent span. |
-| [`propagateTraceContextToSessionAction`](./src/types.ts) | `boolean` | `false` | If true, injects W3C Trace Context into the Oracle `V$SESSION.ACTION` field so database-side tracing can be correlated with application spans. |
+| `enhancedDatabaseReporting` | `boolean` | `false` | If true, adds SQL bind values as `db.operation.parameter.<key>` attributes. When enabled, it also records `db.query.text`. This can capture sensitive data and should be used with care. |
+| `dbStatementDump` | `boolean` | `false` | If true, records the SQL statement as `db.query.text`. |
+| `requestHook` | `OracleInstrumentationExecutionRequestHook` | `undefined` | Hook for adding custom span attributes based on the query input and connection metadata. |
+| `responseHook` | `OracleInstrumentationExecutionResponseHook` | `undefined` | Hook for adding custom span attributes based on the database response. |
+| `requireParentSpan` | `boolean` | `false` | If true, only creates spans when there is an active parent span. |
+| `propagateTraceContextToSessionAction` | `boolean` | `false` | If true, injects W3C Trace Context into the Oracle `V$SESSION.ACTION` field so database-side tracing can be correlated with application spans.
 
 ## OracleDB-specific Notes
 
