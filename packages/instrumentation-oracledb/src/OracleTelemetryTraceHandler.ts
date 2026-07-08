@@ -58,6 +58,18 @@ function getTraceHandlerBaseClass(
   }
 }
 
+function parseNormalizedOperationName(statement: string): string {
+  const trimmedStatement = statement.trim();
+  const indexOfFirstSpace = trimmedStatement.indexOf(' ');
+  let sqlCommand =
+    indexOfFirstSpace === -1
+      ? trimmedStatement
+      : trimmedStatement.slice(0, indexOfFirstSpace);
+
+  sqlCommand = sqlCommand.toUpperCase();
+  return sqlCommand.endsWith(';') ? sqlCommand.slice(0, -1) : sqlCommand;
+}
+
 export function buildTraceparent(spanContext: SpanContext): string | undefined {
   return `00-${spanContext.traceId}-${spanContext.spanId}-0${Number(
     spanContext.traceFlags || TraceFlags.NONE
@@ -213,8 +225,7 @@ export function getOracleTelemetryTraceHandlerClass(
       if (callConfig.statement) {
         span.setAttribute(
           ATTR_DB_OPERATION_NAME,
-          // retrieve just the first word
-          callConfig.statement.split(' ')[0].toUpperCase()
+          parseNormalizedOperationName(callConfig.statement)
         );
         if (
           this._instrumentConfig.dbStatementDump ||
@@ -303,7 +314,9 @@ export function getOracleTelemetryTraceHandlerClass(
       const dbName = connectLevelConfig.dbUniqueName;
       // Prefer the SQL text for the verb. When the trace payload omits the
       // statement, the fallback above uses the original SQL argument.
-      const sqlCommand = sqlStatement?.split(' ')[0].toUpperCase() || '';
+      const sqlCommand = sqlStatement
+        ? parseNormalizedOperationName(sqlStatement)
+        : '';
       userContext.span.updateName(
         `${operation}:${sqlCommand}${dbName ? ` ${dbName}` : ''}`
       );

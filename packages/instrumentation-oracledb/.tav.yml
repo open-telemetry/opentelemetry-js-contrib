@@ -1,4 +1,7 @@
 oracledb:
-    # a sample from supported versions
+    # lower-bound sample from the supported range
+  - versions: "6.7.0"
+    commands: npm run test
+    # a sample from the remainder of the supported range
   - versions: ">=6.10.0 <8"
     commands: npm run test
