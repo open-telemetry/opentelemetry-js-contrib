@@ -21,7 +21,7 @@ const instrumentation = registerInstrumentationTesting(
   new TypeormInstrumentation()
 );
 import * as typeorm from 'typeorm';
-import { defaultOptions, User } from './utils';
+import { defaultOptions, secondaryOptions, User } from './utils';
 
 describe('EntityManager', () => {
   after(() => {
@@ -162,18 +162,10 @@ describe('EntityManager', () => {
   });
 
   describe('multiple connections', () => {
-    const options2: any = {
-      name: 'connection2',
-      type: 'sqlite',
-      database: 'connection2.db',
-      entities: [User],
-      synchronize: true,
-    };
-
     it('appends matching connection details to span', async () => {
       const ds1 = new typeorm.DataSource(defaultOptions);
       await ds1.initialize();
-      const ds2 = new typeorm.DataSource(options2);
+      const ds2 = new typeorm.DataSource(secondaryOptions);
       await ds2.initialize();
 
       const manager1 = ds1.manager;
@@ -209,11 +201,11 @@ describe('EntityManager', () => {
       assert.strictEqual(sqlite2Span.name, 'remove user');
       assert.strictEqual(
         sqlite2Span.attributes[ATTR_DB_SYSTEM_NAME],
-        options2.type
+        secondaryOptions.type
       );
       assert.strictEqual(
         sqlite2Span.attributes[ATTR_DB_NAMESPACE],
-        options2.database
+        secondaryOptions.database
       );
       assert.strictEqual(
         sqlite2Span.attributes[ATTR_DB_OPERATION_NAME],

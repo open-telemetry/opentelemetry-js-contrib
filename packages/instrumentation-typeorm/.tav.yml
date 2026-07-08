@@ -1,5 +1,12 @@
 typeorm:
-  versions:
-    include: ">=0.3.0 <1"
-    mode: max-7
-  commands: npm run test
+  jobs:
+    - versions:
+        include: ">=0.3.0 <1"
+        mode: max-7
+      commands: npm run test
+    - versions:
+        include: ">=1.0.0 <2"
+        mode: max-7
+      node: '>=20'
+      peerDependencies: "better-sqlite3@^11.0.0"
+      commands: npm run test

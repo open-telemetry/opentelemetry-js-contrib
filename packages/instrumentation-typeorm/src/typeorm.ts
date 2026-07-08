@@ -70,14 +70,16 @@ const functionsUsingQueryBuilder: EntityManagerMethods[] = [
   'count',
   'find',
   'findAndCount',
-  'findByIds',
   'findOne',
   'increment',
   'decrement',
 ];
-const entityManagerMethods: EntityManagerMethods[] = [
+// 'findByIds' was removed in typeorm 1.x. Keep it in the runtime list so it is
+// still instrumented on 0.3.x; the patch loop skips it when absent.
+const entityManagerMethods: string[] = [
   ...functionsUsingEntityPersistExecutor,
   ...functionsUsingQueryBuilder,
+  'findByIds',
 ];
 
 export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumentationConfig> {
@@ -88,7 +90,7 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
   protected init() {
     const selectQueryBuilder = new InstrumentationNodeModuleFile(
       'typeorm/query-builder/SelectQueryBuilder.js',
-      ['>=0.3.0 <1'],
+      ['>=0.3.0 <2'],
       moduleExports => {
         selectQueryBuilderExecuteMethods.map(method => {
           if (isWrapped(moduleExports.SelectQueryBuilder.prototype?.[method])) {
@@ -115,7 +117,7 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
 
     const dataSource = new InstrumentationNodeModuleFile(
       'typeorm/data-source/DataSource.js',
-      ['>=0.3.0 <1'],
+      ['>=0.3.0 <2'],
       moduleExports => {
         if (isWrapped(moduleExports.DataSource.prototype?.[rawQueryFuncName])) {
           this._unwrap(moduleExports.DataSource.prototype, rawQueryFuncName);
@@ -138,9 +140,10 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
 
     const entityManager = new InstrumentationNodeModuleFile(
       'typeorm/entity-manager/EntityManager.js',
-      ['>=0.3.0 <1'],
+      ['>=0.3.0 <2'],
       moduleExports => {
         entityManagerMethods.map(method => {
+          if (!moduleExports.EntityManager.prototype?.[method]) return;
           if (isWrapped(moduleExports.EntityManager.prototype?.[method])) {
             this._unwrap(moduleExports.EntityManager.prototype, method);
           }
@@ -165,7 +168,7 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
 
     const module = new InstrumentationNodeModuleDefinition(
       'typeorm',
-      ['>=0.3.0 <1'],
+      ['>=0.3.0 <2'],
       undefined,
       undefined,
       [selectQueryBuilder, entityManager, dataSource]
