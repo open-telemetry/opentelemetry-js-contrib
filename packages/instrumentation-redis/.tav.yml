@@ -9,3 +9,8 @@ redis:
       exclude: "4.6.9"
       mode: latest-minors
     commands: npm run test
+  - versions:
+      include: '>=6 <7'
+      mode: latest-minors
+    node: '>=20'
+    commands: npm run test

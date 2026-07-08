@@ -11,6 +11,7 @@ import { RedisInstrumentationConfig } from './types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { RedisInstrumentationV2_V3 } from './v2-v3/instrumentation';
 import { TracerProvider } from '@opentelemetry/api';
+// "v4-v5" is a bit of a misnomer. It now supports redis@6 as well.
 import { RedisInstrumentationV4_V5 } from './v4-v5/instrumentation';
 
 const DEFAULT_CONFIG: RedisInstrumentationConfig = {
