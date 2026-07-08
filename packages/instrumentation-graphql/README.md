@@ -5,7 +5,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation and tracing for GraphQL in Node.js applications, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation and tracing for GraphQL in Node.js applications.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -26,28 +26,18 @@ npm install @opentelemetry/instrumentation-graphql
 ## Usage
 
 ```js
-'use strict';
-
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { GraphQLInstrumentation } = require('@opentelemetry/instrumentation-graphql');
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new GraphQLInstrumentation({
-      // optional params
-      // allowValues: true,
-      // depth: 2,
-      // mergeItems: true,
-      // ignoreTrivialResolveSpans: true,
-      // ignoreResolveSpans: true,
+      // See below for configuration options.
     }),
   ],
 });
-
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Optional Parameters

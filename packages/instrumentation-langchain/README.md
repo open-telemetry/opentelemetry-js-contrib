@@ -20,22 +20,19 @@ npm install --save @opentelemetry/instrumentation-langchain
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { LangChainInstrumentation } = require('@opentelemetry/instrumentation-langchain');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new LangChainInstrumentation({
       // Configuration options
       captureMessageContent: false, // Set to true to capture prompt/completion content
     }),
-    // other instrumentations
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Configuration Options

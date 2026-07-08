@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`mysql2`](https://github.com/sidorares/node-mysql2) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`mysql2`](https://github.com/sidorares/node-mysql2) module.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -23,7 +23,7 @@ npm install --save @opentelemetry/instrumentation-mysql2
 
 OpenTelemetry MySQL2 Instrumentation allows the user to automatically collect trace data and export them to the backend of choice, to give observability to distributed systems when working with [mysql2](https://github.com/sidorares/node-mysql2).
 
-To enable a specific instrumentation (**MySQL2** in this case), pass it to `registerInstrumentations()`.
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
 This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
 
 ```js
@@ -35,6 +35,8 @@ const sdk = new NodeSDK({
     new MySQL2Instrumentation(),
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ### MySQL2 Instrumentation Options

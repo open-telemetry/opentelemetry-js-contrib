@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`lru-memoizer`](https://github.com/jfromaniello/lru-memoizer) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`lru-memoizer`](https://github.com/jfromaniello/lru-memoizer) module.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -23,21 +23,20 @@ npm install --save @opentelemetry/instrumentation-lru-memoizer
 
 This instrumentation does not produce any telemetry data. It only bind the caller context to callbacks so downstream operations are recorded with the right context (traceId / parentSpanId / baggage / etc). The `lru-memoizer` package is a dependency for other packages such as [jwks-rsa](https://www.npmjs.com/package/jwks-rsa)
 
-To load a specific plugin, specify it in the registerInstrumentations's configuration:
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { LruMemoizerInstrumentation } = require('@opentelemetry/instrumentation-lru-memoizer');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new LruMemoizerInstrumentation(),
   ],
-})
+});
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Semantic Conventions

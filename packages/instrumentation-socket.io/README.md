@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`socket.io`](https://github.com/socketio/socket.io) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`socket.io`](https://github.com/socketio/socket.io) module.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -21,21 +21,20 @@ npm install --save @opentelemetry/instrumentation-socket.io
 
 ## Usage
 
-To load a specific plugin, specify it in the registerInstrumentations's configuration:
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
 
 ```js
-const { NodeTracerProvider } = require("@opentelemetry/sdk-trace-node");
-const {
-  SocketIoInstrumentation,
-} = require("@opentelemetry/instrumentation-socket.io");
-const { registerInstrumentations } = require("@opentelemetry/instrumentation");
+const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { SocketIoInstrumentation } = require("@opentelemetry/instrumentation-socket.io");
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
-  instrumentations: [new SocketIoInstrumentation()],
+const sdk = new NodeSDK({
+  instrumentations: [
+    new SocketIoInstrumentation(),
+  ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Optional Parameters

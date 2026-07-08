@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`generic-pool`](https://github.com/coopernurse/node-pool) module, creating a span for every acquire call, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`generic-pool`](https://github.com/coopernurse/node-pool) module, creating a span for every acquire call.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -22,23 +22,16 @@ npm install --save @opentelemetry/instrumentation-generic-pool
 ## Usage
 
 ```js
-const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace');
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { GenericPoolInstrumentation } = require('@opentelemetry/instrumentation-generic-pool');
 
-const provider = new NodeTracerProvider({
-  spanProcessors: [
-    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
+const sdk = new NodeSDK({
+  instrumentations: [
+    new GenericPoolInstrumentation(),
   ],
 });
-
-provider.register();
-
-registerInstrumentations({
-  instrumentations: [new GenericPoolInstrumentation()],
-  tracerProvider: provider,
-});
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Semantic Conventions
