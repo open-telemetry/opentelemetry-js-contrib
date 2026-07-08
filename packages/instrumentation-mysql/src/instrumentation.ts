@@ -38,7 +38,7 @@ import {
   getDbQueryText,
   getDbValues,
   getSpanName,
-  getPoolNameOld,
+  getPoolName,
 } from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -172,7 +172,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const nAll = (pool as any)._allConnections.length;
         const nFree = (pool as any)._freeConnections.length;
         const nUsed = nAll - nFree;
-        const poolName = getPoolNameOld(pool);
+        const poolName = getPoolName(pool);
         thisPlugin._connCountAdd(-nUsed, poolName, 'used');
         thisPlugin._connCountAdd(-nFree, poolName, 'idle');
         originalPoolEnd.apply(pool, arguments);
@@ -397,7 +397,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
   }
 
   private _setPoolCallbacks(pool: mysqlTypes.Pool, id: string) {
-    const poolName = id || getPoolNameOld(pool);
+    const poolName = id || getPoolName(pool);
 
     pool.on('connection', _connection => {
       this._connCountAdd(1, poolName, 'idle');
