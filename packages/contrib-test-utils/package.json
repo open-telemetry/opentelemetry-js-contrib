@@ -44,7 +44,6 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/exporter-jaeger": "^2.0.0",
     "@opentelemetry/instrumentation": "^0.220.0",
     "@opentelemetry/resources": "^2.0.0",
     "@opentelemetry/sdk-metrics": "^2.0.0",
