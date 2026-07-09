@@ -55,7 +55,7 @@ import {
   MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
   MESSAGING_SYSTEM_VALUE_AWS_SQS,
 } from './semconv';
-import {
+import type {
   APIGatewayProxyEventHeaders,
   Callback,
   Context,
