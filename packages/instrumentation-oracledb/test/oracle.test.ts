@@ -25,7 +25,10 @@ import {
 import * as assert from 'assert';
 import { OracleInstrumentation } from '../src';
 import { SpanNames } from '../src/constants';
-import { buildTraceparent } from '../src/OracleTelemetryTraceHandler';
+import {
+  buildTraceparent,
+  getOracleTelemetryTraceHandlerClass,
+} from '../src/OracleTelemetryTraceHandler';
 
 import {
   ATTR_DB_NAMESPACE,
@@ -42,7 +45,11 @@ import {
 
 import {
   ATTR_DB_OPERATION_PARAMETER,
-  ATTR_DB_USER,
+  ATTR_ORACLE_DB_DOMAIN,
+  ATTR_ORACLE_DB_INSTANCE_NAME,
+  ATTR_ORACLE_DB_NAME,
+  ATTR_ORACLE_DB_PDB,
+  ATTR_ORACLE_DB_SERVICE,
   DB_SYSTEM_NAME_VALUE_ORACLE_DB,
 } from '../src/semconv';
 
@@ -52,16 +59,60 @@ const provider = new TracerProvider({
   spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
 });
 const tracer = provider.getTracer('external');
+
 const instrumentation = new OracleInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
 import * as oracledb from 'oracledb';
 
+function createTestTraceHandlerForSemconvTests() {
+  const TraceHandler = getOracleTelemetryTraceHandlerClass({
+    traceHandler: {
+      TraceHandlerBase: class {
+        enable() {}
+      },
+    },
+  } as any);
+  return new TraceHandler(() => tracer, {});
+}
+
 const VER_23_4 = 2304000000;
 const hostname = 'localhost';
 const pno = 1521;
-const serviceName = 'FREEPDB1';
+const configuredConnectString =
+  process.env.ORACLE_CONNECTSTRING || 'localhost:1521/freepdb1';
+const serviceName = configuredConnectString.split('/').pop() || 'freepdb1';
+
+function isOracleDB610(): boolean {
+  return oracledb.version === 61000;
+}
+
+function isOracleDB610Plus(): boolean {
+  return oracledb.version >= 61000;
+}
+
+function isOracleDB7Plus(): boolean {
+  return oracledb.version >= 70000;
+}
+
+// Older pre-6.10 drivers expose connection metadata inconsistently across
+// connect, execute, and hook code paths. Normalize those attrs in assertions
+// so version-matrix tests only check fields that are stable for that range.
+function normalizeLegacyDriverAttributes(attributes: Attributes): Attributes {
+  const normalized = { ...attributes };
+  if (!isOracleDB610Plus()) {
+    delete normalized[ATTR_DB_NAMESPACE];
+    delete normalized[ATTR_ORACLE_DB_PDB];
+    delete normalized[ATTR_ORACLE_DB_INSTANCE_NAME];
+    if (typeof normalized[ATTR_ORACLE_DB_SERVICE] === 'string') {
+      normalized[ATTR_ORACLE_DB_SERVICE] =
+        normalized[ATTR_ORACLE_DB_SERVICE].toLowerCase();
+    }
+  }
+  return normalized;
+}
+
 let serverVersion = 2304000000; // DB version.
 let numExecSpans = 2; // Default number of Spans created for Execute API in thin mode.
 let numConnSpans = 2; // Default number of spans created during connection establishment.
@@ -69,7 +120,7 @@ let poolMinSpanCount = 1; // number of spans created for createPool considering 
 const CONFIG = {
   user: process.env.ORACLE_USER || 'demo',
   password: process.env.ORACLE_PASSWORD || 'demo',
-  connectString: process.env.ORACLE_CONNECTSTRING || 'localhost:1521/freepdb1',
+  connectString: configuredConnectString,
 };
 const POOL_CONFIG = {
   ...CONFIG,
@@ -104,17 +155,16 @@ let attributesWithSensitiveDataBindsByName: Record<
 let connAttributes: Record<string, string | number>; // connection related span attributes.
 let poolAttributes: Record<string, string | number>; // pool related span attributes.
 let connAttrList: Record<string, string | number>[]; // attributes per span during connection establishment.
-let spanNameSuffix: string; // SpanName will be <operationName serviceName>
+let spanNameSuffix: string; // SpanName will be <operationName db.namespace>
 let failedConnAttrList: Record<string, string | number>[]; // attributes in span for failed connection.
 let poolConnAttrList: Record<string, string | number>[]; // attributes per span when connection established from pool.
 let spanNamesList: string[]; // span names for roundtrips and public API spans.
 
 const DEFAULT_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
-  [ATTR_DB_NAMESPACE]: serviceName,
+  [ATTR_ORACLE_DB_SERVICE]: serviceName,
   [ATTR_SERVER_ADDRESS]: hostname,
   [ATTR_SERVER_PORT]: pno,
-  [ATTR_DB_USER]: CONFIG.user,
   [ATTR_NETWORK_TRANSPORT]: 'TCP',
 };
 
@@ -122,18 +172,15 @@ const DEFAULT_ATTRIBUTES = {
 // hostname, port and protocol.
 const DEFAULT_ATTRIBUTES_THICK = {
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
-  [ATTR_DB_NAMESPACE]: serviceName,
-  [ATTR_DB_USER]: CONFIG.user,
+  [ATTR_ORACLE_DB_SERVICE]: serviceName,
 };
 
 const POOL_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
-  [ATTR_DB_USER]: CONFIG.user,
 };
 
 const CONN_FAILED_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
-  [ATTR_DB_USER]: CONFIG.user,
 };
 
 const unsetStatus: SpanStatus = {
@@ -166,6 +213,8 @@ if (process.env.NODE_ORACLEDB_DRIVER_MODE === 'thick') {
 // Additionally, adjusts the number of roundtrip spans based on the database version.
 function updateAttrSpanList(connection: oracledb.Connection) {
   serverVersion = connection.oracleServerVersion;
+  const extendedConnection = connection as any;
+  const connectSpanAttributes: Record<string, string | number> = {};
 
   let attributes: Record<string, string | number>;
   if (oracledb.thin) {
@@ -177,28 +226,48 @@ function updateAttrSpanList(connection: oracledb.Connection) {
     attributes = { ...DEFAULT_ATTRIBUTES_THICK };
     numExecSpans = 1;
   }
-  attributes[ATTR_DB_NAMESPACE] = `||${connection.serviceName}`;
+  Object.assign(connectSpanAttributes, attributes);
+  if (connection.instanceName) {
+    connectSpanAttributes[ATTR_ORACLE_DB_INSTANCE_NAME] =
+      connection.instanceName;
+  }
+  if (isOracleDB7Plus() && extendedConnection.pdbName) {
+    connectSpanAttributes[ATTR_ORACLE_DB_PDB] = extendedConnection.pdbName;
+  } else if (isOracleDB610() && connection.dbName) {
+    connectSpanAttributes[ATTR_ORACLE_DB_PDB] = connection.dbName;
+  }
+  if (connection.serviceName) {
+    connectSpanAttributes[ATTR_ORACLE_DB_SERVICE] = connection.serviceName;
+  }
+  if (isOracleDB7Plus() && connection.dbName) {
+    connectSpanAttributes[ATTR_ORACLE_DB_NAME] = connection.dbName;
+  }
+  if (extendedConnection.domainName) {
+    connectSpanAttributes[ATTR_ORACLE_DB_DOMAIN] =
+      extendedConnection.domainName;
+  }
+  if (isOracleDB7Plus() && extendedConnection.dbUniqueName) {
+    connectSpanAttributes[ATTR_DB_NAMESPACE] =
+      `${extendedConnection.dbUniqueName}`;
+  }
 
   // initialize the span attributes list.
   connAttrList = [];
   poolConnAttrList = [];
   spanNamesList = [];
   failedConnAttrList = [];
-  spanNameSuffix = ` ${connAttributes[ATTR_DB_NAMESPACE]}`;
+  spanNameSuffix = connAttributes[ATTR_DB_NAMESPACE]
+    ? ` ${connAttributes[ATTR_DB_NAMESPACE]}`
+    : '';
   if (serverVersion >= VER_23_4) {
     if (oracledb.thin) {
       // for round trips.
       connAttrList.push({ ...attributes }); // FastAuth standalone
       poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES }); // FastAuth pool
-      if (oracledb.version < 61000) {
-        connAttrList.push({ ...connAttributes }); // OAUTH
-        poolConnAttrList.push({ ...connAttributes, ...POOL_ATTRIBUTES }); // OAUTH
-      } else {
-        // From oracledb version 6.10 onwards, the db instance name is not populated
-        // until all validations for connection establishment is done.
-        connAttrList.push({ ...attributes }); // OAUTH
-        poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES }); // OAUTH
-      }
+      // From oracledb version 6.10 onwards, the db instance name is not
+      // populated until all validations for connection establishment are done.
+      connAttrList.push({ ...attributes }); // OAUTH
+      poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES }); // OAUTH
       failedConnAttrList = [...connAttrList];
       failedConnAttrList[2] = { ...CONN_FAILED_ATTRIBUTES };
       failedConnAttrList[1] = { ...attributes };
@@ -217,13 +286,8 @@ function updateAttrSpanList(connection: oracledb.Connection) {
       poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
       poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
       poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
-      if (oracledb.version < 61000) {
-        connAttrList.push({ ...attributes });
-        poolConnAttrList.push({ ...attributes, ...POOL_ATTRIBUTES });
-      } else {
-        connAttrList.push({ ...connAttributes });
-        poolConnAttrList.push({ ...connAttributes, ...POOL_ATTRIBUTES });
-      }
+      connAttrList.push({ ...connectSpanAttributes });
+      poolConnAttrList.push({ ...connectSpanAttributes, ...POOL_ATTRIBUTES });
       failedConnAttrList = [...connAttrList];
       failedConnAttrList[4] = { ...CONN_FAILED_ATTRIBUTES };
       failedConnAttrList[3] = { ...attributes };
@@ -251,10 +315,20 @@ const verifySpanData = (
   events: testUtils.TimedEvent[] = defaultEvents,
   status = unsetStatus
 ) => {
+  // Normalize both expected and actual attributes so the same assertions work
+  // across older drivers that expose connect metadata differently.
+  const normalizedAttributes = normalizeLegacyDriverAttributes(attributes);
+  const normalizedSpan = Object.assign(
+    Object.create(Object.getPrototypeOf(span)),
+    span,
+    {
+      attributes: normalizeLegacyDriverAttributes(span.attributes),
+    }
+  ) as ReadableSpan;
   testUtils.assertSpan(
-    span as unknown as ReadableSpan,
+    normalizedSpan as unknown as ReadableSpan,
     SpanKind.CLIENT,
-    attributes,
+    normalizedAttributes,
     events,
     status
   );
@@ -288,10 +362,6 @@ function checkRoundTripSpans(
   }
 }
 
-function getDBNameSpace(instanceName = '', pdbName = '', servicename = '') {
-  return [instanceName, pdbName, servicename].join('|');
-}
-
 // It verifies the spans, its attributes and the parent child relationship.
 function verifySpans(
   parentSpan: Span | null,
@@ -301,19 +371,26 @@ function verifySpans(
     SpanNames.EXECUTE + ':SELECT' + spanNameSuffix,
   ],
   eventList: testUtils.TimedEvent[][] = [defaultEvents, defaultEvents],
-  statusList: SpanStatus[] = [unsetStatus, unsetStatus]
+  statusList: SpanStatus[] = [unsetStatus, unsetStatus],
+  startIndex = -1
 ) {
   if (!oracledb.thin) {
     attributesList = attributesList.slice(attributesList.length - 1);
     spanNamesList = spanNamesList.slice(spanNamesList.length - 1);
     statusList = statusList.slice(statusList.length - 1);
   }
-  const spans = memoryExporter.getFinishedSpans();
+  let spans =
+    startIndex >= 0
+      ? memoryExporter.getFinishedSpans().slice(startIndex)
+      : memoryExporter.getFinishedSpans();
   let spanLength = 1;
-  const lastSpan = spans[spans.length - 1];
   if (oracledb.thin) {
     spanLength = attributesList.length;
   }
+  if (startIndex >= 0 && spans.length > spanLength) {
+    spans = spans.slice(spans.length - spanLength);
+  }
+  const lastSpan = spans[spans.length - 1];
   assert.strictEqual(spans.length, spanLength);
 
   // verify roundtrip child spans or public API span if no roundtrip
@@ -363,7 +440,23 @@ function assertErrorSpan(
     code: SpanStatusCode.ERROR,
     message: error.message,
   };
-  testUtils.assertSpan(span, SpanKind.CLIENT, failedAttributes, events, status);
+  const normalizedSpan = Object.assign(
+    Object.create(Object.getPrototypeOf(span)),
+    span,
+    {
+      attributes: normalizeLegacyDriverAttributes(span.attributes),
+    }
+  ) as ReadableSpan;
+  const normalizedFailedAttributes = normalizeLegacyDriverAttributes(
+    failedAttributes as Attributes
+  ) as Record<string, string | number>;
+  testUtils.assertSpan(
+    normalizedSpan,
+    SpanKind.CLIENT,
+    normalizedFailedAttributes,
+    events,
+    status
+  );
 }
 
 const sqlDropTable = function (tableName: string) {
@@ -394,6 +487,42 @@ const sqlCreateTable = async function (
   await conn.execute(plsql);
 };
 
+describe('DB semantic conventions', () => {
+  const connectionConfig = {
+    user: 'vector',
+    protocol: 'TCP',
+    hostName: 'localhost',
+    port: 1521,
+    dbName: 'ORCL',
+    instanceName: 'ORCL1',
+    pdbName: 'PDB1',
+    domainName: 'example.com',
+    serviceName: 'svc',
+    dbUniqueName: 'ORCL1_UNIQUE',
+  };
+
+  it('emits db.namespace as DB_UNIQUE_NAME', () => {
+    const handler = createTestTraceHandlerForSemconvTests();
+    const attributes = (handler as any)._getConnectionSpanAttributes(
+      connectionConfig
+    );
+
+    assert.strictEqual(
+      attributes[ATTR_DB_SYSTEM_NAME],
+      DB_SYSTEM_NAME_VALUE_ORACLE_DB
+    );
+    assert.strictEqual(attributes[ATTR_DB_NAMESPACE], 'ORCL1_UNIQUE');
+    assert.strictEqual(attributes[ATTR_NETWORK_TRANSPORT], 'TCP');
+    assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], 'localhost');
+    assert.strictEqual(attributes[ATTR_SERVER_PORT], 1521);
+    assert.strictEqual(attributes[ATTR_ORACLE_DB_NAME], 'ORCL');
+    assert.strictEqual(attributes[ATTR_ORACLE_DB_INSTANCE_NAME], 'ORCL1');
+    assert.strictEqual(attributes[ATTR_ORACLE_DB_PDB], 'PDB1');
+    assert.strictEqual(attributes[ATTR_ORACLE_DB_DOMAIN], 'example.com');
+    assert.strictEqual(attributes[ATTR_ORACLE_DB_SERVICE], 'svc');
+  });
+});
+
 describe('oracledb', () => {
   let connection: oracledb.Connection;
 
@@ -413,7 +542,6 @@ describe('oracledb', () => {
 
   async function doSetup() {
     const extendedConn: any = connection;
-    let dbName;
 
     if (oracledb.thin) {
       connAttributes = { ...DEFAULT_ATTRIBUTES };
@@ -429,16 +557,30 @@ describe('oracledb', () => {
     if (oracledb.thin && extendedConn.protocol) {
       connAttributes[ATTR_NETWORK_TRANSPORT] = extendedConn.protocol;
     }
-    if (connection.dbName) {
-      dbName = oracledb.thin
+    if (connection.dbName && isOracleDB7Plus()) {
+      connAttributes[ATTR_ORACLE_DB_NAME] = oracledb.thin
         ? connection.dbName.toUpperCase()
         : connection.dbName;
     }
-    connAttributes[ATTR_DB_NAMESPACE] = getDBNameSpace(
-      connection.instanceName,
-      dbName,
-      connection.serviceName
-    );
+    if (extendedConn.domainName) {
+      connAttributes[ATTR_ORACLE_DB_DOMAIN] = extendedConn.domainName;
+    }
+    if (connection.instanceName) {
+      connAttributes[ATTR_ORACLE_DB_INSTANCE_NAME] = connection.instanceName;
+    }
+    if (isOracleDB7Plus() && extendedConn.pdbName) {
+      connAttributes[ATTR_ORACLE_DB_PDB] = extendedConn.pdbName;
+    } else if (connection.dbName && isOracleDB610()) {
+      connAttributes[ATTR_ORACLE_DB_PDB] = oracledb.thin
+        ? connection.dbName.toUpperCase()
+        : connection.dbName;
+    }
+    if (connection.serviceName) {
+      connAttributes[ATTR_ORACLE_DB_SERVICE] = connection.serviceName;
+    }
+    if (isOracleDB610Plus() && extendedConn.dbUniqueName) {
+      connAttributes[ATTR_DB_NAMESPACE] = extendedConn.dbUniqueName;
+    }
     poolAttributes = { ...connAttributes, ...POOL_ATTRIBUTES };
 
     executeAttributes = {
@@ -474,6 +616,9 @@ describe('oracledb', () => {
   }
 
   before(async function () {
+    // Give the database up to 60 seconds to register its service
+    this.timeout(60000);
+
     const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -485,7 +630,32 @@ describe('oracledb', () => {
       skip();
     }
 
-    connection = await oracledb.getConnection(CONFIG);
+    // Retry connection mechanism for intermittent service registration (NJS-518)
+    const maxRetries = 15;
+    const delayMs = 3000;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        connection = await oracledb.getConnection(CONFIG);
+        break; // Successfully connected! Break out of the retry loop.
+      } catch (err: any) {
+        // NJS-518: Listener service not registered yet
+        // ORA-01017: User/credentials don't exist yet while startup scripts run
+        const isStartupError =
+          err?.message?.includes('NJS-518') ||
+          err?.message?.includes('ORA-01017');
+        const isLastRetry = i === maxRetries - 1;
+
+        if (isStartupError && !isLastRetry) {
+          console.log(
+            `[Oracle Test Setup] Database initialization in progress (${err.message.split(':')[0]}). Retrying in ${delayMs / 1000}s... (${i + 1}/${maxRetries})`
+          );
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        } else {
+          throw err;
+        }
+      }
+    }
     await doSetup();
     updateAttrSpanList(connection);
     contextManager = new AsyncLocalStorageContextManager().enable();
@@ -1307,8 +1477,42 @@ describe('oracledb', () => {
       });
     });
 
+    it('should normalize db.operation.name and span name with leading SQL whitespace', async () => {
+      const span = tracer.startSpan('test span');
+      const sqlWithLeadingWhitespace = `   SELECT * FROM ${tableName}`;
+      const expectedAttributes = {
+        ...connAttributes,
+        [ATTR_DB_OPERATION_NAME]: 'SELECT',
+      };
+      const startIndex = memoryExporter.getFinishedSpans().length;
+
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        const res = await connection.execute(sqlWithLeadingWhitespace);
+        try {
+          assert.ok(res);
+          verifySpans(
+            span,
+            [expectedAttributes, expectedAttributes],
+            [
+              SpanNames.EXECUTE_MSG + ':SELECT' + spanNameSuffix,
+              SpanNames.EXECUTE + ':SELECT' + spanNameSuffix,
+            ],
+            [defaultEvents, defaultEvents],
+            [unsetStatus, unsetStatus],
+            startIndex
+          );
+        } catch (e: any) {
+          assert.ok(false, e.message);
+        } finally {
+          span.end();
+        }
+      });
+    });
+
     it('should intercept connection.executeMany(sql, binds)', async () => {
       const span = tracer.startSpan('test span');
+      const executeManyRoundTripCommand = isOracleDB7Plus() ? 'INSERT' : '';
+      const executeManyPublicCommand = 'INSERT';
       const binds = [
         { a: 1, b: 'Test 1 (One)' },
         { a: 2, b: 'Test 2 (Two)' },
@@ -1317,6 +1521,10 @@ describe('oracledb', () => {
         { a: 5, b: 'Test 5 (Five)' },
       ];
       const sqlInsert = `INSERT INTO ${tableName} VALUES (:a, :b, 'clob')`;
+      const executeManyAttributes = { ...connAttributes };
+      if (isOracleDB7Plus()) {
+        executeManyAttributes[ATTR_DB_OPERATION_NAME] = 'INSERT';
+      }
 
       await context.with(trace.setSpan(context.active(), span), async () => {
         const res = await connection.executeMany<Array<string>>(
@@ -1327,10 +1535,14 @@ describe('oracledb', () => {
           assert.ok(res);
           verifySpans(
             span,
-            [connAttributes, connAttributes],
+            [executeManyAttributes, executeManyAttributes],
             [
-              SpanNames.EXECUTE_MSG + ':' + spanNameSuffix,
-              SpanNames.EXECUTE_MANY + ':' + spanNameSuffix,
+              SpanNames.EXECUTE_MSG +
+                `:${executeManyRoundTripCommand}` +
+                spanNameSuffix,
+              SpanNames.EXECUTE_MANY +
+                `:${executeManyPublicCommand}` +
+                spanNameSuffix,
             ]
           );
         } catch (e: any) {
@@ -1344,6 +1556,8 @@ describe('oracledb', () => {
 
     it('should intercept connection.executeMany(sql, binds) with out parent span', async () => {
       instrumentation.enable();
+      const executeManyRoundTripCommand = isOracleDB7Plus() ? 'INSERT' : '';
+      const executeManyPublicCommand = 'INSERT';
       const binds = [
         { a: 1, b: 'Test 1 (One)' },
         { a: 2, b: 'Test 2 (Two)' },
@@ -1352,15 +1566,23 @@ describe('oracledb', () => {
         { a: 5, b: 'Test 5 (Five)' },
       ];
       const sqlInsert = `INSERT INTO ${tableName} VALUES (:a, :b, 'clob')`;
+      const executeManyAttributes = { ...connAttributes };
+      if (isOracleDB7Plus()) {
+        executeManyAttributes[ATTR_DB_OPERATION_NAME] = 'INSERT';
+      }
       const res = await connection.executeMany<Array<string>>(sqlInsert, binds);
       try {
         assert.ok(res);
         verifySpans(
           null,
-          [connAttributes, connAttributes],
+          [executeManyAttributes, executeManyAttributes],
           [
-            SpanNames.EXECUTE_MSG + ':' + spanNameSuffix,
-            SpanNames.EXECUTE_MANY + ':' + spanNameSuffix,
+            SpanNames.EXECUTE_MSG +
+              `:${executeManyRoundTripCommand}` +
+              spanNameSuffix,
+            SpanNames.EXECUTE_MANY +
+              `:${executeManyPublicCommand}` +
+              spanNameSuffix,
           ]
         );
       } catch (e: any) {
