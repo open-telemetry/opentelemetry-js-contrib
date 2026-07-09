@@ -58,7 +58,6 @@
     "@opentelemetry/context-async-hooks": "^2.9.0",
     "@opentelemetry/contrib-test-utils": "^0.67.0",
     "@opentelemetry/sdk-trace": "^2.9.0",
-    "@opentelemetry/sdk-trace-node": "^2.9.0",
     "oracledb": "^6.7.0"
   },
   "dependencies": {

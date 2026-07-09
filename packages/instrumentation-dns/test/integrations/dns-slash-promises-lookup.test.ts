@@ -6,9 +6,9 @@
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
+  TracerProvider,
 } from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { DnsInstrumentation } from '../../src';
 import type * as DnsPromisesType from 'dns/promises';
 import * as utils from '../utils/utils';
@@ -16,7 +16,7 @@ import { assertSpan } from '../utils/assertSpan';
 import { SpanStatusCode } from '@opentelemetry/api';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider({
+const provider = new TracerProvider({
   spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
 });
 

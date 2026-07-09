@@ -4,11 +4,11 @@
  */
 
 import { context, SpanStatusCode } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
+  TracerProvider,
 } from '@opentelemetry/sdk-trace';
 import {
   ATTR_CODE_FILE_PATH,
@@ -43,7 +43,7 @@ import { PassThrough } from 'stream';
 describe('CucumberInstrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
-  const provider = new NodeTracerProvider({
+  const provider = new TracerProvider({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'CucumberInstrumentation',
     }),

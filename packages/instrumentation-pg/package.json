@@ -59,7 +59,6 @@
     "@opentelemetry/context-async-hooks": "^2.9.0",
     "@opentelemetry/contrib-test-utils": "^0.67.0",
     "@opentelemetry/sdk-trace": "^2.9.0",
-    "@opentelemetry/sdk-trace-node": "^2.9.0",
     "pg": "8.7.1",
     "pg-pool": "3.4.1"
   },

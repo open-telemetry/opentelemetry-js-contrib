@@ -6,11 +6,11 @@
 import * as semver from 'semver';
 
 import { context, SpanStatusCode } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
+  TracerProvider,
 } from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import { NestInstrumentation } from '../src';
@@ -27,7 +27,7 @@ util.inspect.defaultOptions.depth = 3;
 util.inspect.defaultOptions.breakLength = 200;
 
 describe('nestjs-core', () => {
-  const provider = new NodeTracerProvider({
+  const provider = new TracerProvider({
     spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   instrumentation.setTracerProvider(provider);

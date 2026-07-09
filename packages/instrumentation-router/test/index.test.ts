@@ -4,11 +4,11 @@
  */
 
 import { context, propagation, trace } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
+  TracerProvider,
 } from '@opentelemetry/sdk-trace';
 
 import { RouterInstrumentation } from '../src';
@@ -141,7 +141,7 @@ const spans = {
 describe('Router instrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
-  const provider = new NodeTracerProvider({
+  const provider = new TracerProvider({
     spanProcessors: [spanProcessor],
   });
   plugin.setTracerProvider(provider);

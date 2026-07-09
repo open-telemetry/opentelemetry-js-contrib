@@ -6,7 +6,7 @@ import * as assert from 'assert';
 
 import { context, propagation } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { TracerProvider } from '@opentelemetry/sdk-trace';
 import {
   AggregationTemporality,
   DataPointType,
@@ -32,7 +32,7 @@ describe('UndiciInstrumentation metrics tests', function () {
   const protocol = 'http';
   const hostname = 'localhost';
   const mockServer = new MockServer();
-  const provider = new NodeTracerProvider();
+  const provider = new TracerProvider();
   const metricsMemoryExporter = new InMemoryMetricExporter(
     AggregationTemporality.DELTA
   );

@@ -10,11 +10,11 @@ import {
   SpanStatusCode,
   trace,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
+  TracerProvider,
 } from '@opentelemetry/sdk-trace';
 import type * as Memcached from 'memcached';
 import * as assert from 'assert';
@@ -64,7 +64,7 @@ const VALUE = '_test_value_';
 const shouldTest = process.env.RUN_MEMCACHED_TESTS;
 
 describe('memcached@2.x', () => {
-  const provider = new NodeTracerProvider({
+  const provider = new TracerProvider({
     spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   const tracer = provider.getTracer('default');

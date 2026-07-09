@@ -131,29 +131,14 @@ OpenTelemetry Meta Packages for Node automatically loads instrumentations for No
 Custom configuration for each of the instrumentations can be passed to the function, by providing an object with the name of the instrumentation as a key, and its configuration as the value.
 
 ```javascript
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
-const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
-const { resourceFromAttributes } = require('@opentelemetry/resources');
-const { ATTR_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
-const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const exporter = new CollectorTraceExporter();
-const provider = new NodeTracerProvider({
-  resource: resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: 'basic-service',
-  }),
-  spanProcessors: [
-    new SimpleSpanProcessor({ exporter }),
-  ],
-});
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
+  serviceName: 'my-service',
   instrumentations: [
     getNodeAutoInstrumentations({
-      // load custom configuration for http instrumentation
+      // Optionally customize some instrumentations, e.g.:
       '@opentelemetry/instrumentation-http': {
         applyCustomAttributesOnSpan: (span) => {
           span.setAttribute('foo2', 'bar2');
@@ -162,7 +147,8 @@ registerInstrumentations({
     }),
   ],
 });
-
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Supported instrumentations

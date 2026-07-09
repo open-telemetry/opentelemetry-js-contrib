@@ -21,8 +21,7 @@ import {
   Link,
   Context,
 } from '@opentelemetry/api';
-import { SamplingDecision } from '@opentelemetry/sdk-trace';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { SamplingDecision, TracerProvider } from '@opentelemetry/sdk-trace';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { expect } from 'expect';
 import * as nock from 'nock';
@@ -351,7 +350,7 @@ describe('AWSXRayRemoteSampler', () => {
     sampler = new AWSXRayRemoteSampler({
       resource: emptyResource(),
     });
-    const tracerProvider: NodeTracerProvider = new NodeTracerProvider({
+    const tracerProvider = new TracerProvider({
       sampler: sampler,
     });
     const tracer: Tracer = tracerProvider.getTracer('test');
@@ -393,7 +392,7 @@ describe('AWSXRayRemoteSampler', () => {
     });
     const internalSampler: _AWSXRayRemoteSampler =
       sampler['internalXraySampler'];
-    const tracerProvider: NodeTracerProvider = new NodeTracerProvider({
+    const tracerProvider = new TracerProvider({
       sampler: internalSampler,
     });
     const tracer: Tracer = tracerProvider.getTracer('test');
