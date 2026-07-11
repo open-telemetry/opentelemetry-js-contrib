@@ -95,6 +95,28 @@ export function parseNormalizedOperationName(queryText: string) {
   return sqlCommand.endsWith(';') ? sqlCommand.slice(0, -1) : sqlCommand;
 }
 
+/**
+ * Extracts the table/collection name from a SQL query.
+ * Note: Multi-table queries, CTEs, and subqueries are out of scope.
+ * 
+ * @param queryText The SQL query string
+ * @returns The extracted table name, or undefined if not found
+ */
+export function parseTableName(queryText: string): string | undefined {
+  // Match common SQL clauses that precede a table name: FROM, INTO, UPDATE, JOIN
+  // The table name can be a simple identifier, or a quoted identifier (which can contain spaces),
+  // or a schema-qualified identifier (e.g. "my-schema"."my table")
+  const identifierRegex = /((?:[^\s();,"'`]+|["'`][^"'`]+["'`])+)/;
+  const match = queryText.match(new RegExp(`\\b(?:FROM|INTO|UPDATE|JOIN)\\s+${identifierRegex.source}`, 'i'));
+  
+  if (match && match[1]) {
+    // Remove optional quotes (single, double, or backticks) that might surround the table name or schema name
+    let tableName = match[1].replace(/["'`]/g, '');
+    return tableName;
+  }
+  return undefined;
+}
+
 export function parseAndMaskConnectionString(connectionString: string): string {
   try {
     // Parse the connection string

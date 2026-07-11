@@ -53,6 +53,7 @@ import {
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_SYSTEM_NAME,
   METRIC_DB_CLIENT_OPERATION_DURATION,
+  ATTR_DB_COLLECTION_NAME,
 } from '@opentelemetry/semantic-conventions';
 import {
   METRIC_DB_CLIENT_CONNECTION_COUNT,
@@ -353,6 +354,10 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         if (queryConfig?.text) {
           attributes[ATTR_DB_OPERATION_NAME] =
             utils.parseNormalizedOperationName(queryConfig?.text);
+          const collectionName = utils.parseTableName(queryConfig?.text);
+          if (collectionName) {
+            attributes[ATTR_DB_COLLECTION_NAME] = collectionName;
+          }
         }
 
         const recordDuration = () => {

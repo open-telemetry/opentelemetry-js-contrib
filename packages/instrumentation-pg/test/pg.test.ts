@@ -41,6 +41,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   ATTR_DB_QUERY_TEXT,
+  ATTR_DB_COLLECTION_NAME,
 } from '@opentelemetry/semantic-conventions';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 
@@ -577,6 +578,7 @@ describe('pg', () => {
           [ATTR_DB_QUERY_TEXT]: queryConfig.text,
           [AttributeNames.PG_PLAN]: queryConfig.name,
           [AttributeNames.PG_VALUES]: values,
+          [ATTR_DB_COLLECTION_NAME]: 'pg_tables',
         };
 
         const events: TimedEvent[] = [];
