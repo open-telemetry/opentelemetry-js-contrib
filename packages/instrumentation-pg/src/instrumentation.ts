@@ -351,10 +351,11 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           [ATTR_SERVER_ADDRESS]: this.connectionParameters.host,
         };
 
+        let collectionName: string | undefined;
         if (queryConfig?.text) {
           attributes[ATTR_DB_OPERATION_NAME] =
             utils.parseNormalizedOperationName(queryConfig?.text);
-          const collectionName = utils.parseTableName(queryConfig?.text);
+          collectionName = utils.parseTableName(queryConfig?.text);
           if (collectionName) {
             attributes[ATTR_DB_COLLECTION_NAME] = collectionName;
           }
@@ -372,6 +373,11 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           instrumentationConfig,
           queryConfig
         );
+
+        // Also set db.collection.name on the span itself
+        if (collectionName) {
+          span.setAttribute(ATTR_DB_COLLECTION_NAME, collectionName);
+        }
 
         // Modify query text w/ a tracing comment before invoking original for
         // tracing, but only if args[0] has one of our expected shapes.
