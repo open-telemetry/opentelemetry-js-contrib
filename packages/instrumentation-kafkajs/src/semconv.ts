@@ -77,6 +77,15 @@ export const ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE =
 export const ATTR_MESSAGING_KAFKA_OFFSET = 'messaging.kafka.offset' as const;
 
 /**
+ * The unique identifier of the messaging system cluster, obtained from the MetadataResponse (KIP-78 for Kafka).
+ *
+ * @example "lkc-abc123"
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_CLUSTER_ID = 'messaging.kafka.cluster.id' as const;
+
+/**
  * The system-specific name of the messaging operation.
  *
  * @example ack
