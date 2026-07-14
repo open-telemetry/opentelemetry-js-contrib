@@ -136,35 +136,65 @@ describe('utils.ts', () => {
     });
 
     it('should parse INSERT INTO', () => {
-      assert.strictEqual(utils.parseTableName('INSERT INTO user_profiles (name) VALUES ($1)'), 'user_profiles');
+      assert.strictEqual(
+        utils.parseTableName('INSERT INTO user_profiles (name) VALUES ($1)'),
+        'user_profiles'
+      );
     });
 
     it('should parse UPDATE', () => {
       assert.strictEqual(utils.parseTableName('UPDATE tbl SET a=1'), 'tbl');
-      assert.strictEqual(utils.parseTableName('UPDATE users SET x = 1 FROM other_table WHERE other_table.id = users.id'), 'users');
+      assert.strictEqual(
+        utils.parseTableName(
+          'UPDATE users SET x = 1 FROM other_table WHERE other_table.id = users.id'
+        ),
+        'users'
+      );
     });
 
     it('should parse DELETE FROM', () => {
-      assert.strictEqual(utils.parseTableName('DELETE FROM my_table WHERE id = 1'), 'my_table');
+      assert.strictEqual(
+        utils.parseTableName('DELETE FROM my_table WHERE id = 1'),
+        'my_table'
+      );
     });
 
     it('should parse JOIN', () => {
-      assert.strictEqual(utils.parseTableName('SELECT * FROM a JOIN b ON a.id = b.id'), 'a');
+      assert.strictEqual(
+        utils.parseTableName('SELECT * FROM a JOIN b ON a.id = b.id'),
+        'a'
+      );
     });
 
     it('should remove quotes', () => {
-      assert.strictEqual(utils.parseTableName('SELECT * FROM "MyTable"'), 'MyTable');
-      assert.strictEqual(utils.parseTableName('SELECT * FROM \'MyTable\''), 'MyTable');
-      assert.strictEqual(utils.parseTableName('SELECT * FROM `MyTable`'), 'MyTable');
+      assert.strictEqual(
+        utils.parseTableName('SELECT * FROM "MyTable"'),
+        'MyTable'
+      );
+      assert.strictEqual(
+        utils.parseTableName('SELECT * FROM `MyTable`'),
+        'MyTable'
+      );
     });
 
     it('should handle schema-qualified names and spaces in quotes', () => {
-      assert.strictEqual(utils.parseTableName('SELECT * FROM "my-schema"."my table" WHERE id = 1'), 'my-schema.my table');
-      assert.strictEqual(utils.parseTableName('SELECT * FROM schema.table'), 'schema.table');
+      assert.strictEqual(
+        utils.parseTableName(
+          'SELECT * FROM "my-schema"."my table" WHERE id = 1'
+        ),
+        'my-schema.my table'
+      );
+      assert.strictEqual(
+        utils.parseTableName('SELECT * FROM schema.table'),
+        'schema.table'
+      );
     });
 
     it('should handle multi-line queries', () => {
-      assert.strictEqual(utils.parseTableName('SELECT *\nFROM\n"my_table"'), 'my_table');
+      assert.strictEqual(
+        utils.parseTableName('SELECT *\nFROM\n"my_table"'),
+        'my_table'
+      );
     });
 
     it('should return undefined when no table is found', () => {
