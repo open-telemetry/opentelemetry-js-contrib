@@ -68,11 +68,13 @@ describe('oracledb-metrics', () => {
   }
 
   before(async function () {
+    // Give the database up to 60 seconds to register its service.
+    this.timeout(60000);
+
     const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
-      //   this.test!.parent!.pending = true;
-      //   console.log('Skipping test-oracledb for metrics.');
+      this.test!.parent!.pending = true;
       this.skip();
     };
 
@@ -80,12 +82,47 @@ describe('oracledb-metrics', () => {
       skip();
     }
 
-    const pool = await oracledb.createPool(utils.POOL_CONFIG);
-    const d1 = Date.now();
-    await pool.getConnection();
-    const d2 = Date.now();
-    queueTimeout = Number(d2 - d1) + 100;
-    await pool.close(0);
+    // Retry connection mechanism for intermittent service registration (NJS-518).
+    const maxRetries = 15;
+    const delayMs = 3000;
+
+    for (let i = 0; i < maxRetries; i++) {
+      let pool: oracledb.Pool | undefined;
+      let connection: oracledb.Connection | undefined;
+      try {
+        pool = await oracledb.createPool(utils.POOL_CONFIG);
+        const d1 = Date.now();
+        connection = await pool.getConnection();
+        const d2 = Date.now();
+        queueTimeout = Number(d2 - d1) + 100;
+        await connection.close();
+        await pool.close(0);
+        break;
+      } catch (err: any) {
+        if (connection) {
+          await connection.close().catch(() => undefined);
+        }
+        if (pool) {
+          await pool.close(0).catch(() => undefined);
+        }
+
+        // NJS-518: Listener service not registered yet
+        // ORA-01017: User/credentials don't exist yet while startup scripts run
+        const isStartupError =
+          err?.message?.includes('NJS-518') ||
+          err?.message?.includes('ORA-01017');
+        const isLastRetry = i === maxRetries - 1;
+
+        if (isStartupError && !isLastRetry) {
+          console.log(
+            `[Oracle Metrics Test Setup] Database initialization in progress (${err.message.split(':')[0]}). Retrying in ${delayMs / 1000}s... (${i + 1}/${maxRetries})`
+          );
+          await delay(delayMs);
+        } else {
+          throw err;
+        }
+      }
+    }
     await initMeterProvider();
   });
 
