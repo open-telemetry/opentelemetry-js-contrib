@@ -189,60 +189,85 @@ function _triggerClusterIdFetch(kafkaInstance: kafkaJs.Kafka): void {
     _clusterIdFetching.delete(kafkaInstance);
     return;
   }
-  const admin = kafkaInstance.admin();
-  const connectPromise = admin.connect();
-  let connected = false;
+  // admin() / connect() can throw synchronously (e.g. a misconfigured or
+  // non-standard client). This runs from the patched producer()/consumer() and,
+  // via the TTL-refresh path, from span creation — so a throw here must never
+  // escape into the user's call. Keep the whole setup inside try/catch.
+  let admin: kafkaJs.Admin | undefined;
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-  // Single deadline covering BOTH connect() and describeCluster(). A hang in either
-  // stage would otherwise keep the admin client (and its socket) alive indefinitely.
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutHandle = setTimeout(
-      () => reject(new Error('KafkaJS cluster-id lookup timed out after 10s')),
-      10_000
-    );
-    if (
-      timeoutHandle &&
-      typeof timeoutHandle === 'object' &&
-      'unref' in timeoutHandle
-    )
-      (timeoutHandle as NodeJS.Timeout).unref();
-  });
-  const lookup = connectPromise.then(() => {
-    connected = true;
-    return admin.describeCluster();
-  });
-  Promise.race([lookup, timeout])
-    .then(({ clusterId }) => {
-      if (clusterId != null && clusterId !== '') {
-        _clusterIdByKafka.set(kafkaInstance, clusterId);
-        _clusterIdFetchedAt.set(kafkaInstance, Date.now());
-      } else {
-        _clusterIdUnavailable.add(kafkaInstance);
-      }
-    })
-    .catch((err: unknown) => {
-      // Transient failure or timeout. Do NOT mark unavailable — the next client creation
-      // will retry. If connect() is still in-flight (timeout case), schedule disconnect
-      // for when it resolves to release the socket.
-      if (!connected) {
-        connectPromise
-          .then(() => admin.disconnect().catch(() => {}))
-          .catch(() => {});
-      }
-      diag.warn(
-        'opentelemetry-instrumentation-kafkajs: failed to fetch cluster ID',
-        err
+  try {
+    const adminClient = (admin = kafkaInstance.admin());
+    const connectPromise = adminClient.connect();
+    let connected = false;
+    // Single deadline covering BOTH connect() and describeCluster(). A hang in either
+    // stage would otherwise keep the admin client (and its socket) alive indefinitely.
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutHandle = setTimeout(
+        () => reject(new Error('KafkaJS cluster-id lookup timed out after 10s')),
+        10_000
       );
-    })
-    .finally(() => {
-      clearTimeout(timeoutHandle);
-      _clusterIdFetching.delete(kafkaInstance);
-      // connect() had resolved (describeCluster resolved, rejected, or timed out
-      // mid-flight), so the socket is open — close it.
-      if (connected) {
-        admin.disconnect().catch(() => {});
-      }
+      if (
+        timeoutHandle &&
+        typeof timeoutHandle === 'object' &&
+        'unref' in timeoutHandle
+      )
+        (timeoutHandle as NodeJS.Timeout).unref();
     });
+    const lookup = connectPromise.then(() => {
+      connected = true;
+      return adminClient.describeCluster();
+    });
+    Promise.race([lookup, timeout])
+      .then(({ clusterId }) => {
+        if (clusterId != null && clusterId !== '') {
+          _clusterIdByKafka.set(kafkaInstance, clusterId);
+          _clusterIdFetchedAt.set(kafkaInstance, Date.now());
+        } else {
+          // No cluster id (pre-KIP-78 broker). A good id cached from an earlier
+          // fetch is deliberately left in place — cluster ids are stable — but the
+          // instance is now marked unavailable, which also stops future refreshes.
+          // Acceptable: a value that never changes does not need refreshing.
+          _clusterIdUnavailable.add(kafkaInstance);
+        }
+      })
+      .catch((err: unknown) => {
+        // Transient failure or timeout. Do NOT mark unavailable — the next client creation
+        // will retry. If connect() is still in-flight (timeout case), schedule disconnect
+        // for when it resolves to release the socket.
+        if (!connected) {
+          connectPromise
+            .then(() => adminClient.disconnect().catch(() => {}))
+            .catch(() => {});
+        }
+        diag.warn(
+          'opentelemetry-instrumentation-kafkajs: failed to fetch cluster ID',
+          err
+        );
+      })
+      .finally(() => {
+        clearTimeout(timeoutHandle);
+        _clusterIdFetching.delete(kafkaInstance);
+        // connect() had resolved (describeCluster resolved, rejected, or timed out
+        // mid-flight), so the socket is open — close it.
+        if (connected) {
+          adminClient.disconnect().catch(() => {});
+        }
+      });
+  } catch (err: unknown) {
+    // admin() or connect() threw synchronously. Clear the in-flight marker so a
+    // later client creation can retry, and best-effort close any admin we created.
+    clearTimeout(timeoutHandle);
+    _clusterIdFetching.delete(kafkaInstance);
+    try {
+      admin?.disconnect().catch(() => {});
+    } catch {
+      // ignore — disconnect() on a client that never connected may itself throw
+    }
+    diag.warn(
+      'opentelemetry-instrumentation-kafkajs: failed to fetch cluster ID',
+      err
+    );
+  }
 }
 
 // _triggerClusterIdFetch already handles freshness checks, so calling it unconditionally

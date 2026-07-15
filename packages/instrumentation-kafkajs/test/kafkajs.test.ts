@@ -1923,6 +1923,116 @@ describe('instrumentation-kafkajs', () => {
         'background refresh should trigger after TTL on consumer span'
       );
     });
+
+    it('does not throw and omits cluster id when admin() throws synchronously', async () => {
+      let adminCallCount = 0;
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-admin-throws',
+        brokers: ['mock:9092'],
+      });
+      kafkajs.Kafka.prototype.admin = () => {
+        adminCallCount++;
+        throw new Error('admin boom');
+      };
+
+      // producer() must still succeed even though the cluster-id fetch throws.
+      producer = initProducerOnInstance(kafkaForTest);
+      await new Promise(resolve => setImmediate(resolve));
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+      assert.strictEqual(adminCallCount, 1);
+
+      // The in-flight marker must have been cleared, so a later client retries
+      // rather than being wedged forever.
+      initProducerOnInstance(kafkaForTest);
+      await new Promise(resolve => setImmediate(resolve));
+      assert.strictEqual(
+        adminCallCount,
+        2,
+        'a synchronous throw must clear the in-flight marker so a later client retries'
+      );
+    });
+
+    it('best-effort disconnects when admin.connect() throws synchronously', async () => {
+      let disconnectCalled = false;
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-connect-throws',
+        brokers: ['mock:9092'],
+      });
+      kafkajs.Kafka.prototype.admin = () =>
+        ({
+          connect: () => {
+            throw new Error('connect boom');
+          },
+          describeCluster: () =>
+            Promise.resolve({ clusterId: 'x', brokers: [], controller: 0 }),
+          disconnect: () => {
+            disconnectCalled = true;
+            return Promise.resolve();
+          },
+        }) as unknown as kafkajs.Admin;
+
+      producer = initProducerOnInstance(kafkaForTest);
+      await new Promise(resolve => setImmediate(resolve));
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+      assert.strictEqual(
+        disconnectCalled,
+        true,
+        'the admin created before the synchronous throw should be disconnected'
+      );
+    });
+
+    it('does not block message flow when the admin lookup hangs', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-hang',
+        brokers: ['mock:9092'],
+      });
+      // connect() never resolves. The unref'd 10s deadline guards the socket, but
+      // message flow must proceed immediately with the attribute simply omitted.
+      kafkajs.Kafka.prototype.admin = () =>
+        ({
+          connect: () => new Promise<void>(() => {}),
+          describeCluster: () =>
+            Promise.resolve({ clusterId: 'x', brokers: [], controller: 0 }),
+          disconnect: () => Promise.resolve(),
+        }) as unknown as kafkajs.Admin;
+
+      producer = initProducerOnInstance(kafkaForTest);
+      await new Promise(resolve => setImmediate(resolve));
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+    });
   });
 
   describe('bufferTextMapGetter', () => {
