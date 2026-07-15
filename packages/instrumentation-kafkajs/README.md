@@ -88,6 +88,7 @@ These attributes are added to both spans and metrics, where possible.
 | `messaging.kafka.message.key`        | A stringified value representing the key of the Kafka message (if present).                                                                                        |
 | `messaging.kafka.message.tombstone`  | A boolean that is true if the message is a tombstone.                                                                                                              |
 | `messaging.kafka.offset`             | The offset of a record in the corresponding Kafka partition.                                                                                                       |
+| `messaging.kafka.cluster.id`         | The Kafka cluster id, resolved from broker metadata via the admin client and cached. Best-effort: omitted if it cannot be resolved (e.g. broker unreachable, missing cluster `Describe` ACL, or a pre-KIP-78 broker). |
 | `messaging.destination.partition.id` | The identifier of the partition messages are sent to or received from, unique within the `messaging.destination.name`. **Note:** only available on producer spans. |
 
 ## Useful links

@@ -193,9 +193,11 @@ function _triggerClusterIdFetch(kafkaInstance: kafkaJs.Kafka): void {
   const connectPromise = admin.connect();
   let connected = false;
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-  const connectTimeout = new Promise<never>((_, reject) => {
+  // Single deadline covering BOTH connect() and describeCluster(). A hang in either
+  // stage would otherwise keep the admin client (and its socket) alive indefinitely.
+  const timeout = new Promise<never>((_, reject) => {
     timeoutHandle = setTimeout(
-      () => reject(new Error('KafkaJS admin connect timed out after 10s')),
+      () => reject(new Error('KafkaJS cluster-id lookup timed out after 10s')),
       10_000
     );
     if (
@@ -205,11 +207,11 @@ function _triggerClusterIdFetch(kafkaInstance: kafkaJs.Kafka): void {
     )
       (timeoutHandle as NodeJS.Timeout).unref();
   });
-  Promise.race([connectPromise, connectTimeout])
-    .then(() => {
-      connected = true;
-      return admin.describeCluster();
-    })
+  const lookup = connectPromise.then(() => {
+    connected = true;
+    return admin.describeCluster();
+  });
+  Promise.race([lookup, timeout])
     .then(({ clusterId }) => {
       if (clusterId != null && clusterId !== '') {
         _clusterIdByKafka.set(kafkaInstance, clusterId);
@@ -235,6 +237,8 @@ function _triggerClusterIdFetch(kafkaInstance: kafkaJs.Kafka): void {
     .finally(() => {
       clearTimeout(timeoutHandle);
       _clusterIdFetching.delete(kafkaInstance);
+      // connect() had resolved (describeCluster resolved, rejected, or timed out
+      // mid-flight), so the socket is open — close it.
       if (connected) {
         admin.disconnect().catch(() => {});
       }
