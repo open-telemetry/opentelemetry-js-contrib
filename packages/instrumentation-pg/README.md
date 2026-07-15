@@ -80,6 +80,10 @@ The `@opentelemetry/instrumentation-pg` versions 0.72.0 and later emit the stabl
 | `server.port`         | Remote port number.                                                                        |
 | `error.type`          | Describes a class of error the operation ended with.                                       |
 
+> [!NOTE]
+> `db.collection.name` is not collected by this instrumentation.
+> The database client does not make the table/collection name easily available, and parsing the SQL query text is not compliant with the OpenTelemetry specification.
+
 Metrics Exported:
 
 - [`db.client.operation.duration`](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/database-metrics.md#metric-dbclientoperationduration)
