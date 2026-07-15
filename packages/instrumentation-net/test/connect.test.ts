@@ -9,17 +9,11 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 import * as net from 'net';
 import * as assert from 'assert';
 import { NetInstrumentation } from '../src';
 import { SocketEvent } from '../src/internal-types';
 import { assertIpcSpan, assertTcpSpan, IPC_PATH, HOST, PORT } from './utils';
-
-// By default tests run with both old and stable semconv. Some test cases
-// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup';
-const DEFAULT_NET_SEMCONV_STABILITY = SemconvStability.DUPLICATE;
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider({
@@ -73,14 +67,14 @@ describe('NetInstrumentation', () => {
   describe('successful net.connect produces a span', () => {
     it('should produce a span given port and host', done => {
       socket = net.connect(PORT, HOST, () => {
-        assertTcpSpan(getSpan(), socket, DEFAULT_NET_SEMCONV_STABILITY);
+        assertTcpSpan(getSpan(), socket);
         done();
       });
     });
 
     it('should produce a span for IPC', done => {
       socket = net.connect(IPC_PATH, () => {
-        assertIpcSpan(getSpan(), DEFAULT_NET_SEMCONV_STABILITY);
+        assertIpcSpan(getSpan());
         done();
       });
     });
@@ -92,7 +86,7 @@ describe('NetInstrumentation', () => {
           host: HOST,
         },
         () => {
-          assertTcpSpan(getSpan(), socket, DEFAULT_NET_SEMCONV_STABILITY);
+          assertTcpSpan(getSpan(), socket);
           done();
         }
       );
@@ -102,14 +96,14 @@ describe('NetInstrumentation', () => {
   describe('successful net.createConnection produces a span', () => {
     it('should produce a span given port and host', done => {
       socket = net.createConnection(PORT, HOST, () => {
-        assertTcpSpan(getSpan(), socket, DEFAULT_NET_SEMCONV_STABILITY);
+        assertTcpSpan(getSpan(), socket);
         done();
       });
     });
 
     it('should produce a span for IPC', done => {
       socket = net.createConnection(IPC_PATH, () => {
-        assertIpcSpan(getSpan(), DEFAULT_NET_SEMCONV_STABILITY);
+        assertIpcSpan(getSpan());
         done();
       });
     });
@@ -121,7 +115,7 @@ describe('NetInstrumentation', () => {
           host: HOST,
         },
         () => {
-          assertTcpSpan(getSpan(), socket, DEFAULT_NET_SEMCONV_STABILITY);
+          assertTcpSpan(getSpan(), socket);
           done();
         }
       );
@@ -131,21 +125,21 @@ describe('NetInstrumentation', () => {
   describe('successful Socket.connect produces a span', () => {
     it('should produce a span given port and host', done => {
       socket.connect(PORT, HOST, () => {
-        assertTcpSpan(getSpan(), socket, DEFAULT_NET_SEMCONV_STABILITY);
+        assertTcpSpan(getSpan(), socket);
         done();
       });
     });
 
     it('should produce a span for IPC', done => {
       socket.connect(IPC_PATH, () => {
-        assertIpcSpan(getSpan(), DEFAULT_NET_SEMCONV_STABILITY);
+        assertIpcSpan(getSpan());
         done();
       });
     });
 
     it('should create a tcp span when port is given as string', done => {
       socket = socket.connect(String(PORT) as unknown as number, HOST, () => {
-        assertTcpSpan(getSpan(), socket, DEFAULT_NET_SEMCONV_STABILITY);
+        assertTcpSpan(getSpan(), socket);
         done();
       });
     });
@@ -157,7 +151,7 @@ describe('NetInstrumentation', () => {
           host: HOST,
         },
         () => {
-          assertTcpSpan(getSpan(), socket, DEFAULT_NET_SEMCONV_STABILITY);
+          assertTcpSpan(getSpan(), socket);
           done();
         }
       );
@@ -200,58 +194,6 @@ describe('NetInstrumentation', () => {
         );
         assertSpan();
       }
-    });
-  });
-
-  describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
-    const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-    after(() => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-    });
-
-    it('tcp with OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', done => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-      memoryExporter.reset();
-
-      socket = net.connect(PORT, HOST, () => {
-        assertTcpSpan(getSpan(), socket, SemconvStability.OLD);
-        done();
-      });
-    });
-
-    it('tcp with OTEL_SEMCONV_STABILITY_OPT_IN=http', done => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-      memoryExporter.reset();
-
-      socket = net.connect(PORT, HOST, () => {
-        assertTcpSpan(getSpan(), socket, SemconvStability.STABLE);
-        done();
-      });
-    });
-
-    it('ipc with OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', done => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-      memoryExporter.reset();
-
-      socket.connect(IPC_PATH, () => {
-        assertIpcSpan(getSpan(), SemconvStability.OLD);
-        done();
-      });
-    });
-
-    it('ipc with OTEL_SEMCONV_STABILITY_OPT_IN=http', done => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-      memoryExporter.reset();
-
-      socket.connect(IPC_PATH, () => {
-        assertIpcSpan(getSpan(), SemconvStability.STABLE);
-        done();
-      });
     });
   });
 

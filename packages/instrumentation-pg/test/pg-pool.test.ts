@@ -31,27 +31,18 @@ import { AttributeNames } from '../src/enums/AttributeNames';
 import { TimedEvent } from './types';
 import {
   METRIC_DB_CLIENT_OPERATION_DURATION,
+  ATTR_DB_NAMESPACE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
   DB_SYSTEM_NAME_VALUE_POSTGRESQL,
 } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_CLIENT_CONNECTION_STATE,
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_NAME,
-  ATTR_DB_USER,
-  DB_SYSTEM_VALUE_POSTGRESQL,
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_NET_PEER_PORT,
-  ATTR_NET_PEER_NAME,
-  ATTR_DB_STATEMENT,
 } from '../src/semconv';
-import {
-  ATTR_DB_QUERY_TEXT,
-  ATTR_DB_SYSTEM_NAME,
-  ATTR_SERVER_ADDRESS,
-  ATTR_SERVER_PORT,
-} from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -69,27 +60,17 @@ const CONFIG = {
 };
 
 const DEFAULT_PGPOOL_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
-  [ATTR_DB_NAME]: CONFIG.database,
-  [ATTR_NET_PEER_NAME]: CONFIG.host,
-  [ATTR_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-  [ATTR_NET_PEER_PORT]: CONFIG.port,
-  [ATTR_DB_USER]: CONFIG.user,
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+  [ATTR_DB_NAMESPACE]: CONFIG.database,
+  [ATTR_SERVER_ADDRESS]: CONFIG.host,
+  [ATTR_SERVER_PORT]: CONFIG.port,
   [AttributeNames.MAX_CLIENT]: CONFIG.maxClient,
   [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
 };
 
 const DEFAULT_PG_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
-  [ATTR_DB_NAME]: CONFIG.database,
-  [ATTR_NET_PEER_NAME]: CONFIG.host,
-  [ATTR_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-  [ATTR_NET_PEER_PORT]: CONFIG.port,
-  [ATTR_DB_USER]: CONFIG.user,
-};
-
-const STABLE_PG_QUERY_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+  [ATTR_DB_NAMESPACE]: CONFIG.database,
   [ATTR_SERVER_ADDRESS]: CONFIG.host,
   [ATTR_SERVER_PORT]: CONFIG.port,
 };
@@ -190,7 +171,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: 'SELECT NOW()',
+        [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
@@ -224,12 +205,10 @@ describe('pg-pool', () => {
       });
 
       const expectedAttributes = {
-        [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_POSTGRESQL,
-        [ATTR_DB_NAME]: CONFIG.database,
-        [ATTR_NET_PEER_NAME]: CONFIG.host,
-        [ATTR_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-        [ATTR_NET_PEER_PORT]: CONFIG.port,
-        [ATTR_DB_USER]: CONFIG.user,
+        [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+        [ATTR_DB_NAMESPACE]: CONFIG.database,
+        [ATTR_SERVER_ADDRESS]: CONFIG.host,
+        [ATTR_SERVER_PORT]: CONFIG.port,
         [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
       };
 
@@ -252,7 +231,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: 'SELECT NOW()',
+        [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const parentSpan = provider
@@ -397,7 +376,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: 'SELECT NOW()',
+        [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
@@ -416,7 +395,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: 'SELECT NOW()',
+        [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const parentSpan = provider
@@ -453,7 +432,7 @@ describe('pg-pool', () => {
         };
         const pgAttributes = {
           ...DEFAULT_PG_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: query,
+          [ATTR_DB_QUERY_TEXT]: query,
           [dataAttributeName]: '{"rowCount":1}',
         };
 
@@ -535,7 +514,7 @@ describe('pg-pool', () => {
         };
         const pgAttributes = {
           ...DEFAULT_PG_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: query,
+          [ATTR_DB_QUERY_TEXT]: query,
         };
 
         beforeEach(async () => {
@@ -605,8 +584,8 @@ describe('pg-pool', () => {
 
           const querySpan = spans.find(
             s =>
-              s.attributes?.[ATTR_DB_STATEMENT] &&
-              String(s.attributes[ATTR_DB_STATEMENT]).includes(
+              s.attributes?.[ATTR_DB_QUERY_TEXT] &&
+              String(s.attributes[ATTR_DB_QUERY_TEXT]).includes(
                 'nonexistent_table'
               )
           );
@@ -666,8 +645,8 @@ describe('pg-pool', () => {
 
             const querySpan = spans.find(
               s =>
-                s.attributes?.[ATTR_DB_STATEMENT] &&
-                String(s.attributes[ATTR_DB_STATEMENT]).includes(
+                s.attributes?.[ATTR_DB_QUERY_TEXT] &&
+                String(s.attributes[ATTR_DB_QUERY_TEXT]).includes(
                   'nonexistent_table'
                 )
             );
@@ -1169,120 +1148,5 @@ describe('pg-pool (ESM)', () => {
         }
       },
     });
-  });
-});
-
-describe('pg semantic conventions env variable', () => {
-  let pool: pgPool<pg.Client>;
-  let contextManager: AsyncLocalStorageContextManager;
-  let instrumentation: PgInstrumentation;
-  const provider = new BasicTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
-  });
-  const testPostgres = process.env.RUN_POSTGRES_TESTS;
-  const shouldTest = testPostgres;
-  // Here we are `require`ing *before* the instrumentation is created below.
-  // In *general* this is a potential instrumentation issue, but this works for
-  // `pg-pool` instrumentation because it patches the `pgPool.prototype`
-  // (i.e. not a top-level export).
-  const pgPool = require('pg-pool');
-  pool = new pgPool(CONFIG);
-
-  before(function () {
-    const skip = () => {
-      // this.skip() workaround
-      // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
-      this.test!.parent!.pending = true;
-      this.skip();
-    };
-
-    if (!shouldTest) {
-      skip();
-    }
-  });
-
-  beforeEach(() => {
-    contextManager = new AsyncLocalStorageContextManager().enable();
-    context.setGlobalContextManager(contextManager);
-  });
-
-  afterEach(() => {
-    delete process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-    memoryExporter.reset();
-    context.disable();
-  });
-
-  it('send only default semantic conventions', async () => {
-    process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-    instrumentation = new PgInstrumentation();
-    instrumentation.setTracerProvider(provider);
-    pool = new pgPool(CONFIG);
-
-    const pgAttributes = {
-      ...DEFAULT_PG_ATTRIBUTES,
-      [ATTR_DB_STATEMENT]: 'SELECT NOW()',
-    };
-    const events: TimedEvent[] = [];
-    const span = provider
-      .getTracer('test-pg-pool-semantic')
-      .startSpan('test span');
-    await context.with(trace.setSpan(context.active(), span), async () => {
-      const result = await pool.query('SELECT NOW()');
-      runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 2);
-      assert.ok(result, 'pool.query() returns a promise');
-    });
-
-    span.end();
-    await pool.end();
-  });
-
-  it('send both default and stable semantic conventions', async () => {
-    process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
-    instrumentation = new PgInstrumentation();
-    instrumentation.setTracerProvider(provider);
-    pool = new pgPool(CONFIG);
-
-    const pgAttributes = {
-      ...DEFAULT_PG_ATTRIBUTES,
-      ...STABLE_PG_QUERY_ATTRIBUTES,
-      [ATTR_DB_STATEMENT]: 'SELECT NOW()',
-      [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
-    };
-    const events: TimedEvent[] = [];
-    const span = provider
-      .getTracer('test-pg-pool-semantic')
-      .startSpan('test span');
-    await context.with(trace.setSpan(context.active(), span), async () => {
-      const result = await pool.query('SELECT NOW()');
-      runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 2);
-      assert.ok(result, 'pool.query() returns a promise');
-    });
-
-    span.end();
-    await pool.end();
-  });
-
-  it('send only stable semantic conventions', async () => {
-    process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database';
-    instrumentation = new PgInstrumentation();
-    instrumentation.setTracerProvider(provider);
-    pool = new pgPool(CONFIG);
-
-    const pgAttributes = {
-      ...STABLE_PG_QUERY_ATTRIBUTES,
-      [ATTR_DB_QUERY_TEXT]: 'SELECT NOW()',
-    };
-    const events: TimedEvent[] = [];
-    const span = provider
-      .getTracer('test-pg-pool-semantic')
-      .startSpan('test span');
-    await context.with(trace.setSpan(context.active(), span), async () => {
-      const result = await pool.query('SELECT NOW()');
-      runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 2);
-      assert.ok(result, 'pool.query() returns a promise');
-    });
-
-    span.end();
-    await pool.end();
   });
 });

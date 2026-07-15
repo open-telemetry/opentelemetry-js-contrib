@@ -24,7 +24,6 @@ import * as hapi from '@hapi/hapi';
 import { HapiLayerType } from '../src/internal-types';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ATTR_HTTP_REQUEST_METHOD } from '@opentelemetry/semantic-conventions';
-import { ATTR_HTTP_METHOD } from '../src/semconv';
 
 function getTestSpanAttr(span: TestSpan, name: string) {
   const kv = span.attributes.filter(a => a.key === name)[0];
@@ -583,14 +582,11 @@ describe('Hapi Instrumentation - Core Tests', () => {
     });
   });
 
-  describe('HTTP semconv migration', () => {
-    it('should emit only old HTTP semconv with OTEL_SEMCONV_STABILITY_OPT_IN unset', async () => {
+  describe('HTTP semconv', () => {
+    it('should emit stable HTTP semconv', async () => {
       await runTestFixture({
         cwd: __dirname,
         argv: ['fixtures/use-hapi.js'],
-        env: {
-          OTEL_SEMCONV_STABILITY_OPT_IN: '',
-        },
         checkResult: (err, stdout, stderr) => {
           assert.ifError(err);
         },
@@ -601,67 +597,6 @@ describe('Hapi Instrumentation - Core Tests', () => {
           assert.equal(
             hapiSpan.instrumentationScope.name,
             '@opentelemetry/instrumentation-hapi'
-          );
-          assert.equal(
-            getTestSpanAttr(hapiSpan, ATTR_HTTP_METHOD)?.stringValue,
-            'GET'
-          );
-          assert.equal(
-            getTestSpanAttr(hapiSpan, ATTR_HTTP_REQUEST_METHOD),
-            undefined
-          );
-        },
-      });
-    });
-
-    it('should emit only stable HTTP semconv with OTEL_SEMCONV_STABILITY_OPT_IN=http', async () => {
-      await runTestFixture({
-        cwd: __dirname,
-        argv: ['fixtures/use-hapi.js'],
-        env: {
-          OTEL_SEMCONV_STABILITY_OPT_IN: 'http',
-        },
-        checkResult: (err, stdout, stderr) => {
-          assert.ifError(err);
-        },
-        checkCollector: (collector: TestCollector) => {
-          const spans = collector.sortedSpans;
-          assert.equal(spans.length, 3);
-          const hapiSpan = spans[2];
-          assert.equal(
-            hapiSpan.instrumentationScope.name,
-            '@opentelemetry/instrumentation-hapi'
-          );
-          assert.equal(getTestSpanAttr(hapiSpan, ATTR_HTTP_METHOD), undefined);
-          assert.equal(
-            getTestSpanAttr(hapiSpan, ATTR_HTTP_REQUEST_METHOD)?.stringValue,
-            'GET'
-          );
-        },
-      });
-    });
-
-    it('should emit both old and stable HTTP semconv with OTEL_SEMCONV_STABILITY_OPT_IN=http/dup', async () => {
-      await runTestFixture({
-        cwd: __dirname,
-        argv: ['fixtures/use-hapi.js'],
-        env: {
-          OTEL_SEMCONV_STABILITY_OPT_IN: 'http/dup',
-        },
-        checkResult: (err, stdout, stderr) => {
-          assert.ifError(err);
-        },
-        checkCollector: (collector: TestCollector) => {
-          const spans = collector.sortedSpans;
-          assert.equal(spans.length, 3);
-          const hapiSpan = spans[2];
-          assert.equal(
-            hapiSpan.instrumentationScope.name,
-            '@opentelemetry/instrumentation-hapi'
-          );
-          assert.equal(
-            getTestSpanAttr(hapiSpan, ATTR_HTTP_METHOD)?.stringValue,
-            'GET'
           );
           assert.equal(
             getTestSpanAttr(hapiSpan, ATTR_HTTP_REQUEST_METHOD)?.stringValue,

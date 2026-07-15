@@ -26,7 +26,9 @@ const { NodeSDK, tracing, logs, api } = require('@opentelemetry/sdk-node');
 const { BunyanInstrumentation } = require('@opentelemetry/instrumentation-bunyan');
 const sdk = new NodeSDK({
   spanProcessor: new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter()),
-  logRecordProcessor: new logs.SimpleLogRecordProcessor(new logs.ConsoleLogRecordExporter()),
+  logRecordProcessors: [
+    new logs.SimpleLogRecordProcessor({ exporter: new logs.ConsoleLogRecordExporter() }),
+  ],
   instrumentations: [
     new BunyanInstrumentation({
       // See below for Bunyan instrumentation options.

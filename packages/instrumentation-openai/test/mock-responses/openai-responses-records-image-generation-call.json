@@ -1,0 +1,76 @@
+[
+	{
+		"scope": "https://api.openai.com:443",
+		"method": "POST",
+		"path": "/v1/responses",
+		"body": {
+			"model": "gpt-4o-mini",
+			"input": [
+				{
+					"role": "user",
+					"content": [
+						{ "type": "input_text", "text": "Now make it look realistic" }
+					]
+				},
+				{
+					"type": "image_generation_call",
+					"id": "ig_123"
+				}
+			],
+			"tools": [{ "type": "image_generation" }]
+		},
+		"status": 200,
+		"response": {
+			"id": "resp_67ca09c5efe0819096d0511c92b8c890096610f474011cc0",
+			"object": "response",
+			"created_at": 1741294021,
+			"status": "completed",
+			"error": null,
+			"incomplete_details": null,
+			"instructions": null,
+			"max_output_tokens": null,
+			"model": "gpt-4.1-2025-04-14",
+			"output": [
+				{
+					"id": "ig_124",
+					"type": "image_generation_call",
+					"status": "completed",
+					"revised_prompt": "A gray tabby cat hugging an otter. The otter is wearing an orange scarf. Both animals are cute and friendly, depicted in a warm, heartwarming, but realistic style.",
+					"result": "..."
+				}
+			],
+			"parallel_tool_calls": true,
+			"previous_response_id": null,
+			"reasoning": {
+				"effort": null,
+				"summary": null
+			},
+			"store": true,
+			"temperature": 1.0,
+			"text": {
+				"format": {
+					"type": "text"
+				}
+			},
+			"tool_choice": "auto",
+			"tools": [{ "type": "image_generation" }],
+			"top_p": 1.0,
+			"truncation": "disabled",
+			"usage": {
+				"input_tokens": 291,
+				"output_tokens": 23,
+				"output_tokens_details": {
+					"reasoning_tokens": 0
+				},
+				"total_tokens": 314
+			},
+			"user": null,
+			"metadata": {}
+		},
+		"rawHeaders": {
+			"content-type": "application/json",
+			"date": "Fri, 11 Jul 2025 07:02:40 GMT"
+		},
+		"responseIsBinary": false
+	}
+]

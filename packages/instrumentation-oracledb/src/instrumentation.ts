@@ -24,7 +24,7 @@ export class OracleInstrumentation extends InstrumentationBase {
   protected init() {
     const moduleOracleDB = new InstrumentationNodeModuleDefinition(
       'oracledb',
-      ['>= 6.7 < 7'],
+      ['>= 6.7 < 8'],
       (moduleExports: typeof oracleDBTypes) => {
         if (!moduleExports) {
           return;
@@ -59,8 +59,6 @@ export class OracleInstrumentation extends InstrumentationBase {
 
   override setConfig(config: OracleInstrumentationConfig = {}) {
     super.setConfig(config);
-
-    // update the config in OracleTelemetryTraceHandler obj.
     this._tmHandler?.setInstrumentConfig(this._config);
   }
 }

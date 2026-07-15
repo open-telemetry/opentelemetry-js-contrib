@@ -39,7 +39,7 @@ instrumentation.setMeterProvider(meterProvider);
 
 export const logsExporter = new InMemoryLogRecordExporter();
 export const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor(logsExporter)],
+  processors: [new SimpleLogRecordProcessor({ exporter: logsExporter })],
 });
 instrumentation.setLoggerProvider(loggerProvider);
 

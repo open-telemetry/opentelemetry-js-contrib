@@ -475,6 +475,27 @@ describe('Utils', () => {
           '/api/v2/users/:userId/posts/:postId/comments'
         );
       });
+      it('should filter out Express v5 wildcard paths like /{*path}', () => {
+        const req = createMockRequest('/api/users', [
+          '/',
+          '/{*path}',
+          '/api',
+          '/users',
+        ]);
+        const result = utils.getActualMatchedRoute(req);
+        assert.strictEqual(result, '/api/users');
+      });
+
+      it('should filter out Express v5 wildcard paths like /{*}', () => {
+        const req = createMockRequest('/api/users', [
+          '/',
+          '/{*}',
+          '/api',
+          '/users',
+        ]);
+        const result = utils.getActualMatchedRoute(req);
+        assert.strictEqual(result, '/api/users');
+      });
     });
 
     describe('Query parameters and fragments', () => {

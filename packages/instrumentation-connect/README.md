@@ -51,8 +51,6 @@ registerInstrumentations({
 });
 ```
 
-See [examples/connect](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/connect) for a short example.
-
 ## Semantic Conventions
 
 This package implements Semantic Convention v1.33.1.

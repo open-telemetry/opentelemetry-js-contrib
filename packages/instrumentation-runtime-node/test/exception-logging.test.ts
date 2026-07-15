@@ -26,7 +26,7 @@ describe('runtime exception logging', () => {
   beforeEach(() => {
     exporter = new InMemoryLogRecordExporter();
     const loggerProvider = new LoggerProvider({
-      processors: [new SimpleLogRecordProcessor(exporter)],
+      processors: [new SimpleLogRecordProcessor({ exporter })],
     });
     instrumentation = new RuntimeNodeInstrumentation({
       captureUncaughtException: true,
@@ -145,7 +145,7 @@ describe('runtime exception logging', () => {
       }),
     });
     const loggerProvider = new LoggerProvider({
-      processors: [new SimpleLogRecordProcessor(exporter)],
+      processors: [new SimpleLogRecordProcessor({ exporter })],
     });
     instrumentation.setLoggerProvider(loggerProvider);
     instrumentation.enable();
@@ -197,7 +197,7 @@ describe('runtime exception logging', () => {
       },
     });
     const loggerProvider = new LoggerProvider({
-      processors: [new SimpleLogRecordProcessor(exporter)],
+      processors: [new SimpleLogRecordProcessor({ exporter })],
     });
     instrumentation.setLoggerProvider(loggerProvider);
     instrumentation.enable();
@@ -222,7 +222,7 @@ describe('runtime exception logging', () => {
     } as unknown as RuntimeNodeInstrumentationConfig;
     instrumentation = new RuntimeNodeInstrumentation(config);
     const loggerProvider = new LoggerProvider({
-      processors: [new SimpleLogRecordProcessor(exporter)],
+      processors: [new SimpleLogRecordProcessor({ exporter })],
     });
     instrumentation.setLoggerProvider(loggerProvider);
     instrumentation.enable();
@@ -293,7 +293,7 @@ describe('runtime exception logging', () => {
       captureUncaughtException: false,
     });
     const loggerProvider = new LoggerProvider({
-      processors: [new SimpleLogRecordProcessor(exporter)],
+      processors: [new SimpleLogRecordProcessor({ exporter })],
     });
     instrumentation.setLoggerProvider(loggerProvider);
     instrumentation.enable();
@@ -311,7 +311,7 @@ describe('runtime exception logging', () => {
     instrumentation.disable();
     exporter = new InMemoryLogRecordExporter();
     const loggerProvider = new LoggerProvider({
-      processors: [new SimpleLogRecordProcessor(exporter)],
+      processors: [new SimpleLogRecordProcessor({ exporter })],
     });
     let forceFlushCalls = 0;
     const originalForceFlush = loggerProvider.forceFlush.bind(loggerProvider);
@@ -341,7 +341,7 @@ describe('runtime exception logging', () => {
     instrumentation.disable();
     exporter = new InMemoryLogRecordExporter();
     const loggerProvider = new LoggerProvider({
-      processors: [new SimpleLogRecordProcessor(exporter)],
+      processors: [new SimpleLogRecordProcessor({ exporter })],
     });
     loggerProvider.forceFlush = () => Promise.reject(new Error('flush failed'));
 

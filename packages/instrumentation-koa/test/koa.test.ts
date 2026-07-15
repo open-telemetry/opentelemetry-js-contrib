@@ -450,6 +450,47 @@ describe('Koa Instrumentation', function () {
       );
     });
 
+    it('should use fallback name for anonymous middleware', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      // Sets rootSpan as active context for subsequent middlewares.
+      // This middleware itself runs with no parent so it won't get a span.
+      app.use((ctx, next) =>
+        context.with(trace.setSpan(context.active(), rootSpan), next)
+      );
+      // Anonymous arrow function (no name inference for function arguments in JS).
+      // Runs after context is set, so the instrumentation will have a parent span
+      // and will create a span for it with the 'anonymous' fallback name.
+      app.use(async (_ctx, next) => {
+        await next();
+      });
+      app.use(simpleResponse());
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}`);
+          rootSpan.end();
+
+          const anonymousSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'middleware - anonymous');
+          assert.notStrictEqual(
+            anonymousSpan,
+            undefined,
+            'Expected a span named "middleware - anonymous" for the anonymous middleware'
+          );
+          assert.strictEqual(
+            anonymousSpan?.attributes[AttributeNames.KOA_NAME],
+            'anonymous'
+          );
+          assert.strictEqual(
+            anonymousSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.MIDDLEWARE
+          );
+        }
+      );
+    });
+
     it('should not create span if there is no parent span', async () => {
       app.use(customMiddleware());
       app.use(simpleResponse());
