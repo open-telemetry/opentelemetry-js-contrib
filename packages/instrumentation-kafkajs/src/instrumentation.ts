@@ -47,7 +47,7 @@ import {
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_DESTINATION_PARTITION_ID,
-  ATTR_MESSAGING_CLUSTER_ID,
+  ATTR_MESSAGING_KAFKA_CLUSTER_ID,
   ATTR_MESSAGING_KAFKA_MESSAGE_KEY,
   ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE,
   ATTR_MESSAGING_KAFKA_OFFSET,
@@ -881,7 +881,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
             message?.key && message.value === null ? true : undefined,
           [ATTR_MESSAGING_KAFKA_OFFSET]: message?.offset,
           ...(clusterId !== undefined
-            ? { [ATTR_MESSAGING_CLUSTER_ID]: clusterId }
+            ? { [ATTR_MESSAGING_KAFKA_CLUSTER_ID]: clusterId }
             : {}),
         },
         links: link ? [link] : [],
@@ -927,7 +927,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         [ATTR_MESSAGING_OPERATION_NAME]: 'send',
         [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_SEND,
         ...(clusterId !== undefined
-          ? { [ATTR_MESSAGING_CLUSTER_ID]: clusterId }
+          ? { [ATTR_MESSAGING_KAFKA_CLUSTER_ID]: clusterId }
           : {}),
       },
     });

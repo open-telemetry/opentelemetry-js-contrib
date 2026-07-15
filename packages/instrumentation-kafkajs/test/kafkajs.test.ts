@@ -27,7 +27,7 @@ import {
   METRIC_MESSAGING_PROCESS_DURATION,
   METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES,
   METRIC_MESSAGING_CLIENT_OPERATION_DURATION,
-  ATTR_MESSAGING_CLUSTER_ID,
+  ATTR_MESSAGING_KAFKA_CLUSTER_ID,
 } from '../src/semconv';
 import {
   getTestSpans,
@@ -1710,7 +1710,7 @@ describe('instrumentation-kafkajs', () => {
       const spans = getTestSpans();
       assert.strictEqual(spans.length, 1);
       assert.strictEqual(
-        spans[0].attributes[ATTR_MESSAGING_CLUSTER_ID],
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
         'my-cluster-123'
       );
     });
@@ -1734,7 +1734,7 @@ describe('instrumentation-kafkajs', () => {
       const spans = getTestSpans();
       assert.strictEqual(spans.length, 1);
       assert.strictEqual(
-        spans[0].attributes[ATTR_MESSAGING_CLUSTER_ID],
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
         undefined
       );
     });
@@ -1778,7 +1778,7 @@ describe('instrumentation-kafkajs', () => {
       const spans = getTestSpans();
       assert.strictEqual(spans.length, 1);
       assert.strictEqual(
-        spans[0].attributes[ATTR_MESSAGING_CLUSTER_ID],
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
         undefined
       );
     });

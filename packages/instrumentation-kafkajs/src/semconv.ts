@@ -83,7 +83,8 @@ export const ATTR_MESSAGING_KAFKA_OFFSET = 'messaging.kafka.offset' as const;
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_MESSAGING_CLUSTER_ID = 'messaging.kafka.cluster.id' as const;
+export const ATTR_MESSAGING_KAFKA_CLUSTER_ID =
+  'messaging.kafka.cluster.id' as const;
 
 /**
  * The system-specific name of the messaging operation.
