@@ -203,7 +203,8 @@ function _triggerClusterIdFetch(kafkaInstance: kafkaJs.Kafka): void {
     // stage would otherwise keep the admin client (and its socket) alive indefinitely.
     const timeout = new Promise<never>((_, reject) => {
       timeoutHandle = setTimeout(
-        () => reject(new Error('KafkaJS cluster-id lookup timed out after 10s')),
+        () =>
+          reject(new Error('KafkaJS cluster-id lookup timed out after 10s')),
         10_000
       );
       if (
@@ -221,12 +222,12 @@ function _triggerClusterIdFetch(kafkaInstance: kafkaJs.Kafka): void {
       .then(({ clusterId }) => {
         if (clusterId != null && clusterId !== '') {
           _clusterIdByKafka.set(kafkaInstance, clusterId);
-          _clusterIdFetchedAt.set(kafkaInstance, Date.now());
-        } else {
-          // No cluster id (pre-KIP-78 broker). A good id cached from an earlier
-          // fetch is deliberately left in place — cluster ids are stable — but the
-          // instance is now marked unavailable, which also stops future refreshes.
-          // Acceptable: a value that never changes does not need refreshing.
+        } else if (!_clusterIdByKafka.has(kafkaInstance)) {
+          // Broker returned no cluster id and we have never resolved one (e.g. a
+          // pre-KIP-78 broker) — stop retrying this instance. If an id was resolved
+          // on an earlier fetch it is deliberately kept: cluster ids are stable, so
+          // an anomalous empty response is ignored rather than dropping the value or
+          // permanently disabling refreshes.
           _clusterIdUnavailable.add(kafkaInstance);
         }
       })
@@ -247,13 +248,19 @@ function _triggerClusterIdFetch(kafkaInstance: kafkaJs.Kafka): void {
       .finally(() => {
         clearTimeout(timeoutHandle);
         _clusterIdFetching.delete(kafkaInstance);
+        // Treat the TTL as a minimum interval between fetch attempts: once an id is
+        // cached, record this attempt so a failed or empty refresh backs off for a
+        // full TTL rather than re-fetching on every span.
+        if (_clusterIdByKafka.has(kafkaInstance)) {
+          _clusterIdFetchedAt.set(kafkaInstance, Date.now());
+        }
         // connect() had resolved (describeCluster resolved, rejected, or timed out
         // mid-flight), so the socket is open — close it.
         if (connected) {
           adminClient.disconnect().catch(() => {});
         }
       });
-  } catch (err: unknown) {
+  } catch (setupErr: unknown) {
     // admin() or connect() threw synchronously. Clear the in-flight marker so a
     // later client creation can retry, and best-effort close any admin we created.
     clearTimeout(timeoutHandle);
@@ -265,7 +272,7 @@ function _triggerClusterIdFetch(kafkaInstance: kafkaJs.Kafka): void {
     }
     diag.warn(
       'opentelemetry-instrumentation-kafkajs: failed to fetch cluster ID',
-      err
+      setupErr
     );
   }
 }

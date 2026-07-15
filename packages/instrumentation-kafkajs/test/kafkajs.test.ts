@@ -2033,6 +2033,73 @@ describe('instrumentation-kafkajs', () => {
         undefined
       );
     });
+
+    it('keeps a cached cluster id and does not disable refreshes when a later refresh returns empty', async () => {
+      let adminCallCount = 0;
+      let clusterIdToReturn = 'good-1';
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-empty-after-good',
+        brokers: ['mock:9092'],
+      });
+      kafkajs.Kafka.prototype.admin = () => {
+        adminCallCount++;
+        return makeMockAdmin({ clusterId: clusterIdToReturn });
+      };
+
+      const realNow = Date.now;
+      let fakeNow = 1000;
+      const TTL = 60 * 60 * 1000;
+      try {
+        Date.now = () => fakeNow;
+
+        // Fetch #1: resolves a good cluster id.
+        producer = initProducerOnInstance(kafkaForTest);
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(adminCallCount, 1);
+
+        // A later refresh (past the TTL) comes back empty.
+        clusterIdToReturn = '';
+        fakeNow = 1000 + TTL + 1;
+        await producer.send({
+          topic: 'test-topic',
+          messages: [{ value: 'a' }],
+        });
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(
+          adminCallCount,
+          2,
+          'a stale id should trigger a background refresh'
+        );
+        // The previously-resolved id is retained despite the empty response.
+        let spans = getTestSpans();
+        assert.strictEqual(
+          spans[spans.length - 1].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+          'good-1'
+        );
+
+        // Past the TTL again: the instance must NOT have been permanently disabled,
+        // so another refresh is still attempted (the old behavior marked it
+        // unavailable and would stop at 2).
+        fakeNow = fakeNow + TTL + 1;
+        await producer.send({
+          topic: 'test-topic',
+          messages: [{ value: 'b' }],
+        });
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(
+          adminCallCount,
+          3,
+          'an empty refresh must not permanently disable future refreshes'
+        );
+        spans = getTestSpans();
+        assert.strictEqual(
+          spans[spans.length - 1].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+          'good-1'
+        );
+      } finally {
+        Date.now = realNow;
+      }
+    });
   });
 
   describe('bufferTextMapGetter', () => {
