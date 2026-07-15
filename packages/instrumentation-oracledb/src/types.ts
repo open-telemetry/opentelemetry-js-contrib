@@ -15,9 +15,12 @@ export interface SpanConnectionConfig {
   port?: number;
   user?: string;
   protocol?: string;
+  dbName?: string;
   instanceName?: string;
   serverMode?: string;
   pdbName?: string;
+  domainName?: string;
+  dbUniqueName?: string;
   poolMin?: number;
   poolMax?: number;
   poolIncrement?: number;

@@ -41,7 +41,7 @@ This project includes:
 **Instrumentations**: OpenTelemetry can collect tracing data automatically using instrumentations. Vendors/Users can also create and use their own.
 Please read the [contributing guidelines on adding new instrumentation](CONTRIBUTING.md#new-instrumentation) before opening any PRs.
 
-**Resource Detectors**: OpenTelemetry can collect resource attributes of the entity that producing telemetry. For example, a process producing telemetry that is running in a container on Kubernetes has a Pod name, it is in a namespace and possibly is part of a Deployment which also has a name. All three of these attributes can be included in the `Resource`.
+**Resource Detectors**: OpenTelemetry can collect resource attributes of the entity that is producing telemetry. For example, a process producing telemetry that is running in a container on Kubernetes has a Pod name, it is in a namespace and possibly is part of a Deployment which also has a name. All three of these attributes can be included in the `Resource`.
 
 ## Component Ownership
 
@@ -58,7 +58,7 @@ is [.github/component_owners.yml](https://github.com/open-telemetry/opentelemetr
 
 ## Stability levels
 
-Stability level for components in this repository follow the definitions in [CONTRIBUTING.md](./CONTRIBUTING.md).
+Stability levels for components in this repository follow the definitions in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Supported Runtimes
 

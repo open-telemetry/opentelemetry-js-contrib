@@ -29,8 +29,6 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import type {
   MiddlewareStack,
@@ -47,7 +45,6 @@ import {
 } from './utils';
 import { propwrap } from './propwrap';
 import { RequestMetadata } from './services/ServiceExtension';
-import { ATTR_HTTP_STATUS_CODE } from './semconv';
 import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 const V3_CLIENT_CONFIG_KEY = Symbol(
@@ -62,19 +59,8 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
   // need declare since initialized in callbacks from super constructor
   declare private servicesExtensions: ServicesExtensions;
 
-  private _httpSemconvStability: SemconvStability;
-  private _dbSemconvStability: SemconvStability;
-
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._httpSemconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
-    this._dbSemconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   protected init(): InstrumentationModuleDefinition[] {
@@ -391,8 +377,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
         const requestMetadata = self.servicesExtensions.requestPreSpanHook(
           normalizedRequest,
           self.getConfig(),
-          self._diag,
-          self._dbSemconvStability
+          self._diag
         );
         const startTime = hrTime();
         const span = self._startAwsV3Span(normalizedRequest, requestMetadata);
@@ -434,15 +419,10 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                   const httpStatusCode =
                     response.output?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
-                    if (self._httpSemconvStability & SemconvStability.OLD) {
-                      span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
-                    }
-                    if (self._httpSemconvStability & SemconvStability.STABLE) {
-                      span.setAttribute(
-                        ATTR_HTTP_RESPONSE_STATUS_CODE,
-                        httpStatusCode
-                      );
-                    }
+                    span.setAttribute(
+                      ATTR_HTTP_RESPONSE_STATUS_CODE,
+                      httpStatusCode
+                    );
                   }
 
                   const extendedRequestId =
@@ -481,15 +461,10 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
 
                   const httpStatusCode = err?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
-                    if (self._httpSemconvStability & SemconvStability.OLD) {
-                      span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
-                    }
-                    if (self._httpSemconvStability & SemconvStability.STABLE) {
-                      span.setAttribute(
-                        ATTR_HTTP_RESPONSE_STATUS_CODE,
-                        httpStatusCode
-                      );
-                    }
+                    span.setAttribute(
+                      ATTR_HTTP_RESPONSE_STATUS_CODE,
+                      httpStatusCode
+                    );
                   }
 
                   const extendedRequestId = err?.extendedRequestId;

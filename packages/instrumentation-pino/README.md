@@ -27,7 +27,9 @@ const { NodeSDK, tracing, logs, api } = require('@opentelemetry/sdk-node');
 const { PinoInstrumentation } = require('@opentelemetry/instrumentation-pino');
 const sdk = new NodeSDK({
   spanProcessor: new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter()),
-  logRecordProcessor: new logs.SimpleLogRecordProcessor(new logs.ConsoleLogRecordExporter()),
+  logRecordProcessors: [
+    new logs.SimpleLogRecordProcessor({ exporter: new logs.ConsoleLogRecordExporter() }),
+  ],
   instrumentations: [
     new PinoInstrumentation({
       // See below for Pino instrumentation options.

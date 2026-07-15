@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-host-metrics-v0.2.0...instrumentation-host-metrics-v0.3.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+
 ## [0.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-host-metrics-v0.1.0...instrumentation-host-metrics-v0.2.0) (2026-06-11)
 
 

@@ -9,6 +9,7 @@ import { logs, Logger, SeverityNumber } from '@opentelemetry/api-logs';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { millisToHrTime } from '@opentelemetry/core';
+import { ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-conventions';
 
 // This block is a copy (modulo code style and TypeScript types) of the Pino
 // code that defines log level value and names. This file is part of
@@ -198,6 +199,8 @@ export class OTelPinoStream extends Writable {
       span_id, // eslint-disable-line @typescript-eslint/no-unused-vars
       trace_flags, // eslint-disable-line @typescript-eslint/no-unused-vars
 
+      [ATTR_OTEL_EVENT_NAME]: eventName,
+
       ...attributes
     } = recObj;
 
@@ -220,6 +223,9 @@ export class OTelPinoStream extends Writable {
     // (https://getpino.io/#/docs/api?id=formatters-object).
     const lastLevel = (this as any).lastLevel;
 
+    const normalizedEventName =
+      typeof eventName === 'string' ? eventName : undefined;
+
     const otelRec = {
       timestamp: timestampHrTime,
       observedTimestamp: timestampHrTime,
@@ -228,6 +234,9 @@ export class OTelPinoStream extends Writable {
       body,
       attributes,
       exception: normalizeException(exception),
+      ...(normalizedEventName !== undefined
+        ? { eventName: normalizedEventName }
+        : {}),
     };
 
     this._otelLogger.emit(otelRec);

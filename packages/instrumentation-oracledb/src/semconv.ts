@@ -28,16 +28,30 @@ export const ATTR_DB_OPERATION_PARAMETER = (key: string) =>
   `db.operation.parameter.${key}`;
 
 /**
- * Deprecated, no replacement at this time.
- *
- * @example readonly_user
- * @example reporting_user
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Removed, no replacement at this time.
+ * The database domain associated with the connection.
  */
-export const ATTR_DB_USER = 'db.user' as const;
+export const ATTR_ORACLE_DB_DOMAIN = 'oracle.db.domain' as const;
+
+/**
+ * The instance name associated with the connection in an Oracle Real
+ * Application Clusters environment.
+ */
+export const ATTR_ORACLE_DB_INSTANCE_NAME = 'oracle.db.instance.name' as const;
+
+/**
+ * The database name associated with the connection.
+ */
+export const ATTR_ORACLE_DB_NAME = 'oracle.db.name' as const;
+
+/**
+ * The pluggable database (PDB) name associated with the connection.
+ */
+export const ATTR_ORACLE_DB_PDB = 'oracle.db.pdb' as const;
+
+/**
+ * The service name currently associated with the database connection.
+ */
+export const ATTR_ORACLE_DB_SERVICE = 'oracle.db.service' as const;
 
 /**
  * The state of a connection in the pool

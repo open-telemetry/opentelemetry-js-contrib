@@ -41,7 +41,9 @@ import {
 import {
   ATTR_AWS_SQS_QUEUE_URL,
   ATTR_CLOUD_ACCOUNT_ID,
+  ATTR_CLOUD_RESOURCE_ID,
   ATTR_FAAS_COLDSTART,
+  ATTR_FAAS_INVOCATION_ID,
   ATTR_FAAS_TRIGGER,
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
@@ -53,9 +55,7 @@ import {
   MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
   MESSAGING_SYSTEM_VALUE_AWS_SQS,
 } from './semconv';
-import { ATTR_FAAS_EXECUTION, ATTR_FAAS_ID } from './semconv-obsolete';
-
-import {
+import type {
   APIGatewayProxyEventHeaders,
   Callback,
   Context,
@@ -475,8 +475,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
       {
         kind: SpanKind.SERVER,
         attributes: {
-          [ATTR_FAAS_EXECUTION]: context.awsRequestId,
-          [ATTR_FAAS_ID]: context.invokedFunctionArn,
+          [ATTR_FAAS_INVOCATION_ID]: context.awsRequestId,
+          [ATTR_CLOUD_RESOURCE_ID]: context.invokedFunctionArn,
           [ATTR_CLOUD_ACCOUNT_ID]: AwsLambdaInstrumentation._extractAccountId(
             context.invokedFunctionArn
           ),

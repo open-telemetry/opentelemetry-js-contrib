@@ -8,17 +8,9 @@ import {
   isWrapped,
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import type * as Memcached from 'memcached';
-import {
-  DB_SYSTEM_NAME_VALUE_MEMCACHED,
-  DB_SYSTEM_VALUE_MEMCACHED,
-  ATTR_DB_OPERATION,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-} from './semconv';
+import { DB_SYSTEM_NAME_VALUE_MEMCACHED } from './semconv';
 import {
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
@@ -36,27 +28,11 @@ export class MemcachedInstrumentation extends InstrumentationBase<Instrumentatio
     enhancedDatabaseReporting: false,
   };
 
-  private _netSemconvStability!: SemconvStability;
-  private _dbSemconvStability!: SemconvStability;
-
   constructor(config: InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, {
       ...MemcachedInstrumentation.DEFAULT_CONFIG,
       ...config,
     });
-    this._setSemconvStabilityFromEnv();
-  }
-
-  // Used for testing.
-  private _setSemconvStabilityFromEnv() {
-    this._netSemconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
-    this._dbSemconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   override setConfig(config: InstrumentationConfig = {}) {
@@ -106,12 +82,7 @@ export class MemcachedInstrumentation extends InstrumentationBase<Instrumentatio
         'memcached.version': moduleVersion,
       };
 
-      if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
-        attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MEMCACHED;
-      }
-      if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
-        attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MEMCACHED;
-      }
+      attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MEMCACHED;
 
       // The name will be overwritten later
       const span = instrumentation.tracer.startSpan(
@@ -158,28 +129,13 @@ export class MemcachedInstrumentation extends InstrumentationBase<Instrumentatio
       const attributes: api.Attributes = {
         'db.memcached.key': query.key,
         'db.memcached.lifetime': query.lifetime,
-        ...utils.getPeerAttributes(
-          client,
-          server,
-          query,
-          instrumentation._netSemconvStability
-        ),
+        ...utils.getPeerAttributes(client, server, query),
       };
 
-      if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
-        attributes[ATTR_DB_OPERATION] = query.type;
-      }
-      if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
-        attributes[ATTR_DB_OPERATION_NAME] = query.type;
-      }
+      attributes[ATTR_DB_OPERATION_NAME] = query.type;
 
       if (instrumentation.getConfig().enhancedDatabaseReporting) {
-        if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
-          attributes[ATTR_DB_STATEMENT] = query.command;
-        }
-        if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
-          attributes[ATTR_DB_QUERY_TEXT] = query.command;
-        }
+        attributes[ATTR_DB_QUERY_TEXT] = query.command;
       }
 
       span.setAttributes(attributes);

@@ -4,17 +4,14 @@
  */
 
 import { Span } from '@opentelemetry/api';
-import {
-  InstrumentationConfig,
-  SemconvStability,
-} from '@opentelemetry/instrumentation';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 /**
- * Function that can be used to serialize db.statement tag
+ * Function that can be used to serialize the db.query.text attribute
  * @param cmdName - The name of the command (eg. set, get, mset)
  * @param cmdArgs - Array of arguments passed to the command
  *
- * @returns serialized string that will be used as the db.statement attribute.
+ * @returns serialized string that will be used as the db.query.text attribute.
  */
 export type DbStatementSerializer = (
   cmdName: string,
@@ -40,7 +37,7 @@ export interface RedisResponseCustomAttributeFunction {
 }
 
 export interface RedisInstrumentationConfig extends InstrumentationConfig {
-  /** Custom serializer function for the db.statement tag */
+  /** Custom serializer function for the db.query.text attribute */
   dbStatementSerializer?: DbStatementSerializer;
 
   /** Function for adding custom attributes on db response */
@@ -48,12 +45,4 @@ export interface RedisInstrumentationConfig extends InstrumentationConfig {
 
   /** Require parent to create redis span, default when unset is false */
   requireParentSpan?: boolean;
-
-  /**
-   * Controls which semantic-convention attributes are emitted on spans.
-   * Default: 'OLD'.
-   * When this option is set, it takes precedence over any value provided via
-   * the OTEL_SEMCONV_STABILITY_OPT_IN environment variable.
-   */
-  semconvStability?: SemconvStability;
 }

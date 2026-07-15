@@ -21,11 +21,11 @@ import {
 
 registerInstrumentationTesting(new AmqplibInstrumentation());
 import * as amqp from 'amqplib';
+import { ATTR_MESSAGING_SYSTEM } from '../src/semconv';
 import {
-  ATTR_MESSAGING_SYSTEM,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from '../src/semconv';
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 import {
   ATTR_MESSAGING_PROTOCOL,
   ATTR_MESSAGING_PROTOCOL_VERSION,
@@ -66,10 +66,10 @@ describe('amqplib instrumentation connection', () => {
           '0.9.1'
         );
         expect(publishSpan.attributes[ATTR_MESSAGING_URL]).toBeUndefined(); // no url string if value supplied as object
-        expect(publishSpan.attributes[ATTR_NET_PEER_NAME]).toEqual(
+        expect(publishSpan.attributes[ATTR_SERVER_ADDRESS]).toEqual(
           TEST_RABBITMQ_HOST
         );
-        expect(publishSpan.attributes[ATTR_NET_PEER_PORT]).toEqual(
+        expect(publishSpan.attributes[ATTR_SERVER_PORT]).toEqual(
           TEST_RABBITMQ_PORT
         );
       } finally {
@@ -119,7 +119,7 @@ describe('amqplib instrumentation connection', () => {
           Buffer.from('message created only to test connection attributes')
         );
         const [publishSpan] = getTestSpans();
-        expect(publishSpan.attributes[ATTR_NET_PEER_NAME]).toEqual(
+        expect(publishSpan.attributes[ATTR_SERVER_ADDRESS]).toEqual(
           TEST_RABBITMQ_HOST
         );
       } finally {
@@ -149,10 +149,10 @@ describe('amqplib instrumentation connection', () => {
           '0.9.1'
         );
         expect(publishSpan.attributes[ATTR_MESSAGING_URL]).toEqual(censoredUrl);
-        expect(publishSpan.attributes[ATTR_NET_PEER_NAME]).toEqual(
+        expect(publishSpan.attributes[ATTR_SERVER_ADDRESS]).toEqual(
           TEST_RABBITMQ_HOST
         );
-        expect(publishSpan.attributes[ATTR_NET_PEER_PORT]).toEqual(
+        expect(publishSpan.attributes[ATTR_SERVER_PORT]).toEqual(
           TEST_RABBITMQ_PORT
         );
       } finally {

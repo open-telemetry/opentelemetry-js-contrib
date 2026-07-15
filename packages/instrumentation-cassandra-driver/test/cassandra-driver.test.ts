@@ -27,15 +27,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  DB_SYSTEM_VALUE_CASSANDRA,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-  DB_SYSTEM_NAME_VALUE_CASSANDRA,
-} from '../src/semconv';
+import { DB_SYSTEM_NAME_VALUE_CASSANDRA } from '../src/semconv';
 import * as assert from 'assert';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import type * as CassandraDriver from 'cassandra-driver';
@@ -44,10 +36,6 @@ import {
   CassandraDriverInstrumentationConfig,
 } from '../src';
 import { ResponseHookInfo } from '../src/types';
-
-// By default tests run with both old and stable semconv. Some test cases
-// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider({
@@ -61,18 +49,8 @@ const cassandraContactPoint = process.env.CASSANDRA_HOST
   ? '127.0.0.1'
   : 'cassandra';
 
-const DEFAULT_OLD_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_CASSANDRA,
-  [ATTR_DB_USER]: 'cassandra',
-};
-
 const DEFAULT_STABLE_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_CASSANDRA,
-};
-
-const NET_OLD_ATTRIBUTES = {
-  [ATTR_NET_PEER_NAME]: cassandraContactPoint,
-  [ATTR_NET_PEER_PORT]: 9042,
 };
 
 const NET_STABLE_ATTRIBUTES = {
@@ -89,15 +67,12 @@ function assertSpan(
   includeAddressAttrs = true
 ) {
   const attributes: Attributes = {
-    ...DEFAULT_OLD_ATTRIBUTES,
     ...DEFAULT_STABLE_ATTRIBUTES,
-    ...(includeAddressAttrs ? NET_OLD_ATTRIBUTES : {}),
     ...(includeAddressAttrs ? NET_STABLE_ATTRIBUTES : {}),
     ...customAttributes,
   };
 
   if (query !== undefined) {
-    attributes[ATTR_DB_STATEMENT] = query;
     attributes[ATTR_DB_QUERY_TEXT] = query;
   }
 
@@ -142,15 +117,12 @@ function assertErrorSpan(
   const [span] = spans;
 
   const attributes: Attributes = {
-    ...DEFAULT_OLD_ATTRIBUTES,
     ...DEFAULT_STABLE_ATTRIBUTES,
-    ...(includeAddressAttrs ? NET_OLD_ATTRIBUTES : {}),
     ...(includeAddressAttrs ? NET_STABLE_ATTRIBUTES : {}),
     ...customAttributes,
   };
 
   if (query !== undefined) {
-    attributes[ATTR_DB_STATEMENT] = query;
     attributes[ATTR_DB_QUERY_TEXT] = query;
   }
 
@@ -425,57 +397,6 @@ describe('CassandraDriverInstrumentation', () => {
         assertStreamSpans();
         done();
       });
-    });
-  });
-
-  describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
-    const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-
-    after(() => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-    });
-
-    it('uses old attributes when OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-      memoryExporter.reset();
-
-      await client.execute('select * from ot.test');
-
-      const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 1);
-      testUtils.assertSpan(
-        spans[0],
-        SpanKind.CLIENT,
-        {
-          ...DEFAULT_OLD_ATTRIBUTES,
-          ...NET_OLD_ATTRIBUTES,
-        },
-        [],
-        { code: SpanStatusCode.UNSET }
-      );
-    });
-
-    it('uses stable attributes when OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-      memoryExporter.reset();
-
-      await client.execute('select * from ot.test');
-
-      const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 1);
-      testUtils.assertSpan(
-        spans[0],
-        SpanKind.CLIENT,
-        {
-          ...DEFAULT_STABLE_ATTRIBUTES,
-          ...NET_STABLE_ATTRIBUTES,
-        },
-        [],
-        { code: SpanStatusCode.UNSET }
-      );
     });
   });
 });

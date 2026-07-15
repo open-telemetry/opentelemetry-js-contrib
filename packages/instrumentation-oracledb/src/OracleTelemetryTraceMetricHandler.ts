@@ -29,8 +29,12 @@ import {
   ATTR_ERROR_TYPE,
 } from '@opentelemetry/semantic-conventions';
 import {
-  ATTR_DB_USER,
   ATTR_DB_OPERATION_PARAMETER,
+  ATTR_ORACLE_DB_DOMAIN,
+  ATTR_ORACLE_DB_INSTANCE_NAME,
+  ATTR_ORACLE_DB_NAME,
+  ATTR_ORACLE_DB_PDB,
+  ATTR_ORACLE_DB_SERVICE,
   DB_SYSTEM_NAME_VALUE_ORACLE_DB,
 } from './semconv';
 import { hrTime } from '@opentelemetry/core';
@@ -57,6 +61,18 @@ function getTraceHandlerBaseClass(
     diag.error('Failed to load oracledb module.', err);
     return null;
   }
+}
+
+function parseNormalizedOperationName(statement: string): string {
+  const trimmedStatement = statement.trim();
+  const indexOfFirstSpace = trimmedStatement.indexOf(' ');
+  let sqlCommand =
+    indexOfFirstSpace === -1
+      ? trimmedStatement
+      : trimmedStatement.slice(0, indexOfFirstSpace);
+
+  sqlCommand = sqlCommand.toUpperCase();
+  return sqlCommand.endsWith(';') ? sqlCommand.slice(0, -1) : sqlCommand;
 }
 
 export function buildTraceparent(spanContext: SpanContext): string | undefined {
@@ -97,34 +113,36 @@ export function getOracleTelemetryTraceMetricHandlerClass(
       );
     }
 
-    // It returns db.namespace as mentioned in semantic conventions
-    // Ex: ORCL1|PDB1|db_high.adb.oraclecloud.com
-    private _getDBNameSpace(
-      instanceName?: string,
-      pdbName?: string,
-      serviceName?: string
-    ): string | undefined {
-      if (instanceName == null && pdbName == null && serviceName == null) {
-        return undefined;
-      }
-      return `${instanceName ?? ''}|${pdbName ?? ''}|${serviceName ?? ''}`;
-    }
-
     // Returns the connection related Attributes for
     // semantic standards and module custom keys.
     private _getConnectionSpanAttributes(config: SpanConnectionConfig) {
-      return {
+      const attributes: Record<string, string | number | undefined> = {
         [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
         [ATTR_NETWORK_TRANSPORT]: config.protocol,
-        [ATTR_DB_USER]: config.user,
-        [ATTR_DB_NAMESPACE]: this._getDBNameSpace(
-          config.instanceName,
-          config.pdbName,
-          config.serviceName
-        ),
         [ATTR_SERVER_ADDRESS]: config.hostName,
         [ATTR_SERVER_PORT]: config.port,
       };
+
+      if (config.dbUniqueName) {
+        attributes[ATTR_DB_NAMESPACE] = config.dbUniqueName;
+      }
+      if (config.dbName) {
+        attributes[ATTR_ORACLE_DB_NAME] = config.dbName;
+      }
+      if (config.domainName) {
+        attributes[ATTR_ORACLE_DB_DOMAIN] = config.domainName;
+      }
+      if (config.pdbName) {
+        attributes[ATTR_ORACLE_DB_PDB] = config.pdbName;
+      }
+      if (config.instanceName) {
+        attributes[ATTR_ORACLE_DB_INSTANCE_NAME] = config.instanceName;
+      }
+      if (config.serviceName) {
+        attributes[ATTR_ORACLE_DB_SERVICE] = config.serviceName;
+      }
+
+      return attributes;
     }
 
     // It returns true if object is of type oracledb.Lob.
@@ -212,8 +230,7 @@ export function getOracleTelemetryTraceMetricHandlerClass(
       if (callConfig.statement) {
         span.setAttribute(
           ATTR_DB_OPERATION_NAME,
-          // retrieve just the first word
-          callConfig.statement.split(' ')[0].toUpperCase()
+          parseNormalizedOperationName(callConfig.statement)
         );
         if (
           this._instrumentConfig.dbStatementDump ||
@@ -291,12 +308,22 @@ export function getOracleTelemetryTraceMetricHandlerClass(
         return;
       }
 
-      const { instanceName, pdbName, serviceName } = connectLevelConfig;
-      const dbName = this._getDBNameSpace(instanceName, pdbName, serviceName);
-      const sqlCommand =
-        callLevelConfig?.statement?.split(' ')[0].toUpperCase() || '';
+      // Some older node-oracledb versions do not populate
+      // callLevelConfig.statement for executeMany round trips,
+      // so fall back to the original SQL argument.
+      const sqlStatement =
+        callLevelConfig?.statement ??
+        (typeof traceContext.args?.[0] === 'string'
+          ? traceContext.args[0]
+          : undefined);
+      const dbName = connectLevelConfig.dbUniqueName;
+      // Prefer the SQL text for the verb. When the trace payload omits the
+      // statement, the fallback above uses the original SQL argument.
+      const sqlCommand = sqlStatement
+        ? parseNormalizedOperationName(sqlStatement)
+        : '';
       userContext.span.updateName(
-        `${operation}:${sqlCommand}${dbName && ` ${dbName}`}`
+        `${operation}:${sqlCommand}${dbName ? ` ${dbName}` : ''}`
       );
     }
 

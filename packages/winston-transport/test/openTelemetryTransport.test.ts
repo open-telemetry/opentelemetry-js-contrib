@@ -4,6 +4,7 @@
  */
 
 import { SeverityNumber, logs } from '@opentelemetry/api-logs';
+import { ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-conventions';
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,
@@ -15,7 +16,7 @@ import { OpenTelemetryTransportV3 } from '../src';
 
 const memoryLogExporter = new InMemoryLogRecordExporter();
 const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor(memoryLogExporter)],
+  processors: [new SimpleLogRecordProcessor({ exporter: memoryLogExporter })],
 });
 logs.setGlobalLoggerProvider(loggerProvider);
 
@@ -375,6 +376,89 @@ describe('OpenTelemetryTransportV3', () => {
       assert.strictEqual(logRecords[5].severityNumber, SeverityNumber.INFO2);
       assert.strictEqual(logRecords[6].severityNumber, SeverityNumber.INFO);
       assert.strictEqual(logRecords[7].severityNumber, SeverityNumber.DEBUG);
+    });
+  });
+
+  describe('otel.event.name support', () => {
+    it('sets eventName on the LogRecord when otel.event.name is present', () => {
+      const transport = new OpenTelemetryTransportV3();
+      transport.log(
+        { message: kMessage, 'otel.event.name': 'my-event', foo: 'bar' },
+        () => {}
+      );
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 1);
+      assert.strictEqual(logRecords[0].eventName, 'my-event');
+    });
+
+    it('does not pass otel.event.name through as an attribute', () => {
+      const transport = new OpenTelemetryTransportV3();
+      transport.log(
+        { message: kMessage, 'otel.event.name': 'my-event', foo: 'bar' },
+        () => {}
+      );
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 1);
+      assert.strictEqual(logRecords[0].eventName, 'my-event');
+      assert.strictEqual(
+        logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+        undefined
+      );
+      assert.strictEqual(logRecords[0].attributes['foo'], 'bar');
+      assert.strictEqual(logRecords[0].body, kMessage);
+    });
+
+    it('leaves eventName undefined when otel.event.name is absent', () => {
+      const transport = new OpenTelemetryTransportV3();
+      transport.log({ message: kMessage, foo: 'bar' }, () => {});
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 1);
+      assert.strictEqual(logRecords[0].eventName, undefined);
+    });
+
+    it('ignores otel.event.name when value is a number', () => {
+      const transport = new OpenTelemetryTransportV3();
+      transport.log(
+        { message: kMessage, 'otel.event.name': 123, foo: 'bar' },
+        () => {}
+      );
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 1);
+      assert.strictEqual(logRecords[0].eventName, undefined);
+      assert.strictEqual(
+        logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+        undefined
+      );
+    });
+
+    it('ignores otel.event.name when value is an object', () => {
+      const transport = new OpenTelemetryTransportV3();
+      transport.log(
+        { message: kMessage, 'otel.event.name': { bad: true }, foo: 'bar' },
+        () => {}
+      );
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 1);
+      assert.strictEqual(logRecords[0].eventName, undefined);
+      assert.strictEqual(
+        logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+        undefined
+      );
+    });
+
+    it('promotes otel.event.name to eventName when value is empty string', () => {
+      const transport = new OpenTelemetryTransportV3();
+      transport.log(
+        { message: kMessage, 'otel.event.name': '', foo: 'bar' },
+        () => {}
+      );
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 1);
+      assert.strictEqual(logRecords[0].eventName, '');
+      assert.strictEqual(
+        logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+        undefined
+      );
     });
   });
 });

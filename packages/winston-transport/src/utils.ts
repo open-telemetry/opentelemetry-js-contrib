@@ -10,6 +10,7 @@ import {
   Logger,
   SeverityNumber,
 } from '@opentelemetry/api-logs';
+import { ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-conventions';
 
 const npmLevels: Record<string, number> = {
   error: SeverityNumber.ERROR,
@@ -207,6 +208,7 @@ export function emitLogRecord(
   logger: Logger
 ): void {
   const { message, level, ...splat } = record;
+  const { [ATTR_OTEL_EVENT_NAME]: eventName, ...rest } = splat;
   const attributes: LogAttributes = {};
   // Ensures the log level is read from a symbol property, avoiding any
   // accidental inclusion of ANSI color codes that may be present in the string
@@ -216,12 +218,12 @@ export function emitLogRecord(
   const excludedAttributes = new Set(
     exceptionPayload?.excludedAttributes ?? []
   );
-  for (const key in splat) {
+  for (const key in rest) {
     if (
-      Object.prototype.hasOwnProperty.call(splat, key) &&
+      Object.prototype.hasOwnProperty.call(rest, key) &&
       !excludedAttributes.has(key)
     ) {
-      attributes[key] = splat[key];
+      attributes[key] = rest[key];
     }
   }
   if (exceptionPayload?.additionalAttributes) {
@@ -236,12 +238,18 @@ export function emitLogRecord(
       }
     }
   }
+  const normalizedEventName =
+    typeof eventName === 'string' ? eventName : undefined;
+
   const logRecord: LogRecord = {
     severityNumber: getSeverityNumber(levelSym),
     severityText: levelSym,
     body: message,
     attributes: attributes,
     ...(exceptionPayload ? { exception: exceptionPayload.exception } : {}),
+    ...(normalizedEventName !== undefined
+      ? { eventName: normalizedEventName }
+      : {}),
   };
   logger.emit(logRecord);
 }

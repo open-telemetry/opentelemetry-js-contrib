@@ -1,6 +1,26 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.68.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.67.0...instrumentation-express-v0.68.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+
+
+### Bug Fixes
+
+* **instrumentation-express:** filter Express v5 wildcard paths in get… ([#3557](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3557)) ([76405b1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/76405b10979da176814583ef87fb4174fc600160))
+* **instrumentation-express:** fix missing http.route when path-less middleware is ignored ([#3571](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3571)) ([83a1dc4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/83a1dc48e958840ec5bce2054e723d5fad32af2b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.66.0 to ^0.67.0
+
 ## [0.67.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.66.0...instrumentation-express-v0.67.0) (2026-06-11)
 
 

@@ -14,8 +14,6 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import { IORedisInstrumentationConfig } from './types';
 import { IORedisCommand, RedisInterface } from './internal-types';
@@ -25,15 +23,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  DB_SYSTEM_VALUE_REDIS,
-  DB_SYSTEM_NAME_VALUE_REDIS,
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from './semconv';
+import { DB_SYSTEM_NAME_VALUE_REDIS } from './semconv';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { endSpan } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
@@ -45,24 +35,8 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
 };
 
 export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumentationConfig> {
-  private _netSemconvStability!: SemconvStability;
-  private _dbSemconvStability!: SemconvStability;
-
   constructor(config: IORedisInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
-    this._setSemconvStabilityFromEnv();
-  }
-
-  // Used for testing.
-  private _setSemconvStabilityFromEnv() {
-    this._netSemconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
-    this._dbSemconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   override setConfig(config: IORedisInstrumentationConfig = {}) {
@@ -143,23 +117,10 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
       const attributes: Attributes = {};
       const { host, port } = this.options;
       const dbQueryText = dbStatementSerializer(cmd.name, cmd.args);
-      if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
-        attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_REDIS;
-        attributes[ATTR_DB_STATEMENT] = dbQueryText;
-        attributes[ATTR_DB_CONNECTION_STRING] = `redis://${host}:${port}`;
-      }
-      if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
-        attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_REDIS;
-        attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
-      }
-      if (instrumentation._netSemconvStability & SemconvStability.OLD) {
-        attributes[ATTR_NET_PEER_NAME] = host;
-        attributes[ATTR_NET_PEER_PORT] = port;
-      }
-      if (instrumentation._netSemconvStability & SemconvStability.STABLE) {
-        attributes[ATTR_SERVER_ADDRESS] = host;
-        attributes[ATTR_SERVER_PORT] = port;
-      }
+      attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_REDIS;
+      attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
+      attributes[ATTR_SERVER_ADDRESS] = host;
+      attributes[ATTR_SERVER_PORT] = port;
       const span = instrumentation.tracer.startSpan(cmd.name, {
         kind: SpanKind.CLIENT,
         attributes,
@@ -230,23 +191,10 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
 
       const attributes: Attributes = {};
       const { host, port } = this.options;
-      if (instrumentation._dbSemconvStability & SemconvStability.OLD) {
-        attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_REDIS;
-        attributes[ATTR_DB_STATEMENT] = 'connect';
-        attributes[ATTR_DB_CONNECTION_STRING] = `redis://${host}:${port}`;
-      }
-      if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
-        attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_REDIS;
-        attributes[ATTR_DB_QUERY_TEXT] = 'connect';
-      }
-      if (instrumentation._netSemconvStability & SemconvStability.OLD) {
-        attributes[ATTR_NET_PEER_NAME] = host;
-        attributes[ATTR_NET_PEER_PORT] = port;
-      }
-      if (instrumentation._netSemconvStability & SemconvStability.STABLE) {
-        attributes[ATTR_SERVER_ADDRESS] = host;
-        attributes[ATTR_SERVER_PORT] = port;
-      }
+      attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_REDIS;
+      attributes[ATTR_DB_QUERY_TEXT] = 'connect';
+      attributes[ATTR_SERVER_ADDRESS] = host;
+      attributes[ATTR_SERVER_PORT] = port;
       const span = instrumentation.tracer.startSpan('connect', {
         kind: SpanKind.CLIENT,
         attributes,
