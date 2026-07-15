@@ -265,6 +265,11 @@ function _triggerClusterIdFetch(kafkaInstance: kafkaJs.Kafka): void {
     // later client creation can retry, and best-effort close any admin we created.
     clearTimeout(timeoutHandle);
     _clusterIdFetching.delete(kafkaInstance);
+    // Same TTL back-off as the async path: if an id is already cached, record this
+    // attempt so a synchronously-throwing admin can't cause a per-span refetch loop.
+    if (_clusterIdByKafka.has(kafkaInstance)) {
+      _clusterIdFetchedAt.set(kafkaInstance, Date.now());
+    }
     try {
       admin?.disconnect().catch(() => {});
     } catch {

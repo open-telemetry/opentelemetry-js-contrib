@@ -1924,42 +1924,53 @@ describe('instrumentation-kafkajs', () => {
       );
     });
 
-    it('does not throw and omits cluster id when admin() throws synchronously', async () => {
-      let adminCallCount = 0;
+    it('does not throw and recovers cluster id when admin() throws synchronously', async () => {
       const kafkaForTest = new Kafka({
         clientId: 'cluster-id-test-admin-throws',
         brokers: ['mock:9092'],
       });
-      kafkajs.Kafka.prototype.admin = () => {
-        adminCallCount++;
-        throw new Error('admin boom');
-      };
+      // Scoped to this instance: throw on the first attempt, then recover. This
+      // lets us assert the throw was contained AND did not permanently wedge the
+      // client (marker cleared, not marked unavailable), without depending on
+      // admin() call counts.
+      let shouldThrow = true;
+      (kafkaForTest as unknown as { admin: () => kafkajs.Admin }).admin =
+        () => {
+          if (shouldThrow) {
+            throw new Error('admin boom');
+          }
+          return makeMockAdmin({ clusterId: 'recovered-cluster' });
+        };
 
-      // producer() must still succeed even though the cluster-id fetch throws.
+      // A synchronous throw in the fetch must not break producer() or send(); the
+      // attribute is simply omitted.
       producer = initProducerOnInstance(kafkaForTest);
       await new Promise(resolve => setImmediate(resolve));
-
       await producer.send({
         topic: 'test-topic',
         messages: [{ value: 'hello' }],
       });
-
-      const spans = getTestSpans();
+      let spans = getTestSpans();
       assert.strictEqual(spans.length, 1);
       assert.strictEqual(
         spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
         undefined
       );
-      assert.strictEqual(adminCallCount, 1);
 
-      // The in-flight marker must have been cleared, so a later client retries
-      // rather than being wedged forever.
-      initProducerOnInstance(kafkaForTest);
+      // Once admin recovers, a new client creation must resolve the id and it must
+      // appear on later spans — proving the throw cleared the in-flight marker and
+      // did not permanently disable the instance.
+      shouldThrow = false;
+      producer = initProducerOnInstance(kafkaForTest);
       await new Promise(resolve => setImmediate(resolve));
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+      spans = getTestSpans();
       assert.strictEqual(
-        adminCallCount,
-        2,
-        'a synchronous throw must clear the in-flight marker so a later client retries'
+        spans[spans.length - 1].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        'recovered-cluster'
       );
     });
 
