@@ -351,7 +351,6 @@ describe('oracledb-metrics', () => {
         const metrics = await getMetrics();
         checkPoolConnMetrics(metrics, pool);
 
-        const d1 = Date.now();
         const pendingMetricCheck = new Promise<void>((resolve, reject) => {
           setImmediate(() => {
             void (async () => {
@@ -361,15 +360,15 @@ describe('oracledb-metrics', () => {
           });
         });
         try {
-          const conn = await pool.getConnection();
-          if (conn) await conn.close();
-        } catch {
-          await pendingMetricCheck;
-          const d2 = Date.now();
-          assert.ok(
-            d2 - d1 <= queueTimeout + 5,
-            'took too longer than queuetimeout'
+          const result = await pool.getConnection().then(
+            conn => ({ status: 'fulfilled' as const, conn }),
+            err => ({ status: 'rejected' as const, err })
           );
+          if (result.status === 'fulfilled') {
+            await result.conn.close();
+            assert.fail('expected getConnection to time out when pool is full');
+          }
+          await pendingMetricCheck;
           const metrics = await getMetrics();
           checkPoolConnMetrics(metrics, pool, undefined, undefined, 0, 1);
         } finally {
