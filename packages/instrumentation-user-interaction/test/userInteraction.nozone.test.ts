@@ -7,7 +7,7 @@ const originalSetTimeout = window.setTimeout;
 import { trace } from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import * as tracing from '@opentelemetry/sdk-trace-base';
+import * as tracing from '@opentelemetry/sdk-trace';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
@@ -80,7 +80,9 @@ describe('UserInteractionInstrumentation', () => {
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');
       webTracerProvider = new WebTracerProvider({
-        spanProcessors: [new tracing.SimpleSpanProcessor(dummySpanExporter)],
+        spanProcessors: [
+          new tracing.SimpleSpanProcessor({ exporter: dummySpanExporter }),
+        ],
       });
       webTracerProvider.register();
 

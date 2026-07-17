@@ -51,9 +51,9 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/propagator-b3": "^2.0.0",
-    "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@opentelemetry/sdk-trace-web": "^2.0.0",
+    "@opentelemetry/propagator-b3": "^2.9.0",
+    "@opentelemetry/sdk-trace": "^2.9.0",
+    "@opentelemetry/sdk-trace-web": "^2.9.0",
     "@types/react": "17.0.91",
     "@types/react-addons-test-utils": "0.14.26",
     "@types/react-dom": "17.0.26",

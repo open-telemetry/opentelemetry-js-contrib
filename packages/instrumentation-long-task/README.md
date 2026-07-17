@@ -18,14 +18,14 @@ npm install --save @opentelemetry/instrumentation-long-task
 ## Usage
 
 ```js
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { LongTaskInstrumentation } from '@opentelemetry/instrumentation-long-task';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
 const provider = new WebTracerProvider({
   spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
   ],
 });
 

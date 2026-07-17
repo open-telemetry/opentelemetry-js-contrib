@@ -4,12 +4,12 @@
  */
 
 import { context, trace } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
@@ -29,8 +29,8 @@ import * as http from 'http';
 
 describe('ExpressInstrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
-  const provider = new NodeTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  const provider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   const tracer = provider.getTracer('default');
   const contextManager = new AsyncLocalStorageContextManager().enable();

@@ -8,7 +8,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { SpanKind, context } from '@opentelemetry/api';
-import { SamplingDecision } from '@opentelemetry/sdk-trace-base';
+import { SamplingDecision } from '@opentelemetry/sdk-trace';
 import { expect } from 'expect';
 import * as sinon from 'sinon';
 import { FallbackSampler } from '../src/fallback-sampler';

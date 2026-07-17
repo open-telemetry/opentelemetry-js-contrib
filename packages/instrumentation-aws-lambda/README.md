@@ -5,7 +5,7 @@
 
 [component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @jj22ee
 
-This module provides automatic instrumentation for the [`AWS Lambda`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`AWS Lambda`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html) module.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -75,20 +75,18 @@ This can be done either by:
 Create a file to initialize the instrumentation, such as `lambda-wrapper.js`.
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { AwsLambdaInstrumentation } = require('@opentelemetry/instrumentation-aws-lambda');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new AwsLambdaInstrumentation({
-        // see under for available configuration
+        // see below for available configuration
     })
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 In your Lambda function configuration, add or update the `NODE_OPTIONS` environment variable to require the wrapper, e.g.,
@@ -152,37 +150,28 @@ Examples:
 1. Active Tracing is enabled and the OpenTelemetry SDK is configured to export traces to AWS X-Ray. In this case, configure the SDK to use the `AWSXRayLambdaPropagator`.
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { propagation } = require('@opentelemetry/api');
 const { AWSXRayLambdaPropagator } = require('@opentelemetry/propagator-aws-xray-lambda');
 
-const provider = new NodeTracerProvider();
-provider.register({
-  propagator: new AWSXRayLambdaPropagator()
-});
+propagation.setGlobalPropagator(new AWSXRayLambdaPropagator());
 ```
 
 Alternatively, use the `getPropagators()` function from the [auto-configuration-propagators](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/packages/auto-configuration-propagators/README.md) package, and set the OTEL_PROPAGATORS environment variable to `xray-lambda`.
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { propagation } = require('@opentelemetry/api');
 const { getPropagator } = require('@opentelemetry/auto-configuration-propagators');
 
-const provider = new NodeTracerProvider();
-provider.register({
-  propagator: getPropagator()
-});
+propagation.setGlobalPropagator(getPropagator());
 ```
 
 1. The OpenTelemetry SDK is configured to export traces to a backend other than AWX X-Ray, but the lambda function is invoked by other AWS services which send the context using the X-Ray HTTP headers. In this case, include the `AWSXRayPropagator`, which extracts context from the HTTP header but not the Lambda Active Tracing context.
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { AWSXRayLambdaPropagator } = require('@opentelemetry/propagator-aws-xray-lambda');
+const { propagation } = require('@opentelemetry/api');
+const { AWSXRayPropagator } = require('@opentelemetry/propagator-aws-xray');
 
-const provider = new NodeTracerProvider();
-provider.register({
-  propagator: new AWSXRayPropagator()
-});
+propagation.setGlobalPropagator(new AWSXRayPropagator());
 ```
 
 Alternatively, use the `auto-configuration-package` as in example #1 and set the OTEL_PROPAGATORS environment variable to `xray`.

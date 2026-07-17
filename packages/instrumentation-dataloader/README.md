@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the injection of trace context to [`dataloader`](https://www.npmjs.com/package/dataloader), which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the injection of trace context to [`dataloader`](https://www.npmjs.com/package/dataloader).
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -22,21 +22,16 @@ npm install --save @opentelemetry/instrumentation-dataloader
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require("@opentelemetry/sdk-trace-node");
-const {
-  DataloaderInstrumentation,
-} = require("@opentelemetry/instrumentation-dataloader");
-const { registerInstrumentations } = require("@opentelemetry/instrumentation");
+const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { DataloaderInstrumentation } = require("@opentelemetry/instrumentation-dataloader");
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new DataloaderInstrumentation(),
-    // other instrumentations
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ### Dataloader Instrumentation Options

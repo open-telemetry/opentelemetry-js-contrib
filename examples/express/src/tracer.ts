@@ -9,9 +9,9 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
   Sampler,
   AlwaysOnSampler,
-  SimpleSpanProcessor,
   SamplingDecision,
-} from '@opentelemetry/sdk-trace-base';
+  BatchSpanProcessor,
+} from '@opentelemetry/sdk-trace';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import {
   ATTR_SERVICE_NAME,
@@ -27,7 +27,7 @@ export const setupTracing = (serviceName: string) => {
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: serviceName,
     }),
-    spanProcessors: [new SimpleSpanProcessor(exporter)],
+    spanProcessors: [new BatchSpanProcessor({ exporter })],
     sampler: filterSampler(ignoreHealthCheck, new AlwaysOnSampler()),
   });
   registerInstrumentations({
@@ -41,6 +41,12 @@ export const setupTracing = (serviceName: string) => {
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();
+
+  // This shutdown is important to ensure that buffered tracing data is
+  // flushed on process shutdown (e.g. for `npm run client`).
+  process.once('beforeExit', async () => {
+    await provider.shutdown();
+  });
 
   return trace.getTracer(serviceName);
 };

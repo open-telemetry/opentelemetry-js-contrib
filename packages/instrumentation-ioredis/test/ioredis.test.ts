@@ -11,14 +11,14 @@ import {
   trace,
   Span,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as ioredisTypes from 'ioredis';
@@ -73,8 +73,8 @@ const sanitizeEventForAssertion = (span: ReadableSpan) => {
 };
 
 describe('ioredis', () => {
-  const provider = new NodeTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  const provider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   let ioredis: typeof ioredisTypes.default;
   let instrumentation: IORedisInstrumentation;

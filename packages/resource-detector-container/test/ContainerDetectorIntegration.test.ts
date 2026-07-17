@@ -9,14 +9,14 @@ import { FsInstrumentation } from '@opentelemetry/instrumentation-fs';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { detectResources } from '@opentelemetry/resources';
 
 describe('[Integration] ContainerDetector', () => {
   it('should not start spans for detector reads to filesystem', async () => {
     const memoryExporter = new InMemorySpanExporter();
-    const spanProcessor = new SimpleSpanProcessor(memoryExporter);
+    const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
     const sdk = new NodeSDK({
       instrumentations: [new FsInstrumentation()],
       spanProcessors: [spanProcessor],

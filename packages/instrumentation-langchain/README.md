@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`langchain`](https://www.npmjs.com/package/langchain) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package.
+This module provides automatic instrumentation for the [`langchain`](https://www.npmjs.com/package/langchain) module.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -20,22 +20,19 @@ npm install --save @opentelemetry/instrumentation-langchain
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { LangChainInstrumentation } = require('@opentelemetry/instrumentation-langchain');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new LangChainInstrumentation({
       // Configuration options
       captureMessageContent: false, // Set to true to capture prompt/completion content
     }),
-    // other instrumentations
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Configuration Options

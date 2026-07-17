@@ -5,7 +5,7 @@
 
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 import { SpanKind } from '@opentelemetry/api';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { ATTR_AWS_SECRETSMANAGER_SECRET_ARN } from '../src/semconv';
 
 import { SecretsManager } from '@aws-sdk/client-secrets-manager';

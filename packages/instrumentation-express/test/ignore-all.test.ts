@@ -4,12 +4,12 @@
  */
 
 import { context, trace, Span } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { AttributeNames } from '../src/enums/AttributeNames';
@@ -31,8 +31,8 @@ import * as http from 'http';
 
 describe('ExpressInstrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  const provider = new NodeTracerProvider({
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
+  const provider = new TracerProvider({
     spanProcessors: [spanProcessor],
   });
   const tracer = provider.getTracer('default');

@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [Nest framework][pkg-web-url] module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [Nest framework][pkg-web-url] module.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -23,21 +23,20 @@ npm install --save @opentelemetry/instrumentation-nestjs-core
 
 OpenTelemetry Nest Instrumentation allows the user to automatically collect trace data from the controller handlers and export them to the backend of choice.
 
-To load a specific instrumentation (**Nest** in this case), specify it in the registerInstrumentations' configuration.
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
 
-```javascript
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+```js
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { NestInstrumentation } = require('@opentelemetry/instrumentation-nestjs-core');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new NestInstrumentation(),
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Emitted Spans

@@ -7,7 +7,8 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
   ReadableSpan,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import {
   Attributes,
   context,
@@ -16,7 +17,6 @@ import {
   SpanStatus,
   SpanStatusCode,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   ATTR_DB_QUERY_TEXT,
@@ -38,8 +38,8 @@ import {
 import { ResponseHookInfo } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+const provider = new TracerProvider({
+  spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
 });
 context.setGlobalContextManager(new AsyncLocalStorageContextManager());
 

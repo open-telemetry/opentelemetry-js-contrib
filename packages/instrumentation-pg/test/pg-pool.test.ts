@@ -12,7 +12,6 @@ import {
   SpanStatus,
   trace,
 } from '@opentelemetry/api';
-import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base';
 import {
   PgInstrumentation,
   PgInstrumentationConfig,
@@ -21,9 +20,10 @@ import {
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
+  TracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
@@ -107,8 +107,8 @@ describe('pg-pool', () => {
   let pool: pgPool<pg.Client>;
   let contextManager: AsyncLocalStorageContextManager;
   let instrumentation: PgInstrumentation;
-  const provider = new BasicTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  const provider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
 
   const testPostgres = process.env.RUN_POSTGRES_TESTS;

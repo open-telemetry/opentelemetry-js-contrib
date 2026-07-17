@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`sequelize`](https://www.npmjs.com/package/sequelize) package, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`sequelize`](https://www.npmjs.com/package/sequelize) package.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -20,37 +20,20 @@ npm install --save @opentelemetry/instrumentation-sequelize
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { SequelizeInstrumentation } = require('@opentelemetry/instrumentation-sequelize');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new SequelizeInstrumentation({
       // see below for available configuration
     }),
   ],
 });
-export interface SequelizeInstrumentationConfig extends InstrumentationConfig {
-  /** Hook for adding custom attributes using the query */
-  queryHook?: SequelizeQueryHook;
-  /** Hook for adding custom attributes using the response payload */
-  responseHook?: SequelizeResponseCustomAttributesFunction;
-  /** Set to true if you only want to trace operation which has parent spans */
-  ignoreOrphanedSpans?: boolean;
-  /**
-   * Sequelize operation use postgres/mysql/mariadb/etc. under the hood.
-   * If, for example, postgres instrumentation is enabled, a postgres operation will also create
-   * a postgres span describing the communication.
-   * Setting the `suppressInternalInstrumentation` config value to `true` will
-   * cause the instrumentation to suppress instrumentation of underlying operations.
-   */
-  suppressInternalInstrumentation?: boolean;
- * An identifier for the database management system (DBMS) product being used. See below for a list of well-known identifiers.
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
+
 
 ### Instrumentation Options
 

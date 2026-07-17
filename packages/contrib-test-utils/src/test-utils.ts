@@ -11,7 +11,7 @@ import {
   SpanStatus,
 } from '@opentelemetry/api';
 import * as assert from 'assert';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { MetricReader, MeterProvider } from '@opentelemetry/sdk-metrics';
 import {
   hrTimeToMilliseconds,

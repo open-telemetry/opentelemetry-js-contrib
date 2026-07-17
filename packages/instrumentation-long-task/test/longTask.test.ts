@@ -5,8 +5,8 @@
 import { trace } from '@opentelemetry/api';
 import { hrTimeToMilliseconds, hrTimeToNanoseconds } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import * as tracing from '@opentelemetry/sdk-trace-base';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
@@ -52,7 +52,9 @@ describe('LongTaskInstrumentation', () => {
     dummySpanExporter = new DummySpanExporter();
     exportSpy = sandbox.stub(dummySpanExporter, 'export');
     webTracerProvider = new WebTracerProvider({
-      spanProcessors: [new tracing.SimpleSpanProcessor(dummySpanExporter)],
+      spanProcessors: [
+        new SimpleSpanProcessor({ exporter: dummySpanExporter }),
+      ],
     });
     webTracerProvider.register();
 
