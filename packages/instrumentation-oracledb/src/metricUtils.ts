@@ -7,8 +7,8 @@
 import {
   Attributes,
   Counter,
-  HrTime,
   Histogram,
+  HrTime,
   Meter,
   UpDownCounter,
 } from '@opentelemetry/api';
@@ -17,58 +17,53 @@ import {
   hrTimeDuration,
   hrTimeToMilliseconds,
 } from '@opentelemetry/core';
-import { PoolConnectionsCounter } from './types';
+import { METRIC_DB_CLIENT_OPERATION_DURATION } from '@opentelemetry/semantic-conventions';
 import * as oracleDBTypes from 'oracledb';
 import {
   ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
   ATTR_DB_CLIENT_CONNECTION_STATE,
   DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
   DB_CLIENT_CONNECTION_STATE_VALUE_USED,
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
+  METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
+  METRIC_DB_CLIENT_CONNECTION_TIMEOUTS,
 } from './semconv';
 
-let _operationDuration: Histogram;
-let _connectionsCount: UpDownCounter;
-let _connectionPendingRequests: UpDownCounter;
+let _operationDuration!: Histogram;
+let _connectionsCount!: UpDownCounter;
+let _connectionPendingRequests!: UpDownCounter;
 let _connectionsTimeouts!: Counter;
-let _connectionHits!: Counter;
-let _connectionMisses!: Counter;
 const _connectionsCounter: Record<string, PoolConnectionsCounter> = {};
+
+export interface PoolConnectionsCounter {
+  idle: number;
+  pending: number;
+  used: number;
+  timeouts: number;
+}
 
 // To be discussed
 export function getPoolName(
-  pool: oracleDBTypes.Pool & { connectString?: string; user?: string }
+  pool: oracleDBTypes.Pool & { connectString?: string }
 ): string {
-  if (pool.poolAlias) return pool.poolAlias;
-  if (pool.connectString) return `${pool.connectString}_${pool.user}`;
-  return 'default';
-}
+  const poolAlias = pool.poolAlias?.trim();
+  if (poolAlias) return poolAlias;
 
-// TO be discussed
-export function getOperationName(
-  statement: string | undefined,
-  isBatch: boolean
-): string {
-  if (!statement || typeof statement !== 'string') return 'UNKNOWN';
-
-  const normalized = statement.trim().replace(/\s+/g, ' ');
-  if (/^(BEGIN|DECLARE)\b/i.test(normalized)) {
-    return isBatch ? 'BATCH PLSQL' : 'PLSQL';
-  }
-  const firstWord = normalized.split(' ')[0].replace(/;$/, '').toUpperCase();
-  const opName = firstWord || 'UNKNOWN';
-
-  return isBatch ? `BATCH ${opName}` : opName;
+  return pool.connectString!.trim();
 }
 
 export function _setMetricInstruments(meter: Meter) {
-  _connectionsCount = meter.createUpDownCounter('db.client.connection.count', {
-    description:
-      'The number of connections that are currently in state described by the state attribute.',
-    unit: '{connection}',
-  });
+  _connectionsCount = meter.createUpDownCounter(
+    METRIC_DB_CLIENT_CONNECTION_COUNT,
+    {
+      description:
+        'The number of connections that are currently in state described by the state attribute.',
+      unit: '{connection}',
+    }
+  );
 
   _connectionPendingRequests = meter.createUpDownCounter(
-    'db.client.connection.pending_requests',
+    METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
     {
       description:
         'The number of current pending requests for an open connection.',
@@ -76,38 +71,28 @@ export function _setMetricInstruments(meter: Meter) {
     }
   );
 
-  _connectionsTimeouts = meter.createCounter('db.client.connection.timeouts', {
-    description:
-      'The number of connection timeouts that have occurred trying to obtain a connection from the pool.',
-    unit: '{timeout}',
-  });
-
-  _connectionHits = meter.createCounter(
-    'db.client.connection.hits', //TODO:: to be added in semantic convention
+  _connectionsTimeouts = meter.createCounter(
+    METRIC_DB_CLIENT_CONNECTION_TIMEOUTS,
     {
       description:
-        'The number of requests that got a connection from the already available free connections from the pool.',
-      unit: '{request}',
+        'The number of connection timeouts that have occurred trying to obtain a connection from the pool.',
+      unit: '{timeout}',
     }
   );
 
-  _connectionMisses = meter.createCounter(
-    'db.client.connection.misses', //TODO:: to be added in semantic convention
+  _operationDuration = meter.createHistogram(
+    METRIC_DB_CLIENT_OPERATION_DURATION,
     {
-      description:
-        'The number of requests that got a connection from newly created open connections from the pool.',
-      unit: '{request}',
+      description: 'Duration of database client operations.',
+      unit: 's',
+      valueType: 1,
+      advice: {
+        explicitBucketBoundaries: [
+          0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10,
+        ],
+      },
     }
   );
-
-  _operationDuration = meter.createHistogram('db.client.operation.duration', {
-    description: 'Duration of database client operations.',
-    unit: 's',
-    valueType: 1,
-    advice: {
-      explicitBucketBoundaries: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10],
-    },
-  });
 
   Object.keys(_connectionsCounter).forEach(p => {
     _connectionsCounter[p] = { used: 0, idle: 0, pending: 0, timeouts: 0 };
@@ -164,24 +149,6 @@ export function updateCounter(pool: oracleDBTypes.Pool) {
   });
 
   _connectionsCounter[poolName] = metrics;
-}
-
-export function updateConnHits(pool: oracleDBTypes.Pool) {
-  if (!pool) return;
-  const poolName = getPoolName(pool);
-  const attributes = {
-    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
-  };
-  _connectionHits.add(1, attributes);
-}
-
-export function updateConnMisses(pool: oracleDBTypes.Pool) {
-  if (!pool) return;
-  const poolName = getPoolName(pool);
-  const attributes = {
-    [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
-  };
-  _connectionMisses.add(1, attributes);
 }
 
 export function recordOperationDuration(

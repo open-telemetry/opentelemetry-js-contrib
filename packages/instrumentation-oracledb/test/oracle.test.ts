@@ -27,8 +27,8 @@ import { OracleInstrumentation } from '../src';
 import { SpanNames } from '../src/constants';
 import {
   buildTraceparent,
-  getOracleTelemetryTraceMetricHandlerClass,
-} from '../src/OracleTelemetryTraceMetricHandler';
+  getOracleTelemetryTraceHandlerClass,
+} from '../src/OracleTelemetryTraceHandler';
 
 import {
   ATTR_DB_NAMESPACE,
@@ -67,7 +67,7 @@ instrumentation.disable();
 import * as oracledb from 'oracledb';
 
 function createTestTraceHandlerForSemconvTests() {
-  const TraceHandler = getOracleTelemetryTraceMetricHandlerClass({
+  const TraceHandler = getOracleTelemetryTraceHandlerClass({
     traceHandler: {
       TraceHandlerBase: class {
         enable() {}

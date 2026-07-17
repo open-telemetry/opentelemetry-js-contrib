@@ -84,6 +84,30 @@ export const ATTR_DB_CLIENT_CONNECTION_POOL_NAME =
   'db.client.connection.pool.name' as const;
 
 /**
+ * The number of connections that are currently in state described by the `state` attribute.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_DB_CLIENT_CONNECTION_COUNT =
+  'db.client.connection.count' as const;
+
+/**
+ * The number of current pending requests for an open connection.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS =
+  'db.client.connection.pending_requests' as const;
+
+/**
+ * The number of connection timeouts that have occurred trying to obtain a connection from the pool.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_DB_CLIENT_CONNECTION_TIMEOUTS =
+  'db.client.connection.timeouts' as const;
+
+/**
  * Enum value "oracle.db" for attribute {@link ATTR_DB_SYSTEM_NAME}.
  *
  * [Oracle Database](https://www.oracle.com/database/)

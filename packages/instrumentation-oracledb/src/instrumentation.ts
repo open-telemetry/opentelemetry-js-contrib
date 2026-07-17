@@ -11,7 +11,7 @@ import {
 import type * as oracleDBTypes from 'oracledb';
 import { OracleInstrumentationConfig } from './types';
 import * as metrics from './metricUtils';
-import { getOracleTelemetryTraceMetricHandlerClass } from './OracleTelemetryTraceMetricHandler';
+import { getOracleTelemetryTraceHandlerClass } from './OracleTelemetryTraceHandler';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -42,7 +42,7 @@ export class OracleInstrumentation extends InstrumentationBase {
         }
         const config = this.getConfig();
         const thClass =
-          getOracleTelemetryTraceMetricHandlerClass(moduleExports);
+          getOracleTelemetryTraceHandlerClass(moduleExports);
         if (thClass) {
           const obj = new thClass(() => this.tracer, config);
           obj.enable();

@@ -63,6 +63,21 @@ function getTraceHandlerBaseClass(
   }
 }
 
+function parseMetricOperationName(
+  statement: string | undefined,
+  isBatch: boolean
+): string {
+  if (!statement || typeof statement !== 'string') return 'UNKNOWN';
+
+  const operationName = parseNormalizedOperationName(statement);
+
+  if (/^(BEGIN|DECLARE)\b/.test(operationName)) {
+    return isBatch ? 'BATCH PLSQL' : 'PLSQL';
+  }
+
+  return isBatch ? `BATCH ${operationName}` : operationName;
+}
+
 function parseNormalizedOperationName(statement: string): string {
   const trimmedStatement = statement.trim();
   const indexOfFirstSpace = trimmedStatement.indexOf(' ');
@@ -81,7 +96,7 @@ export function buildTraceparent(spanContext: SpanContext): string | undefined {
   ).toString(16)}`;
 }
 
-export function getOracleTelemetryTraceMetricHandlerClass(
+export function getOracleTelemetryTraceHandlerClass(
   obj: typeof oracleDBTypes
 ): any {
   const traceHandlerBase = getTraceHandlerBaseClass(obj);
@@ -90,13 +105,13 @@ export function getOracleTelemetryTraceMetricHandlerClass(
   }
 
   /**
-   * OracleTelemetryTraceMetricHandler extends TraceHandlerBase from oracledb module
+   * OracleTelemetryTraceHandler extends TraceHandlerBase from oracledb module
    * It implements the abstract methods; `onEnterFn`, `onExitFn`,
    * `onBeginRoundTrip` and `onEndRoundTrip` of TraceHandlerBase class.
    * Inside these overridden methods, the input traceContext data is used
    * to generate attributes for span.
    */
-  class OracleTelemetryTraceMetricHandler extends traceHandlerBase {
+  class OracleTelemetryTraceHandler extends traceHandlerBase {
     private _getTracer: () => Tracer;
     private _instrumentConfig: OracleInstrumentationConfig;
 
@@ -359,39 +374,28 @@ export function getOracleTelemetryTraceMetricHandlerClass(
       }
     }
 
+    // Builds the attribute set used for execute duration metrics.
     private _getExecOperationAttributes(traceContext: TraceSpanData) {
       const isBatch = traceContext.operation === SpanNames.EXECUTE_MANY;
       const connAttrs = this._getConnectionSpanAttributes(
         traceContext.connectLevelConfig
       );
-      let attributes: Attributes = {
+
+      const metricsAttributes: Attributes = {
         [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
         [ATTR_DB_NAMESPACE]: connAttrs[ATTR_DB_NAMESPACE],
         [ATTR_SERVER_PORT]: connAttrs[ATTR_SERVER_PORT],
         [ATTR_SERVER_ADDRESS]: connAttrs[ATTR_SERVER_ADDRESS],
-        [ATTR_DB_OPERATION_NAME]: metricsUtils.getOperationName(
+        // Metric operation names also normalize PLSQL and executeMany batch operations.
+        [ATTR_DB_OPERATION_NAME]: parseMetricOperationName(
           traceContext.callLevelConfig?.statement,
           isBatch
         ),
       };
+
       if (traceContext.error)
-        attributes = {
-          ...attributes,
-          [ATTR_ERROR_TYPE]: traceContext.error.code,
-        };
-      const metricsAttributes: Attributes = {};
-      const keysToCopy: string[] = [
-        ATTR_DB_NAMESPACE,
-        ATTR_ERROR_TYPE,
-        ATTR_SERVER_PORT,
-        ATTR_SERVER_ADDRESS,
-        ATTR_DB_OPERATION_NAME,
-      ];
-      keysToCopy.forEach(key => {
-        if (key in attributes) {
-          metricsAttributes[key] = attributes[key];
-        }
-      });
+        metricsAttributes[ATTR_ERROR_TYPE] = traceContext.error.code;
+  
       return metricsAttributes;
     }
 
@@ -550,22 +554,9 @@ export function getOracleTelemetryTraceMetricHandlerClass(
       metricsUtils.updateCounter(pool);
     }
 
-    // When a connection request has got a connection from
-    // the already available free connections from the pool.
-    onPoolConnectionHit(pool: oracleDBTypes.Pool) {
-      metricsUtils.updateConnHits(pool);
-    }
-
-    // When a connection request has got a connection by
-    // creating a new connection as there was no free connection
-    // available in the pool.
-    onPoolConnectionMiss(pool: oracleDBTypes.Pool) {
-      metricsUtils.updateConnMisses(pool);
-    }
-
     onPoolClose(pool: oracleDBTypes.Pool) {
       metricsUtils.updateCounter(pool);
     }
   }
-  return OracleTelemetryTraceMetricHandler;
+  return OracleTelemetryTraceHandler;
 }

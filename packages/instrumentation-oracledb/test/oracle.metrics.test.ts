@@ -34,6 +34,9 @@ import {
   ATTR_DB_CLIENT_CONNECTION_STATE,
   DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
   DB_CLIENT_CONNECTION_STATE_VALUE_USED,
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
+  METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
+  METRIC_DB_CLIENT_CONNECTION_TIMEOUTS,
 } from '../src/semconv';
 import {
   ATTR_ERROR_TYPE,
@@ -143,6 +146,33 @@ describe('oracledb-metrics', () => {
     return resourceMetrics.scopeMetrics[0].metrics;
   }
 
+  function findMetric(metrics: MetricData[], name: string): MetricData {
+    const metric = metrics.find(metric => metric.descriptor.name === name);
+    assert.ok(metric, `expected ${name}`);
+    return metric;
+  }
+
+  function findPoolMetricDataPoint(
+    metric: MetricData,
+    poolName: string | undefined,
+    state?: string
+  ): DataPoint<number> {
+    const dataPoints = metric.dataPoints as DataPoint<number>[];
+    const dataPoint = dataPoints.find(
+      dp =>
+        dp.attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME] === poolName &&
+        (state === undefined ||
+          dp.attributes[ATTR_DB_CLIENT_CONNECTION_STATE] === state)
+    );
+    assert.ok(
+      dataPoint,
+      `expected ${metric.descriptor.name} datapoint for ${poolName}${
+        state ? `/${state}` : ''
+      }`
+    );
+    return dataPoint as DataPoint<number>;
+  }
+
   function checkPoolConnMetrics(
     metrics: MetricData[],
     pool: oracledb.Pool,
@@ -151,79 +181,97 @@ describe('oracledb-metrics', () => {
     pending?: number,
     timeout?: number
   ) {
-    if (used === undefined) used = pool.getStatistics().connectionsInUse;
-    if (idle === undefined)
-      idle =
-        pool.getStatistics().connectionsOpen -
-        pool.getStatistics().connectionsInUse;
-    if (pending === undefined)
-      pending = pool.getStatistics().currentQueueLength;
-    if (timeout === undefined) timeout = pool.getStatistics().requestTimeouts;
-    for (let i = 0; i < 3; i++)
-      assert.strictEqual(metrics[i].dataPointType, DataPointType.SUM);
+    if (
+      used === undefined ||
+      idle === undefined ||
+      pending === undefined ||
+      timeout === undefined
+    ) {
+      const stats = pool.getStatistics();
+      if (used === undefined) used = stats.connectionsInUse;
+      if (idle === undefined)
+        idle = stats.connectionsOpen - stats.connectionsInUse;
+      if (pending === undefined) pending = stats.currentQueueLength;
+      if (timeout === undefined) timeout = stats.requestTimeouts;
+    }
 
     const poolName = pool.poolAlias;
 
-    assert.strictEqual(
-      metrics[0].descriptor.name,
-      'db.client.connection.count'
+    const countMetric = findMetric(metrics, METRIC_DB_CLIENT_CONNECTION_COUNT);
+    const pendingMetric = findMetric(
+      metrics,
+      METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS
+    );
+    const timeoutMetric = findMetric(
+      metrics,
+      METRIC_DB_CLIENT_CONNECTION_TIMEOUTS
     );
 
+    assert.strictEqual(countMetric.dataPointType, DataPointType.SUM);
+    assert.strictEqual(pendingMetric.dataPointType, DataPointType.SUM);
+    assert.strictEqual(timeoutMetric.dataPointType, DataPointType.SUM);
+
     assert.strictEqual(
-      metrics[0].descriptor.description,
+      countMetric.descriptor.description,
       'The number of connections that are currently in state described by the state attribute.'
     );
 
     assert.strictEqual(
-      metrics[1].descriptor.description,
+      pendingMetric.descriptor.description,
       'The number of current pending requests for an open connection.'
     );
 
     assert.strictEqual(
-      metrics[2].descriptor.description,
+      timeoutMetric.descriptor.description,
       'The number of connection timeouts that have occurred trying to obtain a connection from the pool.'
     );
 
-    assert.strictEqual(
-      metrics[0].dataPoints[1].attributes[ATTR_DB_CLIENT_CONNECTION_STATE],
+    assert.strictEqual(countMetric.descriptor.unit, '{connection}');
+    assert.strictEqual(pendingMetric.descriptor.unit, '{request}');
+    assert.strictEqual(timeoutMetric.descriptor.unit, '{timeout}');
+
+    const idleDataPoint = findPoolMetricDataPoint(
+      countMetric,
+      poolName,
       DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
     );
 
-    assert.strictEqual(
-      metrics[0].dataPoints[1].attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME],
-      poolName
-    );
-
-    assert.strictEqual(
-      metrics[0].dataPoints[0].attributes[ATTR_DB_CLIENT_CONNECTION_STATE],
+    const usedDataPoint = findPoolMetricDataPoint(
+      countMetric,
+      poolName,
       DB_CLIENT_CONNECTION_STATE_VALUE_USED
     );
 
-    assert.strictEqual(
-      metrics[0].dataPoints[0].attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME],
+    const pendingDataPoint = findPoolMetricDataPoint(
+      pendingMetric,
+      poolName
+    );
+
+    const timeoutDataPoint = findPoolMetricDataPoint(
+      timeoutMetric,
       poolName
     );
 
     assert.strictEqual(
-      metrics[1].dataPoints[0].attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME],
-      poolName
+      idleDataPoint?.value,
+      idle,
+      `Mismatched idle value for pool ${poolName}`
     );
-
     assert.strictEqual(
-      metrics[2].dataPoints[0].attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME],
-      poolName
+      usedDataPoint?.value,
+      used,
+      `Mismatched used value for pool ${poolName}`
     );
-
-    assert.strictEqual(metrics[0].descriptor.unit, '{connection}');
-    assert.strictEqual(metrics[1].descriptor.unit, '{request}');
-    assert.strictEqual(metrics[2].descriptor.unit, '{timeout}');
-
-    assert.strictEqual(metrics[0].dataPoints.length, 2);
-    // 2 used and idle for pool2
-    assert.strictEqual(metrics[0].dataPoints[1].value, idle);
-    assert.strictEqual(metrics[0].dataPoints[0].value, used);
-    assert.strictEqual(metrics[1].dataPoints[0].value, pending); // pending requests (again decrease by 1 after timeout)
-    assert.strictEqual(metrics[2].dataPoints[0].value, timeout); // timeout
+    assert.strictEqual(
+      pendingDataPoint?.value,
+      pending,
+      `Mismatched pending value for pool ${poolName}`
+    );
+    assert.strictEqual(
+      timeoutDataPoint?.value,
+      timeout,
+      `Mismatched timeout value for pool ${poolName}`
+    );
   }
 
   describe('1. Pool Connection metrics - pool.getConnection(...) ', () => {
@@ -256,6 +304,7 @@ describe('oracledb-metrics', () => {
 
       async function getThreeConnections(pool: oracledb.Pool) {
         const errors: oracledb.DBError[] = [];
+        const connections: oracledb.Connection[] = [];
         // Request 3 connections simultaneously
         const results = await Promise.allSettled([
           pool.getConnection(),
@@ -265,11 +314,12 @@ describe('oracledb-metrics', () => {
 
         results.forEach(res => {
           if (res.status === 'fulfilled') {
-            res.value.close(); // release if somehow it succeeds
+            connections.push(res.value);
           } else {
             errors.push(res.reason);
           }
         });
+        await Promise.all(connections.map(conn => conn.close()));
         if (errors.length) throw errors;
       }
 
@@ -280,7 +330,7 @@ describe('oracledb-metrics', () => {
       });
 
       it('1.1.2 Getting new connection by closing other connection before queueTimeout from a Pool that is full initially', async () => {
-        const conns: any = [];
+        const conns: oracledb.Connection[] = [];
         for (let i = 0; i < pool.poolMax; i++)
           conns.push(await pool.getConnection());
 
@@ -344,7 +394,7 @@ describe('oracledb-metrics', () => {
       });
 
       it('1.1.4 Getting max (i.e 3) connections from the pool, should timeout on requesting for 1 more connection', async () => {
-        const conns: any = [];
+        const conns: oracledb.Connection[] = [];
         for (let i = 0; i < pool.poolMax; i++)
           conns.push(await pool.getConnection());
 
@@ -391,7 +441,7 @@ describe('oracledb-metrics', () => {
           enableStatistics: true,
           poolTimeout: 5,
         });
-        const conns: any = [];
+        const conns: oracledb.Connection[] = [];
         for (let i = 0; i < pool.poolMax; i++)
           conns.push(await pool.getConnection());
         const pendingMetricCheck = new Promise<void>((resolve, reject) => {
@@ -425,120 +475,7 @@ describe('oracledb-metrics', () => {
       });
     });
 
-    describe('1.2 Checking Pool connection hits/misses : pool2', () => {
-      let pool: oracledb.Pool;
-      const poolName = 'pool2';
-      beforeEach(async () => {
-        pool = await oracledb.createPool({
-          ...utils.POOL_CONFIG,
-          poolIncrement: 2,
-          poolAlias: poolName,
-        });
-        await initMeterProvider();
-      });
-
-      afterEach(async () => {
-        if (pool) await pool.close(0);
-      });
-
-      function checkConnHitsMisses(
-        metrics: MetricData[],
-        hits: number,
-        misses: number
-      ) {
-        const i = metrics.findIndex(
-          m => m.descriptor.name === 'db.client.connection.hits'
-        );
-        if (hits === 0) assert.strictEqual(i, -1);
-        else {
-          assert.notEqual(i, -1);
-          assert.strictEqual(metrics[i].dataPointType, DataPointType.SUM);
-          assert.strictEqual(metrics[i].dataPoints.length, 1);
-          assert.strictEqual(
-            metrics[i].dataPoints[0].attributes[
-              ATTR_DB_CLIENT_CONNECTION_POOL_NAME
-            ],
-            poolName
-          );
-          assert.strictEqual(metrics[i].dataPoints[0].value, hits);
-        }
-
-        const j = metrics.findIndex(
-          m => m.descriptor.name === 'db.client.connection.misses'
-        );
-        if (misses === 0) assert.strictEqual(j, -1);
-        else {
-          assert.notEqual(j, -1);
-          assert.strictEqual(metrics[j].dataPointType, DataPointType.SUM);
-          assert.strictEqual(metrics[j].dataPoints.length, 1);
-          assert.strictEqual(
-            metrics[j].dataPoints[0].attributes[
-              ATTR_DB_CLIENT_CONNECTION_POOL_NAME
-            ],
-            poolName
-          );
-          assert.strictEqual(metrics[j].dataPoints[0].value, misses);
-        }
-      }
-
-      it('1.2.1 No hits/miss on pool warmup', async () => {
-        await utils.waitForCreatePool(pool, queueTimeout);
-        const metrics = await getMetrics();
-        checkConnHitsMisses(metrics, 0, 0);
-      });
-
-      it('1.2.2 Should be connection miss on getting connection with no pool warmup', async () => {
-        await pool.getConnection();
-        const metrics = await getMetrics();
-        checkConnHitsMisses(metrics, 0, 1);
-      });
-
-      it('1.2.3 Should be atmost poolMin connection hits & subsequent misses when getting connections after pool warmup', async () => {
-        await utils.waitForCreatePool(pool, queueTimeout);
-        for (let i = 0; i < pool.poolMin; i++) await pool.getConnection();
-        let metrics = await getMetrics();
-        checkConnHitsMisses(metrics, pool.poolMin, 0);
-        await pool.getConnection();
-        metrics = await getMetrics();
-        checkConnHitsMisses(metrics, pool.poolMin, 1);
-      });
-
-      it('1.2.4 Should be Connection miss on getting connection from pool with no free connections', async () => {
-        instrumentation.disable();
-        for (let i = 0; i < pool.poolMin; i++) await pool.getConnection();
-        instrumentation.enable();
-        await pool.getConnection();
-        const metrics = await getMetrics();
-        checkConnHitsMisses(metrics, 0, 1);
-      });
-
-      it('1.2.5 Should be multiple connection misses on getting multiple connections from pool with no free connections', async () => {
-        for (let i = 0; i < pool.poolMin; i++) await pool.getConnection();
-        const metrics = await getMetrics();
-        checkConnHitsMisses(metrics, 0, pool.poolMin);
-      });
-
-      it('1.2.6 Should be a connection hit when there are extra free connections according due to pool increment', async () => {
-        for (let i = 0; i < pool.poolMin; i++) await pool.getConnection();
-        await pool.getConnection();
-        await new Promise(resolve =>
-          setTimeout(resolve, queueTimeout * pool.poolIncrement)
-        );
-        await pool.getConnection();
-        const metrics = await getMetrics();
-        checkConnHitsMisses(metrics, 1, pool.poolMin + 1);
-      });
-
-      it('1.2.7 Should be a connection hit if a connection is got after some connection is closed', async () => {
-        const conn = await pool.getConnection();
-        await conn.close();
-        await pool.getConnection();
-        const metrics = await getMetrics();
-        checkConnHitsMisses(metrics, 1, 1);
-      });
-    });
-
-    describe('1.3 Multiple pools : all of them should be instrumented', () => {
+    describe('1.2 Multiple pools : all of them should be instrumented', () => {
       after(async () => {
         if (newPool1) await newPool1.close(0);
         if (newPool2) await newPool2.close(0);
@@ -551,10 +488,10 @@ describe('oracledb-metrics', () => {
 
       let newPool1: oracledb.Pool;
       let newPool2: oracledb.Pool;
-      let poolName1 = 'newPool1';
-      let poolName2 = 'newPool2';
+      const poolName1 = 'newPool1';
+      const poolName2 = 'newPool2';
 
-      it('1.3.1 Creating 2 pools...', async () => {
+      it('1.2.1 Creating 2 pools...', async () => {
         newPool1 = await oracledb.createPool({
           ...utils.POOL_CONFIG,
           poolAlias: poolName1,
@@ -566,104 +503,68 @@ describe('oracledb-metrics', () => {
           enableStatistics: true,
         });
 
-        await Promise.all([newPool1.getConnection(), newPool2.getConnection()]);
+        const [conn1, conn2] = await Promise.all([
+          newPool1.getConnection(),
+          newPool2.getConnection(),
+        ]);
 
-        const metrics = await getMetrics();
-        assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
-        assert.strictEqual(
-          metrics[0].descriptor.description,
-          'The number of connections that are currently in state described by the state attribute.'
-        );
-        assert.strictEqual(metrics[0].descriptor.unit, '{connection}');
-        assert.strictEqual(metrics[0].dataPoints.length, 4);
-
-        if (
-          metrics[0].dataPoints[0].attributes[
-            ATTR_DB_CLIENT_CONNECTION_POOL_NAME
-          ] === poolName2
-        ) {
-          const temp = poolName1;
-          poolName1 = poolName2;
-          poolName2 = temp;
-          const tempp = newPool1;
-          newPool1 = newPool2;
-          newPool2 = tempp;
+        try {
+          const metrics = await getMetrics();
+          checkPoolConnMetrics(metrics, newPool1);
+          checkPoolConnMetrics(metrics, newPool2);
+        } finally {
+          await Promise.all([conn1.close(), conn2.close()]);
         }
-        assert.strictEqual(
-          metrics[0].dataPoints[1].value,
-          newPool1.getStatistics().connectionsOpen -
-            newPool1.getStatistics().connectionsInUse
-        );
-        assert.strictEqual(
-          metrics[0].dataPoints[0].value,
-          newPool1.getStatistics().connectionsInUse
-        );
-        assert.strictEqual(
-          metrics[0].descriptor.name,
-          'db.client.connection.count'
-        );
+      });
 
-        assert.strictEqual(
-          metrics[0].dataPoints[1].attributes[ATTR_DB_CLIENT_CONNECTION_STATE],
-          DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
-        );
+      it('1.2.2 Creating 2 pools with distinct states should keep connection counts isolated', async () => {
+        const distinctPoolName1 = 'distinctPool1';
+        const distinctPoolName2 = 'distinctPool2';
+        let distinctPool1: oracledb.Pool | undefined;
+        let distinctPool2: oracledb.Pool | undefined;
+        const connsPool1: oracledb.Connection[] = [];
+        let connPool2: oracledb.Connection | undefined;
 
-        assert.strictEqual(
-          metrics[0].dataPoints[1].attributes[
-            ATTR_DB_CLIENT_CONNECTION_POOL_NAME
-          ],
-          poolName1
-        );
+        try {
+          distinctPool1 = await oracledb.createPool({
+            ...utils.POOL_CONFIG,
+            poolMin: 2,
+            poolMax: 5,
+            poolAlias: distinctPoolName1,
+            enableStatistics: true,
+          });
+          distinctPool2 = await oracledb.createPool({
+            ...utils.POOL_CONFIG,
+            poolMin: 4,
+            poolMax: 10,
+            poolAlias: distinctPoolName2,
+            enableStatistics: true,
+          });
 
-        assert.strictEqual(
-          metrics[0].dataPoints[0].attributes[ATTR_DB_CLIENT_CONNECTION_STATE],
-          DB_CLIENT_CONNECTION_STATE_VALUE_USED
-        );
+          assert.ok(
+            await utils.waitForCreatePool(distinctPool1, queueTimeout),
+            `expected ${distinctPoolName1} to warm up`
+          );
+          assert.ok(
+            await utils.waitForCreatePool(distinctPool2, queueTimeout),
+            `expected ${distinctPoolName2} to warm up`
+          );
 
-        assert.strictEqual(
-          metrics[0].dataPoints[0].attributes[
-            ATTR_DB_CLIENT_CONNECTION_POOL_NAME
-          ],
-          poolName1
-        );
+          connsPool1.push(
+            await distinctPool1.getConnection(),
+            await distinctPool1.getConnection()
+          );
+          connPool2 = await distinctPool2.getConnection();
 
-        assert.strictEqual(
-          metrics[0].dataPoints[3].value,
-          newPool2.getStatistics().connectionsOpen -
-            newPool2.getStatistics().connectionsInUse
-        );
-        assert.strictEqual(
-          metrics[0].dataPoints[2].value,
-          newPool2.getStatistics().connectionsInUse
-        );
-        assert.strictEqual(
-          metrics[0].descriptor.name,
-          'db.client.connection.count'
-        );
-
-        assert.strictEqual(
-          metrics[0].dataPoints[3].attributes[ATTR_DB_CLIENT_CONNECTION_STATE],
-          DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
-        );
-
-        assert.strictEqual(
-          metrics[0].dataPoints[3].attributes[
-            ATTR_DB_CLIENT_CONNECTION_POOL_NAME
-          ],
-          poolName2
-        );
-
-        assert.strictEqual(
-          metrics[0].dataPoints[2].attributes[ATTR_DB_CLIENT_CONNECTION_STATE],
-          DB_CLIENT_CONNECTION_STATE_VALUE_USED
-        );
-
-        assert.strictEqual(
-          metrics[0].dataPoints[2].attributes[
-            ATTR_DB_CLIENT_CONNECTION_POOL_NAME
-          ],
-          poolName2
-        );
+          const metrics = await getMetrics();
+          checkPoolConnMetrics(metrics, distinctPool1, 0, 2, 0, 0);
+          checkPoolConnMetrics(metrics, distinctPool2, 3, 1, 0, 0);
+        } finally {
+          await Promise.all(connsPool1.map(conn => conn.close()));
+          if (connPool2) await connPool2.close();
+          if (distinctPool1) await distinctPool1.close(0);
+          if (distinctPool2) await distinctPool2.close(0);
+        }
       });
     });
   });
@@ -697,27 +598,22 @@ describe('oracledb-metrics', () => {
       operationName: string,
       err?: unknown
     ) {
-      const i = metrics.findIndex(
-        m => m.descriptor.name === METRIC_DB_CLIENT_OPERATION_DURATION
-      );
-      assert.notStrictEqual(
-        i,
-        -1,
-        `expected ${METRIC_DB_CLIENT_OPERATION_DURATION} metric`
+      const durationMetric = findMetric(
+        metrics,
+        METRIC_DB_CLIENT_OPERATION_DURATION
       );
 
       assert.strictEqual(
-        metrics[i].descriptor.name,
-        METRIC_DB_CLIENT_OPERATION_DURATION
-      );
-      assert.strictEqual(
-        metrics[i].descriptor.description,
+        durationMetric.descriptor.description,
         'Duration of database client operations.'
       );
-      const dataPoint = metrics[i].dataPoints[0];
-      assert.strictEqual(
-        dataPoint.attributes[ATTR_DB_OPERATION_NAME],
-        operationName
+      const dataPoints = durationMetric.dataPoints as DataPoint<Histogram>[];
+      const dataPoint = dataPoints.find(
+        dp => dp.attributes[ATTR_DB_OPERATION_NAME] === operationName
+      );
+      assert.ok(
+        dataPoint,
+        `expected ${METRIC_DB_CLIENT_OPERATION_DURATION} datapoint for ${operationName}`
       );
 
       if (err)
