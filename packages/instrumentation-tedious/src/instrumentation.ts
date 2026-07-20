@@ -255,9 +255,6 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
               message: err.message,
             });
 
-            // error.type must be an error class identifier (e.g. "EREQUEST",
-            // "ETIMEOUT"), not a numeric SQL Server error number.
-            // See: https://opentelemetry.io/docs/specs/semconv/attributes-registry/error/
             const errorType = err.constructor.name;
             span.setAttribute(ATTR_ERROR_TYPE, errorType);
 
