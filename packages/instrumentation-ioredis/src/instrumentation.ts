@@ -143,9 +143,7 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
         operationName = `PIPELINE ${cmd.name}`;
       }
 
-      if (instrumentation._dbSemconvStability & SemconvStability.STABLE) {
-        attributes[ATTR_DB_OPERATION_NAME] = operationName;
-      }
+      attributes[ATTR_DB_OPERATION_NAME] = operationName;
 
       const { host, port } = this.options;
 
