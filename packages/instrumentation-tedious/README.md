@@ -57,6 +57,7 @@ The `instrumentation-tedious` versions 0.39.0 and later emit the stable v1.33.0+
 | `error.type`               | Describes a class of error the operation ended with.                                          |
 | `server.address`           | Remote hostname or similar.                                                                   |
 | `server.port`              | Remote port number.                                                                           |
+
 ### Trace Context Propagation
 
 Database trace context propagation can be enabled by setting `enableTraceContextPropagation` to `true`.
