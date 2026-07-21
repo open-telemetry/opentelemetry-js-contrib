@@ -83,7 +83,7 @@ When invoking `npm run compile` on the instrumentation package, typescript will 
 
 - Types that are `export`ed from the module, or types that are transitively used in other types that are `export`ed from the module.
 - Types in `public` functions of exported classes such as `class InstrumentationFoo`.
-- Types used as [`Generic Type Varibles`] on exported generic types/classes/functions.
+- Types used as [`Generic Type Variables`] on exported generic types/classes/functions.
 
 Note that types that are used in non-public files (like `internal-types.ts` or `utils.ts`), or that are not somehow `export`ed from a module (for example - used in private function implementations), can safely use types from a "devDependency" package.
 
