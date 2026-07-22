@@ -175,8 +175,16 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const nFree = (pool as any)._freeConnections.length;
         const nUsed = nAll - nFree;
         const poolName = getPoolName(pool);
-        thisPlugin._connCountAdd(-nUsed, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
-        thisPlugin._connCountAdd(-nFree, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
+        thisPlugin._connCountAdd(
+          -nUsed,
+          poolName,
+          DB_CLIENT_CONNECTION_STATE_VALUE_USED
+        );
+        thisPlugin._connCountAdd(
+          -nFree,
+          poolName,
+          DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+        );
         originalPoolEnd.apply(pool, arguments);
       };
     };

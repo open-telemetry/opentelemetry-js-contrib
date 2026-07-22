@@ -265,11 +265,23 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
         if (nSessionsBeforeAcquire === nSessionsAfterAcquire) {
           //no session in the pool. a new session was created and used
-          instrumentation._connCountAdd(1, instrumentation._poolName, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
+          instrumentation._connCountAdd(
+            1,
+            instrumentation._poolName,
+            DB_CLIENT_CONNECTION_STATE_VALUE_USED
+          );
         } else if (nSessionsBeforeAcquire - 1 === nSessionsAfterAcquire) {
           //a session was already in the pool. remove it from the pool and use it.
-          instrumentation._connCountAdd(-1, instrumentation._poolName, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
-          instrumentation._connCountAdd(1, instrumentation._poolName, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
+          instrumentation._connCountAdd(
+            -1,
+            instrumentation._poolName,
+            DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+          );
+          instrumentation._connCountAdd(
+            1,
+            instrumentation._poolName,
+            DB_CLIENT_CONNECTION_STATE_VALUE_USED
+          );
         }
         return session;
       };
@@ -282,8 +294,16 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       return function patchRelease(this: any, session: ServerSession) {
         const cmdPromise = original.call(this, session);
 
-        instrumentation._connCountAdd(-1, instrumentation._poolName, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
-        instrumentation._connCountAdd(1, instrumentation._poolName, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
+        instrumentation._connCountAdd(
+          -1,
+          instrumentation._poolName,
+          DB_CLIENT_CONNECTION_STATE_VALUE_USED
+        );
+        instrumentation._connCountAdd(
+          1,
+          instrumentation._poolName,
+          DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+        );
         return cmdPromise;
       };
     };
@@ -1042,7 +1062,11 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         }
 
         if (commandType === 'endSessions') {
-          instrumentation._connCountAdd(-1, instrumentation._poolName, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
+          instrumentation._connCountAdd(
+            -1,
+            instrumentation._poolName,
+            DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+          );
         }
       }
 
