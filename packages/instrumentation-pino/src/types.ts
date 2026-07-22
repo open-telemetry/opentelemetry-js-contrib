@@ -57,8 +57,8 @@ export interface PinoInstrumentationConfig extends InstrumentationConfig {
    * available.
    */
   logKeys?: {
-    traceId?: string;
-    spanId?: string;
-    traceFlags?: string;
+    traceId: string | null;
+    spanId: string | null;
+    traceFlags: string | null;
   };
 }
