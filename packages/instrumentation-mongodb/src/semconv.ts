@@ -10,6 +10,40 @@
  */
 
 /**
+ * The name of the connection pool; unique within the instrumented application. In case the connection pool implementation doesn't provide a name, instrumentation **SHOULD** use a combination of parameters that would make the name unique, for example, combining attributes `server.address`, `server.port`, and `db.namespace`, formatted as `server.address:server.port/db.namespace`. Instrumentations that generate connection pool name following different patterns **SHOULD** document it.
+ *
+ * @example myDataSource
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_DB_CLIENT_CONNECTION_POOL_NAME =
+  'db.client.connection.pool.name' as const;
+
+/**
+ * The state of a connection in the pool
+ *
+ * @example idle
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_DB_CLIENT_CONNECTION_STATE =
+  'db.client.connection.state' as const;
+
+/**
+ * Enum value "idle" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const DB_CLIENT_CONNECTION_STATE_VALUE_IDLE = 'idle' as const;
+
+/**
+ * Enum value "used" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const DB_CLIENT_CONNECTION_STATE_VALUE_USED = 'used' as const;
+
+/**
  * Enum value "mongodb" for attribute {@link ATTR_DB_SYSTEM_NAME}.
  *
  * [MongoDB](https://www.mongodb.com/)
@@ -19,11 +53,9 @@
 export const DB_SYSTEM_NAME_VALUE_MONGODB = 'mongodb' as const;
 
 /**
- * Deprecated, use `db.client.connection.count` instead.
+ * The number of connections that are currently in state described by the `state` attribute.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.client.connection.count`.
  */
-export const METRIC_DB_CLIENT_CONNECTIONS_USAGE =
-  'db.client.connections.usage' as const;
+export const METRIC_DB_CLIENT_CONNECTION_COUNT =
+  'db.client.connection.count' as const;

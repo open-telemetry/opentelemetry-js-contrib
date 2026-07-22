@@ -63,7 +63,7 @@ Attributes collected:
 
 Metrics collected:
 
-- [`db.client.connections.usage`](https://github.com/open-telemetry/semantic-conventions/blob/v1.24.0/docs/database/database-metrics.md#metric-dbclientconnectionsusage) - The number of connections currently in a given state.
+- [`db.client.connection.count`](https://opentelemetry.io/docs/specs/semconv/database/database-metrics/#metric-dbclientconnectioncount) - The number of connections currently in a given state.
 
 ## Useful links
 

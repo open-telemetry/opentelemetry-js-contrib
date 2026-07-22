@@ -20,7 +20,7 @@ describe('utils.ts', () => {
       });
 
       assert.strictEqual(
-        utils.getPoolNameOld(pool),
+        utils.getPoolName(pool),
         "host: '127.0.0.1', port: 33306, database: 'test_db', user: 'otel'"
       );
     });
@@ -34,7 +34,7 @@ describe('utils.ts', () => {
       });
 
       assert.strictEqual(
-        utils.getPoolNameOld(pool),
+        utils.getPoolName(pool),
         "host: '127.0.0.1', port: 33306, database: 'test_db'"
       );
     });
