@@ -72,6 +72,8 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 
 ## Semantic Conventions
 
+This instrumentation emits metrics defined in the experimental `@opentelemetry/semantic-conventions` (`^1.29.0`) for the `nodejs` and `v8js` runtime namespaces.
+
 ### Metrics collected
 
 | Metric | Short Description |
