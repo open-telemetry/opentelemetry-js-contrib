@@ -141,5 +141,4 @@ describe('v8js.memory.heap.*', function () {
       });
     }
   }
-
 });

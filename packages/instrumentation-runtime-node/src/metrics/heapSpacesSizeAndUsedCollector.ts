@@ -82,12 +82,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
           );
         }
       },
-      [
-        heapSpaceSize,
-        heapSpaceUsed,
-        heapSpaceAvailable,
-        heapSpacePhysical,
-      ]
+      [heapSpaceSize, heapSpaceUsed, heapSpaceAvailable, heapSpacePhysical]
     );
   }
 
