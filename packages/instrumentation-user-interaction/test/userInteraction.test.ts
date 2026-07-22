@@ -202,7 +202,7 @@ describe('UserInteractionInstrumentation', () => {
 
             const attributes = spanXhr.attributes;
             assert.equal(
-              attributes['http.url'],
+              attributes['url.full'],
               'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
             );
             // all other attributes are checked in xhr anyway

@@ -137,7 +137,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
             [AttributeNames.EVENT_TYPE]: eventName,
             [AttributeNames.TARGET_ELEMENT]: element.tagName,
             [AttributeNames.TARGET_XPATH]: xpath,
-            [AttributeNames.HTTP_URL]: window.location.href,
+            [AttributeNames.URL_FULL]: window.location.href,
           },
         },
         parentSpan
