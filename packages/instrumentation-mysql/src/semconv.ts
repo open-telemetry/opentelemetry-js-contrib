@@ -31,16 +31,20 @@ export const ATTR_DB_CLIENT_CONNECTION_STATE =
 
 /**
  * Enum value "idle" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const DB_CLIENT_CONNECTION_STATE_VALUE_IDLE = 'idle' as const;
 
 /**
  * Enum value "used" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const DB_CLIENT_CONNECTION_STATE_VALUE_USED = 'used' as const;
 
 /**
- * The number of connections that are currently in state described by the `state` attribute
+ * The number of connections that are currently in state described by the `state` attribute.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
