@@ -29,6 +29,8 @@ import {
   METRIC_DB_CLIENT_CONNECTION_COUNT,
   ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
   ATTR_DB_CLIENT_CONNECTION_STATE,
+  DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
+  DB_CLIENT_CONNECTION_STATE_VALUE_USED,
 } from './semconv';
 import type * as mysqlTypes from 'mysql';
 import { AttributeNames } from './AttributeNames';
@@ -173,8 +175,8 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const nFree = (pool as any)._freeConnections.length;
         const nUsed = nAll - nFree;
         const poolName = getPoolName(pool);
-        thisPlugin._connCountAdd(-nUsed, poolName, 'used');
-        thisPlugin._connCountAdd(-nFree, poolName, 'idle');
+        thisPlugin._connCountAdd(-nUsed, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
+        thisPlugin._connCountAdd(-nFree, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
         originalPoolEnd.apply(pool, arguments);
       };
     };
@@ -400,17 +402,17 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
     const poolName = id || getPoolName(pool);
 
     pool.on('connection', _connection => {
-      this._connCountAdd(1, poolName, 'idle');
+      this._connCountAdd(1, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
     });
 
     pool.on('acquire', _connection => {
-      this._connCountAdd(-1, poolName, 'idle');
-      this._connCountAdd(1, poolName, 'used');
+      this._connCountAdd(-1, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
+      this._connCountAdd(1, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
     });
 
     pool.on('release', _connection => {
-      this._connCountAdd(1, poolName, 'idle');
-      this._connCountAdd(-1, poolName, 'used');
+      this._connCountAdd(1, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
+      this._connCountAdd(-1, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
     });
   }
 }

@@ -4,6 +4,10 @@
  */
 
 import { MongoDBInstrumentation } from '../src';
+import {
+  DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
+  DB_CLIENT_CONNECTION_STATE_VALUE_USED,
+} from '../src/semconv';
 
 import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
 import { TestMetricReader } from '@opentelemetry/contrib-test-utils';
@@ -103,7 +107,7 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     assert.strictEqual(dataPoints[0].value, 0);
     assert.strictEqual(
       dataPoints[0].attributes['db.client.connection.state'],
-      'used'
+      DB_CLIENT_CONNECTION_STATE_VALUE_USED
     );
     assert.strictEqual(
       dataPoints[0].attributes['db.client.connection.pool.name'],
@@ -113,7 +117,7 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     assert.strictEqual(dataPoints[1].value, 1);
     assert.strictEqual(
       dataPoints[1].attributes['db.client.connection.state'],
-      'idle'
+      DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
     );
     assert.strictEqual(
       dataPoints[1].attributes['db.client.connection.pool.name'],
@@ -147,7 +151,7 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     assert.strictEqual(dataPoints[0].value, 0);
     assert.strictEqual(
       dataPoints[0].attributes['db.client.connection.state'],
-      'used'
+      DB_CLIENT_CONNECTION_STATE_VALUE_USED
     );
     assert.strictEqual(
       dataPoints[0].attributes['db.client.connection.pool.name'],
@@ -156,7 +160,7 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     assert.strictEqual(dataPoints[1].value, 0);
     assert.strictEqual(
       dataPoints[1].attributes['db.client.connection.state'],
-      'idle'
+      DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
     );
     assert.strictEqual(
       dataPoints[1].attributes['db.client.connection.pool.name'],
