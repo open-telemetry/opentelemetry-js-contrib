@@ -39,12 +39,44 @@ import {
   DB_SYSTEM_NAME_VALUE_POSTGRESQL,
 } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
   ATTR_DB_CLIENT_CONNECTION_STATE,
   METRIC_DB_CLIENT_CONNECTION_COUNT,
+  METRIC_DB_CLIENT_CONNECTION_MAX,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
 } from '../src/semconv';
+import { getPoolName } from '../src/utils';
 
 const memoryExporter = new InMemorySpanExporter();
+
+async function collectConnectionMaxMetric(
+  metricReader: testUtils.TestMetricReader
+) {
+  const { resourceMetrics, errors } = await metricReader.collect();
+  assert.deepEqual(errors, [], 'expected no errors during metric collection');
+
+  const metric = resourceMetrics.scopeMetrics
+    .flatMap(scope => scope.metrics)
+    .find(metric => metric.descriptor.name === METRIC_DB_CLIENT_CONNECTION_MAX);
+  assert.ok(metric, `expected ${METRIC_DB_CLIENT_CONNECTION_MAX} metric`);
+  return metric;
+}
+
+function getConnectionMaxValue(
+  metric: Awaited<ReturnType<typeof collectConnectionMaxMetric>>,
+  poolName: string
+) {
+  const dataPoints = metric.dataPoints as Array<{
+    attributes: SpanAttributes;
+    value: unknown;
+  }>;
+  const dataPoint = dataPoints.find(
+    point => point.attributes[ATTR_DB_CLIENT_CONNECTION_POOL_NAME] === poolName
+  );
+  assert.ok(dataPoint, `expected data point for pool ${poolName}`);
+  assert.strictEqual(typeof dataPoint.value, 'number');
+  return dataPoint.value as number;
+}
 
 const CONFIG = {
   user: process.env.POSTGRES_USER || 'postgres',
@@ -58,6 +90,26 @@ const CONFIG = {
   maxClient: 1,
   idleTimeoutMillis: 10000,
 };
+
+function createNamedPool(name: string, max?: number) {
+  const connectionString = `postgresql://${encodeURIComponent(
+    CONFIG.user
+  )}:${encodeURIComponent(CONFIG.password)}@${CONFIG.host}:${CONFIG.port}/${encodeURIComponent(
+    CONFIG.database
+  )}`;
+  return new pgPool({
+    ...CONFIG,
+    connectionString,
+    host: name,
+    ...(max === undefined ? {} : { max }),
+  });
+}
+
+function getTestPoolName(pool: pgPool<pg.Client>) {
+  return getPoolName(
+    pool.options as unknown as Parameters<typeof getPoolName>[0]
+  );
+}
 
 const DEFAULT_PGPOOL_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_POSTGRESQL,
@@ -811,6 +863,139 @@ describe('pg-pool', () => {
         metrics[2].descriptor.name,
         METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS
       );
+      assert.strictEqual(
+        metrics[3].descriptor.name,
+        METRIC_DB_CLIENT_CONNECTION_MAX
+      );
+    });
+
+    it('should report a configured connection maximum once per pool', async () => {
+      const poolMax = 7;
+      const poolAux = createNamedPool('configured-pool', poolMax);
+      const poolName = getTestPoolName(poolAux);
+
+      try {
+        for (let i = 0; i < 2; i++) {
+          const client = await poolAux.connect();
+          client.release();
+        }
+
+        const metric = await collectConnectionMaxMetric(metricReader);
+        assert.strictEqual(
+          metric.descriptor.name,
+          METRIC_DB_CLIENT_CONNECTION_MAX
+        );
+        assert.strictEqual(
+          metric.descriptor.description,
+          'The maximum number of open connections allowed.'
+        );
+        assert.strictEqual(metric.descriptor.unit, '{connection}');
+        assert.ok('isMonotonic' in metric);
+        assert.strictEqual(metric.isMonotonic, false, 'expected UpDownCounter');
+        assert.strictEqual(getConnectionMaxValue(metric, poolName), poolMax);
+      } finally {
+        await poolAux.end();
+      }
+    });
+
+    it('should report the default pool connection maximum', async () => {
+      const poolAux = createNamedPool('default-pool');
+      const poolName = getTestPoolName(poolAux);
+
+      try {
+        const client = await poolAux.connect();
+        client.release();
+
+        assert.strictEqual(poolAux.options.max, 10);
+        assert.strictEqual(
+          getConnectionMaxValue(
+            await collectConnectionMaxMetric(metricReader),
+            poolName
+          ),
+          poolAux.options.max
+        );
+      } finally {
+        await poolAux.end();
+      }
+    });
+
+    it('should report connection maxima for multiple pools', async () => {
+      const pool1 = createNamedPool('first-pool', 3);
+      const pool2 = createNamedPool('second-pool', 5);
+
+      try {
+        const client1 = await pool1.connect();
+        client1.release();
+        const client2 = await pool2.connect();
+        client2.release();
+
+        const metric = await collectConnectionMaxMetric(metricReader);
+        assert.strictEqual(
+          getConnectionMaxValue(metric, getTestPoolName(pool1)),
+          pool1.options.max
+        );
+        assert.strictEqual(
+          getConnectionMaxValue(metric, getTestPoolName(pool2)),
+          pool2.options.max
+        );
+      } finally {
+        await pool1.end();
+        await pool2.end();
+      }
+    });
+
+    it('should transfer active pool maxima when replacing the MeterProvider and remove them on shutdown', async () => {
+      const poolAux = createNamedPool('lifecycle-pool', 4);
+      const poolName = getTestPoolName(poolAux);
+      let ended = false;
+
+      try {
+        const client = await poolAux.connect();
+        client.release();
+
+        assert.strictEqual(
+          getConnectionMaxValue(
+            await collectConnectionMaxMetric(metricReader),
+            poolName
+          ),
+          poolAux.options.max
+        );
+
+        const oldMetricReader = metricReader;
+        metricReader = testUtils.initMeterProvider(instrumentation);
+
+        assert.strictEqual(
+          getConnectionMaxValue(
+            await collectConnectionMaxMetric(oldMetricReader),
+            poolName
+          ),
+          0,
+          'expected the old MeterProvider value to be cleared'
+        );
+        assert.strictEqual(
+          getConnectionMaxValue(
+            await collectConnectionMaxMetric(metricReader),
+            poolName
+          ),
+          poolAux.options.max,
+          'expected active pools to be replayed to the new MeterProvider'
+        );
+
+        await poolAux.end();
+        ended = true;
+        assert.strictEqual(
+          getConnectionMaxValue(
+            await collectConnectionMaxMetric(metricReader),
+            poolName
+          ),
+          0,
+          'expected a closed pool maximum to be removed'
+        );
+      } finally {
+        if (!ended) {
+          await poolAux.end();
+        }
+      }
     });
 
     it('should not add duplicate event listeners to PgPool events', done => {
