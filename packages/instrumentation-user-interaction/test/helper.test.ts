@@ -68,7 +68,7 @@ export function assertInteractionSpan(
   assert.strictEqual(attributes.event_type, eventType);
   assert.strictEqual(attributes.target_element, 'BUTTON');
   assert.strictEqual(attributes.target_xpath, `//*[@id="${elementId}"]`);
-  assert.ok(attributes['http.url'] !== '');
+  assert.ok(attributes['url.full'] !== '');
   assert.ok(attributes['user_agent'] !== '');
 }
 
