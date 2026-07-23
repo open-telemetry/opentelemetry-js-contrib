@@ -1,6 +1,22 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.68.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.67.0...contrib-test-utils-v0.68.0) (2026-07-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **contrib-test-utils:** drop `OTEL_EXPORTER_JAEGER_AGENT_HOST` support for using Jaeger exporter ([#3610](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3610))
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3629](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3629)) ([466d5de](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/466d5def474cf251217881322ed4db13fad96b86))
+
+
+### Miscellaneous Chores
+
+* **contrib-test-utils:** drop `OTEL_EXPORTER_JAEGER_AGENT_HOST` support for using Jaeger exporter ([#3610](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3610)) ([307ecae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/307ecaee9c75a32ccfdf94b0e1d0b34a1913f034))
+
 ## [0.67.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.66.0...contrib-test-utils-v0.67.0) (2026-07-03)
 
 
