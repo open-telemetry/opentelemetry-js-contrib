@@ -74,6 +74,7 @@ The `@opentelemetry/instrumentation-pg` versions 0.72.0 and later emit the stabl
 | `db.namespace`        | The name of the database, fully qualified within the server address and port.              |
 | `db.query.text`       | The database query being executed.                                                         |
 | `db.operation.name`   | The name of the operation or command being executed.                                       |
+| `db.collection.name`  | The name of a collection (table, keyspace, etc.) to be used.                               |
 | `server.address`      | Remote hostname or similar.                                                                |
 | `server.port`         | Remote port number.                                                                        |
 | `error.type`          | Describes a class of error the operation ended with.                                       |
