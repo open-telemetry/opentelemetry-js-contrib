@@ -9,6 +9,13 @@ import * as sinon from 'sinon';
 import { detectResources } from '@opentelemetry/resources';
 
 import { gitHubDetector } from '../../src/detectors';
+import {
+  ATTR_CICD_PIPELINE_NAME,
+  ATTR_CICD_PIPELINE_RUN_ID,
+  ATTR_VCS_REF_BASE_NAME,
+  ATTR_VCS_REF_HEAD_NAME,
+  ATTR_VCS_REF_HEAD_REVISION,
+} from '../../src/semconv';
 
 describe('GitHubResourceDetector', () => {
   let sandbox: sinon.SinonSandbox;
@@ -36,7 +43,7 @@ describe('GitHubResourceDetector', () => {
     process.env.GITHUB_RUN_NUMBER = '42';
     process.env.GITHUB_ACTOR = 'octocat';
     process.env.GITHUB_SHA = 'git-sha';
-    process.env.GITHUB_REF = 'git-ref';
+    process.env.GITHUB_REF = 'refs/pull/1/merge';
     process.env.GITHUB_HEAD_REF = 'ref/foo';
     process.env.GITHUB_BASE_REF = 'ref/bar';
 
@@ -44,14 +51,28 @@ describe('GitHubResourceDetector', () => {
 
     assert.ok(resource);
     assert.deepStrictEqual(resource.attributes, {
-      'github.workflow': 'workflow-foo',
-      'github.run_id': 'run-id-foo',
+      [ATTR_CICD_PIPELINE_NAME]: 'workflow-foo',
+      [ATTR_CICD_PIPELINE_RUN_ID]: 'run-id-foo',
+      [ATTR_VCS_REF_HEAD_NAME]: 'ref/foo',
+      [ATTR_VCS_REF_HEAD_REVISION]: 'git-sha',
+      [ATTR_VCS_REF_BASE_NAME]: 'ref/bar',
       'github.run_number': '42',
       'github.actor': 'octocat',
-      'github.sha': 'git-sha',
-      'github.ref': 'git-ref',
-      'github.head_ref': 'ref/foo',
-      'github.base_ref': 'ref/bar',
+    });
+  });
+
+  it('should fall back to GITHUB_REF for the head ref name outside of pull requests', async () => {
+    process.env.GITHUB_WORKFLOW = 'workflow-foo';
+    process.env.GITHUB_SHA = 'git-sha';
+    process.env.GITHUB_REF = 'refs/heads/main';
+
+    const resource = detectResources({ detectors: [gitHubDetector] });
+
+    assert.ok(resource);
+    assert.deepStrictEqual(resource.attributes, {
+      [ATTR_CICD_PIPELINE_NAME]: 'workflow-foo',
+      [ATTR_VCS_REF_HEAD_NAME]: 'refs/heads/main',
+      [ATTR_VCS_REF_HEAD_REVISION]: 'git-sha',
     });
   });
 
