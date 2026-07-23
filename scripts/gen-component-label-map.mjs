@@ -41,7 +41,7 @@ function warn(...args) {
 function getAllWorkspaceDirs() {
   const pj = JSON.parse(fs.readFileSync(join(TOP, 'package.json'), 'utf8'));
   return pj.workspaces
-    .map(wsGlob => globSync(join(wsGlob, 'package.json')))
+    .map(wsGlob => globSync(`${wsGlob}/package.json`, { posix: true }))
     .flat()
     .map(dirname);
 }

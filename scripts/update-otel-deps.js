@@ -36,7 +36,7 @@ function getAllWorkspaceDirs() {
     fs.readFileSync(path.join(TOP, 'package.json'), 'utf8')
   );
   return pj.workspaces
-    .map(wsGlob => globSync(path.join(wsGlob, 'package.json')))
+    .map(wsGlob => globSync(`${wsGlob}/package.json`, { posix: true }))
     .flat()
     .map(path.dirname);
 }
