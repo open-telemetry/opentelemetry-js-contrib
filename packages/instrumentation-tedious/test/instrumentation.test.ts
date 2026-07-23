@@ -26,8 +26,12 @@ import * as semver from 'semver';
 import {
   ATTR_DB_COLLECTION_NAME,
   ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
+  ATTR_DB_RESPONSE_STATUS_CODE,
+  ATTR_DB_STORED_PROCEDURE_NAME,
   ATTR_DB_SYSTEM_NAME,
+  ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER,
@@ -140,7 +144,8 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'execSql master',
+      name: 'SELECT master',
+      operationName: 'SELECT',
       sql: queryString,
       parentSpan,
     });
@@ -159,9 +164,11 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'execSql master',
+      name: 'SELECT master',
+      operationName: 'SELECT',
       sql: queryString,
       error: /incorrect syntax/i,
+      errorType: /^RequestError$/,
       statementCount: 0,
     });
   });
@@ -181,7 +188,8 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'execSql master',
+      name: 'SELECT master',
+      operationName: 'SELECT',
       sql: queryString,
       procCount: 1,
       statementCount: 3,
@@ -198,7 +206,8 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'execSqlBatch master',
+      name: 'SELECT master',
+      operationName: 'SELECT',
       sql: queryString,
       procCount: 0,
       statementCount: 3,
@@ -214,12 +223,15 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'execSql master',
+      name: 'CREATE master',
+      operationName: 'CREATE',
       sql: /create or alter procedure/i,
     });
     assertSpan(spans[1], {
-      name: `callProcedure ${tedious.storedProcedure.procedureName} master`,
+      name: `EXECUTE ${tedious.storedProcedure.procedureName} master`,
+      operationName: 'EXECUTE',
       sql: tedious.storedProcedure.procedureName,
+      storedProcedureName: tedious.storedProcedure.procedureName,
     });
   });
 
@@ -234,16 +246,19 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'execSql master',
+      name: 'IF master',
+      operationName: 'IF',
       sql: /create table/i,
       statementCount: 2,
     });
     assertSpan(spans[1], {
-      name: 'prepare master',
+      name: 'INSERT master',
+      operationName: 'INSERT',
       sql: /INSERT INTO/,
     });
     assertSpan(spans[2], {
-      name: 'execute master',
+      name: 'INSERT master',
+      operationName: 'INSERT',
       sql: /INSERT INTO/,
     });
   });
@@ -265,15 +280,18 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'execSql master',
+      name: 'CREATE master',
+      operationName: 'CREATE',
       sql: sql.create,
     });
     assertSpan(spans[1], {
-      name: 'execSql master',
+      name: 'USE master',
+      operationName: 'USE',
       sql: sql.use,
     });
     assertSpan(spans[2], {
-      name: 'execSql temp_otel_db',
+      name: 'SELECT temp_otel_db',
+      operationName: 'SELECT',
       sql: sql.select,
       database: 'temp_otel_db',
     });
@@ -286,17 +304,20 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'execSql master',
+      name: 'IF master',
+      operationName: 'IF',
       sql: /create table/i,
       statementCount: 2,
     });
     assertSpan(spans[1], {
-      name: 'execSqlBatch master',
+      name: 'INSERT master',
+      operationName: 'INSERT',
       sql: /insert bulk/,
       procCount: 0,
     });
     assertSpan(spans[2], {
-      name: 'execBulkLoad test_bulk master',
+      name: 'BULK INSERT test_bulk master',
+      operationName: 'BULK INSERT',
       procCount: 0,
       table: 'test_bulk',
     });
@@ -405,7 +426,14 @@ function assertSpan(span: ReadableSpan, expected: any) {
   if (expected.table) {
     expectedAttrs[ATTR_DB_COLLECTION_NAME] = expected.table;
   }
-  // "db.statement"
+  if (expected.operationName) {
+    expectedAttrs[ATTR_DB_OPERATION_NAME] = expected.operationName;
+  }
+  if (expected.storedProcedureName) {
+    expectedAttrs[ATTR_DB_STORED_PROCEDURE_NAME] = expected.storedProcedureName;
+  }
+
+  // db.query.text
   if (expected.sql) {
     if (expected.sql instanceof RegExp) {
       assert.match(span.attributes[ATTR_DB_QUERY_TEXT] as string, expected.sql);
@@ -420,6 +448,23 @@ function assertSpan(span: ReadableSpan, expected: any) {
     assert.strictEqual(actualAttrs[ATTR_DB_QUERY_TEXT], undefined);
   }
   delete actualAttrs[ATTR_DB_QUERY_TEXT];
+
+  if (expected.errorType) {
+    assert.match(
+      span.attributes[ATTR_ERROR_TYPE] as string,
+      expected.errorType
+    );
+  }
+  delete actualAttrs[ATTR_ERROR_TYPE];
+
+  if (expected.statusCode) {
+    assert.match(
+      span.attributes[ATTR_DB_RESPONSE_STATUS_CODE] as string,
+      expected.statusCode
+    );
+  }
+  delete actualAttrs[ATTR_DB_RESPONSE_STATUS_CODE];
+
   assert.deepEqual(actualAttrs, expectedAttrs);
 
   if (expected.parentSpan) {

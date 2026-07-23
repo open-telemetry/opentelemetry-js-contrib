@@ -4,32 +4,53 @@
  */
 
 /**
- * The span name SHOULD be set to a low cardinality value
- * representing the statement executed on the database.
+ * Returns the `db.operation.name` value for a given tedious method and SQL text.
  *
- * @returns Operation executed on Tedious Connection. Does not map to SQL statement in any way.
+ * - `callProcedure` → `"EXECUTE"`
+ * - `execBulkLoad`  → `"BULK INSERT"`
+ * - SQL text        → first whitespace-delimited token, uppercased (e.g. `"SELECT"`)
+ */
+export function getOperationName(
+  tediousMethod: string,
+  sql: string | undefined
+): string | undefined {
+  if (tediousMethod === 'callProcedure') return 'EXECUTE';
+  if (tediousMethod === 'execBulkLoad') return 'BULK INSERT';
+  if (!sql) return undefined;
+  const trimmed = sql.trimStart();
+  const idx = trimmed.search(/\s/);
+  const verb = idx === -1 ? trimmed : trimmed.slice(0, idx);
+  const normalized = verb.replace(/;$/, '').toUpperCase();
+  return normalized || undefined;
+}
+
+/**
+ * The span name SHOULD be set to a low cardinality value representing the
+ * statement executed on the database, following the OTel convention:
+ *   "{db.operation.name} {db.collection.name}"   (when both are known)
+ *   "{db.operation.name} {db.namespace}"          (when collection is absent)
+ *   "{db.operation.name}"                         (when namespace is absent)
+ *   "db"                                          (fallback)
  */
 export function getSpanName(
-  operation: string,
+  operationName: string | undefined,
   db: string | undefined,
-  sql: string | undefined,
-  bulkLoadTable: string | undefined
+  collection: string | undefined
 ): string {
-  if (operation === 'execBulkLoad' && bulkLoadTable && db) {
-    return `${operation} ${bulkLoadTable} ${db}`;
+  if (!operationName) return 'db';
+
+  // For stored-procedure calls and bulk loads the "collection" is the
+  // procedure / table name, which gives a useful low-cardinality name.
+  if (collection && db) {
+    return `${operationName} ${collection} ${db}`;
   }
-  if (operation === 'callProcedure') {
-    // `sql` refers to procedure name with `callProcedure`
-    if (db) {
-      return `${operation} ${sql} ${db}`;
-    }
-    return `${operation} ${sql}`;
+  if (collection) {
+    return `${operationName} ${collection}`;
   }
-  // do not use `sql` in general case because of high-cardinality
   if (db) {
-    return `${operation} ${db}`;
+    return `${operationName} ${db}`;
   }
-  return `${operation}`;
+  return operationName;
 }
 
 export const once = (fn: Function) => {

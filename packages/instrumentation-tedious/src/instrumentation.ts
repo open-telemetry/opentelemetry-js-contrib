@@ -13,15 +13,19 @@ import {
 import {
   ATTR_DB_COLLECTION_NAME,
   ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
+  ATTR_DB_RESPONSE_STATUS_CODE,
+  ATTR_DB_STORED_PROCEDURE_NAME,
   ATTR_DB_SYSTEM_NAME,
+  ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER,
 } from '@opentelemetry/semantic-conventions';
 import type * as tedious from 'tedious';
 import { TediousInstrumentationConfig } from './types';
-import { getSpanName, once } from './utils';
+import { getOperationName, getSpanName, once } from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -199,24 +203,37 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
 
         const attributes: api.Attributes = {};
 
-        // The OTel spec for "db.namespace" discusses handling for connection
-        // to MSSQL "named instances". This isn't currently supported.
-        //    https://opentelemetry.io/docs/specs/semconv/database/sql-server/#:~:text=%5B1%5D%20db%2Enamespace
-        attributes[ATTR_DB_NAMESPACE] = databaseName;
+        // db.namespace: for named instances include the instance name as a
+        // prefix separated by "|" per the SQL Server semconv spec.
+        // https://opentelemetry.io/docs/specs/semconv/database/sql-server/#:~:text=%5B1%5D%20db%2Enamespace
+        const instanceName = this.config?.options?.instanceName;
+        const dbNamespace = instanceName
+          ? `${instanceName}|${databaseName}`
+          : databaseName;
+        attributes[ATTR_DB_NAMESPACE] = dbNamespace;
         attributes[ATTR_DB_SYSTEM_NAME] =
           DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
         attributes[ATTR_DB_QUERY_TEXT] = sql;
         attributes[ATTR_DB_COLLECTION_NAME] = request.table;
-        // See https://opentelemetry.io/docs/specs/semconv/database/sql-server/#spans
-        // TODO(3290): can `db.response.status_code` be added?
-        // TODO(3290): is `operation` correct for `db.operation.name`
-        // TODO(3290): can `db.query.summary` reliably be calculated?
-        // TODO(3290): `db.stored_procedure.name`
+
+        const operationName = getOperationName(operation, sql);
+        if (operationName !== undefined) {
+          attributes[ATTR_DB_OPERATION_NAME] = operationName;
+        }
+
+        // db.stored_procedure.name: available directly from sqlTextOrProcedure
+        // when callProcedure is used.
+        if (operation === 'callProcedure' && sql) {
+          attributes[ATTR_DB_STORED_PROCEDURE_NAME] = sql;
+        }
 
         attributes[ATTR_SERVER_ADDRESS] = this.config?.server;
         attributes[ATTR_SERVER_PORT] = this.config?.options?.port;
+
+        const spanCollection =
+          operation === 'callProcedure' ? sql : request.table;
         const span = thisPlugin.tracer.startSpan(
-          getSpanName(operation, databaseName, sql, request.table),
+          getSpanName(operationName, dbNamespace, spanCollection),
           {
             kind: api.SpanKind.CLIENT,
             attributes,
@@ -237,7 +254,17 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
               code: api.SpanStatusCode.ERROR,
               message: err.message,
             });
-            // TODO(3290): set `error.type` attribute?
+
+            const errorType = err.constructor.name;
+            span.setAttribute(ATTR_ERROR_TYPE, errorType);
+
+            // db.response.status_code carries the SQL Server error number when
+            // present, otherwise the Tedious error code string.
+            const statusCode =
+              err.number != null ? String(err.number) : err.code;
+            if (statusCode) {
+              span.setAttribute(ATTR_DB_RESPONSE_STATUS_CODE, statusCode);
+            }
           }
           span.end();
         });
