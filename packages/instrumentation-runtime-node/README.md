@@ -99,7 +99,7 @@ This instrumentation emits metrics defined in the experimental `@opentelemetry/s
 | Attribute | Short Description |
 |---|---|
 | `nodejs.eventloop.state` | State of the event loop (`active`, `idle`) |
-| `v8js.gc.type` | Type of GC (`major`, `minor`, `incremental`, `weakcb`) |
+| `v8js.gc.type` | Type of Garbage Collection (`major`, `minor`, `incremental`, `weakcb`) |
 | `v8js.heap.space.name` | Name of the V8 heap space |
 | `v8js.resource.type` | Type of active resource |
 
