@@ -293,14 +293,23 @@ export function getSourceFromLocation(
 export function wrapFields(
   type: Maybe<graphqlTypes.GraphQLObjectType & OtelPatched>,
   tracer: api.Tracer,
-  getConfig: () => GraphQLInstrumentationParsedConfig
+  getConfig: () => GraphQLInstrumentationParsedConfig,
+  visitedInThisTraversal: Set<graphqlTypes.GraphQLObjectType> = new Set()
 ): void {
-  if (!type || type[OTEL_PATCHED_SYMBOL]) {
+  if (!type) {
     return;
   }
-  const fields = type.getFields();
 
-  type[OTEL_PATCHED_SYMBOL] = true;
+  // Use a per-traversal visited Set to prevent infinite recursion on circular
+  // type references (e.g. User.friends -> User), while still re-checking all
+  // types on every execute call so we catch resolvers added after the first
+  // traversal (e.g. Apollo Server wraps resolvers post schema-creation).
+  if (visitedInThisTraversal.has(type)) {
+    return;
+  }
+  visitedInThisTraversal.add(type);
+
+  const fields = type.getFields();
 
   Object.keys(fields).forEach(key => {
     const field = fields[key];
@@ -309,14 +318,22 @@ export function wrapFields(
       return;
     }
 
-    if (field.resolve) {
+    // Wrap the resolver if it exists and hasn't been wrapped yet.
+    // Check each resolver individually because Apollo Server (and similar
+    // frameworks) adds wrappers to resolvers after the initial schema
+    // creation, so a type-level "already patched" flag would cause those
+    // late-added resolvers to be missed on subsequent execute calls.
+    if (
+      field.resolve &&
+      !(field.resolve as OtelPatched)[OTEL_PATCHED_SYMBOL]
+    ) {
       field.resolve = wrapFieldResolver(tracer, getConfig, field.resolve);
     }
 
     if (field.type) {
       const unwrappedTypes = unwrapType(field.type);
       for (const unwrappedType of unwrappedTypes) {
-        wrapFields(unwrappedType, tracer, getConfig);
+        wrapFields(unwrappedType, tracer, getConfig, visitedInThisTraversal);
       }
     }
   });
@@ -395,8 +412,8 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
 > &
   OtelPatched {
   if (
-    (wrappedFieldResolver as OtelPatched)[OTEL_PATCHED_SYMBOL] ||
-    typeof fieldResolver !== 'function'
+    typeof fieldResolver !== 'function' ||
+    (fieldResolver as OtelPatched)[OTEL_PATCHED_SYMBOL]
   ) {
     return fieldResolver!;
   }
