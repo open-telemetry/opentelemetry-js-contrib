@@ -70,6 +70,39 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 | [`captureUncaughtException`](./src/types.ts#L31) | `bool` | - | `false` | Whether to emit a `LogRecord` for uncaught exceptions (severity `FATAL`). Uses the `uncaughtExceptionMonitor` process event. |
 | [`applyCustomExceptionAttributes`](./src/types.ts#L43) | `function` | - | `undefined` | Optional callback to attach custom attributes to emitted exception log records. |
 
+## Semantic Conventions
+
+This instrumentation emits metrics defined in the experimental `@opentelemetry/semantic-conventions` (`^1.29.0`) for the `nodejs` and `v8js` runtime namespaces.
+
+### Metrics collected
+
+| Metric | Short Description |
+|---|---|
+| `nodejs.eventloop.time` | Cumulative duration the event loop has been in each state |
+| `nodejs.eventloop.utilization` | Event loop utilization ratio (0.0–1.0) |
+| `nodejs.eventloop.delay.min` | Minimum event loop delay |
+| `nodejs.eventloop.delay.max` | Maximum event loop delay |
+| `nodejs.eventloop.delay.mean` | Mean event loop delay |
+| `nodejs.eventloop.delay.stddev` | Standard deviation of event loop delay |
+| `nodejs.eventloop.delay.p50` | 50th-percentile event loop delay |
+| `nodejs.eventloop.delay.p90` | 90th-percentile event loop delay |
+| `nodejs.eventloop.delay.p99` | 99th-percentile event loop delay |
+| `v8js.gc.duration` | Garbage Collection pause duration by type |
+| `v8js.memory.heap.space.size` | Total pre-allocated size of a heap space |
+| `v8js.memory.heap.used` | Used heap memory in a heap space |
+| `v8js.memory.heap.space.available_size` | Available size in a heap space |
+| `v8js.memory.heap.space.physical_size` | Committed (physical) size of a heap space |
+| `v8js.resource.active` | Count of active resources keeping the event loop alive |
+
+### Attributes collected
+
+| Attribute | Short Description |
+|---|---|
+| `nodejs.eventloop.state` | State of the event loop (`active`, `idle`) |
+| `v8js.gc.type` | Type of Garbage Collection (`major`, `minor`, `incremental`, `weakcb`) |
+| `v8js.heap.space.name` | Name of the V8 heap space |
+| `v8js.resource.type` | Type of active resource |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

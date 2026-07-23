@@ -138,12 +138,11 @@ export const METRIC_NODEJS_EVENTLOOP_UTILIZATION =
 export const METRIC_V8JS_GC_DURATION = 'v8js.gc.duration' as const;
 
 /**
- * Maximum heap size allowed by the V8 engine.
- *
- * @note The value can be retrieved from value `heap_size_limit` of [`v8.getHeapStatistics()`](https://nodejs.org/api/v8.html#v8getheapstatistics).
- * This represents the absolute ceiling the heap can grow to, controlled by `--max-old-space-size` or V8 defaults.
+ * Deprecated, use `v8js.memory.heap.space.size` instead.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `v8js.memory.heap.space.size`.
  */
 export const METRIC_V8JS_MEMORY_HEAP_LIMIT = 'v8js.memory.heap.limit' as const;
 
