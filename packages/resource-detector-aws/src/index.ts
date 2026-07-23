@@ -9,4 +9,6 @@ export {
   awsEcsDetector,
   awsEksDetector,
   awsLambdaDetector,
+  AwsLambdaDetector,
+  type AwsLambdaDetectorConfig,
 } from './detectors';
