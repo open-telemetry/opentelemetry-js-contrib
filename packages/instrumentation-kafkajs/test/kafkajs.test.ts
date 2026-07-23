@@ -27,6 +27,7 @@ import {
   METRIC_MESSAGING_PROCESS_DURATION,
   METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES,
   METRIC_MESSAGING_CLIENT_OPERATION_DURATION,
+  ATTR_MESSAGING_KAFKA_CLUSTER_ID,
 } from '../src/semconv';
 import {
   getTestSpans,
@@ -1639,6 +1640,476 @@ describe('instrumentation-kafkajs', () => {
           },
         ],
       });
+    });
+  });
+
+  describe('cluster id', () => {
+    let origAdmin: typeof kafkajs.Kafka.prototype.admin;
+
+    beforeEach(() => {
+      origAdmin = kafkajs.Kafka.prototype.admin;
+    });
+
+    afterEach(() => {
+      kafkajs.Kafka.prototype.admin = origAdmin;
+    });
+
+    function makeMockAdmin(opts: {
+      clusterId?: string;
+      rejectConnect?: boolean;
+    }): kafkajs.Admin {
+      return {
+        connect: () =>
+          opts.rejectConnect
+            ? Promise.reject(new Error('connect failed'))
+            : Promise.resolve(),
+        describeCluster: () =>
+          Promise.resolve({
+            clusterId: opts.clusterId ?? 'test-cluster',
+            brokers: [],
+            controller: 0,
+          }),
+        disconnect: () => Promise.resolve(),
+      } as unknown as kafkajs.Admin;
+    }
+
+    function initProducerOnInstance(kafkaInst: Kafka): Producer {
+      patchProducerSend(
+        async (): Promise<RecordMetadata[]> => [
+          {
+            topicName: 'test-topic',
+            partition: 0,
+            errorCode: 0,
+            offset: '0',
+            timestamp: '0',
+          },
+        ]
+      );
+      instrumentation.disable();
+      instrumentation.enable();
+      return kafkaInst.producer();
+    }
+
+    it('sets messaging.kafka.cluster.id on producer spans after successful admin fetch', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-success',
+        brokers: ['mock:9092'],
+      });
+      kafkajs.Kafka.prototype.admin = () =>
+        makeMockAdmin({ clusterId: 'my-cluster-123' });
+
+      producer = initProducerOnInstance(kafkaForTest);
+      // Drain the micro-task queue so the async admin promise chain can complete.
+      await new Promise(resolve => setImmediate(resolve));
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        'my-cluster-123'
+      );
+    });
+
+    it('does not set messaging.kafka.cluster.id when admin connect fails', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-err',
+        brokers: ['mock:9092'],
+      });
+      kafkajs.Kafka.prototype.admin = () =>
+        makeMockAdmin({ rejectConnect: true });
+
+      producer = initProducerOnInstance(kafkaForTest);
+      await new Promise(resolve => setImmediate(resolve));
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+    });
+
+    it('marks instance permanently unavailable when broker returns empty cluster id', async () => {
+      let adminCallCount = 0;
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-empty',
+        brokers: ['mock:9092'],
+      });
+      kafkajs.Kafka.prototype.admin = () => {
+        adminCallCount++;
+        return makeMockAdmin({ clusterId: '' });
+      };
+
+      initProducerOnInstance(kafkaForTest);
+      await new Promise(resolve => setImmediate(resolve));
+      // Second producer() call — instance should be permanently unavailable, no new admin call.
+      initProducerOnInstance(kafkaForTest);
+      await new Promise(resolve => setImmediate(resolve));
+
+      assert.strictEqual(adminCallCount, 1);
+    });
+
+    it('skips cluster id fetch when kafka instance has no admin() method', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-noadmin',
+        brokers: ['mock:9092'],
+      });
+      // Shadow the prototype admin with a non-function on the instance level.
+      (kafkaForTest as unknown as Record<string, unknown>)['admin'] =
+        'not-a-function';
+
+      producer = initProducerOnInstance(kafkaForTest);
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+    });
+
+    it('deduplicates concurrent fetch requests for the same kafka instance', async () => {
+      let adminCallCount = 0;
+      let resolveConnect!: () => void;
+      const connectLatch = new Promise<void>(r => {
+        resolveConnect = r;
+      });
+
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-dedup',
+        brokers: ['mock:9092'],
+      });
+      kafkajs.Kafka.prototype.admin = () => {
+        adminCallCount++;
+        return {
+          connect: () => connectLatch,
+          describeCluster: () =>
+            Promise.resolve({
+              clusterId: 'dedup-cluster',
+              brokers: [],
+              controller: 0,
+            }),
+          disconnect: () => Promise.resolve(),
+        } as unknown as kafkajs.Admin;
+      };
+
+      patchProducerSend(
+        async (): Promise<RecordMetadata[]> => [
+          {
+            topicName: 't',
+            partition: 0,
+            errorCode: 0,
+            offset: '0',
+            timestamp: '0',
+          },
+        ]
+      );
+      instrumentation.disable();
+      instrumentation.enable();
+
+      kafkaForTest.producer();
+      kafkaForTest.producer();
+
+      assert.strictEqual(
+        adminCallCount,
+        1,
+        'second producer() while fetch is in-flight should not open a second admin connection'
+      );
+      resolveConnect(); // release latch to avoid open handle
+    });
+
+    it('triggers background refresh when producer span cluster id TTL expires', async () => {
+      let adminCallCount = 0;
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-ttl-producer',
+        brokers: ['mock:9092'],
+      });
+      kafkajs.Kafka.prototype.admin = () => {
+        adminCallCount++;
+        return makeMockAdmin({ clusterId: 'refreshed-cluster' });
+      };
+
+      const realNow = Date.now;
+      try {
+        Date.now = () => 1000;
+        producer = initProducerOnInstance(kafkaForTest);
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(adminCallCount, 1);
+      } finally {
+        Date.now = realNow;
+      }
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+      await new Promise(resolve => setImmediate(resolve));
+      assert.strictEqual(
+        adminCallCount,
+        2,
+        'background refresh should trigger after TTL'
+      );
+    });
+
+    it('triggers background refresh when consumer span cluster id TTL expires', async () => {
+      let adminCallCount = 0;
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-ttl-consumer',
+        brokers: ['mock:9092'],
+      });
+      kafkajs.Kafka.prototype.admin = () => {
+        adminCallCount++;
+        return makeMockAdmin({ clusterId: 'refreshed-cluster' });
+      };
+
+      const origConsumerProto = kafkajs.Kafka.prototype.consumer;
+      let consumerRunConfig: ConsumerRunConfig | undefined;
+      kafkajs.Kafka.prototype.consumer = function (...args): Consumer {
+        const cons: Consumer = origConsumerProto.apply(this, args);
+        cons.run = function (cfg?: ConsumerRunConfig): Promise<void> {
+          consumerRunConfig = cfg;
+          return Promise.resolve();
+        };
+        return cons;
+      };
+
+      const realNow = Date.now;
+      try {
+        Date.now = () => 1000;
+        instrumentation.disable();
+        instrumentation.enable();
+        const cons = kafkaForTest.consumer({ groupId: 'ttl-test-group' });
+        cons.run({ eachMessage: async () => {} });
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(adminCallCount, 1);
+      } finally {
+        Date.now = realNow;
+        kafkajs.Kafka.prototype.consumer = origConsumerProto;
+      }
+
+      await consumerRunConfig?.eachMessage?.({
+        topic: 'test-topic',
+        partition: 0,
+        message: {
+          key: Buffer.from('key', 'utf8'),
+          value: Buffer.from('value', 'utf8'),
+          timestamp: '1234',
+          size: 10,
+          attributes: 1,
+          offset: '0',
+        },
+        heartbeat: async () => {},
+        pause: () => () => {},
+      });
+      await new Promise(resolve => setImmediate(resolve));
+      assert.strictEqual(
+        adminCallCount,
+        2,
+        'background refresh should trigger after TTL on consumer span'
+      );
+    });
+
+    it('does not throw and recovers cluster id when admin() throws synchronously', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-admin-throws',
+        brokers: ['mock:9092'],
+      });
+      // Scoped to this instance: throw on the first attempt, then recover. This
+      // lets us assert the throw was contained AND did not permanently wedge the
+      // client (marker cleared, not marked unavailable), without depending on
+      // admin() call counts.
+      let shouldThrow = true;
+      (kafkaForTest as unknown as { admin: () => kafkajs.Admin }).admin =
+        () => {
+          if (shouldThrow) {
+            throw new Error('admin boom');
+          }
+          return makeMockAdmin({ clusterId: 'recovered-cluster' });
+        };
+
+      // A synchronous throw in the fetch must not break producer() or send(); the
+      // attribute is simply omitted.
+      producer = initProducerOnInstance(kafkaForTest);
+      await new Promise(resolve => setImmediate(resolve));
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+      let spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+
+      // Once admin recovers, a new client creation must resolve the id and it must
+      // appear on later spans — proving the throw cleared the in-flight marker and
+      // did not permanently disable the instance.
+      shouldThrow = false;
+      producer = initProducerOnInstance(kafkaForTest);
+      await new Promise(resolve => setImmediate(resolve));
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+      spans = getTestSpans();
+      assert.strictEqual(
+        spans[spans.length - 1].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        'recovered-cluster'
+      );
+    });
+
+    it('best-effort disconnects when admin.connect() throws synchronously', async () => {
+      let disconnectCalled = false;
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-connect-throws',
+        brokers: ['mock:9092'],
+      });
+      kafkajs.Kafka.prototype.admin = () =>
+        ({
+          connect: () => {
+            throw new Error('connect boom');
+          },
+          describeCluster: () =>
+            Promise.resolve({ clusterId: 'x', brokers: [], controller: 0 }),
+          disconnect: () => {
+            disconnectCalled = true;
+            return Promise.resolve();
+          },
+        }) as unknown as kafkajs.Admin;
+
+      producer = initProducerOnInstance(kafkaForTest);
+      await new Promise(resolve => setImmediate(resolve));
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+      assert.strictEqual(
+        disconnectCalled,
+        true,
+        'the admin created before the synchronous throw should be disconnected'
+      );
+    });
+
+    it('does not block message flow when the admin lookup hangs', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-hang',
+        brokers: ['mock:9092'],
+      });
+      // connect() never resolves. The unref'd 10s deadline guards the socket, but
+      // message flow must proceed immediately with the attribute simply omitted.
+      kafkajs.Kafka.prototype.admin = () =>
+        ({
+          connect: () => new Promise<void>(() => {}),
+          describeCluster: () =>
+            Promise.resolve({ clusterId: 'x', brokers: [], controller: 0 }),
+          disconnect: () => Promise.resolve(),
+        }) as unknown as kafkajs.Admin;
+
+      producer = initProducerOnInstance(kafkaForTest);
+      await new Promise(resolve => setImmediate(resolve));
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+    });
+
+    it('keeps a cached cluster id and does not disable refreshes when a later refresh returns empty', async () => {
+      let adminCallCount = 0;
+      let clusterIdToReturn = 'good-1';
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-empty-after-good',
+        brokers: ['mock:9092'],
+      });
+      kafkajs.Kafka.prototype.admin = () => {
+        adminCallCount++;
+        return makeMockAdmin({ clusterId: clusterIdToReturn });
+      };
+
+      const realNow = Date.now;
+      let fakeNow = 1000;
+      const TTL = 60 * 60 * 1000;
+      try {
+        Date.now = () => fakeNow;
+
+        // Fetch #1: resolves a good cluster id.
+        producer = initProducerOnInstance(kafkaForTest);
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(adminCallCount, 1);
+
+        // A later refresh (past the TTL) comes back empty.
+        clusterIdToReturn = '';
+        fakeNow = 1000 + TTL + 1;
+        await producer.send({
+          topic: 'test-topic',
+          messages: [{ value: 'a' }],
+        });
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(
+          adminCallCount,
+          2,
+          'a stale id should trigger a background refresh'
+        );
+        // The previously-resolved id is retained despite the empty response.
+        let spans = getTestSpans();
+        assert.strictEqual(
+          spans[spans.length - 1].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+          'good-1'
+        );
+
+        // Past the TTL again: the instance must NOT have been permanently disabled,
+        // so another refresh is still attempted (the old behavior marked it
+        // unavailable and would stop at 2).
+        fakeNow = fakeNow + TTL + 1;
+        await producer.send({
+          topic: 'test-topic',
+          messages: [{ value: 'b' }],
+        });
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(
+          adminCallCount,
+          3,
+          'an empty refresh must not permanently disable future refreshes'
+        );
+        spans = getTestSpans();
+        assert.strictEqual(
+          spans[spans.length - 1].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+          'good-1'
+        );
+      } finally {
+        Date.now = realNow;
+      }
     });
   });
 
