@@ -38,7 +38,7 @@ export class ConsoleInstrumentation extends InstrumentationBase<ConsoleInstrumen
   private _isEmitting = false;
   // Lazily created in _patchConsole(); `declare` avoids an inline initializer
   // that would run after super()'s constructor-time enable() and wipe it.
-  private declare _originals: Map<string, (...args: unknown[]) => void>;
+  declare private _originals: Map<string, (...args: unknown[]) => void>;
 
   constructor(config: ConsoleInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
