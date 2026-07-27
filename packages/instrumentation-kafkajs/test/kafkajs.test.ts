@@ -1886,10 +1886,11 @@ describe('instrumentation-kafkajs', () => {
         clientId: 'cluster-id-no-admin-call',
         brokers: ['mock:9092'],
       });
-      (kafkaForTest as unknown as { admin: () => kafkajs.Admin }).admin = () => {
-        adminCallCount++;
-        return {} as unknown as kafkajs.Admin;
-      };
+      (kafkaForTest as unknown as { admin: () => kafkajs.Admin }).admin =
+        () => {
+          adminCallCount++;
+          return {} as unknown as kafkajs.Admin;
+        };
 
       producer = initProducerOnInstance(kafkaForTest);
       (producer as unknown as Record<string, unknown>)['clusterId'] = () =>
@@ -1954,7 +1955,9 @@ describe('instrumentation-kafkajs', () => {
         clientId: 'cluster-id-eachbatch',
         brokers: ['mock:9092'],
       });
-      consumer = kafkaForTest.consumer({ groupId: 'cluster-id-eachbatch-group' });
+      consumer = kafkaForTest.consumer({
+        groupId: 'cluster-id-eachbatch-group',
+      });
       (consumer as unknown as Record<string, unknown>)['clusterId'] = () =>
         'batch-consumer-cluster';
       consumer.run({ eachBatch: async () => {} });

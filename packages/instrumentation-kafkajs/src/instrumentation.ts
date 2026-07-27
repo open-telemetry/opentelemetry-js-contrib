@@ -163,15 +163,15 @@ const HISTOGRAM_BUCKET_BOUNDARIES = [
 // is almost always available.
 function _readClusterId(client: unknown): string | undefined {
   if (client === null || client === undefined) return undefined;
-  if (
-    typeof (client as Record<string, unknown>)['clusterId'] !== 'function'
-  ) {
+  if (typeof (client as Record<string, unknown>)['clusterId'] !== 'function') {
     return undefined;
   }
   try {
-    const id = (client as {
-      clusterId(): string | null | undefined;
-    }).clusterId();
+    const id = (
+      client as {
+        clusterId(): string | null | undefined;
+      }
+    ).clusterId();
     return id != null && id !== '' ? id : undefined;
   } catch {
     return undefined;
