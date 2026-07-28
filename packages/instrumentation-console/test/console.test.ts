@@ -171,13 +171,17 @@ describe('ConsoleInstrumentation', () => {
       // { enabled: true } triggers enable() from InstrumentationBase's
       // constructor, patching console and saving originals.
       const inst = new ConsoleInstrumentation({ enabled: true });
-      assert.notStrictEqual(
-        console.log,
-        beforeLog,
-        'expected console.log to be patched after construction'
-      );
-
-      inst.disable();
+      try {
+        assert.notStrictEqual(
+          console.log,
+          beforeLog,
+          'expected console.log to be patched after construction'
+        );
+      } finally {
+        // Ensure console is unpatched even if the assertion above fails so we
+        // don't leave console.log double-patched for subsequent tests.
+        inst.disable();
+      }
       assert.strictEqual(
         console.log,
         beforeLog,
