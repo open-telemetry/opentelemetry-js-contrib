@@ -128,8 +128,8 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     if (!this._allowEventName(eventName)) {
       return undefined;
     }
-    const xpath = getElementXPath(element, true);
     try {
+      const xpath = getElementXPath(element, true);
       const span = this.tracer.startSpan(
         eventName,
         {

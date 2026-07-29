@@ -303,6 +303,35 @@ describe('UserInteractionInstrumentation', () => {
       sandbox.clock.tick(10);
     });
 
+    it('should invoke the listener when the XPath cannot be computed', () => {
+      // getElementXPath reads `localName` on every sibling it walks, which
+      // throws for a node from a cross-origin frame, e.g., an iframe injected
+      // by a browser extension
+      const crossOriginNode = document.createElement('iframe');
+      Object.defineProperty(crossOriginNode, 'localName', {
+        get() {
+          throw new Error('Permission denied to access property "localName"');
+        },
+      });
+      const element = createButton();
+      const parent = document.createElement('div');
+      parent.appendChild(crossOriginNode);
+      parent.appendChild(element);
+      document.body.appendChild(parent);
+
+      let called = false;
+      try {
+        fakeClickInteraction(() => {
+          called = true;
+        }, element);
+      } finally {
+        document.body.removeChild(parent);
+      }
+
+      assert.strictEqual(called, true, 'should invoke the listener');
+      assert.equal(exportSpy.args.length, 0, 'should NOT export any span');
+    });
+
     it('should handle task with navigation change', done => {
       fakeClickInteraction(() => {
         history.pushState(
