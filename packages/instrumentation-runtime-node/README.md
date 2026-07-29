@@ -60,9 +60,9 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 
 | name                                        | type  | unit        | default | description                                                                                                                                                                                                                                                                                     |
 |---------------------------------------------|-------|-------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`monitoringPrecision`](./src/types.ts#L10) | `int` | millisecond | `10`    | The resolution in milliseconds for the event loop delay histogram (`perf_hooks.monitorEventLoopDelay`). A smaller value gives finer-grained delay samples at the cost of more overhead. Has no effect on event loop utilization or time metrics. |
-| [`captureUncaughtException`](./src/types.ts#L16) | `bool` | - | `false` | Whether to emit a `LogRecord` for uncaught exceptions (severity `FATAL`). Uses the `uncaughtExceptionMonitor` process event. |
-| [`applyCustomExceptionAttributes`](./src/types.ts#L21) | `function` | - | `undefined` | Optional callback to attach custom attributes to emitted exception log records. |
+| [`monitoringPrecision`](./src/types.ts) | `int` | millisecond | `10`    | The resolution in milliseconds for the event loop delay histogram (`perf_hooks.monitorEventLoopDelay`). A smaller value gives finer-grained delay samples at the cost of more overhead. Has no effect on event loop utilization or time metrics. |
+| [`captureUncaughtException`](./src/types.ts) | `bool` | - | `false` | Whether to emit a `LogRecord` for uncaught exceptions (severity `FATAL`). Uses the `uncaughtExceptionMonitor` process event. |
+| [`applyCustomExceptionAttributes`](./src/types.ts) | `function` | - | `undefined` | Optional callback to attach custom attributes to emitted exception log records. |
 
 ## Semantic Conventions
 
