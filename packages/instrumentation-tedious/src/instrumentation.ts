@@ -207,16 +207,17 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
         // prefix separated by "|" per the SQL Server semconv spec.
         // https://opentelemetry.io/docs/specs/semconv/database/sql-server/#:~:text=%5B1%5D%20db%2Enamespace
         const instanceName = this.config?.options?.instanceName;
-        const dbNamespace = instanceName
-          ? `${instanceName}|${databaseName}`
-          : databaseName;
+        const dbNamespace =
+          instanceName && databaseName
+            ? `${instanceName}|${databaseName}`
+            : databaseName;
         attributes[ATTR_DB_NAMESPACE] = dbNamespace;
         attributes[ATTR_DB_SYSTEM_NAME] =
           DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
         attributes[ATTR_DB_QUERY_TEXT] = sql;
         attributes[ATTR_DB_COLLECTION_NAME] = request.table;
 
-        const operationName = getOperationName(operation, sql);
+        const operationName = getOperationName(operation);
         if (operationName !== undefined) {
           attributes[ATTR_DB_OPERATION_NAME] = operationName;
         }
@@ -233,7 +234,12 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
         const spanCollection =
           operation === 'callProcedure' ? sql : request.table;
         const span = thisPlugin.tracer.startSpan(
-          getSpanName(operationName, dbNamespace, spanCollection),
+          getSpanName(
+            operationName,
+            dbNamespace,
+            spanCollection,
+            DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER
+          ),
           {
             kind: api.SpanKind.CLIENT,
             attributes,

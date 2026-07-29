@@ -144,8 +144,7 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'SELECT master',
-      operationName: 'SELECT',
+      name: 'master',
       sql: queryString,
       parentSpan,
     });
@@ -164,8 +163,7 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'SELECT master',
-      operationName: 'SELECT',
+      name: 'master',
       sql: queryString,
       error: /incorrect syntax/i,
       errorType: /^RequestError$/,
@@ -188,8 +186,7 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'SELECT master',
-      operationName: 'SELECT',
+      name: 'master',
       sql: queryString,
       procCount: 1,
       statementCount: 3,
@@ -206,8 +203,7 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'SELECT master',
-      operationName: 'SELECT',
+      name: 'master',
       sql: queryString,
       procCount: 0,
       statementCount: 3,
@@ -223,8 +219,7 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'CREATE master',
-      operationName: 'CREATE',
+      name: 'master',
       sql: /create or alter procedure/i,
     });
     assertSpan(spans[1], {
@@ -246,19 +241,16 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'IF master',
-      operationName: 'IF',
+      name: 'master',
       sql: /create table/i,
       statementCount: 2,
     });
     assertSpan(spans[1], {
-      name: 'INSERT master',
-      operationName: 'INSERT',
+      name: 'master',
       sql: /INSERT INTO/,
     });
     assertSpan(spans[2], {
-      name: 'INSERT master',
-      operationName: 'INSERT',
+      name: 'master',
       sql: /INSERT INTO/,
     });
   });
@@ -280,18 +272,15 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'CREATE master',
-      operationName: 'CREATE',
+      name: 'master',
       sql: sql.create,
     });
     assertSpan(spans[1], {
-      name: 'USE master',
-      operationName: 'USE',
+      name: 'master',
       sql: sql.use,
     });
     assertSpan(spans[2], {
-      name: 'SELECT temp_otel_db',
-      operationName: 'SELECT',
+      name: 'temp_otel_db',
       sql: sql.select,
       database: 'temp_otel_db',
     });
@@ -304,14 +293,12 @@ describe('tedious', () => {
     assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
-      name: 'IF master',
-      operationName: 'IF',
+      name: 'master',
       sql: /create table/i,
       statementCount: 2,
     });
     assertSpan(spans[1], {
-      name: 'INSERT master',
-      operationName: 'INSERT',
+      name: 'master',
       sql: /insert bulk/,
       procCount: 0,
     });
