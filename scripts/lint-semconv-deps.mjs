@@ -41,9 +41,18 @@ function getAllWorkspaceDirs() {
     fs.readFileSync(path.join(TOP, 'package.json'), 'utf8')
   );
   return pj.workspaces
-    .map(wsGlob => globSync(path.join(wsGlob, 'package.json')))
+    .map(wsGlob => globSync(`${wsGlob}/package.json`, { posix: true }))
     .flat()
     .map(path.dirname);
+}
+
+// `glob` always wants forward slashes in its patterns, even on Windows,
+// where `path.join` produces backslashes.
+function toGlobPattern(...parts) {
+  return path
+    .join(...parts)
+    .split(path.sep)
+    .join('/');
 }
 
 function lintSemconvDeps(excludePaths) {
@@ -72,7 +81,9 @@ function lintSemconvDeps(excludePaths) {
     }
 
     // Rule: The incubating entry-point should not be used.
-    const srcFiles = globSync(path.join(wsDir, 'src', '**', '*.ts'));
+    const srcFiles = globSync(toGlobPattern(wsDir, 'src', '**', '*.ts'), {
+      posix: true,
+    });
     const usesIncubatingRe =
       /import\s+\{?[^{;]*\s+from\s+'@opentelemetry\/semantic-conventions\/incubating'/s;
     for (let srcFile of srcFiles) {
