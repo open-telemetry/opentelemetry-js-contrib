@@ -8,11 +8,12 @@
  *
  * - `callProcedure` → `"EXECUTE"`
  * - `execBulkLoad`  → `"BULK INSERT"`
+ * - everything else → the method name as-is (e.g. `"execSql"`, `"prepare"`)
  */
-export function getOperationName(tediousMethod: string): string | undefined {
+export function getOperationName(tediousMethod: string): string {
   if (tediousMethod === 'callProcedure') return 'EXECUTE';
   if (tediousMethod === 'execBulkLoad') return 'BULK INSERT';
-  return undefined;
+  return tediousMethod;
 }
 
 /**
