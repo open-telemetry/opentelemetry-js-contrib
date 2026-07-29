@@ -255,7 +255,7 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
               message: err.message,
             });
 
-            const errorType = err.constructor.name;
+            const errorType = err?.constructor?.name ?? 'Error';
             span.setAttribute(ATTR_ERROR_TYPE, errorType);
 
             // db.response.status_code carries the SQL Server error number when
