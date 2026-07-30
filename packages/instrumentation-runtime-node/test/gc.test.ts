@@ -4,12 +4,39 @@
  */
 import * as assert from 'assert';
 import * as sinon from 'sinon';
+import * as perf_hooks from 'node:perf_hooks';
 import { Meter } from '@opentelemetry/api';
 
 import { GCCollector } from '../src/metrics/gcCollector';
 import { METRIC_V8JS_GC_DURATION } from '../src/semconv';
 
 describe('GCCollector', function () {
+  it('should observe with buffered: false to prevent unbounded buffer growth', function () {
+    const observeStub = sinon.stub();
+    const disconnectStub = sinon.stub();
+    const PerformanceObserverStub = sinon
+      .stub(perf_hooks, 'PerformanceObserver')
+      .callsFake(
+        () => ({ observe: observeStub, disconnect: disconnectStub }) as any
+      );
+
+    try {
+      const collector = new GCCollector();
+      collector.internalEnable();
+
+      sinon.assert.calledOnce(observeStub);
+      const [options] = observeStub.firstCall.args;
+      assert.deepStrictEqual(options.entryTypes, ['gc']);
+      assert.strictEqual(
+        options.buffered,
+        false,
+        'buffered must be false to prevent unbounded heap growth'
+      );
+    } finally {
+      PerformanceObserverStub.restore();
+    }
+  });
+
   it('should configure GC duration histogram with sub-second buckets', function () {
     const createHistogram = sinon.stub().returns({
       record: sinon.stub(),

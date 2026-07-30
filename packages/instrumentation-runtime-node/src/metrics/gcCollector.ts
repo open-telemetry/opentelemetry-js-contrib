@@ -59,7 +59,7 @@ export class GCCollector extends BaseCollector {
   }
 
   internalEnable(): void {
-    this._observer.observe({ entryTypes: ['gc'] });
+    this._observer.observe({ entryTypes: ['gc'], buffered: false });
   }
 
   internalDisable(): void {
