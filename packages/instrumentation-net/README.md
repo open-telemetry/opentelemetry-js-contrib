@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`net`](http://nodejs.org/dist/latest/docs/api/net.html) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`net`](http://nodejs.org/dist/latest/docs/api/net.html) module.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -24,44 +24,32 @@ npm install --save @opentelemetry/instrumentation-net
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { NetInstrumentation } = require('@opentelemetry/instrumentation-net');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new NetInstrumentation(),
-    // other instrumentations
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Semantic Conventions
 
-This instrumentation implements Semantic Conventions (semconv) v1.7.0. Since then, many networking-related semantic conventions (in semconv v1.21.0 and v1.23.1) were stabilized. As of `@opentelemetry/instrumentation-net@0.53.0` support has been added for migrating to the stable semantic conventions using the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable as follows:
+This instrumentation uses stable semantic conventions for networking attributes.
 
-1. Upgrade to the latest version of this instrumentation package.
-2. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` to emit both old and stable semantic conventions. (The [`http` token is used to control the `net.*` attributes](https://github.com/open-telemetry/opentelemetry-js/issues/5663#issuecomment-3349204546).)
-3. Modify alerts, dashboards, metrics, and other processes in your Observability system to use the stable semantic conventions.
-4. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http` to emit only the stable semantic conventions.
+The `instrumentation-net` versions 0.64.0 and later emit the stable v1.23.0+ semantic conventions.
 
-By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` is not set or does not include `http`, then the old v1.7.0 semconv is used.
-The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new networking semconv, after which a new minor version will use the new semconv by default and drop support for the old semconv.
-See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/) and [deprecated network attributes](https://opentelemetry.io/docs/specs/semconv/registry/attributes/network/#deprecated-network-attributes) for details.
-
-Attributes collected:
-
-| Old semconv     | Stable semconv          | Description                                                                       |
-| --------------- | ----------------------- | --------------------------------------------------------------------------------- |
-| `net.transport` | `network.transport`     | One of `pipe`, `unix`, `ip_tcp` (old) or `tcp` (stable)                           |
-| `net.peer.name` | `server.address`        | Host name or the IPC file path                                                    |
-| `net.peer.port` | `server.port`           | Remote port number                                                                |
-| `net.peer.ip`   | `network.peer.address`  | Peer address of the network connection - IP address or Unix domain socket name.   |
-| `net.host.ip`   | `network.local.address` | Local address of the network connection - IP address or Unix domain socket name.  |
-| `net.host.port` | `network.local.port`    | Local port number of the network connection.                                      |
+| Attribute               | Description                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| `network.transport`     | One of `tcp` or `pipe`                                                           |
+| `server.address`        | Host name or the IPC file path                                                   |
+| `server.port`           | Remote port number                                                               |
+| `network.peer.address`  | Peer address of the network connection - IP address or Unix domain socket name.  |
+| `network.local.address` | Local address of the network connection - IP address or Unix domain socket name. |
+| `network.local.port`    | Local port number of the network connection.                                     |
 
 
 ## Useful links

@@ -21,21 +21,22 @@ npm install --save @opentelemetry/instrumentation-typeorm
 
 ## Usage
 
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
+
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { TypeormInstrumentation } = require('@opentelemetry/instrumentation-typeorm');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new TypeormInstrumentation({
       // see below for available configuration
     }),
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ### Instrumentation Options

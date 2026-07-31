@@ -1,0 +1,109 @@
+[
+	{
+		"scope": "https://api.openai.com:443",
+		"method": "POST",
+		"path": "/v1/responses",
+		"body": {
+			"model": "gpt-4o-mini",
+			"input": "What is deep research by OpenAI?",
+			"tools": [
+				{
+					"type": "file_search",
+					"vector_store_ids": ["<vector_store_id>"],
+					"max_num_results": 2
+				}
+			],
+			"include": ["file_search_call.results"]
+		},
+		"status": 200,
+		"response": {
+			"id": "resp_67ca09c5efe0819096d0511c92b8c890096610f474011cc0",
+			"object": "response",
+			"created_at": 1741294021,
+			"status": "completed",
+			"error": null,
+			"incomplete_details": null,
+			"instructions": null,
+			"max_output_tokens": null,
+			"model": "gpt-4.1-2025-04-14",
+			"output": [
+				{
+					"type": "file_search_call",
+					"id": "fs_67c09ccea8c48191ade9367e3ba71515",
+					"status": "completed",
+					"queries": ["What is deep research?"],
+					"results": [
+						{
+							"id": "file-2dtbBZdjtDKS8eqWxqbgDi",
+							"filename": "deep_research_blog.pdf",
+							"score": 0.95,
+							"text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl eget aliquam aliquet, nunc nisl aliquet nisl, eget aliquam nisl nisl eget nisl. Sed euismod, nisl eget aliquam aliquet, nunc nisl aliquet nisl, eget aliquam nisl nisl eget nisl."
+						}
+					]
+				},
+				{
+					"id": "msg_67c09cd3091c819185af2be5d13d87de",
+					"type": "message",
+					"role": "assistant",
+					"content": [
+						{
+							"type": "output_text",
+							"text": "Deep research is a sophisticated capability that allows for extensive inquiry and synthesis of information across various domains. It is designed to conduct multi-step research tasks, gather data from multiple online sources, and provide comprehensive reports similar to what a research analyst would produce. This functionality is particularly useful in fields requiring detailed and accurate information...",
+							"annotations": [
+								{
+									"type": "file_citation",
+									"index": 992,
+									"file_id": "file-2dtbBZdjtDKS8eqWxqbgDi",
+									"filename": "deep_research_blog.pdf"
+								},
+								{
+									"type": "file_citation",
+									"index": 1176,
+									"file_id": "file-2dtbBZdjtDKS8eqWxqbgDi",
+									"filename": "deep_research_blog.pdf"
+								}
+							]
+						}
+					]
+				}
+			],
+			"parallel_tool_calls": true,
+			"previous_response_id": null,
+			"reasoning": {
+				"effort": null,
+				"summary": null
+			},
+			"store": true,
+			"temperature": 1.0,
+			"text": {
+				"format": {
+					"type": "text"
+				}
+			},
+			"tool_choice": "auto",
+			"tools": [
+				{
+					"type": "file_search",
+					"vector_store_ids": ["<vector_store_id>"]
+				}
+			],
+			"top_p": 1.0,
+			"truncation": "disabled",
+			"usage": {
+				"input_tokens": 291,
+				"output_tokens": 23,
+				"output_tokens_details": {
+					"reasoning_tokens": 0
+				},
+				"total_tokens": 314
+			},
+			"user": null,
+			"metadata": {}
+		},
+		"rawHeaders": {
+			"content-type": "application/json",
+			"date": "Fri, 11 Jul 2025 07:02:40 GMT"
+		},
+		"responseIsBinary": false
+	}
+]

@@ -1,23 +1,12 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import { trace } from '@opentelemetry/api';
 import { hrTimeToMilliseconds, hrTimeToNanoseconds } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import * as tracing from '@opentelemetry/sdk-trace-base';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
@@ -63,7 +52,9 @@ describe('LongTaskInstrumentation', () => {
     dummySpanExporter = new DummySpanExporter();
     exportSpy = sandbox.stub(dummySpanExporter, 'export');
     webTracerProvider = new WebTracerProvider({
-      spanProcessors: [new tracing.SimpleSpanProcessor(dummySpanExporter)],
+      spanProcessors: [
+        new SimpleSpanProcessor({ exporter: dummySpanExporter }),
+      ],
     });
     webTracerProvider.register();
 

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { Attributes } from '@opentelemetry/api';
@@ -19,7 +8,6 @@ import {
   ATTR_HTTP_ROUTE,
   ATTR_HTTP_REQUEST_METHOD,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_HTTP_METHOD } from './semconv';
 import type * as Hapi from '@hapi/hapi';
 import {
   HapiLayerType,
@@ -29,7 +17,6 @@ import {
   ServerExtDirectInput,
 } from './internal-types';
 import { AttributeNames } from './enums/AttributeNames';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 
 export function getPluginName<T>(plugin: Hapi.Plugin<T>): string {
   if ((plugin as Hapi.PluginNameVersion).name) {
@@ -74,7 +61,6 @@ export const isPatchableExtMethod = (
 
 export const getRouteMetadata = (
   route: Hapi.ServerRoute,
-  semconvStability: SemconvStability,
   pluginName?: string
 ): {
   attributes: Attributes;
@@ -83,17 +69,12 @@ export const getRouteMetadata = (
   const attributes: Attributes = {
     [ATTR_HTTP_ROUTE]: route.path,
   };
-  if (semconvStability & SemconvStability.OLD) {
-    attributes[ATTR_HTTP_METHOD] = route.method;
-  }
-  if (semconvStability & SemconvStability.STABLE) {
-    // Note: This currently does *not* normalize the method name to uppercase
-    // and conditionally include `http.request.method.original` as described
-    // at https://opentelemetry.io/docs/specs/semconv/http/http-spans/
-    // These attributes are for a *hapi* span, and not the parent HTTP span,
-    // so the HTTP span guidance doesn't strictly apply.
-    attributes[ATTR_HTTP_REQUEST_METHOD] = route.method;
-  }
+  // Note: This currently does *not* normalize the method name to uppercase
+  // and conditionally include `http.request.method.original` as described
+  // at https://opentelemetry.io/docs/specs/semconv/http/http-spans/
+  // These attributes are for a *hapi* span, and not the parent HTTP span,
+  // so the HTTP span guidance doesn't strictly apply.
+  attributes[ATTR_HTTP_REQUEST_METHOD] = route.method;
 
   let name;
   if (pluginName) {
@@ -110,11 +91,17 @@ export const getRouteMetadata = (
 
 export const getExtMetadata = (
   extPoint: Hapi.ServerRequestExtType,
-  pluginName?: string
+  pluginName?: string,
+  methodName?: string
 ): {
   attributes: Attributes;
   name: string;
 } => {
+  let baseName = `ext - ${extPoint}`;
+  if (methodName && methodName !== 'method') {
+    // method is the default name for the extension in the ServerExtEventsObject format.
+    baseName = `ext - ${extPoint} - ${methodName}`;
+  }
   if (pluginName) {
     return {
       attributes: {
@@ -122,7 +109,7 @@ export const getExtMetadata = (
         [AttributeNames.HAPI_TYPE]: HapiLayerType.EXT,
         [AttributeNames.PLUGIN_NAME]: pluginName,
       },
-      name: `${pluginName}: ext - ${extPoint}`,
+      name: `${pluginName}: ${baseName}`,
     };
   }
   return {
@@ -130,7 +117,7 @@ export const getExtMetadata = (
       [AttributeNames.EXT_TYPE]: extPoint,
       [AttributeNames.HAPI_TYPE]: HapiLayerType.EXT,
     },
-    name: `ext - ${extPoint}`,
+    name: baseName,
   };
 };
 

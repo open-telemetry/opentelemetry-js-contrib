@@ -1,52 +1,50 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
-import {
-  NodeTracerProvider,
-  NodeTracerConfig,
-} from '@opentelemetry/sdk-trace-node';
+
+import { context, propagation, trace } from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
+import {
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
+import type { Resource } from '@opentelemetry/resources';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+
 import {
   getTestMemoryExporter,
   setTestMemoryExporter,
 } from './otel-provider-api';
 
-export const registerInstrumentationTestingProvider = (
-  config?: NodeTracerConfig
-): NodeTracerProvider => {
-  const spanProcessors = config?.spanProcessors
-    ? [...config.spanProcessors]
-    : [];
+export function registerInstrumentationTestingProvider(config?: {
+  resource: Resource;
+}): TracerProvider {
+  const spanProcessors = [];
 
   setTestMemoryExporter(new InMemorySpanExporter());
 
-  spanProcessors.push(new SimpleSpanProcessor(getTestMemoryExporter()!));
+  spanProcessors.push(
+    new SimpleSpanProcessor({ exporter: getTestMemoryExporter()! })
+  );
 
-  if (process.env.OTEL_EXPORTER_JAEGER_AGENT_HOST) {
-    spanProcessors.push(new SimpleSpanProcessor(new JaegerExporter()));
-  }
-
-  const otelTestingProvider = new NodeTracerProvider({
+  const tracerProvider = new TracerProvider({
     ...config,
     spanProcessors,
   });
+  trace.setGlobalTracerProvider(tracerProvider);
 
-  otelTestingProvider.register();
-  return otelTestingProvider;
-};
+  context.setGlobalContextManager(new AsyncLocalStorageContextManager());
+
+  const propagator = new CompositePropagator({
+    propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
+  });
+  propagation.setGlobalPropagator(propagator);
+
+  return tracerProvider;
+}

@@ -1,32 +1,11 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import { Attributes, SpanStatusCode, diag, Span } from '@opentelemetry/api';
 import type { Collection } from 'mongoose';
 import { MongooseResponseCustomAttributesFunction } from './types';
-import {
-  safeExecuteInTheMiddle,
-  SemconvStability,
-} from '@opentelemetry/instrumentation';
-import {
-  ATTR_DB_MONGODB_COLLECTION,
-  ATTR_DB_NAME,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from './semconv';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
   ATTR_DB_COLLECTION_NAME,
   ATTR_DB_NAMESPACE,
@@ -35,31 +14,14 @@ import {
 } from '@opentelemetry/semantic-conventions';
 
 export function getAttributesFromCollection(
-  collection: Collection,
-  dbSemconvStability: SemconvStability,
-  netSemconvStability: SemconvStability
+  collection: Collection
 ): Attributes {
   const attrs: Attributes = {};
 
-  if (dbSemconvStability & SemconvStability.OLD) {
-    attrs[ATTR_DB_MONGODB_COLLECTION] = collection.name;
-    attrs[ATTR_DB_NAME] = collection.conn.name;
-    attrs[ATTR_DB_USER] = collection.conn.user;
-  }
-  if (dbSemconvStability & SemconvStability.STABLE) {
-    attrs[ATTR_DB_COLLECTION_NAME] = collection.name;
-    attrs[ATTR_DB_NAMESPACE] = collection.conn.name;
-    // db.user has no stable replacement
-  }
-
-  if (netSemconvStability & SemconvStability.OLD) {
-    attrs[ATTR_NET_PEER_NAME] = collection.conn.host;
-    attrs[ATTR_NET_PEER_PORT] = collection.conn.port;
-  }
-  if (netSemconvStability & SemconvStability.STABLE) {
-    attrs[ATTR_SERVER_ADDRESS] = collection.conn.host;
-    attrs[ATTR_SERVER_PORT] = collection.conn.port;
-  }
+  attrs[ATTR_DB_COLLECTION_NAME] = collection.name;
+  attrs[ATTR_DB_NAMESPACE] = collection.conn.name;
+  attrs[ATTR_SERVER_ADDRESS] = collection.conn.host;
+  attrs[ATTR_SERVER_PORT] = collection.conn.port;
 
   return attrs;
 }

@@ -38,3 +38,10 @@ tedious:
     commands: npm run test
     # See typescript@5 note above.
     peerDependencies: typescript@5
+  - versions:
+      include: ">=20 <21"
+      mode: latest-majors
+    node: '>=22'
+    commands: npm run test
+    # See typescript@5 note above.
+    peerDependencies: typescript@5

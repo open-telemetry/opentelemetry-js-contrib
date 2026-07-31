@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -26,8 +15,6 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import { getClientAttributes } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
@@ -38,7 +25,6 @@ import {
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_DB_STATEMENT } from '../semconv';
 import type { MultiErrorReply } from './internal-types';
 
 const OTEL_OPEN_SPANS = Symbol(
@@ -48,7 +34,7 @@ const MULTI_COMMAND_OPTIONS = Symbol(
   'opentelemetry.instrumentation.redis.multi_command_options'
 );
 
-interface MutliCommandInfo {
+interface MultiCommandInfo {
   span: Span;
   commandName: string;
   commandArgs: Array<string | Buffer>;
@@ -56,26 +42,13 @@ interface MutliCommandInfo {
 
 export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
-  private _semconvStability: SemconvStability;
 
   constructor(config: RedisInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._semconvStability = config.semconvStability
-      ? config.semconvStability
-      : semconvStabilityFromStr(
-          'database',
-          process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-        );
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
     super.setConfig(config);
-    this._semconvStability = config.semconvStability
-      ? config.semconvStability
-      : semconvStabilityFromStr(
-          'database',
-          process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-        );
   }
 
   protected init() {
@@ -134,7 +107,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
 
     const multiCommanderModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/client/multi-command.js`,
-      ['^1.0.0', '^5.0.0'],
+      ['^1.0.0', '^5.0.0', '^6.0.0'],
       (moduleExports: any) => {
         const redisClientMultiCommandPrototype =
           moduleExports?.default?.prototype;
@@ -181,7 +154,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
 
     const clientIndexModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/client/index.js`,
-      ['^1.0.0', '^5.0.0'],
+      ['^1.0.0', '^5.0.0', '^6.0.0'],
       (moduleExports: any) => {
         const redisClientPrototype = moduleExports?.default?.prototype;
 
@@ -242,14 +215,88 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
       }
     );
 
+    const clusterIndexModule = new InstrumentationNodeModuleFile(
+      `${basePackageName}/dist/lib/cluster/index.js`,
+      ['^1.0.0', '^5.0.0', '^6.0.0'],
+      (moduleExports: any) => {
+        const redisClusterPrototype = moduleExports?.default?.prototype;
+
+        // Patch MULTI to store cluster options on the multi command object
+        // so that _traceClientCommand can read connection attributes later
+        if (redisClusterPrototype?.MULTI) {
+          if (isWrapped(redisClusterPrototype?.MULTI)) {
+            this._unwrap(redisClusterPrototype, 'MULTI');
+          }
+          this._wrap(
+            redisClusterPrototype,
+            'MULTI',
+            this._getPatchRedisClusterMulti()
+          );
+        }
+
+        return moduleExports;
+      },
+      (moduleExports: any) => {
+        const redisClusterPrototype = moduleExports?.default?.prototype;
+        if (isWrapped(redisClusterPrototype?.MULTI)) {
+          this._unwrap(redisClusterPrototype, 'MULTI');
+        }
+      }
+    );
+
+    const clusterMultiCommanderModule = new InstrumentationNodeModuleFile(
+      `${basePackageName}/dist/lib/cluster/multi-command.js`,
+      ['^1.0.0', '^5.0.0', '^6.0.0'],
+      (moduleExports: any) => {
+        const redisClusterMultiCommandPrototype =
+          moduleExports?.default?.prototype;
+
+        if (isWrapped(redisClusterMultiCommandPrototype?.exec)) {
+          this._unwrap(redisClusterMultiCommandPrototype, 'exec');
+        }
+        this._wrap(
+          redisClusterMultiCommandPrototype,
+          'exec',
+          this._getPatchMultiCommandsExec(false)
+        );
+
+        if (isWrapped(redisClusterMultiCommandPrototype?.addCommand)) {
+          this._unwrap(redisClusterMultiCommandPrototype, 'addCommand');
+        }
+        this._wrap(
+          redisClusterMultiCommandPrototype,
+          'addCommand',
+          this._getPatchClusterMultiCommandsAddCommand()
+        );
+
+        return moduleExports;
+      },
+      (moduleExports: any) => {
+        const redisClusterMultiCommandPrototype =
+          moduleExports?.default?.prototype;
+        if (isWrapped(redisClusterMultiCommandPrototype?.exec)) {
+          this._unwrap(redisClusterMultiCommandPrototype, 'exec');
+        }
+        if (isWrapped(redisClusterMultiCommandPrototype?.addCommand)) {
+          this._unwrap(redisClusterMultiCommandPrototype, 'addCommand');
+        }
+      }
+    );
+
     return new InstrumentationNodeModuleDefinition(
       basePackageName,
-      ['^1.0.0', '^5.0.0'],
+      ['^1.0.0', '^5.0.0', '^6.0.0'],
       (moduleExports: any) => {
         return moduleExports;
       },
       () => {},
-      [commanderModuleFile, multiCommanderModule, clientIndexModule]
+      [
+        commanderModuleFile,
+        multiCommanderModule,
+        clientIndexModule,
+        clusterIndexModule,
+        clusterMultiCommanderModule,
+      ]
     );
   }
 
@@ -331,6 +378,34 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     };
   }
 
+  private _getPatchClusterMultiCommandsAddCommand() {
+    const plugin = this;
+    return function addCommandWrapper(original: Function) {
+      return function addCommandPatch(
+        this: any,
+        firstKeyOrArgs: any,
+        isReadonly: any,
+        args: Array<string | Buffer>
+      ) {
+        // Cluster addCommand is called in two ways:
+        // 1. Internally by named commands: (firstKey, isReadonly, args, transformReply)
+        // 2. Directly by user via .addCommand([...]): (args) - single array argument
+        const redisArgs = Array.isArray(firstKeyOrArgs) ? firstKeyOrArgs : args;
+        return plugin._traceClientCommand(original, this, arguments, redisArgs);
+      };
+    };
+  }
+  private _getPatchRedisClusterMulti() {
+    return function multiPatchWrapper(original: Function) {
+      return function multiPatch(this: any) {
+        const multiRes = original.apply(this, arguments);
+        // Store cluster options so _traceClientCommand can read connection attributes
+        multiRes[MULTI_COMMAND_OPTIONS] = this._options;
+        return multiRes;
+      };
+    };
+  }
+
   private _getPatchRedisClientMulti() {
     return function multiPatchWrapper(original: Function) {
       return function multiPatch(this: any) {
@@ -358,11 +433,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     return function connectWrapper(original: Function) {
       return function patchedConnect(this: any): Promise<void> {
         const options = this.options;
-        const attributes = getClientAttributes(
-          plugin._diag,
-          options,
-          plugin._semconvStability
-        );
+        const attributes = getClientAttributes(options);
 
         const span = plugin.tracer.startSpan(
           `${RedisInstrumentationV4_V5.COMPONENT}-connect`,
@@ -413,23 +484,12 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     const dbStatementSerializer =
       this.getConfig().dbStatementSerializer || defaultDbStatementSerializer;
 
-    const attributes = getClientAttributes(
-      this._diag,
-      clientOptions,
-      this._semconvStability
-    );
-    if (this._semconvStability & SemconvStability.STABLE) {
-      attributes[ATTR_DB_OPERATION_NAME] = commandName;
-    }
+    const attributes = getClientAttributes(clientOptions);
+    attributes[ATTR_DB_OPERATION_NAME] = commandName;
     try {
       const dbStatement = dbStatementSerializer(commandName, commandArgs);
       if (dbStatement != null) {
-        if (this._semconvStability & SemconvStability.OLD) {
-          attributes[ATTR_DB_STATEMENT] = dbStatement;
-        }
-        if (this._semconvStability & SemconvStability.STABLE) {
-          attributes[ATTR_DB_QUERY_TEXT] = dbStatement;
-        }
+        attributes[ATTR_DB_QUERY_TEXT] = dbStatement;
       }
     } catch (e) {
       this._diag.error('dbStatementSerializer throw an exception', e, {
@@ -465,7 +525,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
       );
     } else {
       const redisClientMultiCommand = res as {
-        [OTEL_OPEN_SPANS]?: Array<MutliCommandInfo>;
+        [OTEL_OPEN_SPANS]?: Array<MultiCommandInfo>;
       };
       redisClientMultiCommand[OTEL_OPEN_SPANS] =
         redisClientMultiCommand[OTEL_OPEN_SPANS] || [];
@@ -479,7 +539,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
   }
 
   private _endSpansWithRedisReplies(
-    openSpans: Array<MutliCommandInfo>,
+    openSpans: Array<MultiCommandInfo>,
     replies: unknown[],
     isPipeline = false
   ) {
@@ -512,9 +572,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
           ? [null, currCommandRes]
           : [currCommandRes, undefined];
 
-      if (this._semconvStability & SemconvStability.STABLE) {
-        span.setAttribute(ATTR_DB_OPERATION_NAME, operationName);
-      }
+      span.setAttribute(ATTR_DB_OPERATION_NAME, operationName);
 
       this._endSpanWithResponse(span, allCommands[i], commandArgs, res, err);
     }

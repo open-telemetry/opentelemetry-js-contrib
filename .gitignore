@@ -40,11 +40,10 @@ dist/
 # TypeScript v1 declaration files
 typings/
 
-# Optional npm cache directory
+# caches
 .npm
-
-# Optional eslint cache
 .eslintcache
+*.tsbuildinfo
 
 # Optional REPL history
 .node_repl_history

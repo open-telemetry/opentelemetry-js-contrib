@@ -42,11 +42,6 @@ components:
     - legendecas
   packages/id-generator-aws-xray:
     - jj22ee
-  packages/propagation-utils:
-    - dyladan
-    - pichlermarc
-    - legendecas
-    - blumamir
   packages/redis-common: []
     # Unmaintained
   packages/contrib-test-utils:
@@ -94,6 +89,9 @@ components:
     - trentm
   packages/instrumentation-cassandra-driver:
     - seemk
+  packages/instrumentation-console:
+    - jacksonweber
+    - hectorhdzg
   packages/instrumentation-connect: []
     # Unmaintained
   packages/instrumentation-dns: []
@@ -102,14 +100,14 @@ components:
     - JamieDanielson
     - pkanal
     - raphael-theriault-swi
-  packages/instrumentation-fastify: []
-    # Unmaintained
   packages/instrumentation-generic-pool: []
     # Unmaintained
   packages/instrumentation-graphql:
     - obecny
   packages/instrumentation-hapi: []
     # Unmaintained
+  packages/instrumentation-host-metrics:
+    - legendecas
   packages/instrumentation-ioredis:
     - blumamir
     - naseemkullah
@@ -117,6 +115,10 @@ components:
     # Unmaintained
   packages/instrumentation-koa: []
     # Unmaintained
+  packages/instrumentation-langchain:
+    - hectorhdzg
+    - yiyuan-he
+    - mxiamxia
   packages/instrumentation-memcached: []
     # Unmaintained
   packages/instrumentation-mongodb:
@@ -125,8 +127,8 @@ components:
     # Unmaintained
   packages/instrumentation-mysql2:
     - raphael-theriault-swi
-  packages/instrumentation-nestjs-core: []
-    # Unmaintained
+  packages/instrumentation-nestjs-core:
+    - neilime
   packages/instrumentation-net:
     - seemk
   packages/instrumentation-oracledb:
@@ -134,11 +136,14 @@ components:
     - sharadraju
   packages/instrumentation-runtime-node:
     - d4nyll
+    - raphael-theriault-swi
   packages/instrumentation-openai:
+    - hectorhdzg
     - trentm
     - seemk
   packages/instrumentation-pg:
     - maryliag
+    - raphael-theriault-swi
   packages/instrumentation-pino:
     - seemk
   packages/instrumentation-redis:
@@ -176,6 +181,8 @@ components:
   packages/propagator-aws-xray:
     - jj22ee
   packages/propagator-aws-xray-lambda: [ ]
-  # Unmaintained
+    # Unmaintained
+  packages/sql-common:
+    - raphael-theriault-swi
 ignored-authors:
   - renovate-bot

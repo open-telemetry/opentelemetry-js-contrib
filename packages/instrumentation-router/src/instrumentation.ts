@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as api from '@opentelemetry/api';
@@ -30,12 +19,17 @@ import type * as Router from 'router';
 import * as types from './internal-types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import * as constants from './constants';
+import {
+  RouterConstants,
+  MODULE_NAME,
+  V1_CONSTANTS,
+  V2_CONSTANTS,
+} from './constants';
 import * as utils from './utils';
 import AttributeNames from './enums/AttributeNames';
 import LayerType from './enums/LayerType';
 
-const supportedVersions = ['>=1.0.0 <2'];
+const supportedVersions = ['>=1.0.0 <3'];
 
 export class RouterInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
@@ -43,10 +37,11 @@ export class RouterInstrumentation extends InstrumentationBase {
   }
 
   private _moduleVersion?: string;
+  private _constants?: RouterConstants;
 
   init() {
     const module = new InstrumentationNodeModuleDefinition(
-      constants.MODULE_NAME,
+      MODULE_NAME,
       supportedVersions,
       (moduleExports, moduleVersion) => {
         this._moduleVersion = moduleVersion;
@@ -58,30 +53,36 @@ export class RouterInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleFile(
         'router/lib/layer.js',
         supportedVersions,
-        moduleExports => {
+        (moduleExports, moduleVersion) => {
           const Layer: any = moduleExports;
-          if (isWrapped(Layer.prototype.handle_request)) {
-            this._unwrap(Layer.prototype, 'handle_request');
+          const isV2 = moduleVersion?.startsWith('2.');
+          this._constants ??= isV2 ? V2_CONSTANTS : V1_CONSTANTS;
+          const requestHandlerName = this._constants.requestHandlerName;
+          const errorHandlerName = this._constants.errorHandlerName;
+          if (isWrapped(Layer.prototype[requestHandlerName])) {
+            this._unwrap(Layer.prototype, requestHandlerName);
           }
           this._wrap(
             Layer.prototype,
-            'handle_request',
+            requestHandlerName,
             this._requestHandlerPatcher.bind(this)
           );
-          if (isWrapped(Layer.prototype.handle_error)) {
-            this._unwrap(Layer.prototype, 'handle_error');
+          if (isWrapped(Layer.prototype[errorHandlerName])) {
+            this._unwrap(Layer.prototype, errorHandlerName);
           }
           this._wrap(
             Layer.prototype,
-            'handle_error',
+            errorHandlerName,
             this._errorHandlerPatcher.bind(this)
           );
           return moduleExports;
         },
         moduleExports => {
           const Layer: any = moduleExports;
-          this._unwrap(Layer.prototype, 'handle_request');
-          this._unwrap(Layer.prototype, 'handle_error');
+          if (this._constants !== undefined) {
+            this._unwrap(Layer.prototype, this._constants.requestHandlerName);
+            this._unwrap(Layer.prototype, this._constants.errorHandlerName);
+          }
           return moduleExports;
         }
       )
@@ -91,7 +92,7 @@ export class RouterInstrumentation extends InstrumentationBase {
   }
 
   // Define handle_request wrapper separately to ensure the signature has the correct length
-  private _requestHandlerPatcher(original: Router.Layer['handle_request']) {
+  private _requestHandlerPatcher(original: Router.RequestHandler) {
     const instrumentation = this;
     return function wrapped_handle_request(
       this: Router.Layer,
@@ -101,21 +102,24 @@ export class RouterInstrumentation extends InstrumentationBase {
     ) {
       // Skip creating spans if the registered handler is of invalid length, because
       // we know router will ignore those
-      if (utils.isInternal(this.handle) || this.handle.length > 3) {
+      if (
+        this.handle.length > 3 ||
+        utils.isInternal(this.handle, instrumentation._constants)
+      ) {
         return original.call(this, req, res, next);
       }
-      const { context, wrappedNext } = instrumentation._setupSpan(
-        this,
-        req,
-        res,
-        next
-      );
-      return api.context.with(context, original, this, req, res, wrappedNext);
+      const { context, wrappedNext, ensureFallbackListener } =
+        instrumentation._setupSpan(this, req, res, next);
+      try {
+        return api.context.with(context, original, this, req, res, wrappedNext);
+      } finally {
+        ensureFallbackListener();
+      }
     };
   }
 
   // Define handle_error wrapper separately to ensure the signature has the correct length
-  private _errorHandlerPatcher(original: Router.Layer['handle_error']) {
+  private _errorHandlerPatcher(original: Router.ErrorRequestHandler) {
     const instrumentation = this;
     return function wrapped_handle_request(
       this: Router.Layer,
@@ -126,24 +130,27 @@ export class RouterInstrumentation extends InstrumentationBase {
     ) {
       // Skip creating spans if the registered handler is of invalid length, because
       // we know router will ignore those
-      if (utils.isInternal(this.handle) || this.handle.length !== 4) {
+      if (
+        this.handle.length !== 4 ||
+        utils.isInternal(this.handle, instrumentation._constants)
+      ) {
         return original.call(this, error, req, res, next);
       }
-      const { context, wrappedNext } = instrumentation._setupSpan(
-        this,
-        req,
-        res,
-        next
-      );
-      return api.context.with(
-        context,
-        original,
-        this,
-        error,
-        req,
-        res,
-        wrappedNext
-      );
+      const { context, wrappedNext, ensureFallbackListener } =
+        instrumentation._setupSpan(this, req, res, next);
+      try {
+        return api.context.with(
+          context,
+          original,
+          this,
+          error,
+          req,
+          res,
+          wrappedNext
+        );
+      } finally {
+        ensureFallbackListener();
+      }
     };
   }
 
@@ -178,26 +185,63 @@ export class RouterInstrumentation extends InstrumentationBase {
       },
       parent
     ) as types.InstrumentationSpan;
-    const endSpan = utils.once(span.end.bind(span));
 
     utils.renameHttpSpan(parentSpan, layer.method, route);
-    // make sure spans are ended at least when response is finished
-    res.prependOnceListener('finish', endSpan);
+
+    // Span lifecycle:
+    //   - Normal path: the layer calls `next(err?)`, which runs `wrappedNext`,
+    //     ending the span and removing the fallback `close` listener (if one
+    //     was attached).
+    //   - Layer ends the response itself (e.g. `res.send(...)` and never
+    //     calls `next`): the `close` listener fires when the underlying
+    //     connection closes and ends the span.
+    //
+    // The fallback listener is only attached AFTER the original handler
+    // returns, and only if `next` wasn't already called synchronously. For
+    // the overwhelmingly common case (synchronous `next()`) NO listener is
+    // registered at all, so listener count never approaches Node's default
+    // MaxListeners=10 even with dozens of middleware (issue #3458). This
+    // mirrors the pattern adopted by `instrumentation-express` in #3462.
+    let spanEnded = false;
+    let listenerAttached = false;
+    const onClose = () => {
+      if (!spanEnded) {
+        spanEnded = true;
+        span.end();
+      }
+    };
 
     const wrappedNext: Router.NextFunction = err => {
       if (err) {
         span.recordException(err);
       }
-      endSpan();
-      if (parent) {
-        return api.context.with(parent, next, undefined, err);
+      if (!spanEnded) {
+        spanEnded = true;
+        if (listenerAttached) {
+          res.removeListener('close', onClose);
+        }
+        span.end();
       }
-      return next(err);
+
+      const activeContext = api.context.active();
+      const nextContext = parentSpan
+        ? api.trace.setSpan(activeContext, parentSpan)
+        : activeContext;
+
+      return api.context.with(nextContext, next, undefined, err);
+    };
+
+    const ensureFallbackListener = () => {
+      if (!spanEnded && !listenerAttached) {
+        listenerAttached = true;
+        res.once('close', onClose);
+      }
     };
 
     return {
       context: api.trace.setSpan(parent, span),
       wrappedNext,
+      ensureFallbackListener,
     };
   }
 }

@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`redis`](https://github.com/NodeRedis/node_redis) module versions `>=2.6.0 <6`, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`redis`](https://github.com/NodeRedis/node_redis) module versions `>=2.6.0 <6`.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -17,27 +17,26 @@ npm install --save @opentelemetry/instrumentation-redis
 
 ### Supported Versions
 
-- [`redis`](https://www.npmjs.com/package/redis) versions `>=2.6.0 <6`
+- [`redis`](https://www.npmjs.com/package/redis) versions `>=2.6.0 <7`
 
 ## Usage
 
 OpenTelemetry Redis Instrumentation allows the user to automatically collect trace data and export them to the backend of choice, to give observability to distributed systems when working with [redis](https://www.npmjs.com/package/redis).
 
-To load a specific instrumentation (**redis** in this case), specify it in the registerInstrumentations' configuration
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
 
-```javascript
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+```js
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { RedisInstrumentation } = require('@opentelemetry/instrumentation-redis');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new RedisInstrumentation(),
   ],
-})
+});
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 See [examples/redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/redis) for a short example.
@@ -75,34 +74,15 @@ const redisInstrumentation = new RedisInstrumentation({
 
 ## Semantic Conventions
 
+The `instrumentation-redis` versions 0.68.0 and later emit the stable v1.33.0+ semantic conventions.
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md) ("old" conventions).
-
-It also supports the new stable semantic conventions introduced in [Version 1.33.0]
-By default, old semantic conventions are used. Use the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable to control which version to emit.
-
-Attributes collected:
-
-### Old Semantic Conventions (default)
-
-| Attribute              | Short Description                                            |
-|------------------------|--------------------------------------------------------------|
-| `db.connection_string` | URL to Redis server address, of the form `redis://host:port` |
-| `db.statement`         | Executed Redis statement                                     |
-| `db.system`            | Database identifier; always `redis`                          |
-| `net.peer.name`        | Hostname or IP of the connected Redis server                 |
-| `net.peer.port`        | Port of the connected Redis server                           |
-
-### Stable Semantic Conventions (v1.33.0)
-
-| Attribute                 | Short Description                                      |
-|---------------------------|--------------------------------------------------------|
-| `db.operation.name`       | Redis command name                                     |
-| `db.operation.batch.size` | Number of commands in a Redis `MULTI/EXEC` transaction |
-| `db.query.text`           | The database query being executed                      |
-| `db.system.name`          | Database identifier; always `redis`                    |
-| `server.address`          | Hostname or IP of the connected Redis server           |
-| `server.port`             | Port of the connected Redis server                     |
+| Attribute           | Short Description                                    |
+|---------------------|------------------------------------------------------|
+| `db.operation.name` | Redis command name                                   |
+| `db.query.text`     | The database query being executed                    |
+| `db.system.name`    | Database identifier; always `redis`                  |
+| `server.address`    | Hostname or IP of the connected Redis server         |
+| `server.port`       | Port of the connected Redis server                   |
 
 ## Useful links
 

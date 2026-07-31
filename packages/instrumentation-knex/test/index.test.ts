@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -20,12 +9,12 @@ import {
   context,
   trace,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 
 import { KnexInstrumentation } from '../src';
@@ -35,12 +24,12 @@ const plugin = new KnexInstrumentation({
 
 import knex from 'knex';
 // @ts-ignore
-import * as BetterSqlite3Dialect from 'knex/lib/dialects/better-sqlite3';
+import * as BetterSqlite3Dialect from 'knex/lib/dialects/better-sqlite3/index.js';
 
 describe('Knex instrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  const provider = new NodeTracerProvider({
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
+  const provider = new TracerProvider({
     spanProcessors: [spanProcessor],
   });
   plugin.setTracerProvider(provider);
@@ -151,9 +140,38 @@ describe('Knex instrumentation', () => {
       await client.raw(statement);
 
       const [span] = memoryExporter.getFinishedSpans();
-      const limitedStatement = span?.attributes?.['db.statement'] as string;
+      const limitedStatement = span?.attributes?.['db.query.text'] as string;
       assert.strictEqual(limitedStatement.length, 52);
       assert.ok(statement.startsWith(limitedStatement.substring(0, 50)));
+    });
+
+    it('should read connection attributes when connection is configured as a function', async () => {
+      const functionClient = knex({
+        client: 'sqlite3',
+        connection: () => ({ filename: ':memory:' }),
+        useNullAsDefault: true,
+      });
+
+      try {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await functionClient.raw("select date('now')");
+            parentSpan.end();
+
+            const [span] = memoryExporter.getFinishedSpans();
+            assert.ok(span, 'expected a span');
+            assert.strictEqual(
+              span.attributes['db.namespace'],
+              ':memory:',
+              'db.namespace should be populated from function-based connection'
+            );
+          }
+        );
+      } finally {
+        await functionClient.destroy();
+      }
     });
 
     it("should correctly capture the DB's system name even with custom client implementations", async () => {
@@ -623,6 +641,56 @@ describe('Knex instrumentation', () => {
   });
 });
 
+describe('utils: connectionString parsing', () => {
+  it('should extract database name from connectionString', () => {
+    const { extractDatabaseFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractDatabaseFromConnectionString(
+        'postgres://user:pass@localhost:5432/mydb'
+      ),
+      'mydb'
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString('mysql://user:pass@host/testdb'),
+      'testdb'
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString(undefined),
+      undefined
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString('not-a-url'),
+      undefined
+    );
+  });
+
+  it('should extract host from connectionString', () => {
+    const { extractHostFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractHostFromConnectionString('postgres://user:pass@myhost:5432/mydb'),
+      'myhost'
+    );
+    assert.strictEqual(extractHostFromConnectionString('not-a-url'), undefined);
+    assert.strictEqual(extractHostFromConnectionString(undefined), undefined);
+  });
+
+  it('should extract port from connectionString', () => {
+    const { extractPortFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractPortFromConnectionString(
+        'postgres://user:pass@localhost:5432/mydb'
+      ),
+      5432
+    );
+    assert.strictEqual(
+      extractPortFromConnectionString('postgres://user:pass@localhost/mydb'),
+      undefined // no port specified
+    );
+    assert.strictEqual(extractPortFromConnectionString('not-a-url'), undefined);
+    assert.strictEqual(extractPortFromConnectionString(undefined), undefined);
+  });
+});
+
 const assertSpans = (
   actualSpans: any[],
   expectedSpans: any[],
@@ -652,18 +720,18 @@ const assertSpans = (
       assertMatch(span.name, new RegExp(expected.op));
       assertMatch(span.name, new RegExp(':memory:'));
       assert.strictEqual(
-        span.attributes['db.system'],
+        span.attributes['db.system.name'],
         customAssertOptions.dbSystem
       );
-      assert.strictEqual(span.attributes['db.name'], ':memory:');
-      assert.strictEqual(span.attributes['db.sql.table'], expected.table);
-      assert.strictEqual(span.attributes['db.statement'], expected.statement);
+      assert.strictEqual(span.attributes['db.namespace'], ':memory:');
+      assert.strictEqual(span.attributes['db.collection.name'], expected.table);
+      assert.strictEqual(span.attributes['db.query.text'], expected.statement);
       assert.strictEqual(
         typeof span.attributes['knex.version'],
         'string',
         'knex.version not specified'
       );
-      assert.strictEqual(span.attributes['db.operation'], expected.op);
+      assert.strictEqual(span.attributes['db.operation.name'], expected.op);
       assert.strictEqual(
         span.parentSpanContext?.spanId,
         expected.parentSpan?.spanContext().spanId

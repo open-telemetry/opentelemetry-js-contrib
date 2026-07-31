@@ -1,27 +1,13 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 const originalSetTimeout = window.setTimeout;
 
 import { trace } from '@opentelemetry/api';
-import {
-  registerInstrumentations,
-  isWrapped,
-} from '@opentelemetry/instrumentation';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import * as tracing from '@opentelemetry/sdk-trace-base';
+import * as tracing from '@opentelemetry/sdk-trace';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
@@ -94,7 +80,9 @@ describe('UserInteractionInstrumentation', () => {
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');
       webTracerProvider = new WebTracerProvider({
-        spanProcessors: [new tracing.SimpleSpanProcessor(dummySpanExporter)],
+        spanProcessors: [
+          new tracing.SimpleSpanProcessor({ exporter: dummySpanExporter }),
+        ],
       });
       webTracerProvider.register();
 
@@ -145,6 +133,42 @@ describe('UserInteractionInstrumentation', () => {
       document.body.dispatchEvent(new Event('bodyEvent2'));
       document.dispatchEvent(new Event('docEvent'));
       assert.strictEqual(called, false);
+    });
+
+    it('should not retain detached elements in listener bookkeeping when removeEventListener is never called', () => {
+      // Simulates the SPA framework pattern (Vue's createFnInvoker, React's
+      // bound handlers) where the same listener function is reused across
+      // many elements, and removeEventListener is never called on unmount -
+      // cleanup is expected to happen via garbage collection of the element
+      // instead. See open-telemetry/opentelemetry-js-contrib#3539.
+      const sharedListener = function () {};
+      const elements: HTMLElement[] = [];
+      for (let i = 0; i < 50; i++) {
+        const element = createButton();
+        elements.push(element);
+        element.addEventListener('click', sharedListener);
+      }
+
+      const instrumentationAny = userInteractionInstrumentation as any;
+      const wrappedListeners = instrumentationAny._wrappedListeners;
+
+      const listener2Type = wrappedListeners.get(sharedListener);
+      assert.ok(listener2Type, 'listener should be tracked');
+      const element2patched = listener2Type.get('click');
+      assert.ok(element2patched, 'click bookkeeping should exist');
+
+      // The bug: the per-element bookkeeping is a plain Map keyed by the
+      // HTMLElement itself, so every element added above is strongly
+      // retained here even though none of them were ever attached to the
+      // document and nothing else in the test references them anymore.
+      assert.ok(
+        element2patched instanceof WeakMap,
+        'per-element listener bookkeeping should be a WeakMap so detached ' +
+          'elements are not strongly retained (#3539)'
+      );
+
+      // Drop the only other reference we held.
+      elements.length = 0;
     });
 
     it('should not double-register a listener', () => {
@@ -279,6 +303,35 @@ describe('UserInteractionInstrumentation', () => {
       sandbox.clock.tick(10);
     });
 
+    it('should invoke the listener when the XPath cannot be computed', () => {
+      // getElementXPath reads `localName` on every sibling it walks, which
+      // throws for a node from a cross-origin frame, e.g., an iframe injected
+      // by a browser extension
+      const crossOriginNode = document.createElement('iframe');
+      Object.defineProperty(crossOriginNode, 'localName', {
+        get() {
+          throw new Error('Permission denied to access property "localName"');
+        },
+      });
+      const element = createButton();
+      const parent = document.createElement('div');
+      parent.appendChild(crossOriginNode);
+      parent.appendChild(element);
+      document.body.appendChild(parent);
+
+      let called = false;
+      try {
+        fakeClickInteraction(() => {
+          called = true;
+        }, element);
+      } finally {
+        document.body.removeChild(parent);
+      }
+
+      assert.strictEqual(called, true, 'should invoke the listener');
+      assert.equal(exportSpy.args.length, 0, 'should NOT export any span');
+    });
+
     it('should handle task with navigation change', done => {
       fakeClickInteraction(() => {
         history.pushState(
@@ -334,7 +387,7 @@ describe('UserInteractionInstrumentation', () => {
 
             const attributes = spanXhr.attributes;
             assert.equal(
-              attributes['http.url'],
+              attributes['url.full'],
               'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
             );
             // all other attributes are checked in xhr anyway
@@ -664,77 +717,13 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should handle disable', () => {
-      assert.strictEqual(
-        isWrapped(HTMLElement.prototype.addEventListener),
-        true,
-        'addEventListener should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(HTMLElement.prototype.removeEventListener),
-        true,
-        'removeEventListener should be wrapped'
-      );
-
-      assert.strictEqual(
-        isWrapped(history.replaceState),
-        true,
-        'replaceState should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.pushState),
-        true,
-        'pushState should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.back),
-        true,
-        'back should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.forward),
-        true,
-        'forward should be wrapped'
-      );
-      assert.strictEqual(isWrapped(history.go), true, 'go should be wrapped');
-
+      const element = createButton();
+      element.addEventListener('click', () => {});
+      element.click();
       userInteractionInstrumentation.disable();
+      element.click();
 
-      assert.strictEqual(
-        isWrapped(HTMLElement.prototype.addEventListener),
-        false,
-        'addEventListener should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(HTMLElement.prototype.removeEventListener),
-        false,
-        'removeEventListener should be unwrapped'
-      );
-
-      assert.strictEqual(
-        isWrapped(history.replaceState),
-        false,
-        'replaceState should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.pushState),
-        false,
-        'pushState should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.back),
-        false,
-        'back should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.forward),
-        false,
-        'forward should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.go),
-        false,
-        'go should be unwrapped'
-      );
+      assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
     });
 
     describe('simulate IE', () => {

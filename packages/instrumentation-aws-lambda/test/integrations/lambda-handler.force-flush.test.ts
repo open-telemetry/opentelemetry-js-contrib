@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // We access through node_modules to allow it to be patched.
@@ -22,11 +11,14 @@ import { AwsLambdaInstrumentation } from '../../src';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
-} from '@opentelemetry/sdk-trace-base';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
-import { ProxyTracerProvider, TracerProvider } from '@opentelemetry/api';
+import {
+  ProxyTracerProvider,
+  TracerProvider as ApiTracerProvider,
+} from '@opentelemetry/api';
 import {
   AggregationTemporality,
   InMemoryMetricExporter,
@@ -52,7 +44,7 @@ describe('force flush', () => {
 
   const initializeHandlerTracing = (
     handler: string,
-    provider: TracerProvider
+    provider: ApiTracerProvider
   ) => {
     process.env._HANDLER = handler;
 
@@ -86,11 +78,12 @@ describe('force flush', () => {
     metricMemoryExporter.reset();
   });
 
-  it('should force flush NodeTracerProvider', async () => {
-    const provider = new NodeTracerProvider({
-      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+  it('should force flush TracerProvider', async () => {
+    const provider = new TracerProvider({
+      spanProcessors: [
+        new BatchSpanProcessor({ exporter: traceMemoryExporter }),
+      ],
     });
-    provider.register();
     let forceFlushed = false;
     const forceFlush = () =>
       new Promise<void>(resolve => {
@@ -105,20 +98,21 @@ describe('force flush', () => {
     assert.strictEqual(forceFlushed, true);
   });
 
-  it('should force flush ProxyTracerProvider with NodeTracerProvider', async () => {
-    const nodeTracerProvider = new NodeTracerProvider({
-      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+  it('should force flush ProxyTracerProvider with TracerProvider', async () => {
+    const tracerProvider = new TracerProvider({
+      spanProcessors: [
+        new BatchSpanProcessor({ exporter: traceMemoryExporter }),
+      ],
     });
-    nodeTracerProvider.register();
     const provider = new ProxyTracerProvider();
-    provider.setDelegate(nodeTracerProvider);
+    provider.setDelegate(tracerProvider);
     let forceFlushed = false;
     const forceFlush = () =>
       new Promise<void>(resolve => {
         forceFlushed = true;
         resolve();
       });
-    nodeTracerProvider.forceFlush = forceFlush;
+    tracerProvider.forceFlush = forceFlush;
     initializeHandlerTracing('lambda-test/sync.handler', provider);
 
     await lambdaRequire('lambda-test/sync').handler('arg', ctx);
@@ -147,10 +141,11 @@ describe('force flush', () => {
   });
 
   it('should complete handler after force flush providers', async () => {
-    const nodeTracerProvider = new NodeTracerProvider({
-      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+    const nodeTracerProvider = new TracerProvider({
+      spanProcessors: [
+        new BatchSpanProcessor({ exporter: traceMemoryExporter }),
+      ],
     });
-    nodeTracerProvider.register();
     const tracerProvider = new ProxyTracerProvider();
     tracerProvider.setDelegate(nodeTracerProvider);
     let tracerForceFlushed = false;

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 'use strict';
@@ -20,7 +9,7 @@ import { context, trace } from '@opentelemetry/api';
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
@@ -40,8 +29,8 @@ const provider = new WebTracerProvider({
     [ATTR_SERVICE_NAME]: 'web-service-dl',
   }),
   spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
-    new SimpleSpanProcessor(new OTLPTraceExporter()),
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
+    new SimpleSpanProcessor({ exporter: new OTLPTraceExporter() }),
   ],
 });
 

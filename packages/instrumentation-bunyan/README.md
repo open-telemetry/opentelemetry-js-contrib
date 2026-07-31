@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation of the [`bunyan`](https://www.npmjs.com/package/bunyan) module to inject trace-context into Bunyan log records (log correlation) and to send Bunyan logging to the OpenTelemetry Logging SDK (log sending). It may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation of the [`bunyan`](https://www.npmjs.com/package/bunyan) module to inject trace-context into Bunyan log records (log correlation) and to send Bunyan logging to the OpenTelemetry Logging SDK (log sending).
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -22,18 +22,27 @@ npm install --save @opentelemetry/instrumentation-bunyan
 ## Usage
 
 ```js
-const { NodeSDK, tracing, logs, api } = require('@opentelemetry/sdk-node');
+const { trace } = require('@opentelemetry/api');
+const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/sdk-trace');
+const { SimpleLogRecordProcessor, ConsoleLogRecordExporter } = require('@opentelemetry/sdk-logs');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { BunyanInstrumentation } = require('@opentelemetry/instrumentation-bunyan');
+
 const sdk = new NodeSDK({
-  spanProcessor: new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter()),
-  logRecordProcessor: new logs.SimpleLogRecordProcessor(new logs.ConsoleLogRecordExporter()),
+  spanProcessors: [
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+  ],
+  logRecordProcessors: [
+    new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
+  ],
   instrumentations: [
     new BunyanInstrumentation({
       // See below for Bunyan instrumentation options.
     }),
   ]
-})
+});
 sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 
 const bunyan = require('bunyan');
 const logger = bunyan.createLogger({name: 'example'});
@@ -42,7 +51,7 @@ logger.info('hi');
 // 1. Log records will be sent to the SDK-registered log record processor, if any.
 //    This is called "log sending".
 
-const tracer = api.trace.getTracer('example');
+const tracer = trace.getTracer('example');
 tracer.startActiveSpan('manual-span', span => {
   logger.info('in a span');
   // 2. Fields identifying the current span will be added to log records:
@@ -58,6 +67,11 @@ Creation of a Bunyan Logger will automatically add a [Bunyan stream](https://git
 If the OpenTelemetry SDK is not configured with a Logger provider, then this added stream will be a no-op.
 
 Log sending can be disabled with the `disableLogSending: true` option.
+
+When Bunyan emits a top-level `err` field, for example via
+`logger.error(err, 'msg')`, this instrumentation forwards it through the Logs
+API `exception` field so the SDK can populate standard `exception.*`
+attributes.
 
 ### Log correlation
 
@@ -120,7 +134,8 @@ const logger = bunyan.createLogger({
 
 ## Semantic Conventions
 
-This package does not currently generate any attributes from semantic conventions.
+This package forwards Bunyan `err` fields through the Logs API `exception`
+field, allowing the SDK to populate standard `exception.*` attributes.
 
 ## Useful links
 

@@ -2,7 +2,10 @@
   "extends": "../../tsconfig.base",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "build"
+    "outDir": "build",
+    // Required due to mongoose@9's deep type instantiation issues
+    // (TS2589: Type instantiation is excessively deep and possibly infinite)
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts",

@@ -39,8 +39,10 @@ import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
 const loggerProvider = new LoggerProvider({
   resource: new Resource({ [ATTR_SERVICE_NAME]: '<service-name>' }),
+  processors: [
+    new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() })
+  ],
 });
-loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()));
 logs.setGlobalLoggerProvider(loggerProvider);
 
 registerInstrumentations({

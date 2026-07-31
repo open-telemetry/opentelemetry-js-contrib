@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
@@ -42,6 +31,13 @@ export const ATTR_V8JS_GC_TYPE = 'v8js.gc.type' as const;
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_V8JS_HEAP_SPACE_NAME = 'v8js.heap.space.name' as const;
+
+/**
+ * The type of active resource.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_V8JS_RESOURCE_TYPE = 'v8js.resource.type' as const;
 
 /**
  * Event loop maximum delay.
@@ -142,11 +138,11 @@ export const METRIC_NODEJS_EVENTLOOP_UTILIZATION =
 export const METRIC_V8JS_GC_DURATION = 'v8js.gc.duration' as const;
 
 /**
- * Total heap memory size pre-allocated.
- *
- * @note The value can be retrieved from value `space_size` of [`v8.getHeapSpaceStatistics()`](https://nodejs.org/api/v8.html#v8getheapspacestatistics)
+ * Deprecated, use `v8js.memory.heap.space.size` instead.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `v8js.memory.heap.space.size`.
  */
 export const METRIC_V8JS_MEMORY_HEAP_LIMIT = 'v8js.memory.heap.limit' as const;
 
@@ -180,6 +176,15 @@ export const METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE =
 export const METRIC_V8JS_MEMORY_HEAP_USED = 'v8js.memory.heap.used' as const;
 
 /**
+ * Types of the active resources that are currently keeping the event loop alive.
+ *
+ * @note The value can be retrieved from [`process.getActiveResourcesInfo()`](https://nodejs.org/api/process.html#processgetactiveresourcesinfo)
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_V8JS_RESOURCE_ACTIVE = 'v8js.resource.active' as const;
+
+/**
  * Enum value "active" for attribute {@link ATTR_NODEJS_EVENTLOOP_STATE}.
  *
  * Active time.
@@ -196,3 +201,13 @@ export const NODEJS_EVENTLOOP_STATE_VALUE_ACTIVE = 'active' as const;
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const NODEJS_EVENTLOOP_STATE_VALUE_IDLE = 'idle' as const;
+
+/**
+ * Total heap memory size pre-allocated for a heap space.
+ *
+ * @note The value can be retrieved from value `space_size` of [`v8.getHeapSpaceStatistics()`](https://nodejs.org/api/v8.html#v8getheapspacestatistics)
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_V8JS_MEMORY_HEAP_SPACE_SIZE =
+  'v8js.memory.heap.space.size' as const;

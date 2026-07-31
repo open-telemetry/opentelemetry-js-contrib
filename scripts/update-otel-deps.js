@@ -1,18 +1,7 @@
 #!/usr/bin/env node
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
@@ -47,7 +36,7 @@ function getAllWorkspaceDirs() {
     fs.readFileSync(path.join(TOP, 'package.json'), 'utf8')
   );
   return pj.workspaces
-    .map(wsGlob => globSync(path.join(wsGlob, 'package.json')))
+    .map(wsGlob => globSync(`${wsGlob}/package.json`, { posix: true }))
     .flat()
     .map(path.dirname);
 }
@@ -333,7 +322,10 @@ function updateNpmWorkspacesDeps({ patterns, allowRangeBumpFor0x, dryRun }) {
   }
 
   // Summary/commit message.
-  let commitMsg = `chore(deps): update deps${matchStr}\n\n`;
+  // Note: using `feat` rather than `chore`, because if release-please is
+  // being used, it ignores `chore` conventional-commits when determining if
+  // a package needs a new release.
+  let commitMsg = `feat(deps): update deps${matchStr}\n\n`;
   commitMsg +=
     '    ' +
     Array.from(summaryStrs)

@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.38.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.38.2...redis-common-v0.38.3) (2026-04-17)
+
+
+### Bug Fixes
+
+* **redis-common:** expand redaction to include ACL, CONFIG, PSETEX, GETSET ([#3472](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3472)) ([39193ca](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/39193cac4124eedc9e8fa5ae16ba960b5ab7a36b))
+
 ## [0.38.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.38.1...redis-common-v0.38.2) (2025-09-29)
 
 

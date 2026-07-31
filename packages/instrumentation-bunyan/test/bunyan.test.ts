@@ -1,23 +1,13 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { context, INVALID_SPAN_CONTEXT, trace } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
@@ -25,10 +15,16 @@ import {
   SimpleLogRecordProcessor,
   InMemoryLogRecordExporter,
 } from '@opentelemetry/sdk-logs';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { resourceFromAttributes } from '@opentelemetry/resources';
-import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  ATTR_EXCEPTION_MESSAGE,
+  ATTR_EXCEPTION_STACKTRACE,
+  ATTR_EXCEPTION_TYPE,
+  ATTR_OTEL_EVENT_NAME,
+  ATTR_SERVICE_NAME,
+} from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
@@ -40,19 +36,25 @@ import type * as BunyanLogger from 'bunyan';
 // import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
-const tracerProvider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(new InMemorySpanExporter())],
-});
-tracerProvider.register();
-const tracer = tracerProvider.getTracer('default');
-
 const resource = resourceFromAttributes({
   [ATTR_SERVICE_NAME]: 'test-instrumentation-bunyan',
 });
+
+context.setGlobalContextManager(new AsyncLocalStorageContextManager());
+
+const tracerProvider = new TracerProvider({
+  resource,
+  spanProcessors: [
+    new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() }),
+  ],
+});
+trace.setGlobalTracerProvider(tracerProvider);
+const tracer = tracerProvider.getTracer('default');
+
 const memExporter = new InMemoryLogRecordExporter();
 const loggerProvider = new LoggerProvider({
   resource,
-  processors: [new SimpleLogRecordProcessor(memExporter)],
+  processors: [new SimpleLogRecordProcessor({ exporter: memExporter })],
 });
 logs.setGlobalLoggerProvider(loggerProvider);
 
@@ -264,6 +266,25 @@ describe('BunyanInstrumentation', () => {
       rec = logRecords[logRecords.length - 1];
       assert.strictEqual(rec.severityNumber, SeverityNumber.FATAL4);
       assert.strictEqual(rec.severityText, undefined);
+    });
+
+    it('maps Bunyan err fields to exception attributes', () => {
+      const error = new Error('boom');
+
+      log.error(error, 'with exception');
+
+      const logRecords = memExporter.getFinishedLogRecords();
+      const rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.body, 'with exception');
+      assert.strictEqual(rec.attributes.err, undefined);
+      assert.strictEqual(rec.attributes[ATTR_EXCEPTION_MESSAGE], error.message);
+      assert.strictEqual(rec.attributes[ATTR_EXCEPTION_TYPE], error.name);
+      if (error.stack) {
+        assert.strictEqual(
+          rec.attributes[ATTR_EXCEPTION_STACKTRACE],
+          error.stack
+        );
+      }
     });
 
     it('does not emit to the Logs SDK if disableLogSending=true', () => {
@@ -539,5 +560,98 @@ describe('OpenTelemetryBunyanStream', () => {
 
       span.end();
     });
+  });
+});
+
+describe('otel.event.name support', () => {
+  const stream = new OpenTelemetryBunyanStream();
+
+  beforeEach(() => {
+    memExporter.getFinishedLogRecords().length = 0;
+  });
+
+  it('sets eventName on the LogRecord when otel.event.name is present', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ 'otel.event.name': 'my-event', foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, 'my-event');
+  });
+
+  it('does not pass otel.event.name through as an attribute', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ 'otel.event.name': 'my-event', foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, 'my-event');
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
+    assert.strictEqual(logRecords[0].attributes['foo'], 'bar');
+    assert.strictEqual(logRecords[0].body, 'hi');
+    assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO);
+  });
+
+  it('leaves eventName undefined when otel.event.name is absent', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, undefined);
+  });
+
+  it('ignores otel.event.name when value is a number', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ 'otel.event.name': 123, foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, undefined);
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
+  });
+
+  it('ignores otel.event.name when value is an object', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ 'otel.event.name': { bad: true }, foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, undefined);
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
+  });
+
+  it('promotes otel.event.name to eventName when value is empty string', () => {
+    const log = Logger.createLogger({
+      name: 'test',
+      streams: [{ type: 'raw', stream, level: 'debug' }],
+    });
+    log.info({ 'otel.event.name': '', foo: 'bar' }, 'hi');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].eventName, '');
+    assert.strictEqual(
+      logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+      undefined
+    );
   });
 });

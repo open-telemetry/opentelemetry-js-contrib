@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import * as diagch from 'diagnostics_channel';
 import { URL } from 'url';
@@ -384,7 +373,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
       for (const [name, value] of headersMap.entries()) {
         if (headersToAttribs.has(name)) {
-          const attrValue = Array.isArray(value) ? value.join(', ') : value;
+          const attrValue = Array.isArray(value) ? value : [value];
           spanAttributes[`http.request.header.${name}`] = attrValue;
         }
       }
@@ -420,26 +409,23 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       true
     );
 
-    const headersToAttribs = new Set();
-
     if (config.headersToSpanAttributes?.responseHeaders) {
+      const headersToAttribs = new Set();
       config.headersToSpanAttributes?.responseHeaders.forEach(name =>
         headersToAttribs.add(name.toLowerCase())
       );
-    }
 
-    for (let idx = 0; idx < response.headers.length; idx = idx + 2) {
-      const name = response.headers[idx].toString().toLowerCase();
-      const value = response.headers[idx + 1];
+      for (let idx = 0; idx < response.headers.length; idx = idx + 2) {
+        const name = response.headers[idx].toString().toLowerCase();
+        const value = response.headers[idx + 1];
 
-      if (headersToAttribs.has(name)) {
-        spanAttributes[`http.response.header.${name}`] = value.toString();
-      }
-
-      if (name === 'content-length') {
-        const contentLength = Number(value.toString());
-        if (!isNaN(contentLength)) {
-          spanAttributes['http.response.header.content-length'] = contentLength;
+        if (headersToAttribs.has(name)) {
+          const attrName = `http.response.header.${name}`;
+          if (!Object.hasOwn(spanAttributes, attrName)) {
+            spanAttributes[attrName] = [value.toString()];
+          } else {
+            (spanAttributes[attrName] as string[]).push(value.toString());
+          }
         }
       }
     }
@@ -461,7 +447,6 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     if (!record) {
       return;
     }
-
     const { span, attributes, startTime } = record;
 
     // End the span
@@ -487,22 +472,30 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     const { span, attributes, startTime } = record;
 
-    // NOTE: in `undici@6.3.0` when request aborted the error type changes from
-    // a custom error (`RequestAbortedError`) to a built-in `DOMException` carrying
-    // some differences:
-    // - `code` is from DOMEXception (ABORT_ERR: 20)
-    // - `message` changes
-    // - stacktrace is smaller and contains node internal frames
-    span.recordException(error);
-    span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: error.message,
-    });
-    span.end();
-    this._recordFromReq.delete(request);
+    // Per OTel HTTP spec: if the request was intentionally cancelled via an
+    // AbortController signal, it SHOULD NOT be treated as an error.
+    // Span status should be left unset and error.type should not be set.
+    // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#http-client
+    const isAbort =
+      error.name === 'AbortError' ||
+      (typeof DOMException !== 'undefined' &&
+        error instanceof DOMException &&
+        error.code === DOMException.ABORT_ERR);
 
-    // Record metrics (with the error)
-    attributes[ATTR_ERROR_TYPE] = error.message;
+    if (isAbort) {
+      span.end();
+    } else {
+      span.recordException(error);
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message,
+      });
+      span.end();
+
+      attributes[ATTR_ERROR_TYPE] = error.message;
+    }
+
+    this._recordFromReq.delete(request);
     this.recordRequestDuration(attributes, startTime);
   }
 
@@ -544,6 +537,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       PATCH: true,
       DELETE: true,
       TRACE: true,
+      // QUERY from https://datatracker.ietf.org/doc/draft-ietf-httpbis-safe-method-w-body/
+      QUERY: true,
     };
 
     if (original.toUpperCase() in knownMethods) {

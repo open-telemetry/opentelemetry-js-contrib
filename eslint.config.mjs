@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import eslint from '@eslint/js';
@@ -24,18 +13,7 @@ import baselinePlugin from 'eslint-plugin-baseline-js';
 const defaultLicense = `
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 `;
 
@@ -47,7 +25,7 @@ const defaultLicense = `
 //    Copyright <someone>
 //    Copyright <another someone>
 const licensePattern =
-  /^\/\*\n \* Copyright The OpenTelemetry Authors(?:, [^\n]+)*\n(?: \* Copyright [^\n]+\n)* \*\n \* Licensed under the Apache License, Version 2.0 \(the "License"\);\n \* you may not use this file except in compliance with the License.\n \* You may obtain a copy of the License at\n \*\n \* {6}https:\/\/www.apache.org\/licenses\/LICENSE-2.0\n \*\n \* Unless required by applicable law or agreed to in writing, software\n \* distributed under the License is distributed on an "AS IS" BASIS,\n \* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n \* See the License for the specific language governing permissions and\n \* limitations under the License.\n \*\/$/;
+  /^\/\*\n \* Copyright The OpenTelemetry Authors(?:, [^\n]+)*\n(?: \* Copyright [^\n]+\n)* \* SPDX-License-Identifier: Apache-2.0\n \*\/$/;
 
 const baseConfig = tseslint.config(
   {
@@ -63,12 +41,9 @@ const baseConfig = tseslint.config(
     files: ['**/*.{js,ts,mjs}'],
     plugins: {
       'yet-another-license-header': yalhPlugin,
-      node: nodePlugin,
+      n: nodePlugin,
     },
-    extends: [
-      eslint.configs.recommended,
-      // nodePlugin.configs['flat/recommended'],
-    ],
+    extends: [eslint.configs.recommended],
     languageOptions: {
       ecmaVersion: 2022,
       globals: {
@@ -76,7 +51,7 @@ const baseConfig = tseslint.config(
       },
     },
     settings: {
-      node: {
+      n: {
         tryExtensions: ['.js', '.json', '.node', '.ts', '.tsx'],
       },
     },
@@ -95,7 +70,7 @@ const baseConfig = tseslint.config(
 
       // new rules
       'no-unused-vars': 'warn',
-      'node/no-deprecated-api': 'warn',
+      'n/no-deprecated-api': 'warn',
     },
   },
 
@@ -115,7 +90,7 @@ const baseConfig = tseslint.config(
       },
     },
     rules: {
-      // 'node/no-missing-import': 'off',
+      // 'n/no-missing-import': 'off',
 
       // things that should be repaired
       '@typescript-eslint/no-explicit-any': 'warn',

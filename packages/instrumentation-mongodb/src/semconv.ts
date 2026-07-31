@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
@@ -21,94 +10,38 @@
  */
 
 /**
- * Deprecated, use `server.address`, `server.port` attributes instead.
+ * The name of the connection pool; unique within the instrumented application. In case the connection pool implementation doesn't provide a name, instrumentation **SHOULD** use a combination of parameters that would make the name unique, for example, combining attributes `server.address`, `server.port`, and `db.namespace`, formatted as `server.address:server.port/db.namespace`. Instrumentations that generate connection pool name following different patterns **SHOULD** document it.
  *
- * @example "Server=(localdb)\\v11.0;Integrated Security=true;"
+ * @example myDataSource
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `server.address` and `server.port`.
  */
-export const ATTR_DB_CONNECTION_STRING = 'db.connection_string' as const;
+export const ATTR_DB_CLIENT_CONNECTION_POOL_NAME =
+  'db.client.connection.pool.name' as const;
 
 /**
- * Deprecated, use `db.collection.name` instead.
+ * The state of a connection in the pool
  *
- * @example "mytable"
+ * @example idle
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.collection.name`.
  */
-export const ATTR_DB_MONGODB_COLLECTION = 'db.mongodb.collection' as const;
+export const ATTR_DB_CLIENT_CONNECTION_STATE =
+  'db.client.connection.state' as const;
 
 /**
- * Deprecated, use `db.namespace` instead.
+ * Enum value "idle" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
  *
- * @example customers
- * @example main
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.namespace`.
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_DB_NAME = 'db.name' as const;
+export const DB_CLIENT_CONNECTION_STATE_VALUE_IDLE = 'idle' as const;
 
 /**
- * Deprecated, use `db.operation.name` instead.
+ * Enum value "used" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
  *
- * @example findAndModify
- * @example HMSET
- * @example SELECT
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.operation.name`.
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_DB_OPERATION = 'db.operation' as const;
-
-/**
- * The database statement being executed.
- *
- * @example SELECT * FROM wuser_table
- * @example SET mykey "WuValue"
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.query.text`.
- */
-export const ATTR_DB_STATEMENT = 'db.statement' as const;
-
-/**
- * Deprecated, use `db.system.name` instead.
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.system.name`.
- */
-export const ATTR_DB_SYSTEM = 'db.system' as const;
-
-/**
- * Deprecated, use `server.address` on client spans and `client.address` on server spans.
- *
- * @example example.com
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `server.address` on client spans and `client.address` on server spans.
- */
-export const ATTR_NET_PEER_NAME = 'net.peer.name' as const;
-
-/**
- * Deprecated, use `server.port` on client spans and `client.port` on server spans.
- *
- * @example 8080
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `server.port` on client spans and `client.port` on server spans.
- */
-export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
+export const DB_CLIENT_CONNECTION_STATE_VALUE_USED = 'used' as const;
 
 /**
  * Enum value "mongodb" for attribute {@link ATTR_DB_SYSTEM_NAME}.
@@ -120,20 +53,9 @@ export const ATTR_NET_PEER_PORT = 'net.peer.port' as const;
 export const DB_SYSTEM_NAME_VALUE_MONGODB = 'mongodb' as const;
 
 /**
- * Enum value "mongodb" for attribute {@link ATTR_DB_SYSTEM}.
- *
- * MongoDB
- *
- * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const DB_SYSTEM_VALUE_MONGODB = 'mongodb' as const;
-
-/**
- * Deprecated, use `db.client.connection.count` instead.
+ * The number of connections that are currently in state described by the `state` attribute.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `db.client.connection.count`.
  */
-export const METRIC_DB_CLIENT_CONNECTIONS_USAGE =
-  'db.client.connections.usage' as const;
+export const METRIC_DB_CLIENT_CONNECTION_COUNT =
+  'db.client.connection.count' as const;

@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`amqplib`](https://www.npmjs.com/package/amqplib) (RabbitMQ) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`amqplib`](https://www.npmjs.com/package/amqplib) (RabbitMQ) module.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-amqplib
 
 ## Supported Versions
 
-- [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <1`
+- [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <3`
 
 ## Usage
 
@@ -25,15 +25,14 @@ OpenTelemetry amqplib Instrumentation allows the user to automatically collect t
 
 To load a specific plugin, specify it in the registerInstrumentations's configuration:
 
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
+
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { AmqplibInstrumentation } = require('@opentelemetry/instrumentation-amqplib');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new AmqplibInstrumentation({
       // publishHook: (span: Span, publishInfo: PublishInfo) => { },
@@ -43,7 +42,9 @@ registerInstrumentations({
       // useLinksForConsume: boolean,
     }),
   ],
-})
+});
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ### amqplib Instrumentation Options
@@ -89,16 +90,7 @@ By default, the tests that connect to RabbitMQ are skipped. To make sure these t
 
 ## Semantic Conventions
 
-This instrumentation implements Semantic Conventions (semconv) v1.7.0. Since then, many networking-related semantic conventions (in semconv v1.21.0 and v1.23.1) were stabilized. As of `@opentelemetry/instrumentation-amqplib@0.56.0` support has been added for migrating to the stable semantic conventions using the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable as follows:
-
-1. Upgrade to the latest version of this instrumentation package.
-2. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` to emit both old and stable semantic conventions. (The [`http` token is used to control the `net.*` attributes](https://github.com/open-telemetry/opentelemetry-js/issues/5663#issuecomment-3349204546).)
-3. Modify alerts, dashboards, metrics, and other processes in your Observability system to use the stable semantic conventions.
-4. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http` to emit only the stable semantic conventions.
-
-By default, if `OTEL_SEMCONV_STABILITY_OPT_IN` is not set or does not include `http`, then the old v1.7.0 semconv is used.
-The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new networking semconv, after which a new minor version will use the new semconv by default and drop support for the old semconv.
-See [the HTTP migration guide](https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/) and [deprecated network attributes](https://opentelemetry.io/docs/specs/semconv/registry/attributes/network/#deprecated-network-attributes) for details.
+This instrumentation uses Semantic Conventions for messaging spans. The `instrumentation-amqplib` versions 0.67.0 and later emit the stable `server.*` semantic conventions for network attributes.
 
 Attributes collected:
 
@@ -114,11 +106,8 @@ Attributes collected:
 | `messaging.protocol_version`     | The version of the transport protocol.                                 |
 | `messaging.system`               | A string identifying the messaging system.                             |
 | `messaging.url`                  | The connection string.                                                 |
-
-| Old semconv     | Stable semconv   | Description        |
-| --------------- | ---------------- | ------------------ |
-| `net.peer.name` | `server.address` | Remote hostname    |
-| `net.peer.port` | `server.port`    | Remote port number |
+| `server.address`                 | Remote hostname.                                                       |
+| `server.port`                    | Remote port number.                                                    |
 
 ## Useful links
 

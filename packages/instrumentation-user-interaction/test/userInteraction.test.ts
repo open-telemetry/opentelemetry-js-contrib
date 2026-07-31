@@ -1,33 +1,18 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 const originalSetTimeout = window.setTimeout;
 import { context, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
-import {
-  isWrapped,
-  registerInstrumentations,
-} from '@opentelemetry/instrumentation';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import * as tracing from '@opentelemetry/sdk-trace-base';
+import * as tracing from '@opentelemetry/sdk-trace';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import 'zone.js';
 import { UserInteractionInstrumentation } from '../src';
-import { WindowWithZone } from '../src/internal-types';
 import { UserInteractionInstrumentationConfig } from '../src/types';
 import {
   assertClickSpan,
@@ -98,7 +83,9 @@ describe('UserInteractionInstrumentation', () => {
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');
       webTracerProvider = new WebTracerProvider({
-        spanProcessors: [new tracing.SimpleSpanProcessor(dummySpanExporter)],
+        spanProcessors: [
+          new tracing.SimpleSpanProcessor({ exporter: dummySpanExporter }),
+        ],
       });
       webTracerProvider.register({
         contextManager,
@@ -215,7 +202,7 @@ describe('UserInteractionInstrumentation', () => {
 
             const attributes = spanXhr.attributes;
             assert.equal(
-              attributes['http.url'],
+              attributes['url.full'],
               'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
             );
             // all other attributes are checked in xhr anyway
@@ -532,92 +519,6 @@ describe('UserInteractionInstrumentation', () => {
 
         done();
       });
-    });
-
-    it('should handle unpatch', () => {
-      const _window: WindowWithZone = window as unknown as WindowWithZone;
-      const ZoneWithPrototype = _window.Zone;
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.runTask),
-        true,
-        'runTask should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.scheduleTask),
-        true,
-        'scheduleTask should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.cancelTask),
-        true,
-        'cancelTask should be wrapped'
-      );
-
-      assert.strictEqual(
-        isWrapped(history.replaceState),
-        true,
-        'replaceState should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.pushState),
-        true,
-        'pushState should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.back),
-        true,
-        'back should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.forward),
-        true,
-        'forward should be wrapped'
-      );
-      assert.strictEqual(isWrapped(history.go), true, 'go should be wrapped');
-
-      userInteractionInstrumentation.disable();
-
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.runTask),
-        false,
-        'runTask should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.scheduleTask),
-        false,
-        'scheduleTask should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.cancelTask),
-        false,
-        'cancelTask should be unwrapped'
-      );
-
-      assert.strictEqual(
-        isWrapped(history.replaceState),
-        false,
-        'replaceState should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.pushState),
-        false,
-        'pushState should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.back),
-        false,
-        'back should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.forward),
-        false,
-        'forward should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.go),
-        false,
-        'go should be unwrapped'
-      );
     });
   });
 });

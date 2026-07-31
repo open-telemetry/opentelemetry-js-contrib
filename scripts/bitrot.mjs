@@ -1,18 +1,7 @@
 #!/usr/bin/env node
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
@@ -37,6 +26,15 @@ import { satisfies } from 'semver';
 const TOP = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const USE_COLOR = process.stdout.isTTY && !process.env.NO_COLOR?.length > 0;
 const BUILD_DIR = path.join(TOP, 'build', 'bitrot');
+
+// `glob` always wants forward slashes in its patterns, even on Windows,
+// where `path.join` produces backslashes.
+function toGlobPattern(...parts) {
+  return path
+    .join(...parts)
+    .split(path.sep)
+    .join('/');
+}
 
 let numProbs = 0;
 function problem(...args) {
@@ -104,7 +102,7 @@ function bitrotRenovateCoreExperimental() {
   }
 
   const pkgNames = globSync(
-    path.join(ojDir, 'experimental/packages/*/package.json')
+    toGlobPattern(ojDir, 'experimental/packages/*/package.json')
   )
     .map(packageJson => JSON.parse(fs.readFileSync(packageJson)))
     .filter(pj => isPublicPackage(pj))
@@ -179,7 +177,7 @@ function getNpmInfo(name) {
  */
 function bitrotInstrumentations() {
   const instrReadmes = globSync(
-    path.join(TOP, 'packages/instrumentation-*/README.md')
+    toGlobPattern(TOP, 'packages/instrumentation-*/README.md')
   );
 
   // Match examples:

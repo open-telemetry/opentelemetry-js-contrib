@@ -6,7 +6,7 @@
 [component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @abhee11
 
 Resource detector for container id.
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+Compatible with OpenTelemetry JS SDK `2.0+`.
 
 ## Installation
 

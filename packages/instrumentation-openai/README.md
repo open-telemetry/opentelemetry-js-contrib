@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`openai`](https://www.npmjs.com/package/openai) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`openai`](https://www.npmjs.com/package/openai) module.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -22,24 +22,21 @@ npm install --save @opentelemetry/instrumentation-openai
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { OpenAIInstrumentation } = require('@opentelemetry/instrumentation-openai');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new OpenAIInstrumentation(),
-    // other instrumentations
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Semantic Conventions
 
-This package implements Semantic Convention [Version 1.36.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/README.md).
+This package implements Semantic Convention [Version 1.36.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/README.md) for Chat Completions, and Semantic Convention [Version 1.38.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.38.0/docs/README.md) for Responses API.
 
 ## Useful links
 

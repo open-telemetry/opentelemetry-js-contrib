@@ -131,29 +131,14 @@ OpenTelemetry Meta Packages for Node automatically loads instrumentations for No
 Custom configuration for each of the instrumentations can be passed to the function, by providing an object with the name of the instrumentation as a key, and its configuration as the value.
 
 ```javascript
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
-const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
-const { resourceFromAttributes } = require('@opentelemetry/resources');
-const { ATTR_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
-const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const exporter = new CollectorTraceExporter();
-const provider = new NodeTracerProvider({
-  resource: resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: 'basic-service',
-  }),
-  spanProcessors: [
-    new SimpleSpanProcessor(exporter),
-  ],
-});
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
+  serviceName: 'my-service',
   instrumentations: [
     getNodeAutoInstrumentations({
-      // load custom configuration for http instrumentation
+      // Optionally customize some instrumentations, e.g.:
       '@opentelemetry/instrumentation-http': {
         applyCustomAttributesOnSpan: (span) => {
           span.setAttribute('foo2', 'bar2');
@@ -162,7 +147,8 @@ registerInstrumentations({
     }),
   ],
 });
-
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Supported instrumentations
@@ -177,15 +163,12 @@ registerInstrumentations({
 - [@opentelemetry/instrumentation-dataloader](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-dataloader)
 - [@opentelemetry/instrumentation-dns](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-dns)
 - [@opentelemetry/instrumentation-express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-express)
-- [@opentelemetry/instrumentation-fastify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-fastify) (deprecated, default disabled)
-  - This component is **deprecated** in favor of the official instrumentation package [`@fastify/otel`](https://www.npmjs.com/package/@fastify/otel), maintained by the Fastify authors.
-    - Please see [the offical plugin's README.md](https://github.com/fastify/otel?tab=readme-ov-file#usage) for instructions on how to use `@fastify/otel`.
-  - This component will be removed on June 30, 2025
 - [@opentelemetry/instrumentation-fs](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-fs) (default disabled)
 - [@opentelemetry/instrumentation-generic-pool](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-generic-pool)
 - [@opentelemetry/instrumentation-graphql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-graphql)
 - [@opentelemetry/instrumentation-grpc](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-grpc)
 - [@opentelemetry/instrumentation-hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-hapi)
+- [@opentelemetry/instrumentation-host-metrics](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-host-metrics) (default disabled)
 - [@opentelemetry/instrumentation-http](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http)
 - [@opentelemetry/instrumentation-ioredis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-ioredis)
 - [@opentelemetry/instrumentation-kafkajs](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-kafkajs)
@@ -209,6 +192,11 @@ registerInstrumentations({
 - [@opentelemetry/instrumentation-socket.io](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-socket.io)
 - [@opentelemetry/instrumentation-undici](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-undici)
 - [@opentelemetry/instrumentation-winston](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-winston)
+
+### Removed instrumentations
+
+- [`@opentelemetry/instrumentation-fastify`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/archive/instrumentation-fastify) was removed Mar 2026. It had been deprecated (and default disabled) Jan 2025, in favor of the [`@fastify/otel`](https://www.npmjs.com/package/@fastify/otel) instrumentation package, maintained by the Fastify authors.
+  - Please see [the offical plugin's README.md](https://github.com/fastify/otel?tab=readme-ov-file#usage) for instructions on how to use `@fastify/otel`.
 
 ## Useful links
 

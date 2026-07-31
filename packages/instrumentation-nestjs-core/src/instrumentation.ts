@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as api from '@opentelemetry/api';
@@ -21,8 +10,6 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   ATTR_HTTP_REQUEST_METHOD,
@@ -34,7 +21,6 @@ import type { RouterExecutionContext } from '@nestjs/core/router/router-executio
 import type { Controller } from '@nestjs/common/interfaces';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { ATTR_HTTP_METHOD, ATTR_HTTP_URL } from './semconv';
 import { AttributeNames, NestType } from './enums';
 
 const supportedVersions = ['>=4.0.0 <12'];
@@ -45,14 +31,8 @@ export class NestInstrumentation extends InstrumentationBase {
     component: NestInstrumentation.COMPONENT,
   };
 
-  private _semconvStability: SemconvStability;
-
   constructor(config: InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._semconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   init() {
@@ -95,11 +75,7 @@ export class NestInstrumentation extends InstrumentationBase {
         this.ensureWrapped(
           RouterExecutionContext.RouterExecutionContext.prototype,
           'create',
-          createWrapCreateHandler(
-            this.tracer,
-            moduleVersion,
-            this._semconvStability
-          )
+          createWrapCreateHandler(this.tracer, moduleVersion)
         );
         return RouterExecutionContext;
       },
@@ -159,8 +135,7 @@ function createWrapNestFactoryCreate(
 
 function createWrapCreateHandler(
   tracer: api.Tracer,
-  moduleVersion: string | undefined,
-  semconvStability: SemconvStability
+  moduleVersion: string | undefined
 ) {
   return function wrapCreateHandler(
     original: RouterExecutionContext['create']
@@ -196,14 +171,8 @@ function createWrapCreateHandler(
           [AttributeNames.CONTROLLER]: instanceName,
           [AttributeNames.CALLBACK]: callbackName,
         };
-        if (semconvStability & SemconvStability.OLD) {
-          attributes[ATTR_HTTP_METHOD] = req.method;
-          attributes[ATTR_HTTP_URL] = req.originalUrl || req.url;
-        }
-        if (semconvStability & SemconvStability.STABLE) {
-          attributes[ATTR_HTTP_REQUEST_METHOD] = req.method;
-          attributes[ATTR_URL_FULL] = req.originalUrl || req.url;
-        }
+        attributes[ATTR_HTTP_REQUEST_METHOD] = req.method;
+        attributes[ATTR_URL_FULL] = req.originalUrl || req.url;
         const span = tracer.startSpan(spanName, { attributes });
         const spanContext = api.trace.setSpan(api.context.active(), span);
 

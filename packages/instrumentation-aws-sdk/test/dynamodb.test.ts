@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
@@ -25,19 +14,13 @@ import {
 import * as nock from 'nock';
 
 import { SpanKind } from '@opentelemetry/api';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   ATTR_DB_NAMESPACE,
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_SYSTEM_NAME,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_DB_NAME,
-  ATTR_DB_OPERATION,
-  ATTR_DB_SYSTEM,
-  DB_SYSTEM_NAME_VALUE_DYNAMODB,
-  DB_SYSTEM_VALUE_DYNAMODB,
-} from '../src/semconv';
+import { DB_SYSTEM_NAME_VALUE_DYNAMODB } from '../src/semconv';
 import { expect } from 'expect';
 
 // set aws environment variables, so tests in non aws environment are able to run
@@ -58,7 +41,7 @@ describe('DynamoDB - v3', () => {
   });
 
   describe('GetItem', () => {
-    it('Request span attributes - emits both old and stable DB semconv', async () => {
+    it('Request span attributes - emits stable DB semconv', async () => {
       const tableName = 'test-table';
 
       nock(`https://dynamodb.${region}.amazonaws.com/`)
@@ -83,10 +66,6 @@ describe('DynamoDB - v3', () => {
       const span = dynamoDbSpans[0];
       expect(span.kind).toBe(SpanKind.CLIENT);
 
-      expect(span.attributes[ATTR_DB_SYSTEM]).toBe(DB_SYSTEM_VALUE_DYNAMODB);
-      expect(span.attributes[ATTR_DB_NAME]).toBe(tableName);
-      expect(span.attributes[ATTR_DB_OPERATION]).toBe('GetItem');
-
       expect(span.attributes[ATTR_DB_SYSTEM_NAME]).toBe(
         DB_SYSTEM_NAME_VALUE_DYNAMODB
       );
@@ -96,7 +75,7 @@ describe('DynamoDB - v3', () => {
   });
 
   describe('PutItem', () => {
-    it('Request span attributes - emits both old and stable DB semconv', async () => {
+    it('Request span attributes - emits stable DB semconv', async () => {
       const tableName = 'another-table';
 
       nock(`https://dynamodb.${region}.amazonaws.com/`)
@@ -121,10 +100,6 @@ describe('DynamoDB - v3', () => {
       expect(dynamoDbSpans.length).toBe(1);
       const span = dynamoDbSpans[0];
       expect(span.kind).toBe(SpanKind.CLIENT);
-
-      expect(span.attributes[ATTR_DB_SYSTEM]).toBe(DB_SYSTEM_VALUE_DYNAMODB);
-      expect(span.attributes[ATTR_DB_NAME]).toBe(tableName);
-      expect(span.attributes[ATTR_DB_OPERATION]).toBe('PutItem');
 
       expect(span.attributes[ATTR_DB_SYSTEM_NAME]).toBe(
         DB_SYSTEM_NAME_VALUE_DYNAMODB

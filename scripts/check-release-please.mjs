@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import path from 'node:path';
@@ -42,12 +31,17 @@ const getPackages = () => {
   const TOP = process.cwd();
   const pj = readJson(path.join(TOP, 'package.json'));
   return pj.workspaces
-    .map(wsGlob => globSync(path.join(wsGlob, 'package.json')))
+    .map(wsGlob => globSync(`${wsGlob}/package.json`))
     .flat()
     .map(p => {
       const pkgInfo = readJson(p);
       pkgInfo.location = path.dirname(p);
-      pkgInfo.relativeLocation = path.relative(PROJECT_ROOT, pkgInfo.location);
+      // release-please's manifest/config files always use forward slashes
+      // for their package location keys, regardless of platform.
+      pkgInfo.relativeLocation = path
+        .relative(PROJECT_ROOT, pkgInfo.location)
+        .split(path.sep)
+        .join('/');
       return pkgInfo;
     });
 };

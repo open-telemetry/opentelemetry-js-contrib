@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import {
   InstrumentationBase,
@@ -22,6 +11,7 @@ import { RedisInstrumentationConfig } from './types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { RedisInstrumentationV2_V3 } from './v2-v3/instrumentation';
 import { TracerProvider } from '@opentelemetry/api';
+// "v4-v5" is a bit of a misnomer. It now supports redis@6 as well.
 import { RedisInstrumentationV4_V5 } from './v4-v5/instrumentation';
 
 const DEFAULT_CONFIG: RedisInstrumentationConfig = {

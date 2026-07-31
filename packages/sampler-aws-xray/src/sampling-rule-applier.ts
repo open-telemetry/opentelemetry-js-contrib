@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // Includes work from:
@@ -31,7 +20,7 @@ import {
   SamplingDecision,
   SamplingResult,
   TraceIdRatioBasedSampler,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import {
   ATTR_CLIENT_ADDRESS,
   ATTR_HTTP_REQUEST_METHOD,
@@ -41,10 +30,6 @@ import {
   ATTR_SERVICE_NAME,
 } from '@opentelemetry/semantic-conventions';
 import {
-  ATTR_HTTP_HOST,
-  ATTR_HTTP_METHOD,
-  ATTR_HTTP_URL,
-  ATTR_HTTP_TARGET,
   ATTR_CLOUD_PLATFORM,
   ATTR_AWS_ECS_CLUSTER_ARN,
   ATTR_AWS_ECS_CONTAINER_ARN,
@@ -132,14 +117,11 @@ export class SamplingRuleApplier {
     let serviceName: AttributeValue | undefined = undefined;
 
     if (attributes) {
-      httpTarget = attributes[ATTR_HTTP_TARGET] ?? attributes[ATTR_URL_PATH];
-      httpUrl = attributes[ATTR_HTTP_URL] ?? attributes[ATTR_URL_FULL];
-      httpMethod =
-        attributes[ATTR_HTTP_METHOD] ?? attributes[ATTR_HTTP_REQUEST_METHOD];
+      httpTarget = attributes[ATTR_URL_PATH];
+      httpUrl = attributes[ATTR_URL_FULL];
+      httpMethod = attributes[ATTR_HTTP_REQUEST_METHOD];
       httpHost =
-        attributes[ATTR_HTTP_HOST] ??
-        attributes[ATTR_SERVER_ADDRESS] ??
-        attributes[ATTR_CLIENT_ADDRESS];
+        attributes[ATTR_SERVER_ADDRESS] ?? attributes[ATTR_CLIENT_ADDRESS];
     }
 
     let serviceType: AttributeValue | undefined = undefined;
