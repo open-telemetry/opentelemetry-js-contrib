@@ -1644,6 +1644,22 @@ describe('instrumentation-kafkajs', () => {
   });
 
   describe('cluster id', () => {
+    // Returns the property key (Symbol or string) that kafkajs uses to store
+    // the internal createCluster factory on a Kafka instance.
+    // kafkajs >= 1.3.0 uses Symbol(private:Kafka:createCluster);
+    // kafkajs < 1.3.0 uses the plain 'createCluster' string property.
+    function getCreateClusterKey(kafkaInst: object): PropertyKey | undefined {
+      return (
+        Object.getOwnPropertySymbols(kafkaInst).find(s =>
+          s.toString().includes('createCluster')
+        ) ??
+        (typeof (kafkaInst as Record<string, unknown>)['createCluster'] ===
+        'function'
+          ? 'createCluster'
+          : undefined)
+      );
+    }
+
     function initProducerOnInstance(kafkaInst: Kafka): Producer {
       patchProducerSend(
         async (): Promise<RecordMetadata[]> => [
@@ -1666,11 +1682,9 @@ describe('instrumentation-kafkajs', () => {
         clientId: 'cluster-id-test-success',
         brokers: ['mock:9092'],
       });
-      const _ccSym1 = Object.getOwnPropertySymbols(kafkaForTest as object).find(
-        s => s.toString().includes('createCluster')
-      );
-      if (_ccSym1) {
-        Reflect.set(kafkaForTest as object, _ccSym1, () => ({
+      const _ccKey1 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey1) {
+        Reflect.set(kafkaForTest as object, _ccKey1, () => ({
           brokerPool: { metadata: { clusterId: 'my-cluster-123' } },
         }));
       }
@@ -1715,11 +1729,9 @@ describe('instrumentation-kafkajs', () => {
         clientId: 'cluster-id-test-null',
         brokers: ['mock:9092'],
       });
-      const _ccSym2 = Object.getOwnPropertySymbols(kafkaForTest as object).find(
-        s => s.toString().includes('createCluster')
-      );
-      if (_ccSym2) {
-        Reflect.set(kafkaForTest as object, _ccSym2, () => ({
+      const _ccKey2 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey2) {
+        Reflect.set(kafkaForTest as object, _ccKey2, () => ({
           brokerPool: { metadata: { clusterId: null } },
         }));
       }
@@ -1743,11 +1755,9 @@ describe('instrumentation-kafkajs', () => {
         clientId: 'cluster-id-test-noadmin',
         brokers: ['mock:9092'],
       });
-      const _ccSym3 = Object.getOwnPropertySymbols(kafkaForTest as object).find(
-        s => s.toString().includes('createCluster')
-      );
-      if (_ccSym3) {
-        Reflect.set(kafkaForTest as object, _ccSym3, () => ({
+      const _ccKey3 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey3) {
+        Reflect.set(kafkaForTest as object, _ccKey3, () => ({
           brokerPool: { metadata: { clusterId: 42 } },
         }));
       }
@@ -1771,11 +1781,9 @@ describe('instrumentation-kafkajs', () => {
         clientId: 'cluster-id-sendbatch',
         brokers: ['mock:9092'],
       });
-      const _ccSym4 = Object.getOwnPropertySymbols(kafkaForTest as object).find(
-        s => s.toString().includes('createCluster')
-      );
-      if (_ccSym4) {
-        Reflect.set(kafkaForTest as object, _ccSym4, () => ({
+      const _ccKey4 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey4) {
+        Reflect.set(kafkaForTest as object, _ccKey4, () => ({
           brokerPool: { metadata: { clusterId: 'batch-cluster-456' } },
         }));
       }
@@ -1805,11 +1813,9 @@ describe('instrumentation-kafkajs', () => {
         clientId: 'cluster-id-test-empty-str',
         brokers: ['mock:9092'],
       });
-      const _ccSym5 = Object.getOwnPropertySymbols(kafkaForTest as object).find(
-        s => s.toString().includes('createCluster')
-      );
-      if (_ccSym5) {
-        Reflect.set(kafkaForTest as object, _ccSym5, () => ({
+      const _ccKey5 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey5) {
+        Reflect.set(kafkaForTest as object, _ccKey5, () => ({
           brokerPool: { metadata: { clusterId: '' } },
         }));
       }
@@ -1846,11 +1852,9 @@ describe('instrumentation-kafkajs', () => {
         clientId: 'cluster-id-consumer',
         brokers: ['mock:9092'],
       });
-      const _ccSym6 = Object.getOwnPropertySymbols(kafkaForTest as object).find(
-        s => s.toString().includes('createCluster')
-      );
-      if (_ccSym6) {
-        Reflect.set(kafkaForTest as object, _ccSym6, () => ({
+      const _ccKey6 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey6) {
+        Reflect.set(kafkaForTest as object, _ccKey6, () => ({
           brokerPool: { metadata: { clusterId: 'consumer-cluster-789' } },
         }));
       }
@@ -1889,11 +1893,9 @@ describe('instrumentation-kafkajs', () => {
       const mockCluster = {
         brokerPool: { metadata: { clusterId: 'cluster-v1' } },
       };
-      const _ccSym7 = Object.getOwnPropertySymbols(kafkaForTest as object).find(
-        s => s.toString().includes('createCluster')
-      );
-      if (_ccSym7) {
-        Reflect.set(kafkaForTest as object, _ccSym7, () => mockCluster);
+      const _ccKey7 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey7) {
+        Reflect.set(kafkaForTest as object, _ccKey7, () => mockCluster);
       }
       producer = initProducerOnInstance(kafkaForTest);
 
@@ -1934,11 +1936,9 @@ describe('instrumentation-kafkajs', () => {
           return {} as unknown as kafkajs.Admin;
         };
 
-      const _ccSym8 = Object.getOwnPropertySymbols(kafkaForTest as object).find(
-        s => s.toString().includes('createCluster')
-      );
-      if (_ccSym8) {
-        Reflect.set(kafkaForTest as object, _ccSym8, () => ({
+      const _ccKey8 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey8) {
+        Reflect.set(kafkaForTest as object, _ccKey8, () => ({
           brokerPool: { metadata: { clusterId: 'direct-cluster' } },
         }));
       }
@@ -1967,11 +1967,9 @@ describe('instrumentation-kafkajs', () => {
         clientId: 'cluster-id-throws',
         brokers: ['mock:9092'],
       });
-      const _ccSym9 = Object.getOwnPropertySymbols(kafkaForTest as object).find(
-        s => s.toString().includes('createCluster')
-      );
-      if (_ccSym9) {
-        Reflect.set(kafkaForTest as object, _ccSym9, () => ({
+      const _ccKey9 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey9) {
+        Reflect.set(kafkaForTest as object, _ccKey9, () => ({
           brokerPool: {
             get metadata(): never {
               throw new Error('clusterId boom');
@@ -2012,11 +2010,9 @@ describe('instrumentation-kafkajs', () => {
         clientId: 'cluster-id-eachbatch',
         brokers: ['mock:9092'],
       });
-      const _ccSym10 = Object.getOwnPropertySymbols(
-        kafkaForTest as object
-      ).find(s => s.toString().includes('createCluster'));
-      if (_ccSym10) {
-        Reflect.set(kafkaForTest as object, _ccSym10, () => ({
+      const _ccKey10 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey10) {
+        Reflect.set(kafkaForTest as object, _ccKey10, () => ({
           brokerPool: { metadata: { clusterId: 'batch-consumer-cluster' } },
         }));
       }
