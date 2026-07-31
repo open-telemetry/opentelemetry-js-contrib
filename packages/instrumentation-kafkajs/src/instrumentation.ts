@@ -154,25 +154,33 @@ const HISTOGRAM_BUCKET_BOUNDARIES = [
   0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10,
 ];
 
-// Reads the cluster ID from a kafkajs Producer or Consumer if it exposes a
-// `clusterId()` method.  This method is not part of the kafkajs v2.2.4 public
-// API; it requires an extended build.  On stock v2.2.4 the call is a no-op and
-// the attribute is simply omitted from the span rather than causing an error.
-// The method returns null when metadata has not yet been fetched (i.e. before
-// the first connect()), so by the time a send/receive span is created the value
-// is almost always available.
+// Maps a public Producer or Consumer instance to the internal kafkajs Cluster
+// object captured at construction time.  kafkajs creates the Cluster inside
+// producer() / consumer() via a private Symbol-keyed method
+// (Symbol(private:Kafka:createCluster)); we intercept that transiently to
+// obtain the reference without modifying kafkajs internals.
+const _clusterWeakMap = new WeakMap<object, unknown>();
+
+// Reads the cluster ID from the internal kafkajs Cluster stored in
+// _clusterWeakMap for the given Producer or Consumer.  Accesses
+// cluster.brokerPool.metadata.clusterId synchronously — populated as soon as
+// the first broker connection establishes metadata, which always precedes the
+// first send/receive span.  Returns undefined if metadata is not yet available.
 function _readClusterId(client: unknown): string | undefined {
   if (client === null || client === undefined) return undefined;
-  if (typeof (client as Record<string, unknown>)['clusterId'] !== 'function') {
-    return undefined;
-  }
+  const cluster = _clusterWeakMap.get(client as object);
+  if (!cluster) return undefined;
   try {
-    const id = (
-      client as {
-        clusterId(): string | null | undefined;
-      }
-    ).clusterId();
-    return id != null && id !== '' ? id : undefined;
+    const brokerPool = (cluster as Record<string, unknown>)['brokerPool'];
+    const metadata = (
+      brokerPool as Record<string, unknown> | undefined
+    )?.['metadata'];
+    const clusterId = (metadata as Record<string, unknown> | undefined)?.[
+      'clusterId'
+    ];
+    return typeof clusterId === 'string' && clusterId !== ''
+      ? clusterId
+      : undefined;
   } catch {
     return undefined;
   }
@@ -245,7 +253,36 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         this: kafkaJs.Kafka,
         ...args: Parameters<kafkaJs.Kafka['consumer']>
       ) {
+        // Transiently intercept Symbol(private:Kafka:createCluster) to capture
+        // the internal Cluster object created inside the original consumer() call.
+        let capturedCluster: unknown;
+        const kafkaInstance = this as object;
+        const createClusterSym = Object.getOwnPropertySymbols(
+          kafkaInstance
+        ).find(s => s.toString().includes('createCluster'));
+        let originalCreateCluster: unknown;
+        if (createClusterSym) {
+          originalCreateCluster = Reflect.get(kafkaInstance, createClusterSym);
+          if (typeof originalCreateCluster === 'function') {
+            Reflect.set(
+              kafkaInstance,
+              createClusterSym,
+              function (this: unknown, ...clusterArgs: unknown[]) {
+                capturedCluster = (
+                  originalCreateCluster as (...a: unknown[]) => unknown
+                ).apply(this, clusterArgs);
+                return capturedCluster;
+              }
+            );
+          }
+        }
         const newConsumer: Consumer = original.apply(this, args);
+        if (createClusterSym && typeof originalCreateCluster === 'function') {
+          Reflect.set(kafkaInstance, createClusterSym, originalCreateCluster);
+        }
+        if (capturedCluster !== undefined) {
+          _clusterWeakMap.set(newConsumer, capturedCluster);
+        }
 
         if (isWrapped(newConsumer.run)) {
           instrumentation._unwrap(newConsumer, 'run');
@@ -297,7 +334,36 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         this: kafkaJs.Kafka,
         ...args: Parameters<kafkaJs.Kafka['producer']>
       ) {
+        // Transiently intercept Symbol(private:Kafka:createCluster) to capture
+        // the internal Cluster object created inside the original producer() call.
+        let capturedCluster: unknown;
+        const kafkaInstance = this as object;
+        const createClusterSym = Object.getOwnPropertySymbols(
+          kafkaInstance
+        ).find(s => s.toString().includes('createCluster'));
+        let originalCreateCluster: unknown;
+        if (createClusterSym) {
+          originalCreateCluster = Reflect.get(kafkaInstance, createClusterSym);
+          if (typeof originalCreateCluster === 'function') {
+            Reflect.set(
+              kafkaInstance,
+              createClusterSym,
+              function (this: unknown, ...clusterArgs: unknown[]) {
+                capturedCluster = (
+                  originalCreateCluster as (...a: unknown[]) => unknown
+                ).apply(this, clusterArgs);
+                return capturedCluster;
+              }
+            );
+          }
+        }
         const newProducer: Producer = original.apply(this, args);
+        if (createClusterSym && typeof originalCreateCluster === 'function') {
+          Reflect.set(kafkaInstance, createClusterSym, originalCreateCluster);
+        }
+        if (capturedCluster !== undefined) {
+          _clusterWeakMap.set(newProducer, capturedCluster);
+        }
 
         if (isWrapped(newProducer.sendBatch)) {
           instrumentation._unwrap(newProducer, 'sendBatch');
