@@ -172,9 +172,9 @@ function _readClusterId(client: unknown): string | undefined {
   if (!cluster) return undefined;
   try {
     const brokerPool = (cluster as Record<string, unknown>)['brokerPool'];
-    const metadata = (
-      brokerPool as Record<string, unknown> | undefined
-    )?.['metadata'];
+    const metadata = (brokerPool as Record<string, unknown> | undefined)?.[
+      'metadata'
+    ];
     const clusterId = (metadata as Record<string, unknown> | undefined)?.[
       'clusterId'
     ];
