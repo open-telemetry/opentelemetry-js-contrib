@@ -29,6 +29,7 @@ describe('GitHubResourceDetector', () => {
     process.env.GITHUB_ACTOR = '';
     process.env.GITHUB_SHA = '';
     process.env.GITHUB_REF = '';
+    process.env.GITHUB_REF_NAME = '';
     process.env.GITHUB_HEAD_REF = '';
     process.env.GITHUB_BASE_REF = '';
   });
@@ -61,7 +62,22 @@ describe('GitHubResourceDetector', () => {
     });
   });
 
-  it('should fall back to GITHUB_REF for the head ref name outside of pull requests', async () => {
+  it('should fall back to GITHUB_REF_NAME then GITHUB_REF for the head ref name outside of pull requests', async () => {
+    process.env.GITHUB_WORKFLOW = 'workflow-foo';
+    process.env.GITHUB_SHA = 'git-sha';
+    process.env.GITHUB_REF_NAME = 'main';
+
+    const resource = detectResources({ detectors: [gitHubDetector] });
+
+    assert.ok(resource);
+    assert.deepStrictEqual(resource.attributes, {
+      [ATTR_CICD_PIPELINE_NAME]: 'workflow-foo',
+      [ATTR_VCS_REF_HEAD_NAME]: 'main',
+      [ATTR_VCS_REF_HEAD_REVISION]: 'git-sha',
+    });
+  });
+
+  it('should fall back to GITHUB_REF for the head ref name when GITHUB_REF_NAME is absent', async () => {
     process.env.GITHUB_WORKFLOW = 'workflow-foo';
     process.env.GITHUB_SHA = 'git-sha';
     process.env.GITHUB_REF = 'refs/heads/main';

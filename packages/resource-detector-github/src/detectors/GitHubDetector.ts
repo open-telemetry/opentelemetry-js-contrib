@@ -25,7 +25,10 @@ class GitHubDetector implements ResourceDetector {
   public detect(): DetectedResource {
     // GITHUB_HEAD_REF is only set for pull request events, where GITHUB_REF
     // holds the synthetic merge ref instead of the branch being merged.
-    const headRef = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF;
+    const headRef =
+      process.env.GITHUB_HEAD_REF ||
+      process.env.GITHUB_REF_NAME ||
+      process.env.GITHUB_REF;
 
     const attributes = {
       [ATTR_CICD_PIPELINE_NAME]: process.env.GITHUB_WORKFLOW || undefined,
