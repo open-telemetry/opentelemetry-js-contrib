@@ -20,16 +20,12 @@ npm install --save @opentelemetry/propagator-aws-xray
 In the [global tracer configuration file](https://opentelemetry.io/docs/instrumentation/js/getting-started/nodejs/#setup), configure the following:
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { propagation } = require('@opentelemetry/api');
 const { AWSXRayPropagator } = require('@opentelemetry/propagator-aws-xray');
 // ...
 
-const provider = new NodeTracerProvider();
-
 // Set the global trace context propagator to use X-Ray formatted trace header
-provider.register({
-  propagator: new AWSXRayPropagator()
-});
+propagation.setGlobalPropagator(new AWSXRayPropagator());
 ```
 
 ## Propagator Details

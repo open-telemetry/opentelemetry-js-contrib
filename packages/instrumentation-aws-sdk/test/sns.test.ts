@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import * as nock from 'nock';
 
 import { expect } from 'expect';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   ATTR_MESSAGING_SYSTEM,
   ATTR_RPC_METHOD,

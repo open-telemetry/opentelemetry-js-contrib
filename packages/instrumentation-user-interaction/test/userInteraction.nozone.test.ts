@@ -7,7 +7,7 @@ const originalSetTimeout = window.setTimeout;
 import { trace } from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import * as tracing from '@opentelemetry/sdk-trace-base';
+import * as tracing from '@opentelemetry/sdk-trace';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
@@ -80,7 +80,9 @@ describe('UserInteractionInstrumentation', () => {
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');
       webTracerProvider = new WebTracerProvider({
-        spanProcessors: [new tracing.SimpleSpanProcessor(dummySpanExporter)],
+        spanProcessors: [
+          new tracing.SimpleSpanProcessor({ exporter: dummySpanExporter }),
+        ],
       });
       webTracerProvider.register();
 
@@ -301,6 +303,35 @@ describe('UserInteractionInstrumentation', () => {
       sandbox.clock.tick(10);
     });
 
+    it('should invoke the listener when the XPath cannot be computed', () => {
+      // getElementXPath reads `localName` on every sibling it walks, which
+      // throws for a node from a cross-origin frame, e.g., an iframe injected
+      // by a browser extension
+      const crossOriginNode = document.createElement('iframe');
+      Object.defineProperty(crossOriginNode, 'localName', {
+        get() {
+          throw new Error('Permission denied to access property "localName"');
+        },
+      });
+      const element = createButton();
+      const parent = document.createElement('div');
+      parent.appendChild(crossOriginNode);
+      parent.appendChild(element);
+      document.body.appendChild(parent);
+
+      let called = false;
+      try {
+        fakeClickInteraction(() => {
+          called = true;
+        }, element);
+      } finally {
+        document.body.removeChild(parent);
+      }
+
+      assert.strictEqual(called, true, 'should invoke the listener');
+      assert.equal(exportSpy.args.length, 0, 'should NOT export any span');
+    });
+
     it('should handle task with navigation change', done => {
       fakeClickInteraction(() => {
         history.pushState(
@@ -356,7 +387,7 @@ describe('UserInteractionInstrumentation', () => {
 
             const attributes = spanXhr.attributes;
             assert.equal(
-              attributes['http.url'],
+              attributes['url.full'],
               'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
             );
             // all other attributes are checked in xhr anyway

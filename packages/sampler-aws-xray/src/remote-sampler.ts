@@ -19,7 +19,7 @@ import {
   ParentBasedSampler,
   Sampler,
   SamplingResult,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { AWSXRaySamplingClient } from './aws-xray-sampling-client';
 import { FallbackSampler } from './fallback-sampler';
 import {

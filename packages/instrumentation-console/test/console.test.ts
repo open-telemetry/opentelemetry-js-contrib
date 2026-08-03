@@ -6,22 +6,25 @@
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { context, trace } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,
   InMemoryLogRecordExporter,
 } from '@opentelemetry/sdk-logs';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import * as assert from 'assert';
 import { ConsoleInstrumentation } from '../src';
 
-const tracerProvider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(new InMemorySpanExporter())],
+context.setGlobalContextManager(new AsyncLocalStorageContextManager());
+const tracerProvider = new TracerProvider({
+  spanProcessors: [
+    new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() }),
+  ],
 });
-tracerProvider.register();
 const tracer = tracerProvider.getTracer('default');
 
 const memExporter = new InMemoryLogRecordExporter();
@@ -159,6 +162,34 @@ describe('ConsoleInstrumentation', () => {
       const logRecords = memExporter.getFinishedLogRecords();
       assert.strictEqual(logRecords.length, 0);
       instrumentation.enable();
+    });
+  });
+
+  describe('construction-time enable', () => {
+    it('restores original console methods on disable() when constructed with { enabled: true }', () => {
+      // Capture the shared instrumentation's patched console.log so we can
+      // assert disable() restores it exactly.
+      const beforeLog = console.log;
+
+      // { enabled: true } triggers enable() from InstrumentationBase's
+      // constructor, patching console and saving originals.
+      const inst = new ConsoleInstrumentation({ enabled: true });
+      try {
+        assert.notStrictEqual(
+          console.log,
+          beforeLog,
+          'expected console.log to be patched after construction'
+        );
+      } finally {
+        // Ensure console is unpatched even if the assertion above fails so we
+        // don't leave console.log double-patched for subsequent tests.
+        inst.disable();
+      }
+      assert.strictEqual(
+        console.log,
+        beforeLog,
+        'expected console.log to be restored after disable()'
+      );
     });
   });
 });

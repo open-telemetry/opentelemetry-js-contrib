@@ -5,12 +5,12 @@
 
 import { context, trace, Span } from '@opentelemetry/api';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 
 import { RestifyInstrumentation } from '../src';
 import * as types from '../src/internal-types';
@@ -107,8 +107,8 @@ const createServer = async (setupRoutes?: Function) => {
 
 describe('Restify Instrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  const provider = new NodeTracerProvider({
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
+  const provider = new TracerProvider({
     spanProcessors: [spanProcessor],
   });
   plugin.setTracerProvider(provider);

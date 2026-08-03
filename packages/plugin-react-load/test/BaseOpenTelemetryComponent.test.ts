@@ -12,11 +12,11 @@ import {
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import {
-  BasicTracerProvider,
+  TracerProvider,
   SimpleSpanProcessor,
   SpanExporter,
   ReadableSpan,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { StackContextManager } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
@@ -44,7 +44,7 @@ interface TestCases {
 }
 
 describe('ReactLoad Instrumentation', () => {
-  let provider: BasicTracerProvider;
+  let provider: TracerProvider;
   let spanProcessor: SimpleSpanProcessor;
   let dummyExporter: DummyExporter;
   let contextManager: StackContextManager;
@@ -58,8 +58,8 @@ describe('ReactLoad Instrumentation', () => {
     context.setGlobalContextManager(contextManager);
 
     dummyExporter = new DummyExporter();
-    spanProcessor = new SimpleSpanProcessor(dummyExporter);
-    provider = new BasicTracerProvider({
+    spanProcessor = new SimpleSpanProcessor({ exporter: dummyExporter });
+    provider = new TracerProvider({
       spanProcessors: [spanProcessor],
     });
     sandbox = sinon.createSandbox();

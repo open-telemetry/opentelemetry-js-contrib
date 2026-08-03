@@ -5,7 +5,7 @@
 
 [component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @blumamir @jj22ee @trivikr
 
-This module provides automatic instrumentation for the [AWS SDK for JavaScript v3](https://github.com/aws/aws-sdk-js-v3) modules, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [AWS SDK for JavaScript v3](https://github.com/aws/aws-sdk-js-v3) modules.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -23,25 +23,22 @@ npm install --save @opentelemetry/instrumentation-aws-sdk
 
 ## Usage
 
-For further automatic instrumentation instruction see the [@opentelemetry/instrumentation](https://www.npmjs.com/package/@opentelemetry/instrumentation) package.
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const {
-  AwsInstrumentation,
-} = require('@opentelemetry/instrumentation-aws-sdk');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { AwsInstrumentation } = require('@opentelemetry/instrumentation-aws-sdk');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new AwsInstrumentation({
-      // see under for available configuration
+      // see below for available configuration
     }),
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ### aws-sdk Instrumentation Options

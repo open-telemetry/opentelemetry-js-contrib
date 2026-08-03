@@ -13,7 +13,7 @@ import {
   SamplingDecision,
   SamplingResult,
   TraceIdRatioBasedSampler,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { RateLimitingSampler } from './rate-limiting-sampler';
 
 // FallbackSampler samples 1 req/sec and additional 5% of requests using TraceIdRatioBasedSampler.

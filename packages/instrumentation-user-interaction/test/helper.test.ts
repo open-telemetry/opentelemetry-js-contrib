@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as tracing from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 
-export class DummySpanExporter implements tracing.SpanExporter {
-  export(spans: tracing.ReadableSpan[]) {}
+export class DummySpanExporter implements SpanExporter {
+  export(spans: ReadableSpan[]) {}
 
   shutdown() {
     return Promise.resolve();
@@ -50,12 +50,12 @@ export function fakeEventInteraction(
   element.dispatchEvent(event);
 }
 
-export function assertClickSpan(span: tracing.ReadableSpan, id = 'testBtn') {
+export function assertClickSpan(span: ReadableSpan, id = 'testBtn') {
   assertInteractionSpan(span, { name: 'click', elementId: id });
 }
 
 export function assertInteractionSpan(
-  span: tracing.ReadableSpan,
+  span: ReadableSpan,
   {
     name,
     eventType = name,
@@ -68,7 +68,7 @@ export function assertInteractionSpan(
   assert.strictEqual(attributes.event_type, eventType);
   assert.strictEqual(attributes.target_element, 'BUTTON');
   assert.strictEqual(attributes.target_xpath, `//*[@id="${elementId}"]`);
-  assert.ok(attributes['http.url'] !== '');
+  assert.ok(attributes['url.full'] !== '');
   assert.ok(attributes['user_agent'] !== '');
 }
 

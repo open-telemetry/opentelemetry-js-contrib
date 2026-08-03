@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [Hapi Framework](https://hapi.dev)(`@hapi/hapi`)package, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [Hapi Framework](https://hapi.dev)(`@hapi/hapi`)package.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -29,33 +29,20 @@ npm install --save @opentelemetry/instrumentation-hapi
 
 OpenTelemetry Hapi Instrumentation allows the user to automatically collect trace data and export them to their backend of choice, to give observability to distributed systems.
 
-To load a specific instrumentation (Hapi in this case), specify it in the registerInstrumentations' configuration.
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new HapiInstrumentation(),
   ],
 });
-```
-
-If instead you would just want to load a specific instrumentation only (**hapi** in this case);
-
-```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
-const provider = new NodeTracerProvider();
-provider.register();
-
-const hapiInstrumentation = new HapiInstrumentation();
-hapiInstrumentation.setTracerProvider(provider);
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 <!--

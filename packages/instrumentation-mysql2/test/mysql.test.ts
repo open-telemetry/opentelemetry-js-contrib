@@ -8,11 +8,11 @@ import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
-  BasicTracerProvider,
+  TracerProvider,
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import { MySQL2Instrumentation, MySQL2InstrumentationConfig } from '../src';
 
@@ -89,8 +89,8 @@ describe('mysql2', () => {
   describe('callback API', () => {
     let contextManager: AsyncLocalStorageContextManager;
     const memoryExporter = new InMemorySpanExporter();
-    const provider = new BasicTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+    const provider = new TracerProvider({
+      spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
     });
 
     let connection: Connection;
@@ -1413,8 +1413,8 @@ describe('mysql2', () => {
 
     let contextManager: AsyncLocalStorageContextManager;
     const memoryExporter = new InMemorySpanExporter();
-    const provider = new BasicTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+    const provider = new TracerProvider({
+      spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
     });
     let connection: ConnectionAsync;
     let rootConnection: ConnectionAsync;

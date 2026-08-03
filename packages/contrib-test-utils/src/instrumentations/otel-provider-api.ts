@@ -2,10 +2,7 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-import {
-  InMemorySpanExporter,
-  ReadableSpan,
-} from '@opentelemetry/sdk-trace-base';
+import { InMemorySpanExporter, ReadableSpan } from '@opentelemetry/sdk-trace';
 
 const OTEL_TESTING_MEMORY_EXPORTER = Symbol.for(
   'opentelemetry.testing.memory_exporter'

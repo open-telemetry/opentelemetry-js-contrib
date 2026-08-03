@@ -12,9 +12,9 @@ import {
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { context, trace, Span, INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as assert from 'assert';
@@ -24,8 +24,8 @@ import type { Winston2Logger, Winston3Logger } from '../src/internal-types';
 import { WinstonInstrumentation } from '../src';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+const provider = new TracerProvider({
+  spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
 });
 const tracer = provider.getTracer('default');
 context.setGlobalContextManager(new AsyncLocalStorageContextManager());

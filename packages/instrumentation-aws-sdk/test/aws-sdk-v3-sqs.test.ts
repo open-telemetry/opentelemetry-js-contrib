@@ -17,7 +17,7 @@ process.env.AWS_ACCESS_KEY_ID = 'testing';
 process.env.AWS_SECRET_ACCESS_KEY = 'testing';
 
 import 'mocha';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { context, trace } from '@opentelemetry/api';
 import {
   ATTR_HTTP_RESPONSE_STATUS_CODE,

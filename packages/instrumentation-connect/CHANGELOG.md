@@ -1,6 +1,18 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.64.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.63.0...instrumentation-connect-v0.64.0) (2026-07-23)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3629](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3629)) ([466d5de](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/466d5def474cf251217881322ed4db13fad96b86))
+
+
+### Bug Fixes
+
+* **instrumentation-connect:** avoid unconditional close listener causing MaxListenersExceededWarning ([#3602](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3602)) ([07607d0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/07607d0adab59f87c0e517075fa1fbd41c18f99e))
+
 ## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.62.0...instrumentation-connect-v0.63.0) (2026-07-03)
 
 

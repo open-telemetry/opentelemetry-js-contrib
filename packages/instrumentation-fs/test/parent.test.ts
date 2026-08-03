@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import {
-  BasicTracerProvider,
+  TracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { FsInstrumentation } from '../src';
 import * as assert from 'assert';
 import type * as FSType from 'fs';
@@ -15,8 +15,8 @@ import * as api from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new BasicTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+const provider = new TracerProvider({
+  spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
 });
 
 const tracer = provider.getTracer('default');

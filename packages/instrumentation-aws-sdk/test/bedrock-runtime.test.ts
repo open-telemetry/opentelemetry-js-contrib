@@ -32,7 +32,7 @@ import * as path from 'path';
 import { Definition, back as nockBack } from 'nock';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   ATTR_GEN_AI_SYSTEM,
   ATTR_GEN_AI_OPERATION_NAME,

@@ -22,30 +22,20 @@ npm install --save @opentelemetry/instrumentation-undici
 
 OpenTelemetry Undici/fetch Instrumentation allows the user to automatically collect trace data and export them to their backend of choice, to give observability to distributed systems.
 
-To load a specific instrumentation (Undici in this case), specify it in the Node Tracer's configuration.
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
 
 ```js
-const {
-  UndiciInstrumentation,
-} = require('@opentelemetry/instrumentation-undici');
-const {
-  ConsoleSpanExporter,
-  NodeTracerProvider,
-  SimpleSpanProcessor,
-} = require('@opentelemetry/sdk-trace-node');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { UndiciInstrumentation } = require('@opentelemetry/instrumentation-undici');
 
-const provider = new NodeTracerProvider({
-  spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+const sdk = new NodeSDK({
+  instrumentations: [
+    new UndiciInstrumentation(),
   ],
 });
-
-provider.register();
-
-registerInstrumentations({
-  instrumentations: [new UndiciInstrumentation()],
-});
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ### Undici/Fetch instrumentation Options

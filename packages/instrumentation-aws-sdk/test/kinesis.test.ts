@@ -13,7 +13,7 @@ import * as fs from 'fs';
 import * as nock from 'nock';
 
 import { SpanKind } from '@opentelemetry/api';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { expect } from 'expect';
 
 const region = 'us-east-1';

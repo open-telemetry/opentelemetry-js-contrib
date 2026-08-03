@@ -59,7 +59,7 @@
     "@types/webpack-env": "1.18.8",
     "assert": "2.1.0",
     "babel-loader": "10.0.0",
-    "babel-plugin-istanbul": "7.0.1",
+    "babel-plugin-istanbul": "8.0.0",
     "cross-env": "10.1.0",
     "eslint": "9.39.4",
     "eslint-plugin-baseline-js": "0.4.2",

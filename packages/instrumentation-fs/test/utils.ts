@@ -2,7 +2,7 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import type { FMember } from '../src/types';

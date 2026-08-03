@@ -8,7 +8,7 @@
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
@@ -24,8 +24,8 @@ const providerWithZone = new WebTracerProvider({
     [ATTR_SERVICE_NAME]: 'web-service-ui',
   }),
   spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
-    new SimpleSpanProcessor(new OTLPTraceExporter()),
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
+    new SimpleSpanProcessor({ exporter: new OTLPTraceExporter() }),
   ],
 });
 

@@ -5,11 +5,7 @@
 
 import { BaggageKeyPredicate } from './types';
 import { Context, propagation } from '@opentelemetry/api';
-import {
-  SpanProcessor,
-  Span,
-  ReadableSpan,
-} from '@opentelemetry/sdk-trace-base';
+import { SpanProcessor, Span, ReadableSpan } from '@opentelemetry/sdk-trace';
 
 /**
  * BaggageSpanProcessor is a {@link SpanProcessor} that reads entries stored in {@link Baggage}

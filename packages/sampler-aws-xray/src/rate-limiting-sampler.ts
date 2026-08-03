@@ -12,7 +12,7 @@ import {
   Sampler,
   SamplingDecision,
   SamplingResult,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { RateLimiter } from './rate-limiter';
 
 export class RateLimitingSampler implements Sampler {

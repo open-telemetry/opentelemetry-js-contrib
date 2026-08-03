@@ -5,7 +5,7 @@
 import * as assert from 'assert';
 import { SequelizeInstrumentation } from '../src';
 import { extractTableFromQuery } from '../src/utils';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   context,
   diag,

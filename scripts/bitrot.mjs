@@ -27,6 +27,15 @@ const TOP = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const USE_COLOR = process.stdout.isTTY && !process.env.NO_COLOR?.length > 0;
 const BUILD_DIR = path.join(TOP, 'build', 'bitrot');
 
+// `glob` always wants forward slashes in its patterns, even on Windows,
+// where `path.join` produces backslashes.
+function toGlobPattern(...parts) {
+  return path
+    .join(...parts)
+    .split(path.sep)
+    .join('/');
+}
+
 let numProbs = 0;
 function problem(...args) {
   numProbs += 1;
@@ -93,7 +102,7 @@ function bitrotRenovateCoreExperimental() {
   }
 
   const pkgNames = globSync(
-    path.join(ojDir, 'experimental/packages/*/package.json')
+    toGlobPattern(ojDir, 'experimental/packages/*/package.json')
   )
     .map(packageJson => JSON.parse(fs.readFileSync(packageJson)))
     .filter(pj => isPublicPackage(pj))
@@ -168,7 +177,7 @@ function getNpmInfo(name) {
  */
 function bitrotInstrumentations() {
   const instrReadmes = globSync(
-    path.join(TOP, 'packages/instrumentation-*/README.md')
+    toGlobPattern(TOP, 'packages/instrumentation-*/README.md')
   );
 
   // Match examples:

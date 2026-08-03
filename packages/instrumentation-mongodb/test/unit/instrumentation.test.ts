@@ -380,7 +380,7 @@ describe('_patchEnd', () => {
       const mockSpan = createMockSpan();
       let metricsAddCallCount = 0;
 
-      (instrumentation as any)._connectionsUsage = {
+      (instrumentation as any)._connectionsCount = {
         add: () => {
           metricsAddCallCount++;
         },

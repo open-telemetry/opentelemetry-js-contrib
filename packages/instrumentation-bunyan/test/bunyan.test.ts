@@ -6,7 +6,8 @@
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { context, INVALID_SPAN_CONTEXT, trace } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
@@ -14,9 +15,9 @@ import {
   SimpleLogRecordProcessor,
   InMemoryLogRecordExporter,
 } from '@opentelemetry/sdk-logs';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { resourceFromAttributes } from '@opentelemetry/resources';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
@@ -35,15 +36,21 @@ import type * as BunyanLogger from 'bunyan';
 // import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
-const tracerProvider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(new InMemorySpanExporter())],
-});
-tracerProvider.register();
-const tracer = tracerProvider.getTracer('default');
-
 const resource = resourceFromAttributes({
   [ATTR_SERVICE_NAME]: 'test-instrumentation-bunyan',
 });
+
+context.setGlobalContextManager(new AsyncLocalStorageContextManager());
+
+const tracerProvider = new TracerProvider({
+  resource,
+  spanProcessors: [
+    new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() }),
+  ],
+});
+trace.setGlobalTracerProvider(tracerProvider);
+const tracer = tracerProvider.getTracer('default');
+
 const memExporter = new InMemoryLogRecordExporter();
 const loggerProvider = new LoggerProvider({
   resource,

@@ -4,7 +4,7 @@
  */
 
 import { SpanKind, type Attributes } from '@opentelemetry/api';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   ATTR_NETWORK_LOCAL_ADDRESS,
   ATTR_NETWORK_LOCAL_PORT,

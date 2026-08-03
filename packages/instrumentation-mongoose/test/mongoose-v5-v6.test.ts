@@ -11,7 +11,7 @@ import {
   getTestSpans,
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 
 const instrumentation = registerInstrumentationTesting(
   new MongooseInstrumentation()

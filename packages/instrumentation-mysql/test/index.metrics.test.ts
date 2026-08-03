@@ -13,7 +13,7 @@ import {
   ResourceMetrics,
   MetricData,
 } from '@opentelemetry/sdk-metrics';
-import { METRIC_DB_CLIENT_CONNECTIONS_USAGE } from '../src/semconv';
+import { METRIC_DB_CLIENT_CONNECTION_COUNT } from '../src/semconv';
 import { MySQLInstrumentation } from '../src';
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 
@@ -106,7 +106,7 @@ describe('mysql@2.x-Metrics', () => {
       });
     });
 
-    it('Pool - Should add connection usage metrics', async () => {
+    it('Pool - Should add connection count metrics', async () => {
       const conn: PoolConnection = await promisify(pool.getConnection)();
       assert.ok(conn);
 
@@ -184,7 +184,7 @@ describe('mysql@2.x-Metrics', () => {
       });
     });
 
-    it('PoolCluster - Should add connection usage metrics', async () => {
+    it('PoolCluster - Should add connection count metrics', async () => {
       const conn = (await promisify(
         poolCluster.getConnection
       )()) as PoolConnection;
@@ -208,11 +208,8 @@ describe('mysql@2.x-Metrics', () => {
 });
 
 function assertMetrics(metrics: MetricData[]) {
-  // TODO(3590): `db.client.connections.usage` is pre-stable and should be removed
-  // in a follow-up PR. The emission is not gated on semconv stability so it
-  // is still produced and no stable is being sent; assert its presence until it is explicitly removed.
   assert.ok(
-    metrics.some(m => m.descriptor.name === METRIC_DB_CLIENT_CONNECTIONS_USAGE),
-    'db.client.connections.usage metric should be present'
+    metrics.some(m => m.descriptor.name === METRIC_DB_CLIENT_CONNECTION_COUNT),
+    'db.client.connection.count metric should be present'
   );
 }

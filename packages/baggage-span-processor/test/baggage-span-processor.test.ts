@@ -6,7 +6,7 @@
 import { BaggageSpanProcessor } from '../src/baggage-span-processor';
 import { ALLOW_ALL_BAGGAGE_KEYS } from '../src/types';
 import { propagation, ROOT_CONTEXT, SpanKind } from '@opentelemetry/api';
-import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base';
+import { TracerProvider, Span } from '@opentelemetry/sdk-trace';
 import { expect } from 'expect';
 
 describe('BaggageSpanProcessor with all keys filter', () => {
@@ -23,7 +23,7 @@ describe('BaggageSpanProcessor with all keys filter', () => {
   let span: Span;
 
   beforeEach(() => {
-    const tracer = new BasicTracerProvider().getTracer('baggage-testing');
+    const tracer = new TracerProvider().getTracer('baggage-testing');
     span = tracer.startSpan(
       'Edward W. Span',
       {
@@ -72,7 +72,7 @@ describe('BaggageSpanProcessor with startWith key filter', () => {
   let span: Span;
 
   beforeEach(() => {
-    const tracer = new BasicTracerProvider().getTracer('baggage-testing');
+    const tracer = new TracerProvider().getTracer('baggage-testing');
     span = tracer.startSpan(
       'Edward W. Span',
       {
@@ -109,7 +109,7 @@ describe('BaggageSpanProcessor with regex key filter', () => {
   let span: Span;
 
   beforeEach(() => {
-    const tracer = new BasicTracerProvider().getTracer('baggage-testing');
+    const tracer = new TracerProvider().getTracer('baggage-testing');
     span = tracer.startSpan(
       'Edward W. Span',
       {

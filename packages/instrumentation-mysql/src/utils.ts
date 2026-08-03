@@ -76,7 +76,7 @@ export function arrayStringifyHelper(arr: Array<unknown> | undefined): string {
   return '';
 }
 
-export function getPoolNameOld(pool: Pool): string {
+export function getPoolName(pool: Pool): string {
   const c = pool.config.connectionConfig;
   let poolName = '';
   poolName += c.host ? `host: '${c.host}', ` : '';

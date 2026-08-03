@@ -4,11 +4,11 @@
  */
 
 import {
-  BasicTracerProvider,
+  TracerProvider,
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { Span, SpanStatusCode } from '@opentelemetry/api';
 import { ATTR_EXCEPTION_MESSAGE } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
@@ -103,8 +103,8 @@ const queryInvalid = `
 `;
 
 const exporter = new InMemorySpanExporter();
-const provider = new BasicTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(exporter)],
+const provider = new TracerProvider({
+  spanProcessors: [new SimpleSpanProcessor({ exporter })],
 });
 graphQLInstrumentation.setTracerProvider(provider);
 

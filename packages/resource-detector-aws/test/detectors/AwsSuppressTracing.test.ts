@@ -10,7 +10,7 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ResourceDetector, detectResources } from '@opentelemetry/resources';
 
@@ -21,7 +21,7 @@ describe('[Integration] Internal tracing', () => {
       'http://169.254.169.254/metadata';
 
     const memoryExporter = new InMemorySpanExporter();
-    const spanProcessor = new SimpleSpanProcessor(memoryExporter);
+    const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
     const sdk = new NodeSDK({
       instrumentations: [new FsInstrumentation(), new HttpInstrumentation()],
       spanProcessors: [spanProcessor],

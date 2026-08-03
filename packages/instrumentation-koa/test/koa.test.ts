@@ -7,13 +7,13 @@ import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
 import type { RouterParamContext } from '@koa/router';
 import * as KoaRouter from '@koa/router';
 import { context, trace, Span } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import {
   ATTR_HTTP_ROUTE,
   ATTR_EXCEPTION_MESSAGE,
@@ -62,8 +62,8 @@ const isrouterCompat =
 
 describe('Koa Instrumentation', function () {
   const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  const provider = new NodeTracerProvider({
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
+  const provider = new TracerProvider({
     spanProcessors: [spanProcessor],
   });
   plugin.setTracerProvider(provider);
