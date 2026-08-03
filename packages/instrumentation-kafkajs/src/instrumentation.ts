@@ -20,6 +20,7 @@ import {
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
+  InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
@@ -154,19 +155,19 @@ const HISTOGRAM_BUCKET_BOUNDARIES = [
   0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10,
 ];
 
-// Maps a public Producer or Consumer instance to the internal kafkajs Cluster
-// object captured at construction time.  kafkajs >= 1.3.0 stores the factory
-// as a Symbol-keyed property (Symbol(private:Kafka:createCluster)); kafkajs
-// < 1.3.0 stores it as a plain 'createCluster' property.  We intercept the
-// factory transiently to obtain the Cluster reference without modifying
-// kafkajs internals persistently.
+// Maps a Producer/Consumer to the internal kafkajs Cluster instance it was
+// created with, captured via the producer()/consumer() factory module hooks
+// below.
 const _clusterWeakMap = new WeakMap<object, unknown>();
 
-// Reads the cluster ID from the internal kafkajs Cluster stored in
-// _clusterWeakMap for the given Producer or Consumer.  Accesses
-// cluster.brokerPool.metadata.clusterId synchronously — populated as soon as
-// the first broker connection establishes metadata, which always precedes the
-// first send/receive span.  Returns undefined if metadata is not yet available.
+// cluster.brokerPool.metadata is only populated once kafkajs has fetched
+// broker metadata. For a consumer this always precedes eachMessage/eachBatch
+// (kafkajs fetches metadata on connect() and at the top of every fetch()
+// cycle), so the read below is effectively guaranteed once messages are
+// flowing. For a producer it is not guaranteed: metadata is fetched lazily
+// inside send()/sendBatch(), so the very first send on a fresh producer can
+// race ahead of it and omit the attribute; later sends on the same producer
+// pick it up once metadata has arrived.
 function _readClusterId(client: unknown): string | undefined {
   if (client === null || client === undefined) return undefined;
   const cluster = _clusterWeakMap.get(client as object);
@@ -244,7 +245,48 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
       },
       unpatch
     );
+    module.files.push(
+      this._getClusterCaptureFile('kafkajs/src/producer/index.js')
+    );
+    module.files.push(
+      this._getClusterCaptureFile('kafkajs/src/consumer/index.js')
+    );
     return module;
+  }
+
+  // kafkajs's own Kafka.prototype.producer()/consumer() build a Cluster and
+  // pass it straight into these internal factories as `params.cluster`, so
+  // hooking the factory module directly reads it as a plain argument. No
+  // instance patching, no restore step, and no dependency on the private
+  // field kafkajs happens to store the factory under.
+  //
+  // Once required, the wrapped factory stays in place: it fully replaces the
+  // module's function export rather than patching a property on it, so there
+  // is nothing for unpatch to restore. That's harmless here — the wrapper
+  // always delegates to the original factory and only adds a WeakMap entry
+  // nothing reads once the instrumentation is disabled.
+  private _getClusterCaptureFile(path: string): InstrumentationNodeModuleFile {
+    return new InstrumentationNodeModuleFile(
+      path,
+      ['>=0.3.0 <3'],
+      (moduleExports: unknown) => {
+        if (typeof moduleExports !== 'function') return moduleExports;
+        const originalFactory = moduleExports as (
+          params?: Record<string, unknown>
+        ) => object;
+        return function wrappedFactory(
+          this: unknown,
+          params?: Record<string, unknown>
+        ) {
+          const client = originalFactory.call(this, params);
+          if (params?.cluster) {
+            _clusterWeakMap.set(client, params.cluster);
+          }
+          return client;
+        };
+      },
+      (moduleExports: unknown) => moduleExports
+    );
   }
 
   private _getConsumerPatch() {
@@ -254,44 +296,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         this: kafkaJs.Kafka,
         ...args: Parameters<kafkaJs.Kafka['consumer']>
       ) {
-        // Transiently intercept the createCluster factory to capture the
-        // internal Cluster object created inside the original consumer() call.
-        // kafkajs >= 1.3.0 stores it under Symbol(private:Kafka:createCluster);
-        // kafkajs < 1.3.0 stores it as the plain 'createCluster' property.
-        let capturedCluster: unknown;
-        const kafkaInstance = this as object;
-        const createClusterKey: PropertyKey | undefined =
-          Object.getOwnPropertySymbols(kafkaInstance).find(s =>
-            s.toString().includes('createCluster')
-          ) ??
-          (typeof (kafkaInstance as Record<string, unknown>)[
-            'createCluster'
-          ] === 'function'
-            ? 'createCluster'
-            : undefined);
-        let originalCreateCluster: unknown;
-        if (createClusterKey) {
-          originalCreateCluster = Reflect.get(kafkaInstance, createClusterKey);
-          if (typeof originalCreateCluster === 'function') {
-            Reflect.set(
-              kafkaInstance,
-              createClusterKey,
-              function (this: unknown, ...clusterArgs: unknown[]) {
-                capturedCluster = (
-                  originalCreateCluster as (...a: unknown[]) => unknown
-                ).apply(this, clusterArgs);
-                return capturedCluster;
-              }
-            );
-          }
-        }
         const newConsumer: Consumer = original.apply(this, args);
-        if (createClusterKey && typeof originalCreateCluster === 'function') {
-          Reflect.set(kafkaInstance, createClusterKey, originalCreateCluster);
-        }
-        if (capturedCluster !== undefined) {
-          _clusterWeakMap.set(newConsumer, capturedCluster);
-        }
 
         if (isWrapped(newConsumer.run)) {
           instrumentation._unwrap(newConsumer, 'run');
@@ -343,44 +348,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         this: kafkaJs.Kafka,
         ...args: Parameters<kafkaJs.Kafka['producer']>
       ) {
-        // Transiently intercept the createCluster factory to capture the
-        // internal Cluster object created inside the original producer() call.
-        // kafkajs >= 1.3.0 stores it under Symbol(private:Kafka:createCluster);
-        // kafkajs < 1.3.0 stores it as the plain 'createCluster' property.
-        let capturedCluster: unknown;
-        const kafkaInstance = this as object;
-        const createClusterKey: PropertyKey | undefined =
-          Object.getOwnPropertySymbols(kafkaInstance).find(s =>
-            s.toString().includes('createCluster')
-          ) ??
-          (typeof (kafkaInstance as Record<string, unknown>)[
-            'createCluster'
-          ] === 'function'
-            ? 'createCluster'
-            : undefined);
-        let originalCreateCluster: unknown;
-        if (createClusterKey) {
-          originalCreateCluster = Reflect.get(kafkaInstance, createClusterKey);
-          if (typeof originalCreateCluster === 'function') {
-            Reflect.set(
-              kafkaInstance,
-              createClusterKey,
-              function (this: unknown, ...clusterArgs: unknown[]) {
-                capturedCluster = (
-                  originalCreateCluster as (...a: unknown[]) => unknown
-                ).apply(this, clusterArgs);
-                return capturedCluster;
-              }
-            );
-          }
-        }
         const newProducer: Producer = original.apply(this, args);
-        if (createClusterKey && typeof originalCreateCluster === 'function') {
-          Reflect.set(kafkaInstance, createClusterKey, originalCreateCluster);
-        }
-        if (capturedCluster !== undefined) {
-          _clusterWeakMap.set(newProducer, capturedCluster);
-        }
 
         if (isWrapped(newProducer.sendBatch)) {
           instrumentation._unwrap(newProducer, 'sendBatch');

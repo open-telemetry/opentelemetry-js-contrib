@@ -1644,8 +1644,11 @@ describe('instrumentation-kafkajs', () => {
   });
 
   describe('cluster id', () => {
-    // Returns the property key (Symbol or string) that kafkajs uses to store
-    // the internal createCluster factory on a Kafka instance.
+    // Test-only double injection: substitutes kafkajs's own internal
+    // createCluster factory on a real Kafka instance so a synthetic Cluster
+    // flows through the real producer()/consumer() -> createProducer()/
+    // createConsumer() call chain that the instrumentation hooks. Unrelated
+    // to how the instrumentation itself captures the cluster.
     // kafkajs >= 1.3.0 uses Symbol(private:Kafka:createCluster);
     // kafkajs < 1.3.0 uses the plain 'createCluster' string property.
     function getCreateClusterKey(kafkaInst: object): PropertyKey | undefined {
@@ -2036,6 +2039,67 @@ describe('instrumentation-kafkajs', () => {
       assert.strictEqual(
         spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
         'batch-consumer-cluster'
+      );
+    });
+
+    it('does not add any own property or symbol to the Kafka instance while capturing the cluster', () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-no-mutation',
+        brokers: ['mock:9092'],
+      });
+      const keysBefore = [
+        ...Object.getOwnPropertyNames(kafkaForTest),
+        ...Object.getOwnPropertySymbols(kafkaForTest),
+      ];
+
+      kafkaForTest.producer();
+      kafkaForTest.consumer({ groupId: 'cluster-id-no-mutation-group' });
+
+      const keysAfter = [
+        ...Object.getOwnPropertyNames(kafkaForTest),
+        ...Object.getOwnPropertySymbols(kafkaForTest),
+      ];
+      assert.deepStrictEqual(keysAfter, keysBefore);
+    });
+
+    it('leaves a non-function module export untouched', () => {
+      const file = instrumentation['_getClusterCaptureFile'](
+        'kafkajs/src/producer/index.js'
+      );
+      const notAFunction = { some: 'object' };
+      assert.strictEqual(file.patch(notAFunction), notAFunction);
+    });
+
+    it('captures params.cluster from the wrapped factory and surfaces it on a span for that client', () => {
+      const file = instrumentation['_getClusterCaptureFile'](
+        'kafkajs/src/producer/index.js'
+      );
+      const fakeClient = { marker: 'fake-client' };
+      const originalFactory = (params?: Record<string, unknown>) => {
+        assert.strictEqual(params?.some, 'param');
+        return fakeClient;
+      };
+
+      const wrapped = file.patch(originalFactory) as typeof originalFactory;
+      const cluster = {
+        brokerPool: { metadata: { clusterId: 'direct-capture-cluster' } },
+      };
+      const result = wrapped({ some: 'param', cluster });
+      assert.strictEqual(result, fakeClient);
+
+      const span = instrumentation['_startProducerSpan'](
+        'direct-capture-topic',
+        { key: null, value: 'v' } as unknown as Message,
+        fakeClient
+      );
+      span.end();
+
+      const spans = getTestSpans();
+      const found = spans.find(s => s.name === 'send direct-capture-topic');
+      assert.ok(found);
+      assert.strictEqual(
+        found!.attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        'direct-capture-cluster'
       );
     });
   });
