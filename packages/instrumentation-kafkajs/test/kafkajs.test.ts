@@ -1644,11 +1644,8 @@ describe('instrumentation-kafkajs', () => {
   });
 
   describe('cluster id', () => {
-    // Test-only double injection: substitutes kafkajs's own internal
-    // createCluster factory on a real Kafka instance so a synthetic Cluster
-    // flows through the real producer()/consumer() -> createProducer()/
-    // createConsumer() call chain that the instrumentation hooks. Unrelated
-    // to how the instrumentation itself captures the cluster.
+    // Test double: swaps kafkajs's own createCluster factory so a synthetic
+    // Cluster flows through the real producer()/consumer() call chain.
     // kafkajs >= 1.3.0 uses Symbol(private:Kafka:createCluster);
     // kafkajs < 1.3.0 uses the plain 'createCluster' string property.
     function getCreateClusterKey(kafkaInst: object): PropertyKey | undefined {

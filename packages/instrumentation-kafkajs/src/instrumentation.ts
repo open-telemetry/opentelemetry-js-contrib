@@ -155,19 +155,13 @@ const HISTOGRAM_BUCKET_BOUNDARIES = [
   0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10,
 ];
 
-// Maps a Producer/Consumer to the internal kafkajs Cluster instance it was
-// created with, captured via the producer()/consumer() factory module hooks
-// below.
+// Maps a Producer/Consumer to its kafkajs Cluster instance.
 const _clusterWeakMap = new WeakMap<object, unknown>();
 
-// cluster.brokerPool.metadata is only populated once kafkajs has fetched
-// broker metadata. For a consumer this always precedes eachMessage/eachBatch
-// (kafkajs fetches metadata on connect() and at the top of every fetch()
-// cycle), so the read below is effectively guaranteed once messages are
-// flowing. For a producer it is not guaranteed: metadata is fetched lazily
-// inside send()/sendBatch(), so the very first send on a fresh producer can
-// race ahead of it and omit the attribute; later sends on the same producer
-// pick it up once metadata has arrived.
+// Guaranteed populated by the time eachMessage/eachBatch runs (kafkajs
+// refreshes metadata on connect() and before every fetch()). Not guaranteed
+// on a producer's first send, since that metadata is fetched lazily inside
+// send()/sendBatch() — later sends on the same producer pick it up.
 function _readClusterId(client: unknown): string | undefined {
   if (client === null || client === undefined) return undefined;
   const cluster = _clusterWeakMap.get(client as object);
@@ -254,17 +248,10 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     return module;
   }
 
-  // kafkajs's own Kafka.prototype.producer()/consumer() build a Cluster and
-  // pass it straight into these internal factories as `params.cluster`, so
-  // hooking the factory module directly reads it as a plain argument. No
-  // instance patching, no restore step, and no dependency on the private
-  // field kafkajs happens to store the factory under.
-  //
-  // Once required, the wrapped factory stays in place: it fully replaces the
-  // module's function export rather than patching a property on it, so there
-  // is nothing for unpatch to restore. That's harmless here — the wrapper
-  // always delegates to the original factory and only adds a WeakMap entry
-  // nothing reads once the instrumentation is disabled.
+  // kafkajs passes the Cluster as params.cluster into these internal
+  // factories, so no instance patching or restore step is needed. unpatch is
+  // a no-op: the export is replaced wholesale (not a property), so there's
+  // nothing to restore, and the wrapper stays harmless once disabled.
   private _getClusterCaptureFile(path: string): InstrumentationNodeModuleFile {
     return new InstrumentationNodeModuleFile(
       path,
