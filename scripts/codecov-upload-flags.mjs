@@ -1,0 +1,111 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { execSync, execFileSync } from 'child_process';
+import { globSync } from 'glob';
+import { chmodSync, existsSync, readFileSync } from 'fs';
+import path from 'path';
+
+// Usage
+// node ./scripts/codecov-upload-flags.mjs
+
+const commitSha = process.env.COMMIT_SHA;
+const branchName = process.env.PR_BRANCH_NAME;
+
+const readPkg = dir =>
+  JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
+const pkgInfo = readPkg('.');
+const pkgFiles = pkgInfo.workspaces.map(exp =>
+  globSync(`${exp}/package.json`, { posix: true })
+);
+const pkgsWithFlag = pkgFiles.flat().map(f => {
+  const path = f.replace('package.json', '');
+  const info = readPkg(path);
+  const name = info.name;
+  const flag = name.replace('@opentelemetry/', '');
+  const report = path + 'coverage/coverage-final.json';
+  // To get a list of available options run
+  // ```
+  //   ./codecov --verbose upload-coverage --help
+  // ```
+  // or check https://docs.codecov.com/docs/cli-options
+  // prettier-ignore
+  const command = [
+   './codecov', '--verbose',
+   'upload-coverage',
+   '--git-service', 'github',
+    // we don't need xcrun or pycoverage plugins
+   '--plugin', 'gcov',
+   '--gcov-executable', 'gcov',
+   '--file', report,
+   '--flag', flag,
+    // limit any scan to the package folder
+   '--dir', path,
+ ];
+
+  if (typeof commitSha === 'string') {
+    command.push('--sha', commitSha);
+  }
+  if (typeof branchName === 'string') {
+    command.push('--branch', branchName);
+  }
+
+  return { name, flag, path, report, command };
+});
+
+// Download codecov-cli if necessary
+const codecovPath = './codecov';
+const baseUrl = 'https://cli.codecov.io/latest/';
+const urlMap = {
+  linux: `${baseUrl}linux/codecov`,
+  darwin: `${baseUrl}macos/codecov`,
+};
+
+const url = urlMap[process.platform];
+if (!url) {
+  console.log(`No codecov binary available for platform "${process.platform}"`);
+  console.log(`Available platforms are "${Object.keys(urlMap)}"`);
+  process.exit(-1);
+}
+
+const execOpts = { encoding: 'utf-8', stdio: 'inherit' };
+if (existsSync(codecovPath)) {
+  console.log('Codecov binary found.');
+} else {
+  console.log(`Codecov binary missing. Downloading from ${url}`);
+  execSync(`curl -Os "${url}"`, execOpts);
+  console.log(`Verifying codecov binary downloaded to "${codecovPath}"`);
+  execSync(
+    'curl https://keybase.io/codecovsecops/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import',
+    execOpts
+  );
+  execSync(`curl -Os "${url}.SHA256SUM"`, execOpts);
+  execSync(`curl -Os "${url}.SHA256SUM.sig"`, execOpts);
+  execSync(
+    'gpg --no-default-keyring --keyring trustedkeys.gpg --verify "codecov.SHA256SUM.sig" "codecov.SHA256SUM"',
+    execOpts
+  );
+  execSync('shasum -a 256 -c codecov.SHA256SUM', execOpts);
+}
+// make sure we have exec perms
+chmodSync(codecovPath, 0o555);
+
+// Compute the commands to run
+for (const pkg of pkgsWithFlag) {
+  if (existsSync(`${pkg.path}.nyc_output`)) {
+    console.log(
+      `\n\nCODECOV: Merging coverage reports of "${pkg.name}" into ${pkg.path}coverage/coverage-final.json.`
+    );
+    execFileSync(
+      'npx',
+      ['nyc', 'merge', '.nyc_output', 'coverage/coverage-final.json'],
+      { ...execOpts, cwd: pkg.path }
+    );
+    console.log(
+      `\n\nCODECOV: Uploading report of "${pkg.name}" with flag "${pkg.flag}"\n${pkg.command.join(' ')}`
+    );
+    execFileSync(pkg.command[0], pkg.command.slice(1), execOpts);
+  }
+}

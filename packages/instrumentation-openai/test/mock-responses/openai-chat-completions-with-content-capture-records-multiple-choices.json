@@ -1,0 +1,46 @@
+[
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/chat/completions",
+        "body": {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "Answer in up to 3 words: Which ocean contains Bouvet Island?"
+                }
+            ],
+            "n": 2
+        },
+        "status": 200,
+        "response": [
+            "1f8b0800000000000003000000ffffc4534d4fe33010bde757583e37a8cd0229bdf1715b2190405a69572832f63499e2782c7b824088ffbe72529a940f89c34a7bf1c16fdef37b33e3974c088946ae84d48d62dd7a9b9f75174bfbbb9b3f9e878d33eafca1bcded8cdedaf939bb39f9772961874bf01cd6fac034dadb7c0486e807500c5905417e55151fe383e2a4f7aa0250336d16acff921e52d3acc8b797198cfcb7cb1dcb21b420d51aec49f4c08215efa33f974069ee44acc676f372dc4a86a90ab5d911032904d3752c588919563391b414d8ec1f5d66fa8e3469cb2558e518b2b0dca1d4c6b03acbba8925fd7593b019473c42ae5ed5dde6d91d79d2f4bb50f741fdf51e51a1dc6a60aa022b9e4213279994dc81fc22efe6158086e88f9ff526642dcf553eef6b2481fa8f55c313d40ff5c510c7272dcad113cde624cacec84b39c7d2256196085364efa26b5d20d9891396e94ea0cd20498cee6a397cfb487d8e8eaefc88f80d6e0194ce50318d4fb79c7b200e9e37d55b66b716f5846088fa8a1628490c66060ad3a3b6c888ccf91a1add6e86a083e60bf26698cd96bf6170000ffff03003b0c3ca016040000"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "9607f3ff4c2f7376-NRT",
+            "connection": "close",
+            "content-encoding": "gzip",
+            "content-type": "application/json",
+            "date": "Thu, 17 Jul 2025 07:16:19 GMT",
+            "openai-processing-ms": "459",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-envoy-upstream-service-time": "462",
+            "x-ratelimit-limit-requests": "5000",
+            "x-ratelimit-limit-tokens": "4000000",
+            "x-ratelimit-remaining-requests": "4999",
+            "x-ratelimit-remaining-tokens": "3999981",
+            "x-ratelimit-reset-requests": "12ms",
+            "x-ratelimit-reset-tokens": "0s",
+            "x-request-id": "req_c8606b5a0df9cbb0e34366d284418548"
+        },
+        "responseIsBinary": false
+    }
+]

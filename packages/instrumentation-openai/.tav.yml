@@ -1,0 +1,5 @@
+openai:
+  versions:
+    include: '>=4.19.0 <7'
+    mode: max-5
+  commands: npm test

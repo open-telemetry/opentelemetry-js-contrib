@@ -1,0 +1,49 @@
+[
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/anthropic.claude-3-5-sonnet-20240620-v1%3A0/invoke",
+        "body": {
+            "anthropic_version": "bedrock-2023-05-31",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Say this is a test"
+                        }
+                    ]
+                }
+            ],
+            "max_tokens": 10,
+            "temperature": 0.8,
+            "top_p": 1,
+            "stop_sequences": [
+                "|"
+            ]
+        },
+        "status": 200,
+        "response": {
+            "completion": "\nHello! I am a computer program designed to",
+            "stop_reason": "max_tokens",
+            "usage": {
+                "input_tokens": 8,
+                "output_tokens": 10
+            }
+        },
+        "rawHeaders": [
+            "Date",
+            "Tue, 25 Mar 2025 23:51:14 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "134",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "bc580190-38fa-4792-b215-519c6690b485"
+        ],
+        "responseIsBinary": false
+    }
+]

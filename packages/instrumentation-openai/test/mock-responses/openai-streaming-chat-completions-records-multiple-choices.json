@@ -1,0 +1,44 @@
+[
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/chat/completions",
+        "body": {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "Answer in up to 3 words: Which ocean contains Bouvet Island?"
+                }
+            ],
+            "n": 2,
+            "stream": true
+        },
+        "status": 200,
+        "response": "data: {\"id\":\"chatcmpl-BuDPruvXvy1cTouU79MhRWdmZWMqk\",\"object\":\"chat.completion.chunk\",\"created\":1752737639,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"refusal\":null},\"logprobs\":null,\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-BuDPruvXvy1cTouU79MhRWdmZWMqk\",\"object\":\"chat.completion.chunk\",\"created\":1752737639,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Atlantic\"},\"logprobs\":null,\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-BuDPruvXvy1cTouU79MhRWdmZWMqk\",\"object\":\"chat.completion.chunk\",\"created\":1752737639,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\" Ocean\"},\"logprobs\":null,\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-BuDPruvXvy1cTouU79MhRWdmZWMqk\",\"object\":\"chat.completion.chunk\",\"created\":1752737639,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\".\"},\"logprobs\":null,\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-BuDPruvXvy1cTouU79MhRWdmZWMqk\",\"object\":\"chat.completion.chunk\",\"created\":1752737639,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":1,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"refusal\":null},\"logprobs\":null,\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-BuDPruvXvy1cTouU79MhRWdmZWMqk\",\"object\":\"chat.completion.chunk\",\"created\":1752737639,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":1,\"delta\":{\"content\":\"Southern\"},\"logprobs\":null,\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-BuDPruvXvy1cTouU79MhRWdmZWMqk\",\"object\":\"chat.completion.chunk\",\"created\":1752737639,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":1,\"delta\":{\"content\":\" Ocean\"},\"logprobs\":null,\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-BuDPruvXvy1cTouU79MhRWdmZWMqk\",\"object\":\"chat.completion.chunk\",\"created\":1752737639,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":1,\"delta\":{\"content\":\".\"},\"logprobs\":null,\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-BuDPruvXvy1cTouU79MhRWdmZWMqk\",\"object\":\"chat.completion.chunk\",\"created\":1752737639,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{},\"logprobs\":null,\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"chatcmpl-BuDPruvXvy1cTouU79MhRWdmZWMqk\",\"object\":\"chat.completion.chunk\",\"created\":1752737639,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":1,\"delta\":{},\"logprobs\":null,\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n",
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "96080de51fa847f7-NRT",
+            "connection": "close",
+            "content-type": "text/event-stream; charset=utf-8",
+            "date": "Thu, 17 Jul 2025 07:33:59 GMT",
+            "openai-processing-ms": "209",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-envoy-upstream-service-time": "217",
+            "x-ratelimit-limit-requests": "5000",
+            "x-ratelimit-limit-tokens": "4000000",
+            "x-ratelimit-remaining-requests": "4999",
+            "x-ratelimit-remaining-tokens": "3999981",
+            "x-ratelimit-reset-requests": "12ms",
+            "x-ratelimit-reset-tokens": "0s",
+            "x-request-id": "req_fa9c7a16b29cca45d28032fdb0d910b6"
+        },
+        "responseIsBinary": false
+    }
+]

@@ -1,0 +1,318 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import {
+  Attributes,
+  context,
+  SpanKind,
+  SpanStatusCode,
+  trace,
+} from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
+import type * as Memcached from 'memcached';
+import * as assert from 'assert';
+import { MemcachedInstrumentation } from '../src';
+import { ATTR_EXCEPTION_MESSAGE } from '@opentelemetry/semantic-conventions';
+import { DB_SYSTEM_NAME_VALUE_MEMCACHED } from '../src/semconv';
+import {
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
+import * as util from 'util';
+
+const instrumentation = new MemcachedInstrumentation();
+const memoryExporter = new InMemorySpanExporter();
+
+const CONFIG = {
+  host: process.env.OPENTELEMETRY_MEMCACHED_HOST || 'localhost',
+  port: process.env.OPENTELEMETRY_MEMCACHED_PORT
+    ? parseInt(process.env.OPENTELEMETRY_MEMCACHED_PORT)
+    : 27017,
+};
+
+const ATTRIBUTES: Attributes = {
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_MEMCACHED,
+  [ATTR_SERVER_ADDRESS]: CONFIG.host,
+  [ATTR_SERVER_PORT]: CONFIG.port,
+};
+
+interface ExtendedMemcached extends Memcached {
+  getPromise: (key: string) => Promise<unknown>;
+  setPromise: (key: string, value: any, lifetime: number) => Promise<unknown>;
+  appendPromise: (key: string, value: any) => Promise<unknown>;
+}
+const getClient = (...args: any[]): ExtendedMemcached => {
+  const Memcached = require('memcached');
+  const client = new Memcached(...args);
+  client.getPromise = util.promisify(client.get.bind(client));
+  client.setPromise = util.promisify(client.set.bind(client));
+  client.appendPromise = util.promisify(client.append.bind(client));
+  return client;
+};
+const KEY = 'foo';
+const VALUE = '_test_value_';
+const shouldTest = process.env.RUN_MEMCACHED_TESTS;
+
+describe('memcached@2.x', () => {
+  const provider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
+  });
+  const tracer = provider.getTracer('default');
+  instrumentation.setTracerProvider(provider);
+  let contextManager: AsyncLocalStorageContextManager;
+
+  beforeEach(() => {
+    contextManager = new AsyncLocalStorageContextManager();
+    context.setGlobalContextManager(contextManager.enable());
+    instrumentation.setConfig({});
+    instrumentation.enable();
+  });
+
+  afterEach(() => {
+    memoryExporter.reset();
+    context.disable();
+    instrumentation.disable();
+  });
+
+  before(function () {
+    // needs to be "function" to have MochaContext "this" context
+    if (!shouldTest) {
+      // this.skip() workaround
+      // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
+      this.test!.parent!.pending = true;
+      this.skip();
+    }
+  });
+
+  describe('default config', () => {
+    let client: ExtendedMemcached;
+    beforeEach(() => {
+      client = getClient(`${CONFIG.host}:${CONFIG.port}`, { retries: 0 });
+    });
+
+    afterEach(() => {
+      client.end();
+    });
+
+    it('should collect basic info', async () => {
+      const parentSpan = tracer.startSpan('parentSpan');
+
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client.setPromise(KEY, VALUE, 10);
+          const value = await client.getPromise(KEY);
+
+          assert.strictEqual(value, VALUE);
+          const instrumentationSpans = memoryExporter.getFinishedSpans();
+          assertSpans(instrumentationSpans, [
+            {
+              op: 'set',
+              key: KEY,
+              parentSpan,
+            },
+            {
+              op: 'get',
+              key: KEY,
+              parentSpan,
+            },
+          ]);
+        }
+      );
+    });
+
+    it('should handle errors', async () => {
+      const parentSpan = tracer.startSpan('parentSpan');
+      const KEY = 'unset_key';
+      const neverError = new Error('Expected to error but did not');
+
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          try {
+            await client.appendPromise(KEY, VALUE);
+            assert.fail(neverError);
+          } catch (e) {
+            assert.notStrictEqual(e, neverError);
+          }
+
+          const instrumentationSpans = memoryExporter.getFinishedSpans();
+          assertSpans(instrumentationSpans, [
+            {
+              op: 'append',
+              key: KEY,
+              parentSpan,
+              status: {
+                code: SpanStatusCode.ERROR,
+                message: 'Item is not stored',
+              },
+            },
+          ]);
+
+          assertMatch(
+            instrumentationSpans?.[0]?.events[0]?.attributes?.[
+              ATTR_EXCEPTION_MESSAGE
+            ] as 'string',
+            /not stored/
+          );
+        }
+      );
+    });
+
+    it('should not require callback to be present', done => {
+      // want to force an signature without the callback
+      (client.get as any)(KEY);
+
+      setTimeout(() => {
+        try {
+          const instrumentationSpans = memoryExporter.getFinishedSpans();
+          assertSpans(instrumentationSpans, [
+            {
+              op: 'get',
+              key: KEY,
+            },
+          ]);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      }, 200);
+    });
+
+    it('should return to parent context in callback', done => {
+      const parentSpan = tracer.startSpan('parentSpan');
+      const parentContext = trace.setSpan(context.active(), parentSpan);
+
+      context.with(parentContext, () => {
+        client.get(KEY, () => {
+          try {
+            const cbContext = context.active();
+            assert.strictEqual(cbContext, parentContext);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+    });
+
+    it('should collect be able to collect statements', async () => {
+      instrumentation.setConfig({
+        enhancedDatabaseReporting: true,
+      });
+      const value = await client.getPromise(KEY);
+
+      assert.strictEqual(value, VALUE);
+      const instrumentationSpans = memoryExporter.getFinishedSpans();
+      assertSpans(instrumentationSpans, [
+        {
+          op: 'get',
+          key: KEY,
+          statement: 'get foo',
+        },
+      ]);
+    });
+
+    it('should not create new spans when disabled', async () => {
+      instrumentation.disable();
+      await client.getPromise(KEY);
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    });
+  });
+
+  describe('alternate memcached configurations', () => {
+    it('should support multiple server configuration', async () => {
+      const client = getClient(
+        {
+          [`${CONFIG.host}:${CONFIG.port}`]: 1,
+          'other:11211': 1,
+        },
+        { retries: 0 }
+      );
+
+      await Promise.all([client.getPromise(KEY)]);
+
+      const instrumentationSpans = memoryExporter.getFinishedSpans();
+      assertSpans(instrumentationSpans, [
+        {
+          op: 'get',
+          key: KEY,
+        },
+      ]);
+    });
+  });
+});
+
+const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
+  assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
+  assert(
+    Array.isArray(expectedSpans),
+    'Expected `expectedSpans` to be an array'
+  );
+  assert.strictEqual(
+    actualSpans.length,
+    expectedSpans.length,
+    'Expected span count different from actual'
+  );
+  actualSpans.forEach((span, idx) => {
+    const expected = expectedSpans[idx];
+    if (expected === null) return;
+    try {
+      assert.notStrictEqual(span, undefined);
+      assert.notStrictEqual(expected, undefined);
+      assertMatch(span.name, new RegExp(expected.op));
+      assertMatch(span.name, new RegExp('memcached'));
+      assert.strictEqual(span.kind, SpanKind.CLIENT);
+
+      // Verify both old and stable semconv attributes
+      for (const attr in ATTRIBUTES) {
+        assert.strictEqual(span.attributes[attr], ATTRIBUTES[attr]);
+      }
+
+      // Verify db.operation.name (stable)
+      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], expected.op);
+
+      // Verify db.query.text (stable) if statement is expected
+      if (expected.statement !== undefined) {
+        assert.strictEqual(
+          span.attributes[ATTR_DB_QUERY_TEXT],
+          expected.statement
+        );
+      } else {
+        assert.strictEqual(span.attributes[ATTR_DB_QUERY_TEXT], undefined);
+      }
+
+      assert.strictEqual(span.attributes['db.memcached.key'], expected.key);
+      assert.strictEqual(
+        typeof span.attributes['memcached.version'],
+        'string',
+        'memcached.version not specified'
+      );
+      assert.deepEqual(
+        span.status,
+        expected.status || { code: SpanStatusCode.UNSET }
+      );
+      assert.strictEqual(
+        span.parentSpanContext?.spanId,
+        expected.parentSpan?.spanContext().spanId
+      );
+    } catch (e: any) {
+      e.message = `At span[${idx}]: ${e.message}`;
+      throw e;
+    }
+  });
+};
+
+const assertMatch = (str: string, regexp: RegExp, err?: any) => {
+  assert.ok(regexp.test(str), err ?? `Expected '${str} to match ${regexp}`);
+};

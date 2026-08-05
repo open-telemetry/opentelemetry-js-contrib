@@ -1,0 +1,748 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import {
+  INVALID_SPAN_CONTEXT,
+  SpanKind,
+  context,
+  trace,
+} from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
+import * as assert from 'assert';
+
+import { KnexInstrumentation } from '../src';
+const plugin = new KnexInstrumentation({
+  maxQueryLength: 50,
+});
+
+import knex from 'knex';
+// @ts-ignore
+import * as BetterSqlite3Dialect from 'knex/lib/dialects/better-sqlite3/index.js';
+
+describe('Knex instrumentation', () => {
+  const memoryExporter = new InMemorySpanExporter();
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
+  const provider = new TracerProvider({
+    spanProcessors: [spanProcessor],
+  });
+  plugin.setTracerProvider(provider);
+  const tracer = provider.getTracer('default');
+  let contextManager: AsyncLocalStorageContextManager;
+  let client: any;
+
+  before(() => {
+    plugin.enable();
+  });
+
+  after(() => {
+    plugin.disable();
+  });
+
+  beforeEach(async () => {
+    contextManager = new AsyncLocalStorageContextManager();
+    context.setGlobalContextManager(contextManager.enable());
+
+    client = knex({
+      client: 'sqlite3',
+      connection: {
+        filename: ':memory:',
+      },
+      useNullAsDefault: true,
+    });
+
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+  });
+
+  afterEach(() => {
+    memoryExporter.reset();
+    context.disable();
+    client.schema.dropTableIfExists('testTable');
+    client.schema.dropTableIfExists('testTable1');
+    client.schema.dropTableIfExists('testTable2');
+    client.destroy();
+  });
+
+  describe('Instrumenting', () => {
+    it('should record spans from query builder', async () => {
+      const parentSpan = tracer.startSpan('parentSpan');
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client.schema.createTable('testTable1', (table: any) => {
+            table.string('title');
+          });
+          await client.insert({ title: 'test1' }).into('testTable1');
+
+          assert.deepEqual(await client('testTable1').select('*'), [
+            { title: 'test1' },
+          ]);
+
+          parentSpan.end();
+
+          const instrumentationSpans = memoryExporter.getFinishedSpans();
+          const last = instrumentationSpans.pop() as any;
+          assertSpans(instrumentationSpans, [
+            {
+              statement: 'create table `testTable1` (`title` varchar(255))',
+              parentSpan,
+            },
+            {
+              op: 'insert',
+              table: 'testTable1',
+              statement: 'insert into `testTable1` (`title`) values (?)',
+              parentSpan,
+            },
+            {
+              op: 'select',
+              table: 'testTable1',
+              statement: 'select * from `testTable1`',
+              parentSpan,
+            },
+          ]);
+          assert.strictEqual(instrumentationSpans[0].name, ':memory:');
+          assert.strictEqual(
+            instrumentationSpans[1].name,
+            'insert :memory:.testTable1'
+          );
+
+          assert(last.name, 'parentSpan');
+        }
+      );
+    });
+
+    it('should collect spans from raw', async () => {
+      const parentSpan = tracer.startSpan('parentSpan');
+      const statement = "select date('now')";
+
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client.raw(statement);
+          parentSpan.end();
+
+          assertSpans(memoryExporter.getFinishedSpans(), [
+            { statement, op: 'raw', parentSpan },
+            null,
+          ]);
+        }
+      );
+    });
+
+    it('should truncate the query', async () => {
+      const statement = `select date('now'), "${'long-'.repeat(15)}"`;
+      await client.raw(statement);
+
+      const [span] = memoryExporter.getFinishedSpans();
+      const limitedStatement = span?.attributes?.['db.query.text'] as string;
+      assert.strictEqual(limitedStatement.length, 52);
+      assert.ok(statement.startsWith(limitedStatement.substring(0, 50)));
+    });
+
+    it('should read connection attributes when connection is configured as a function', async () => {
+      const functionClient = knex({
+        client: 'sqlite3',
+        connection: () => ({ filename: ':memory:' }),
+        useNullAsDefault: true,
+      });
+
+      try {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await functionClient.raw("select date('now')");
+            parentSpan.end();
+
+            const [span] = memoryExporter.getFinishedSpans();
+            assert.ok(span, 'expected a span');
+            assert.strictEqual(
+              span.attributes['db.namespace'],
+              ':memory:',
+              'db.namespace should be populated from function-based connection'
+            );
+          }
+        );
+      } finally {
+        await functionClient.destroy();
+      }
+    });
+
+    it("should correctly capture the DB's system name even with custom client implementations", async () => {
+      client = knex({
+        client: BetterSqlite3Dialect,
+        connection: {
+          filename: ':memory:',
+        },
+        useNullAsDefault: true,
+      });
+
+      const parentSpan = tracer.startSpan('parentSpan');
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          assert.deepEqual(await client.select(client.raw('1 as testCol')), [
+            { testCol: 1 },
+          ]);
+
+          parentSpan.end();
+
+          const instrumentationSpans = memoryExporter.getFinishedSpans();
+          const last = instrumentationSpans.pop() as any;
+          assertSpans(
+            instrumentationSpans,
+            [
+              {
+                op: 'select',
+                statement: 'select 1 as testCol',
+                parentSpan,
+              },
+            ],
+            { dbSystem: 'better-sqlite3' }
+          );
+          assert.strictEqual(instrumentationSpans[0].name, 'select :memory:');
+
+          assert(last.name, 'parentSpan');
+        }
+      );
+    });
+
+    it('should catch errors', async () => {
+      const parentSpan = tracer.startSpan('parentSpan');
+      const neverError = new Error('Query was expected to error');
+      const MESSAGE = 'SQLITE_ERROR: no such table: testTable1';
+      const CODE = 'SQLITE_ERROR';
+
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client
+            .insert({ title: 'test1' })
+            .into('testTable1')
+            .then(() => {
+              throw neverError;
+            })
+            .catch((err: any) => {
+              assertMatch(err.message, /SQLITE_ERROR/, err);
+            });
+          parentSpan.end();
+
+          const events = memoryExporter.getFinishedSpans()[0].events!;
+
+          assert.strictEqual(events.length, 1);
+          assert.strictEqual(events[0].name, 'exception');
+          assert.strictEqual(
+            events[0].attributes?.['exception.message'],
+            MESSAGE
+          );
+          assert.strictEqual(events[0].attributes?.['exception.type'], CODE);
+
+          assertSpans(memoryExporter.getFinishedSpans(), [
+            {
+              op: 'insert',
+              table: 'testTable1',
+              statement: 'insert into `testTable1` (`title`) values (?)',
+              parentSpan,
+            },
+            null,
+          ]);
+        }
+      );
+    });
+
+    it('should catch better-sqlite3 errors', async () => {
+      client = knex({
+        client: 'better-sqlite3',
+        connection: {
+          filename: ':memory:',
+        },
+        useNullAsDefault: true,
+      });
+
+      const parentSpan = tracer.startSpan('parentSpan');
+      const MESSAGE = 'no such table: testTable1';
+      const CODE = 'SQLITE_ERROR';
+
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          try {
+            await client
+              .insert({ title: 'test1' })
+              .into('testTable1')
+              .catch((err: any) => {
+                assertMatch(err.message, /SQLITE_ERROR/, err);
+              });
+          } catch (e) {
+            // skip
+          }
+          parentSpan.end();
+
+          const events = memoryExporter.getFinishedSpans()[0].events!;
+
+          assert.strictEqual(events.length, 1);
+          assert.strictEqual(events[0].name, 'exception');
+          assert.strictEqual(
+            events[0].attributes?.['exception.message'],
+            MESSAGE
+          );
+          assert.strictEqual(events[0].attributes?.['exception.type'], CODE);
+
+          assertSpans(
+            memoryExporter.getFinishedSpans(),
+            [
+              {
+                op: 'insert',
+                table: 'testTable1',
+                statement: 'insert into `testTable1` (`title`) values (?)',
+                parentSpan,
+              },
+              null,
+            ],
+            { dbSystem: 'better-sqlite3' }
+          );
+        }
+      );
+    });
+
+    describe('nested queries', () => {
+      it('should correctly identify the table in nested queries', async () => {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await client.schema.createTable('testTable1', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test1' }).into('testTable1');
+
+            const builder = client('testTable1').select('*');
+            const clone = builder.clone().clear('order');
+
+            const nestedQueryBuilder = builder.client
+              .queryBuilder()
+              .count('* AS count')
+              .from(clone.as('inner'))
+              .first();
+
+            const total = await nestedQueryBuilder;
+            assert.deepEqual(total, { count: 1 });
+
+            parentSpan.end();
+
+            const instrumentationSpans = memoryExporter.getFinishedSpans();
+            assertSpans(instrumentationSpans, [
+              {
+                statement: 'create table `testTable1` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable1',
+                statement: 'insert into `testTable1` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                op: 'first',
+                table: 'testTable1',
+                statement:
+                  'select count(*) as `count` from (select * from `te..',
+                parentSpan,
+              },
+              null,
+            ]);
+          }
+        );
+      });
+
+      it('should correctly identify the table in double nested queries', async () => {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await client.schema.createTable('testTable1', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test1' }).into('testTable1');
+
+            const builder = client('testTable1').select('*');
+            const clone = builder.clone().clear('order');
+
+            const nestedQueryBuilder = builder.client
+              .queryBuilder()
+              .count('* AS count')
+              .from(clone.as('inner'))
+              .first();
+
+            const nestedClone = nestedQueryBuilder.clone().clear('order');
+            const totalDoubleNested = await nestedQueryBuilder.client
+              .queryBuilder()
+              .count('* AS count2')
+              .from(nestedClone.as('inner2'))
+              .first();
+            assert.deepEqual(totalDoubleNested, { count2: 1 });
+
+            parentSpan.end();
+
+            const instrumentationSpans = memoryExporter.getFinishedSpans();
+            assertSpans(instrumentationSpans, [
+              {
+                statement: 'create table `testTable1` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable1',
+                statement: 'insert into `testTable1` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                op: 'first',
+                table: 'testTable1',
+                statement:
+                  'select count(*) as `count2` from (select count(*) ..',
+                parentSpan,
+              },
+              null,
+            ]);
+          }
+        );
+      });
+
+      it('should correctly identify the table in join with nested table', async () => {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await client.schema.createTable('testTable1', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test1' }).into('testTable1');
+
+            await client.schema.createTable('testTable2', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test2' }).into('testTable2');
+
+            const builder = client('testTable1').select('*');
+            const clone = builder.clone().clear('order');
+
+            const nestedQueryBuilder = builder.client
+              .queryBuilder()
+              .count('* AS count')
+              .from(clone.as('inner'))
+              .first();
+
+            const totalDoubleNested = await nestedQueryBuilder.client
+              .queryBuilder()
+              .from('testTable2')
+              .leftJoin(nestedQueryBuilder.as('nested_query'))
+              .first();
+            assert.deepEqual(totalDoubleNested, { title: 'test2', count: 1 });
+
+            parentSpan.end();
+
+            const instrumentationSpans = memoryExporter.getFinishedSpans();
+            assertSpans(instrumentationSpans, [
+              {
+                statement: 'create table `testTable1` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable1',
+                statement: 'insert into `testTable1` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                statement: 'create table `testTable2` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable2',
+                statement: 'insert into `testTable2` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                op: 'first',
+                table: 'testTable2',
+                statement:
+                  'select * from `testTable2` left join (select count..',
+                parentSpan,
+              },
+              null,
+            ]);
+          }
+        );
+      });
+
+      it('should correctly identify the table in join nested table with table', async () => {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await client.schema.createTable('testTable1', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test1' }).into('testTable1');
+
+            await client.schema.createTable('testTable2', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test2' }).into('testTable2');
+
+            const builder = client('testTable1').select('*');
+            const clone = builder.clone().clear('order');
+
+            const nestedQueryBuilder = builder.client
+              .queryBuilder()
+              .count('* AS count')
+              .from(clone.as('inner'))
+              .first();
+
+            const totalDoubleNested = await nestedQueryBuilder.client
+              .queryBuilder()
+              .from(nestedQueryBuilder.as('nested_query'))
+              .leftJoin('testTable2')
+              .first();
+            assert.deepEqual(totalDoubleNested, { title: 'test2', count: 1 });
+
+            parentSpan.end();
+
+            const instrumentationSpans = memoryExporter.getFinishedSpans();
+            assertSpans(instrumentationSpans, [
+              {
+                statement: 'create table `testTable1` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable1',
+                statement: 'insert into `testTable1` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                statement: 'create table `testTable2` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable2',
+                statement: 'insert into `testTable2` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                op: 'first',
+                table: 'testTable1',
+                statement:
+                  'select * from (select count(*) as `count` from (se..',
+                parentSpan,
+              },
+              null,
+            ]);
+          }
+        );
+      });
+    });
+  });
+
+  describe('Disabling instrumentation', () => {
+    it('should not create new spans', async () => {
+      plugin.disable();
+      const parentSpan = tracer.startSpan('parentSpan');
+
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client.raw("select date('now')");
+          parentSpan.end();
+          assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+          assert.notStrictEqual(
+            memoryExporter.getFinishedSpans()[0],
+            undefined
+          );
+        }
+      );
+    });
+  });
+
+  describe('Setting requireParentSpan=true', () => {
+    beforeEach(() => {
+      plugin.disable();
+      plugin.setConfig({ requireParentSpan: true });
+      plugin.enable();
+    });
+
+    it('should not create new spans when there is no parent', async () => {
+      await client.schema.createTable('testTable1', (table: any) => {
+        table.string('title');
+      });
+      assert.deepEqual(await client('testTable1').select('*'), []);
+      assert.deepEqual(await client.raw('select 1 as result'), [{ result: 1 }]);
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    });
+
+    it('should not create new spans when there is an INVALID_SPAN_CONTEXT parent', async () => {
+      const parentSpan = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client.schema.createTable('testTable1', (table: any) => {
+            table.string('title');
+          });
+          assert.deepEqual(await client('testTable1').select('*'), []);
+          assert.deepEqual(await client.raw('select 1 as result'), [
+            { result: 1 },
+          ]);
+        }
+      );
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    });
+
+    it('should create new spans when there is a parent', async () => {
+      await tracer.startActiveSpan('parentSpan', async parentSpan => {
+        await client.schema.createTable('testTable1', (table: any) => {
+          table.string('title');
+        });
+        assert.deepEqual(await client('testTable1').select('*'), []);
+        assert.deepEqual(await client.raw('select 1 as result'), [
+          { result: 1 },
+        ]);
+        parentSpan.end();
+      });
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
+      const instrumentationSpans = memoryExporter.getFinishedSpans();
+      const last = instrumentationSpans.pop() as any;
+      assertSpans(instrumentationSpans, [
+        {
+          statement: 'create table `testTable1` (`title` varchar(255))',
+          parentSpan: last,
+        },
+        {
+          op: 'select',
+          table: 'testTable1',
+          statement: 'select * from `testTable1`',
+          parentSpan: last,
+        },
+        {
+          op: 'raw',
+          statement: 'select 1 as result',
+          parentSpan: last,
+        },
+      ]);
+    });
+  });
+});
+
+describe('utils: connectionString parsing', () => {
+  it('should extract database name from connectionString', () => {
+    const { extractDatabaseFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractDatabaseFromConnectionString(
+        'postgres://user:pass@localhost:5432/mydb'
+      ),
+      'mydb'
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString('mysql://user:pass@host/testdb'),
+      'testdb'
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString(undefined),
+      undefined
+    );
+    assert.strictEqual(
+      extractDatabaseFromConnectionString('not-a-url'),
+      undefined
+    );
+  });
+
+  it('should extract host from connectionString', () => {
+    const { extractHostFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractHostFromConnectionString('postgres://user:pass@myhost:5432/mydb'),
+      'myhost'
+    );
+    assert.strictEqual(extractHostFromConnectionString('not-a-url'), undefined);
+    assert.strictEqual(extractHostFromConnectionString(undefined), undefined);
+  });
+
+  it('should extract port from connectionString', () => {
+    const { extractPortFromConnectionString } = require('../src/utils');
+    assert.strictEqual(
+      extractPortFromConnectionString(
+        'postgres://user:pass@localhost:5432/mydb'
+      ),
+      5432
+    );
+    assert.strictEqual(
+      extractPortFromConnectionString('postgres://user:pass@localhost/mydb'),
+      undefined // no port specified
+    );
+    assert.strictEqual(extractPortFromConnectionString('not-a-url'), undefined);
+    assert.strictEqual(extractPortFromConnectionString(undefined), undefined);
+  });
+});
+
+const assertSpans = (
+  actualSpans: any[],
+  expectedSpans: any[],
+  options?: { dbSystem?: string }
+) => {
+  const customAssertOptions = {
+    dbSystem: 'sqlite',
+    ...options,
+  };
+  assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
+  assert(
+    Array.isArray(expectedSpans),
+    'Expected `expectedSpans` to be an array'
+  );
+  assert.strictEqual(
+    actualSpans.length,
+    expectedSpans.length,
+    'Expected span count different from actual'
+  );
+  actualSpans.forEach((span, idx) => {
+    const expected = expectedSpans[idx];
+    if (expected === null) return;
+    try {
+      assert.notStrictEqual(span, undefined);
+      assert.notStrictEqual(expected, undefined);
+      assert.strictEqual(span.kind, SpanKind.CLIENT);
+      assertMatch(span.name, new RegExp(expected.op));
+      assertMatch(span.name, new RegExp(':memory:'));
+      assert.strictEqual(
+        span.attributes['db.system.name'],
+        customAssertOptions.dbSystem
+      );
+      assert.strictEqual(span.attributes['db.namespace'], ':memory:');
+      assert.strictEqual(span.attributes['db.collection.name'], expected.table);
+      assert.strictEqual(span.attributes['db.query.text'], expected.statement);
+      assert.strictEqual(
+        typeof span.attributes['knex.version'],
+        'string',
+        'knex.version not specified'
+      );
+      assert.strictEqual(span.attributes['db.operation.name'], expected.op);
+      assert.strictEqual(
+        span.parentSpanContext?.spanId,
+        expected.parentSpan?.spanContext().spanId
+      );
+    } catch (e: any) {
+      e.message = `At span[${idx}]: ${e.message}`;
+      throw e;
+    }
+  });
+};
+
+const assertMatch = (str: string, regexp: RegExp, err?: any) => {
+  assert.ok(regexp.test(str), err ?? `Expected '${str} to match ${regexp}`);
+};

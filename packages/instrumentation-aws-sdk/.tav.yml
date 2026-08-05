@@ -1,0 +1,41 @@
+# Versions [3.363.0, 3.377.0] of all @aws-sdk/client-* were bad releases. See:
+# - https://github.com/open-telemetry/opentelemetry-js-contrib/pull/2464#issuecomment-2403652552
+# - https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1828#issuecomment-1834276719
+
+"@aws-sdk/client-bedrock-runtime":
+  env:
+    - SKIP_TEST_IF_DISABLE=true
+  jobs:
+    - node: ">=18"
+      versions:
+        include: "^3.587.0"
+        exclude: ">=3.363.0 <=3.377.0"
+        mode: "max-7"
+      commands:
+        - mocha --require '@opentelemetry/contrib-test-utils' test/bedrock-runtime.test.ts
+
+"@aws-sdk/client-s3":
+  env:
+    - SKIP_TEST_IF_DISABLE=true
+  # - 3.529.0 was missing the fast-xml-parser dependency (https://github.com/aws/aws-sdk-js-v3/releases/tag/v3.529.1)
+  jobs:
+    - node: ">=18"
+      versions:
+        include: "^3.6.1"
+        exclude: "3.529.0 || >=3.363.0 <=3.377.0"
+        mode: "max-7"
+      commands:
+        - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-s3.test.ts
+        - mocha --require '@opentelemetry/contrib-test-utils' test/s3.test.ts
+
+"@aws-sdk/client-sqs":
+  env:
+    - SKIP_TEST_IF_DISABLE=true
+  jobs:
+    - node: ">=18"
+      versions:
+        include: "^3.24.0"
+        exclude: ">=3.363.0 <=3.377.0"
+        mode: "max-7"
+      commands:
+        - mocha --require '@opentelemetry/contrib-test-utils' test/aws-sdk-v3-sqs.test.ts

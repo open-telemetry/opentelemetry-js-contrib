@@ -1,0 +1,79 @@
+# OpenTelemetry `sequelize` Instrumentation for Node.js
+
+[![NPM Published Version][npm-img]][npm-url]
+[![Apache License][license-image]][license-image]
+
+This module provides automatic instrumentation for the [`sequelize`](https://www.npmjs.com/package/sequelize) package.
+
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+
+## Installation
+
+```bash
+npm install --save @opentelemetry/instrumentation-sequelize
+```
+
+### Supported versions
+
+- [`sequelize`](https://www.npmjs.com/package/sequelize) versions `>=6 <7`
+
+## Usage
+
+```js
+const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { SequelizeInstrumentation } = require('@opentelemetry/instrumentation-sequelize');
+
+const sdk = new NodeSDK({
+  instrumentations: [
+    new SequelizeInstrumentation({
+      // see below for available configuration
+    }),
+  ],
+});
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
+```
+
+
+### Instrumentation Options
+
+You can set the following:
+
+| Options                           | Type                                        | Description                                                                                    |
+| --------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `queryHook`                       | `SequelizeQueryHook`                        | Function called before running the query. Allows for adding custom attributes to the span.     |
+| `responseHook`                    | `SequelizeResponseCustomAttributesFunction` | Function called after a response is received. Allows for adding custom attributes to the span. |
+| `ignoreOrphanedSpans`             | `boolean`                                   | Can be set to only produce spans which have parent spans. Default: `false`                     |
+| `suppressInternalInstrumentation` | `boolean`                                   | Set to ignore the underlying database library instrumentation. Default: `false`                |
+
+## Semantic Conventions
+
+| Attribute            | Short Description                                                           |
+| -------------------- | --------------------------------------------------------------------------- |
+| `db.namespace`       | The name of the database being accessed.                                    |
+| `db.operation.name`  | The name of the operation being executed (e.g. the SQL keyword).            |
+| `db.collection.name` | The name of the table being accessed.                                       |
+| `db.query.text`      | The database statement being executed.                                      |
+| `db.system.name`     | An identifier for the database management system (DBMS) product being used. |
+| `server.address`     | Remote address of the database.                                             |
+| `server.port`        | Peer port number of the network connection.                                 |
+| `network transport`  | OSI transport layer or inter-process communication method.                  |
+
+Attributes collected:
+
+
+## Useful links
+
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+
+## License
+
+Apache 2.0 - See [LICENSE][license-url] for more information.
+
+[discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
+[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-sequelize
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-sequelize.svg

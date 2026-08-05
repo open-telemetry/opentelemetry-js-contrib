@@ -1,0 +1,19 @@
+'socket.io':
+  - versions:
+      include: "^2.1.1"
+      mode: latest-minors
+    peerDependencies: socket.io-client@^2
+    commands:
+      - npm run test
+
+  - versions: "^3.1.2"
+    peerDependencies: socket.io-client@^3
+    commands:
+      - npm run test
+
+  - versions:
+      include: "^4.5.3"
+      mode: latest-minors
+    peerDependencies: socket.io-client@^4
+    commands:
+      - npm run test

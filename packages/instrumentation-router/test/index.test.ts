@@ -1,0 +1,365 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { context, propagation, trace } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
+
+import { RouterInstrumentation } from '../src';
+import { InstrumentationSpan } from '../src/internal-types';
+const plugin = new RouterInstrumentation();
+
+import * as http from 'http';
+import * as Router from 'router';
+import * as assert from 'assert';
+import { AddressInfo } from 'net';
+
+const createServer = async ({
+  parentSpan,
+}: { parentSpan?: InstrumentationSpan } = {}) => {
+  const router = new Router();
+
+  router.use((req, res, next) => {
+    // anonymous middleware
+    next();
+  });
+
+  router.get('/err', (req, res, next) => {
+    next(new Error('Oops'));
+  });
+
+  router.get('/deep/hello/someone', (req, res, next) => {
+    next();
+  });
+
+  const helloRouter = new Router();
+
+  const preName: Router.RequestHandler = (req, res, next) => {
+    if (req.params?.name?.toLowerCase() === 'nobody') {
+      return next();
+    }
+    res.end(`Hello, ${req.params?.name}!`);
+  };
+  helloRouter.get('/:name', preName);
+
+  helloRouter.get('/:name', function announceRude(req, res, next) {
+    res.end('How rude!');
+  });
+
+  router.use('/hello', helloRouter);
+
+  const deepRouter = new Router();
+
+  deepRouter.use('/hello', helloRouter);
+  router.use('/deep', deepRouter);
+
+  const errHandler: Router.ErrorRequestHandler = (err, req, res, next) => {
+    res.end(`Server error: ${err.message}!`);
+  };
+
+  router.use(function postMiddleware(req, res, next) {
+    next();
+  });
+  router.use(errHandler);
+
+  const defaultHandler = (
+    req: http.IncomingMessage,
+    res: http.ServerResponse
+  ) => {
+    router(req, res, err => {
+      if (err) {
+        res.statusCode = 500;
+        res.end(err.message);
+      }
+      if (!res.headersSent) {
+        res.statusCode = 404;
+        res.end('Not Found');
+      }
+      parentSpan?.end();
+    });
+  };
+  const handler = parentSpan
+    ? context.bind(trace.setSpan(context.active(), parentSpan), defaultHandler)
+    : defaultHandler;
+  const server = http.createServer(handler);
+
+  await new Promise<void>(resolve => server.listen(0, resolve));
+
+  return server;
+};
+
+const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
+  assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
+  assert(
+    Array.isArray(expectedSpans),
+    'Expected `expectedSpans` to be an array'
+  );
+  assert.strictEqual(
+    actualSpans.length,
+    expectedSpans.length,
+    'Expected span count different from actual'
+  );
+  actualSpans.forEach((span, idx) => {
+    const expected = expectedSpans[idx];
+    if (expected === null) return;
+    try {
+      assert.notStrictEqual(span, undefined);
+      assert.notStrictEqual(expected, undefined);
+      assert.strictEqual(span.attributes['router.name'], expected.name);
+      assert.strictEqual(span.attributes['router.type'], expected.type);
+      assert.strictEqual(typeof span.attributes['router.version'], 'string');
+      assert.strictEqual(span.attributes['http.route'], expected.route);
+    } catch (e: any) {
+      e.message = `At span[${idx}]: ${e.message}`;
+      throw e;
+    }
+  });
+};
+
+const ANONYMOUS = '<anonymous>';
+const spans = {
+  anonymousUse: { type: 'middleware', name: ANONYMOUS, route: '/' },
+  preName: { type: 'request_handler', name: 'preName', route: '/hello/:name' },
+  announceRude: {
+    type: 'request_handler',
+    name: 'announceRude',
+    route: '/hello/:name',
+  },
+  postMiddleware: {
+    type: 'middleware',
+    name: 'postMiddleware',
+    route: '/:name',
+  },
+};
+
+describe('Router instrumentation', () => {
+  const memoryExporter = new InMemorySpanExporter();
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
+  const provider = new TracerProvider({
+    spanProcessors: [spanProcessor],
+  });
+  plugin.setTracerProvider(provider);
+  const tracer = provider.getTracer('default');
+  let contextManager: AsyncLocalStorageContextManager;
+  let server: http.Server;
+
+  const request = (path: string, serverOverwrite?: http.Server) => {
+    const port = ((serverOverwrite ?? server).address() as AddressInfo).port;
+    return new Promise((resolve, reject) => {
+      return http.get(`http://localhost:${port}${path}`, resp => {
+        let data = '';
+        resp.on('data', chunk => {
+          data += chunk;
+        });
+        resp.on('end', () => {
+          resolve(data);
+        });
+        resp.on('error', err => {
+          reject(err);
+        });
+      });
+    });
+  };
+
+  beforeEach(async () => {
+    plugin.enable();
+    // To force `require-in-the-middle` to definitely reload and patch the layer
+    require('router/lib/layer.js');
+    server = await createServer();
+    contextManager = new AsyncLocalStorageContextManager();
+    context.setGlobalContextManager(contextManager.enable());
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+  });
+
+  afterEach(() => {
+    memoryExporter.reset();
+    context.disable();
+    server.close();
+    plugin.disable();
+  });
+
+  describe('Instrumenting handler calls', () => {
+    it('should create a span for each handler', async () => {
+      assert.strictEqual(await request('/hello/nobody'), 'How rude!');
+      assertSpans(memoryExporter.getFinishedSpans(), [
+        spans.anonymousUse,
+        spans.preName,
+        spans.announceRude,
+      ]);
+    });
+
+    it('should gather full route for nested routers', async () => {
+      assert.strictEqual(await request('/deep/hello/world'), 'Hello, world!');
+      assertSpans(memoryExporter.getFinishedSpans(), [
+        spans.anonymousUse,
+        { ...spans.preName, route: '/deep/hello/:name' },
+      ]);
+    });
+
+    it('should create spans for requests that did not result with response from the router', async () => {
+      assert.strictEqual(await request('/not-found'), 'Not Found');
+      assertSpans(memoryExporter.getFinishedSpans(), [
+        spans.anonymousUse,
+        { ...spans.postMiddleware, route: '/' },
+      ]);
+    });
+
+    it('should create spans for errored routes', async () => {
+      assert.strictEqual(await request('/err'), 'Server error: Oops!');
+      assertSpans(memoryExporter.getFinishedSpans(), [
+        spans.anonymousUse,
+        { ...spans.preName, name: ANONYMOUS, route: '/err' },
+        { ...spans.anonymousUse, name: 'errHandler', route: '/err' },
+      ]);
+    });
+
+    it('should create spans under parent', async () => {
+      const parentSpan: InstrumentationSpan = tracer.startSpan('HTTP GET');
+      const testLocalServer = await createServer({ parentSpan });
+
+      try {
+        assert.strictEqual(
+          await request('/deep/hello/someone', testLocalServer),
+          'Hello, someone!'
+        );
+        assertSpans(memoryExporter.getFinishedSpans(), [
+          spans.anonymousUse,
+          { ...spans.preName, name: ANONYMOUS, route: '/deep/hello/someone' },
+          { ...spans.preName, route: '/deep/hello/:name' },
+        ]);
+
+        memoryExporter.getFinishedSpans().forEach((span, idx) => {
+          assert.strictEqual(
+            span.parentSpanContext?.spanId,
+            parentSpan.spanContext().spanId,
+            `span[${idx}] has invalid parent`
+          );
+        });
+        assert.strictEqual(parentSpan.name, 'GET /deep/hello/someone');
+      } finally {
+        testLocalServer.close();
+      }
+    });
+
+    it('should preserve baggage added before next across middleware and handler boundaries', async () => {
+      const router = new Router();
+      const snapshots: Array<Record<string, string> | null> = [];
+
+      const snapshotBaggage = () => {
+        const baggage = propagation.getBaggage(context.active());
+
+        if (!baggage) {
+          return null;
+        }
+
+        return Object.fromEntries(
+          baggage.getAllEntries().map(([key, entry]) => [key, entry.value])
+        );
+      };
+
+      router.use((_req, _res, next) => {
+        const baggage = (
+          propagation.getBaggage(context.active()) ??
+          propagation.createBaggage()
+        ).setEntry('foo', { value: 'bar' });
+        const nextContext = propagation.setBaggage(context.active(), baggage);
+
+        context.with(nextContext, next);
+      });
+
+      router.use((_req, _res, next) => {
+        snapshots.push(snapshotBaggage());
+
+        const baggage = (
+          propagation.getBaggage(context.active()) ??
+          propagation.createBaggage()
+        ).setEntry('baz', { value: 'qux' });
+        const nextContext = propagation.setBaggage(context.active(), baggage);
+
+        context.with(nextContext, next);
+      });
+
+      router.get('/baggage', (_req, res) => {
+        snapshots.push(snapshotBaggage());
+        res.end('ok');
+      });
+
+      const server = http.createServer((req, res) => {
+        router(req, res, () => {
+          if (!res.headersSent) {
+            res.statusCode = 404;
+            res.end('not found');
+          }
+        });
+      });
+      await new Promise<void>(resolve => server.listen(0, resolve));
+
+      try {
+        assert.strictEqual(await request('/baggage', server), 'ok');
+        assert.deepStrictEqual(snapshots, [
+          { foo: 'bar' },
+          { foo: 'bar', baz: 'qux' },
+        ]);
+      } finally {
+        server.close();
+      }
+    });
+  });
+
+  describe('Disabling instrumentation', () => {
+    it('should not create new spans', async () => {
+      plugin.disable();
+      await request('/hello/nobody');
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+    });
+  });
+
+  describe('Response listener management (issue #3458)', () => {
+    it('does not emit MaxListenersExceededWarning with many sync middleware', async () => {
+      const router = new Router();
+
+      for (let i = 0; i < 20; i++) {
+        router.use((_req, _res, next) => next());
+      }
+
+      router.get('/ping', (_req, res) => {
+        res.end('pong');
+      });
+
+      const server = http.createServer((req, res) => {
+        router(req, res, () => {
+          if (!res.headersSent) {
+            res.statusCode = 404;
+            res.end('not found');
+          }
+        });
+      });
+      await new Promise<void>(resolve => server.listen(0, resolve));
+
+      const warnings: Error[] = [];
+      const onWarning = (w: Error) => warnings.push(w);
+      process.on('warning', onWarning);
+
+      try {
+        assert.strictEqual(await request('/ping', server), 'pong');
+        const maxListenersWarn = warnings.find(
+          w => w.name === 'MaxListenersExceededWarning'
+        );
+        assert.strictEqual(
+          maxListenersWarn,
+          undefined,
+          `unexpected warning: ${maxListenersWarn?.message}`
+        );
+      } finally {
+        process.removeListener('warning', onWarning);
+        server.close();
+      }
+    });
+  });
+});

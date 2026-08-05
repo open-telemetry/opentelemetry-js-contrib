@@ -1,0 +1,207 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import {
+  isWrapped,
+  InstrumentationBase,
+  InstrumentationNodeModuleDefinition,
+  safeExecuteInTheMiddle,
+} from '@opentelemetry/instrumentation';
+import {
+  endSpan,
+  getTracedCreateClient,
+  getTracedCreateStreamTrace,
+} from './utils';
+import { RedisInstrumentationConfig } from '../types';
+/** @knipignore */
+import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
+import type { RedisCommand, RedisPluginClientTypes } from './internal-types';
+import { Attributes, SpanKind, context, trace } from '@opentelemetry/api';
+import {
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
+import { DB_SYSTEM_NAME_VALUE_REDIS } from '../semconv';
+import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
+
+export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrumentationConfig> {
+  static readonly COMPONENT = 'redis';
+
+  constructor(config: RedisInstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
+  }
+
+  override setConfig(config: RedisInstrumentationConfig = {}) {
+    super.setConfig(config);
+  }
+
+  protected init() {
+    return [
+      new InstrumentationNodeModuleDefinition(
+        'redis',
+        ['>=2.6.0 <4'],
+        moduleExports => {
+          if (
+            isWrapped(
+              moduleExports.RedisClient.prototype['internal_send_command']
+            )
+          ) {
+            this._unwrap(
+              moduleExports.RedisClient.prototype,
+              'internal_send_command'
+            );
+          }
+          this._wrap(
+            moduleExports.RedisClient.prototype,
+            'internal_send_command',
+            this._getPatchInternalSendCommand()
+          );
+
+          if (isWrapped(moduleExports.RedisClient.prototype['create_stream'])) {
+            this._unwrap(moduleExports.RedisClient.prototype, 'create_stream');
+          }
+          this._wrap(
+            moduleExports.RedisClient.prototype,
+            'create_stream',
+            this._getPatchCreateStream()
+          );
+
+          if (isWrapped(moduleExports.createClient)) {
+            this._unwrap(moduleExports, 'createClient');
+          }
+          this._wrap(
+            moduleExports,
+            'createClient',
+            this._getPatchCreateClient()
+          );
+          return moduleExports;
+        },
+        moduleExports => {
+          if (moduleExports === undefined) return;
+          this._unwrap(
+            moduleExports.RedisClient.prototype,
+            'internal_send_command'
+          );
+          this._unwrap(moduleExports.RedisClient.prototype, 'create_stream');
+          this._unwrap(moduleExports, 'createClient');
+        }
+      ),
+    ];
+  }
+
+  /**
+   * Patch internal_send_command(...) to trace requests
+   */
+  private _getPatchInternalSendCommand() {
+    const instrumentation = this;
+    return function internal_send_command(original: Function) {
+      return function internal_send_command_trace(
+        this: RedisPluginClientTypes,
+        cmd?: RedisCommand
+      ) {
+        // Versions of redis (2.4+) use a single options object
+        // instead of named arguments
+        if (arguments.length !== 1 || typeof cmd !== 'object') {
+          // We don't know how to trace this call, so don't start/stop a span
+          return original.apply(this, arguments);
+        }
+
+        const config = instrumentation.getConfig();
+
+        const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
+        if (config.requireParentSpan === true && hasNoParentSpan) {
+          return original.apply(this, arguments);
+        }
+
+        const dbStatementSerializer =
+          config?.dbStatementSerializer || defaultDbStatementSerializer;
+
+        const attributes: Attributes = {};
+        Object.assign(attributes, {
+          [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_REDIS,
+          [ATTR_DB_OPERATION_NAME]: cmd.command,
+          [ATTR_DB_QUERY_TEXT]: dbStatementSerializer(cmd.command, cmd.args),
+        });
+
+        const span = instrumentation.tracer.startSpan(
+          `${RedisInstrumentationV2_V3.COMPONENT}-${cmd.command}`,
+          {
+            kind: SpanKind.CLIENT,
+            attributes,
+          }
+        );
+
+        // Set attributes for not explicitly typed RedisPluginClientTypes
+        if (this.connection_options) {
+          const connectionAttributes: Attributes = {};
+          Object.assign(connectionAttributes, {
+            [ATTR_SERVER_ADDRESS]: this.connection_options.host,
+            [ATTR_SERVER_PORT]: this.connection_options.port,
+          });
+
+          span.setAttributes(connectionAttributes);
+        }
+
+        const originalCallback = arguments[0].callback;
+        if (originalCallback) {
+          const originalContext = context.active();
+          (arguments[0] as RedisCommand).callback = function callback<T>(
+            this: unknown,
+            err: Error | null,
+            reply: T
+          ) {
+            if (config?.responseHook) {
+              const responseHook = config.responseHook;
+              safeExecuteInTheMiddle(
+                () => {
+                  responseHook(span, cmd.command, cmd.args, reply);
+                },
+                err => {
+                  if (err) {
+                    instrumentation._diag.error(
+                      'Error executing responseHook',
+                      err
+                    );
+                  }
+                },
+                true
+              );
+            }
+
+            endSpan(span, err);
+            return context.with(
+              originalContext,
+              originalCallback,
+              this,
+              ...arguments
+            );
+          };
+        }
+        try {
+          // Span will be ended in callback
+          return original.apply(this, arguments);
+        } catch (rethrow: any) {
+          endSpan(span, rethrow);
+          throw rethrow; // rethrow after ending span
+        }
+      };
+    };
+  }
+
+  private _getPatchCreateClient() {
+    return function createClient(original: Function) {
+      return getTracedCreateClient(original);
+    };
+  }
+
+  private _getPatchCreateStream() {
+    return function createReadStream(original: Function) {
+      return getTracedCreateStreamTrace(original);
+    };
+  }
+}

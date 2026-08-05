@@ -1,0 +1,106 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
+import * as assert from 'assert';
+import type { MongoClient, MongoClientOptions, Collection } from 'mongodb';
+import {
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+} from '@opentelemetry/semantic-conventions';
+
+export const DEFAULT_MONGO_HOST = '127.0.0.1';
+
+export interface MongoDBAccess {
+  client: MongoClient;
+  collection: Collection;
+}
+
+/**
+ * Access the mongodb collection.
+ * @param url The mongodb URL to access.
+ * @param dbName The mongodb database name.
+ * @param collectionName The mongodb collection name.
+ * @param options The mongodb client config options.
+ */
+export function accessCollection(
+  url: string,
+  dbName: string,
+  collectionName: string,
+  options: MongoClientOptions = {}
+): Promise<MongoDBAccess> {
+  return new Promise((resolve, reject) => {
+    let mongodb;
+    try {
+      mongodb = require('mongodb');
+    } catch (err: any) {
+      reject(new Error('Could not load mongodb. ' + err.message));
+      return;
+    }
+    mongodb.MongoClient.connect(url, {
+      serverSelectionTimeoutMS: 1000,
+    })
+      .then((client: MongoClient) => {
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        resolve({ client, collection });
+      })
+      .catch((reason: any) => {
+        reject(
+          new Error('Could not connect. Run MongoDB to test. ' + reason.message)
+        );
+      });
+  });
+}
+
+export function assertSpans(
+  spans: ReadableSpan[],
+  expectedOperation: string,
+  expectedCollection: string,
+  log = false,
+  isEnhancedDatabaseReportingEnabled = false
+) {
+  if (log) {
+    console.log(spans);
+  }
+  assert.strictEqual(spans.length, 2);
+  spans.forEach(span => {
+    assert(span.endTime instanceof Array);
+    assert(span.endTime.length === 2);
+  });
+  const [mongoSpan] = spans;
+  assert.strictEqual(mongoSpan.kind, SpanKind.CLIENT);
+  assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
+
+  assert.strictEqual(
+    mongoSpan.name,
+    `${expectedOperation} ${expectedCollection}`
+  );
+  assert.strictEqual(
+    mongoSpan.attributes[ATTR_DB_OPERATION_NAME],
+    expectedOperation
+  );
+  assert.strictEqual(
+    mongoSpan.attributes[ATTR_DB_COLLECTION_NAME],
+    expectedCollection
+  );
+  assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM_NAME], 'mongodb');
+  assert.strictEqual(
+    mongoSpan.attributes[ATTR_SERVER_ADDRESS],
+    process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
+  );
+
+  if (isEnhancedDatabaseReportingEnabled) {
+    const dbQueryText = mongoSpan.attributes[ATTR_DB_QUERY_TEXT];
+    const dbStatement = JSON.parse(dbQueryText as string);
+    for (const key in dbStatement) {
+      assert.notStrictEqual(dbStatement[key], '?');
+    }
+  }
+}

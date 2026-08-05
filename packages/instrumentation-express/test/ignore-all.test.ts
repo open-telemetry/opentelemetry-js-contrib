@@ -1,0 +1,132 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { context, trace, Span } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
+import * as assert from 'assert';
+import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { AttributeNames } from '../src/enums/AttributeNames';
+import { ExpressInstrumentation, ExpressLayerType } from '../src';
+import { createServer, httpRequest } from './utils';
+
+const instrumentation = new ExpressInstrumentation({
+  ignoreLayersType: [
+    ExpressLayerType.MIDDLEWARE,
+    ExpressLayerType.ROUTER,
+    ExpressLayerType.REQUEST_HANDLER,
+  ],
+});
+instrumentation.enable();
+instrumentation.disable();
+
+import * as express from 'express';
+import * as http from 'http';
+
+describe('ExpressInstrumentation', () => {
+  const memoryExporter = new InMemorySpanExporter();
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
+  const provider = new TracerProvider({
+    spanProcessors: [spanProcessor],
+  });
+  const tracer = provider.getTracer('default');
+  const contextManager = new AsyncLocalStorageContextManager().enable();
+
+  before(() => {
+    instrumentation.setTracerProvider(provider);
+    context.setGlobalContextManager(contextManager);
+    instrumentation.enable();
+  });
+
+  afterEach(() => {
+    contextManager.disable();
+    contextManager.enable();
+    memoryExporter.reset();
+  });
+
+  describe('when route exists', () => {
+    let server: http.Server;
+    let port: number;
+    let rootSpan: Span;
+    let rpcMetadata: RPCMetadata;
+
+    beforeEach(async () => {
+      rootSpan = tracer.startSpan('rootSpan');
+      const app = express();
+
+      app.use((req, res, next) => {
+        rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+        return context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        );
+      });
+      app.use(express.json());
+      app.use((req, res, next) => {
+        for (let i = 0; i < 1000; i++) {}
+        return next();
+      });
+      const router = express.Router();
+      app.use('/toto', router);
+      router.get('/:id', (req, res) => {
+        setImmediate(() => {
+          res.status(200).end();
+        });
+      });
+
+      const httpServer = await createServer(app);
+      server = httpServer.server;
+      port = httpServer.port;
+    });
+
+    afterEach(() => {
+      server.close();
+    });
+
+    it('should ignore all ExpressLayerType based on config', async () => {
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/toto/tata`);
+          rootSpan.end();
+          assert.deepStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .filter(
+                span =>
+                  span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                    ExpressLayerType.MIDDLEWARE ||
+                  span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                    ExpressLayerType.ROUTER ||
+                  span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                    ExpressLayerType.REQUEST_HANDLER
+              ).length,
+            0
+          );
+        }
+      );
+    });
+
+    it('rpcMetadata.route still capture correct route', async () => {
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/toto/tata`);
+          rootSpan.end();
+          assert.strictEqual(rpcMetadata.route, '/toto/:id');
+        }
+      );
+    });
+  });
+});

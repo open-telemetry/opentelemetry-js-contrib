@@ -1,0 +1,339 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import * as api from '@opentelemetry/api';
+import { EventEmitter } from 'events';
+import {
+  InstrumentationBase,
+  InstrumentationNodeModuleDefinition,
+  isWrapped,
+} from '@opentelemetry/instrumentation';
+import {
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_RESPONSE_STATUS_CODE,
+  ATTR_DB_STORED_PROCEDURE_NAME,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_ERROR_TYPE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER,
+} from '@opentelemetry/semantic-conventions';
+import type * as tedious from 'tedious';
+import { TediousInstrumentationConfig } from './types';
+import { getOperationName, getSpanName, once } from './utils';
+/** @knipignore */
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+
+const CURRENT_DATABASE = Symbol(
+  'opentelemetry.instrumentation-tedious.current-database'
+);
+
+export const INJECTED_CTX = Symbol(
+  'opentelemetry.instrumentation-tedious.context-info-injected'
+);
+
+const PATCHED_METHODS = [
+  'callProcedure',
+  'execSql',
+  'execSqlBatch',
+  'execBulkLoad',
+  'prepare',
+  'execute',
+];
+
+type UnknownFunction = (...args: any[]) => any;
+type ApproxConnection = EventEmitter & {
+  [CURRENT_DATABASE]: string;
+  config: any;
+};
+type ApproxRequest = EventEmitter & {
+  sqlTextOrProcedure: string | undefined;
+  callback: any;
+  table: string | undefined;
+  parametersByName: any;
+};
+
+function setDatabase(this: ApproxConnection, databaseName: string) {
+  Object.defineProperty(this, CURRENT_DATABASE, {
+    value: databaseName,
+    writable: true,
+  });
+}
+
+export class TediousInstrumentation extends InstrumentationBase<TediousInstrumentationConfig> {
+  static readonly COMPONENT = 'tedious';
+
+  constructor(config: TediousInstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
+  }
+
+  protected init() {
+    return [
+      new InstrumentationNodeModuleDefinition(
+        TediousInstrumentation.COMPONENT,
+        ['>=1.11.0 <21'],
+        (moduleExports: typeof tedious) => {
+          const ConnectionPrototype: any = moduleExports.Connection.prototype;
+          for (const method of PATCHED_METHODS) {
+            if (isWrapped(ConnectionPrototype[method])) {
+              this._unwrap(ConnectionPrototype, method);
+            }
+            this._wrap(
+              ConnectionPrototype,
+              method,
+              this._patchQuery(method, moduleExports) as any
+            );
+          }
+
+          if (isWrapped(ConnectionPrototype.connect)) {
+            this._unwrap(ConnectionPrototype, 'connect');
+          }
+          this._wrap(ConnectionPrototype, 'connect', this._patchConnect);
+
+          return moduleExports;
+        },
+        (moduleExports: typeof tedious) => {
+          if (moduleExports === undefined) return;
+          const ConnectionPrototype: any = moduleExports.Connection.prototype;
+          for (const method of PATCHED_METHODS) {
+            this._unwrap(ConnectionPrototype, method);
+          }
+          this._unwrap(ConnectionPrototype, 'connect');
+        }
+      ),
+    ];
+  }
+
+  private _patchConnect(original: UnknownFunction): UnknownFunction {
+    return function patchedConnect(this: ApproxConnection) {
+      setDatabase.call(this, this.config?.options?.database);
+
+      // remove the listener first in case it's already added
+      this.removeListener('databaseChange', setDatabase);
+      this.on('databaseChange', setDatabase);
+
+      this.once('end', () => {
+        this.removeListener('databaseChange', setDatabase);
+      });
+      return original.apply(this, arguments as unknown as any[]);
+    };
+  }
+
+  private _buildTraceparent(span: api.Span): string {
+    const sc = span.spanContext();
+    return `00-${sc.traceId}-${sc.spanId}-0${Number(sc.traceFlags || api.TraceFlags.NONE).toString(16)}`;
+  }
+
+  /**
+   * Fire a one-off `SET CONTEXT_INFO @opentelemetry_traceparent` on the same
+   * connection. Marks the request with INJECTED_CTX so our patch skips it.
+   */
+  private _injectContextInfo(
+    connection: any,
+    tediousModule: typeof tedious,
+    traceparent: string
+  ): Promise<void> {
+    return new Promise(resolve => {
+      try {
+        const sql = 'set context_info @opentelemetry_traceparent';
+        const req = new tediousModule.Request(sql, (_err: any) => {
+          resolve();
+        });
+        Object.defineProperty(req, INJECTED_CTX, { value: true });
+        const buf = Buffer.from(traceparent, 'utf8');
+        req.addParameter(
+          'opentelemetry_traceparent',
+          (tediousModule as any).TYPES.VarBinary,
+          buf,
+          { length: buf.length }
+        );
+
+        connection.execSql(req);
+      } catch {
+        resolve();
+      }
+    });
+  }
+
+  private _shouldInjectFor(operation: string): boolean {
+    return (
+      operation === 'execSql' ||
+      operation === 'execSqlBatch' ||
+      operation === 'callProcedure' ||
+      operation === 'execute'
+    );
+  }
+
+  private _patchQuery(operation: string, tediousModule: typeof tedious) {
+    return (originalMethod: UnknownFunction): UnknownFunction => {
+      const thisPlugin = this;
+
+      function patchedMethod(this: ApproxConnection, request: ApproxRequest) {
+        // Skip our own injected request
+        if ((request as any)?.[INJECTED_CTX]) {
+          return originalMethod.apply(this, arguments as unknown as any[]);
+        }
+
+        if (!(request instanceof EventEmitter)) {
+          thisPlugin._diag.warn(
+            `Unexpected invocation of patched ${operation} method. Span not recorded`
+          );
+          return originalMethod.apply(this, arguments as unknown as any[]);
+        }
+        let procCount = 0;
+        let statementCount = 0;
+        const incrementStatementCount = () => statementCount++;
+        const incrementProcCount = () => procCount++;
+        const databaseName = this[CURRENT_DATABASE];
+        const sql = (request => {
+          // Required for <11.0.9
+          if (
+            request.sqlTextOrProcedure === 'sp_prepare' &&
+            request.parametersByName?.stmt?.value
+          ) {
+            return request.parametersByName.stmt.value;
+          }
+          return request.sqlTextOrProcedure;
+        })(request);
+
+        const attributes: api.Attributes = {};
+
+        // db.namespace: for named instances include the instance name as a
+        // prefix separated by "|" per the SQL Server semconv spec.
+        // https://opentelemetry.io/docs/specs/semconv/database/sql-server/#:~:text=%5B1%5D%20db%2Enamespace
+        const instanceName = this.config?.options?.instanceName;
+        const dbNamespace =
+          instanceName && databaseName
+            ? `${instanceName}|${databaseName}`
+            : databaseName;
+        attributes[ATTR_DB_NAMESPACE] = dbNamespace;
+        attributes[ATTR_DB_SYSTEM_NAME] =
+          DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
+        attributes[ATTR_DB_QUERY_TEXT] = sql;
+        attributes[ATTR_DB_COLLECTION_NAME] = request.table;
+
+        const operationName = getOperationName(operation);
+        if (operationName !== undefined) {
+          attributes[ATTR_DB_OPERATION_NAME] = operationName;
+        }
+
+        // db.stored_procedure.name: available directly from sqlTextOrProcedure
+        // when callProcedure is used.
+        if (operation === 'callProcedure' && sql) {
+          attributes[ATTR_DB_STORED_PROCEDURE_NAME] = sql;
+        }
+
+        attributes[ATTR_SERVER_ADDRESS] = this.config?.server;
+        attributes[ATTR_SERVER_PORT] = this.config?.options?.port;
+
+        const spanCollection =
+          operation === 'callProcedure' ? sql : request.table;
+        const span = thisPlugin.tracer.startSpan(
+          getSpanName(
+            operationName,
+            dbNamespace,
+            spanCollection,
+            DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER
+          ),
+          {
+            kind: api.SpanKind.CLIENT,
+            attributes,
+          }
+        );
+
+        const endSpan = once((err?: any) => {
+          request.removeListener('done', incrementStatementCount);
+          request.removeListener('doneInProc', incrementStatementCount);
+          request.removeListener('doneProc', incrementProcCount);
+          request.removeListener('error', endSpan);
+          this.removeListener('end', endSpan);
+
+          span.setAttribute('tedious.procedure_count', procCount);
+          span.setAttribute('tedious.statement_count', statementCount);
+          if (err) {
+            span.setStatus({
+              code: api.SpanStatusCode.ERROR,
+              message: err.message,
+            });
+
+            const errorType = err?.constructor?.name ?? 'Error';
+            span.setAttribute(ATTR_ERROR_TYPE, errorType);
+
+            // db.response.status_code carries the SQL Server error number when
+            // present, otherwise the Tedious error code string.
+            const statusCode =
+              err.number != null ? String(err.number) : err.code;
+            if (statusCode) {
+              span.setAttribute(ATTR_DB_RESPONSE_STATUS_CODE, statusCode);
+            }
+          }
+          span.end();
+        });
+
+        request.on('done', incrementStatementCount);
+        request.on('doneInProc', incrementStatementCount);
+        request.on('doneProc', incrementProcCount);
+        request.once('error', endSpan);
+        this.on('end', endSpan);
+
+        if (typeof request.callback === 'function') {
+          thisPlugin._wrap(
+            request,
+            'callback',
+            thisPlugin._patchCallbackQuery(endSpan)
+          );
+        } else {
+          thisPlugin._diag.error('Expected request.callback to be a function');
+        }
+
+        const runUserRequest = () => {
+          return api.context.with(
+            api.trace.setSpan(api.context.active(), span),
+            originalMethod,
+            this,
+            ...arguments
+          );
+        };
+
+        const cfg = thisPlugin.getConfig();
+        const shouldInject =
+          cfg.enableTraceContextPropagation &&
+          thisPlugin._shouldInjectFor(operation);
+
+        if (!shouldInject) return runUserRequest();
+
+        const traceparent = thisPlugin._buildTraceparent(span);
+
+        void thisPlugin
+          ._injectContextInfo(this, tediousModule, traceparent)
+          .finally(runUserRequest);
+      }
+
+      Object.defineProperty(patchedMethod, 'length', {
+        value: originalMethod.length,
+        writable: false,
+      });
+
+      return patchedMethod;
+    };
+  }
+
+  private _patchCallbackQuery(endSpan: Function) {
+    return (originalCallback: Function) => {
+      return function (
+        this: any,
+        err: Error | undefined | null,
+        rowCount?: number,
+        rows?: any
+      ) {
+        endSpan(err);
+        return originalCallback.apply(this, arguments);
+      };
+    };
+  }
+}

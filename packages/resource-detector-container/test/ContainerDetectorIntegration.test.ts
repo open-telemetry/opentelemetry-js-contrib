@@ -1,0 +1,61 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import * as assert from 'assert';
+
+import { FsInstrumentation } from '@opentelemetry/instrumentation-fs';
+import {
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { detectResources } from '@opentelemetry/resources';
+
+describe('[Integration] ContainerDetector', () => {
+  it('should not start spans for detector reads to filesystem', async () => {
+    const memoryExporter = new InMemorySpanExporter();
+    const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
+    const sdk = new NodeSDK({
+      instrumentations: [new FsInstrumentation()],
+      spanProcessors: [spanProcessor],
+    });
+
+    sdk.start();
+
+    // NOTE: detectors implementing the `DetectorSync` interface and starting
+    // HTTP requests within the `detect` method will produce Noop Spans since
+    // the SDK resolves the trace provider after resource detectors are triggered.
+    // Ref: https://github.com/open-telemetry/opentelemetry-js/blob/38f6689480d28dcbdafcb7b5ba4b14025328ffda/experimental/packages/opentelemetry-sdk-node/src/sdk.ts#L210-L240
+    //
+    // So having the detector in the config would result in no spans for Azure requests
+    // being exported which is what we want. Although we may think we're safe of sending
+    // internal tracing any change that delays these request will result in internal
+    // tracing being exported. We do the detection outside the SDK constructor to have such
+    // scenario.
+    const {
+      containerDetector,
+    } = require('../build/src/detectors/ContainerDetector');
+
+    // NOTE: the require process makes use of the fs API so spans are being exported.
+    // We need to check no new spans are exported when `detect` is called.
+    await spanProcessor.forceFlush();
+    const numSpansAfterRequire = memoryExporter.getFinishedSpans().length;
+
+    const resource = detectResources({ detectors: [containerDetector] });
+    await resource.waitForAsyncAttributes?.();
+
+    // Wait for the next loop to let the span close properly
+    await new Promise(r => setTimeout(r, 0));
+    const spans = memoryExporter.getFinishedSpans();
+
+    assert.equal(
+      spans.length,
+      numSpansAfterRequire,
+      'no spans exported for ContainerDetector'
+    );
+
+    await sdk.shutdown();
+  });
+});

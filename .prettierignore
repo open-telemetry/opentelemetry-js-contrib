@@ -1,0 +1,9 @@
+*.md
+*.json
+*.jsonc
+*.json5
+*.yml
+*.yaml
+!package.json
+
+/.nx

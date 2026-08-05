@@ -1,0 +1,137 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+import { context, trace } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  TracerProvider,
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace';
+import * as assert from 'assert';
+import { FsInstrumentation } from '../src';
+import * as sinon from 'sinon';
+import type * as FSPromisesType from 'fs/promises';
+import tests, { FsFunction, TestCase, TestCreator } from './definitions';
+import type { FPMember, EndHook } from '../src/types';
+import { assertSpans, makeRootSpanName } from './utils';
+
+const TEST_ATTRIBUTE = 'test.attr';
+const TEST_VALUE = 'test.attr.value';
+
+const endHook = <EndHook>sinon.spy((fnName, { args, span }) => {
+  span.setAttribute(TEST_ATTRIBUTE, TEST_VALUE);
+});
+const pluginConfig = {
+  endHook,
+};
+const memoryExporter = new InMemorySpanExporter();
+const provider = new TracerProvider({
+  spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
+});
+const tracer = provider.getTracer('default');
+
+describe('fs/promises instrumentation', () => {
+  let contextManager: AsyncLocalStorageContextManager;
+  let fsPromises: typeof FSPromisesType;
+  let plugin: FsInstrumentation;
+
+  beforeEach(async () => {
+    contextManager = new AsyncLocalStorageContextManager();
+    context.setGlobalContextManager(contextManager.enable());
+    plugin = new FsInstrumentation(pluginConfig);
+    plugin.setTracerProvider(provider);
+    plugin.enable();
+    fsPromises = require('fs/promises');
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+  });
+
+  afterEach(() => {
+    plugin.disable();
+    memoryExporter.reset();
+    context.disable();
+  });
+
+  const promiseTest: TestCreator<FPMember> = (
+    name: FPMember,
+    args,
+    { error, result, resultAsError = null, hasPromiseVersion = true },
+    spans
+  ) => {
+    if (!hasPromiseVersion) return;
+    const rootSpanName = makeRootSpanName(name);
+    it(`promises.${name} ${error ? 'error' : 'success'}`, async () => {
+      const rootSpan = tracer.startSpan(rootSpanName);
+
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await context
+        .with(trace.setSpan(context.active(), rootSpan), () => {
+          assert(
+            typeof fsPromises[name] === 'function',
+            `Expected fsPromises.${name} to be a function`
+          );
+          return Reflect.apply(fsPromises[name], fsPromises, args);
+        })
+        .then((actualResult: any) => {
+          if (error) {
+            assert.fail(`promises.${name} did not reject`);
+          } else {
+            assert.deepEqual(actualResult, result ?? resultAsError);
+          }
+        })
+        .catch((actualError: any) => {
+          assert(
+            actualError instanceof Error,
+            `Expected caugth error to be instance of Error. Got ${actualError}`
+          );
+          if (error) {
+            assert(
+              error.test(actualError?.message ?? ''),
+              `Expected "${actualError?.message}" to match ${error}`
+            );
+          } else {
+            actualError.message = `Did not expect promises.${name} to reject: ${actualError.message}`;
+            assert.fail(actualError);
+          }
+        });
+      rootSpan.end();
+      assertSpans(memoryExporter.getFinishedSpans(), [
+        ...spans.map((s: any) => {
+          const spanName = s.name.replace(/%NAME/, name);
+          const attributes = {
+            ...(s.attributes ?? {}),
+          };
+          attributes[TEST_ATTRIBUTE] = TEST_VALUE;
+          return {
+            ...s,
+            name: spanName,
+            attributes,
+          };
+        }),
+        { name: rootSpanName },
+      ]);
+    });
+  };
+
+  const selection: TestCase[] = tests.filter(
+    ([name, , , , options = {}]) =>
+      options.promise !== false && name !== ('exists' as FsFunction)
+  );
+
+  describe('Instrumentation enabled', () => {
+    selection.forEach(([name, args, result, spans]) => {
+      promiseTest(name as FPMember, args, result, spans);
+    });
+  });
+
+  describe('Instrumentation disabled', () => {
+    beforeEach(() => {
+      plugin.disable();
+    });
+
+    selection.forEach(([name, args, result]) => {
+      promiseTest(name as FPMember, args, result, []);
+    });
+  });
+});

@@ -1,0 +1,12 @@
+mysql2:
+  - versions:
+      include: ">=1.4.2 <3"
+      # Skip v1.6.2, which is broken
+      # Skip 2.3.3 which installs types from git which takes 10m on its own
+      exclude: "1.6.2 || 2.3.3"
+      mode: max-3
+    commands: npm run test
+  - versions:
+      include: ">=3 <4"
+      mode: max-7
+    commands: npm run test
