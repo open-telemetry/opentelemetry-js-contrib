@@ -161,9 +161,10 @@ describe('UndiciInstrumentation metrics tests', function () {
       assert.strictEqual(metricAttributes[ATTR_HTTP_REQUEST_METHOD], 'GET');
       assert.strictEqual(metricAttributes[ATTR_SERVER_ADDRESS], hostname);
       assert.strictEqual(metricAttributes[ATTR_SERVER_PORT], mockServer.port);
+      const errorType = metricAttributes[ATTR_ERROR_TYPE];
       assert.ok(
-        metricAttributes[ATTR_ERROR_TYPE],
-        `the metric contains "${ATTR_ERROR_TYPE}" attribute if request failed`
+        typeof errorType === 'string' && errorType.length > 0,
+        `the metric contains a non-empty "${ATTR_ERROR_TYPE}" attribute if request failed`
       );
     });
   });
