@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import * as assert from 'assert';
+import * as diagch from 'diagnostics_channel';
 
 import { context, propagation } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
@@ -128,14 +129,19 @@ describe('UndiciInstrumentation metrics tests', function () {
       assert.strictEqual(metricAttributes[ATTR_HTTP_RESPONSE_STATUS_CODE], 200);
     });
 
-    it('should have error.type in "http.client.request.duration" metric', async () => {
-      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/error`;
+    it('should use error code as error.type in "http.client.request.duration" metric', async () => {
+      const request: any = {
+        method: 'GET',
+        origin: `${protocol}://${hostname}:${mockServer.port}`,
+        path: '/error',
+        headers: [],
+      };
+      const error = Object.assign(new Error(''), {
+        code: 'UND_ERR_SOCKET',
+      });
 
-      try {
-        await fetch(fetchUrl);
-      } catch (err) {
-        // Expected error, do nothing
-      }
+      diagch.channel('undici:request:create').publish({ request });
+      diagch.channel('undici:request:error').publish({ request, error });
 
       await metricReader.collectAndExport();
       const resourceMetrics = metricsMemoryExporter.getMetrics();
@@ -161,10 +167,7 @@ describe('UndiciInstrumentation metrics tests', function () {
       assert.strictEqual(metricAttributes[ATTR_HTTP_REQUEST_METHOD], 'GET');
       assert.strictEqual(metricAttributes[ATTR_SERVER_ADDRESS], hostname);
       assert.strictEqual(metricAttributes[ATTR_SERVER_PORT], mockServer.port);
-      assert.ok(
-        metricAttributes[ATTR_ERROR_TYPE],
-        `the metric contains "${ATTR_ERROR_TYPE}" attribute if request failed`
-      );
+      assert.strictEqual(metricAttributes[ATTR_ERROR_TYPE], 'UND_ERR_SOCKET');
     });
   });
 });
