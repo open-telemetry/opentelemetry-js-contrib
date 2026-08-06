@@ -40,7 +40,13 @@ let connectionsTimeouts!: Counter;
 // calculate the correct delta on every pool event. On the next pool event, this
 // also reconciles any pool changes that were not recorded, such as changes made
 // while instrumentation was disabled, ensuring metric values remain accurate.
-const connectionsCounterState: Record<string, PoolConnectionsCounter> = {};
+// WeakMap keyed by Pool instance prevents memory leaks when pools are
+// dropped without an explicit close and state collisions between pools that
+// share aliases or connect strings.
+let connectionsCounterState = new WeakMap<
+  oracleDBTypes.Pool,
+  PoolConnectionsCounter
+>();
 
 export interface PoolConnectionsCounter {
   idle: number;
@@ -83,6 +89,8 @@ export function getPoolName(
 }
 
 export function setMetricInstruments(meter: Meter) {
+  connectionsCounterState = new WeakMap();
+
   connectionsCount = meter.createUpDownCounter(
     METRIC_DB_CLIENT_CONNECTION_COUNT,
     {
@@ -123,18 +131,14 @@ export function setMetricInstruments(meter: Meter) {
       },
     }
   );
-
-  for (const poolName of Object.keys(connectionsCounterState)) {
-    connectionsCounterState[poolName] = createEmptyCounterState();
-  }
 }
 
 export function updateCounter(pool: oracleDBTypes.Pool) {
   if (!pool) return;
 
-  const poolName = getPoolName(pool);
-  const prev = connectionsCounterState[poolName] ?? createEmptyCounterState();
+  const prev = connectionsCounterState.get(pool) ?? createEmptyCounterState();
   const curr = getCurrentPoolState(pool);
+  const poolName = getPoolName(pool);
 
   const deltaUsed = curr.used - prev.used;
   const deltaIdle = curr.idle - prev.idle;
@@ -157,9 +161,9 @@ export function updateCounter(pool: oracleDBTypes.Pool) {
   connectionsTimeouts.add(deltaTimeouts, poolAttr);
 
   if (pool.status === oracleDBTypes.POOL_STATUS_OPEN) {
-    connectionsCounterState[poolName] = curr;
+    connectionsCounterState.set(pool, curr);
   } else {
-    delete connectionsCounterState[poolName];
+    connectionsCounterState.delete(pool);
   }
 }
 
