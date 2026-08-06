@@ -1,6 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- * Copyright (c) 2025, Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -200,10 +200,7 @@ if (process.env.NODE_ORACLEDB_DRIVER_MODE === 'thick') {
   let clientOpts = {};
   // On Windows and macOS Intel platforms, set the environment
   // variable NODE_ORACLEDB_CLIENT_LIB_DIR to the Oracle Client library path
-  if (
-    process.platform === 'win32' ||
-    (process.platform === 'darwin' && process.arch === 'x64')
-  ) {
+  if (process.platform === 'win32' || process.platform === 'darwin') {
     clientOpts = { libDir: process.env.NODE_ORACLEDB_CLIENT_LIB_DIR };
   }
   oracledb.initOracleClient(clientOpts); // enable node-oracledb Thick mode
@@ -246,7 +243,7 @@ function updateAttrSpanList(connection: oracledb.Connection) {
     connectSpanAttributes[ATTR_ORACLE_DB_DOMAIN] =
       extendedConnection.domainName;
   }
-  if (isOracleDB7Plus() && extendedConnection.dbUniqueName) {
+  if (oracledb.thin && isOracleDB7Plus() && extendedConnection.dbUniqueName) {
     connectSpanAttributes[ATTR_DB_NAMESPACE] =
       `${extendedConnection.dbUniqueName}`;
   }
@@ -578,7 +575,7 @@ describe('oracledb', () => {
     if (connection.serviceName) {
       connAttributes[ATTR_ORACLE_DB_SERVICE] = connection.serviceName;
     }
-    if (isOracleDB610Plus() && extendedConn.dbUniqueName) {
+    if (oracledb.thin && isOracleDB610Plus() && extendedConn.dbUniqueName) {
       connAttributes[ATTR_DB_NAMESPACE] = extendedConn.dbUniqueName;
     }
     poolAttributes = { ...connAttributes, ...POOL_ATTRIBUTES };
@@ -866,9 +863,10 @@ describe('oracledb', () => {
       instrumentation.enable();
       await context.with(trace.setSpan(context.active(), span), async () => {
         await new Promise<void>(resolve => {
-          pool.getConnection((err, conn) => {
+          pool.getConnection((...args) => {
+            const [err, conn] = args;
             assert.strictEqual(err, null);
-            connection = conn;
+            connection = conn!;
             verifyPoolGetConnHitAttrs(span);
             resolve();
           });
@@ -921,8 +919,8 @@ describe('oracledb', () => {
       instrumentation.enable();
       await context.with(trace.setSpan(context.active(), span), async () => {
         await new Promise<void>(resolve => {
-          pool.getConnection((err, conn) => {
-            connection = conn;
+          pool.getConnection((...args) => {
+            const [err] = args;
             assertErrorSpan(poolConnFailedAttrs, 1, err as any);
             resolve();
           });
@@ -977,8 +975,9 @@ describe('oracledb', () => {
     it('should intercept getConnection callback', done => {
       const span = tracer.startSpan('test span');
       context.with(trace.setSpan(context.active(), span), () => {
-        oracledb.getConnection(CONFIG, (err, conn) => {
-          connection = conn;
+        oracledb.getConnection(CONFIG, (...args) => {
+          const [err, conn] = args;
+          connection = conn!;
           assert.strictEqual(err, null);
           verifySpans(span, connAttrList, spanNamesList);
 
@@ -1016,8 +1015,8 @@ describe('oracledb', () => {
       const wrongConfig = Object.assign({}, CONFIG);
       wrongConfig.password = 'null';
       context.with(trace.setSpan(context.active(), span), () => {
-        oracledb.getConnection(wrongConfig, (err, conn) => {
-          connection = conn;
+        oracledb.getConnection(wrongConfig, (...args) => {
+          const [err] = args;
           assertErrorSpan(
             failedConnAttrList[connAttrList.length - 1],
             connAttrList.length,
@@ -1041,7 +1040,8 @@ describe('oracledb', () => {
 
   describe('#connection.execute(...)', () => {
     it('should not return a promise if callback is provided', done => {
-      const res = connection.execute(sql, (err, res) => {
+      const res = connection.execute(sql, (...args) => {
+        const [err] = args;
         assert.strictEqual(err, null);
         done();
       });
@@ -1091,9 +1091,10 @@ describe('oracledb', () => {
     it('should intercept connection.execute(sql, callback)', done => {
       const span = tracer.startSpan('test span');
       context.with(trace.setSpan(context.active(), span), () => {
-        const res = connection.execute(sql, (err, res) => {
+        const res = connection.execute(sql, (...args) => {
+          const [err, result] = args;
           assert.strictEqual(err, null);
-          assert.ok(res);
+          assert.ok(result);
           verifySpans(span);
           span.end();
 
@@ -1109,9 +1110,10 @@ describe('oracledb', () => {
     });
 
     it('should intercept connection.execute(sql, callback) with out parent span', done => {
-      const res = connection.execute(sql, (err, res) => {
+      const res = connection.execute(sql, (...args) => {
+        const [err, result] = args;
         assert.strictEqual(err, null);
-        assert.ok(res);
+        assert.ok(result);
         verifySpans(null);
         done();
       });
@@ -1463,9 +1465,10 @@ describe('oracledb', () => {
       const span = tracer.startSpan('test span');
       context.with(trace.setSpan(context.active(), span), () => {
         instrumentation.setConfig({ enhancedDatabaseReporting: true });
-        const res = connection.execute(sqlWithBinds, binds, (err, res) => {
+        const res = connection.execute(sqlWithBinds, binds, (...args) => {
+          const [err, result] = args;
           assert.strictEqual(err, null);
-          assert.ok(res);
+          assert.ok(result);
           verifySpans(span, [
             executeAttributesInternalRoundTripBinds,
             attributesWithSensitiveDataBinds,
@@ -1756,9 +1759,10 @@ describe('oracledb', () => {
       it('should attach request hook data to resulting spans for query with callback)', done => {
         const span = tracer.startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
-          const res = connection.execute(sql, (err, res) => {
+          const res = connection.execute(sql, (...args) => {
+            const [err, result] = args;
             assert.strictEqual(err, null);
-            assert.ok(res);
+            assert.ok(result);
             const extendedConn: any = connection;
             verifySpans(span, [
               attributesWithSensitiveDataNoBinds,
@@ -1780,7 +1784,7 @@ describe('oracledb', () => {
       beforeEach(async () => {
         instrumentation.setConfig({
           enhancedDatabaseReporting: true,
-          requestHook: (span, requestInfo) => {
+          requestHook: (_span, _requestInfo) => {
             throw 'Failed!';
           },
         });
@@ -1789,9 +1793,10 @@ describe('oracledb', () => {
       it('should not do any harm when throwing an exception', done => {
         const span = tracer.startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
-          const res = connection.execute(sql, (err, res) => {
+          const res = connection.execute(sql, (...args) => {
+            const [err, result] = args;
             assert.strictEqual(err, null);
-            assert.ok(res);
+            assert.ok(result);
             verifySpans(span, [
               attributesWithSensitiveDataNoBinds,
               attributesWithSensitiveDataNoBinds,
@@ -1845,14 +1850,15 @@ describe('oracledb', () => {
       it('should attach response hook data to resulting spans for query with callback)', done => {
         const span = tracer.startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
-          const res = connection.execute(sql, (err, res) => {
+          const res = connection.execute(sql, (...args) => {
+            const [err, result] = args;
             assert.strictEqual(err, null);
-            assert.ok(res);
+            assert.ok(result);
             verifySpans(span, [
               attributesWithSensitiveDataNoBinds,
               {
                 ...attributesWithSensitiveDataNoBinds,
-                [key1]: JSON.stringify(res),
+                [key1]: JSON.stringify(result),
               },
             ]);
             span.end();
@@ -1867,7 +1873,7 @@ describe('oracledb', () => {
       beforeEach(async () => {
         instrumentation.setConfig({
           enhancedDatabaseReporting: true,
-          responseHook: (span, responseInfo) => {
+          responseHook: (_span, _responseInfo) => {
             throw 'Failure!';
           },
         });
@@ -1876,9 +1882,10 @@ describe('oracledb', () => {
       it('should not do any harm when throwing an exception', done => {
         const span = tracer.startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
-          const res = connection.execute(sql, (err, res) => {
+          const res = connection.execute(sql, (...args) => {
+            const [err, result] = args;
             assert.strictEqual(err, null);
-            assert.ok(res);
+            assert.ok(result);
             verifySpans(span, [
               attributesWithSensitiveDataNoBinds,
               attributesWithSensitiveDataNoBinds,

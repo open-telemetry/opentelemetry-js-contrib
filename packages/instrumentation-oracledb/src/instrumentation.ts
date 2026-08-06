@@ -1,6 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- * Copyright (c) 2025, Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,7 +9,8 @@ import {
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 import type * as oracleDBTypes from 'oracledb';
-import { OracleInstrumentationConfig } from './types';
+import type { OracleInstrumentationConfig } from './types';
+import { setMetricInstruments } from './metricUtils';
 import { getOracleTelemetryTraceHandlerClass } from './OracleTelemetryTraceHandler';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -19,6 +20,10 @@ export class OracleInstrumentation extends InstrumentationBase {
 
   constructor(config: OracleInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+  }
+
+  override _updateMetricInstruments(): void {
+    setMetricInstruments(this.meter);
   }
 
   protected init() {
