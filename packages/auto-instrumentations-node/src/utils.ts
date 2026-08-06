@@ -40,7 +40,6 @@ import { OracleInstrumentation } from '@opentelemetry/instrumentation-oracledb';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
 import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
-import { RestifyInstrumentation } from '@opentelemetry/instrumentation-restify';
 import { RouterInstrumentation } from '@opentelemetry/instrumentation-router';
 import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
 import { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.io';
@@ -119,7 +118,6 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
   '@opentelemetry/instrumentation-pino': PinoInstrumentation,
   '@opentelemetry/instrumentation-redis': RedisInstrumentation,
-  '@opentelemetry/instrumentation-restify': RestifyInstrumentation,
   '@opentelemetry/instrumentation-router': RouterInstrumentation,
   '@opentelemetry/instrumentation-runtime-node': RuntimeNodeInstrumentation,
   '@opentelemetry/instrumentation-socket.io': SocketIoInstrumentation,
