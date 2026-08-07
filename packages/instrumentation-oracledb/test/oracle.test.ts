@@ -866,7 +866,7 @@ describe('oracledb', () => {
           pool.getConnection((...args) => {
             const [err, conn] = args;
             assert.strictEqual(err, null);
-            connection = conn!;
+            connection = conn;
             verifyPoolGetConnHitAttrs(span);
             resolve();
           });
@@ -977,8 +977,8 @@ describe('oracledb', () => {
       context.with(trace.setSpan(context.active(), span), () => {
         oracledb.getConnection(CONFIG, (...args) => {
           const [err, conn] = args;
-          connection = conn!;
           assert.strictEqual(err, null);
+          connection = conn;
           verifySpans(span, connAttrList, spanNamesList);
 
           // Verify spans inside callback are child of application span
