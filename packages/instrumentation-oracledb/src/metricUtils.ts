@@ -35,6 +35,13 @@ let connectionsCount!: UpDownCounter;
 let connectionPendingRequests!: UpDownCounter;
 let connectionsTimeouts!: Counter;
 
+export interface PoolConnectionsCounter {
+  idle: number;
+  pending: number;
+  used: number;
+  timeouts: number;
+}
+
 // Pool properties provide absolute values, but synchronous counters can only be
 // updated by adding deltas. Store the last recorded values for each pool to
 // calculate the correct delta on every pool event. On the next pool event, this
@@ -47,13 +54,6 @@ let connectionsCounterState = new WeakMap<
   oracleDBTypes.Pool,
   PoolConnectionsCounter
 >();
-
-export interface PoolConnectionsCounter {
-  idle: number;
-  pending: number;
-  used: number;
-  timeouts: number;
-}
 
 const EMPTY_COUNTER_STATE: PoolConnectionsCounter = {
   idle: 0,
