@@ -1,0 +1,16 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "" # See documentation for possible values
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "weekly"
+npm i @opentelemetry/auto-instrumentations-node
+00b217d2-6de3-48c9-912c-03c9856d08c1
+4388b601-787a-4926-bf0a-06cf8e586323
+30abbaa9-9f25-4108-8ac7-e9c6dc8ccef5
+apt-get install nsolid -ycurl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
