@@ -1,4 +1,4 @@
-apiVersion: v1
+FROM apiVersion: v1
 entries:
   actions-runner-controller:
   - apiVersion: v2
