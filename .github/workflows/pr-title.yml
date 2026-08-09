@@ -1,23 +1,48 @@
-name: Lint PR
+A transient network/DNS failure during the `conclusion` job’s `Checkout actions folder` step was causing a second-order crash (`MODULE_NOT_FOUND` for `setup_globals.cjs` and related helpers), obscuring the real root cause. This change hardens that path so checkout failures are retried and, if still unsuccessful, fail with a direct checkout error instead of cascading module errors.
 
-on:
-  # Using 'pull_request_target' to *not* run changes in the PR branch.
-  # https://docs.zizmor.sh/audits/#dangerous-triggers
-  # zizmor: ignore[dangerous-triggers]
-  pull_request_target:
-    types:
-      - opened
-      - edited
-      - synchronize
+- **Scope**
+  - Targets the `pr-sous-chef` conclusion setup path specifically (`WorkflowID == "pr-sous-chef"`), without changing checkout behavior for other workflows/jobs.
 
-permissions:
-  contents: read
+- **Conclusion checkout resilience**
+  - Adds retry/backoff checkout generation for the conclusion setup path:
+    - attempt 1
+    - retry after 5s
+    - retry after 15s
+  - Each attempt is `continue-on-error: true`, followed by an explicit terminal step that emits a clear checkout failure message and exits non-zero if all attempts fail.
 
-jobs:
-  main:
-    name: Validate PR title
-    runs-on: ubuntu-latest
-    steps:
-      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+- **Compiler and generated workflow updates**
+  - Adds `generateCheckoutActionsFolderWithRetry(...)` in the workflow compiler.
+  - Wires conclusion setup (`buildConclusionSetupSteps`) to use retrying checkout for `pr-sous-chef`.
+  - Regenerates `.github/workflows/pr-sous-chef.lock.yml` to include the retry sequence in the `conclusion` job.
+
+- **Regression guardrails**
+  - Adds focused compiler tests for:
+    - retry-step generation shape/content
+    - `pr-sous-chef`-only application of retrying checkout in conclusion setup.
+
+```yaml
+- name: Checkout actions folder
+  id: checkout-actions-folder-attempt-1
+  continue-on-error: true
+  uses: actions/checkout@...
+  with:
+    repository: github/gh-aw
+    sparse-checkout: |
+      actions
+
+- name: Backoff before retrying checkout actions folder (5s)
+  if: steps.checkout-actions-folder-attempt-1.outcome == 'failure'
+  run: sleep 5
+
+# ...attempt-2, backoff 15s, attempt-3...
+
+- name: Fail with clear checkout error after retries
+  if: steps.checkout-actions-folder-attempt-3.outcome == 'failure'
+  run: |
+    echo "::error::Failed to checkout github/gh-aw actions folder after 3 attempts (5s/15s backoff). This is usually a transient GitHub DNS or network failure."
+    exit 1
+```
+
+<!-- START COPILOT CODING AGENT SUFFIX -->
+
+- Fixes #49023
