@@ -32,8 +32,6 @@ jobs:
           cache-dependency-path: package-lock.json
           node-version: 24
 
-      - run: npm install -g npm@latest
-
       - run: npm ci --ignore-scripts
 
       - name: Create PR
