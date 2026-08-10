@@ -81,8 +81,10 @@ The `@opentelemetry/instrumentation-pg` versions 0.72.0 and later emit the stabl
 | `error.type`          | Describes a class of error the operation ended with.                                       |
 
 > [!NOTE]
-> `db.collection.name` is not collected by this instrumentation.
-> The database client does not make the table/collection name easily available, and parsing the SQL query text is not compliant with the OpenTelemetry specification.
+> `db.collection.name` is not collected. The `pg` driver does not expose the table
+> name separately, and the OpenTelemetry specification advises against parsing
+> `db.query.text` when the database supports queries touching multiple
+> collections in non-batch operations, which is the case for PostgreSQL.
 
 Metrics Exported:
 
