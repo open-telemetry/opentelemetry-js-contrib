@@ -293,30 +293,12 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           }
         };
 
-        if (
-          !self._observeAPIPromiseResponse(
-            apiPromise as unknown as OpenAIAPIPromiseInternals,
-            onResult,
-            onError,
-            onResponse
-          )
-        ) {
-          // Never observe the public APIPromise here: doing so starts its lazy
-          // body parser. An unknown runtime shape gets a minimal ended span and
-          // otherwise remains completely untouched.
-          try {
-            self._diag.warn(
-              'OpenAI APIPromise responsePromise is unavailable; ending span without response telemetry'
-            );
-          } catch {
-            // Diagnostics must not affect the caller.
-          }
-          try {
-            span.end();
-          } catch {
-            // Telemetry must not affect the caller.
-          }
-        }
+        self._observeAPIPromise(
+          apiPromise as unknown as OpenAIAPIPromiseInternals<ChatCompletion>,
+          onResult,
+          onError,
+          onResponse
+        );
 
         return apiPromise;
       };
@@ -324,16 +306,16 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
   }
 
   /**
-   * Observe an APIPromise without starting or changing its lazy parser. A
-   * cloned response provides result telemetry while the original body remains
-   * exclusively owned by the caller.
+   * Observe an APIPromise without starting its lazy parser. Normal parsed calls
+   * reuse the SDK parser. Only an explicit raw-response call parses a clone for
+   * telemetry, leaving the original response exclusively owned by the caller.
    */
-  private _observeAPIPromiseResponse<T>(
-    apiPromise: OpenAIAPIPromiseInternals,
+  private _observeAPIPromise<T>(
+    apiPromise: OpenAIAPIPromiseInternals<T>,
     onResult: (result: T) => void,
     onError: (error: Error) => void,
     onResponse: () => void
-  ): boolean {
+  ): void {
     const safeWarn = (message: string, err?: unknown) => {
       try {
         this._diag.warn(message, err);
@@ -348,26 +330,44 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         // Diagnostics must not affect the caller.
       }
     };
+    const replaceProperty = (name: string, replacement: unknown): boolean => {
+      let descriptor: PropertyDescriptor | undefined;
+      try {
+        descriptor = Reflect.getOwnPropertyDescriptor(apiPromise, name);
+      } catch (err) {
+        safeWarn(`unable to inspect OpenAI APIPromise ${name}`, err);
+        return false;
+      }
 
-    let responsePromise: unknown;
-    try {
-      responsePromise = apiPromise.responsePromise;
-    } catch (err) {
-      safeWarn('unable to read OpenAI APIPromise responsePromise', err);
-      return false;
-    }
+      try {
+        const assigned =
+          descriptor == null ||
+          Object.prototype.hasOwnProperty.call(descriptor, 'value')
+            ? Reflect.defineProperty(apiPromise, name, {
+                ...(descriptor ?? {
+                  configurable: true,
+                  enumerable: false,
+                  writable: true,
+                }),
+                value: replacement,
+              })
+            : Reflect.set(apiPromise, name, replacement);
+        if (!assigned) {
+          return false;
+        }
+        try {
+          return Reflect.get(apiPromise, name) === replacement;
+        } catch (err) {
+          safeWarn(`unable to verify OpenAI APIPromise ${name}`, err);
+          return false;
+        }
+      } catch (err) {
+        safeWarn(`unable to patch OpenAI APIPromise ${name}`, err);
+        return false;
+      }
+    };
 
-    let responseThen: unknown;
-    try {
-      responseThen = (responsePromise as { then?: unknown } | null)?.then;
-    } catch (err) {
-      safeWarn('unable to read OpenAI APIPromise responsePromise.then', err);
-      return false;
-    }
-    if (typeof responseThen !== 'function') {
-      return false;
-    }
-
+    let parseStarted = false;
     let finished = false;
     const finish = (callback: () => void) => {
       if (finished) {
@@ -384,9 +384,102 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       finish(() => onError(err as Error));
     };
 
-    const onResponseProps = async (props: unknown): Promise<void> => {
+    let originalParseResponse: unknown;
+    try {
+      originalParseResponse = apiPromise.parseResponse;
+    } catch (err) {
+      safeWarn('unable to read OpenAI APIPromise parseResponse', err);
+    }
+
+    let parserPatched = false;
+    if (typeof originalParseResponse === 'function') {
+      const parseResponse = originalParseResponse as (
+        ...args: unknown[]
+      ) => T | PromiseLike<T>;
+      let parsedPromise: Promise<T> | undefined;
+      const wrappedParseResponse = function (
+        this: unknown,
+        ...args: unknown[]
+      ): Promise<T> {
+        parseStarted = true;
+        if (parsedPromise == null) {
+          try {
+            parsedPromise = Promise.resolve(
+              Reflect.apply(parseResponse, this, args)
+            ).then(
+              result => {
+                finish(() => onResult(result));
+                return result;
+              },
+              err => {
+                finishWithError(err);
+                throw err;
+              }
+            );
+          } catch (err) {
+            finishWithError(err);
+            throw err;
+          }
+        }
+        return parsedPromise!;
+      };
+
+      parserPatched = replaceProperty(
+        'parseResponse',
+        wrappedParseResponse
+      );
+      if (!parserPatched) {
+        safeWarn('unable to patch OpenAI APIPromise parseResponse');
+      }
+    } else {
+      safeWarn('OpenAI APIPromise parseResponse is unavailable');
+    }
+
+    const onRawResponse = async (response: unknown): Promise<void> => {
       try {
-        const response = (props as { response?: unknown } | null)?.response;
+        const rawResponse = response as {
+          status?: unknown;
+          headers?: unknown;
+        } | null;
+        if (rawResponse?.status === 204) {
+          finish(onResponse);
+          return;
+        }
+
+        const headers = rawResponse?.headers;
+        const getHeader = (headers as { get?: unknown } | null)?.get;
+        if (typeof getHeader !== 'function') {
+          throw new Error('OpenAI response headers are unavailable');
+        }
+        const contentType = Reflect.apply(getHeader, headers, [
+          'content-type',
+        ]);
+        const mediaType =
+          typeof contentType === 'string'
+            ? contentType.split(';')[0]?.trim()
+            : undefined;
+        const isJSON =
+          mediaType?.includes('application/json') ||
+          mediaType?.endsWith('+json');
+        if (!isJSON) {
+          finish(onResponse);
+          return;
+        }
+
+        const contentLength = Reflect.apply(getHeader, headers, [
+          'content-length',
+        ]);
+        if (contentLength === '0') {
+          finish(onResponse);
+          return;
+        }
+      } catch (err) {
+        safeError('unable to classify raw OpenAI response:', err);
+        finish(onResponse);
+        return;
+      }
+
+      try {
         const clone = (response as { clone?: unknown } | null)?.clone;
         if (typeof clone !== 'function') {
           throw new Error('OpenAI response does not have a clone method');
@@ -405,31 +498,132 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         )) as T;
         finish(() => onResult(result));
       } catch (err) {
-        safeError(
-          'unable to parse cloned OpenAI response for telemetry:',
-          err
-        );
-        finish(onResponse);
+        safeError('unable to parse raw OpenAI response for telemetry:', err);
+        finishWithError(err);
       }
     };
 
-    // Private thenables are treated as untrusted boundaries. Their access and
-    // invocation must never change whether patched create returns the original
-    // APIPromise.
+    const observeRawResponsePromise = (responsePromise: unknown): void => {
+      let responseThen: unknown;
+      try {
+        responseThen = (responsePromise as { then?: unknown } | null)?.then;
+      } catch (err) {
+        safeWarn('unable to read OpenAI asResponse promise then', err);
+        finish(onResponse);
+        return;
+      }
+      if (typeof responseThen !== 'function') {
+        safeWarn('OpenAI asResponse did not return a thenable');
+        finish(onResponse);
+        return;
+      }
+
+      let callbackStarted = false;
+      try {
+        Reflect.apply(responseThen, responsePromise, [
+          (response: unknown) => {
+            callbackStarted = true;
+            if (parseStarted || finished) {
+              return;
+            }
+            void onRawResponse(response);
+          },
+          (err: unknown) => {
+            callbackStarted = true;
+            finishWithError(err);
+          },
+        ]);
+      } catch (err) {
+        safeWarn('unable to observe OpenAI asResponse promise', err);
+        if (!callbackStarted) {
+          finish(onResponse);
+        }
+      }
+    };
+
+    let originalAsResponse: unknown;
+    try {
+      originalAsResponse = apiPromise.asResponse;
+    } catch (err) {
+      safeWarn('unable to read OpenAI APIPromise asResponse', err);
+    }
+
+    if (typeof originalAsResponse === 'function') {
+      const asResponse = originalAsResponse as (...args: unknown[]) => unknown;
+      let rawObservationStarted = false;
+      const wrappedAsResponse = function (
+        this: unknown,
+        ...args: unknown[]
+      ): unknown {
+        let responsePromise: unknown;
+        try {
+          responsePromise = Reflect.apply(asResponse, this, args);
+        } catch (err) {
+          finishWithError(err);
+          throw err;
+        }
+        if (!rawObservationStarted) {
+          rawObservationStarted = true;
+          observeRawResponsePromise(responsePromise);
+        }
+        // Preserve the exact native promise returned by the SDK.
+        return responsePromise;
+      };
+
+      if (!replaceProperty('asResponse', wrappedAsResponse)) {
+        safeWarn('unable to patch OpenAI APIPromise asResponse');
+      }
+    } else {
+      safeWarn('OpenAI APIPromise asResponse is unavailable');
+    }
+
+    let responsePromise: unknown;
+    try {
+      responsePromise = apiPromise.responsePromise;
+    } catch (err) {
+      safeWarn('unable to read OpenAI APIPromise responsePromise', err);
+      finish(onResponse);
+      return;
+    }
+
+    let responseThen: unknown;
+    try {
+      responseThen = (responsePromise as { then?: unknown } | null)?.then;
+    } catch (err) {
+      safeWarn('unable to read OpenAI APIPromise responsePromise.then', err);
+      finish(onResponse);
+      return;
+    }
+    if (typeof responseThen !== 'function') {
+      safeWarn('OpenAI APIPromise responsePromise is unavailable');
+      finish(onResponse);
+      return;
+    }
+
+    // The private response promise is observed only for rejection (or minimal
+    // success when its parser could not be patched). A hostile thenable may
+    // call a callback and then throw; once a callback starts, that path owns
+    // finalization and no outer fallback may race it.
+    let callbackStarted = false;
     try {
       Reflect.apply(responseThen, responsePromise, [
-        (props: unknown) => {
-          void onResponseProps(props);
+        () => {
+          callbackStarted = true;
+          if (!parserPatched) {
+            finish(onResponse);
+          }
         },
         (err: unknown) => {
+          callbackStarted = true;
           finishWithError(err);
         },
       ]);
     } catch (err) {
       safeWarn('unable to observe OpenAI APIPromise responsePromise', err);
-      return false;
+      if (!callbackStarted) {
+        finish(onResponse);
+      }
     }
-    return true;
   }
 
   /**

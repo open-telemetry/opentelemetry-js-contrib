@@ -360,30 +360,43 @@ describe('OpenAI', function () {
     );
 
     it('preserves withResponse and finalizes once for multiple observers', async () => {
-      const completionPromise = client.chat.completions.create({
-        model,
-        messages: [{ role: 'user', content: input }],
-      });
+      const originalClone = Response.prototype.clone;
+      let cloneCalls = 0;
+      Response.prototype.clone = function (this: Response): Response {
+        cloneCalls++;
+        return Reflect.apply(originalClone, this, []);
+      };
 
-      expect(completionPromise.asResponse).toEqual(expect.any(Function));
-      expect(completionPromise.withResponse).toEqual(expect.any(Function));
-      const [completion, withResponse, repeatedCompletion] = await Promise.all([
-        completionPromise,
-        completionPromise.withResponse(),
-        completionPromise.then(result => result),
-      ]);
+      try {
+        const completionPromise = client.chat.completions.create({
+          model,
+          messages: [{ role: 'user', content: input }],
+        });
 
-      expect(completion.choices[0].message.content).toBe('Atlantic Ocean.');
-      expect(withResponse.data).toBe(completion);
-      expect(withResponse.response.status).toBe(200);
-      expect(withResponse.response.headers.get('x-request-id')).toBe(
-        'req_with_response'
-      );
-      if (withResponse.request_id !== undefined) {
-        expect(withResponse.request_id).toBe('req_with_response');
+        expect(completionPromise.asResponse).toEqual(expect.any(Function));
+        expect(completionPromise.withResponse).toEqual(expect.any(Function));
+        const [completion, withResponse, repeatedCompletion] =
+          await Promise.all([
+            completionPromise,
+            completionPromise.withResponse(),
+            completionPromise.then(result => result),
+          ]);
+
+        expect(completion.choices[0].message.content).toBe('Atlantic Ocean.');
+        expect(withResponse.data).toBe(completion);
+        expect(withResponse.response.status).toBe(200);
+        expect(withResponse.response.headers.get('x-request-id')).toBe(
+          'req_with_response'
+        );
+        if (withResponse.request_id !== undefined) {
+          expect(withResponse.request_id).toBe('req_with_response');
+        }
+        expect(repeatedCompletion).toBe(completion);
+        expect(getTestSpans()).toHaveLength(1);
+        expect(cloneCalls).toBe(0);
+      } finally {
+        Response.prototype.clone = originalClone;
       }
-      expect(repeatedCompletion).toBe(completion);
-      expect(getTestSpans()).toHaveLength(1);
     });
 
     it('preserves HTTP errors and finalizes their telemetry once', async () => {
@@ -463,6 +476,126 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
       });
+    });
+
+    it('does not clone responses for ordinary create', async () => {
+      const originalClone = Response.prototype.clone;
+      let cloneCalls = 0;
+      Response.prototype.clone = function (this: Response): Response {
+        cloneCalls++;
+        return Reflect.apply(originalClone, this, []);
+      };
+
+      try {
+        const completionPromise = client.chat.completions.create({
+          model,
+          messages: [{ role: 'user', content: input }],
+        });
+        expect(
+          Object.prototype.propertyIsEnumerable.call(
+            completionPromise,
+            'asResponse'
+          )
+        ).toBe(false);
+        const completion = await completionPromise;
+        expect(completion.choices[0].message.content).toBe('Atlantic Ocean.');
+        await waitForTestSpans(1);
+        expect(getTestSpans()).toHaveLength(1);
+        expect(cloneCalls).toBe(0);
+      } finally {
+        Response.prototype.clone = originalClone;
+      }
+    });
+
+    it('keeps telemetry owned when private fulfillment throws', async () => {
+      const completion = {
+        id: 'chatcmpl-fulfill-then-throw',
+        object: 'chat.completion',
+        created: 1752220000,
+        model: 'gpt-4o-mini-2024-07-18',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: 'Atlantic Ocean.',
+              refusal: null,
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {
+          prompt_tokens: 22,
+          completion_tokens: 3,
+          total_tokens: 25,
+        },
+      };
+      const response = new Response(JSON.stringify(completion), {
+        headers: { 'content-type': 'application/json' },
+      });
+      const responsePromise = {
+        then: (onFulfilled: (props: { response: Response }) => void) => {
+          onFulfilled({ response });
+          throw new Error('responsePromise.then threw after fulfillment');
+        },
+      };
+      let publicThenCalled = false;
+      const fakeAPIPromise: Record<string, unknown> = {
+        parseResponse: () => Promise.resolve(completion),
+        responsePromise,
+        asResponse: () => responsePromise,
+        then: () => {
+          publicThenCalled = true;
+          throw new Error('public APIPromise.then must not be called');
+        },
+      };
+      const patchedCreate = patchChatCompletionCreate(function () {
+        return fakeAPIPromise;
+      });
+
+      let result: unknown;
+      expect(() => {
+        result = patchedCreate.call(
+          { _client: { baseURL: 'https://api.openai.com' } },
+          { model, messages: [] }
+        );
+      }).not.toThrow();
+      expect(result).toBe(fakeAPIPromise);
+      expect(publicThenCalled).toBe(false);
+
+      const parsed = await Reflect.apply(
+        fakeAPIPromise.parseResponse as (...args: unknown[]) => unknown,
+        fakeAPIPromise,
+        []
+      );
+      expect(parsed).toBe(completion);
+      await waitForTestSpans(1);
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-fulfill-then-throw',
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
+      });
+    });
+
+    it('records invalid JSON as an error after asResponse', async () => {
+      const completionPromise = client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+      });
+
+      const response = await completionPromise.asResponse();
+      expect(response.bodyUsed).toBe(false);
+
+      const parseError = await completionPromise.catch(error => error);
+      expect(parseError).toBeInstanceOf(SyntaxError);
+      expect(response.bodyUsed).toBe(true);
+
+      await waitForTestSpans(1);
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes[ATTR_ERROR_TYPE]).toBe('SyntaxError');
     });
 
     it('does not throw for a read-only APIPromise parser', async () => {

@@ -1,0 +1,23 @@
+[
+  {
+    "scope": "https://api.openai.com:443",
+    "method": "POST",
+    "path": "/v1/chat/completions",
+    "body": {
+      "model": "gpt-4o-mini",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Answer in up to 3 words: Which ocean contains Bouvet Island?"
+        }
+      ]
+    },
+    "status": 200,
+    "response": "{invalid-json",
+    "rawHeaders": {
+      "content-type": "application/json",
+      "x-request-id": "req_invalid_json"
+    },
+    "responseIsBinary": false
+  }
+]
