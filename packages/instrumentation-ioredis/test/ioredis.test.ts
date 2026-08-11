@@ -161,14 +161,11 @@ describe('ioredis', () => {
         } finally {
           client.quit(() => {
             assert.ok(
-            endedSpans.length === 4 || endedSpans.length === 5,
-            `expected 4 or 5 handshake spans, got ${endedSpans.length}`
-          );
-          
-          assert.strictEqual(
-            endedSpans[endedSpans.length - 1].name,
-            'quit'
-          );
+              endedSpans.length === 4 || endedSpans.length === 5,
+              `expected 4 or 5 handshake spans, got ${endedSpans.length}`
+            );
+
+            assert.strictEqual(endedSpans[endedSpans.length - 1].name, 'quit');
             done();
           });
         }
