@@ -181,6 +181,59 @@ describe('OpenAI', function () {
   const model = 'gpt-4o-mini';
   const input = 'Answer in up to 3 words: Which ocean contains Bouvet Island?';
 
+  const rawCompletionProbe = {
+    id: 'chatcmpl-raw-probe',
+    object: 'chat.completion',
+    created: 1752220000,
+    model: 'gpt-4o-mini-2024-07-18',
+    choices: [
+      {
+        index: 0,
+        message: {
+          role: 'assistant',
+          content: 'Atlantic Ocean.',
+          refusal: null,
+        },
+        finish_reason: 'stop',
+      },
+    ],
+    usage: {
+      prompt_tokens: 22,
+      completion_tokens: 3,
+      total_tokens: 25,
+    },
+  };
+
+  const runRawResponseProbe = async (response: unknown): Promise<void> => {
+    const rawPromise = Promise.resolve(response);
+    let publicThenCalled = false;
+    const fakeAPIPromise: Record<string, unknown> = {
+      parseResponse: () => Promise.resolve(rawCompletionProbe),
+      responsePromise: Promise.resolve({ response }),
+      asResponse: () => rawPromise,
+      then: () => {
+        publicThenCalled = true;
+        throw new Error('public APIPromise.then must not be called');
+      },
+    };
+    const patchedCreate = patchChatCompletionCreate(function () {
+      return fakeAPIPromise;
+    });
+
+    const result = patchedCreate.call(
+      { _client: { baseURL: 'https://api.openai.com' } },
+      { model, messages: [] }
+    ) as Record<string, unknown>;
+    expect(result).toBe(fakeAPIPromise);
+
+    const asResponse = result.asResponse as () => unknown;
+    const observedPromise = Reflect.apply(asResponse, result, []);
+    expect(observedPromise).toBe(rawPromise);
+    await expect(observedPromise).resolves.toBe(response);
+    expect(publicThenCalled).toBe(false);
+    await waitForTestSpans(1);
+  };
+
   describe('chat completions', function () {
     this.beforeEach(() => {
       instrumentation.enable();
@@ -505,6 +558,148 @@ describe('OpenAI', function () {
       } finally {
         Response.prototype.clone = originalClone;
       }
+    });
+
+    it('finalizes successful fire-and-forget requests', async () => {
+      const originalClone = Response.prototype.clone;
+      let cloneCalls = 0;
+      Response.prototype.clone = function (this: Response): Response {
+        cloneCalls++;
+        return Reflect.apply(originalClone, this, []);
+      };
+
+      try {
+        client.chat.completions.create({
+          model,
+          messages: [{ role: 'user', content: input }],
+        });
+
+        await waitForTestSpans(1);
+        const spans = getTestSpans();
+        expect(spans).toHaveLength(1);
+        expect(spans[0].attributes).toMatchObject({
+          [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-ordinary-no-clone',
+          [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
+          [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
+        });
+        expect(cloneCalls).toBe(1);
+      } finally {
+        Response.prototype.clone = originalClone;
+      }
+    });
+
+    it('skips cloning when raw response exceeds telemetry body limit', async () => {
+      let cloneCalls = 0;
+      const response = {
+        status: 200,
+        headers: {
+          get: (name: string) =>
+            name === 'content-type'
+              ? 'application/json'
+              : name === 'content-length'
+                ? String(1 * 1024 * 1024 + 1)
+                : null,
+        },
+        clone: () => {
+          cloneCalls++;
+          return { json: () => Promise.resolve(rawCompletionProbe) };
+        },
+      };
+
+      await runRawResponseProbe(response);
+
+      expect(cloneCalls).toBe(0);
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes[ATTR_ERROR_TYPE]).toBeUndefined();
+      expect(spans[0].attributes[ATTR_GEN_AI_RESPONSE_ID]).toBeUndefined();
+    });
+
+    it('skips cloning when raw response has no content length', async () => {
+      let cloneCalls = 0;
+      const response = {
+        status: 200,
+        headers: {
+          get: (name: string) =>
+            name === 'content-type' ? 'application/json' : null,
+        },
+        clone: () => {
+          cloneCalls++;
+          return { json: () => Promise.resolve(rawCompletionProbe) };
+        },
+      };
+
+      await runRawResponseProbe(response);
+
+      expect(cloneCalls).toBe(0);
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes[ATTR_ERROR_TYPE]).toBeUndefined();
+      expect(spans[0].attributes[ATTR_GEN_AI_RESPONSE_ID]).toBeUndefined();
+    });
+
+    it('treats missing response clone as telemetry mechanics failure', async () => {
+      const response = {
+        status: 200,
+        headers: {
+          get: (name: string) =>
+            name === 'content-type'
+              ? 'application/json'
+              : name === 'content-length'
+                ? '128'
+                : null,
+        },
+      };
+
+      await runRawResponseProbe(response);
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes[ATTR_ERROR_TYPE]).toBeUndefined();
+    });
+
+    it('treats thrown response clone as telemetry mechanics failure', async () => {
+      const response = {
+        status: 200,
+        headers: {
+          get: (name: string) =>
+            name === 'content-type'
+              ? 'application/json'
+              : name === 'content-length'
+                ? '128'
+                : null,
+        },
+        clone: () => {
+          throw new Error('response clone failed');
+        },
+      };
+
+      await runRawResponseProbe(response);
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes[ATTR_ERROR_TYPE]).toBeUndefined();
+    });
+
+    it('treats missing cloned response json as telemetry mechanics failure', async () => {
+      const response = {
+        status: 200,
+        headers: {
+          get: (name: string) =>
+            name === 'content-type'
+              ? 'application/json'
+              : name === 'content-length'
+                ? '128'
+                : null,
+        },
+        clone: () => ({}),
+      };
+
+      await runRawResponseProbe(response);
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes[ATTR_ERROR_TYPE]).toBeUndefined();
     });
 
     it('keeps telemetry owned when private fulfillment throws', async () => {

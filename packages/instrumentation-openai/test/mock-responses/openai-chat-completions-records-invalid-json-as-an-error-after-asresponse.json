@@ -16,6 +16,7 @@
     "response": "{invalid-json",
     "rawHeaders": {
       "content-type": "application/json",
+      "content-length": "13",
       "x-request-id": "req_invalid_json"
     },
     "responseIsBinary": false

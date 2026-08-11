@@ -37,6 +37,7 @@
     },
     "rawHeaders": {
       "content-type": "application/json",
+      "content-length": "300",
       "x-request-id": "req_as_response"
     },
     "responseIsBinary": false

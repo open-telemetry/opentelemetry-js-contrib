@@ -13,7 +13,6 @@ export type APIPromise<T> = Promise<T>;
 export type OpenAIAPIPromiseInternals<T> = {
   responsePromise?: unknown;
   parseResponse?: (...args: unknown[]) => T | PromiseLike<T>;
-  asResponse?: (...args: unknown[]) => unknown;
 };
 
 export type GenAIFunction = {
