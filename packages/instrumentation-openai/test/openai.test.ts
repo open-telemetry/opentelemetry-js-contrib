@@ -123,6 +123,24 @@ const waitForTestSpans = async (expectedCount: number): Promise<void> => {
   }
 };
 
+type ChatCompletionCreateLike = (
+  this: { _client?: { baseURL?: string } },
+  params: { model: string; messages: unknown[] }
+) => unknown;
+
+const patchChatCompletionCreate = (
+  original: ChatCompletionCreateLike
+): ChatCompletionCreateLike => {
+  const getPatch = (
+    instrumentation as unknown as {
+      _getPatchedChatCompletionsCreate(): (
+        original: ChatCompletionCreateLike
+      ) => ChatCompletionCreateLike;
+    }
+  )._getPatchedChatCompletionsCreate();
+  return getPatch(original);
+};
+
 describe('OpenAI', function () {
   this.timeout(10000); // Increase timeout for LLM tests
 
@@ -413,6 +431,105 @@ describe('OpenAI', function () {
       expect(responseBody.choices[0].message.content).toBe('Atlantic Ocean.');
       expect(response.bodyUsed).toBe(true);
 
+      await waitForTestSpans(1);
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-as-response',
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
+      });
+    });
+
+    it('preserves full telemetry when asResponse precedes parsing', async () => {
+      const completionPromise = client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+      });
+
+      const response = await completionPromise.asResponse();
+      expect(response.bodyUsed).toBe(false);
+
+      const completion = await completionPromise;
+      expect(completion.choices[0].message.content).toBe('Atlantic Ocean.');
+
+      await waitForTestSpans(1);
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-as-response-then-parse',
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
+      });
+    });
+
+    it('does not throw for a read-only APIPromise parser', async () => {
+      const fakeAPIPromise: Record<string, unknown> = {};
+      let publicThenCalled = false;
+      Object.defineProperties(fakeAPIPromise, {
+        parseResponse: {
+          get: () => () => Promise.resolve({}),
+          set: () => {
+            throw new Error('parseResponse is read-only');
+          },
+        },
+        responsePromise: {
+          value: Promise.resolve({}),
+        },
+        then: {
+          value: () => {
+            publicThenCalled = true;
+            throw new Error('public APIPromise.then must not be called');
+          },
+        },
+      });
+      const patchedCreate = patchChatCompletionCreate(function () {
+        return fakeAPIPromise;
+      });
+
+      let result: unknown;
+      expect(() => {
+        result = patchedCreate.call(
+          { _client: { baseURL: 'https://api.openai.com' } },
+          { model, messages: [] }
+        );
+      }).not.toThrow();
+      expect(result).toBe(fakeAPIPromise);
+      expect(publicThenCalled).toBe(false);
+      await waitForTestSpans(1);
+      expect(getTestSpans()).toHaveLength(1);
+    });
+
+    it('does not throw for a throwing responsePromise then', async () => {
+      const privateThenError = new Error('responsePromise.then failed');
+      const fakeAPIPromise: Record<string, unknown> = {
+        parseResponse: () => Promise.resolve({}),
+        responsePromise: {
+          then: () => {
+            throw privateThenError;
+          },
+        },
+      };
+      let publicThenCalled = false;
+      fakeAPIPromise.then = () => {
+        publicThenCalled = true;
+        throw new Error('public APIPromise.then must not be called');
+      };
+      const patchedCreate = patchChatCompletionCreate(function () {
+        return fakeAPIPromise;
+      });
+
+      let result: unknown;
+      expect(() => {
+        result = patchedCreate.call(
+          { _client: { baseURL: 'https://api.openai.com' } },
+          { model, messages: [] }
+        );
+      }).not.toThrow();
+      expect(result).toBe(fakeAPIPromise);
+      expect(publicThenCalled).toBe(false);
       await waitForTestSpans(1);
       expect(getTestSpans()).toHaveLength(1);
     });
