@@ -282,18 +282,37 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           span,
           commonAttrs
         );
+        const onResponse = () => {
+          self._genaiClientOperationDuration.record(
+            (performance.now() - startNow) / 1000,
+            commonAttrs
+          );
+          span.end();
+        };
 
         if (
           !self._observeAPIPromiseParse(
             apiPromise as unknown as OpenAIAPIPromiseInternals<ChatCompletion>,
             onResult,
-            onError
+            onError,
+            onResponse
           )
         ) {
-          // Fall back to the original observer for an unknown APIPromise
-          // implementation. All supported OpenAI versions expose the lazy
-          // parser fields used above.
-          apiPromise.then(result => onResult(result as ChatCompletion), onError);
+          // Never observe the public APIPromise here: doing so starts its lazy
+          // body parser. An unknown runtime shape gets a minimal ended span and
+          // otherwise remains completely untouched.
+          try {
+            self._diag.warn(
+              'OpenAI APIPromise responsePromise is unavailable; ending span without response telemetry'
+            );
+          } catch {
+            // Diagnostics must not affect the caller.
+          }
+          try {
+            span.end();
+          } catch {
+            // Telemetry must not affect the caller.
+          }
         }
 
         return apiPromise;
@@ -309,19 +328,20 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
   private _observeAPIPromiseParse<T>(
     apiPromise: OpenAIAPIPromiseInternals<T>,
     onResult: (result: T) => void,
-    onError: (error: Error) => void
+    onError: (error: Error) => void,
+    onResponse: () => void
   ): boolean {
     const originalParseResponse = apiPromise.parseResponse;
     const responsePromise = apiPromise.responsePromise;
     if (
-      typeof originalParseResponse !== 'function' ||
       responsePromise == null ||
-      typeof responsePromise.catch !== 'function'
+      typeof responsePromise.then !== 'function'
     ) {
       return false;
     }
 
     let parsedPromise: Promise<T> | undefined;
+    let parseStarted = false;
     let finished = false;
     const finish = (callback: () => void) => {
       if (finished) {
@@ -331,42 +351,67 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       try {
         callback();
       } catch (err) {
-        this._diag.error('unexpected error recording OpenAI telemetry:', err);
+        try {
+          this._diag.error('unexpected error recording OpenAI telemetry:', err);
+        } catch {
+          // Diagnostics must not affect the APIPromise settlement.
+        }
       }
     };
     const finishWithError = (err: unknown) => {
       finish(() => onError(err as Error));
     };
 
-    apiPromise.parseResponse = function (...args: unknown[]) {
-      if (parsedPromise == null) {
-        try {
-          parsedPromise = Promise.resolve(
-            originalParseResponse.apply(this, args)
-          ).then(
-            result => {
-              finish(() => onResult(result));
-              return result;
-            },
-            err => {
-              finishWithError(err);
-              throw err;
-            }
-          );
-        } catch (err) {
-          finishWithError(err);
-          throw err;
+    if (typeof originalParseResponse === 'function') {
+      apiPromise.parseResponse = function (...args: unknown[]) {
+        parseStarted = true;
+        if (parsedPromise == null) {
+          try {
+            parsedPromise = Promise.resolve(
+              originalParseResponse.apply(this, args)
+            ).then(
+              result => {
+                finish(() => onResult(result));
+                return result;
+              },
+              err => {
+                finishWithError(err);
+                throw err;
+              }
+            );
+          } catch (err) {
+            finishWithError(err);
+            throw err;
+          }
         }
+        return parsedPromise;
+      };
+    } else {
+      try {
+        this._diag.warn(
+          'OpenAI APIPromise parseResponse is unavailable; response telemetry will not include result attributes'
+        );
+      } catch {
+        // Diagnostics must not affect the caller.
       }
-      return parsedPromise;
-    };
+    }
 
-    // HTTP and network errors reject before `parseResponse` is called. Observe
-    // that rejection on an isolated branch without parsing or changing the
-    // APIPromise returned to the caller.
-    responsePromise.catch(err => {
-      finishWithError(err);
-    });
+    // Observe raw response settlement without touching its body. Promise
+    // reaction ordering lets an immediately attached parser claim full result
+    // telemetry before this one-microtask success fallback runs. `asResponse`
+    // and unobserved calls end with request attributes only.
+    responsePromise.then(
+      () => {
+        queueMicrotask(() => {
+          if (!parseStarted && !finished) {
+            finish(onResponse);
+          }
+        });
+      },
+      err => {
+        finishWithError(err);
+      }
+    );
     return true;
   }
 

@@ -114,6 +114,15 @@ const getChatCompletionHelpers = (client: OpenAI): ChatCompletionHelpers => {
   return clients.beta?.chat?.completions as ChatCompletionHelpers;
 };
 
+const waitForTestSpans = async (expectedCount: number): Promise<void> => {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    if (getTestSpans().length >= expectedCount) {
+      return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+};
+
 describe('OpenAI', function () {
   this.timeout(10000); // Increase timeout for LLM tests
 
@@ -398,13 +407,13 @@ describe('OpenAI', function () {
 
       const response = await completionPromise.asResponse();
       expect(response.bodyUsed).toBe(false);
-      const responseBody = (await response.clone().json()) as {
+      const responseBody = (await response.json()) as {
         choices: OpenAI.Chat.Completions.ChatCompletion['choices'];
       };
       expect(responseBody.choices[0].message.content).toBe('Atlantic Ocean.');
+      expect(response.bodyUsed).toBe(true);
 
-      const completion = await completionPromise;
-      expect(completion.choices[0].message.content).toBe('Atlantic Ocean.');
+      await waitForTestSpans(1);
       expect(getTestSpans()).toHaveLength(1);
     });
 
