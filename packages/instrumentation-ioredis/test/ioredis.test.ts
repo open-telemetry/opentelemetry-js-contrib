@@ -157,6 +157,9 @@ describe('ioredis', () => {
           // client info introduced in ioredis@5.8.0 - by disabling it we can ensure that assertions can remain
           // consistent with ioredis@<5.8.0.
           disableClientInfo: true,
+          // ioredis v6 defaults to protocol 3 (RESP3), which sends a HELLO command
+          // during handshake. Force protocol 2 for a consistent span count across versions.
+          protocol: 2,
         });
         client.on('ready', readyHandler);
         client.on('error', errorHandler);
