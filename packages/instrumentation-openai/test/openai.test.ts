@@ -81,6 +81,39 @@ const sanitizeRecordings = (scopes: Definition[]) => {
   return scopes;
 };
 
+type ChatCompletionHelperResult = {
+  choices: Array<{
+    message: {
+      content: string | null;
+      parsed?: unknown;
+    };
+  }>;
+};
+
+type ChatCompletionHelpers = {
+  parse?(params: unknown): Promise<ChatCompletionHelperResult> & {
+    withResponse?(): Promise<{
+      data: ChatCompletionHelperResult;
+      response: Response;
+      request_id: string | null;
+    }>;
+  };
+  runTools?(params: unknown): {
+    finalChatCompletion(): Promise<ChatCompletionHelperResult>;
+  };
+};
+
+const getChatCompletionHelpers = (client: OpenAI): ChatCompletionHelpers => {
+  const clients = client as unknown as {
+    chat: { completions: Partial<ChatCompletionHelpers> };
+    beta?: { chat?: { completions?: ChatCompletionHelpers } };
+  };
+  if (typeof clients.chat.completions.parse === 'function') {
+    return clients.chat.completions as ChatCompletionHelpers;
+  }
+  return clients.beta?.chat?.completions as ChatCompletionHelpers;
+};
+
 describe('OpenAI', function () {
   this.timeout(10000); // Increase timeout for LLM tests
 
@@ -113,6 +146,9 @@ describe('OpenAI', function () {
   });
 
   const client = new OpenAI({ apiKey });
+  const chatCompletionHelpers = getChatCompletionHelpers(client);
+  const itChatCompletionsParse =
+    typeof chatCompletionHelpers.parse === 'function' ? it : it.skip;
   // Responses API was added in openai v4.87.0
   const describeResponses = VERSION >= '4.87.0' ? describe : describe.skip;
   const model = 'gpt-4o-mini';
@@ -255,6 +291,121 @@ describe('OpenAI', function () {
         index: 0,
         message: {},
       });
+    });
+
+    itChatCompletionsParse(
+      'parses structured outputs without consuming the response twice',
+      async () => {
+        const completionPromise = chatCompletionHelpers.parse!({
+          model,
+          messages: [
+            {
+              role: 'user',
+              content: input,
+            },
+          ],
+          response_format: {
+            type: 'json_schema',
+            json_schema: {
+              name: 'ocean_response',
+              strict: true,
+              schema: {
+                type: 'object',
+                properties: {
+                  ocean: { type: 'string' },
+                },
+                required: ['ocean'],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        if (VERSION.startsWith('6.')) {
+          expect(completionPromise.withResponse).toEqual(expect.any(Function));
+        }
+        const completion = await completionPromise;
+        expect(completion.choices[0].message.parsed).toEqual({
+          ocean: 'Atlantic Ocean',
+        });
+        expect(getTestSpans()).toHaveLength(1);
+      }
+    );
+
+    it('preserves withResponse and finalizes once for multiple observers', async () => {
+      const completionPromise = client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+      });
+
+      expect(completionPromise.asResponse).toEqual(expect.any(Function));
+      expect(completionPromise.withResponse).toEqual(expect.any(Function));
+      const [completion, withResponse, repeatedCompletion] = await Promise.all([
+        completionPromise,
+        completionPromise.withResponse(),
+        completionPromise.then(result => result),
+      ]);
+
+      expect(completion.choices[0].message.content).toBe('Atlantic Ocean.');
+      expect(withResponse.data).toBe(completion);
+      expect(withResponse.response.status).toBe(200);
+      expect(withResponse.response.headers.get('x-request-id')).toBe(
+        'req_with_response'
+      );
+      if (withResponse.request_id !== undefined) {
+        expect(withResponse.request_id).toBe('req_with_response');
+      }
+      expect(repeatedCompletion).toBe(completion);
+      expect(getTestSpans()).toHaveLength(1);
+    });
+
+    it('preserves HTTP errors and finalizes their telemetry once', async () => {
+      const completionPromise = client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+      });
+
+      const [firstError, repeatedError] = await Promise.all([
+        completionPromise.catch(error => error),
+        completionPromise.catch(error => error),
+      ]);
+      expect(firstError).toBeInstanceOf(OpenAI.BadRequestError);
+      expect(firstError).toBe(repeatedError);
+      expect(firstError.status).toBe(400);
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes[ATTR_ERROR_TYPE]).toBe('BadRequestError');
+    });
+
+    it('supports non-streaming runTools', async () => {
+      const runner = chatCompletionHelpers.runTools!({
+        model,
+        messages: [{ role: 'user', content: input }],
+        tools: [],
+      });
+
+      const completion = await runner.finalChatCompletion();
+      expect(completion.choices[0].message.content).toBe('Atlantic Ocean.');
+      expect(getTestSpans()).toHaveLength(1);
+    });
+
+    it('does not consume the response returned by asResponse', async () => {
+      const completionPromise = client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+      });
+
+      const response = await completionPromise.asResponse();
+      expect(response.bodyUsed).toBe(false);
+      const responseBody = (await response.clone().json()) as {
+        choices: OpenAI.Chat.Completions.ChatCompletion['choices'];
+      };
+      expect(responseBody.choices[0].message.content).toBe('Atlantic Ocean.');
+
+      const completion = await completionPromise;
+      expect(completion.choices[0].message.content).toBe('Atlantic Ocean.');
+      expect(getTestSpans()).toHaveLength(1);
     });
 
     it('records all the client options', async () => {

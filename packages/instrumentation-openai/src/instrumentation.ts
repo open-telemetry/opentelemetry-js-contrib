@@ -83,6 +83,7 @@ import {
 import type { OpenAIInstrumentationConfig } from './types';
 import type {
   APIPromise,
+  OpenAIAPIPromiseInternals,
   GenAIMessage,
   GenAIChoiceEventBody,
   GenAISystemMessageEventBody,
@@ -266,24 +267,107 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         }
 
         // Non-streaming.
-        apiPromise
-          .then(result => {
-            self._onChatCompletionsCreateResult(
-              span,
-              startNow,
-              commonAttrs,
-              result as ChatCompletion,
-              config,
-              ctx
-            );
-          })
-          .catch(
-            self._createAPIPromiseRejectionHandler(startNow, span, commonAttrs)
+        const onResult = (result: ChatCompletion) => {
+          self._onChatCompletionsCreateResult(
+            span,
+            startNow,
+            commonAttrs,
+            result,
+            config,
+            ctx
           );
+        };
+        const onError = self._createAPIPromiseRejectionHandler(
+          startNow,
+          span,
+          commonAttrs
+        );
+
+        if (
+          !self._observeAPIPromiseParse(
+            apiPromise as unknown as OpenAIAPIPromiseInternals<ChatCompletion>,
+            onResult,
+            onError
+          )
+        ) {
+          // Fall back to the original observer for an unknown APIPromise
+          // implementation. All supported OpenAI versions expose the lazy
+          // parser fields used above.
+          apiPromise.then(result => onResult(result as ChatCompletion), onError);
+        }
 
         return apiPromise;
       };
     };
+  }
+
+  /**
+   * Observe an APIPromise without starting its lazy response-body parser.
+   * `_thenUnwrap` children delegate to the parent `parseResponse`, so caching
+   * this parser also prevents multiple children from consuming one Response.
+   */
+  private _observeAPIPromiseParse<T>(
+    apiPromise: OpenAIAPIPromiseInternals<T>,
+    onResult: (result: T) => void,
+    onError: (error: Error) => void
+  ): boolean {
+    const originalParseResponse = apiPromise.parseResponse;
+    const responsePromise = apiPromise.responsePromise;
+    if (
+      typeof originalParseResponse !== 'function' ||
+      responsePromise == null ||
+      typeof responsePromise.catch !== 'function'
+    ) {
+      return false;
+    }
+
+    let parsedPromise: Promise<T> | undefined;
+    let finished = false;
+    const finish = (callback: () => void) => {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      try {
+        callback();
+      } catch (err) {
+        this._diag.error('unexpected error recording OpenAI telemetry:', err);
+      }
+    };
+    const finishWithError = (err: unknown) => {
+      finish(() => onError(err as Error));
+    };
+
+    apiPromise.parseResponse = function (...args: unknown[]) {
+      if (parsedPromise == null) {
+        try {
+          parsedPromise = Promise.resolve(
+            originalParseResponse.apply(this, args)
+          ).then(
+            result => {
+              finish(() => onResult(result));
+              return result;
+            },
+            err => {
+              finishWithError(err);
+              throw err;
+            }
+          );
+        } catch (err) {
+          finishWithError(err);
+          throw err;
+        }
+      }
+      return parsedPromise;
+    };
+
+    // HTTP and network errors reject before `parseResponse` is called. Observe
+    // that rejection on an isolated branch without parsing or changing the
+    // APIPromise returned to the caller.
+    responsePromise.catch(err => {
+      finishWithError(err);
+    });
+    return true;
   }
 
   /**

@@ -10,6 +10,11 @@ import type { AnyValue } from '@opentelemetry/api-logs';
 // import it has changed between openai@4 and openai@5.
 export type APIPromise<T> = Promise<T>;
 
+export type OpenAIAPIPromiseInternals<T> = {
+  responsePromise?: Promise<unknown>;
+  parseResponse?: (...args: unknown[]) => T | PromiseLike<T>;
+};
+
 export type GenAIFunction = {
   name: string | undefined;
   arguments?: AnyValue;
