@@ -26,6 +26,9 @@ export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrum
 
   constructor(config: LongtaskInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    diag.warn(
+      '@opentelemetry/instrumentation-long-task is deprecated. Use instrumentation based on the Long Animation Frames API when available.'
+    );
   }
 
   init() {}
