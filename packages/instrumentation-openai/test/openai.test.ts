@@ -561,31 +561,49 @@ describe('OpenAI', function () {
     });
 
     it('finalizes successful fire-and-forget requests', async () => {
-      const originalClone = Response.prototype.clone;
+      client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+      });
+
+      await waitForTestSpans(1);
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-ordinary-no-clone',
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
+      });
+    });
+
+    it('clones a raw response once for telemetry', async () => {
       let cloneCalls = 0;
-      Response.prototype.clone = function (this: Response): Response {
-        cloneCalls++;
-        return Reflect.apply(originalClone, this, []);
+      const response = {
+        status: 200,
+        headers: {
+          get: (name: string) =>
+            name === 'content-type'
+              ? 'application/json'
+              : name === 'content-length'
+                ? '128'
+                : null,
+        },
+        clone: () => {
+          cloneCalls++;
+          return { json: () => Promise.resolve(rawCompletionProbe) };
+        },
       };
 
-      try {
-        client.chat.completions.create({
-          model,
-          messages: [{ role: 'user', content: input }],
-        });
+      await runRawResponseProbe(response);
 
-        await waitForTestSpans(1);
-        const spans = getTestSpans();
-        expect(spans).toHaveLength(1);
-        expect(spans[0].attributes).toMatchObject({
-          [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-ordinary-no-clone',
-          [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
-          [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
-        });
-        expect(cloneCalls).toBe(1);
-      } finally {
-        Response.prototype.clone = originalClone;
-      }
+      expect(cloneCalls).toBe(1);
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_RESPONSE_ID]: 'chatcmpl-raw-probe',
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
+      });
     });
 
     it('skips cloning when raw response exceeds telemetry body limit', async () => {
@@ -784,13 +802,41 @@ describe('OpenAI', function () {
       expect(response.bodyUsed).toBe(false);
 
       const parseError = await completionPromise.catch(error => error);
-      expect(parseError).toBeInstanceOf(SyntaxError);
+      expect(parseError).toBeInstanceOf(Error);
       expect(response.bodyUsed).toBe(true);
 
       await waitForTestSpans(1);
       const spans = getTestSpans();
       expect(spans).toHaveLength(1);
-      expect(spans[0].attributes[ATTR_ERROR_TYPE]).toBe('SyntaxError');
+      expect(spans[0].attributes[ATTR_ERROR_TYPE]).toBe(
+        (parseError as Error).constructor.name
+      );
+    });
+
+    it('does not throw for a throwing APIPromise parser getter', async () => {
+      const fakeAPIPromise: Record<string, unknown> = {};
+      Object.defineProperties(fakeAPIPromise, {
+        parseResponse: {
+          get: () => {
+            throw new Error('parseResponse getter failed');
+          },
+        },
+        responsePromise: {
+          value: Promise.resolve({}),
+        },
+      });
+      const patchedCreate = patchChatCompletionCreate(function () {
+        return fakeAPIPromise;
+      });
+
+      expect(() =>
+        patchedCreate.call(
+          { _client: { baseURL: 'https://api.openai.com' } },
+          { model, messages: [] }
+        )
+      ).not.toThrow();
+      await waitForTestSpans(1);
+      expect(getTestSpans()).toHaveLength(1);
     });
 
     it('does not throw for a read-only APIPromise parser', async () => {

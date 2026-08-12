@@ -96,6 +96,16 @@ import type {
 
 const MAX_RAW_RESPONSE_BODY_SIZE_BYTES = 1 * 1024 * 1024;
 
+type OpenAIRawResponse = {
+  status: number;
+  headers: {
+    get(name: string): string | null;
+  };
+  clone(): {
+    json(): unknown | PromiseLike<unknown>;
+  };
+};
+
 export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumentationConfig> {
   private _genaiClientOperationDuration!: Histogram;
   private _genaiClientTokenUsage!: Histogram;
@@ -332,6 +342,8 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         // Diagnostics must not affect the caller.
       }
     };
+    // APIPromise internals have changed across SDK versions. Unlike shimmer,
+    // this also handles accessors and verifies that the replacement stuck.
     const replaceProperty = (name: string, replacement: unknown): boolean => {
       let descriptor: PropertyDescriptor | undefined;
       try {
@@ -387,6 +399,8 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     };
 
     let originalParseResponse: unknown;
+    // Reading an SDK or user-defined accessor can throw; instrumentation must
+    // remain fail-open even in that case.
     try {
       originalParseResponse = apiPromise.parseResponse;
     } catch (err) {
@@ -432,25 +446,25 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       safeWarn('OpenAI APIPromise parseResponse is unavailable');
     }
 
-    const onRawResponse = async (response: unknown): Promise<void> => {
+    const onRawResponse = async (
+      response: OpenAIRawResponse | undefined
+    ): Promise<void> => {
+      if (response == null) {
+        safeWarn(
+          'unable to classify raw OpenAI response',
+          new Error('OpenAI response is unavailable')
+        );
+        finish(onResponse);
+        return;
+      }
+
       try {
-        const rawResponse = response as {
-          status?: unknown;
-          headers?: unknown;
-        } | null;
-        if (rawResponse?.status === 204) {
+        if (response.status === 204) {
           finish(onResponse);
           return;
         }
 
-        const headers = rawResponse?.headers;
-        const getHeader = (headers as { get?: unknown } | null)?.get;
-        if (typeof getHeader !== 'function') {
-          throw new Error('OpenAI response headers are unavailable');
-        }
-        const contentType = Reflect.apply(getHeader, headers, [
-          'content-type',
-        ]);
+        const contentType = response.headers.get('content-type');
         const mediaType =
           typeof contentType === 'string'
             ? contentType.split(';')[0]?.trim()
@@ -463,9 +477,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           return;
         }
 
-        const contentLength = Reflect.apply(getHeader, headers, [
-          'content-length',
-        ]);
+        const contentLength = response.headers.get('content-length');
         const normalizedContentLength =
           typeof contentLength === 'string' ? contentLength.trim() : '';
         if (!/^\d+$/.test(normalizedContentLength)) {
@@ -487,38 +499,29 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         return;
       }
 
-      let clonedResponse: unknown;
+      let clonedResponse: ReturnType<OpenAIRawResponse['clone']>;
       try {
-        const clone = (response as { clone?: unknown } | null)?.clone;
-        if (typeof clone !== 'function') {
-          throw new Error('OpenAI response does not have a clone method');
-        }
-        clonedResponse = Reflect.apply(clone, response, []);
+        clonedResponse = response.clone();
       } catch (err) {
         safeWarn('unable to clone raw OpenAI response for telemetry', err);
         finish(onResponse);
         return;
       }
 
-      let json: (...args: unknown[]) => unknown;
+      let parsedResponse: unknown | PromiseLike<unknown>;
       try {
-        const rawJson = (clonedResponse as { json?: unknown } | null)?.json;
-        if (typeof rawJson !== 'function') {
-          throw new Error('cloned OpenAI response does not have a json method');
-        }
-        json = rawJson as (...args: unknown[]) => unknown;
+        parsedResponse = clonedResponse.json();
       } catch (err) {
-        safeWarn('unable to read cloned OpenAI response body for telemetry', err);
+        safeWarn(
+          'unable to read cloned OpenAI response body for telemetry',
+          err
+        );
         finish(onResponse);
         return;
       }
 
       try {
-        const result = (await Reflect.apply(
-          json,
-          clonedResponse,
-          []
-        )) as T;
+        const result = (await parsedResponse) as T;
         finish(() => onResult(result));
       } catch (err) {
         safeError('unable to parse raw OpenAI response for telemetry:', err);
@@ -562,9 +565,10 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             if (parseStarted || finished) {
               return;
             }
-            let response: unknown;
+            let response: OpenAIRawResponse | undefined;
             try {
-              response = (props as { response?: unknown } | null)?.response;
+              response = (props as { response?: OpenAIRawResponse } | null)
+                ?.response;
             } catch (err) {
               safeWarn('unable to read raw OpenAI response', err);
               finish(onResponse);
