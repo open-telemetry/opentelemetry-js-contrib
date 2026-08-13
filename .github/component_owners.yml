@@ -89,8 +89,8 @@ components:
     - trentm
   packages/instrumentation-cassandra-driver:
     - seemk
-  packages/instrumentation-claude-agent-sdk: []
-    # Unmaintained
+  packages/instrumentation-claude-agent-sdk:
+    - JacksonWeber
   packages/instrumentation-console:
     - jacksonweber
     - hectorhdzg
