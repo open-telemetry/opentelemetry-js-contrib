@@ -19,6 +19,7 @@ interface ClaudeAgentSDKModule {
 }
 
 interface PatchState {
+  source: ClaudeAgentSDKModule;
   target: ClaudeAgentSDKModule;
   originalQuery: QueryFunction;
 }
@@ -103,7 +104,9 @@ export class ClaudeAgentSDKInstrumentation extends InstrumentationBase<ClaudeAge
       diag: this._diag,
     });
 
-    patchStates.set(sdkModule, { target, originalQuery });
+    const state = { source: sdkModule, target, originalQuery };
+    patchStates.set(sdkModule, state);
+    patchStates.set(target, state);
     patchCount += 1;
     return target;
   }
@@ -121,7 +124,8 @@ export class ClaudeAgentSDKInstrumentation extends InstrumentationBase<ClaudeAge
     if (isPropertyWritable(state.target, 'query')) {
       state.target.query = state.originalQuery;
     }
-    patchStates.delete(sdkModule);
+    patchStates.delete(state.source);
+    patchStates.delete(state.target);
     patchCount = Math.max(0, patchCount - 1);
   }
 }
