@@ -40,6 +40,8 @@ interface QuerySpanState {
   captureMessageContent: boolean;
   configuredModel: string | undefined;
   pendingErrorType: string | undefined;
+  pendingErrorMessage: string | undefined;
+  endOnResult: boolean;
   ended: boolean;
 }
 
@@ -107,6 +109,8 @@ export function wrapQuery({
       captureMessageContent,
       configuredModel: requestInfo.configuredModel,
       pendingErrorType: undefined,
+      pendingErrorMessage: undefined,
+      endOnResult: typeof params.prompt === 'string',
       ended: false,
     };
 
@@ -167,19 +171,29 @@ function createQueryProxy(
       }
       if (property === 'throw') {
         return async (...args: Parameters<ClaudeAgentSDK.Query['throw']>) => {
-          const error = args[0];
-          endWithException(state, error);
-          return context.with(state.spanContext, () => target.throw(...args));
+          try {
+            const result = await context.with(state.spanContext, () =>
+              target.throw(...args)
+            );
+            if (!result.done) {
+              processMessage(result.value, state);
+            } else {
+              endFromCurrentState(state);
+            }
+            return result;
+          } catch (error) {
+            endWithException(state, error);
+            throw error;
+          }
         };
       }
       if (property === 'close') {
+        const close = Reflect.get(target, 'close') as unknown;
+        if (typeof close !== 'function') {
+          return close;
+        }
         return () => {
           try {
-            const close = Reflect.get(target, 'close') as unknown;
-            if (typeof close !== 'function') {
-              endFromCurrentState(state);
-              return undefined;
-            }
             const result = Reflect.apply(close, target, []);
             endFromCurrentState(state);
             return result;
@@ -212,6 +226,7 @@ function processMessage(
 
   if (isAssistantErrorMessage(message)) {
     state.pendingErrorType = message.error;
+    state.pendingErrorMessage = message.error;
     return;
   }
 
@@ -227,16 +242,31 @@ function processMessage(
   );
 
   if (isResultErrorMessage(message)) {
-    endWithResultError(state, message.subtype, getResultErrorMessage(message));
+    state.pendingErrorType = message.subtype;
+    state.pendingErrorMessage = getResultErrorMessage(message);
+    if (state.endOnResult) {
+      endWithResultError(
+        state,
+        state.pendingErrorType,
+        state.pendingErrorMessage
+      );
+    }
   } else {
     state.pendingErrorType = undefined;
-    endSuccess(state);
+    state.pendingErrorMessage = undefined;
+    if (state.endOnResult) {
+      endSuccess(state);
+    }
   }
 }
 
 function endFromCurrentState(state: QuerySpanState): void {
   if (state.pendingErrorType) {
-    endWithResultError(state, state.pendingErrorType, state.pendingErrorType);
+    endWithResultError(
+      state,
+      state.pendingErrorType,
+      state.pendingErrorMessage ?? state.pendingErrorType
+    );
   } else {
     endSuccess(state);
   }

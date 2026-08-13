@@ -91,18 +91,23 @@ export class ClaudeAgentSDKInstrumentation extends InstrumentationBase<ClaudeAge
       return module;
     }
 
-    const target =
-      !isModuleNamespace(sdkModule) && isPropertyWritable(sdkModule, 'query')
-        ? sdkModule
-        : { ...sdkModule };
     const originalQuery = sdkModule.query;
-    target.query = wrapQuery({
+    const wrappedQuery = wrapQuery({
       original: originalQuery,
       getTracer: () => this.tracer,
       getConfig: () => this.getConfig(),
       isEnabled: () => this.isEnabled(),
       diag: this._diag,
     });
+    let target = sdkModule;
+    try {
+      sdkModule.query = wrappedQuery;
+    } catch {
+      target = { ...sdkModule, query: wrappedQuery };
+    }
+    if (sdkModule.query !== wrappedQuery) {
+      target = { ...sdkModule, query: wrappedQuery };
+    }
 
     const state = { source: sdkModule, target, originalQuery };
     patchStates.set(sdkModule, state);
@@ -121,8 +126,10 @@ export class ClaudeAgentSDKInstrumentation extends InstrumentationBase<ClaudeAge
       return;
     }
 
-    if (isPropertyWritable(state.target, 'query')) {
+    try {
       state.target.query = state.originalQuery;
+    } catch (error) {
+      this._diag.debug('failed to restore Claude Agent SDK query', error);
     }
     patchStates.delete(state.source);
     patchStates.delete(state.target);
@@ -132,21 +139,6 @@ export class ClaudeAgentSDKInstrumentation extends InstrumentationBase<ClaudeAge
 
 function getSDKModule(module: ClaudeAgentSDKModule): ClaudeAgentSDKModule {
   return module.default ?? module;
-}
-
-function isPropertyWritable(module: object, property: string): boolean {
-  const descriptor = Object.getOwnPropertyDescriptor(module, property);
-  if (!descriptor) {
-    return true;
-  }
-  if (descriptor.get && !descriptor.set && !descriptor.configurable) {
-    return false;
-  }
-  return descriptor.writable !== false;
-}
-
-function isModuleNamespace(module: object): boolean {
-  return Object.prototype.toString.call(module) === '[object Module]';
 }
 
 function getBooleanEnvironmentValue(name: string): boolean | undefined {

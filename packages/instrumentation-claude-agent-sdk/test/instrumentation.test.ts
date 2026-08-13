@@ -10,6 +10,10 @@ import {
 } from '@opentelemetry/sdk-trace';
 import { SpanKind, SpanStatusCode, context, trace } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
+import {
+  runTestFixture,
+  TestCollector,
+} from '@opentelemetry/contrib-test-utils';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_GEN_AI_AGENT_NAME,
@@ -545,7 +549,7 @@ describe('ClaudeAgentSDKInstrumentation', () => {
     assert.strictEqual(exporter.getFinishedSpans().length, 1);
   });
 
-  it('detects ESM namespace objects even when query reports writable', () => {
+  it('patches settable ESM loader namespaces in place', () => {
     const original: QueryFunction = () => createMockQuery();
     const moduleNamespace = { query: original };
     Object.defineProperty(moduleNamespace, Symbol.toStringTag, {
@@ -553,12 +557,12 @@ describe('ClaudeAgentSDKInstrumentation', () => {
     });
     const module = instrumentation.manuallyInstrument(moduleNamespace);
 
-    assert.notStrictEqual(module, moduleNamespace);
-    assert.strictEqual(moduleNamespace.query, original);
+    assert.strictEqual(module, moduleNamespace);
+    assert.notStrictEqual(moduleNamespace.query, original);
     assert.notStrictEqual(module.query, original);
   });
 
-  it('unpatches an ESM namespace copy', () => {
+  it('unpatches a settable ESM loader namespace', () => {
     const original: QueryFunction = () => createMockQuery();
     const moduleNamespace = { query: original };
     Object.defineProperty(moduleNamespace, Symbol.toStringTag, {
@@ -572,7 +576,141 @@ describe('ClaudeAgentSDKInstrumentation', () => {
       module,
     ]);
 
+    assert.strictEqual(moduleNamespace.query, original);
     assert.strictEqual(module.query, original);
+  });
+
+  it('does not fabricate close when the SDK Query omits it', async () => {
+    const original: QueryFunction = () => {
+      const query = createMockQuery({ messages: [resultMessage()] });
+      Reflect.deleteProperty(query, 'close');
+      return query;
+    };
+    const module = instrumentation.manuallyInstrument({ query: original });
+    const query = module.query!({ prompt: 'Hello' });
+
+    assert.strictEqual(Reflect.get(query, 'close'), undefined);
+    await consumeQuery(query);
+  });
+
+  it('keeps the span active when throw is handled by the Query', async () => {
+    const original: QueryFunction = () => {
+      const query = (async function* () {
+        try {
+          yield SYSTEM_MESSAGE;
+        } catch {
+          yield resultMessage();
+        }
+      })();
+      return query as unknown as ReturnType<QueryFunction>;
+    };
+    const module = instrumentation.manuallyInstrument({ query: original });
+    const query = module.query!({ prompt: 'Hello' });
+
+    await query.next();
+    const recovered = await query.throw(new Error('recoverable'));
+
+    assert.strictEqual(recovered.done, false);
+    assert.strictEqual(exporter.getFinishedSpans().length, 1);
+    assert.strictEqual(
+      exporter.getFinishedSpans()[0].status.code,
+      SpanStatusCode.UNSET
+    );
+  });
+
+  it('keeps streaming-input queries open across result messages', async () => {
+    let receivedOptions: Parameters<QueryFunction>[0]['options'];
+    const original: QueryFunction = params => {
+      receivedOptions = params.options;
+      return createMockQuery({
+        messages: [
+          resultMessage({
+            usage: {
+              input_tokens: 7,
+              output_tokens: 4,
+              cache_creation_input_tokens: 0,
+              cache_read_input_tokens: 0,
+            },
+          }),
+          resultMessage({
+            usage: {
+              input_tokens: 15,
+              output_tokens: 9,
+              cache_creation_input_tokens: 1,
+              cache_read_input_tokens: 2,
+            },
+          }),
+        ],
+      });
+    };
+    const module = instrumentation.manuallyInstrument({ query: original });
+    const prompt = {
+      async *[Symbol.asyncIterator]() {
+        yield {
+          type: 'user' as const,
+          message: { role: 'user' as const, content: 'Hello' },
+          parent_tool_use_id: null,
+          session_id: 'session-123',
+        };
+      },
+    } as unknown as Parameters<QueryFunction>[0]['prompt'];
+    const query = module.query!({ prompt });
+
+    await query.next();
+    assert.strictEqual(exporter.getFinishedSpans().length, 0);
+
+    const preToolUse = receivedOptions?.hooks?.PreToolUse?.at(-1)?.hooks[0];
+    const postToolUse = receivedOptions?.hooks?.PostToolUse?.at(-1)?.hooks[0];
+    assert.ok(preToolUse);
+    assert.ok(postToolUse);
+    const signal = new AbortController().signal;
+    await preToolUse(
+      {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Read',
+        tool_input: { file_path: 'package.json' },
+        tool_use_id: 'tool-after-result',
+        session_id: 'session-123',
+        transcript_path: 'transcript.jsonl',
+        cwd: process.cwd(),
+      },
+      'tool-after-result',
+      { signal }
+    );
+    await postToolUse(
+      {
+        hook_event_name: 'PostToolUse',
+        tool_name: 'Read',
+        tool_input: { file_path: 'package.json' },
+        tool_response: { content: '{}' },
+        tool_use_id: 'tool-after-result',
+        session_id: 'session-123',
+        transcript_path: 'transcript.jsonl',
+        cwd: process.cwd(),
+      },
+      'tool-after-result',
+      { signal }
+    );
+
+    await query.next();
+    await query.next();
+
+    const spans = exporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 2);
+    const agentSpan = spans.find(
+      span => span.name === 'invoke_agent Claude Code'
+    );
+    const toolSpan = spans.find(span => span.name === 'execute_tool Read');
+    assert.ok(agentSpan);
+    assert.ok(toolSpan);
+    assert.strictEqual(
+      agentSpan.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS],
+      15
+    );
+    assert.strictEqual(
+      toolSpan.parentSpanContext?.spanId,
+      agentSpan.spanContext().spanId
+    );
   });
 
   it('does not trace through a retained wrapper after disable', async () => {
@@ -584,5 +722,23 @@ describe('ClaudeAgentSDKInstrumentation', () => {
     await consumeQuery(module.query!({ prompt: 'Hello' }));
 
     assert.strictEqual(exporter.getFinishedSpans().length, 0);
+  });
+});
+
+describe('ClaudeAgentSDKInstrumentation ESM auto-instrumentation', () => {
+  it('patches the real SDK through import-in-the-middle', async function () {
+    this.timeout(20000);
+    await runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-esm-auto.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkCollector: (collector: TestCollector) => {
+        assert.strictEqual(collector.spans.length, 0);
+      },
+    });
   });
 });
