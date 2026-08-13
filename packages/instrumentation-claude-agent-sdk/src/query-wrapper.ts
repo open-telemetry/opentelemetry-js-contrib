@@ -27,6 +27,7 @@ import {
   isResultErrorMessage,
   isResultMessage,
   isSystemInitMessage,
+  type MessageCapture,
 } from './message-processor';
 import { mergeToolHooks, ToolSpanTracker } from './tool-hooks';
 import type { ClaudeAgentSDKInstrumentationConfig } from './types';
@@ -37,8 +38,8 @@ interface QuerySpanState {
   span: Span;
   spanContext: Context;
   toolTracker: ToolSpanTracker;
-  captureMessageContent: boolean;
   configuredModel: string | undefined;
+  messageCapture: MessageCapture | undefined;
   pendingErrorType: string | undefined;
   pendingErrorMessage: string | undefined;
   endOnResult: boolean;
@@ -106,8 +107,8 @@ export function wrapQuery({
       span,
       spanContext,
       toolTracker,
-      captureMessageContent,
       configuredModel: requestInfo.configuredModel,
+      messageCapture: requestInfo.messageCapture,
       pendingErrorType: undefined,
       pendingErrorMessage: undefined,
       endOnResult: typeof params.prompt === 'string',
@@ -116,8 +117,11 @@ export function wrapQuery({
 
     let query: ClaudeAgentSDK.Query;
     try {
+      const prompt = requestInfo.messageCapture
+        ? requestInfo.messageCapture.wrapPrompt(params.prompt)
+        : params.prompt;
       query = context.with(spanContext, () =>
-        original({ ...params, options: modifiedOptions })
+        original({ ...params, prompt, options: modifiedOptions })
       );
     } catch (error) {
       endWithException(state, error);
@@ -214,6 +218,11 @@ function processMessage(
   message: ClaudeAgentSDK.SDKMessage,
   state: QuerySpanState
 ): void {
+  state.messageCapture?.recordMessage(message);
+  if (state.messageCapture) {
+    state.span.setAttributes(state.messageCapture.getAttributes());
+  }
+
   if (isSystemInitMessage(message)) {
     state.span.setAttributes(
       getSystemMessageAttributes({
@@ -237,7 +246,6 @@ function processMessage(
   state.span.setAttributes(
     getResultAttributes({
       message,
-      captureMessageContent: state.captureMessageContent,
     })
   );
 
