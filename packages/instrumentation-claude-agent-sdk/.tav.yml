@@ -1,0 +1,5 @@
+"@anthropic-ai/claude-agent-sdk":
+  versions:
+    include: ">=0.2.0 <1"
+    mode: max-5
+  commands: npm test
