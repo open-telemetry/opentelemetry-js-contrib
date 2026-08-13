@@ -5,10 +5,14 @@
 
 /*
  * This file contains a copy of unstable semantic convention definitions used
- * by this package.
+ * by this package, reviewed against:
+ * https://github.com/open-telemetry/semantic-conventions-genai/tree/8d3e4a0f3c34a46f6edb9c71e8666e02e6bf3958
+ *
  * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
  */
 
+export const ATTR_GEN_AI_AGENT_DESCRIPTION =
+  'gen_ai.agent.description' as const;
 export const ATTR_GEN_AI_AGENT_NAME = 'gen_ai.agent.name' as const;
 export const ATTR_GEN_AI_CONVERSATION_ID = 'gen_ai.conversation.id' as const;
 export const ATTR_GEN_AI_INPUT_MESSAGES = 'gen_ai.input.messages' as const;

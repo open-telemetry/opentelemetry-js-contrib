@@ -6,7 +6,7 @@
 This module provides automatic instrumentation for
 [`@anthropic-ai/claude-agent-sdk`](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk).
 It is migrated from the Apache-2.0 licensed
-[OpenInference donation](https://github.com/open-telemetry/donation-openinference/tree/main/js/packages/openinference-instrumentation-claude-agent-sdk)
+[OpenInference donation at commit `6cdd644d`](https://github.com/open-telemetry/donation-openinference/tree/6cdd644d79fccf50aedcb614187f924ddfcafb7b/js/packages/openinference-instrumentation-claude-agent-sdk)
 and emits official OpenTelemetry GenAI semantic conventions without
 OpenInference dependencies.
 
@@ -35,7 +35,8 @@ open until the returned `Query` completes, fails, is closed, or iteration ends
 early. The instrumentation records:
 
 - `gen_ai.operation.name`
-- `gen_ai.agent.name` and `gen_ai.agent.description`
+- `gen_ai.agent.name` and, for configured custom agents,
+  `gen_ai.agent.description`
 - `gen_ai.request.model`
 - `gen_ai.conversation.id`
 - `gen_ai.response.finish_reasons`
@@ -102,9 +103,10 @@ Or set:
 OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
 ```
 
-When enabled, string prompts, visible system instructions, successful result
-text, and tool arguments/results are recorded using the GenAI content
-attributes.
+When enabled, the instrumentation records string and streaming prompts,
+assistant responses, reasoning, tool calls and results, structured output,
+multimodal references, provider-hosted tool activity, visible system
+instructions, and tool arguments/results using the GenAI content schemas.
 
 ## Conformance
 
@@ -115,8 +117,12 @@ Build the package before running them:
 
 ```bash
 npm run compile:with-dependencies
-genai-conformance test/conformance
+npm run test:conformance
 ```
+
+The conformance command requires the runner, GenAI wrapper, and Weaver as
+documented by
+[`semantic-conventions-conformance`](https://github.com/open-telemetry/semantic-conventions-conformance).
 
 ## References
 

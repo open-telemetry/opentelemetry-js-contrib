@@ -16,6 +16,7 @@ import {
 } from '@opentelemetry/contrib-test-utils';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_GEN_AI_AGENT_DESCRIPTION,
   ATTR_GEN_AI_AGENT_NAME,
   ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_INPUT_MESSAGES,
@@ -216,6 +217,463 @@ describe('ClaudeAgentSDKInstrumentation', () => {
     );
   });
 
+  it('maps SDK message parts to the GenAI message schemas', async () => {
+    instrumentation.setConfig({ captureMessageContent: true });
+    const original: QueryFunction = () =>
+      createMockQuery({
+        messages: [
+          {
+            type: 'user',
+            message: {
+              role: 'user',
+              content: [
+                {
+                  type: 'image',
+                  source: {
+                    type: 'url',
+                    url: 'https://example.test/image.png',
+                  },
+                },
+                {
+                  type: 'tool_result',
+                  tool_use_id: 'tool-1',
+                  content: 'package contents',
+                },
+              ],
+            },
+            parent_tool_use_id: null,
+          },
+          {
+            type: 'assistant',
+            message: {
+              id: 'message-1',
+              type: 'message',
+              role: 'assistant',
+              model: 'claude-sonnet-4-5',
+              content: [
+                {
+                  type: 'thinking',
+                  thinking: 'I should inspect the package.',
+                  signature: 'signature',
+                },
+                {
+                  type: 'tool_use',
+                  id: 'tool-1',
+                  name: 'Read',
+                  input: { file_path: 'package.json' },
+                },
+                {
+                  type: 'server_tool_use',
+                  id: 'server-tool-1',
+                  name: 'web_search',
+                  input: { query: 'OpenTelemetry' },
+                },
+                {
+                  type: 'web_search_tool_result',
+                  tool_use_id: 'server-tool-1',
+                  content: [{ type: 'web_search_result', title: 'Result' }],
+                },
+                {
+                  type: 'text',
+                  text: 'The package is instrumented.',
+                  citations: [],
+                },
+              ],
+              stop_reason: 'tool_use',
+              stop_sequence: null,
+              usage: {
+                input_tokens: 12,
+                output_tokens: 8,
+              },
+            },
+            parent_tool_use_id: null,
+            uuid: 'assistant-1',
+            session_id: 'session-123',
+          },
+          resultMessage({
+            structured_output: { valid: true },
+          }),
+        ],
+      });
+    const module = instrumentation.manuallyInstrument({ query: original });
+
+    await consumeQuery(
+      module.query!({
+        prompt: 'Inspect the repository.',
+      })
+    );
+
+    const attributes = exporter.getFinishedSpans()[0].attributes;
+    assert.deepStrictEqual(
+      JSON.parse(attributes[ATTR_GEN_AI_INPUT_MESSAGES] as string),
+      [
+        {
+          role: 'user',
+          parts: [{ type: 'text', content: 'Inspect the repository.' }],
+        },
+        {
+          role: 'user',
+          parts: [
+            {
+              type: 'uri',
+              modality: 'image',
+              uri: 'https://example.test/image.png',
+            },
+            {
+              type: 'tool_call_response',
+              id: 'tool-1',
+              response: 'package contents',
+            },
+          ],
+        },
+      ]
+    );
+    assert.deepStrictEqual(
+      JSON.parse(attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string),
+      [
+        {
+          role: 'assistant',
+          parts: [
+            {
+              type: 'reasoning',
+              content: 'I should inspect the package.',
+            },
+            {
+              type: 'tool_call',
+              id: 'tool-1',
+              name: 'Read',
+              arguments: { file_path: 'package.json' },
+            },
+            {
+              type: 'server_tool_call',
+              id: 'server-tool-1',
+              name: 'web_search',
+              server_tool_call: {
+                type: 'web_search',
+                input: { query: 'OpenTelemetry' },
+              },
+            },
+            {
+              type: 'server_tool_call_response',
+              id: 'server-tool-1',
+              server_tool_call_response: {
+                type: 'web_search_tool_result',
+                tool_use_id: 'server-tool-1',
+                content: [{ type: 'web_search_result', title: 'Result' }],
+              },
+            },
+            {
+              type: 'text',
+              content: 'The package is instrumented.',
+              citations: [],
+            },
+            {
+              type: 'structured_output',
+              content: { valid: true },
+            },
+          ],
+          finish_reason: 'end_turn',
+        },
+      ]
+    );
+  });
+
+  it('captures streaming input messages as they are consumed', async () => {
+    instrumentation.setConfig({ captureMessageContent: true });
+    const original: QueryFunction = params => {
+      const query = (async function* () {
+        if (typeof params.prompt !== 'string') {
+          for await (const message of params.prompt) {
+            void message;
+          }
+        }
+        yield resultMessage();
+      })();
+      return query as unknown as ReturnType<QueryFunction>;
+    };
+    const module = instrumentation.manuallyInstrument({ query: original });
+    const prompt = {
+      async *[Symbol.asyncIterator]() {
+        yield {
+          type: 'user' as const,
+          message: {
+            role: 'user' as const,
+            content: [
+              { type: 'text' as const, text: 'First message' },
+              {
+                type: 'tool_result' as const,
+                tool_use_id: 'tool-1',
+                content: 'Tool result',
+              },
+            ],
+          },
+          parent_tool_use_id: null,
+        };
+      },
+    } as unknown as Parameters<QueryFunction>[0]['prompt'];
+
+    await consumeQuery(module.query!({ prompt }));
+
+    assert.deepStrictEqual(
+      JSON.parse(
+        exporter.getFinishedSpans()[0].attributes[
+          ATTR_GEN_AI_INPUT_MESSAGES
+        ] as string
+      ),
+      [
+        {
+          role: 'user',
+          parts: [
+            { type: 'text', content: 'First message' },
+            {
+              type: 'tool_call_response',
+              id: 'tool-1',
+              response: 'Tool result',
+            },
+          ],
+        },
+      ]
+    );
+  });
+
+  it('accumulates partial assistant events into one output message', async () => {
+    instrumentation.setConfig({ captureMessageContent: true });
+    const original: QueryFunction = () =>
+      createMockQuery({
+        messages: [
+          {
+            type: 'stream_event',
+            event: {
+              type: 'message_start',
+              message: {
+                id: 'stream-message',
+                content: [],
+                stop_reason: null,
+              },
+            },
+          },
+          {
+            type: 'stream_event',
+            event: {
+              type: 'content_block_start',
+              index: 0,
+              content_block: {
+                type: 'text',
+                text: '',
+                citations: null,
+              },
+            },
+          },
+          {
+            type: 'stream_event',
+            event: {
+              type: 'content_block_delta',
+              index: 0,
+              delta: { type: 'text_delta', text: 'Streamed response' },
+            },
+          },
+          {
+            type: 'stream_event',
+            event: {
+              type: 'content_block_delta',
+              index: 0,
+              delta: {
+                type: 'citations_delta',
+                citation: {
+                  type: 'web_search_result_location',
+                  cited_text: 'Streamed response',
+                  encrypted_index: 'index',
+                  title: 'Source',
+                  url: 'https://example.test/source',
+                },
+              },
+            },
+          },
+          {
+            type: 'stream_event',
+            event: {
+              type: 'content_block_start',
+              index: 1,
+              content_block: {
+                type: 'thinking',
+                thinking: '',
+                signature: '',
+              },
+            },
+          },
+          {
+            type: 'stream_event',
+            event: {
+              type: 'content_block_delta',
+              index: 1,
+              delta: {
+                type: 'thinking_delta',
+                thinking: 'Check the result.',
+              },
+            },
+          },
+          {
+            type: 'stream_event',
+            event: {
+              type: 'content_block_delta',
+              index: 1,
+              delta: {
+                type: 'signature_delta',
+                signature: 'signature',
+              },
+            },
+          },
+          {
+            type: 'stream_event',
+            event: {
+              type: 'message_delta',
+              delta: { stop_reason: 'end_turn' },
+            },
+          },
+          {
+            type: 'stream_event',
+            event: { type: 'message_stop' },
+          },
+          resultMessage({ result: '' }),
+        ],
+      });
+    const module = instrumentation.manuallyInstrument({ query: original });
+
+    await consumeQuery(module.query!({ prompt: 'Stream a response.' }));
+
+    assert.deepStrictEqual(
+      JSON.parse(
+        exporter.getFinishedSpans()[0].attributes[
+          ATTR_GEN_AI_OUTPUT_MESSAGES
+        ] as string
+      ),
+      [
+        {
+          role: 'assistant',
+          parts: [
+            {
+              type: 'text',
+              content: 'Streamed response',
+              citations: [
+                {
+                  type: 'web_search_result_location',
+                  cited_text: 'Streamed response',
+                  encrypted_index: 'index',
+                  title: 'Source',
+                  url: 'https://example.test/source',
+                },
+              ],
+            },
+            {
+              type: 'reasoning',
+              content: 'Check the result.',
+            },
+          ],
+          finish_reason: 'end_turn',
+        },
+      ]
+    );
+  });
+
+  it('uses an error finish reason for captured SDK result errors', async () => {
+    instrumentation.setConfig({ captureMessageContent: true });
+    const original: QueryFunction = () =>
+      createMockQuery({
+        messages: [
+          resultMessage({
+            subtype: 'error_during_execution',
+            is_error: true,
+            stop_reason: null,
+            errors: ['Execution failed'],
+            result: undefined,
+          }),
+        ],
+      });
+    const module = instrumentation.manuallyInstrument({ query: original });
+
+    await consumeQuery(module.query!({ prompt: 'Run the task.' }));
+
+    assert.deepStrictEqual(
+      JSON.parse(
+        exporter.getFinishedSpans()[0].attributes[
+          ATTR_GEN_AI_OUTPUT_MESSAGES
+        ] as string
+      ),
+      [
+        {
+          role: 'assistant',
+          parts: [{ type: 'error', content: ['Execution failed'] }],
+          finish_reason: 'error',
+        },
+      ]
+    );
+  });
+
+  it('keeps streaming-input result content separated by turn', async () => {
+    instrumentation.setConfig({ captureMessageContent: true });
+    const original: QueryFunction = () =>
+      createMockQuery({
+        messages: [
+          {
+            type: 'assistant',
+            message: {
+              id: 'turn-1',
+              type: 'message',
+              role: 'assistant',
+              model: 'claude-sonnet-4-5',
+              content: [{ type: 'text', text: 'First turn', citations: null }],
+              stop_reason: 'end_turn',
+              stop_sequence: null,
+              usage: { input_tokens: 1, output_tokens: 1 },
+            },
+            parent_tool_use_id: null,
+            uuid: 'turn-1',
+            session_id: 'session-123',
+          },
+          resultMessage({ result: 'First turn' }),
+          resultMessage({
+            subtype: 'error_during_execution',
+            is_error: true,
+            stop_reason: null,
+            errors: ['Second turn failed'],
+            result: undefined,
+          }),
+        ],
+      });
+    const module = instrumentation.manuallyInstrument({ query: original });
+    const prompt = {
+      async *[Symbol.asyncIterator]() {
+        yield {
+          type: 'user' as const,
+          message: { role: 'user' as const, content: 'Start' },
+          parent_tool_use_id: null,
+        };
+      },
+    } as unknown as Parameters<QueryFunction>[0]['prompt'];
+
+    await consumeQuery(module.query!({ prompt }));
+
+    assert.deepStrictEqual(
+      JSON.parse(
+        exporter.getFinishedSpans()[0].attributes[
+          ATTR_GEN_AI_OUTPUT_MESSAGES
+        ] as string
+      ),
+      [
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'First turn', citations: null }],
+          finish_reason: 'end_turn',
+        },
+        {
+          role: 'assistant',
+          parts: [{ type: 'error', content: ['Second turn failed'] }],
+          finish_reason: 'error',
+        },
+      ]
+    );
+  });
+
   it('records the selected agent name when supported by the SDK', async () => {
     const original: QueryFunction = () =>
       createMockQuery({ messages: [resultMessage()] });
@@ -241,6 +699,10 @@ describe('ClaudeAgentSDKInstrumentation', () => {
     const span = exporter.getFinishedSpans()[0];
     assert.strictEqual(span.name, 'invoke_agent reviewer');
     assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_NAME], 'reviewer');
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_AGENT_DESCRIPTION],
+      'Reviews code changes.'
+    );
   });
 
   it('records result errors without changing the returned messages', async () => {

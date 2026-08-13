@@ -8,11 +8,15 @@
       "gen_ai.tool.type"
     ],
     "gen_ai.invoke_agent.internal": [
+      "gen_ai.agent.description",
       "gen_ai.agent.name",
       "gen_ai.conversation.id",
+      "gen_ai.input.messages",
       "gen_ai.operation.name",
+      "gen_ai.output.messages",
       "gen_ai.request.model",
       "gen_ai.response.finish_reasons",
+      "gen_ai.system_instructions",
       "gen_ai.usage.cache_creation.input_tokens",
       "gen_ai.usage.cache_read.input_tokens",
       "gen_ai.usage.input_tokens",
