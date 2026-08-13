@@ -324,7 +324,6 @@ pkg:winston-transport:
 pkg-status:unmaintained:
   - changed-files:
       - any-glob-to-any-file:
-          - packages/instrumentation-claude-agent-sdk/**
           - packages/instrumentation-connect/**
           - packages/instrumentation-dns/**
           - packages/instrumentation-fs/**
