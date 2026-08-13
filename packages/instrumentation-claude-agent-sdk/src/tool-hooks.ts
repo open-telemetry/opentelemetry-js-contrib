@@ -23,7 +23,7 @@ import {
   ATTR_GEN_AI_TOOL_NAME,
   ATTR_GEN_AI_TOOL_TYPE,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from './semconv';
 
 import { safeJsonStringify } from './message-processor';
 

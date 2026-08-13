@@ -1,0 +1,41 @@
+runner: genai-conformance
+instrumented_library: "@anthropic-ai/claude-agent-sdk"
+instrumentation_library: "@opentelemetry/instrumentation-claude-agent-sdk"
+
+scenarios:
+  invoke_agent:
+    run: node invoke-agent.js
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: invoke_agent
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: Claude Code
+            gen_ai.conversation.id: session-conformance
+            gen_ai.request.model: claude-sonnet-4-5
+            gen_ai.usage.input_tokens: 7
+            gen_ai.usage.output_tokens: 4
+    metrics: []
+    events: []
+
+  execute_tool:
+    run: node execute-tool.js
+    spans:
+      - match:
+          attributes:
+            gen_ai.operation.name: invoke_agent
+        expect:
+          count: 1
+      - match:
+          attributes:
+            gen_ai.operation.name: execute_tool
+        expect:
+          count: 1
+          attributes:
+            gen_ai.tool.name: Read
+            gen_ai.tool.type: extension
+            gen_ai.tool.call.id: tool-conformance
+    metrics: []
+    events: []
