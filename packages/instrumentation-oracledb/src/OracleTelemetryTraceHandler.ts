@@ -391,14 +391,22 @@ export function getOracleTelemetryTraceHandlerClass(
       const isBatch = traceContext.operation === SpanNames.EXECUTE_MANY;
       const metricsAttributes: Attributes = {
         [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
-        [ATTR_DB_NAMESPACE]: connAttrs[ATTR_DB_NAMESPACE],
-        [ATTR_SERVER_PORT]: connAttrs[ATTR_SERVER_PORT],
-        [ATTR_SERVER_ADDRESS]: connAttrs[ATTR_SERVER_ADDRESS],
         [ATTR_DB_OPERATION_NAME]: parseMetricOperationName(
           traceContext.callLevelConfig?.statement,
           isBatch
         ),
       };
+
+      for (const attributeName of [
+        ATTR_DB_NAMESPACE,
+        ATTR_SERVER_PORT,
+        ATTR_SERVER_ADDRESS,
+      ]) {
+        const value = connAttrs[attributeName];
+        if (value !== undefined) {
+          metricsAttributes[attributeName] = value;
+        }
+      }
 
       if (traceContext.error) {
         const errorCode = traceContext.error.code;

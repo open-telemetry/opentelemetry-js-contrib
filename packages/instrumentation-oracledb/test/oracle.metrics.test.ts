@@ -4,11 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import {
-  AggregationTemporality,
   type DataPoint,
   DataPointType,
   type Histogram,
-  InMemoryMetricExporter,
   MeterProvider,
   type MetricData,
   type MetricReader,
@@ -48,16 +46,12 @@ import { TestMetricReader } from '@opentelemetry/contrib-test-utils';
 describe('oracledb-metrics', () => {
   let metricReader: MetricReader;
   let meterProvider: MeterProvider;
-  let metricsExporter: InMemoryMetricExporter;
   let queueTimeout: number;
   const testOracleDB = process.env.RUN_ORACLEDB_TESTS; // For CI: assumes local oracledb is already available
   const testOracleDBLocally = process.env.RUN_ORACLEDB_TESTS_LOCAL; // For local: spins up local oracledb via docker
   const shouldTest = testOracleDB || testOracleDBLocally; // Skips these tests if false (default)
 
   async function initMeterProvider() {
-    metricsExporter = new InMemoryMetricExporter(
-      AggregationTemporality.CUMULATIVE
-    );
     metricReader = new TestMetricReader();
     meterProvider = new MeterProvider({
       readers: [metricReader],
@@ -141,9 +135,6 @@ describe('oracledb-metrics', () => {
 
   after(async () => {
     instrumentation.disable();
-    if (testOracleDBLocally) {
-      metricsExporter.reset();
-    }
   });
 
   async function getMetrics(): Promise<MetricData[]> {
