@@ -15,6 +15,7 @@ We'd love your help!
   - [CHANGELOG](#changelog)
   - [Testing](#testing)
   - [Benchmarks](#benchmarks)
+- [Skills](#skills)
 - [Component Ownership](#component-ownership)
   - [Becoming a Component Owner](#becoming-a-component-owner)
 - [Component Lifecycle](#component-lifecycle)
@@ -193,6 +194,19 @@ npm run test:browser
 When two or more approaches must be compared, please write a benchmark in the benchmark/index.js module so that we can keep track of the most efficient algorithm.
 
 - `npm run bench` to run your benchmark.
+
+## Skills
+
+This repository ships repeatable AI-assisted contribution workflows under
+[`.github/skills`](.github/skills). Trigger them deliberately when starting a
+matching task:
+
+- **`migrate-from-openinference`** - migrate a donated JavaScript or TypeScript
+  OpenInference package into this repository, or augment an existing package
+  with missing coverage.
+
+Please contribute back anything learned while using the skills that could
+improve them.
 
 ## Component Ownership
 
