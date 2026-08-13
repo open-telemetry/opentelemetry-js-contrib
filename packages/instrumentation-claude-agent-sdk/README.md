@@ -106,6 +106,18 @@ When enabled, string prompts, visible system instructions, successful result
 text, and tool arguments/results are recorded using the GenAI content
 attributes.
 
+## Conformance
+
+The scenarios under [`test/conformance`](test/conformance) validate
+`invoke_agent` and `execute_tool` telemetry with the
+[semantic conventions conformance runner](https://github.com/open-telemetry/semantic-conventions-conformance).
+Build the package before running them:
+
+```bash
+npm run compile:with-dependencies
+genai-conformance test/conformance
+```
+
 ## References
 
 - [OpenTelemetry GenAI semantic conventions](https://github.com/open-telemetry/semantic-conventions-genai)

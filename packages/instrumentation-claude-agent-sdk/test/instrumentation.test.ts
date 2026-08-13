@@ -31,7 +31,7 @@ import {
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from '../src/semconv';
 import * as assert from 'assert';
 
 import {

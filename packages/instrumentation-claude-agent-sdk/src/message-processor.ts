@@ -22,7 +22,7 @@ import {
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
   GEN_AI_OUTPUT_TYPE_VALUE_JSON,
-} from '@opentelemetry/semantic-conventions/incubating';
+} from './semconv';
 
 const DEFAULT_AGENT_NAME = 'Claude Code';
 
