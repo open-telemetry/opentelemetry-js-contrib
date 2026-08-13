@@ -558,6 +558,23 @@ describe('ClaudeAgentSDKInstrumentation', () => {
     assert.notStrictEqual(module.query, original);
   });
 
+  it('unpatches an ESM namespace copy', () => {
+    const original: QueryFunction = () => createMockQuery();
+    const moduleNamespace = { query: original };
+    Object.defineProperty(moduleNamespace, Symbol.toStringTag, {
+      value: 'Module',
+    });
+    const module = instrumentation.manuallyInstrument(moduleNamespace);
+    const unpatch = Reflect.get(instrumentation, '_unpatch') as unknown;
+    assert.strictEqual(typeof unpatch, 'function');
+
+    Reflect.apply(unpatch as (...args: unknown[]) => unknown, instrumentation, [
+      module,
+    ]);
+
+    assert.strictEqual(module.query, original);
+  });
+
   it('does not trace through a retained wrapper after disable', async () => {
     const original: QueryFunction = () =>
       createMockQuery({ messages: [resultMessage()] });
