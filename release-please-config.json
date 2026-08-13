@@ -42,6 +42,7 @@
     "packages/instrumentation-aws-sdk": {},
     "packages/instrumentation-bunyan": {},
     "packages/instrumentation-cassandra-driver": {},
+    "packages/instrumentation-claude-agent-sdk": {},
     "packages/instrumentation-console": {},
     "packages/instrumentation-connect": {},
     "packages/instrumentation-dns": {},
