@@ -18,10 +18,13 @@
  *    issues across packages in the ecosystem.
  *
  * @see https://github.com/open-telemetry/semantic-conventions/blob/main/docs/gen-ai/gen-ai-spans.md
+ * @see https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-agent-spans.md
+ * @see https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-events.md
+ * @see https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-metrics.md
  */
 
 // ============================================================================
-// Span and Event Attributes
+// Span Attributes
 // ============================================================================
 
 /**
@@ -172,12 +175,28 @@ export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS =
   'gen_ai.usage.output_tokens' as const;
 
 /**
- * The total number of tokens used in the request (input + output).
+ * The number of tokens used for model reasoning / thinking.
  *
- * @example 384
+ * @example 128
  */
-export const ATTR_GEN_AI_USAGE_TOTAL_TOKENS =
-  'gen_ai.usage.total_tokens' as const;
+export const ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS =
+  'gen_ai.usage.reasoning.output_tokens' as const;
+
+/**
+ * The number of cached tokens read from the prompt cache.
+ *
+ * @example 64
+ */
+export const ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS =
+  'gen_ai.usage.cache_read.input_tokens' as const;
+
+/**
+ * The number of tokens written to create the prompt cache.
+ *
+ * @example 128
+ */
+export const ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS =
+  'gen_ai.usage.cache_creation.input_tokens' as const;
 
 /**
  * The type of token being counted in metric instruments.
@@ -216,6 +235,12 @@ export const ATTR_GEN_AI_OUTPUT_TYPE = 'gen_ai.output.type' as const;
 export const ATTR_GEN_AI_CONVERSATION_ID = 'gen_ai.conversation.id' as const;
 
 /**
+ * Indicates whether the conversation was compacted.
+ */
+export const ATTR_GEN_AI_CONVERSATION_COMPACTED =
+  'gen_ai.conversation.compacted' as const;
+
+/**
  * The data source identifier used by RAG/agent applications.
  *
  * @example H7STPQYOND
@@ -245,6 +270,13 @@ export const ATTR_GEN_AI_AGENT_DESCRIPTION =
   'gen_ai.agent.description' as const;
 
 /**
+ * Version of the GenAI agent.
+ *
+ * @example 1.0.0
+ */
+export const ATTR_GEN_AI_AGENT_VERSION = 'gen_ai.agent.version' as const;
+
+/**
  * The name of the tool called.
  *
  * @example get_weather
@@ -264,14 +296,106 @@ export const ATTR_GEN_AI_TOOL_DESCRIPTION = 'gen_ai.tool.description' as const;
 export const ATTR_GEN_AI_TOOL_CALL_ID = 'gen_ai.tool.call.id' as const;
 
 /**
- * Event name attribute for LogRecord events.
+ * The type classification of the tool.
+ *
+ * @example function
+ * @example extension
+ * @example datastore
  */
-export const ATTR_EVENT_NAME = 'event.name' as const;
+export const ATTR_GEN_AI_TOOL_TYPE = 'gen_ai.tool.type' as const;
 
 /**
- * OpenInference span kind attribute (for compatibility).
+ * The parameters passed to the tool call.
  */
-export const ATTR_OPENINFERENCE_SPAN_KIND = 'openinference.span.kind' as const;
+export const ATTR_GEN_AI_TOOL_CALL_ARGUMENTS =
+  'gen_ai.tool.call.arguments' as const;
+
+/**
+ * The result returned by the tool call.
+ */
+export const ATTR_GEN_AI_TOOL_CALL_RESULT = 'gen_ai.tool.call.result' as const;
+
+/**
+ * The list of tool definitions provided to the model/agent.
+ */
+export const ATTR_GEN_AI_TOOL_DEFINITIONS = 'gen_ai.tool.definitions' as const;
+
+/**
+ * Whether the request was streamed.
+ */
+export const ATTR_GEN_AI_REQUEST_STREAM = 'gen_ai.request.stream' as const;
+
+/**
+ * Stream cursor for resuming streamed responses.
+ */
+export const ATTR_GEN_AI_REQUEST_STREAM_CURSOR =
+  'gen_ai.request.stream_cursor' as const;
+
+/**
+ * The reasoning effort or level requested.
+ *
+ * @example low
+ * @example medium
+ * @example high
+ */
+export const ATTR_GEN_AI_REQUEST_REASONING_LEVEL =
+  'gen_ai.request.reasoning.level' as const;
+
+/**
+ * The identifier of a previous response to continue from.
+ */
+export const ATTR_GEN_AI_REQUEST_PREVIOUS_RESPONSE_ID =
+  'gen_ai.request.previous_response.id' as const;
+
+/**
+ * Lifecycle status of the GenAI response.
+ *
+ * @example queued
+ * @example in_progress
+ * @example completed
+ * @example incomplete
+ * @example failed
+ * @example cancelled
+ */
+export const ATTR_GEN_AI_RESPONSE_STATUS = 'gen_ai.response.status' as const;
+
+/**
+ * Time to first chunk in seconds for streaming responses.
+ */
+export const ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK =
+  'gen_ai.response.time_to_first_chunk' as const;
+
+/**
+ * Human-readable name of the GenAI workflow.
+ *
+ * @example customer_support_pipeline
+ */
+export const ATTR_GEN_AI_WORKFLOW_NAME = 'gen_ai.workflow.name' as const;
+
+/**
+ * The number of dimensions in generated embeddings.
+ *
+ * @example 1536
+ */
+export const ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT =
+  'gen_ai.embeddings.dimension.count' as const;
+
+/**
+ * Documents returned by retrieval.
+ */
+export const ATTR_GEN_AI_RETRIEVAL_DOCUMENTS =
+  'gen_ai.retrieval.documents' as const;
+
+/**
+ * Query text submitted to retrieval.
+ */
+export const ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT =
+  'gen_ai.retrieval.query.text' as const;
+
+/**
+ * Top k parameter for retrieval.
+ */
+export const ATTR_GEN_AI_RETRIEVAL_TOP_K = 'gen_ai.retrieval.top_k' as const;
 
 // ============================================================================
 // Predefined Constant Values
@@ -287,12 +411,20 @@ export const GEN_AI_OPERATION_NAME_VALUE_GENERATE_CONTENT =
 export const GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL = 'execute_tool' as const;
 export const GEN_AI_OPERATION_NAME_VALUE_CREATE_AGENT = 'create_agent' as const;
 export const GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT = 'invoke_agent' as const;
+export const GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL = 'retrieval' as const;
+export const GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE =
+  'fetch_response' as const;
+export const GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW =
+  'invoke_workflow' as const;
 
 // Providers
 export const GEN_AI_PROVIDER_NAME_VALUE_OPENAI = 'openai' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_ANTHROPIC = 'anthropic' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK = 'aws.bedrock' as const;
-export const GEN_AI_PROVIDER_NAME_VALUE_GOOGLE_GENAI = 'google_genai' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI = 'gcp.gen_ai' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI =
+  'gcp.vertex_ai' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_GCP_GEMINI = 'gcp.gemini' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI =
   'azure.ai.openai' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE =
@@ -301,9 +433,11 @@ export const GEN_AI_PROVIDER_NAME_VALUE_COHERE = 'cohere' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_DEEPSEEK = 'deepseek' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_GROQ = 'groq' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_MISTRAL_AI = 'mistral_ai' as const;
-export const GEN_AI_PROVIDER_NAME_VALUE_OLLAMA = 'ollama' as const;
-export const GEN_AI_PROVIDER_NAME_VALUE_LANGCHAIN = 'langchain' as const;
-export const GEN_AI_PROVIDER_NAME_VALUE_WATSONX_AI = 'watsonx.ai' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_MOONSHOT_AI = 'moonshot_ai' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_IBM_WATSONX_AI =
+  'ibm.watsonx.ai' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_PERPLEXITY = 'perplexity' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_X_AI = 'x_ai' as const;
 
 // Token Types
 export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
@@ -317,11 +451,25 @@ export const GEN_AI_FINISH_REASON_VALUE_CONTENT_FILTER =
 export const GEN_AI_FINISH_REASON_VALUE_TOOL_CALL = 'tool_call' as const;
 export const GEN_AI_FINISH_REASON_VALUE_ERROR = 'error' as const;
 
+// Response Status
+export const GEN_AI_RESPONSE_STATUS_VALUE_QUEUED = 'queued' as const;
+export const GEN_AI_RESPONSE_STATUS_VALUE_IN_PROGRESS =
+  'in_progress' as const;
+export const GEN_AI_RESPONSE_STATUS_VALUE_COMPLETED = 'completed' as const;
+export const GEN_AI_RESPONSE_STATUS_VALUE_INCOMPLETE = 'incomplete' as const;
+export const GEN_AI_RESPONSE_STATUS_VALUE_FAILED = 'failed' as const;
+export const GEN_AI_RESPONSE_STATUS_VALUE_CANCELLED = 'cancelled' as const;
+
 // Output Types
 export const GEN_AI_OUTPUT_TYPE_VALUE_TEXT = 'text' as const;
 export const GEN_AI_OUTPUT_TYPE_VALUE_JSON = 'json' as const;
 export const GEN_AI_OUTPUT_TYPE_VALUE_IMAGE = 'image' as const;
 export const GEN_AI_OUTPUT_TYPE_VALUE_SPEECH = 'speech' as const;
+
+// Tool Types
+export const GEN_AI_TOOL_TYPE_VALUE_FUNCTION = 'function' as const;
+export const GEN_AI_TOOL_TYPE_VALUE_EXTENSION = 'extension' as const;
+export const GEN_AI_TOOL_TYPE_VALUE_DATASTORE = 'datastore' as const;
 
 // ============================================================================
 // Metrics
@@ -331,12 +479,26 @@ export const METRIC_GEN_AI_CLIENT_OPERATION_DURATION =
   'gen_ai.client.operation.duration' as const;
 export const METRIC_GEN_AI_CLIENT_TOKEN_USAGE =
   'gen_ai.client.token.usage' as const;
+export const METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK =
+  'gen_ai.client.operation.time_to_first_chunk' as const;
+export const METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK =
+  'gen_ai.client.operation.time_per_output_chunk' as const;
 export const METRIC_GEN_AI_SERVER_REQUEST_DURATION =
   'gen_ai.server.request.duration' as const;
 export const METRIC_GEN_AI_SERVER_TIME_TO_FIRST_TOKEN =
   'gen_ai.server.time_to_first_token' as const;
 export const METRIC_GEN_AI_SERVER_TIME_PER_OUTPUT_TOKEN =
   'gen_ai.server.time_per_output_token' as const;
+export const METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION =
+  'gen_ai.invoke_workflow.duration' as const;
+export const METRIC_GEN_AI_INVOKE_AGENT_DURATION =
+  'gen_ai.invoke_agent.duration' as const;
+export const METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS =
+  'gen_ai.invoke_agent.inference_calls' as const;
+export const METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS =
+  'gen_ai.invoke_agent.tool_calls' as const;
+export const METRIC_GEN_AI_EXECUTE_TOOL_DURATION =
+  'gen_ai.execute_tool.duration' as const;
 
 // ============================================================================
 // Events
@@ -344,9 +506,7 @@ export const METRIC_GEN_AI_SERVER_TIME_PER_OUTPUT_TOKEN =
 
 export const EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS =
   'gen_ai.client.inference.operation.details' as const;
-export const EVENT_GEN_AI_SYSTEM_MESSAGE = 'gen_ai.system.message' as const;
-export const EVENT_GEN_AI_USER_MESSAGE = 'gen_ai.user.message' as const;
-export const EVENT_GEN_AI_ASSISTANT_MESSAGE =
-  'gen_ai.assistant.message' as const;
-export const EVENT_GEN_AI_TOOL_MESSAGE = 'gen_ai.tool.message' as const;
-export const EVENT_GEN_AI_CHOICE = 'gen_ai.choice' as const;
+export const EVENT_GEN_AI_EVALUATION_RESULT =
+  'gen_ai.evaluation.result' as const;
+export const EVENT_GEN_AI_CLIENT_OPERATION_EXCEPTION =
+  'gen_ai.client.operation.exception' as const;

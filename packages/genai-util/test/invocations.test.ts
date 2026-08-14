@@ -20,9 +20,14 @@ import {
   ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
+  ATTR_GEN_AI_WORKFLOW_NAME,
+  ATTR_GEN_AI_AGENT_NAME,
 } from '../src';
 
 class TestMetricReader extends MetricReader {
@@ -82,7 +87,9 @@ describe('GenAI Invocations', () => {
       invocation.setUsage({
         inputTokens: 10,
         outputTokens: 20,
-        totalTokens: 30,
+        reasoningTokens: 5,
+        cacheReadTokens: 15,
+        cacheCreationTokens: 8,
       });
       invocation.addOutputMessages([
         {
@@ -113,6 +120,18 @@ describe('GenAI Invocations', () => {
       );
       assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 10);
       assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 20);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS],
+        5
+      );
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS],
+        15
+      );
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS],
+        8
+      );
       assert.ok(span.attributes[ATTR_GEN_AI_INPUT_MESSAGES]);
       assert.ok(span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES]);
       assert.strictEqual(span.status.code, SpanStatusCode.OK);
@@ -140,14 +159,14 @@ describe('GenAI Invocations', () => {
       assert.strictEqual(span.events[0].name, 'exception');
     });
 
-    it('should record events when event content capture mode is enabled', () => {
+    it('should respect content capture mode when disabled vs enabled', () => {
       const tracer = tracerProvider.getTracer('test-tracer');
-      const handler = new TelemetryHandler({
+      const handlerNone = new TelemetryHandler({
         tracer,
-        contentCaptureMode: 'event_only',
+        contentCaptureMode: 'none',
       });
 
-      const invocation = handler.startInference({
+      const invNone = handlerNone.startInference({
         providerName: 'openai',
         inputMessages: [
           {
@@ -157,32 +176,56 @@ describe('GenAI Invocations', () => {
         ],
       });
 
-      invocation.addOutputMessages([
+      invNone.addOutputMessages([
         {
           role: 'assistant',
           parts: [{ type: 'text', content: 'It is sunny.' }],
           finish_reason: 'stop',
         },
       ]);
-      invocation.stop();
+      invNone.stop();
 
-      const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 1);
-      const span = spans[0];
-
-      // Span attributes for input/output messages should NOT be set
+      const spansNone = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spansNone.length, 1);
       assert.strictEqual(
-        span.attributes[ATTR_GEN_AI_INPUT_MESSAGES],
+        spansNone[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES],
         undefined
       );
       assert.strictEqual(
-        span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES],
+        spansNone[0].attributes[ATTR_GEN_AI_OUTPUT_MESSAGES],
         undefined
       );
 
-      // But events should be present
-      assert.ok(span.events.some(e => e.name === 'gen_ai.user.message'));
-      assert.ok(span.events.some(e => e.name === 'gen_ai.choice'));
+      memoryExporter.reset();
+
+      const handlerSpan = new TelemetryHandler({
+        tracer,
+        contentCaptureMode: 'span_only',
+      });
+
+      const invSpan = handlerSpan.startInference({
+        providerName: 'openai',
+        inputMessages: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: 'What is the weather?' }],
+          },
+        ],
+      });
+
+      invSpan.addOutputMessages([
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'It is sunny.' }],
+          finish_reason: 'stop',
+        },
+      ]);
+      invSpan.stop();
+
+      const spansSpan = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spansSpan.length, 1);
+      assert.ok(spansSpan[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES]);
+      assert.ok(spansSpan[0].attributes[ATTR_GEN_AI_OUTPUT_MESSAGES]);
     });
   });
 
@@ -264,8 +307,21 @@ describe('GenAI Invocations', () => {
 
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
-      assert.strictEqual(spans[0].name, 'agent researcher');
-      assert.strictEqual(spans[1].name, 'workflow summarize_docs');
+      assert.strictEqual(spans[0].name, 'invoke_agent researcher');
+      assert.strictEqual(
+        spans[0].attributes[ATTR_GEN_AI_OPERATION_NAME],
+        'invoke_agent'
+      );
+      assert.strictEqual(spans[0].attributes[ATTR_GEN_AI_AGENT_NAME], 'researcher');
+      assert.strictEqual(spans[1].name, 'invoke_workflow summarize_docs');
+      assert.strictEqual(
+        spans[1].attributes[ATTR_GEN_AI_OPERATION_NAME],
+        'invoke_workflow'
+      );
+      assert.strictEqual(
+        spans[1].attributes[ATTR_GEN_AI_WORKFLOW_NAME],
+        'summarize_docs'
+      );
     });
 
     it('should handle agent and workflow errors', () => {
