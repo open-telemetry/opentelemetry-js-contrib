@@ -116,14 +116,30 @@ Prefer instrumentation owned by the library itself. Before porting:
 3. Confirm behavior with a real `TracerProvider`; a dependency alone does not
    prove that the SDK emits conformant telemetry.
 
-If the SDK already emits equivalent OpenTelemetry telemetry, do not build
-competing monkey-patching instrumentation. Instead:
+If the library is self-instrumented, do not migrate the OpenInference package.
+Pivot the work:
 
-- add conformance and regression tests for the native integration when that
-  belongs in this repository;
-- document missing operations or semantic convention gaps;
-- propose upstream fixes or an adapter only when maintainers agree it is
-  necessary.
+1. **Ignore the OpenInference instrumentation entirely.** The vendor owns the
+   spans, so there is no instrumentor or patcher to reimplement.
+2. **Write conformance tests against the native instrumentation.** If
+   `.github/skills/write-conformance-tests/SKILL.md` exists, follow it, but
+   configure each scenario to enable the native tracer instead of an
+   OpenTelemetry instrumentation package. If the skill is not present, skip
+   authoring the tests for now and record that limitation in the migration
+   report.
+3. **Identify gaps and inconsistencies** between the native telemetry and the
+   GenAI semantic conventions, including missing operations, incorrect
+   operation names, legacy or duplicate attributes, missing metrics, and
+   missing content-capture controls. Record each gap as an expected violation
+   or documented skip.
+4. **Write `MIGRATION_REPORT.md`** as described in
+   [step 11](#11-write-the-migration-report), stating that the library is
+   self-instrumented, the conformance results or reason tests were skipped, and
+   the identified gaps. Stop and surface the finding to the user. Do not build
+   a competing package unless they explicitly request it.
+
+Only continue with the migration when the library has no native OpenTelemetry
+instrumentation.
 
 ### 4. Check for shared GenAI utilities
 
