@@ -1,18 +1,18 @@
 ---
 name: migrate-from-openinference
-description: Migrate a donated JavaScript or TypeScript OpenInference package from https://github.com/open-telemetry/donation-openinference into opentelemetry-js-contrib. Creates a new package or augments an existing package with missing OpenInference coverage while converting it to official OpenTelemetry GenAI semantic conventions. Use when a user asks to migrate or port a donated OpenInference JS package.
+description: Migrate a donated JavaScript or TypeScript openinference-instrumentation-* package from https://github.com/open-telemetry/donation-openinference into opentelemetry-js-contrib. Creates a new package or augments an existing package with missing OpenInference coverage while converting it to official OpenTelemetry GenAI semantic conventions. Use when a user asks to migrate or port a donated OpenInference JS instrumentation package.
 ---
 
-# Migrate a donated OpenInference JavaScript package
+# Migrate a donated OpenInference JavaScript instrumentation package
 
-Migrate a package from
+Migrate an `openinference-instrumentation-<source>` package from
 [`open-telemetry/donation-openinference/js/packages`](https://github.com/open-telemetry/donation-openinference/tree/main/js/packages)
 into this repository.
 
-The donated package is reference material, not the final implementation. The
-result must follow OpenTelemetry JavaScript instrumentation conventions, emit
-official OpenTelemetry GenAI semantic conventions, and contain no OpenInference
-dependencies.
+The donated instrumentation package is reference material, not the final
+implementation. The result must follow OpenTelemetry JavaScript instrumentation
+conventions, emit official OpenTelemetry GenAI semantic conventions, and
+contain no OpenInference dependencies.
 
 This skill covers two modes:
 
@@ -31,11 +31,16 @@ conventions.
 
 ## Inputs
 
-The user should identify a source package, for example:
+The user should identify a source instrumentation package, for example:
 
 ```text
 @arizeai/openinference-instrumentation-anthropic
 ```
+
+The source directory name must begin with `openinference-instrumentation-`.
+Do not use this skill for utility, semantic-model, or middleware packages such
+as `openinference-core`, `openinference-genai`, `openinference-vercel`, or
+`openinference-tanstack-ai`; those require a separately designed workflow.
 
 Use only the corresponding package in the OpenTelemetry donation repository:
 
@@ -55,15 +60,8 @@ Derive the target name by removing `openinference-` and changing the npm scope:
   -> packages/instrumentation-anthropic
 ```
 
-Not every donated package is a Node.js auto-instrumentation:
-
-- `openinference-vercel` and `openinference-tanstack-ai` may use middleware or
-  callback APIs instead of `InstrumentationBase`.
-- `openinference-genai` is a shared utility or semantic-model migration, not a
-  normal instrumentation port. Treat it as a separately designed shared
-  package.
-- Legacy variants such as `instrumentation-langchain-v0` need an explicit
-  support decision before implementation.
+Legacy variants such as `openinference-instrumentation-langchain-v0` need an
+explicit support decision before implementation.
 
 ## Before starting
 
