@@ -10,6 +10,7 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
+import { GEN_AI_OPERATION_NAME_VALUE_CHAT } from './semconv';
 
 const SERVER_PORT_FROM_URL_PROTOCOL: Record<string, number> = {
   'https:': 443,
@@ -159,6 +160,6 @@ export function calculateDurationSeconds(
  * E.g. "chat gpt-4o", "embeddings text-embedding-3-small", "generate_content gemini-1.5-pro".
  */
 export function getSpanName(operationName: string, model?: string): string {
-  const op = operationName || 'chat';
+  const op = operationName || GEN_AI_OPERATION_NAME_VALUE_CHAT;
   return model ? `${op} ${model}` : op;
 }

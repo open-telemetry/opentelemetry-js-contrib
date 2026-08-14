@@ -33,6 +33,15 @@ import {
   recordOperationDuration,
   recordTokenUsage,
 } from './metrics';
+import {
+  GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+  GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
+  GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
+  GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
+  GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
+  GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
+} from './semconv';
 import type {
   AgentInvocationOptions,
   CompletionHook,
@@ -158,7 +167,7 @@ export class TelemetryHandler {
    */
   startInference(options: InferenceInvocationOptions): InferenceInvocation {
     const spanName = getSpanName(
-      options.operationName ?? 'chat',
+      options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_CHAT,
       options.requestModel
     );
 
@@ -177,7 +186,10 @@ export class TelemetryHandler {
    * Start an Embedding invocation.
    */
   startEmbedding(options: EmbeddingInvocationOptions): EmbeddingInvocation {
-    const spanName = getSpanName('embeddings', options.requestModel);
+    const spanName = getSpanName(
+      GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+      options.requestModel
+    );
 
     const span = this._tracer.startSpan(
       spanName,
@@ -194,7 +206,7 @@ export class TelemetryHandler {
    * Start a Tool execution invocation.
    */
   startTool(options: ToolInvocationOptions): ToolInvocation {
-    const spanName = `execute_tool ${options.toolName}`;
+    const spanName = `${GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL} ${options.toolName}`;
 
     const span = this._tracer.startSpan(
       spanName,
@@ -212,7 +224,9 @@ export class TelemetryHandler {
    */
   startAgent(options: AgentInvocationOptions): AgentInvocation {
     const name = options.agentName ?? options.agentId;
-    const spanName = name ? `invoke_agent ${name}` : 'invoke_agent';
+    const spanName = name
+      ? `${GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT} ${name}`
+      : GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT;
 
     const span = this._tracer.startSpan(
       spanName,
@@ -230,8 +244,8 @@ export class TelemetryHandler {
    */
   startWorkflow(options: WorkflowInvocationOptions): WorkflowInvocation {
     const spanName = options.workflowName
-      ? `invoke_workflow ${options.workflowName}`
-      : 'invoke_workflow';
+      ? `${GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW} ${options.workflowName}`
+      : GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW;
 
     const span = this._tracer.startSpan(
       spanName,
@@ -249,8 +263,8 @@ export class TelemetryHandler {
    */
   startRetrieval(options: RetrievalInvocationOptions): RetrievalInvocation {
     const spanName = options.dataSourceId
-      ? `retrieval ${options.dataSourceId}`
-      : 'retrieval';
+      ? `${GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL} ${options.dataSourceId}`
+      : GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL;
 
     const span = this._tracer.startSpan(
       spanName,
@@ -270,7 +284,7 @@ export class TelemetryHandler {
     options: FetchResponseInvocationOptions
   ): FetchResponseInvocation {
     const span = this._tracer.startSpan(
-      'fetch_response',
+      GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
       {
         kind: SpanKind.CLIENT,
       },

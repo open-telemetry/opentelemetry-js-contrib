@@ -10,6 +10,11 @@ import {
   type Span,
 } from '@opentelemetry/api';
 import {
+  ATTR_ERROR_TYPE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
+import {
   ATTR_GEN_AI_AGENT_DESCRIPTION,
   ATTR_GEN_AI_AGENT_ID,
   ATTR_GEN_AI_AGENT_NAME,
@@ -53,6 +58,8 @@ import {
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
   ATTR_GEN_AI_WORKFLOW_NAME,
+  GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
   GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
@@ -114,7 +121,8 @@ export class InferenceInvocation {
     this._handler = handler;
     this._startTime = startTime;
     this._providerName = options.providerName;
-    this._operationName = options.operationName ?? 'chat';
+    this._operationName =
+      options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_CHAT;
     this._requestModel = options.requestModel;
     this._contentCaptureMode = handler.getContentCaptureMode();
 
@@ -137,10 +145,10 @@ export class InferenceInvocation {
     }
 
     if (options.serverAddress) {
-      attrs['server.address'] = options.serverAddress;
+      attrs[ATTR_SERVER_ADDRESS] = options.serverAddress;
     }
     if (options.serverPort) {
-      attrs['server.port'] = options.serverPort;
+      attrs[ATTR_SERVER_PORT] = options.serverPort;
     }
 
     const reqOpts = options.requestOptions;
@@ -406,7 +414,7 @@ export class InferenceInvocation {
       metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
     }
     if (error) {
-      metricAttrs['error.type'] = error instanceof Error ? error.name : 'Error';
+      metricAttrs[ATTR_ERROR_TYPE] = error instanceof Error ? error.name : 'Error';
     }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
@@ -476,7 +484,7 @@ export class EmbeddingInvocation {
 
     const attrs: Attributes = {
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
-      [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
       ...options.attributes,
     };
 
@@ -523,7 +531,7 @@ export class EmbeddingInvocation {
 
     const metricAttrs: Attributes = {
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
-      [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
     };
     if (this._requestModel) {
       metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
@@ -551,8 +559,8 @@ export class EmbeddingInvocation {
 
     const metricAttrs: Attributes = {
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
-      [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
-      'error.type': error instanceof Error ? error.name : 'Error',
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+      [ATTR_ERROR_TYPE]: error instanceof Error ? error.name : 'Error',
     };
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
@@ -852,10 +860,10 @@ export class RetrievalInvocation {
       attrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
     }
     if (this._serverAddress) {
-      attrs['server.address'] = this._serverAddress;
+      attrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
     }
     if (this._serverPort !== undefined) {
-      attrs['server.port'] = this._serverPort;
+      attrs[ATTR_SERVER_PORT] = this._serverPort;
     }
     if (this._topK !== undefined) {
       attrs[ATTR_GEN_AI_REQUEST_TOP_K] = this._topK;
@@ -922,10 +930,10 @@ export class RetrievalInvocation {
       metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
     }
     if (this._serverAddress) {
-      metricAttrs['server.address'] = this._serverAddress;
+      metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
     }
     if (this._serverPort !== undefined) {
-      metricAttrs['server.port'] = this._serverPort;
+      metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
     }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
@@ -944,7 +952,7 @@ export class RetrievalInvocation {
 
     const metricAttrs: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
-      'error.type': error instanceof Error ? error.name : 'Error',
+      [ATTR_ERROR_TYPE]: error instanceof Error ? error.name : 'Error',
     };
     if (this._providerName) {
       metricAttrs[ATTR_GEN_AI_PROVIDER_NAME] = this._providerName;
@@ -953,10 +961,10 @@ export class RetrievalInvocation {
       metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
     }
     if (this._serverAddress) {
-      metricAttrs['server.address'] = this._serverAddress;
+      metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
     }
     if (this._serverPort !== undefined) {
-      metricAttrs['server.port'] = this._serverPort;
+      metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
     }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
@@ -1025,10 +1033,10 @@ export class FetchResponseInvocation {
       this._streamCursor = options.streamCursor;
     }
     if (this._serverAddress) {
-      attrs['server.address'] = this._serverAddress;
+      attrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
     }
     if (this._serverPort !== undefined) {
-      attrs['server.port'] = this._serverPort;
+      attrs[ATTR_SERVER_PORT] = this._serverPort;
     }
 
     this._span.setAttributes(attrs);
@@ -1151,13 +1159,13 @@ export class FetchResponseInvocation {
       metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
     }
     if (this._serverAddress) {
-      metricAttrs['server.address'] = this._serverAddress;
+      metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
     }
     if (this._serverPort !== undefined) {
-      metricAttrs['server.port'] = this._serverPort;
+      metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
     }
     if (error) {
-      metricAttrs['error.type'] = error instanceof Error ? error.name : 'Error';
+      metricAttrs[ATTR_ERROR_TYPE] = error instanceof Error ? error.name : 'Error';
     }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
