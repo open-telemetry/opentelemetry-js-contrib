@@ -20,7 +20,8 @@ This skill covers two modes:
   Create a new package under `packages/`.
 - **Augment an existing package**: this repository already instruments the
   library. Inventory both implementations and add only the missing operations,
-  request or response shapes, tests, and semantic convention coverage.
+  request or response shapes, tests, and semantic convention coverage. See
+  [Augment mode](#augment-mode-the-package-already-exists).
 
 The JavaScript migration effort is tracked in
 [`opentelemetry-js-contrib#3668`](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668).
