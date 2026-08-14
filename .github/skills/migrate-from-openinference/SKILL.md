@@ -277,6 +277,13 @@ follow-up PR.
 
 ## Migration flow
 
+> The numbered steps below apply to both migration modes. For a greenfield
+> migration, follow every step. In
+> [augment mode](#augment-mode-the-package-already-exists), the inventories and
+> delta above replace step 1, skip step 2, and scope steps 3-9 to that delta.
+> Perform step 10 only when the new capability changes workspace integration,
+> then complete the reporting and validation in steps 11-12.
+
 ### 1. Create a source inventory
 
 Before editing, produce a table for the donated package:
