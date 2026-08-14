@@ -32,6 +32,8 @@ export const GENAI_TOKEN_USAGE_BUCKETS = [
 
 /**
  * Standard explicit bucket boundaries for GenAI time to first token (in seconds).
+ *
+ * Adopted from vLLM: https://github.com/vllm-project/vllm/blob/main/vllm/v1/metrics/loggers.py
  */
 export const GENAI_SERVER_TIME_TO_FIRST_TOKEN_BUCKETS = [
   0.001, 0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25,
