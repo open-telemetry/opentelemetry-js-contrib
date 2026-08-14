@@ -1,6 +1,6 @@
 ---
 name: migrate-from-openinference
-description: Migrate a donated JavaScript or TypeScript OpenInference package from open-telemetry/donation-openinference into opentelemetry-js-contrib. Creates a new package or augments an existing package with missing OpenInference coverage while converting it to official OpenTelemetry GenAI semantic conventions. Use when a user asks to migrate or port a donated OpenInference JS package.
+description: Migrate a donated JavaScript or TypeScript OpenInference package from https://github.com/open-telemetry/donation-openinference into opentelemetry-js-contrib. Creates a new package or augments an existing package with missing OpenInference coverage while converting it to official OpenTelemetry GenAI semantic conventions. Use when a user asks to migrate or port a donated OpenInference JS package.
 ---
 
 # Migrate a donated OpenInference JavaScript package
