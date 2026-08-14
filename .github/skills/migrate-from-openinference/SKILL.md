@@ -23,8 +23,6 @@ This skill covers two modes:
   request or response shapes, tests, and semantic convention coverage. See
   [Augment mode](#augment-mode-the-package-already-exists).
 
-The JavaScript migration effort is tracked in
-[`opentelemetry-js-contrib#3668`](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668).
 This workflow is adapted from the Python
 [`migrate-from-openinference` skill](https://github.com/open-telemetry/opentelemetry-python-genai/tree/main/.github/skills/migrate-from-openinference)
 for this repository's TypeScript, npm workspace, instrumentation, and test
