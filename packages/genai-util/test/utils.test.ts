@@ -5,6 +5,10 @@
 
 import * as assert from 'assert';
 import {
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
+import {
   getAttrsFromBaseURL,
   serializeContent,
   formatInputMessages,
@@ -20,14 +24,14 @@ describe('GenAI Utils', () => {
     it('should parse URL into server.address and server.port', () => {
       const attrs1 = getAttrsFromBaseURL('https://api.openai.com/v1');
       assert.deepStrictEqual(attrs1, {
-        'server.address': 'api.openai.com',
-        'server.port': 443,
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
       });
 
       const attrs2 = getAttrsFromBaseURL('http://localhost:8080/v1');
       assert.deepStrictEqual(attrs2, {
-        'server.address': 'localhost',
-        'server.port': 8080,
+        [ATTR_SERVER_ADDRESS]: 'localhost',
+        [ATTR_SERVER_PORT]: 8080,
       });
 
       const attrs3 = getAttrsFromBaseURL(undefined);

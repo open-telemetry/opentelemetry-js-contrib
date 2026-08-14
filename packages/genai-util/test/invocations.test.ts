@@ -12,6 +12,11 @@ import {
 import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import { SpanStatusCode } from '@opentelemetry/api';
 import {
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  EVENT_EXCEPTION,
+} from '@opentelemetry/semantic-conventions';
+import {
   TelemetryHandler,
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_OPERATION_NAME,
@@ -28,6 +33,9 @@ import {
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
+  ATTR_GEN_AI_TOOL_NAME,
+  ATTR_GEN_AI_TOOL_CALL_ID,
+  ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
   ATTR_GEN_AI_REQUEST_STREAM,
   ATTR_GEN_AI_REQUEST_STREAM_CURSOR,
@@ -126,7 +134,10 @@ describe('GenAI Invocations', () => {
         span.attributes[ATTR_GEN_AI_RESPONSE_MODEL],
         'gpt-4o-2024-08-06'
       );
-      assert.strictEqual(span.attributes['gen_ai.response.id'], 'chatcmpl-123');
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_RESPONSE_ID],
+        'chatcmpl-123'
+      );
       assert.deepStrictEqual(
         span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
         ['stop']
@@ -169,7 +180,7 @@ describe('GenAI Invocations', () => {
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
       assert.strictEqual(span.status.message, 'Rate limit exceeded');
       assert.strictEqual(span.events.length, 1);
-      assert.strictEqual(span.events[0].name, 'exception');
+      assert.strictEqual(span.events[0].name, EVENT_EXCEPTION);
     });
 
     it('should respect content capture mode when disabled vs enabled', () => {
@@ -294,10 +305,13 @@ describe('GenAI Invocations', () => {
         'execute_tool'
       );
       assert.strictEqual(
-        span.attributes['gen_ai.tool.name'],
+        span.attributes[ATTR_GEN_AI_TOOL_NAME],
         'get_stock_price'
       );
-      assert.strictEqual(span.attributes['gen_ai.tool.call.id'], 'call_123');
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_TOOL_CALL_ID],
+        'call_123'
+      );
       assert.strictEqual(span.status.code, SpanStatusCode.OK);
     });
   });
@@ -426,12 +440,12 @@ describe('GenAI Invocations', () => {
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 1);
       assert.strictEqual(
-        spans[0].attributes['server.address'],
+        spans[0].attributes[ATTR_SERVER_ADDRESS],
         'api.anthropic.com'
       );
-      assert.strictEqual(spans[0].attributes['server.port'], 443);
+      assert.strictEqual(spans[0].attributes[ATTR_SERVER_PORT], 443);
       assert.strictEqual(
-        spans[0].attributes['gen_ai.conversation.id'],
+        spans[0].attributes[ATTR_GEN_AI_CONVERSATION_ID],
         'conv-123'
       );
       assert.strictEqual(spans[0].attributes['custom.key'], 'custom.val');
@@ -484,8 +498,8 @@ describe('GenAI Invocations', () => {
         'text-embedding-3-small'
       );
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_TOP_K], 5);
-      assert.strictEqual(span.attributes['server.address'], 'pinecone.io');
-      assert.strictEqual(span.attributes['server.port'], 443);
+      assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], 'pinecone.io');
+      assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
       assert.strictEqual(
         span.attributes[ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT],
         'How do I reset my password?'
@@ -523,7 +537,7 @@ describe('GenAI Invocations', () => {
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
       assert.strictEqual(span.status.message, 'Connection timed out');
       assert.strictEqual(span.events.length, 1);
-      assert.strictEqual(span.events[0].name, 'exception');
+      assert.strictEqual(span.events[0].name, EVENT_EXCEPTION);
     });
   });
 
@@ -596,6 +610,11 @@ describe('GenAI Invocations', () => {
         span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
         ['stop']
       );
+      assert.strictEqual(
+        span.attributes[ATTR_SERVER_ADDRESS],
+        'api.openai.com'
+      );
+      assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
       assert.ok(span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES]);
       assert.ok(span.attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS]);
       assert.strictEqual(span.status.code, SpanStatusCode.OK);
