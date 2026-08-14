@@ -353,6 +353,54 @@ export interface WorkflowInvocationOptions {
 }
 
 /**
+ * Options for starting a retrieval invocation.
+ */
+export interface RetrievalInvocationOptions {
+  /** Data source identifier (e.g. database/index name or ID). */
+  dataSourceId?: string;
+  /** Name of the provider. */
+  providerName?: string;
+  /** Model name if an embedding/reranking model is used during retrieval. */
+  requestModel?: string;
+  /** Top-k number of documents requested. */
+  topK?: number;
+  /** Query text submitted to retrieval. */
+  queryText?: string;
+  /** Retrieved documents if known up-front. */
+  documents?: unknown[];
+  /** Server address (e.g. hostname). */
+  serverAddress?: string;
+  /** Server port. */
+  serverPort?: number;
+  /** Parent context. */
+  parentContext?: Context;
+  /** Custom initial span attributes. */
+  attributes?: Attributes;
+}
+
+/**
+ * Options for starting a fetch response invocation.
+ */
+export interface FetchResponseInvocationOptions {
+  /** Name of the provider. */
+  providerName: string;
+  /** Identifier of the response being fetched. */
+  responseId: string;
+  /** Whether the fetched response is streamed. */
+  requestStream?: boolean;
+  /** Stream cursor for resuming a stream from a previous position. */
+  streamCursor?: string;
+  /** Server address. */
+  serverAddress?: string;
+  /** Server port. */
+  serverPort?: number;
+  /** Parent context. */
+  parentContext?: Context;
+  /** Custom initial span attributes. */
+  attributes?: Attributes;
+}
+
+/**
  * Summary result passed to CompletionHook upon invocation finish.
  */
 export interface CompletionResult {
@@ -368,6 +416,8 @@ export interface CompletionResult {
   responseModel?: string;
   /** Response ID. */
   responseId?: string;
+  /** Lifecycle response status. */
+  responseStatus?: string;
   /** Finish reasons. */
   finishReasons?: string[];
   /** Token usage. */

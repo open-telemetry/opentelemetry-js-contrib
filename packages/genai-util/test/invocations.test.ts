@@ -17,6 +17,8 @@ import {
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_REQUEST_MODEL,
   ATTR_GEN_AI_RESPONSE_MODEL,
+  ATTR_GEN_AI_RESPONSE_ID,
+  ATTR_GEN_AI_RESPONSE_STATUS,
   ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
@@ -25,9 +27,20 @@ import {
   ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
+  ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
+  ATTR_GEN_AI_REQUEST_STREAM,
+  ATTR_GEN_AI_REQUEST_STREAM_CURSOR,
+  ATTR_GEN_AI_REQUEST_TOP_K,
+  ATTR_GEN_AI_DATA_SOURCE_ID,
+  ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT,
+  ATTR_GEN_AI_RETRIEVAL_DOCUMENTS,
   ATTR_GEN_AI_WORKFLOW_NAME,
   ATTR_GEN_AI_AGENT_NAME,
+  GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
+  GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
+  GEN_AI_RESPONSE_STATUS_VALUE_COMPLETED,
+  type CompletionResult,
 } from '../src';
 
 class TestMetricReader extends MetricReader {
@@ -423,6 +436,215 @@ describe('GenAI Invocations', () => {
       );
       assert.strictEqual(spans[0].attributes['custom.key'], 'custom.val');
       assert.strictEqual(spans[0].attributes['another.key'], 'val2');
+    });
+  });
+
+  describe('RetrievalInvocation', () => {
+    it('should create and populate retrieval span with attributes and content', () => {
+      const tracer = tracerProvider.getTracer('test-tracer');
+      const meter = meterProvider.getMeter('test-meter');
+      const handler = new TelemetryHandler({
+        tracer,
+        meter,
+        contentCaptureMode: 'span_only',
+      });
+
+      const inv = handler.startRetrieval({
+        dataSourceId: 'kb_articles_v2',
+        providerName: 'pinecone',
+        requestModel: 'text-embedding-3-small',
+        topK: 5,
+        serverAddress: 'pinecone.io',
+        serverPort: 443,
+        queryText: 'How do I reset my password?',
+        documents: [
+          { id: 'doc_1', content: 'Go to settings and click reset password.' },
+          { id: 'doc_2', content: 'Contact admin if locked out.' },
+        ],
+      });
+
+      inv.stop();
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const span = spans[0];
+
+      assert.strictEqual(span.name, 'retrieval kb_articles_v2');
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_OPERATION_NAME],
+        GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL
+      );
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_DATA_SOURCE_ID],
+        'kb_articles_v2'
+      );
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_PROVIDER_NAME], 'pinecone');
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_REQUEST_MODEL],
+        'text-embedding-3-small'
+      );
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_TOP_K], 5);
+      assert.strictEqual(span.attributes['server.address'], 'pinecone.io');
+      assert.strictEqual(span.attributes['server.port'], 443);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT],
+        'How do I reset my password?'
+      );
+      assert.ok(span.attributes[ATTR_GEN_AI_RETRIEVAL_DOCUMENTS]);
+      assert.strictEqual(span.status.code, SpanStatusCode.OK);
+    });
+
+    it('should format default span name when dataSourceId is not provided', () => {
+      const tracer = tracerProvider.getTracer('test-tracer');
+      const handler = new TelemetryHandler({ tracer });
+
+      const inv = handler.startRetrieval({});
+      inv.stop();
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].name, 'retrieval');
+    });
+
+    it('should handle retrieval failure', () => {
+      const tracer = tracerProvider.getTracer('test-tracer');
+      const handler = new TelemetryHandler({ tracer });
+
+      const inv = handler.startRetrieval({
+        dataSourceId: 'kb_articles',
+        providerName: 'qdrant',
+      });
+      inv.fail(new Error('Connection timed out'));
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const span = spans[0];
+
+      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(span.status.message, 'Connection timed out');
+      assert.strictEqual(span.events.length, 1);
+      assert.strictEqual(span.events[0].name, 'exception');
+    });
+  });
+
+  describe('FetchResponseInvocation', () => {
+    it('should create and populate fetch_response span with attributes and hooks', async () => {
+      const tracer = tracerProvider.getTracer('test-tracer');
+      const meter = meterProvider.getMeter('test-meter');
+      let hookCalledWith: CompletionResult | undefined;
+
+      const handler = new TelemetryHandler({
+        tracer,
+        meter,
+        contentCaptureMode: 'span_only',
+        completionHooks: [
+          {
+            onCompletion: result => {
+              hookCalledWith = result;
+            },
+          },
+        ],
+      });
+
+      const inv = handler.startFetchResponse({
+        providerName: 'openai',
+        responseId: 'batch_req_abc123',
+        requestStream: false,
+        serverAddress: 'api.openai.com',
+        serverPort: 443,
+      });
+
+      inv.setResponseModel('gpt-4o');
+      inv.setResponseStatus(GEN_AI_RESPONSE_STATUS_VALUE_COMPLETED);
+      inv.setFinishReasons(['stop']);
+      inv.setStreamCursor('cursor_xyz');
+      inv.setSystemInstructions('You are a helpful assistant.');
+      inv.addOutputMessages([
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'Batch task completed successfully.' }],
+          finish_reason: 'stop',
+        },
+      ]);
+      inv.stop();
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const span = spans[0];
+
+      assert.strictEqual(span.name, 'fetch_response');
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_OPERATION_NAME],
+        GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE
+      );
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_PROVIDER_NAME], 'openai');
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_RESPONSE_ID],
+        'batch_req_abc123'
+      );
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_STREAM], false);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_REQUEST_STREAM_CURSOR],
+        'cursor_xyz'
+      );
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_RESPONSE_MODEL], 'gpt-4o');
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_RESPONSE_STATUS],
+        'completed'
+      );
+      assert.deepStrictEqual(
+        span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        ['stop']
+      );
+      assert.ok(span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES]);
+      assert.ok(span.attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS]);
+      assert.strictEqual(span.status.code, SpanStatusCode.OK);
+
+      // Verify getters
+      assert.strictEqual(inv.getResponseModel(), 'gpt-4o');
+      assert.strictEqual(inv.getResponseStatus(), 'completed');
+      assert.strictEqual(inv.getStreamCursor(), 'cursor_xyz');
+
+      // Verify hook execution
+      await new Promise(r => setTimeout(r, 10));
+      assert.ok(hookCalledWith);
+      assert.strictEqual(hookCalledWith.responseId, 'batch_req_abc123');
+      assert.strictEqual(hookCalledWith.responseModel, 'gpt-4o');
+      assert.strictEqual(hookCalledWith.responseStatus, 'completed');
+    });
+
+    it('should handle fetch_response failure and trigger completion hook with error', async () => {
+      const tracer = tracerProvider.getTracer('test-tracer');
+      let hookCalledWith: CompletionResult | undefined;
+
+      const handler = new TelemetryHandler({
+        tracer,
+        completionHooks: [
+          {
+            onCompletion: result => {
+              hookCalledWith = result;
+            },
+          },
+        ],
+      });
+
+      const inv = handler.startFetchResponse({
+        providerName: 'anthropic',
+        responseId: 'msgbatch_999',
+      });
+
+      inv.fail(new Error('Batch expired'));
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const span = spans[0];
+
+      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(span.status.message, 'Batch expired');
+
+      await new Promise(r => setTimeout(r, 10));
+      assert.ok(hookCalledWith);
+      assert.ok(hookCalledWith.error instanceof Error);
     });
   });
 });

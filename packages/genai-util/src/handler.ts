@@ -21,7 +21,9 @@ import {
 import {
   AgentInvocation,
   EmbeddingInvocation,
+  FetchResponseInvocation,
   InferenceInvocation,
+  RetrievalInvocation,
   ToolInvocation,
   WorkflowInvocation,
 } from './invocations';
@@ -36,8 +38,10 @@ import type {
   CompletionHook,
   ContentCaptureMode,
   EmbeddingInvocationOptions,
+  FetchResponseInvocationOptions,
   GenAIInstrumentationConfig,
   InferenceInvocationOptions,
+  RetrievalInvocationOptions,
   TokenUsage,
   ToolInvocationOptions,
   WorkflowInvocationOptions,
@@ -238,6 +242,42 @@ export class TelemetryHandler {
     );
 
     return new WorkflowInvocation(span, options);
+  }
+
+  /**
+   * Start a Retrieval invocation (for RAG / vector database lookups).
+   */
+  startRetrieval(options: RetrievalInvocationOptions): RetrievalInvocation {
+    const spanName = options.dataSourceId
+      ? `retrieval ${options.dataSourceId}`
+      : 'retrieval';
+
+    const span = this._tracer.startSpan(
+      spanName,
+      {
+        kind: SpanKind.CLIENT,
+      },
+      options.parentContext
+    );
+
+    return new RetrievalInvocation(span, this, options);
+  }
+
+  /**
+   * Start a Fetch Response invocation (for polling or retrieving earlier generated responses).
+   */
+  startFetchResponse(
+    options: FetchResponseInvocationOptions
+  ): FetchResponseInvocation {
+    const span = this._tracer.startSpan(
+      'fetch_response',
+      {
+        kind: SpanKind.CLIENT,
+      },
+      options.parentContext
+    );
+
+    return new FetchResponseInvocation(span, this, options);
   }
 
   /**
