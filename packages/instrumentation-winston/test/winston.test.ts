@@ -250,6 +250,26 @@ describe('WinstonInstrumentation', () => {
       }
     });
 
+    it('serializes Error metadata attributes', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+        });
+        initLogger();
+        const failure = new TypeError('boom');
+
+        logger.log('info', kMessage, { failure });
+
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.deepStrictEqual(logRecords[0].attributes['failure'], {
+          name: 'TypeError',
+          message: 'boom',
+          stack: failure.stack,
+        });
+      }
+    });
+
     it('emit LogRecord with exception attributes', () => {
       if (!isWinston2) {
         instrumentation.setConfig({
