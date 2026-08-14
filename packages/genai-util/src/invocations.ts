@@ -15,6 +15,7 @@ import {
   ATTR_GEN_AI_AGENT_NAME,
   ATTR_GEN_AI_AGENT_VERSION,
   ATTR_GEN_AI_CONVERSATION_ID,
+  ATTR_GEN_AI_DATA_SOURCE_ID,
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
@@ -29,12 +30,16 @@ import {
   ATTR_GEN_AI_REQUEST_SEED,
   ATTR_GEN_AI_REQUEST_STOP_SEQUENCES,
   ATTR_GEN_AI_REQUEST_STREAM,
+  ATTR_GEN_AI_REQUEST_STREAM_CURSOR,
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
   ATTR_GEN_AI_REQUEST_TOP_K,
   ATTR_GEN_AI_REQUEST_TOP_P,
   ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
   ATTR_GEN_AI_RESPONSE_ID,
   ATTR_GEN_AI_RESPONSE_MODEL,
+  ATTR_GEN_AI_RESPONSE_STATUS,
+  ATTR_GEN_AI_RETRIEVAL_DOCUMENTS,
+  ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
   ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
   ATTR_GEN_AI_TOOL_CALL_ID,
@@ -49,15 +54,19 @@ import {
   ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
   ATTR_GEN_AI_WORKFLOW_NAME,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
+  GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
+  GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
 } from './semconv';
 import type {
   CompletionResult,
   ContentCaptureMode,
+  FetchResponseInvocationOptions,
   InferenceInvocationOptions,
   InputMessages,
   OutputMessages,
+  RetrievalInvocationOptions,
   SystemInstruction,
   TokenUsage,
 } from './types';
@@ -66,6 +75,7 @@ import {
   formatInputMessages,
   formatOutputMessages,
   formatSystemInstructions,
+  serializeContent,
 } from './utils';
 import {
   isEventContentCaptureEnabled,
@@ -789,6 +799,389 @@ export class WorkflowInvocation {
       message: error instanceof Error ? error.message : String(error),
     });
     this._span.end(endTime);
+  }
+
+  getSpan(): Span {
+    return this._span;
+  }
+}
+
+/**
+ * Manages the lifecycle and telemetry of a Retrieval operation (vector database / RAG retrievers).
+ */
+export class RetrievalInvocation {
+  private readonly _span: Span;
+  private readonly _handler: TelemetryHandler;
+  private readonly _startTime: HrTime;
+  private readonly _dataSourceId?: string;
+  private readonly _providerName?: string;
+  private readonly _requestModel?: string;
+  private readonly _serverAddress?: string;
+  private readonly _serverPort?: number;
+  private _topK?: number;
+  private _isEnded = false;
+
+  constructor(
+    span: Span,
+    handler: TelemetryHandler,
+    options: RetrievalInvocationOptions,
+    startTime: HrTime = process.hrtime()
+  ) {
+    this._span = span;
+    this._handler = handler;
+    this._startTime = startTime;
+    this._dataSourceId = options.dataSourceId;
+    this._providerName = options.providerName;
+    this._requestModel = options.requestModel;
+    this._serverAddress = options.serverAddress;
+    this._serverPort = options.serverPort;
+    this._topK = options.topK;
+
+    const attrs: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
+      ...options.attributes,
+    };
+
+    if (this._dataSourceId) {
+      attrs[ATTR_GEN_AI_DATA_SOURCE_ID] = this._dataSourceId;
+    }
+    if (this._providerName) {
+      attrs[ATTR_GEN_AI_PROVIDER_NAME] = this._providerName;
+    }
+    if (this._requestModel) {
+      attrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
+    }
+    if (this._serverAddress) {
+      attrs['server.address'] = this._serverAddress;
+    }
+    if (this._serverPort !== undefined) {
+      attrs['server.port'] = this._serverPort;
+    }
+    if (this._topK !== undefined) {
+      attrs[ATTR_GEN_AI_REQUEST_TOP_K] = this._topK;
+    }
+
+    this._span.setAttributes(attrs);
+
+    if (options.queryText) {
+      this.setQueryText(options.queryText);
+    }
+    if (options.documents) {
+      this.setDocuments(options.documents);
+    }
+  }
+
+  setQueryText(queryText: string): this {
+    if (isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())) {
+      this._span.setAttribute(ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT, queryText);
+    }
+    return this;
+  }
+
+  setDocuments(documents: unknown[]): this {
+    if (isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())) {
+      const formatted = serializeContent(documents);
+      if (formatted) {
+        this._span.setAttribute(ATTR_GEN_AI_RETRIEVAL_DOCUMENTS, formatted);
+      }
+    }
+    return this;
+  }
+
+  setTopK(topK: number): this {
+    this._topK = topK;
+    this._span.setAttribute(ATTR_GEN_AI_REQUEST_TOP_K, topK);
+    return this;
+  }
+
+  setAttribute(key: string, value: any): this {
+    this._span.setAttribute(key, value);
+    return this;
+  }
+
+  setAttributes(attributes: Attributes): this {
+    this._span.setAttributes(attributes);
+    return this;
+  }
+
+  stop(endTime?: HrTime | number): void {
+    if (this._isEnded) {
+      return;
+    }
+    this._isEnded = true;
+    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
+    const durationSec = calculateDurationSeconds(this._startTime, endHr);
+
+    const metricAttrs: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
+    };
+    if (this._providerName) {
+      metricAttrs[ATTR_GEN_AI_PROVIDER_NAME] = this._providerName;
+    }
+    if (this._requestModel) {
+      metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
+    }
+    if (this._serverAddress) {
+      metricAttrs['server.address'] = this._serverAddress;
+    }
+    if (this._serverPort !== undefined) {
+      metricAttrs['server.port'] = this._serverPort;
+    }
+
+    this._handler.recordOperationDuration(durationSec, metricAttrs);
+
+    this._span.setStatus({ code: SpanStatusCode.OK });
+    this._span.end(endHr);
+  }
+
+  fail(error: Error | string | unknown, endTime?: HrTime | number): void {
+    if (this._isEnded) {
+      return;
+    }
+    this._isEnded = true;
+    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
+    const durationSec = calculateDurationSeconds(this._startTime, endHr);
+
+    const metricAttrs: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
+      'error.type': error instanceof Error ? error.name : 'Error',
+    };
+    if (this._providerName) {
+      metricAttrs[ATTR_GEN_AI_PROVIDER_NAME] = this._providerName;
+    }
+    if (this._requestModel) {
+      metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
+    }
+    if (this._serverAddress) {
+      metricAttrs['server.address'] = this._serverAddress;
+    }
+    if (this._serverPort !== undefined) {
+      metricAttrs['server.port'] = this._serverPort;
+    }
+
+    this._handler.recordOperationDuration(durationSec, metricAttrs);
+
+    if (error instanceof Error) {
+      this._span.recordException(error);
+    }
+
+    this._span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    this._span.end(endHr);
+  }
+
+  getSpan(): Span {
+    return this._span;
+  }
+}
+
+/**
+ * Manages the lifecycle and telemetry of a Fetch Response operation (fetching previously generated responses).
+ */
+export class FetchResponseInvocation {
+  private readonly _span: Span;
+  private readonly _handler: TelemetryHandler;
+  private readonly _startTime: HrTime;
+  private readonly _providerName: string;
+  private readonly _responseId: string;
+  private readonly _serverAddress?: string;
+  private readonly _serverPort?: number;
+  private _responseModel?: string;
+  private _responseStatus?: string;
+  private _finishReasons?: string[];
+  private _streamCursor?: string;
+  private _outputMessages: OutputMessages = [];
+  private _systemInstructions?: SystemInstruction;
+  private _isEnded = false;
+
+  constructor(
+    span: Span,
+    handler: TelemetryHandler,
+    options: FetchResponseInvocationOptions,
+    startTime: HrTime = process.hrtime()
+  ) {
+    this._span = span;
+    this._handler = handler;
+    this._startTime = startTime;
+    this._providerName = options.providerName;
+    this._responseId = options.responseId;
+    this._serverAddress = options.serverAddress;
+    this._serverPort = options.serverPort;
+
+    const attrs: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
+      [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
+      [ATTR_GEN_AI_RESPONSE_ID]: this._responseId,
+      ...options.attributes,
+    };
+
+    if (options.requestStream !== undefined) {
+      attrs[ATTR_GEN_AI_REQUEST_STREAM] = options.requestStream;
+    }
+    if (options.streamCursor) {
+      attrs[ATTR_GEN_AI_REQUEST_STREAM_CURSOR] = options.streamCursor;
+      this._streamCursor = options.streamCursor;
+    }
+    if (this._serverAddress) {
+      attrs['server.address'] = this._serverAddress;
+    }
+    if (this._serverPort !== undefined) {
+      attrs['server.port'] = this._serverPort;
+    }
+
+    this._span.setAttributes(attrs);
+  }
+
+  setResponseModel(model: string): this {
+    this._responseModel = model;
+    this._span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, model);
+    return this;
+  }
+
+  getResponseModel(): string | undefined {
+    return this._responseModel;
+  }
+
+  setResponseStatus(status: string): this {
+    this._responseStatus = status;
+    this._span.setAttribute(ATTR_GEN_AI_RESPONSE_STATUS, status);
+    return this;
+  }
+
+  getResponseStatus(): string | undefined {
+    return this._responseStatus;
+  }
+
+  setFinishReasons(reasons: string[] | string): this {
+    const list = Array.isArray(reasons) ? reasons : [reasons];
+    this._finishReasons = list;
+    this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, list);
+    return this;
+  }
+
+  setStreamCursor(cursor: string): this {
+    this._streamCursor = cursor;
+    this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM_CURSOR, cursor);
+    return this;
+  }
+
+  getStreamCursor(): string | undefined {
+    return this._streamCursor;
+  }
+
+  addOutputMessages(messages: OutputMessages): this {
+    this._outputMessages.push(...messages);
+    if (isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())) {
+      const formatted = formatOutputMessages(this._outputMessages);
+      if (formatted) {
+        this._span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, formatted);
+      }
+    }
+    return this;
+  }
+
+  setSystemInstructions(instructions: SystemInstruction): this {
+    this._systemInstructions = instructions;
+    if (isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())) {
+      const formatted = formatSystemInstructions(instructions);
+      if (formatted) {
+        this._span.setAttribute(ATTR_GEN_AI_SYSTEM_INSTRUCTIONS, formatted);
+      }
+    }
+    return this;
+  }
+
+  setAttribute(key: string, value: any): this {
+    this._span.setAttribute(key, value);
+    return this;
+  }
+
+  setAttributes(attributes: Attributes): this {
+    this._span.setAttributes(attributes);
+    return this;
+  }
+
+  stop(endTime?: HrTime | number): void {
+    if (this._isEnded) {
+      return;
+    }
+    this._isEnded = true;
+    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
+    const durationSec = calculateDurationSeconds(this._startTime, endHr);
+
+    this._recordMetrics(durationSec);
+
+    this._span.setStatus({ code: SpanStatusCode.OK });
+    this._span.end(endHr);
+
+    this._runCompletionHook(durationSec);
+  }
+
+  fail(error: Error | string | unknown, endTime?: HrTime | number): void {
+    if (this._isEnded) {
+      return;
+    }
+    this._isEnded = true;
+    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
+    const durationSec = calculateDurationSeconds(this._startTime, endHr);
+
+    this._recordMetrics(durationSec, error);
+
+    if (error instanceof Error) {
+      this._span.recordException(error);
+    }
+
+    this._span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    this._span.end(endHr);
+
+    this._runCompletionHook(durationSec, error);
+  }
+
+  private _recordMetrics(durationSec: number, error?: unknown): void {
+    const metricAttrs: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
+      [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
+    };
+    if (this._responseModel) {
+      metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
+    }
+    if (this._serverAddress) {
+      metricAttrs['server.address'] = this._serverAddress;
+    }
+    if (this._serverPort !== undefined) {
+      metricAttrs['server.port'] = this._serverPort;
+    }
+    if (error) {
+      metricAttrs['error.type'] = error instanceof Error ? error.name : 'Error';
+    }
+
+    this._handler.recordOperationDuration(durationSec, metricAttrs);
+  }
+
+  private _runCompletionHook(durationSec: number, error?: unknown): void {
+    const result: CompletionResult = {
+      span: this._span,
+      providerName: this._providerName,
+      operationName: GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
+      responseModel: this._responseModel,
+      responseId: this._responseId,
+      responseStatus: this._responseStatus,
+      finishReasons: this._finishReasons,
+      durationSeconds: durationSec,
+      outputMessages:
+        this._outputMessages.length > 0 ? this._outputMessages : undefined,
+      systemInstructions: this._systemInstructions,
+      error,
+    };
+
+    void this._handler
+      .getCompletionHookManager()
+      .execute(result, this._handler.getDiag());
   }
 
   getSpan(): Span {
