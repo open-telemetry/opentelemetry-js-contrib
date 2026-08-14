@@ -10,6 +10,10 @@ import {
   type Span,
 } from '@opentelemetry/api';
 import {
+  ATTR_GEN_AI_AGENT_DESCRIPTION,
+  ATTR_GEN_AI_AGENT_ID,
+  ATTR_GEN_AI_AGENT_NAME,
+  ATTR_GEN_AI_AGENT_VERSION,
   ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OPERATION_NAME,
@@ -21,8 +25,10 @@ import {
   ATTR_GEN_AI_REQUEST_MAX_TOKENS,
   ATTR_GEN_AI_REQUEST_MODEL,
   ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
+  ATTR_GEN_AI_REQUEST_REASONING_LEVEL,
   ATTR_GEN_AI_REQUEST_SEED,
   ATTR_GEN_AI_REQUEST_STOP_SEQUENCES,
+  ATTR_GEN_AI_REQUEST_STREAM,
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
   ATTR_GEN_AI_REQUEST_TOP_K,
   ATTR_GEN_AI_REQUEST_TOP_P,
@@ -30,25 +36,27 @@ import {
   ATTR_GEN_AI_RESPONSE_ID,
   ATTR_GEN_AI_RESPONSE_MODEL,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
+  ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
   ATTR_GEN_AI_TOOL_CALL_ID,
+  ATTR_GEN_AI_TOOL_CALL_RESULT,
   ATTR_GEN_AI_TOOL_DESCRIPTION,
   ATTR_GEN_AI_TOOL_NAME,
+  ATTR_GEN_AI_TOOL_TYPE,
+  ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-  ATTR_GEN_AI_USAGE_TOTAL_TOKENS,
-  EVENT_GEN_AI_ASSISTANT_MESSAGE,
-  EVENT_GEN_AI_CHOICE,
-  EVENT_GEN_AI_SYSTEM_MESSAGE,
-  EVENT_GEN_AI_TOOL_MESSAGE,
-  EVENT_GEN_AI_USER_MESSAGE,
+  ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
+  ATTR_GEN_AI_WORKFLOW_NAME,
+  GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
+  GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
+  GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
 } from './semconv';
 import type {
-  ChatMessage,
   CompletionResult,
   ContentCaptureMode,
   InferenceInvocationOptions,
   InputMessages,
-  OutputMessage,
   OutputMessages,
   SystemInstruction,
   TokenUsage,
@@ -58,7 +66,6 @@ import {
   formatInputMessages,
   formatOutputMessages,
   formatSystemInstructions,
-  serializeContent,
 } from './utils';
 import {
   isEventContentCaptureEnabled,
@@ -158,6 +165,12 @@ export class InferenceInvocation {
       if (reqOpts.encodingFormats && reqOpts.encodingFormats.length > 0) {
         attrs[ATTR_GEN_AI_REQUEST_ENCODING_FORMATS] = reqOpts.encodingFormats;
       }
+      if (reqOpts.stream !== undefined) {
+        attrs[ATTR_GEN_AI_REQUEST_STREAM] = reqOpts.stream;
+      }
+      if (reqOpts.reasoningLevel !== undefined) {
+        attrs[ATTR_GEN_AI_REQUEST_REASONING_LEVEL] = reqOpts.reasoningLevel;
+      }
     }
 
     if (options.systemInstructions) {
@@ -216,10 +229,22 @@ export class InferenceInvocation {
         usage.outputTokens
       );
     }
-    if (usage.totalTokens !== undefined) {
+    if (usage.reasoningTokens !== undefined) {
       this._span.setAttribute(
-        ATTR_GEN_AI_USAGE_TOTAL_TOKENS,
-        usage.totalTokens
+        ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
+        usage.reasoningTokens
+      );
+    }
+    if (usage.cacheReadTokens !== undefined) {
+      this._span.setAttribute(
+        ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
+        usage.cacheReadTokens
+      );
+    }
+    if (usage.cacheCreationTokens !== undefined) {
+      this._span.setAttribute(
+        ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
+        usage.cacheCreationTokens
       );
     }
     return this;
@@ -231,16 +256,13 @@ export class InferenceInvocation {
   addInputMessages(messages: InputMessages): this {
     this._inputMessages = [...(this._inputMessages ?? []), ...messages];
 
-    if (isSpanContentCaptureEnabled(this._contentCaptureMode)) {
+    if (
+      isSpanContentCaptureEnabled(this._contentCaptureMode) ||
+      isEventContentCaptureEnabled(this._contentCaptureMode)
+    ) {
       const formatted = formatInputMessages(this._inputMessages);
       if (formatted) {
         this._span.setAttribute(ATTR_GEN_AI_INPUT_MESSAGES, formatted);
-      }
-    }
-
-    if (isEventContentCaptureEnabled(this._contentCaptureMode)) {
-      for (const msg of messages) {
-        this._emitMessageEvent(msg);
       }
     }
 
@@ -253,16 +275,13 @@ export class InferenceInvocation {
   addOutputMessages(messages: OutputMessages): this {
     this._outputMessages = [...(this._outputMessages ?? []), ...messages];
 
-    if (isSpanContentCaptureEnabled(this._contentCaptureMode)) {
+    if (
+      isSpanContentCaptureEnabled(this._contentCaptureMode) ||
+      isEventContentCaptureEnabled(this._contentCaptureMode)
+    ) {
       const formatted = formatOutputMessages(this._outputMessages);
       if (formatted) {
         this._span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, formatted);
-      }
-    }
-
-    if (isEventContentCaptureEnabled(this._contentCaptureMode)) {
-      for (let i = 0; i < messages.length; i++) {
-        this._emitChoiceEvent(messages[i], i);
       }
     }
 
@@ -274,7 +293,10 @@ export class InferenceInvocation {
    */
   setSystemInstructions(instructions: SystemInstruction): this {
     this._systemInstructions = instructions;
-    if (isSpanContentCaptureEnabled(this._contentCaptureMode)) {
+    if (
+      isSpanContentCaptureEnabled(this._contentCaptureMode) ||
+      isEventContentCaptureEnabled(this._contentCaptureMode)
+    ) {
       const formatted = formatSystemInstructions(instructions);
       if (formatted) {
         this._span.setAttribute(ATTR_GEN_AI_SYSTEM_INSTRUCTIONS, formatted);
@@ -306,31 +328,6 @@ export class InferenceInvocation {
    */
   recordStreamChunk(_chunk: unknown): this {
     return this;
-  }
-
-  private _emitMessageEvent(msg: ChatMessage): void {
-    let eventName: string = EVENT_GEN_AI_USER_MESSAGE;
-    if (msg.role === 'system') {
-      eventName = EVENT_GEN_AI_SYSTEM_MESSAGE;
-    } else if (msg.role === 'assistant') {
-      eventName = EVENT_GEN_AI_ASSISTANT_MESSAGE;
-    } else if (msg.role === 'tool') {
-      eventName = EVENT_GEN_AI_TOOL_MESSAGE;
-    }
-
-    this._span.addEvent(eventName, {
-      'gen_ai.message.role': msg.role,
-      'gen_ai.message.content': serializeContent(msg.parts),
-    });
-  }
-
-  private _emitChoiceEvent(msg: OutputMessage, index: number): void {
-    this._span.addEvent(EVENT_GEN_AI_CHOICE, {
-      'gen_ai.choice.index': index,
-      'gen_ai.choice.finish_reason': msg.finish_reason ?? 'stop',
-      'gen_ai.choice.message.role': msg.role,
-      'gen_ai.choice.message.content': serializeContent(msg.parts),
-    });
   }
 
   /**
@@ -579,13 +576,14 @@ export class ToolInvocation {
       toolName: string;
       toolDescription?: string;
       toolCallId?: string;
+      toolType?: string;
       toolArguments?: unknown;
       attributes?: Attributes;
     }
   ) {
     this._span = span;
     const attrs: Attributes = {
-      [ATTR_GEN_AI_OPERATION_NAME]: 'execute_tool',
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
       [ATTR_GEN_AI_TOOL_NAME]: options.toolName,
       ...options.attributes,
     };
@@ -596,16 +594,36 @@ export class ToolInvocation {
     if (options.toolCallId) {
       attrs[ATTR_GEN_AI_TOOL_CALL_ID] = options.toolCallId;
     }
+    if (options.toolType) {
+      attrs[ATTR_GEN_AI_TOOL_TYPE] = options.toolType;
+    }
+    if (options.toolArguments !== undefined) {
+      attrs[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] =
+        typeof options.toolArguments === 'string'
+          ? options.toolArguments
+          : JSON.stringify(options.toolArguments);
+    }
 
     this._span.setAttributes(attrs);
   }
 
-  setResult(_result: unknown): this {
+  setResult(result: unknown): this {
+    if (result !== undefined) {
+      this._span.setAttribute(
+        ATTR_GEN_AI_TOOL_CALL_RESULT,
+        typeof result === 'string' ? result : JSON.stringify(result)
+      );
+    }
     return this;
   }
 
   setAttribute(key: string, value: any): this {
     this._span.setAttribute(key, value);
+    return this;
+  }
+
+  setAttributes(attributes: Attributes): this {
+    this._span.setAttributes(attributes);
     return this;
   }
 
@@ -645,12 +663,43 @@ export class AgentInvocation {
   private readonly _span: Span;
   private _isEnded = false;
 
-  constructor(span: Span) {
+  constructor(
+    span: Span,
+    options?: {
+      agentId?: string;
+      agentName?: string;
+      agentDescription?: string;
+      agentVersion?: string;
+      attributes?: Attributes;
+    }
+  ) {
     this._span = span;
+    const attrs: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
+      ...options?.attributes,
+    };
+    if (options?.agentId) {
+      attrs[ATTR_GEN_AI_AGENT_ID] = options.agentId;
+    }
+    if (options?.agentName) {
+      attrs[ATTR_GEN_AI_AGENT_NAME] = options.agentName;
+    }
+    if (options?.agentDescription) {
+      attrs[ATTR_GEN_AI_AGENT_DESCRIPTION] = options.agentDescription;
+    }
+    if (options?.agentVersion) {
+      attrs[ATTR_GEN_AI_AGENT_VERSION] = options.agentVersion;
+    }
+    this._span.setAttributes(attrs);
   }
 
   setAttribute(key: string, value: any): this {
     this._span.setAttribute(key, value);
+    return this;
+  }
+
+  setAttributes(attributes: Attributes): this {
+    this._span.setAttributes(attributes);
     return this;
   }
 
@@ -690,12 +739,31 @@ export class WorkflowInvocation {
   private readonly _span: Span;
   private _isEnded = false;
 
-  constructor(span: Span) {
+  constructor(
+    span: Span,
+    options?: {
+      workflowName?: string;
+      attributes?: Attributes;
+    }
+  ) {
     this._span = span;
+    const attrs: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
+      ...options?.attributes,
+    };
+    if (options?.workflowName) {
+      attrs[ATTR_GEN_AI_WORKFLOW_NAME] = options.workflowName;
+    }
+    this._span.setAttributes(attrs);
   }
 
   setAttribute(key: string, value: any): this {
     this._span.setAttribute(key, value);
+    return this;
+  }
+
+  setAttributes(attributes: Attributes): this {
+    this._span.setAttributes(attributes);
     return this;
   }
 

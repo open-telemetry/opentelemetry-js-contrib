@@ -207,8 +207,8 @@ export class TelemetryHandler {
    * Start an Agent invocation.
    */
   startAgent(options: AgentInvocationOptions): AgentInvocation {
-    const name = options.agentName ?? options.agentId ?? 'agent';
-    const spanName = `agent ${name}`;
+    const name = options.agentName ?? options.agentId;
+    const spanName = name ? `invoke_agent ${name}` : 'invoke_agent';
 
     const span = this._tracer.startSpan(
       spanName,
@@ -218,27 +218,16 @@ export class TelemetryHandler {
       options.parentContext
     );
 
-    if (options.agentId) {
-      span.setAttribute('gen_ai.agent.id', options.agentId);
-    }
-    if (options.agentName) {
-      span.setAttribute('gen_ai.agent.name', options.agentName);
-    }
-    if (options.agentDescription) {
-      span.setAttribute('gen_ai.agent.description', options.agentDescription);
-    }
-    if (options.attributes) {
-      span.setAttributes(options.attributes);
-    }
-
-    return new AgentInvocation(span);
+    return new AgentInvocation(span, options);
   }
 
   /**
    * Start a Workflow invocation.
    */
   startWorkflow(options: WorkflowInvocationOptions): WorkflowInvocation {
-    const spanName = `workflow ${options.workflowName}`;
+    const spanName = options.workflowName
+      ? `invoke_workflow ${options.workflowName}`
+      : 'invoke_workflow';
 
     const span = this._tracer.startSpan(
       spanName,
@@ -248,11 +237,7 @@ export class TelemetryHandler {
       options.parentContext
     );
 
-    if (options.attributes) {
-      span.setAttributes(options.attributes);
-    }
-
-    return new WorkflowInvocation(span);
+    return new WorkflowInvocation(span, options);
   }
 
   /**
