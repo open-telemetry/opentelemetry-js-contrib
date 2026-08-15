@@ -50,6 +50,7 @@ import type {
   FetchResponseInvocationOptions,
   GenAIInstrumentationConfig,
   InferenceInvocationOptions,
+  RemoteAgentInvocationOptions,
   RetrievalInvocationOptions,
   TokenUsage,
   ToolInvocationOptions,
@@ -220,9 +221,9 @@ export class TelemetryHandler {
   }
 
   /**
-   * Start an Agent invocation.
+   * Start an Agent invocation (defaults to local in-process agent with SpanKind.INTERNAL).
    */
-  startAgent(options: AgentInvocationOptions): AgentInvocation {
+  startAgent(options: AgentInvocationOptions = {}): AgentInvocation {
     const name = options.agentName ?? options.agentId;
     const spanName = name
       ? `${GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT} ${name}`
@@ -236,7 +237,34 @@ export class TelemetryHandler {
       options.parentContext
     );
 
-    return new AgentInvocation(span, options);
+    return new AgentInvocation(span, this, options);
+  }
+
+  /**
+   * Start a local in-process Agent invocation (INTERNAL span kind).
+   */
+  startLocalAgent(options: AgentInvocationOptions = {}): AgentInvocation {
+    return this.startAgent(options);
+  }
+
+  /**
+   * Start a remote Agent invocation (CLIENT span kind).
+   */
+  startRemoteAgent(options: RemoteAgentInvocationOptions): AgentInvocation {
+    const name = options.agentName ?? options.agentId;
+    const spanName = name
+      ? `${GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT} ${name}`
+      : GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT;
+
+    const span = this._tracer.startSpan(
+      spanName,
+      {
+        kind: SpanKind.CLIENT,
+      },
+      options.parentContext
+    );
+
+    return new AgentInvocation(span, this, options);
   }
 
   /**
