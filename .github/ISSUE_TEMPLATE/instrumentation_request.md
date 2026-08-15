@@ -5,7 +5,7 @@ labels: instrumentation-request
 ---
 
 <!--
-**NB:** Before opening an instrumentation request against this repo, please read [the contributing guidelines for new instrumentation](../blob/main/CONTRIBUTING.md#new-instrumentation).
+**NB:** Before opening an instrumentation request against this repo, please read [the contributing guidelines for new instrumentation](../../CONTRIBUTING.md#new-instrumentation).
 -->
 
 ### Which library do you want to instrument?
@@ -22,7 +22,7 @@ Any code-owners listed MUST fulfill all criteria laid out in the checklist below
 
 - Owner 1
   - [ ] I am a [member of the OpenTelemetry Organization](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#member)
-  - [ ] I have read [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) and understand the responsibilities of a component owner
+  - [ ] I have read [CONTRIBUTING.md](../../CONTRIBUTING.md) and understand the responsibilities of a component owner
   - [ ] I agree to follow and uphold the [mission, vision and values](https://github.com/open-telemetry/community/blob/main/mission-vision-values.md) of the OpenTelemetry project
   - [ ] I understand that the component may be subject to the [OpenTelemetry Semantic Conventions](https://github.com/open-telemetry/semantic-conventions) and agree to follow the rules set out therein
 - Owner 2
