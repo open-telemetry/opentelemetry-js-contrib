@@ -323,7 +323,7 @@ export interface ToolInvocationOptions {
 }
 
 /**
- * Options for starting an agent invocation.
+ * Options for starting an agent invocation (e.g. local in-process agent).
  */
 export interface AgentInvocationOptions {
   /** Unique ID of the agent. */
@@ -334,10 +334,36 @@ export interface AgentInvocationOptions {
   agentDescription?: string;
   /** Version of the agent. */
   agentVersion?: string;
+  /** Name of the model requested by or configured for the agent. */
+  requestModel?: string;
+  /** Conversation / session / thread ID. */
+  conversationId?: string;
+  /** Data source identifier used by RAG/agent applications. */
+  dataSourceId?: string;
+  /** Represents the content type requested by the client (e.g. 'text', 'json'). */
+  outputType?: string;
+  /** Request parameters/settings. */
+  requestOptions?: GenAIRequestOptions;
+  /** Input messages sent to the agent. */
+  inputMessages?: InputMessages;
+  /** System instructions. */
+  systemInstructions?: SystemInstruction;
   /** Parent context. */
   parentContext?: Context;
   /** Custom initial span attributes. */
   attributes?: Attributes;
+}
+
+/**
+ * Options for starting a remote agent invocation (CLIENT span kind).
+ */
+export interface RemoteAgentInvocationOptions extends AgentInvocationOptions {
+  /** Name of the remote GenAI provider (e.g. 'openai', 'aws.bedrock'). */
+  providerName: string;
+  /** Server address (e.g. hostname). */
+  serverAddress?: string;
+  /** Server port. */
+  serverPort?: number;
 }
 
 /**
