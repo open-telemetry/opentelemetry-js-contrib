@@ -106,6 +106,8 @@ Known examples include:
 - `instrumentation-langchain`
 - AWS Bedrock coverage in `instrumentation-aws-sdk`
 
+If no equivalent package exists, continue below.
+
 ### 3. Check for native OpenTelemetry support
 
 Prefer instrumentation owned by the library itself. Before porting:
