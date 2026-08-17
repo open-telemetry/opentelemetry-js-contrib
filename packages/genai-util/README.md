@@ -86,6 +86,38 @@ try {
 }
 ```
 
+### Wrapping Streaming Responses
+
+For streaming requests (`stream: true`), use `wrapAsyncStream` to automatically track span lifecycle, time to first token (TTFT), chunks, and finalization:
+
+```ts
+const invocation = handler.startInference({
+  providerName: 'openai',
+  operationName: 'chat',
+  requestModel: 'gpt-4o',
+});
+
+const rawStream = await openai.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [{ role: 'user', content: 'Tell me a story' }],
+  stream: true,
+});
+
+// Wrap the async iterable stream with telemetry
+const wrappedStream = handler.wrapAsyncStream(rawStream, {
+  invocation,
+  onChunk: chunk => {
+    // Process text deltas, usage, or finish reasons if needed
+  },
+});
+
+// The returned stream is transparently proxied and implements AsyncIterable
+for await (const chunk of wrappedStream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content || '');
+}
+// Span automatically ends with OK status, and TTFT and duration metrics are recorded!
+```
+
 ### Metrics Helpers
 
 ```ts

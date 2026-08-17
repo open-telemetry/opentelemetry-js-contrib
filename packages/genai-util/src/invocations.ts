@@ -103,6 +103,8 @@ export class InferenceInvocation {
   private readonly _providerName: string;
   private readonly _operationName: string;
   private readonly _requestModel?: string;
+  private readonly _serverAddress?: string;
+  private readonly _serverPort?: number;
   private readonly _contentCaptureMode: ContentCaptureMode;
   private _responseModel?: string;
   private _responseId?: string;
@@ -111,6 +113,7 @@ export class InferenceInvocation {
   private _inputMessages?: InputMessages;
   private _outputMessages?: OutputMessages;
   private _systemInstructions?: SystemInstruction;
+  private _firstChunkTime?: HrTime;
   private _isEnded = false;
   private _customAttributes: Attributes = {};
 
@@ -127,6 +130,8 @@ export class InferenceInvocation {
     this._operationName =
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_CHAT;
     this._requestModel = options.requestModel;
+    this._serverAddress = options.serverAddress;
+    this._serverPort = options.serverPort;
     this._contentCaptureMode = handler.getContentCaptureMode();
 
     this._initAttributes(options);
@@ -345,9 +350,36 @@ export class InferenceInvocation {
   }
 
   /**
-   * Helper for stream chunks recording.
+   * Helper for stream chunks recording. On first chunk, marks stream request and records TTFT metric.
    */
-  recordStreamChunk(_chunk: unknown): this {
+  recordStreamChunk(_chunk?: unknown): this {
+    if (!this._firstChunkTime) {
+      this._firstChunkTime = process.hrtime();
+      this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
+      const ttftSec = calculateDurationSeconds(
+        this._startTime,
+        this._firstChunkTime
+      );
+
+      const metricAttrs: Attributes = {
+        [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
+        [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
+      };
+      if (this._requestModel) {
+        metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
+      }
+      if (this._responseModel) {
+        metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
+      }
+      if (this._serverAddress) {
+        metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
+      }
+      if (this._serverPort !== undefined) {
+        metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
+      }
+
+      this._handler.recordServerTimeToFirstToken(ttftSec, metricAttrs);
+    }
     return this;
   }
 
@@ -700,6 +732,7 @@ export class AgentInvocation {
   private _inputMessages?: InputMessages;
   private _outputMessages?: OutputMessages;
   private _systemInstructions?: SystemInstruction;
+  private _firstChunkTime?: HrTime;
   private _customAttributes: Attributes = {};
   private _isEnded = false;
 
@@ -980,6 +1013,41 @@ export class AgentInvocation {
   setAttributes(attributes: Attributes): this {
     Object.assign(this._customAttributes, attributes);
     this._span.setAttributes(attributes);
+    return this;
+  }
+
+  /**
+   * Helper for stream chunks recording. On first chunk, marks stream request and records TTFT metric.
+   */
+  recordStreamChunk(_chunk?: unknown): this {
+    if (!this._firstChunkTime) {
+      this._firstChunkTime = process.hrtime();
+      this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
+      if (this._handler) {
+        const ttftSec = calculateDurationSeconds(
+          this._startTime,
+          this._firstChunkTime
+        );
+        const metricAttrs: Attributes = {
+          [ATTR_GEN_AI_OPERATION_NAME]:
+            GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
+        };
+        if (this._providerName) {
+          metricAttrs[ATTR_GEN_AI_PROVIDER_NAME] = this._providerName;
+        }
+        if (this._requestModel) {
+          metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
+        }
+        if (this._serverAddress) {
+          metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
+        }
+        if (this._serverPort !== undefined) {
+          metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
+        }
+
+        this._handler.recordServerTimeToFirstToken(ttftSec, metricAttrs);
+      }
+    }
     return this;
   }
 

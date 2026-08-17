@@ -9,6 +9,7 @@ export * from './environment-variables';
 export * from './metrics';
 export * from './completion-hook';
 export * from './invocations';
+export * from './stream';
 export * from './handler';
 export * from './utils';
 export * from './version';
