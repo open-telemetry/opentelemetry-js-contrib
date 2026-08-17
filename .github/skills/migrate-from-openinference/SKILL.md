@@ -82,10 +82,11 @@ review changes and respond to failures and issues.
 ### 2. Check for an existing target
 
 Check whether the derived target package already exists. This prints `existing`
-when `packages/<target>` is present and otherwise produces no output:
+when `packages/instrumentation-<library>` is present and otherwise produces no
+output:
 
 ```sh
-test -d packages/<target> && echo existing
+test -d packages/instrumentation-<library> && echo existing
 ```
 
 Also search for near matches and overlapping instrumentations:
