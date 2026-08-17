@@ -315,10 +315,7 @@ describe('GenAI Invocations', () => {
         span.attributes[ATTR_GEN_AI_TOOL_NAME],
         'get_stock_price'
       );
-      assert.strictEqual(
-        span.attributes[ATTR_GEN_AI_TOOL_CALL_ID],
-        'call_123'
-      );
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_TOOL_CALL_ID], 'call_123');
       assert.strictEqual(span.status.code, SpanStatusCode.OK);
     });
   });
@@ -393,10 +390,7 @@ describe('GenAI Invocations', () => {
         span.attributes[ATTR_GEN_AI_AGENT_DESCRIPTION],
         'Helps with algebra'
       );
-      assert.strictEqual(
-        span.attributes[ATTR_GEN_AI_AGENT_VERSION],
-        '2.1.0'
-      );
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_VERSION], '2.1.0');
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_MODEL], 'gpt-4o');
       assert.strictEqual(
         span.attributes[ATTR_GEN_AI_CONVERSATION_ID],
@@ -524,10 +518,7 @@ describe('GenAI Invocations', () => {
         hookResult.operationName,
         GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
       );
-      assert.strictEqual(
-        hookResult.requestModel,
-        'anthropic.claude-3-sonnet'
-      );
+      assert.strictEqual(hookResult.requestModel, 'anthropic.claude-3-sonnet');
       assert.strictEqual(hookResult.usage?.inputTokens, 120);
     });
 
@@ -755,7 +746,10 @@ describe('GenAI Invocations', () => {
         span.attributes[ATTR_GEN_AI_DATA_SOURCE_ID],
         'kb_articles_v2'
       );
-      assert.strictEqual(span.attributes[ATTR_GEN_AI_PROVIDER_NAME], 'pinecone');
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_PROVIDER_NAME],
+        'pinecone'
+      );
       assert.strictEqual(
         span.attributes[ATTR_GEN_AI_REQUEST_MODEL],
         'text-embedding-3-small'
@@ -839,7 +833,9 @@ describe('GenAI Invocations', () => {
       inv.addOutputMessages([
         {
           role: 'assistant',
-          parts: [{ type: 'text', content: 'Batch task completed successfully.' }],
+          parts: [
+            { type: 'text', content: 'Batch task completed successfully.' },
+          ],
           finish_reason: 'stop',
         },
       ]);

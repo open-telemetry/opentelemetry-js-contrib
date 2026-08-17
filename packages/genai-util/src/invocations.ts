@@ -449,7 +449,8 @@ export class InferenceInvocation {
       metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
     }
     if (error) {
-      metricAttrs[ATTR_ERROR_TYPE] = error instanceof Error ? error.name : 'Error';
+      metricAttrs[ATTR_ERROR_TYPE] =
+        error instanceof Error ? error.name : 'Error';
     }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
@@ -745,9 +746,13 @@ export class AgentInvocation {
     this._span = span;
     this._handler = handler;
     this._startTime = startTime;
-    this._providerName = (options as RemoteAgentInvocationOptions)?.providerName;
+    this._providerName = (
+      options as RemoteAgentInvocationOptions
+    )?.providerName;
     this._requestModel = options?.requestModel;
-    this._serverAddress = (options as RemoteAgentInvocationOptions)?.serverAddress;
+    this._serverAddress = (
+      options as RemoteAgentInvocationOptions
+    )?.serverAddress;
     this._serverPort = (options as RemoteAgentInvocationOptions)?.serverPort;
     this._agentName = options?.agentName;
     this._agentId = options?.agentId;
@@ -1571,7 +1576,8 @@ export class FetchResponseInvocation {
       metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
     }
     if (error) {
-      metricAttrs[ATTR_ERROR_TYPE] = error instanceof Error ? error.name : 'Error';
+      metricAttrs[ATTR_ERROR_TYPE] =
+        error instanceof Error ? error.name : 'Error';
     }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);

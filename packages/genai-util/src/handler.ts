@@ -44,10 +44,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
   GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
 } from './semconv';
-import {
-  wrapAsyncStream,
-  type AsyncStreamWrapperOptions,
-} from './stream';
+import { wrapAsyncStream, type AsyncStreamWrapperOptions } from './stream';
 import type {
   AgentInvocationOptions,
   CompletionHook,
