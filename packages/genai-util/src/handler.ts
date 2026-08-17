@@ -29,8 +29,10 @@ import {
 } from './invocations';
 import {
   createDurationHistogram,
+  createServerTimeToFirstTokenHistogram,
   createTokenUsageHistogram,
   recordOperationDuration,
+  recordServerTimeToFirstToken,
   recordTokenUsage,
 } from './metrics';
 import {
@@ -42,6 +44,10 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
   GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
 } from './semconv';
+import {
+  wrapAsyncStream,
+  type AsyncStreamWrapperOptions,
+} from './stream';
 import type {
   AgentInvocationOptions,
   CompletionHook,
@@ -87,6 +93,7 @@ export class TelemetryHandler {
   private readonly _hookManager: CompletionHookManager;
   private _operationDurationHistogram?: Histogram;
   private _tokenUsageHistogram?: Histogram;
+  private _timeToFirstTokenHistogram?: Histogram;
 
   constructor(options: TelemetryHandlerOptions = {}) {
     this._tracer =
@@ -115,6 +122,8 @@ export class TelemetryHandler {
   private _initMetrics(meter: Meter): void {
     this._operationDurationHistogram = createDurationHistogram(meter);
     this._tokenUsageHistogram = createTokenUsageHistogram(meter);
+    this._timeToFirstTokenHistogram =
+      createServerTimeToFirstTokenHistogram(meter);
   }
 
   /**
@@ -341,5 +350,34 @@ export class TelemetryHandler {
    */
   recordTokenUsage(usage: TokenUsage, attributes?: Attributes): void {
     recordTokenUsage(this._tokenUsageHistogram, usage, attributes);
+  }
+
+  /**
+   * Record server time to first token metric for streaming responses.
+   */
+  recordServerTimeToFirstToken(
+    durationSeconds: number,
+    attributes?: Attributes
+  ): void {
+    recordServerTimeToFirstToken(
+      this._timeToFirstTokenHistogram,
+      durationSeconds,
+      attributes
+    );
+  }
+
+  /**
+   * Wrap an async stream / iterable with telemetry collection.
+   */
+  wrapAsyncStream<TStream extends AsyncIterable<any>>(
+    stream: TStream,
+    optionsOrInvocation?:
+      | AsyncStreamWrapperOptions<
+          TStream extends AsyncIterable<infer TChunk> ? TChunk : any
+        >
+      | InferenceInvocation
+      | AgentInvocation
+  ): TStream {
+    return wrapAsyncStream(stream, optionsOrInvocation);
   }
 }
