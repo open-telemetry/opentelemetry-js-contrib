@@ -42,7 +42,7 @@ components:
     - legendecas
   packages/id-generator-aws-xray:
     - jj22ee
-  packages/genai-util: []
+  packages/genai-util:
     - psx95
   packages/redis-common: []
     # Unmaintained
