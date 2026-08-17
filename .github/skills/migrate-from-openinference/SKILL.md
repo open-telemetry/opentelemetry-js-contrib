@@ -64,15 +64,12 @@ explicit support decision before implementation.
 
 ## Before starting
 
-### 1. Claim the package
+### 1. Confirm repository fit
 
-Check the assignment table in
-[`opentelemetry-js-contrib#3668`](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668).
-Confirm that the tracking issue covers the target as an accepted instrumentation
-request. Before writing code, ask to be assigned to an unclaimed package and
-identify at least two contributors who agree to serve as code owners, as
-required by `CONTRIBUTING.md`. Link the tracking issue from the migration pull
-request.
+Confirm that
+[`opentelemetry-js-contrib#3668`](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668)
+covers the target as an accepted instrumentation request, and link the tracking
+issue from the migration pull request.
 
 Also confirm that the component belongs in this repository. `CONTRIBUTING.md`
 prefers native instrumentation, a repository close to the instrumented
@@ -669,8 +666,7 @@ identify the donated source, and summarize:
 
 ## Completion checklist
 
-- [ ] The package is claimed in the tracking issue.
-- [ ] The instrumentation request is accepted and has two agreed code owners.
+- [ ] The instrumentation request is accepted.
 - [ ] The migration uses `open-telemetry/donation-openinference`.
 - [ ] Existing and native instrumentation were evaluated.
 - [ ] No OpenInference dependencies remain.
