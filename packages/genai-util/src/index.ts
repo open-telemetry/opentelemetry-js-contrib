@@ -12,4 +12,3 @@ export * from './invocations';
 export * from './stream';
 export * from './handler';
 export * from './utils';
-export * from './version';
