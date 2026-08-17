@@ -81,6 +81,9 @@ review changes and respond to failures and issues.
 
 ### 2. Check for an existing target
 
+Check whether the derived target package already exists. This prints `existing`
+when `packages/<target>` is present and otherwise produces no output:
+
 ```sh
 test -d packages/<target> && echo existing
 ```
