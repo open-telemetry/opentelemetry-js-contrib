@@ -41,7 +41,8 @@ export interface AsyncStreamWrapperOptions<TChunk> {
 export class AsyncStreamWrapper<
   TChunk,
   TStream extends AsyncStream<TChunk> = AsyncStream<TChunk>,
-> implements AsyncIterable<TChunk> {
+> implements AsyncIterable<TChunk>
+{
   protected readonly _stream: TStream;
   protected readonly _invocation?: InferenceInvocation | AgentInvocation;
   protected readonly _options?: AsyncStreamWrapperOptions<TChunk>;

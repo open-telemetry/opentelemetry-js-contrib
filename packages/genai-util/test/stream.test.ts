@@ -179,7 +179,10 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     let errorHookCalledWith: unknown = null;
     const streamError = new Error('Network stream interrupted');
 
-    const rawStream = createAsyncChunkGenerator(['chunk1', 'chunk2'], streamError);
+    const rawStream = createAsyncChunkGenerator(
+      ['chunk1', 'chunk2'],
+      streamError
+    );
     const wrappedStream = wrapAsyncStream(rawStream, {
       invocation,
       onError: err => {
@@ -289,7 +292,10 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       serverPort: 443,
     });
 
-    const rawStream = createAsyncChunkGenerator(['agent-step-1', 'agent-step-2']);
+    const rawStream = createAsyncChunkGenerator([
+      'agent-step-1',
+      'agent-step-2',
+    ]);
     const wrapped = handler.wrapAsyncStream(rawStream, {
       invocation: agentInv,
     });
@@ -316,7 +322,11 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     const handler = new TelemetryHandler({ tracer });
     const invocation = handler.startInference({ providerName: 'openai' });
 
-    const sdkStream = new FakeSDKStream([], undefined, new Error('Close failed'));
+    const sdkStream = new FakeSDKStream(
+      [],
+      undefined,
+      new Error('Close failed')
+    );
     const wrapped = wrapAsyncStream(sdkStream, invocation);
 
     // Test proxy property set trap

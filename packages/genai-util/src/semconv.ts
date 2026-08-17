@@ -453,8 +453,7 @@ export const GEN_AI_FINISH_REASON_VALUE_ERROR = 'error' as const;
 
 // Response Status
 export const GEN_AI_RESPONSE_STATUS_VALUE_QUEUED = 'queued' as const;
-export const GEN_AI_RESPONSE_STATUS_VALUE_IN_PROGRESS =
-  'in_progress' as const;
+export const GEN_AI_RESPONSE_STATUS_VALUE_IN_PROGRESS = 'in_progress' as const;
 export const GEN_AI_RESPONSE_STATUS_VALUE_COMPLETED = 'completed' as const;
 export const GEN_AI_RESPONSE_STATUS_VALUE_INCOMPLETE = 'incomplete' as const;
 export const GEN_AI_RESPONSE_STATUS_VALUE_FAILED = 'failed' as const;
