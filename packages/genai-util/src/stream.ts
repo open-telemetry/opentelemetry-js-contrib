@@ -192,6 +192,13 @@ export class AsyncStreamWrapper<
     }
   }
 
+  /**
+   * Finalizes the stream telemetry on successful completion.
+   *
+   * Guards against duplicate execution if the stream is closed or iterated
+   * multiple times, ensuring `_onStreamEnd` (and consequently span stopping
+   * and final metric recording) runs exactly once.
+   */
   private async _finalizeSuccess(): Promise<void> {
     if (this._isFinalized) {
       return;
@@ -200,6 +207,15 @@ export class AsyncStreamWrapper<
     await this._onStreamEnd();
   }
 
+  /**
+   * Finalizes the stream telemetry when an error occurs during iteration or closing.
+   *
+   * Ensures the error hook is invoked and the active span is marked as failed
+   * exactly once, preventing duplicate error recordings if multiple failure paths
+   * are encountered.
+   *
+   * @param error - The error or exception encountered during stream processing.
+   */
   private async _finalizeFailure(error: unknown): Promise<void> {
     if (this._isFinalized) {
       return;
