@@ -71,12 +71,13 @@ Confirm that
 covers the target as an accepted instrumentation request, and link the tracking
 issue from the migration pull request.
 
-Also confirm that the component belongs in this repository. `CONTRIBUTING.md`
-prefers native instrumentation, a repository close to the instrumented
-library, or a dedicated public repository before JS Contrib. For vendor
-components, document installation, configuration, exposed APIs, and relevant
-design; meet the repository's current test coverage; and establish an ongoing
-maintainer who can review changes and respond to failures and issues.
+Also confirm that the proposed instrumentation meets this repository's
+acceptance and maintenance requirements. `CONTRIBUTING.md` prefers native
+instrumentation, a repository close to the instrumented library, or a dedicated
+public repository before JS Contrib. For vendor components, document
+installation, configuration, exposed APIs, and relevant design; meet the
+repository's current test coverage; and establish an ongoing maintainer who can
+review changes and respond to failures and issues.
 
 ### 2. Check for an existing target
 
