@@ -213,7 +213,7 @@ export class InferenceInvocation {
   /**
    * Set the model name that produced the response.
    */
-  setResponseModel(model: string): this {
+  public setResponseModel(model: string): this {
     this._responseModel = model;
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, model);
     return this;
@@ -222,7 +222,7 @@ export class InferenceInvocation {
   /**
    * Set the response identifier.
    */
-  setResponseId(id: string): this {
+  public setResponseId(id: string): this {
     this._responseId = id;
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_ID, id);
     return this;
@@ -231,7 +231,7 @@ export class InferenceInvocation {
   /**
    * Set finish reasons for the response choices.
    */
-  setFinishReasons(reasons: string[] | string): this {
+  public setFinishReasons(reasons: string[] | string): this {
     const arr = Array.isArray(reasons) ? reasons : [reasons];
     this._finishReasons = arr;
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, arr);
@@ -241,7 +241,7 @@ export class InferenceInvocation {
   /**
    * Record token usage.
    */
-  setUsage(usage: TokenUsage): this {
+  public setUsage(usage: TokenUsage): this {
     this._usage = usage;
     if (usage.inputTokens !== undefined) {
       this._span.setAttribute(
@@ -279,7 +279,7 @@ export class InferenceInvocation {
   /**
    * Add input messages to the invocation.
    */
-  addInputMessages(messages: InputMessages): this {
+  public addInputMessages(messages: InputMessages): this {
     this._inputMessages = [...(this._inputMessages ?? []), ...messages];
 
     if (
@@ -298,7 +298,7 @@ export class InferenceInvocation {
   /**
    * Add output messages to the invocation.
    */
-  addOutputMessages(messages: OutputMessages): this {
+  public addOutputMessages(messages: OutputMessages): this {
     this._outputMessages = [...(this._outputMessages ?? []), ...messages];
 
     if (
@@ -317,7 +317,7 @@ export class InferenceInvocation {
   /**
    * Set system instructions.
    */
-  setSystemInstructions(instructions: SystemInstruction): this {
+  public setSystemInstructions(instructions: SystemInstruction): this {
     this._systemInstructions = instructions;
     if (
       isSpanContentCaptureEnabled(this._contentCaptureMode) ||
@@ -334,7 +334,7 @@ export class InferenceInvocation {
   /**
    * Set custom span attribute.
    */
-  setAttribute(key: string, value: any): this {
+  public setAttribute(key: string, value: any): this {
     this._customAttributes[key] = value;
     this._span.setAttribute(key, value);
     return this;
@@ -343,7 +343,7 @@ export class InferenceInvocation {
   /**
    * Set multiple custom span attributes.
    */
-  setAttributes(attributes: Attributes): this {
+  public setAttributes(attributes: Attributes): this {
     Object.assign(this._customAttributes, attributes);
     this._span.setAttributes(attributes);
     return this;
@@ -352,7 +352,7 @@ export class InferenceInvocation {
   /**
    * Helper for stream chunks recording. On first chunk, marks stream request and records TTFT metric.
    */
-  recordStreamChunk(_chunk?: unknown): this {
+  public recordStreamChunk(_chunk?: unknown): this {
     if (!this._firstChunkTime) {
       this._firstChunkTime = process.hrtime();
       this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
@@ -386,7 +386,7 @@ export class InferenceInvocation {
   /**
    * Complete the invocation successfully.
    */
-  stop(endTime?: HrTime | number): void {
+  public stop(endTime?: HrTime | number): void {
     if (this._isEnded) {
       return;
     }
@@ -406,7 +406,10 @@ export class InferenceInvocation {
   /**
    * Complete the invocation with an error.
    */
-  fail(error: Error | string | unknown, endTime?: HrTime | number): void {
+  public fail(
+    error: Error | string | unknown,
+    endTime?: HrTime | number
+  ): void {
     if (this._isEnded) {
       return;
     }
@@ -483,7 +486,7 @@ export class InferenceInvocation {
       .execute(result, this._handler.getDiag());
   }
 
-  getSpan(): Span {
+  public getSpan(): Span {
     return this._span;
   }
 }
@@ -531,17 +534,17 @@ export class EmbeddingInvocation {
     this._span.setAttributes(attrs);
   }
 
-  setResponseModel(model: string): this {
+  public setResponseModel(model: string): this {
     this._responseModel = model;
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, model);
     return this;
   }
 
-  getResponseModel(): string | undefined {
+  public getResponseModel(): string | undefined {
     return this._responseModel;
   }
 
-  setUsage(usage: TokenUsage): this {
+  public setUsage(usage: TokenUsage): this {
     this._usage = usage;
     if (usage.inputTokens !== undefined) {
       this._span.setAttribute(
@@ -552,12 +555,12 @@ export class EmbeddingInvocation {
     return this;
   }
 
-  setAttribute(key: string, value: any): this {
+  public setAttribute(key: string, value: any): this {
     this._span.setAttribute(key, value);
     return this;
   }
 
-  stop(endTime?: HrTime | number): void {
+  public stop(endTime?: HrTime | number): void {
     if (this._isEnded) {
       return;
     }
@@ -585,7 +588,10 @@ export class EmbeddingInvocation {
     this._span.end(endHr);
   }
 
-  fail(error: Error | string | unknown, endTime?: HrTime | number): void {
+  public fail(
+    error: Error | string | unknown,
+    endTime?: HrTime | number
+  ): void {
     if (this._isEnded) {
       return;
     }
@@ -612,7 +618,7 @@ export class EmbeddingInvocation {
     this._span.end(endHr);
   }
 
-  getSpan(): Span {
+  public getSpan(): Span {
     return this._span;
   }
 }
@@ -661,7 +667,7 @@ export class ToolInvocation {
     this._span.setAttributes(attrs);
   }
 
-  setResult(result: unknown): this {
+  public setResult(result: unknown): this {
     if (result !== undefined) {
       this._span.setAttribute(
         ATTR_GEN_AI_TOOL_CALL_RESULT,
@@ -671,17 +677,17 @@ export class ToolInvocation {
     return this;
   }
 
-  setAttribute(key: string, value: any): this {
+  public setAttribute(key: string, value: any): this {
     this._span.setAttribute(key, value);
     return this;
   }
 
-  setAttributes(attributes: Attributes): this {
+  public setAttributes(attributes: Attributes): this {
     this._span.setAttributes(attributes);
     return this;
   }
 
-  stop(endTime?: HrTime | number): void {
+  public stop(endTime?: HrTime | number): void {
     if (this._isEnded) {
       return;
     }
@@ -690,7 +696,10 @@ export class ToolInvocation {
     this._span.end(endTime);
   }
 
-  fail(error: Error | string | unknown, endTime?: HrTime | number): void {
+  public fail(
+    error: Error | string | unknown,
+    endTime?: HrTime | number
+  ): void {
     if (this._isEnded) {
       return;
     }
@@ -705,7 +714,7 @@ export class ToolInvocation {
     this._span.end(endTime);
   }
 
-  getSpan(): Span {
+  public getSpan(): Span {
     return this._span;
   }
 }
@@ -845,87 +854,87 @@ export class AgentInvocation {
     this._span.setAttributes(attrs);
   }
 
-  setAgentId(agentId: string): this {
+  public setAgentId(agentId: string): this {
     this._agentId = agentId;
     this._span.setAttribute(ATTR_GEN_AI_AGENT_ID, agentId);
     return this;
   }
 
-  getAgentId(): string | undefined {
+  public getAgentId(): string | undefined {
     return this._agentId;
   }
 
-  setAgentName(agentName: string): this {
+  public setAgentName(agentName: string): this {
     this._span.setAttribute(ATTR_GEN_AI_AGENT_NAME, agentName);
     return this;
   }
 
-  getAgentName(): string | undefined {
+  public getAgentName(): string | undefined {
     return this._agentName;
   }
 
-  setAgentDescription(agentDescription: string): this {
+  public setAgentDescription(agentDescription: string): this {
     this._agentDescription = agentDescription;
     this._span.setAttribute(ATTR_GEN_AI_AGENT_DESCRIPTION, agentDescription);
     return this;
   }
 
-  getAgentDescription(): string | undefined {
+  public getAgentDescription(): string | undefined {
     return this._agentDescription;
   }
 
-  setAgentVersion(agentVersion: string): this {
+  public setAgentVersion(agentVersion: string): this {
     this._agentVersion = agentVersion;
     this._span.setAttribute(ATTR_GEN_AI_AGENT_VERSION, agentVersion);
     return this;
   }
 
-  getAgentVersion(): string | undefined {
+  public getAgentVersion(): string | undefined {
     return this._agentVersion;
   }
 
-  setConversationId(conversationId: string): this {
+  public setConversationId(conversationId: string): this {
     this._conversationId = conversationId;
     this._span.setAttribute(ATTR_GEN_AI_CONVERSATION_ID, conversationId);
     return this;
   }
 
-  getConversationId(): string | undefined {
+  public getConversationId(): string | undefined {
     return this._conversationId;
   }
 
-  setDataSourceId(dataSourceId: string): this {
+  public setDataSourceId(dataSourceId: string): this {
     this._dataSourceId = dataSourceId;
     this._span.setAttribute(ATTR_GEN_AI_DATA_SOURCE_ID, dataSourceId);
     return this;
   }
 
-  getDataSourceId(): string | undefined {
+  public getDataSourceId(): string | undefined {
     return this._dataSourceId;
   }
 
-  setOutputType(outputType: string): this {
+  public setOutputType(outputType: string): this {
     this._outputType = outputType;
     this._span.setAttribute(ATTR_GEN_AI_OUTPUT_TYPE, outputType);
     return this;
   }
 
-  getOutputType(): string | undefined {
+  public getOutputType(): string | undefined {
     return this._outputType;
   }
 
-  setFinishReasons(reasons: string[] | string): this {
+  public setFinishReasons(reasons: string[] | string): this {
     const arr = Array.isArray(reasons) ? reasons : [reasons];
     this._finishReasons = arr;
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, arr);
     return this;
   }
 
-  getFinishReasons(): string[] | undefined {
+  public getFinishReasons(): string[] | undefined {
     return this._finishReasons;
   }
 
-  setUsage(usage: TokenUsage): this {
+  public setUsage(usage: TokenUsage): this {
     this._usage = usage;
     if (usage.inputTokens !== undefined) {
       this._span.setAttribute(
@@ -960,11 +969,11 @@ export class AgentInvocation {
     return this;
   }
 
-  getUsage(): TokenUsage | undefined {
+  public getUsage(): TokenUsage | undefined {
     return this._usage;
   }
 
-  addInputMessages(messages: InputMessages): this {
+  public addInputMessages(messages: InputMessages): this {
     this._inputMessages = [...(this._inputMessages ?? []), ...messages];
     const mode = this._handler?.getContentCaptureMode() ?? 'none';
     if (
@@ -979,7 +988,7 @@ export class AgentInvocation {
     return this;
   }
 
-  addOutputMessages(messages: OutputMessages): this {
+  public addOutputMessages(messages: OutputMessages): this {
     this._outputMessages = [...(this._outputMessages ?? []), ...messages];
     const mode = this._handler?.getContentCaptureMode() ?? 'none';
     if (
@@ -994,7 +1003,7 @@ export class AgentInvocation {
     return this;
   }
 
-  setSystemInstructions(instructions: SystemInstruction): this {
+  public setSystemInstructions(instructions: SystemInstruction): this {
     this._systemInstructions = instructions;
     const mode = this._handler?.getContentCaptureMode() ?? 'none';
     if (
@@ -1009,13 +1018,13 @@ export class AgentInvocation {
     return this;
   }
 
-  setAttribute(key: string, value: any): this {
+  public setAttribute(key: string, value: any): this {
     this._customAttributes[key] = value;
     this._span.setAttribute(key, value);
     return this;
   }
 
-  setAttributes(attributes: Attributes): this {
+  public setAttributes(attributes: Attributes): this {
     Object.assign(this._customAttributes, attributes);
     this._span.setAttributes(attributes);
     return this;
@@ -1024,7 +1033,7 @@ export class AgentInvocation {
   /**
    * Helper for stream chunks recording. On first chunk, marks stream request and records TTFT metric.
    */
-  recordStreamChunk(_chunk?: unknown): this {
+  public recordStreamChunk(_chunk?: unknown): this {
     if (!this._firstChunkTime) {
       this._firstChunkTime = process.hrtime();
       this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
@@ -1056,7 +1065,7 @@ export class AgentInvocation {
     return this;
   }
 
-  stop(endTime?: HrTime | number): void {
+  public stop(endTime?: HrTime | number): void {
     if (this._isEnded) {
       return;
     }
@@ -1072,7 +1081,10 @@ export class AgentInvocation {
     this._runCompletionHook(durationSec);
   }
 
-  fail(error: Error | string | unknown, endTime?: HrTime | number): void {
+  public fail(
+    error: Error | string | unknown,
+    endTime?: HrTime | number
+  ): void {
     if (this._isEnded) {
       return;
     }
@@ -1156,7 +1168,7 @@ export class AgentInvocation {
       .execute(result, this._handler.getDiag());
   }
 
-  getSpan(): Span {
+  public getSpan(): Span {
     return this._span;
   }
 }
@@ -1186,17 +1198,17 @@ export class WorkflowInvocation {
     this._span.setAttributes(attrs);
   }
 
-  setAttribute(key: string, value: any): this {
+  public setAttribute(key: string, value: any): this {
     this._span.setAttribute(key, value);
     return this;
   }
 
-  setAttributes(attributes: Attributes): this {
+  public setAttributes(attributes: Attributes): this {
     this._span.setAttributes(attributes);
     return this;
   }
 
-  stop(endTime?: HrTime | number): void {
+  public stop(endTime?: HrTime | number): void {
     if (this._isEnded) {
       return;
     }
@@ -1205,7 +1217,10 @@ export class WorkflowInvocation {
     this._span.end(endTime);
   }
 
-  fail(error: Error | string | unknown, endTime?: HrTime | number): void {
+  public fail(
+    error: Error | string | unknown,
+    endTime?: HrTime | number
+  ): void {
     if (this._isEnded) {
       return;
     }
@@ -1220,7 +1235,7 @@ export class WorkflowInvocation {
     this._span.end(endTime);
   }
 
-  getSpan(): Span {
+  public getSpan(): Span {
     return this._span;
   }
 }
@@ -1290,14 +1305,14 @@ export class RetrievalInvocation {
     }
   }
 
-  setQueryText(queryText: string): this {
+  public setQueryText(queryText: string): this {
     if (isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())) {
       this._span.setAttribute(ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT, queryText);
     }
     return this;
   }
 
-  setDocuments(documents: unknown[]): this {
+  public setDocuments(documents: unknown[]): this {
     if (isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())) {
       const formatted = serializeContent(documents);
       if (formatted) {
@@ -1307,23 +1322,23 @@ export class RetrievalInvocation {
     return this;
   }
 
-  setTopK(topK: number): this {
+  public setTopK(topK: number): this {
     this._topK = topK;
     this._span.setAttribute(ATTR_GEN_AI_REQUEST_TOP_K, topK);
     return this;
   }
 
-  setAttribute(key: string, value: any): this {
+  public setAttribute(key: string, value: any): this {
     this._span.setAttribute(key, value);
     return this;
   }
 
-  setAttributes(attributes: Attributes): this {
+  public setAttributes(attributes: Attributes): this {
     this._span.setAttributes(attributes);
     return this;
   }
 
-  stop(endTime?: HrTime | number): void {
+  public stop(endTime?: HrTime | number): void {
     if (this._isEnded) {
       return;
     }
@@ -1353,7 +1368,10 @@ export class RetrievalInvocation {
     this._span.end(endHr);
   }
 
-  fail(error: Error | string | unknown, endTime?: HrTime | number): void {
+  public fail(
+    error: Error | string | unknown,
+    endTime?: HrTime | number
+  ): void {
     if (this._isEnded) {
       return;
     }
@@ -1391,7 +1409,7 @@ export class RetrievalInvocation {
     this._span.end(endHr);
   }
 
-  getSpan(): Span {
+  public getSpan(): Span {
     return this._span;
   }
 }
@@ -1453,44 +1471,44 @@ export class FetchResponseInvocation {
     this._span.setAttributes(attrs);
   }
 
-  setResponseModel(model: string): this {
+  public setResponseModel(model: string): this {
     this._responseModel = model;
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, model);
     return this;
   }
 
-  getResponseModel(): string | undefined {
+  public getResponseModel(): string | undefined {
     return this._responseModel;
   }
 
-  setResponseStatus(status: string): this {
+  public setResponseStatus(status: string): this {
     this._responseStatus = status;
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_STATUS, status);
     return this;
   }
 
-  getResponseStatus(): string | undefined {
+  public getResponseStatus(): string | undefined {
     return this._responseStatus;
   }
 
-  setFinishReasons(reasons: string[] | string): this {
+  public setFinishReasons(reasons: string[] | string): this {
     const list = Array.isArray(reasons) ? reasons : [reasons];
     this._finishReasons = list;
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, list);
     return this;
   }
 
-  setStreamCursor(cursor: string): this {
+  public setStreamCursor(cursor: string): this {
     this._streamCursor = cursor;
     this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM_CURSOR, cursor);
     return this;
   }
 
-  getStreamCursor(): string | undefined {
+  public getStreamCursor(): string | undefined {
     return this._streamCursor;
   }
 
-  addOutputMessages(messages: OutputMessages): this {
+  public addOutputMessages(messages: OutputMessages): this {
     this._outputMessages.push(...messages);
     if (isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())) {
       const formatted = formatOutputMessages(this._outputMessages);
@@ -1501,7 +1519,7 @@ export class FetchResponseInvocation {
     return this;
   }
 
-  setSystemInstructions(instructions: SystemInstruction): this {
+  public setSystemInstructions(instructions: SystemInstruction): this {
     this._systemInstructions = instructions;
     if (isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())) {
       const formatted = formatSystemInstructions(instructions);
@@ -1512,17 +1530,17 @@ export class FetchResponseInvocation {
     return this;
   }
 
-  setAttribute(key: string, value: any): this {
+  public setAttribute(key: string, value: any): this {
     this._span.setAttribute(key, value);
     return this;
   }
 
-  setAttributes(attributes: Attributes): this {
+  public setAttributes(attributes: Attributes): this {
     this._span.setAttributes(attributes);
     return this;
   }
 
-  stop(endTime?: HrTime | number): void {
+  public stop(endTime?: HrTime | number): void {
     if (this._isEnded) {
       return;
     }
@@ -1538,7 +1556,10 @@ export class FetchResponseInvocation {
     this._runCompletionHook(durationSec);
   }
 
-  fail(error: Error | string | unknown, endTime?: HrTime | number): void {
+  public fail(
+    error: Error | string | unknown,
+    endTime?: HrTime | number
+  ): void {
     if (this._isEnded) {
       return;
     }
@@ -1604,7 +1625,7 @@ export class FetchResponseInvocation {
       .execute(result, this._handler.getDiag());
   }
 
-  getSpan(): Span {
+  public getSpan(): Span {
     return this._span;
   }
 }

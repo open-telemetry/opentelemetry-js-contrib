@@ -81,7 +81,7 @@ export class AsyncStreamWrapper<
         }
         const val = Reflect.get(target._stream, prop);
         if (typeof val === 'function') {
-          return (val as Function).bind(target._stream);
+          return (val as (...args: unknown[]) => unknown).bind(target._stream);
         }
         return val;
       },
@@ -97,7 +97,7 @@ export class AsyncStreamWrapper<
     });
   }
 
-  [Symbol.asyncIterator](): AsyncIterator<TChunk> {
+  public [Symbol.asyncIterator](): AsyncIterator<TChunk> {
     const iterator =
       typeof this._stream[Symbol.asyncIterator] === 'function'
         ? this._stream[Symbol.asyncIterator]()
@@ -148,7 +148,7 @@ export class AsyncStreamWrapper<
   /**
    * Close the stream and finalize telemetry.
    */
-  async close(): Promise<void> {
+  public async close(): Promise<void> {
     try {
       if (typeof this._stream.close === 'function') {
         await this._stream.close();

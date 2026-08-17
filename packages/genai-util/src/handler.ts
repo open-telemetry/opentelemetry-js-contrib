@@ -126,7 +126,7 @@ export class TelemetryHandler {
   /**
    * Set or update the Tracer instance.
    */
-  setTracer(tracer: Tracer): this {
+  public setTracer(tracer: Tracer): this {
     this._tracer = tracer;
     return this;
   }
@@ -134,7 +134,7 @@ export class TelemetryHandler {
   /**
    * Set or update the Meter instance and initialize histograms.
    */
-  setMeter(meter: Meter): this {
+  public setMeter(meter: Meter): this {
     this._meter = meter;
     this._initMetrics(meter);
     return this;
@@ -143,7 +143,7 @@ export class TelemetryHandler {
   /**
    * Register a completion hook.
    */
-  addCompletionHook(hook: CompletionHook): this {
+  public addCompletionHook(hook: CompletionHook): this {
     this._hookManager.addHook(hook);
     return this;
   }
@@ -151,28 +151,30 @@ export class TelemetryHandler {
   /**
    * Return the DiagLogger instance.
    */
-  getDiag(): DiagLogger {
+  public getDiag(): DiagLogger {
     return this._diag;
   }
 
   /**
    * Return the active ContentCaptureMode.
    */
-  getContentCaptureMode(): ContentCaptureMode {
+  public getContentCaptureMode(): ContentCaptureMode {
     return this._contentCaptureMode;
   }
 
   /**
    * Return the CompletionHookManager.
    */
-  getCompletionHookManager(): CompletionHookManager {
+  public getCompletionHookManager(): CompletionHookManager {
     return this._hookManager;
   }
 
   /**
    * Start an LLM / GenAI inference invocation.
    */
-  startInference(options: InferenceInvocationOptions): InferenceInvocation {
+  public startInference(
+    options: InferenceInvocationOptions
+  ): InferenceInvocation {
     const spanName = getSpanName(
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_CHAT,
       options.requestModel
@@ -192,7 +194,9 @@ export class TelemetryHandler {
   /**
    * Start an Embedding invocation.
    */
-  startEmbedding(options: EmbeddingInvocationOptions): EmbeddingInvocation {
+  public startEmbedding(
+    options: EmbeddingInvocationOptions
+  ): EmbeddingInvocation {
     const spanName = getSpanName(
       GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
       options.requestModel
@@ -212,7 +216,7 @@ export class TelemetryHandler {
   /**
    * Start a Tool execution invocation.
    */
-  startTool(options: ToolInvocationOptions): ToolInvocation {
+  public startTool(options: ToolInvocationOptions): ToolInvocation {
     const spanName = `${GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL} ${options.toolName}`;
 
     const span = this._tracer.startSpan(
@@ -229,7 +233,7 @@ export class TelemetryHandler {
   /**
    * Start an Agent invocation (defaults to local in-process agent with SpanKind.INTERNAL).
    */
-  startAgent(options: AgentInvocationOptions = {}): AgentInvocation {
+  public startAgent(options: AgentInvocationOptions = {}): AgentInvocation {
     const name = options.agentName ?? options.agentId;
     const spanName = name
       ? `${GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT} ${name}`
@@ -249,14 +253,18 @@ export class TelemetryHandler {
   /**
    * Start a local in-process Agent invocation (INTERNAL span kind).
    */
-  startLocalAgent(options: AgentInvocationOptions = {}): AgentInvocation {
+  public startLocalAgent(
+    options: AgentInvocationOptions = {}
+  ): AgentInvocation {
     return this.startAgent(options);
   }
 
   /**
    * Start a remote Agent invocation (CLIENT span kind).
    */
-  startRemoteAgent(options: RemoteAgentInvocationOptions): AgentInvocation {
+  public startRemoteAgent(
+    options: RemoteAgentInvocationOptions
+  ): AgentInvocation {
     const name = options.agentName ?? options.agentId;
     const spanName = name
       ? `${GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT} ${name}`
@@ -276,7 +284,7 @@ export class TelemetryHandler {
   /**
    * Start a Workflow invocation.
    */
-  startWorkflow(options: WorkflowInvocationOptions): WorkflowInvocation {
+  public startWorkflow(options: WorkflowInvocationOptions): WorkflowInvocation {
     const spanName = options.workflowName
       ? `${GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW} ${options.workflowName}`
       : GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW;
@@ -295,7 +303,9 @@ export class TelemetryHandler {
   /**
    * Start a Retrieval invocation (for RAG / vector database lookups).
    */
-  startRetrieval(options: RetrievalInvocationOptions): RetrievalInvocation {
+  public startRetrieval(
+    options: RetrievalInvocationOptions
+  ): RetrievalInvocation {
     const spanName = options.dataSourceId
       ? `${GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL} ${options.dataSourceId}`
       : GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL;
@@ -314,7 +324,7 @@ export class TelemetryHandler {
   /**
    * Start a Fetch Response invocation (for polling or retrieving earlier generated responses).
    */
-  startFetchResponse(
+  public startFetchResponse(
     options: FetchResponseInvocationOptions
   ): FetchResponseInvocation {
     const span = this._tracer.startSpan(
@@ -331,7 +341,7 @@ export class TelemetryHandler {
   /**
    * Record operation duration metric.
    */
-  recordOperationDuration(
+  public recordOperationDuration(
     durationSeconds: number,
     attributes?: Attributes
   ): void {
@@ -345,14 +355,14 @@ export class TelemetryHandler {
   /**
    * Record token usage metric.
    */
-  recordTokenUsage(usage: TokenUsage, attributes?: Attributes): void {
+  public recordTokenUsage(usage: TokenUsage, attributes?: Attributes): void {
     recordTokenUsage(this._tokenUsageHistogram, usage, attributes);
   }
 
   /**
    * Record server time to first token metric for streaming responses.
    */
-  recordServerTimeToFirstToken(
+  public recordServerTimeToFirstToken(
     durationSeconds: number,
     attributes?: Attributes
   ): void {
@@ -366,7 +376,7 @@ export class TelemetryHandler {
   /**
    * Wrap an async stream / iterable with telemetry collection.
    */
-  wrapAsyncStream<TStream extends AsyncIterable<any>>(
+  public wrapAsyncStream<TStream extends AsyncIterable<any>>(
     stream: TStream,
     optionsOrInvocation?:
       | AsyncStreamWrapperOptions<

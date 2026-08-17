@@ -20,7 +20,7 @@ export class CompletionHookManager {
   /**
    * Register a new completion hook.
    */
-  addHook(hook: CompletionHook): this {
+  public addHook(hook: CompletionHook): this {
     if (hook && typeof hook.onCompletion === 'function') {
       this._hooks.push(hook);
     }
@@ -30,7 +30,7 @@ export class CompletionHookManager {
   /**
    * Unregister an existing completion hook.
    */
-  removeHook(hook: CompletionHook): this {
+  public removeHook(hook: CompletionHook): this {
     this._hooks = this._hooks.filter(h => h !== hook);
     return this;
   }
@@ -38,14 +38,14 @@ export class CompletionHookManager {
   /**
    * Return list of registered hooks.
    */
-  getHooks(): CompletionHook[] {
+  public getHooks(): CompletionHook[] {
     return [...this._hooks];
   }
 
   /**
    * Remove all registered hooks.
    */
-  clearHooks(): void {
+  public clearHooks(): void {
     this._hooks = [];
   }
 
@@ -53,7 +53,7 @@ export class CompletionHookManager {
    * Execute all registered completion hooks safely.
    * Any errors thrown by hooks will be logged without interrupting application execution.
    */
-  async execute(
+  public async execute(
     result: CompletionResult,
     diag_: DiagLogger = diag
   ): Promise<void> {
