@@ -94,20 +94,22 @@ This instrumentation uses Semantic Conventions for messaging spans. The `instrum
 
 Attributes collected:
 
-| Attribute                        | Short Description                                                      |
-| -------------------------------- | ---------------------------------------------------------------------- |
-| `messaging.destination`          | The message destination name.                                          |
-| `messaging.destination_kind`     | The kind of message destination.                                       |
-| `messaging.rabbitmq.routing_key` | RabbitMQ message routing key.                                          |
-| `messaging.operation`            | A string identifying the kind of message consumption.                  |
-| `messaging.message_id`           | A value used by the messaging system as an identifier for the message. |
-| `messaging.conversation_id`      | The ID identifying the conversation to which the message belongs.      |
-| `messaging.protocol`             | The name of the transport protocol.                                    |
-| `messaging.protocol_version`     | The version of the transport protocol.                                 |
-| `messaging.system`               | A string identifying the messaging system.                             |
-| `messaging.url`                  | The connection string.                                                 |
-| `server.address`                 | Remote hostname.                                                       |
-| `server.port`                    | Remote port number.                                                    |
+| Attribute                         | Short Description                                                      |
+| --------------------------------- | ---------------------------------------------------------------------- |
+| `messaging.destination`           | The message destination name.                                          |
+| `messaging.destination_kind`      | The kind of message destination.                                       |
+| `messaging.rabbitmq.routing_key`  | RabbitMQ message routing key.                                          |
+| `messaging.operation`             | A string identifying the kind of message consumption.                  |
+| `messaging.message_id`            | A value used by the messaging system as an identifier for the message. |
+| `messaging.conversation_id`       | The ID identifying the conversation to which the message belongs.      |
+| `messaging.protocol`              | The name of the transport protocol.                                    |
+| `messaging.protocol_version`      | The version of the transport protocol.                                 |
+| `messaging.system`                | A string identifying the messaging system.                             |
+| `messaging.rabbitmq.vhost.name`   | The name of the RabbitMQ virtual host the connection is bound to.      |
+| `messaging.rabbitmq.cluster.name` | The name of the RabbitMQ cluster, as reported by the broker.           |
+| `messaging.url`                   | The connection string.                                                 |
+| `server.address`                  | Remote hostname.                                                       |
+| `server.port`                     | Remote port number.                                                    |
 
 ## Useful links
 

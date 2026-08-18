@@ -21,7 +21,11 @@ import {
 
 registerInstrumentationTesting(new AmqplibInstrumentation());
 import * as amqp from 'amqplib';
-import { ATTR_MESSAGING_SYSTEM } from '../src/semconv';
+import {
+  ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME,
+  ATTR_MESSAGING_RABBITMQ_VHOST_NAME,
+  ATTR_MESSAGING_SYSTEM,
+} from '../src/semconv';
 import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
@@ -155,6 +159,57 @@ describe('amqplib instrumentation connection', () => {
         expect(publishSpan.attributes[ATTR_SERVER_PORT]).toEqual(
           TEST_RABBITMQ_PORT
         );
+      } finally {
+        await conn.close();
+      }
+    });
+  });
+
+  describe('rabbitmq vhost and cluster attributes', () => {
+    it('should set the vhost and cluster name on the span when connecting with a url object', async function () {
+      const testName = this.test!.title;
+      const conn = await amqp.connect({
+        protocol: 'amqp',
+        username: TEST_RABBITMQ_USER,
+        password: TEST_RABBITMQ_PASS,
+        hostname: TEST_RABBITMQ_HOST,
+        port: TEST_RABBITMQ_PORT,
+      });
+
+      try {
+        const channel = await conn.createChannel();
+        channel.sendToQueue(
+          testName,
+          Buffer.from('message created only to test connection attributes')
+        );
+        const [publishSpan] = getTestSpans();
+
+        expect(
+          publishSpan.attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME]
+        ).toEqual('/');
+        expect(
+          publishSpan.attributes[ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME]
+        ).toEqual(conn.connection.serverProperties.cluster_name);
+      } finally {
+        await conn.close();
+      }
+    });
+
+    it('should set the vhost on the span when connecting with a url string', async function () {
+      const testName = this.test!.title;
+      const conn = await amqp.connect(rabbitMqUrl);
+
+      try {
+        const channel = await conn.createChannel();
+        channel.sendToQueue(
+          testName,
+          Buffer.from('message created only to test connection attributes')
+        );
+        const [publishSpan] = getTestSpans();
+
+        expect(
+          publishSpan.attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME]
+        ).toEqual('/');
       } finally {
         await conn.close();
       }

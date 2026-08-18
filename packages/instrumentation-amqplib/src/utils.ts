@@ -15,12 +15,17 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_MESSAGING_SYSTEM } from './semconv';
+import {
+  ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME,
+  ATTR_MESSAGING_RABBITMQ_VHOST_NAME,
+  ATTR_MESSAGING_SYSTEM,
+} from './semconv';
 import {
   ATTR_MESSAGING_PROTOCOL,
   ATTR_MESSAGING_PROTOCOL_VERSION,
   ATTR_MESSAGING_URL,
 } from '../src/semconv-obsolete';
+import { unescape as unescapeUriComponent } from 'querystring';
 import type * as amqp from 'amqplib';
 
 export const MESSAGE_STORED_SPAN: unique symbol = Symbol(
@@ -88,6 +93,21 @@ const getProtocol = (protocolFromUrl: string | undefined): string => {
   return noEndingColon.toUpperCase();
 };
 
+// amqplib falls back to the '/' vhost when the user did not supply one
+const DEFAULT_VHOST = '/';
+
+const getVhostFromOptions = (vhostFromOptions: string | undefined): string => {
+  return vhostFromOptions || DEFAULT_VHOST;
+};
+
+const getVhostFromUrlPath = (pathFromUrl: string | undefined): string => {
+  // this code mimics the behavior of amqplib, which takes the url path
+  // without its leading '/' and unescapes it, so that a vhost named '/' can
+  // be expressed as the '%2f' path
+  const vhost = pathFromUrl ? pathFromUrl.substring(1) : '';
+  return vhost ? unescapeUriComponent(vhost) : DEFAULT_VHOST;
+};
+
 const getHostname = (hostnameFromUrl: string | undefined): string => {
   // if user supplies empty hostname, it gets forwarded to 'net' package which default it to localhost.
   // https://nodejs.org/docs/latest-v12.x/api/net.html#net_socket_connect_options_connectlistener
@@ -116,14 +136,20 @@ const extractConnectionAttributeOrLog = (
 export const getConnectionAttributesFromServer = (
   conn: amqp.Connection
 ): Attributes => {
+  const attributes: Attributes = {};
+
   const product = conn.serverProperties.product?.toLowerCase?.();
   if (product) {
-    return {
-      [ATTR_MESSAGING_SYSTEM]: product,
-    };
-  } else {
-    return {};
+    attributes[ATTR_MESSAGING_SYSTEM] = product;
   }
+
+  // only RabbitMQ brokers report a cluster name in the connection handshake
+  const clusterName = conn.serverProperties['cluster_name'];
+  if (clusterName) {
+    attributes[ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME] = clusterName;
+  }
+
+  return attributes;
 };
 
 export const getConnectionAttributesFromUrl = (
@@ -161,6 +187,10 @@ export const getConnectionAttributesFromUrl = (
     Object.assign(
       attributes,
       extractConnectionAttributeOrLog(url, ATTR_SERVER_PORT, port, 'port')
+    );
+
+    attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME] = getVhostFromOptions(
+      connectOptions?.vhost
     );
   } else {
     const censoredUrl = censorPassword(url);
@@ -200,6 +230,10 @@ export const getConnectionAttributesFromUrl = (
           port,
           'port'
         )
+      );
+
+      attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME] = getVhostFromUrlPath(
+        urlParts.pathname
       );
     } catch (err) {
       diag.error(
