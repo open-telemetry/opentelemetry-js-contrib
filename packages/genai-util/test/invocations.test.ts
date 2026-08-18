@@ -258,6 +258,43 @@ describe('GenAI Invocations', () => {
       assert.strictEqual(spansSpan.length, 1);
       assert.ok(spansSpan[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES]);
       assert.ok(spansSpan[0].attributes[ATTR_GEN_AI_OUTPUT_MESSAGES]);
+
+      memoryExporter.reset();
+
+      const handlerEvent = new TelemetryHandler({
+        tracer,
+        contentCaptureMode: 'event_only',
+      });
+
+      const invEvent = handlerEvent.startInference({
+        providerName: 'openai',
+        inputMessages: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: 'What is the weather?' }],
+          },
+        ],
+      });
+
+      invEvent.addOutputMessages([
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'It is sunny.' }],
+          finish_reason: 'stop',
+        },
+      ]);
+      invEvent.stop();
+
+      const spansEvent = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spansEvent.length, 1);
+      assert.strictEqual(
+        spansEvent[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES],
+        undefined
+      );
+      assert.strictEqual(
+        spansEvent[0].attributes[ATTR_GEN_AI_OUTPUT_MESSAGES],
+        undefined
+      );
     });
   });
 

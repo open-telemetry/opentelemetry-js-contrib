@@ -60,10 +60,7 @@ import {
   formatSystemInstructions,
   getErrorType,
 } from '../utils';
-import {
-  isEventContentCaptureEnabled,
-  isSpanContentCaptureEnabled,
-} from '../environment-variables';
+import { isSpanContentCaptureEnabled } from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
 
 /**
@@ -255,10 +252,7 @@ export class InferenceInvocation {
   public addInputMessages(messages: InputMessages): this {
     this._inputMessages = [...(this._inputMessages ?? []), ...messages];
 
-    if (
-      isSpanContentCaptureEnabled(this._contentCaptureMode) ||
-      isEventContentCaptureEnabled(this._contentCaptureMode)
-    ) {
+    if (isSpanContentCaptureEnabled(this._contentCaptureMode)) {
       const formatted = formatInputMessages(this._inputMessages);
       if (formatted) {
         this._span.setAttribute(ATTR_GEN_AI_INPUT_MESSAGES, formatted);
@@ -274,10 +268,7 @@ export class InferenceInvocation {
   public addOutputMessages(messages: OutputMessages): this {
     this._outputMessages = [...(this._outputMessages ?? []), ...messages];
 
-    if (
-      isSpanContentCaptureEnabled(this._contentCaptureMode) ||
-      isEventContentCaptureEnabled(this._contentCaptureMode)
-    ) {
+    if (isSpanContentCaptureEnabled(this._contentCaptureMode)) {
       const formatted = formatOutputMessages(this._outputMessages);
       if (formatted) {
         this._span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, formatted);
@@ -292,10 +283,7 @@ export class InferenceInvocation {
    */
   public setSystemInstructions(instructions: SystemInstruction): this {
     this._systemInstructions = instructions;
-    if (
-      isSpanContentCaptureEnabled(this._contentCaptureMode) ||
-      isEventContentCaptureEnabled(this._contentCaptureMode)
-    ) {
+    if (isSpanContentCaptureEnabled(this._contentCaptureMode)) {
       const formatted = formatSystemInstructions(instructions);
       if (formatted) {
         this._span.setAttribute(ATTR_GEN_AI_SYSTEM_INSTRUCTIONS, formatted);
