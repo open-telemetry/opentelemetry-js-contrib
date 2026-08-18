@@ -56,6 +56,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
   GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
   GEN_AI_RESPONSE_STATUS_VALUE_COMPLETED,
+  BaseInvocation,
   type CompletionResult,
 } from '../src';
 
@@ -987,6 +988,60 @@ describe('GenAI Invocations', () => {
       await new Promise(r => setTimeout(r, 10));
       assert.ok(hookCalledWith);
       assert.ok(hookCalledWith.error instanceof Error);
+    });
+  });
+
+  describe('BaseInvocation', () => {
+    class CustomInvocation extends BaseInvocation {
+      public metricsRecorded = false;
+      public hookExecuted = false;
+
+      protected override _recordMetrics(): void {
+        this.metricsRecorded = true;
+      }
+
+      protected override _runCompletionHook(): void {
+        this.hookExecuted = true;
+      }
+    }
+
+    it('should manage lifecycle and attributes correctly', () => {
+      const tracer = tracerProvider.getTracer('test-tracer');
+      const span = tracer.startSpan('custom-span');
+      const inv = new CustomInvocation(span);
+
+      assert.strictEqual(inv.getSpan(), span);
+      inv.setAttribute('custom.attr', 'value1');
+      inv.setAttributes({ 'custom.attr2': 'value2' });
+
+      inv.stop();
+      // Double stop should be a no-op
+      inv.stop();
+
+      assert.strictEqual(inv.metricsRecorded, true);
+      assert.strictEqual(inv.hookExecuted, true);
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].status.code, SpanStatusCode.OK);
+      assert.strictEqual(spans[0].attributes['custom.attr'], 'value1');
+      assert.strictEqual(spans[0].attributes['custom.attr2'], 'value2');
+    });
+
+    it('should handle fail lifecycle with error and double fail protection', () => {
+      const tracer = tracerProvider.getTracer('test-tracer');
+      const span = tracer.startSpan('custom-fail-span');
+      const inv = new CustomInvocation(span);
+
+      inv.fail(new Error('Test failure'));
+      // Double fail should be a no-op
+      inv.fail(new Error('Second failure'));
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(spans[0].status.message, 'Test failure');
+      assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
     });
   });
 });

@@ -3,13 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  SpanStatusCode,
-  type Attributes,
-  type HrTime,
-  type Span,
-} from '@opentelemetry/api';
-import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import type { Attributes, Span } from '@opentelemetry/api';
 import {
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
@@ -20,27 +14,15 @@ import {
   ATTR_GEN_AI_TOOL_TYPE,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
 } from '../semconv';
-import { getErrorType } from '../utils';
+import type { ToolInvocationOptions } from '../types';
+import { BaseInvocation } from './base';
 
 /**
  * Manages the lifecycle and telemetry of a Tool execution.
  */
-export class ToolInvocation {
-  private readonly _span: Span;
-  private _isEnded = false;
-
-  constructor(
-    span: Span,
-    options: {
-      toolName: string;
-      toolDescription?: string;
-      toolCallId?: string;
-      toolType?: string;
-      toolArguments?: unknown;
-      attributes?: Attributes;
-    }
-  ) {
-    this._span = span;
+export class ToolInvocation extends BaseInvocation {
+  constructor(span: Span, options: ToolInvocationOptions) {
+    super(span);
     const attrs: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
       [ATTR_GEN_AI_TOOL_NAME]: options.toolName,
@@ -74,48 +56,5 @@ export class ToolInvocation {
       );
     }
     return this;
-  }
-
-  public setAttribute(key: string, value: any): this {
-    this._span.setAttribute(key, value);
-    return this;
-  }
-
-  public setAttributes(attributes: Attributes): this {
-    this._span.setAttributes(attributes);
-    return this;
-  }
-
-  public stop(endTime?: HrTime | number): void {
-    if (this._isEnded) {
-      return;
-    }
-    this._isEnded = true;
-    this._span.setStatus({ code: SpanStatusCode.OK });
-    this._span.end(endTime);
-  }
-
-  public fail(
-    error: Error | string | unknown,
-    endTime?: HrTime | number
-  ): void {
-    if (this._isEnded) {
-      return;
-    }
-    this._isEnded = true;
-    const errorType = getErrorType(error);
-    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
-    if (error instanceof Error) {
-      this._span.recordException(error);
-    }
-    this._span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: error instanceof Error ? error.message : String(error),
-    });
-    this._span.end(endTime);
-  }
-
-  public getSpan(): Span {
-    return this._span;
   }
 }
