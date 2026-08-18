@@ -4,7 +4,11 @@
  */
 
 import type { Attributes, HrTime, Span } from '@opentelemetry/api';
-import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_ERROR_TYPE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 import {
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_PROVIDER_NAME,
@@ -24,6 +28,8 @@ import { BaseInvocation } from './base';
 export class EmbeddingInvocation extends BaseInvocation {
   private readonly _providerName: string;
   private readonly _requestModel?: string;
+  private readonly _serverAddress?: string;
+  private readonly _serverPort?: number;
   private _responseModel?: string;
   private _usage?: TokenUsage;
 
@@ -36,6 +42,8 @@ export class EmbeddingInvocation extends BaseInvocation {
     super(span, handler, startTime);
     this._providerName = options.providerName;
     this._requestModel = options.requestModel;
+    this._serverAddress = options.serverAddress;
+    this._serverPort = options.serverPort;
 
     const attrs: Attributes = {
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
@@ -45,6 +53,12 @@ export class EmbeddingInvocation extends BaseInvocation {
 
     if (this._requestModel) {
       attrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
+    }
+    if (this._serverAddress) {
+      attrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
+    }
+    if (this._serverPort !== undefined) {
+      attrs[ATTR_SERVER_PORT] = this._serverPort;
     }
 
     this._span.setAttributes(attrs);
@@ -87,6 +101,12 @@ export class EmbeddingInvocation extends BaseInvocation {
     }
     if (this._responseModel) {
       metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
+    }
+    if (this._serverAddress) {
+      metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
+    }
+    if (this._serverPort !== undefined) {
+      metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
     }
     if (error) {
       metricAttrs[ATTR_ERROR_TYPE] = getErrorType(error);
