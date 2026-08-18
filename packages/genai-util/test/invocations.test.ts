@@ -104,6 +104,8 @@ describe('GenAI Invocations', () => {
         providerName: 'openai',
         operationName: 'chat',
         requestModel: 'gpt-4o',
+        serverAddress: 'api.openai.com',
+        serverPort: 443,
         requestOptions: {
           temperature: 0.7,
         },
@@ -143,6 +145,8 @@ describe('GenAI Invocations', () => {
       assert.strictEqual(span.attributes[ATTR_GEN_AI_PROVIDER_NAME], 'openai');
       assert.strictEqual(span.attributes[ATTR_GEN_AI_OPERATION_NAME], 'chat');
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_MODEL], 'gpt-4o');
+      assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], 'api.openai.com');
+      assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_TEMPERATURE], 0.7);
       assert.strictEqual(
         span.attributes[ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK],
@@ -317,6 +321,8 @@ describe('GenAI Invocations', () => {
       const invocation = handler.startEmbedding({
         providerName: 'openai',
         requestModel: 'text-embedding-3-small',
+        serverAddress: 'api.openai.com',
+        serverPort: 443,
       });
 
       invocation.setResponseModel('text-embedding-3-small');
@@ -333,6 +339,8 @@ describe('GenAI Invocations', () => {
         span.attributes[ATTR_GEN_AI_OPERATION_NAME],
         'embeddings'
       );
+      assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], 'api.openai.com');
+      assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
       assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 50);
       assert.strictEqual(span.status.code, SpanStatusCode.OK);
     });

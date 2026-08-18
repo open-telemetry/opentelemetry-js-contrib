@@ -347,6 +347,12 @@ export class InferenceInvocation extends BaseInvocation {
     if (this._responseModel) {
       metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
     }
+    if (this._serverAddress) {
+      metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
+    }
+    if (this._serverPort !== undefined) {
+      metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
+    }
     if (error) {
       metricAttrs[ATTR_ERROR_TYPE] = getErrorType(error);
     }
