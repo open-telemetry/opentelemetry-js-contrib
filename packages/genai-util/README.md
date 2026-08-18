@@ -295,7 +295,6 @@ recordServerTimeToFirstToken(ttftHist, 0.15, {
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-- OpenTelemetry GenAI Semantic Conventions: <https://github.com/open-telemetry/semantic-conventions/blob/main/docs/gen-ai/README.md>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
@@ -303,7 +302,7 @@ recordServerTimeToFirstToken(ttftHist, 0.15, {
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
-[license-url]: https://github.com/open-telemetry/open-telemetry-js-contrib/blob/main/LICENSE
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/genai-util
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fgenai-util.svg
