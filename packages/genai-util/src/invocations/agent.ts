@@ -387,7 +387,7 @@ export class AgentInvocation extends BaseInvocation {
           metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
         }
 
-        this._handler.recordServerTimeToFirstToken(ttftSec, metricAttrs);
+        this._handler.recordTimeToFirstChunk(ttftSec, metricAttrs);
       }
     }
     return this;
