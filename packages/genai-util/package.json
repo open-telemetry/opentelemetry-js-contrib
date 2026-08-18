@@ -28,9 +28,9 @@
     "instrumentation"
   ],
   "files": [
-    "build/**/*.js",
-    "build/**/*.js.map",
-    "build/**/*.d.ts"
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
