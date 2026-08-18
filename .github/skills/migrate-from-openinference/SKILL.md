@@ -125,12 +125,10 @@ Pivot the work:
 
 1. **Ignore the OpenInference instrumentation entirely.** The vendor owns the
    spans, so there is no instrumentor or patcher to reimplement.
-2. **Write conformance tests against the native instrumentation.** If
-   `.github/skills/write-conformance-tests/SKILL.md` exists, follow it, but
-   configure each scenario to enable the native tracer instead of an
-   OpenTelemetry instrumentation package. If the skill is not present, skip
-   authoring the tests for now and record that limitation in the migration
-   report.
+2. **Write conformance tests against the native instrumentation.** Follow the
+   approach in [step 9](#9-add-semantic-convention-conformance-tests), but
+   configure each scenario to enable the library's native tracing instead of
+   installing or enabling an OpenTelemetry instrumentation package.
 3. **Identify gaps and inconsistencies** between the native telemetry and the
    GenAI semantic conventions, including missing operations, incorrect
    operation names, legacy or duplicate attributes, missing metrics, and
@@ -138,9 +136,9 @@ Pivot the work:
    or documented skip.
 4. **Write `MIGRATION_REPORT.md`** as described in
    [step 11](#11-write-the-migration-report), stating that the library is
-   self-instrumented, the conformance results or reason tests were skipped, and
-   the identified gaps. Stop and surface the finding to the user. Do not build
-   a competing package unless they explicitly request it.
+   self-instrumented and recording the conformance results and identified gaps.
+   Stop and surface the finding to the user. Do not build a competing package
+   unless they explicitly request it.
 
 Only continue with the migration when the library has no native OpenTelemetry
 instrumentation.
