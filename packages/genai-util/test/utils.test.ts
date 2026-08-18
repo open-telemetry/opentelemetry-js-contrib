@@ -18,7 +18,7 @@ import {
   hrTimeToSeconds,
   getSpanName,
   getErrorType,
-} from '../src';
+} from '../src/utils';
 
 describe('GenAI Utils', () => {
   describe('getAttrsFromBaseURL', () => {

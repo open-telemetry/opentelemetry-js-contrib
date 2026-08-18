@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * Functions declared in this file are only meant to be used within the genai-util package.
+ */
 import { diag } from '@opentelemetry/api';
 import type { Attributes, DiagLogger, HrTime } from '@opentelemetry/api';
 import {
