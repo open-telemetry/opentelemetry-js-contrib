@@ -8,11 +8,14 @@
     "access": "public"
   },
   "scripts": {
+    "clean": "rimraf build/*",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/genai-util",
     "compile": "tsc --build tsconfig.json",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "version:update": "node ../../scripts/version-update.js",
+    "lint:readme": "node ../../scripts/lint-readme.js"
   },
   "repository": {
     "type": "git",
