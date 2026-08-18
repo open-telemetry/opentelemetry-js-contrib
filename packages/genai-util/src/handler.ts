@@ -231,7 +231,7 @@ export class TelemetryHandler {
       options.parentContext
     );
 
-    return new ToolInvocation(span, options);
+    return new ToolInvocation(span, options, this);
   }
 
   /**

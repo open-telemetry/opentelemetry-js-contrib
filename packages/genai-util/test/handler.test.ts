@@ -10,7 +10,11 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
-import { TelemetryHandler, type CompletionResult } from '../src';
+import {
+  TelemetryHandler,
+  isEventContentCaptureEnabled,
+  type CompletionResult,
+} from '../src';
 
 class TestMetricReader extends MetricReader {
   protected async onForceFlush(): Promise<void> {}
@@ -80,5 +84,178 @@ describe('TelemetryHandler', () => {
 
     const spans = memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
+  });
+
+  it('should emit span events for Agent, Retrieval, Tool, and FetchResponse in event_only mode', () => {
+    const tracer = tracerProvider.getTracer('test-tracer');
+    const handler = new TelemetryHandler({
+      tracer,
+      contentCaptureMode: 'event_only',
+    });
+
+    assert.strictEqual(
+      isEventContentCaptureEnabled(handler.getContentCaptureMode()),
+      true
+    );
+
+    // Agent invocation in event_only mode
+    const agentInv = handler.startAgent({
+      agentName: 'TestAgent',
+      inputMessages: [
+        {
+          role: 'user',
+          parts: [{ type: 'text', content: 'Agent prompt' }],
+        },
+      ],
+      systemInstructions: 'System prompt',
+    });
+    agentInv.addOutputMessages([
+      {
+        role: 'assistant',
+        parts: [{ type: 'text', content: 'Agent response' }],
+      },
+    ]);
+    agentInv.stop();
+
+    // Retrieval invocation in event_only mode
+    const retrievalInv = handler.startRetrieval({
+      dataSourceId: 'kb-1',
+      queryText: 'Find info',
+      documents: [{ text: 'Doc chunk 1' }],
+    });
+    retrievalInv.stop();
+
+    // Tool invocation in event_only mode
+    const toolInv = handler.startTool({
+      toolName: 'calculator',
+      toolArguments: { expr: '2+2' },
+    });
+    toolInv.setResult({ answer: 4 });
+    toolInv.stop();
+
+    // FetchResponse invocation in event_only mode
+    const fetchInv = handler.startFetchResponse({
+      providerName: 'openai',
+      responseId: 'resp-123',
+    });
+    fetchInv.addOutputMessages([
+      {
+        role: 'assistant',
+        parts: [{ type: 'text', content: 'Deferred response' }],
+      },
+    ]);
+    fetchInv.setSystemInstructions('Fetch instructions');
+    fetchInv.stop();
+
+    const spans = memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 4);
+
+    const [agentSpan, retrievalSpan, toolSpan, fetchSpan] = spans;
+
+    // Agent span: attributes stripped, event emitted
+    assert.strictEqual(
+      agentSpan.attributes['gen_ai.input.messages'],
+      undefined
+    );
+    assert.strictEqual(
+      agentSpan.attributes['gen_ai.output.messages'],
+      undefined
+    );
+    assert.strictEqual(agentSpan.events.length, 1);
+    assert.strictEqual(
+      agentSpan.events[0].name,
+      'gen_ai.client.inference.operation.details'
+    );
+    assert.ok(agentSpan.events[0].attributes?.['gen_ai.input.messages']);
+    assert.ok(agentSpan.events[0].attributes?.['gen_ai.output.messages']);
+
+    // Retrieval span: attributes stripped, event emitted
+    assert.strictEqual(
+      retrievalSpan.attributes['gen_ai.retrieval.query.text'],
+      undefined
+    );
+    assert.strictEqual(
+      retrievalSpan.attributes['gen_ai.retrieval.documents'],
+      undefined
+    );
+    assert.strictEqual(retrievalSpan.events.length, 1);
+    assert.strictEqual(
+      retrievalSpan.events[0].name,
+      'gen_ai.client.inference.operation.details'
+    );
+    assert.strictEqual(
+      retrievalSpan.events[0].attributes?.['gen_ai.retrieval.query.text'],
+      'Find info'
+    );
+
+    // Tool span: attributes set on span
+    assert.strictEqual(
+      toolSpan.attributes['gen_ai.tool.call.arguments'],
+      '{"expr":"2+2"}'
+    );
+    assert.strictEqual(
+      toolSpan.attributes['gen_ai.tool.call.result'],
+      '{"answer":4}'
+    );
+
+    // FetchResponse span: attributes stripped, event emitted
+    assert.strictEqual(
+      fetchSpan.attributes['gen_ai.output.messages'],
+      undefined
+    );
+    assert.strictEqual(fetchSpan.events.length, 1);
+    assert.strictEqual(
+      fetchSpan.events[0].name,
+      'gen_ai.client.inference.operation.details'
+    );
+    assert.ok(fetchSpan.events[0].attributes?.['gen_ai.output.messages']);
+  });
+
+  it('should reflect event emission enablement based on content capture mode', () => {
+    const tracer = tracerProvider.getTracer('test-tracer');
+    const handlerEvent = new TelemetryHandler({
+      tracer,
+      contentCaptureMode: 'event_only',
+    });
+    assert.strictEqual(
+      isEventContentCaptureEnabled(handlerEvent.getContentCaptureMode()),
+      true
+    );
+
+    const handlerSpanAndEvent = new TelemetryHandler({
+      tracer,
+      contentCaptureMode: 'span_and_event',
+    });
+    assert.strictEqual(
+      isEventContentCaptureEnabled(handlerSpanAndEvent.getContentCaptureMode()),
+      true
+    );
+
+    const handlerSpanOnly = new TelemetryHandler({
+      tracer,
+      contentCaptureMode: 'span_only',
+    });
+    assert.strictEqual(
+      isEventContentCaptureEnabled(handlerSpanOnly.getContentCaptureMode()),
+      false
+    );
+
+    const handlerNone = new TelemetryHandler({
+      tracer,
+      contentCaptureMode: 'none',
+    });
+    assert.strictEqual(
+      isEventContentCaptureEnabled(handlerNone.getContentCaptureMode()),
+      false
+    );
+
+    process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT =
+      'event_only';
+    const handlerEnv = new TelemetryHandler({ tracer });
+    assert.strictEqual(
+      isEventContentCaptureEnabled(handlerEnv.getContentCaptureMode()),
+      true
+    );
+    delete process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;
   });
 });

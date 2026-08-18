@@ -60,6 +60,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
   GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
   GEN_AI_RESPONSE_STATUS_VALUE_COMPLETED,
+  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   BaseInvocation,
   type CompletionResult,
 } from '../src';
@@ -145,7 +146,10 @@ describe('GenAI Invocations', () => {
       assert.strictEqual(span.attributes[ATTR_GEN_AI_PROVIDER_NAME], 'openai');
       assert.strictEqual(span.attributes[ATTR_GEN_AI_OPERATION_NAME], 'chat');
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_MODEL], 'gpt-4o');
-      assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], 'api.openai.com');
+      assert.strictEqual(
+        span.attributes[ATTR_SERVER_ADDRESS],
+        'api.openai.com'
+      );
       assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_TEMPERATURE], 0.7);
       assert.strictEqual(
@@ -242,6 +246,7 @@ describe('GenAI Invocations', () => {
         spansNone[0].attributes[ATTR_GEN_AI_OUTPUT_MESSAGES],
         undefined
       );
+      assert.strictEqual(spansNone[0].events.length, 0);
 
       memoryExporter.reset();
 
@@ -273,6 +278,7 @@ describe('GenAI Invocations', () => {
       assert.strictEqual(spansSpan.length, 1);
       assert.ok(spansSpan[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES]);
       assert.ok(spansSpan[0].attributes[ATTR_GEN_AI_OUTPUT_MESSAGES]);
+      assert.strictEqual(spansSpan[0].events.length, 0);
 
       memoryExporter.reset();
 
@@ -283,6 +289,7 @@ describe('GenAI Invocations', () => {
 
       const invEvent = handlerEvent.startInference({
         providerName: 'openai',
+        systemInstructions: 'You are a helpful assistant',
         inputMessages: [
           {
             role: 'user',
@@ -309,6 +316,52 @@ describe('GenAI Invocations', () => {
       assert.strictEqual(
         spansEvent[0].attributes[ATTR_GEN_AI_OUTPUT_MESSAGES],
         undefined
+      );
+      assert.strictEqual(
+        spansEvent[0].attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS],
+        undefined
+      );
+      assert.strictEqual(spansEvent[0].events.length, 1);
+      assert.strictEqual(
+        spansEvent[0].events[0].name,
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+      );
+      assert.ok(
+        spansEvent[0].events[0].attributes?.[ATTR_GEN_AI_INPUT_MESSAGES]
+      );
+      assert.ok(
+        spansEvent[0].events[0].attributes?.[ATTR_GEN_AI_OUTPUT_MESSAGES]
+      );
+      assert.strictEqual(
+        spansEvent[0].events[0].attributes?.[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS],
+        'You are a helpful assistant'
+      );
+
+      memoryExporter.reset();
+
+      const handlerAll = new TelemetryHandler({
+        tracer,
+        contentCaptureMode: 'span_and_event',
+      });
+
+      const invAll = handlerAll.startInference({
+        providerName: 'openai',
+        inputMessages: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', content: 'Hello' }],
+          },
+        ],
+      });
+      invAll.stop();
+
+      const spansAll = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spansAll.length, 1);
+      assert.ok(spansAll[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES]);
+      assert.strictEqual(spansAll[0].events.length, 1);
+      assert.strictEqual(
+        spansAll[0].events[0].name,
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
       );
     });
   });
@@ -339,7 +392,10 @@ describe('GenAI Invocations', () => {
         span.attributes[ATTR_GEN_AI_OPERATION_NAME],
         'embeddings'
       );
-      assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], 'api.openai.com');
+      assert.strictEqual(
+        span.attributes[ATTR_SERVER_ADDRESS],
+        'api.openai.com'
+      );
       assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
       assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 50);
       assert.strictEqual(span.status.code, SpanStatusCode.OK);

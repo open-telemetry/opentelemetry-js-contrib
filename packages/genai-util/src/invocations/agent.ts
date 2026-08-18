@@ -41,6 +41,7 @@ import {
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
+  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
 } from '../semconv';
 import type {
@@ -59,7 +60,10 @@ import {
   formatSystemInstructions,
   getErrorType,
 } from '../utils';
-import { isSpanContentCaptureEnabled } from '../environment-variables';
+import {
+  isEventContentCaptureEnabled,
+  isSpanContentCaptureEnabled,
+} from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
@@ -422,6 +426,41 @@ export class AgentInvocation extends BaseInvocation {
     this._handler.recordOperationDuration(durationSec, metricAttrs);
     if (this._usage) {
       this._handler.recordTokenUsage(this._usage, metricAttrs);
+    }
+  }
+
+  protected override _emitContentEvents(endTime?: HrTime): void {
+    const mode = this._handler?.getContentCaptureMode() ?? 'none';
+    if (!isEventContentCaptureEnabled(mode)) {
+      return;
+    }
+
+    const eventAttrs: Attributes = {};
+    if (this._inputMessages && this._inputMessages.length > 0) {
+      const formatted = formatInputMessages(this._inputMessages);
+      if (formatted) {
+        eventAttrs[ATTR_GEN_AI_INPUT_MESSAGES] = formatted;
+      }
+    }
+    if (this._outputMessages && this._outputMessages.length > 0) {
+      const formatted = formatOutputMessages(this._outputMessages);
+      if (formatted) {
+        eventAttrs[ATTR_GEN_AI_OUTPUT_MESSAGES] = formatted;
+      }
+    }
+    if (this._systemInstructions) {
+      const formatted = formatSystemInstructions(this._systemInstructions);
+      if (formatted) {
+        eventAttrs[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS] = formatted;
+      }
+    }
+
+    if (Object.keys(eventAttrs).length > 0) {
+      this._span.addEvent(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
+        eventAttrs,
+        endTime
+      );
     }
   }
 
