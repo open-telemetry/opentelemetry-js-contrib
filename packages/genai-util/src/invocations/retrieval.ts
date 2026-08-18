@@ -17,11 +17,15 @@ import {
   ATTR_GEN_AI_REQUEST_TOP_K,
   ATTR_GEN_AI_RETRIEVAL_DOCUMENTS,
   ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT,
+  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
 } from '../semconv';
 import type { RetrievalInvocationOptions } from '../types';
 import { getErrorType, serializeContent } from '../utils';
-import { isSpanContentCaptureEnabled } from '../environment-variables';
+import {
+  isEventContentCaptureEnabled,
+  isSpanContentCaptureEnabled,
+} from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
@@ -35,6 +39,8 @@ export class RetrievalInvocation extends BaseInvocation {
   private readonly _serverAddress?: string;
   private readonly _serverPort?: number;
   private _topK?: number;
+  private _queryText?: string;
+  private _documents?: unknown[];
 
   constructor(
     span: Span,
@@ -85,6 +91,7 @@ export class RetrievalInvocation extends BaseInvocation {
   }
 
   public setQueryText(queryText: string): this {
+    this._queryText = queryText;
     if (
       this._handler &&
       isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())
@@ -95,6 +102,7 @@ export class RetrievalInvocation extends BaseInvocation {
   }
 
   public setDocuments(documents: unknown[]): this {
+    this._documents = documents;
     if (
       this._handler &&
       isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())
@@ -140,5 +148,31 @@ export class RetrievalInvocation extends BaseInvocation {
     }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
+  }
+
+  protected override _emitContentEvents(endTime?: HrTime): void {
+    const mode = this._handler?.getContentCaptureMode() ?? 'none';
+    if (!isEventContentCaptureEnabled(mode)) {
+      return;
+    }
+
+    const eventAttrs: Attributes = {};
+    if (this._queryText) {
+      eventAttrs[ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT] = this._queryText;
+    }
+    if (this._documents) {
+      const formatted = serializeContent(this._documents);
+      if (formatted) {
+        eventAttrs[ATTR_GEN_AI_RETRIEVAL_DOCUMENTS] = formatted;
+      }
+    }
+
+    if (Object.keys(eventAttrs).length > 0) {
+      this._span.addEvent(
+        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
+        eventAttrs,
+        endTime
+      );
+    }
   }
 }

@@ -73,6 +73,7 @@ export abstract class BaseInvocation {
     const durationSec = calculateDurationSeconds(this._startTime, endHr);
 
     this._recordMetrics(durationSec);
+    this._emitContentEvents(endHr);
 
     this._span.setStatus({ code: SpanStatusCode.OK });
     this._span.end(endHr);
@@ -111,6 +112,8 @@ export abstract class BaseInvocation {
       this._span.recordException(error);
     }
 
+    this._emitContentEvents(endHr);
+
     this._span.setStatus({
       code: SpanStatusCode.ERROR,
       message: errorMessage,
@@ -124,6 +127,11 @@ export abstract class BaseInvocation {
    * Hook for subclasses to emit operation-specific metrics on stop/fail.
    */
   protected _recordMetrics(_durationSec: number, _error?: unknown): void {}
+
+  /**
+   * Hook for subclasses to emit content span events on stop/fail.
+   */
+  protected _emitContentEvents(_endTime?: HrTime): void {}
 
   /**
    * Hook for subclasses to execute registered completion hooks on stop/fail.
