@@ -20,7 +20,7 @@ npm install --save @opentelemetry/genai-util
 - **Semantic Conventions**: Complete constants and enumerations for OpenTelemetry GenAI semantic conventions (attributes, operation names, providers, finish reasons, token types, metrics, events).
 - **TelemetryHandler**: Central lifecycle façade managing spans, metrics, events, and completion hooks for LLM and GenAI operations.
 - **Invocations Lifecycle**: Structured handlers for all GenAI operations:
-  - `InferenceInvocation`: Chat completions, text completions, and multimodal content generation (`chat`, `completion`, `generateContent`).
+  - `InferenceInvocation`: Chat completions, text completions, and multimodal content generation (`chat`, `text_completion`, `generate_content`).
   - `AgentInvocation`: Agent / assistant invocations with support for both local in-process agents (`SpanKind.INTERNAL`) and remote agents (`SpanKind.CLIENT`).
   - `EmbeddingInvocation`: Text and multimodal embedding generation (`embeddings`).
   - `ToolInvocation`: Tool / function execution (`execute_tool`).
@@ -189,7 +189,7 @@ const toolInvocation = handler.startTool({
 
 try {
   const result = await executeTool({ query: 'OpenTelemetry news' });
-  toolInvocation.setToolResult(result);
+  toolInvocation.setResult(result);
   toolInvocation.stop();
 } catch (err) {
   toolInvocation.fail(err);
@@ -204,12 +204,12 @@ try {
 ```ts
 const retrieval = handler.startRetrieval({
   dataSourceId: 'vector-db-docs',
-  queries: ['How to instrument GenAI in Node.js?'],
+  queryText: 'How to instrument GenAI in Node.js?',
   serverAddress: 'vector-db.internal',
   serverPort: 8000,
 });
 
-retrieval.setRetrievedDocuments([
+retrieval.setDocuments([
   {
     documentId: 'doc-42',
     content: 'OpenTelemetry GenAI utilities provide standard telemetry...',
