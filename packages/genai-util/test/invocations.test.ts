@@ -35,7 +35,11 @@ import {
   ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
   ATTR_GEN_AI_TOOL_NAME,
+  ATTR_GEN_AI_TOOL_DESCRIPTION,
   ATTR_GEN_AI_TOOL_CALL_ID,
+  ATTR_GEN_AI_TOOL_TYPE,
+  ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
+  ATTR_GEN_AI_TOOL_CALL_RESULT,
   ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
   ATTR_GEN_AI_REQUEST_TOP_P,
@@ -343,8 +347,11 @@ describe('GenAI Invocations', () => {
         toolName: 'get_stock_price',
         toolDescription: 'Fetch stock price for a symbol',
         toolCallId: 'call_123',
+        toolType: 'function',
+        toolArguments: { symbol: 'AAPL' },
       });
 
+      invocation.setResult({ price: 150.25 });
       invocation.stop();
 
       const spans = memoryExporter.getFinishedSpans();
@@ -360,7 +367,57 @@ describe('GenAI Invocations', () => {
         span.attributes[ATTR_GEN_AI_TOOL_NAME],
         'get_stock_price'
       );
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_TOOL_DESCRIPTION],
+        'Fetch stock price for a symbol'
+      );
       assert.strictEqual(span.attributes[ATTR_GEN_AI_TOOL_CALL_ID], 'call_123');
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_TOOL_TYPE], 'function');
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        '{"symbol":"AAPL"}'
+      );
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        '{"price":150.25}'
+      );
+      assert.strictEqual(span.status.code, SpanStatusCode.OK);
+    });
+
+    // Tool calls executed within agentic workflows may receive or return complex runtime
+    // objects (e.g. database connections, context states, or models with cyclic references).
+    // Using standard JSON.stringify without error handling throws an unhandled TypeError.
+    // This test ensures ToolInvocation safely handles cyclic references without crashing.
+    it('should handle non-serializable and circular arguments and results safely', () => {
+      const tracer = tracerProvider.getTracer('test-tracer');
+      const handler = new TelemetryHandler({ tracer });
+
+      const circularArgs: any = { a: 1 };
+      circularArgs.self = circularArgs;
+
+      const invocation = handler.startTool({
+        toolName: 'complex_tool',
+        toolArguments: circularArgs,
+      });
+
+      const circularResult: any = { b: 2 };
+      circularResult.self = circularResult;
+
+      invocation.setResult(circularResult);
+      invocation.stop();
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const span = spans[0];
+
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        '[object Object]'
+      );
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        '[object Object]'
+      );
       assert.strictEqual(span.status.code, SpanStatusCode.OK);
     });
   });
