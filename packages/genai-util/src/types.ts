@@ -487,11 +487,6 @@ export interface GenAIInstrumentationConfig {
   captureMessageContent?: boolean | ContentCaptureMode;
 
   /**
-   * Whether to emit detailed span events for messages and choices.
-   */
-  emitEvents?: boolean;
-
-  /**
    * Optional custom completion hooks.
    */
   completionHooks?: CompletionHook[];
