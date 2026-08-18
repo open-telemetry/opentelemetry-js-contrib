@@ -63,10 +63,7 @@ import {
   formatSystemInstructions,
   getErrorType,
 } from '../utils';
-import {
-  isEventContentCaptureEnabled,
-  isSpanContentCaptureEnabled,
-} from '../environment-variables';
+import { isSpanContentCaptureEnabled } from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
 
 /**
@@ -326,10 +323,7 @@ export class AgentInvocation {
   public addInputMessages(messages: InputMessages): this {
     this._inputMessages = [...(this._inputMessages ?? []), ...messages];
     const mode = this._handler?.getContentCaptureMode() ?? 'none';
-    if (
-      isSpanContentCaptureEnabled(mode) ||
-      isEventContentCaptureEnabled(mode)
-    ) {
+    if (isSpanContentCaptureEnabled(mode)) {
       const formatted = formatInputMessages(this._inputMessages);
       if (formatted) {
         this._span.setAttribute(ATTR_GEN_AI_INPUT_MESSAGES, formatted);
@@ -341,10 +335,7 @@ export class AgentInvocation {
   public addOutputMessages(messages: OutputMessages): this {
     this._outputMessages = [...(this._outputMessages ?? []), ...messages];
     const mode = this._handler?.getContentCaptureMode() ?? 'none';
-    if (
-      isSpanContentCaptureEnabled(mode) ||
-      isEventContentCaptureEnabled(mode)
-    ) {
+    if (isSpanContentCaptureEnabled(mode)) {
       const formatted = formatOutputMessages(this._outputMessages);
       if (formatted) {
         this._span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, formatted);
@@ -356,10 +347,7 @@ export class AgentInvocation {
   public setSystemInstructions(instructions: SystemInstruction): this {
     this._systemInstructions = instructions;
     const mode = this._handler?.getContentCaptureMode() ?? 'none';
-    if (
-      isSpanContentCaptureEnabled(mode) ||
-      isEventContentCaptureEnabled(mode)
-    ) {
+    if (isSpanContentCaptureEnabled(mode)) {
       const formatted = formatSystemInstructions(instructions);
       if (formatted) {
         this._span.setAttribute(ATTR_GEN_AI_SYSTEM_INSTRUCTIONS, formatted);
