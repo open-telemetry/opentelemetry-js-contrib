@@ -39,6 +39,7 @@ import {
   ATTR_GEN_AI_REQUEST_TOP_K,
   ATTR_GEN_AI_REQUEST_TOP_P,
   ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
+  ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
   ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
@@ -369,17 +370,29 @@ export class AgentInvocation {
   }
 
   /**
+   * Set time to first chunk in seconds for streaming responses.
+   */
+  public setTimeToFirstChunk(seconds: number): this {
+    this._span.setAttribute(ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK, seconds);
+    return this;
+  }
+
+  /**
    * Helper for stream chunks recording. On first chunk, marks stream request and records TTFT metric.
    */
   public recordStreamChunk(_chunk?: unknown): this {
     if (!this._firstChunkTime) {
       this._firstChunkTime = process.hrtime();
       this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
+      const ttftSec = calculateDurationSeconds(
+        this._startTime,
+        this._firstChunkTime
+      );
+      this._span.setAttribute(
+        ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
+        ttftSec
+      );
       if (this._handler) {
-        const ttftSec = calculateDurationSeconds(
-          this._startTime,
-          this._firstChunkTime
-        );
         const metricAttrs: Attributes = {
           [ATTR_GEN_AI_OPERATION_NAME]:
             GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,

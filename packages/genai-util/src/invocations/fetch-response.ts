@@ -24,6 +24,7 @@ import {
   ATTR_GEN_AI_RESPONSE_ID,
   ATTR_GEN_AI_RESPONSE_MODEL,
   ATTR_GEN_AI_RESPONSE_STATUS,
+  ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
   GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
 } from '../semconv';
@@ -134,6 +135,11 @@ export class FetchResponseInvocation {
 
   public getStreamCursor(): string | undefined {
     return this._streamCursor;
+  }
+
+  public setTimeToFirstChunk(seconds: number): this {
+    this._span.setAttribute(ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK, seconds);
+    return this;
   }
 
   public addOutputMessages(messages: OutputMessages): this {
