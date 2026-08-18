@@ -47,6 +47,15 @@ const cliLevels: Record<string, number> = {
   silly: SeverityNumber.TRACE,
 };
 
+const OTEL_CONTEXT_SYMBOL = Symbol.for(
+  'opentelemetry.js.contrib.winston.context'
+);
+const LOG_CORRELATION_FIELDS = new Set([
+  'trace_id',
+  'span_id',
+  'trace_flags',
+]);
+
 function getSeverityNumber(level: string): SeverityNumber | undefined {
   return npmLevels[level] ?? sysLoglevels[level] ?? cliLevels[level];
 }
@@ -317,7 +326,8 @@ export function emitLogRecord(
   for (const key in rest) {
     if (
       Object.prototype.hasOwnProperty.call(rest, key) &&
-      !excludedAttributes.has(key)
+      !excludedAttributes.has(key) &&
+      !LOG_CORRELATION_FIELDS.has(key)
     ) {
       attributes[key] = normalizeAttributeValue(rest[key]);
     }
@@ -336,12 +346,14 @@ export function emitLogRecord(
   }
   const normalizedEventName =
     typeof eventName === 'string' ? eventName : undefined;
+  const context = record[OTEL_CONTEXT_SYMBOL];
 
   const logRecord: LogRecord = {
     severityNumber: getSeverityNumber(levelSym),
     severityText: levelSym,
     body: message,
     attributes: attributes,
+    ...(context ? { context } : {}),
     ...(exceptionPayload ? { exception: exceptionPayload.exception } : {}),
     ...(normalizedEventName !== undefined
       ? { eventName: normalizedEventName }
