@@ -15,6 +15,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
 } from '../semconv';
 import type { ToolInvocationOptions } from '../types';
+import { serializeContent } from '../utils';
 import { BaseInvocation } from './base';
 
 /**
@@ -39,10 +40,9 @@ export class ToolInvocation extends BaseInvocation {
       attrs[ATTR_GEN_AI_TOOL_TYPE] = options.toolType;
     }
     if (options.toolArguments !== undefined) {
-      attrs[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] =
-        typeof options.toolArguments === 'string'
-          ? options.toolArguments
-          : JSON.stringify(options.toolArguments);
+      attrs[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] = serializeContent(
+        options.toolArguments
+      );
     }
 
     this._span.setAttributes(attrs);
@@ -52,7 +52,7 @@ export class ToolInvocation extends BaseInvocation {
     if (result !== undefined) {
       this._span.setAttribute(
         ATTR_GEN_AI_TOOL_CALL_RESULT,
-        typeof result === 'string' ? result : JSON.stringify(result)
+        serializeContent(result)
       );
     }
     return this;
