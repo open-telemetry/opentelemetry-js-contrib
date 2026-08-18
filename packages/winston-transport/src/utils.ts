@@ -50,11 +50,7 @@ const cliLevels: Record<string, number> = {
 const OTEL_CONTEXT_SYMBOL = Symbol.for(
   'opentelemetry.js.contrib.winston.context'
 );
-const LOG_CORRELATION_FIELDS = new Set([
-  'trace_id',
-  'span_id',
-  'trace_flags',
-]);
+const LOG_CORRELATION_FIELDS = new Set(['trace_id', 'span_id', 'trace_flags']);
 
 function getSeverityNumber(level: string): SeverityNumber | undefined {
   return npmLevels[level] ?? sysLoglevels[level] ?? cliLevels[level];
