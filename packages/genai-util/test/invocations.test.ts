@@ -12,9 +12,9 @@ import {
 import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import {
+  ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
-  EVENT_EXCEPTION,
 } from '@opentelemetry/semantic-conventions';
 import {
   TelemetryHandler,
@@ -186,8 +186,9 @@ describe('GenAI Invocations', () => {
 
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
       assert.strictEqual(span.status.message, 'Rate limit exceeded');
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
       assert.strictEqual(span.events.length, 1);
-      assert.strictEqual(span.events[0].name, EVENT_EXCEPTION);
+      assert.strictEqual(span.events[0].name, 'exception');
     });
 
     it('should respect content capture mode when disabled vs enabled', () => {
@@ -557,8 +558,9 @@ describe('GenAI Invocations', () => {
         span.status.message,
         'Remote agent execution timed out'
       );
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
       assert.strictEqual(span.events.length, 1);
-      assert.strictEqual(span.events[0].name, EVENT_EXCEPTION);
+      assert.strictEqual(span.events[0].name, 'exception');
 
       await new Promise(r => setTimeout(r, 10));
       assert.ok(hookResult);
@@ -598,6 +600,10 @@ describe('GenAI Invocations', () => {
       assert.strictEqual(spans[1].kind, SpanKind.CLIENT);
       assert.strictEqual(spans[1].status.code, SpanStatusCode.ERROR);
       assert.strictEqual(spans[1].status.message, 'Agent string error');
+      assert.strictEqual(
+        spans[1].attributes[ATTR_ERROR_TYPE],
+        'Agent string error'
+      );
       assert.strictEqual(spans[1].attributes['agent.custom'], true);
       assert.strictEqual(spans[1].attributes['another.custom'], 123);
     });
@@ -629,7 +635,9 @@ describe('GenAI Invocations', () => {
         'summarize_docs'
       );
       assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
       assert.strictEqual(spans[1].status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(spans[1].attributes[ATTR_ERROR_TYPE], 'Error');
     });
     it('should handle embedding and tool errors', () => {
       const tracer = tracerProvider.getTracer('test-tracer');
@@ -654,7 +662,9 @@ describe('GenAI Invocations', () => {
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
       assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
       assert.strictEqual(spans[1].status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(spans[1].attributes[ATTR_ERROR_TYPE], 'Error');
     });
 
     it('should handle comprehensive request options and system instructions', () => {
@@ -793,8 +803,9 @@ describe('GenAI Invocations', () => {
 
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
       assert.strictEqual(span.status.message, 'Connection timed out');
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
       assert.strictEqual(span.events.length, 1);
-      assert.strictEqual(span.events[0].name, EVENT_EXCEPTION);
+      assert.strictEqual(span.events[0].name, 'exception');
     });
   });
 
@@ -919,6 +930,7 @@ describe('GenAI Invocations', () => {
 
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
       assert.strictEqual(span.status.message, 'Batch expired');
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
 
       await new Promise(r => setTimeout(r, 10));
       assert.ok(hookCalledWith);

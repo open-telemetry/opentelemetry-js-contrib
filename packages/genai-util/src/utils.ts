@@ -163,3 +163,21 @@ export function getSpanName(operationName: string, model?: string): string {
   const op = operationName || GEN_AI_OPERATION_NAME_VALUE_CHAT;
   return model ? `${op} ${model}` : op;
 }
+
+/**
+ * Extract a standard error.type string from an error or exception.
+ */
+export function getErrorType(error: unknown): string {
+  if (error instanceof Error) {
+    return (
+      (error as { code?: string }).code ||
+      error.name ||
+      error.constructor?.name ||
+      'Error'
+    );
+  }
+  if (typeof error === 'string' && error.trim().length > 0) {
+    return error;
+  }
+  return 'Error';
+}

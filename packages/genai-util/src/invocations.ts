@@ -85,6 +85,7 @@ import {
   formatInputMessages,
   formatOutputMessages,
   formatSystemInstructions,
+  getErrorType,
   serializeContent,
 } from './utils';
 import {
@@ -427,6 +428,9 @@ export class InferenceInvocation {
           ? error
           : 'GenAI operation error';
 
+    const errorType = getErrorType(error);
+    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
+
     if (error instanceof Error) {
       this._span.recordException(error);
     }
@@ -452,8 +456,7 @@ export class InferenceInvocation {
       metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
     }
     if (error) {
-      metricAttrs[ATTR_ERROR_TYPE] =
-        error instanceof Error ? error.name : 'Error';
+      metricAttrs[ATTR_ERROR_TYPE] = getErrorType(error);
     }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
@@ -599,13 +602,16 @@ export class EmbeddingInvocation {
     const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
     const durationSec = calculateDurationSeconds(this._startTime, endHr);
 
+    const errorType = getErrorType(error);
     const metricAttrs: Attributes = {
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
-      [ATTR_ERROR_TYPE]: error instanceof Error ? error.name : 'Error',
+      [ATTR_ERROR_TYPE]: errorType,
     };
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
+
+    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
 
     if (error instanceof Error) {
       this._span.recordException(error);
@@ -704,6 +710,8 @@ export class ToolInvocation {
       return;
     }
     this._isEnded = true;
+    const errorType = getErrorType(error);
+    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
     if (error instanceof Error) {
       this._span.recordException(error);
     }
@@ -1101,6 +1109,9 @@ export class AgentInvocation {
           ? error
           : 'GenAI agent error';
 
+    const errorType = getErrorType(error);
+    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
+
     if (error instanceof Error) {
       this._span.recordException(error);
     }
@@ -1134,8 +1145,7 @@ export class AgentInvocation {
       metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
     }
     if (error) {
-      metricAttrs[ATTR_ERROR_TYPE] =
-        error instanceof Error ? error.name : 'Error';
+      metricAttrs[ATTR_ERROR_TYPE] = getErrorType(error);
     }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
@@ -1225,6 +1235,8 @@ export class WorkflowInvocation {
       return;
     }
     this._isEnded = true;
+    const errorType = getErrorType(error);
+    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
     if (error instanceof Error) {
       this._span.recordException(error);
     }
@@ -1379,9 +1391,10 @@ export class RetrievalInvocation {
     const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
     const durationSec = calculateDurationSeconds(this._startTime, endHr);
 
+    const errorType = getErrorType(error);
     const metricAttrs: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
-      [ATTR_ERROR_TYPE]: error instanceof Error ? error.name : 'Error',
+      [ATTR_ERROR_TYPE]: errorType,
     };
     if (this._providerName) {
       metricAttrs[ATTR_GEN_AI_PROVIDER_NAME] = this._providerName;
@@ -1397,6 +1410,8 @@ export class RetrievalInvocation {
     }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
+
+    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
 
     if (error instanceof Error) {
       this._span.recordException(error);
@@ -1569,6 +1584,9 @@ export class FetchResponseInvocation {
 
     this._recordMetrics(durationSec, error);
 
+    const errorType = getErrorType(error);
+    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
+
     if (error instanceof Error) {
       this._span.recordException(error);
     }
@@ -1597,8 +1615,7 @@ export class FetchResponseInvocation {
       metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
     }
     if (error) {
-      metricAttrs[ATTR_ERROR_TYPE] =
-        error instanceof Error ? error.name : 'Error';
+      metricAttrs[ATTR_ERROR_TYPE] = getErrorType(error);
     }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);

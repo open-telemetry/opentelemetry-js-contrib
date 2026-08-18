@@ -12,7 +12,7 @@ import {
 import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import {
-  EVENT_EXCEPTION,
+  ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
@@ -209,8 +209,9 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
 
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
     assert.strictEqual(span.status.message, 'Network stream interrupted');
+    assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
     assert.strictEqual(span.events.length, 1);
-    assert.strictEqual(span.events[0].name, EVENT_EXCEPTION);
+    assert.strictEqual(span.events[0].name, 'exception');
   });
 
   it('should transparently proxy properties and methods on SDK stream objects', async () => {
