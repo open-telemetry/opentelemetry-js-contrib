@@ -24,6 +24,7 @@ import {
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_REQUEST_MODEL,
   ATTR_GEN_AI_REQUEST_STREAM,
+  ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
 } from '../src';
@@ -161,6 +162,10 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       GEN_AI_OPERATION_NAME_VALUE_CHAT
     );
     assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
+    assert.strictEqual(
+      typeof span.attributes[ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK],
+      'number'
+    );
     assert.strictEqual(span.attributes[ATTR_GEN_AI_PROVIDER_NAME], 'openai');
     assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_MODEL], 'gpt-4o');
     assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], 'api.openai.com');
@@ -315,6 +320,10 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
     );
     assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
+    assert.strictEqual(
+      typeof span.attributes[ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK],
+      'number'
+    );
     assert.strictEqual(span.status.code, SpanStatusCode.OK);
   });
 

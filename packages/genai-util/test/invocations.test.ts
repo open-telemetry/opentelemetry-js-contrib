@@ -25,6 +25,7 @@ import {
   ATTR_GEN_AI_RESPONSE_ID,
   ATTR_GEN_AI_RESPONSE_STATUS,
   ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
+  ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
@@ -126,6 +127,7 @@ describe('GenAI Invocations', () => {
           finish_reason: 'stop',
         },
       ]);
+      invocation.setTimeToFirstChunk(0.123);
       invocation.stop();
 
       const spans = memoryExporter.getFinishedSpans();
@@ -137,6 +139,10 @@ describe('GenAI Invocations', () => {
       assert.strictEqual(span.attributes[ATTR_GEN_AI_OPERATION_NAME], 'chat');
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_MODEL], 'gpt-4o');
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_TEMPERATURE], 0.7);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK],
+        0.123
+      );
       assert.strictEqual(
         span.attributes[ATTR_GEN_AI_RESPONSE_MODEL],
         'gpt-4o-2024-08-06'
@@ -751,6 +757,10 @@ describe('GenAI Invocations', () => {
       );
       assert.strictEqual(spans[0].attributes['custom.key'], 'custom.val');
       assert.strictEqual(spans[0].attributes['another.key'], 'val2');
+      assert.strictEqual(
+        typeof spans[0].attributes[ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK],
+        'number'
+      );
     });
   });
 
@@ -877,6 +887,7 @@ describe('GenAI Invocations', () => {
       inv.setResponseStatus(GEN_AI_RESPONSE_STATUS_VALUE_COMPLETED);
       inv.setFinishReasons(['stop']);
       inv.setStreamCursor('cursor_xyz');
+      inv.setTimeToFirstChunk(0.42);
       inv.setSystemInstructions('You are a helpful assistant.');
       inv.addOutputMessages([
         {
@@ -907,6 +918,10 @@ describe('GenAI Invocations', () => {
       assert.strictEqual(
         span.attributes[ATTR_GEN_AI_REQUEST_STREAM_CURSOR],
         'cursor_xyz'
+      );
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK],
+        0.42
       );
       assert.strictEqual(span.attributes[ATTR_GEN_AI_RESPONSE_MODEL], 'gpt-4o');
       assert.strictEqual(
