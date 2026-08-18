@@ -60,6 +60,66 @@ describe('OpenTelemetryTransportV3', () => {
     );
   });
 
+  it('serializes Error values in attributes', () => {
+    const transport = new OpenTelemetryTransportV3();
+    const error = new TypeError('boom') as TypeError & {
+      details?: { attempt: number };
+    };
+    error.details = { attempt: 2 };
+    Object.defineProperty(error, 'code', {
+      value: 'E_BROKEN',
+      enumerable: false,
+    });
+
+    transport.log({ message: kMessage, failure: error }, () => {});
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.deepStrictEqual(logRecords[0].attributes['failure'], {
+      name: 'TypeError',
+      stack: error.stack,
+      message: 'boom',
+      details: { attempt: 2 },
+      code: 'E_BROKEN',
+    });
+    assert.ok(error instanceof TypeError);
+  });
+
+  it('serializes nested and circular Error values in attributes', () => {
+    const transport = new OpenTelemetryTransportV3();
+    const rootCause = new Error('root cause');
+    const error = new AggregateError([rootCause], 'aggregate failure', {
+      cause: rootCause,
+    }) as AggregateError & { self?: Error };
+    error.self = error;
+    const metadata = { error };
+
+    transport.log({ message: kMessage, metadata }, () => {});
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    const serializedMetadata = logRecords[0].attributes['metadata'] as {
+      error: {
+        name: string;
+        message: string;
+        stack: string;
+        cause: { message: string };
+        errors: Array<{ message: string }>;
+        self: string;
+      };
+    };
+    assert.strictEqual(serializedMetadata.error.name, 'AggregateError');
+    assert.strictEqual(serializedMetadata.error.message, 'aggregate failure');
+    assert.strictEqual(serializedMetadata.error.stack, error.stack);
+    assert.strictEqual(serializedMetadata.error.cause.message, 'root cause');
+    assert.strictEqual(
+      serializedMetadata.error.errors[0].message,
+      'root cause'
+    );
+    assert.strictEqual(serializedMetadata.error.self, '[Circular]');
+    assert.strictEqual(metadata.error, error);
+  });
+
   it('emit LogRecord with exception from err field', () => {
     const transport = new OpenTelemetryTransportV3();
     transport.log({ message: kMessage, err: new Error('boom') }, () => {});
