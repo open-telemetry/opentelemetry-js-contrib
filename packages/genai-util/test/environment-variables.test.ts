@@ -6,10 +6,8 @@
 import * as assert from 'assert';
 import {
   ENV_GENAI_CAPTURE_MESSAGE_CONTENT,
-  getEnvBool,
   getContentCaptureMode,
   parseContentCaptureMode,
-  isCaptureMessageContentEnabled,
   isSpanContentCaptureEnabled,
   isEventContentCaptureEnabled,
 } from '../src';
@@ -66,16 +64,6 @@ describe('Environment Variables and Content Capture', () => {
   });
 
   describe('mode checkers', () => {
-    it('isCaptureMessageContentEnabled', () => {
-      assert.strictEqual(isCaptureMessageContentEnabled('none'), false);
-      assert.strictEqual(isCaptureMessageContentEnabled('span_only'), true);
-      assert.strictEqual(isCaptureMessageContentEnabled('event_only'), true);
-      assert.strictEqual(
-        isCaptureMessageContentEnabled('span_and_event'),
-        true
-      );
-    });
-
     it('isSpanContentCaptureEnabled', () => {
       assert.strictEqual(isSpanContentCaptureEnabled('none'), false);
       assert.strictEqual(isSpanContentCaptureEnabled('span_only'), true);
@@ -88,29 +76,6 @@ describe('Environment Variables and Content Capture', () => {
       assert.strictEqual(isEventContentCaptureEnabled('span_only'), false);
       assert.strictEqual(isEventContentCaptureEnabled('event_only'), true);
       assert.strictEqual(isEventContentCaptureEnabled('span_and_event'), true);
-    });
-  });
-
-  describe('getEnvBool', () => {
-    it('should parse boolean environment variables', () => {
-      process.env['TEST_BOOL_VAR'] = 'true';
-      assert.strictEqual(getEnvBool('TEST_BOOL_VAR'), true);
-
-      process.env['TEST_BOOL_VAR'] = '1';
-      assert.strictEqual(getEnvBool('TEST_BOOL_VAR'), true);
-
-      process.env['TEST_BOOL_VAR'] = 'false';
-      assert.strictEqual(getEnvBool('TEST_BOOL_VAR'), false);
-
-      process.env['TEST_BOOL_VAR'] = '0';
-      assert.strictEqual(getEnvBool('TEST_BOOL_VAR'), false);
-
-      delete process.env['TEST_BOOL_VAR'];
-      assert.strictEqual(getEnvBool('TEST_BOOL_VAR'), undefined);
-
-      process.env['TEST_BOOL_VAR'] = 'invalid';
-      assert.strictEqual(getEnvBool('TEST_BOOL_VAR'), undefined);
-      delete process.env['TEST_BOOL_VAR'];
     });
   });
 });

@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { diag } from '@opentelemetry/api';
-import type { DiagLogger } from '@opentelemetry/api';
 import type { ContentCaptureMode } from './types';
 
 /**
@@ -14,45 +12,10 @@ export const ENV_GENAI_CAPTURE_MESSAGE_CONTENT =
   'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT' as const;
 
 /**
- * Environment variable controlling whether to emit detailed events.
- */
-export const ENV_GENAI_EMIT_EVENT =
-  'OTEL_INSTRUMENTATION_GENAI_EMIT_EVENT' as const;
-
-/**
  * Environment variable specifying custom completion hook module.
  */
 export const ENV_GENAI_COMPLETION_HOOK =
   'OTEL_INSTRUMENTATION_GENAI_COMPLETION_HOOK' as const;
-
-/**
- * Read and parse a boolean value from an environment variable.
- */
-export function getEnvBool(
-  name: string,
-  diag_: DiagLogger = diag
-): boolean | undefined {
-  const val = process.env[name];
-  if (val === undefined || val === '') {
-    return undefined;
-  }
-  if (typeof val !== 'string') {
-    throw new Error(
-      `invalid type for environment variable: ${typeof val} (${name}=${val})`
-    );
-  }
-  const valLower = val.trim().toLowerCase();
-  if (valLower === 'true' || valLower === '1') {
-    return true;
-  }
-  if (valLower === 'false' || valLower === '0') {
-    return false;
-  }
-  diag_.warn(
-    `invalid boolean value for environment variable: ${name}=${val}; ignoring`
-  );
-  return undefined;
-}
 
 /**
  * Parse an arbitrary input value into a valid ContentCaptureMode.
@@ -105,15 +68,6 @@ export function getContentCaptureMode(
     return parseContentCaptureMode(envVal);
   }
   return parseContentCaptureMode(configVal);
-}
-
-/**
- * Returns true if message content capturing is enabled in any mode.
- */
-export function isCaptureMessageContentEnabled(
-  mode: ContentCaptureMode
-): boolean {
-  return mode !== 'none';
 }
 
 /**

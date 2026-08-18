@@ -286,7 +286,6 @@ recordServerTimeToFirstToken(ttftHist, 0.15, {
 | Variable | Values | Description |
 | :--- | :--- | :--- |
 | `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` | `none`, `span_only`, `event_only`, `span_and_event`, `true`, `false` | Controls whether prompt instructions and completion messages are captured as span attributes and/or events. Defaults to `none`. |
-| `OTEL_INSTRUMENTATION_GENAI_EMIT_EVENT` | `true`, `false`, `1`, `0` | Controls whether detailed GenAI events (such as message events) are emitted. |
 | `OTEL_INSTRUMENTATION_GENAI_COMPLETION_HOOK` | `<module-path>` | Optional module path for dynamically loading custom completion hooks. |
 
 ---
