@@ -8,12 +8,15 @@ import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import {
   createDurationHistogram,
   createTokenUsageHistogram,
+  createTimeToFirstChunkHistogram,
   createServerTimeToFirstTokenHistogram,
   recordOperationDuration,
   recordTokenUsage,
+  recordTimeToFirstChunk,
   recordServerTimeToFirstToken,
   GENAI_OPERATION_DURATION_BUCKETS,
   GENAI_TOKEN_USAGE_BUCKETS,
+  GENAI_TIME_TO_FIRST_CHUNK_BUCKETS,
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_OPERATION_NAME,
 } from '../src';
@@ -39,6 +42,7 @@ describe('GenAI Metrics Helpers', () => {
   it('should define standard bucket boundaries', () => {
     assert.strictEqual(GENAI_OPERATION_DURATION_BUCKETS[0], 0.01);
     assert.strictEqual(GENAI_TOKEN_USAGE_BUCKETS[0], 1);
+    assert.strictEqual(GENAI_TIME_TO_FIRST_CHUNK_BUCKETS[0], 0.001);
   });
 
   it('should create duration and token usage histograms', () => {
@@ -80,6 +84,18 @@ describe('GenAI Metrics Helpers', () => {
     // Should ignore undefined usage / histogram
     recordTokenUsage(undefined, { inputTokens: 10 });
     recordTokenUsage(tokenUsageHistogram, undefined);
+  });
+
+  it('should create and record time to first chunk histogram', () => {
+    const meter = meterProvider.getMeter('test-meter');
+    const ttftHistogram = createTimeToFirstChunkHistogram(meter);
+
+    assert.ok(ttftHistogram);
+    recordTimeToFirstChunk(ttftHistogram, 0.123, {
+      [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+    });
+    recordTimeToFirstChunk(undefined, 0.123);
+    recordTimeToFirstChunk(ttftHistogram, -1);
   });
 
   it('should create and record server time to first token histogram', () => {

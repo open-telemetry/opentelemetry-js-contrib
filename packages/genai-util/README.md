@@ -30,13 +30,13 @@ npm install --save @opentelemetry/genai-util
 - **Streaming Telemetry & TTFT (`wrapAsyncStream`)**:
   - Transparently proxies SDK stream objects via ES6 Proxy.
   - Implements the `AsyncIterable` protocol for clean `for await (const chunk of stream)` consumption.
-  - Records **Time To First Token (TTFT)** (`gen_ai.server.time_to_first_token`) and sets `gen_ai.request.stream = true` on the first chunk.
+  - Records **Time To First Chunk (TTFT)** (`gen_ai.client.operation.time_to_first_chunk`), sets `gen_ai.response.time_to_first_chunk`, and sets `gen_ai.request.stream = true` on the first chunk.
   - Supports per-chunk callbacks (`onChunk`), completion hooks (`onEnd`), error handling (`onError`), and early iterator break (`return()`).
   - Automatically finalizes spans and computes overall duration metrics.
 - **Metrics Helpers**: Pre-configured histograms with standard explicit bucket boundaries:
   - `gen_ai.client.operation.duration` (in seconds)
   - `gen_ai.client.token.usage` (input & output tokens)
-  - `gen_ai.server.time_to_first_token` (in seconds)
+  - `gen_ai.client.operation.time_to_first_chunk` (in seconds)
 - **Content Capturing & Privacy**: Flexible message content capturing modes (`none`, `span_only`, `event_only`, `span_and_event`) configurable in code or via environment variables.
 - **Completion Hooks**: Pluggable lifecycle hooks (`CompletionHookManager`) for custom logging, evaluations, or forwarding prompts and completions to external analysis services.
 

@@ -30,9 +30,11 @@ import {
 import {
   createDurationHistogram,
   createServerTimeToFirstTokenHistogram,
+  createTimeToFirstChunkHistogram,
   createTokenUsageHistogram,
   recordOperationDuration,
   recordServerTimeToFirstToken,
+  recordTimeToFirstChunk,
   recordTokenUsage,
 } from './metrics';
 import {
@@ -90,6 +92,7 @@ export class TelemetryHandler {
   private readonly _hookManager: CompletionHookManager;
   private _operationDurationHistogram?: Histogram;
   private _tokenUsageHistogram?: Histogram;
+  private _timeToFirstChunkHistogram?: Histogram;
   private _timeToFirstTokenHistogram?: Histogram;
 
   constructor(options: TelemetryHandlerOptions = {}) {
@@ -119,6 +122,7 @@ export class TelemetryHandler {
   private _initMetrics(meter: Meter): void {
     this._operationDurationHistogram = createDurationHistogram(meter);
     this._tokenUsageHistogram = createTokenUsageHistogram(meter);
+    this._timeToFirstChunkHistogram = createTimeToFirstChunkHistogram(meter);
     this._timeToFirstTokenHistogram =
       createServerTimeToFirstTokenHistogram(meter);
   }
@@ -357,6 +361,20 @@ export class TelemetryHandler {
    */
   public recordTokenUsage(usage: TokenUsage, attributes?: Attributes): void {
     recordTokenUsage(this._tokenUsageHistogram, usage, attributes);
+  }
+
+  /**
+   * Record time to first chunk metric for streaming responses.
+   */
+  public recordTimeToFirstChunk(
+    durationSeconds: number,
+    attributes?: Attributes
+  ): void {
+    recordTimeToFirstChunk(
+      this._timeToFirstChunkHistogram,
+      durationSeconds,
+      attributes
+    );
   }
 
   /**
