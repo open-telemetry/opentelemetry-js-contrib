@@ -3,12 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  SpanStatusCode,
-  type Attributes,
-  type HrTime,
-  type Span,
-} from '@opentelemetry/api';
+import type { Attributes, HrTime, Span } from '@opentelemetry/api';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_GEN_AI_OPERATION_NAME,
@@ -18,37 +13,27 @@ import {
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
 } from '../semconv';
-import type { TokenUsage } from '../types';
-import { calculateDurationSeconds, getErrorType } from '../utils';
+import type { EmbeddingInvocationOptions, TokenUsage } from '../types';
+import { getErrorType } from '../utils';
 import type { TelemetryHandler } from '../handler';
+import { BaseInvocation } from './base';
 
 /**
  * Manages the lifecycle and telemetry of an Embedding operation.
  */
-export class EmbeddingInvocation {
-  private readonly _span: Span;
-  private readonly _handler: TelemetryHandler;
-  private readonly _startTime: HrTime;
+export class EmbeddingInvocation extends BaseInvocation {
   private readonly _providerName: string;
   private readonly _requestModel?: string;
   private _responseModel?: string;
   private _usage?: TokenUsage;
-  private _isEnded = false;
 
   constructor(
     span: Span,
     handler: TelemetryHandler,
-    options: {
-      providerName: string;
-      requestModel?: string;
-      inputTexts?: string[];
-      attributes?: Attributes;
-    },
+    options: EmbeddingInvocationOptions,
     startTime: HrTime = process.hrtime()
   ) {
-    this._span = span;
-    this._handler = handler;
-    this._startTime = startTime;
+    super(span, handler, startTime);
     this._providerName = options.providerName;
     this._requestModel = options.requestModel;
 
@@ -86,19 +71,13 @@ export class EmbeddingInvocation {
     return this;
   }
 
-  public setAttribute(key: string, value: any): this {
-    this._span.setAttribute(key, value);
-    return this;
-  }
-
-  public stop(endTime?: HrTime | number): void {
-    if (this._isEnded) {
+  protected override _recordMetrics(
+    durationSec: number,
+    error?: unknown
+  ): void {
+    if (!this._handler) {
       return;
     }
-    this._isEnded = true;
-    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
-    const durationSec = calculateDurationSeconds(this._startTime, endHr);
-
     const metricAttrs: Attributes = {
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
@@ -109,50 +88,13 @@ export class EmbeddingInvocation {
     if (this._responseModel) {
       metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
     }
+    if (error) {
+      metricAttrs[ATTR_ERROR_TYPE] = getErrorType(error);
+    }
 
     this._handler.recordOperationDuration(durationSec, metricAttrs);
-    if (this._usage) {
+    if (this._usage && !error) {
       this._handler.recordTokenUsage(this._usage, metricAttrs);
     }
-
-    this._span.setStatus({ code: SpanStatusCode.OK });
-    this._span.end(endHr);
-  }
-
-  public fail(
-    error: Error | string | unknown,
-    endTime?: HrTime | number
-  ): void {
-    if (this._isEnded) {
-      return;
-    }
-    this._isEnded = true;
-    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
-    const durationSec = calculateDurationSeconds(this._startTime, endHr);
-
-    const errorType = getErrorType(error);
-    const metricAttrs: Attributes = {
-      [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
-      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
-      [ATTR_ERROR_TYPE]: errorType,
-    };
-
-    this._handler.recordOperationDuration(durationSec, metricAttrs);
-
-    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
-
-    if (error instanceof Error) {
-      this._span.recordException(error);
-    }
-
-    this._span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: error instanceof Error ? error.message : String(error),
-    });
-    this._span.end(endHr);
-  }
-
-  public getSpan(): Span {
-    return this._span;
   }
 }

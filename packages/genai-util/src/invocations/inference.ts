@@ -3,12 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  SpanStatusCode,
-  type Attributes,
-  type HrTime,
-  type Span,
-} from '@opentelemetry/api';
+import type { Attributes, HrTime, Span } from '@opentelemetry/api';
 import {
   ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
@@ -63,14 +58,12 @@ import {
 } from '../utils';
 import { isSpanContentCaptureEnabled } from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
+import { BaseInvocation } from './base';
 
 /**
  * Manages the lifecycle and telemetry of an LLM / GenAI inference operation.
  */
-export class InferenceInvocation {
-  private readonly _span: Span;
-  private readonly _handler: TelemetryHandler;
-  private readonly _startTime: HrTime;
+export class InferenceInvocation extends BaseInvocation {
   private readonly _providerName: string;
   private readonly _operationName: string;
   private readonly _requestModel?: string;
@@ -85,8 +78,6 @@ export class InferenceInvocation {
   private _outputMessages?: OutputMessages;
   private _systemInstructions?: SystemInstruction;
   private _firstChunkTime?: HrTime;
-  private _isEnded = false;
-  private _customAttributes: Attributes = {};
 
   constructor(
     span: Span,
@@ -94,9 +85,7 @@ export class InferenceInvocation {
     options: InferenceInvocationOptions,
     startTime: HrTime = process.hrtime()
   ) {
-    this._span = span;
-    this._handler = handler;
-    this._startTime = startTime;
+    super(span, handler, startTime);
     this._providerName = options.providerName;
     this._operationName =
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_CHAT;
@@ -294,24 +283,6 @@ export class InferenceInvocation {
   }
 
   /**
-   * Set custom span attribute.
-   */
-  public setAttribute(key: string, value: any): this {
-    this._customAttributes[key] = value;
-    this._span.setAttribute(key, value);
-    return this;
-  }
-
-  /**
-   * Set multiple custom span attributes.
-   */
-  public setAttributes(attributes: Attributes): this {
-    Object.assign(this._customAttributes, attributes);
-    this._span.setAttributes(attributes);
-    return this;
-  }
-
-  /**
    * Set time to first chunk in seconds for streaming responses.
    */
   public setTimeToFirstChunk(seconds: number): this {
@@ -335,89 +306,37 @@ export class InferenceInvocation {
         ttftSec
       );
 
-      const metricAttrs: Attributes = {
-        [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
-        [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
-      };
-      if (this._requestModel) {
-        metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
-      }
-      if (this._responseModel) {
-        metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
-      }
-      if (this._serverAddress) {
-        metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
-      }
-      if (this._serverPort !== undefined) {
-        metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
-      }
+      if (this._handler) {
+        const metricAttrs: Attributes = {
+          [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
+          [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
+        };
+        if (this._requestModel) {
+          metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
+        }
+        if (this._responseModel) {
+          metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
+        }
+        if (this._serverAddress) {
+          metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
+        }
+        if (this._serverPort !== undefined) {
+          metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
+        }
 
-      this._handler.recordServerTimeToFirstToken(ttftSec, metricAttrs);
+        this._handler.recordServerTimeToFirstToken(ttftSec, metricAttrs);
+      }
     }
     return this;
   }
 
-  /**
-   * Complete the invocation successfully.
-   */
-  public stop(endTime?: HrTime | number): void {
-    if (this._isEnded) {
-      return;
-    }
-    this._isEnded = true;
-
-    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
-    const durationSec = calculateDurationSeconds(this._startTime, endHr);
-
-    this._recordMetrics(durationSec);
-
-    this._span.setStatus({ code: SpanStatusCode.OK });
-    this._span.end(endHr);
-
-    this._runCompletionHook(durationSec);
-  }
-
-  /**
-   * Complete the invocation with an error.
-   */
-  public fail(
-    error: Error | string | unknown,
-    endTime?: HrTime | number
+  protected override _recordMetrics(
+    durationSec: number,
+    error?: unknown
   ): void {
-    if (this._isEnded) {
+    if (!this._handler) {
       return;
     }
-    this._isEnded = true;
-
-    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
-    const durationSec = calculateDurationSeconds(this._startTime, endHr);
-
-    this._recordMetrics(durationSec, error);
-
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : typeof error === 'string'
-          ? error
-          : 'GenAI operation error';
-
-    const errorType = getErrorType(error);
-    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
-
-    if (error instanceof Error) {
-      this._span.recordException(error);
-    }
-
-    this._span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: errorMessage,
-    });
-    this._span.end(endHr);
-
-    this._runCompletionHook(durationSec, error);
-  }
-
-  private _recordMetrics(durationSec: number, error?: unknown): void {
     const metricAttrs: Attributes = {
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
       [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
@@ -438,7 +357,13 @@ export class InferenceInvocation {
     }
   }
 
-  private _runCompletionHook(durationSec: number, error?: unknown): void {
+  protected override _runCompletionHook(
+    durationSec: number,
+    error?: unknown
+  ): void {
+    if (!this._handler) {
+      return;
+    }
     const result: CompletionResult = {
       span: this._span,
       providerName: this._providerName,
@@ -460,9 +385,5 @@ export class InferenceInvocation {
     void this._handler
       .getCompletionHookManager()
       .execute(result, this._handler.getDiag());
-  }
-
-  public getSpan(): Span {
-    return this._span;
   }
 }

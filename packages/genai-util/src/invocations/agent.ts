@@ -3,12 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  SpanStatusCode,
-  type Attributes,
-  type HrTime,
-  type Span,
-} from '@opentelemetry/api';
+import type { Attributes, HrTime, Span } from '@opentelemetry/api';
 import {
   ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
@@ -66,14 +61,12 @@ import {
 } from '../utils';
 import { isSpanContentCaptureEnabled } from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
+import { BaseInvocation } from './base';
 
 /**
  * Manages the lifecycle and telemetry of an Agent invocation (local or remote).
  */
-export class AgentInvocation {
-  private readonly _span: Span;
-  private readonly _handler?: TelemetryHandler;
-  private readonly _startTime: HrTime;
+export class AgentInvocation extends BaseInvocation {
   private readonly _providerName?: string;
   private readonly _requestModel?: string;
   private readonly _serverAddress?: string;
@@ -91,8 +84,6 @@ export class AgentInvocation {
   private _outputMessages?: OutputMessages;
   private _systemInstructions?: SystemInstruction;
   private _firstChunkTime?: HrTime;
-  private _customAttributes: Attributes = {};
-  private _isEnded = false;
 
   constructor(
     span: Span,
@@ -100,9 +91,7 @@ export class AgentInvocation {
     options?: AgentInvocationOptions | RemoteAgentInvocationOptions,
     startTime: HrTime = process.hrtime()
   ) {
-    this._span = span;
-    this._handler = handler;
-    this._startTime = startTime;
+    super(span, handler, startTime);
     this._providerName = (
       options as RemoteAgentInvocationOptions
     )?.providerName;
@@ -357,18 +346,6 @@ export class AgentInvocation {
     return this;
   }
 
-  public setAttribute(key: string, value: any): this {
-    this._customAttributes[key] = value;
-    this._span.setAttribute(key, value);
-    return this;
-  }
-
-  public setAttributes(attributes: Attributes): this {
-    Object.assign(this._customAttributes, attributes);
-    this._span.setAttributes(attributes);
-    return this;
-  }
-
   /**
    * Set time to first chunk in seconds for streaming responses.
    */
@@ -416,59 +393,10 @@ export class AgentInvocation {
     return this;
   }
 
-  public stop(endTime?: HrTime | number): void {
-    if (this._isEnded) {
-      return;
-    }
-    this._isEnded = true;
-    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
-    const durationSec = calculateDurationSeconds(this._startTime, endHr);
-
-    this._recordMetrics(durationSec);
-
-    this._span.setStatus({ code: SpanStatusCode.OK });
-    this._span.end(endHr);
-
-    this._runCompletionHook(durationSec);
-  }
-
-  public fail(
-    error: Error | string | unknown,
-    endTime?: HrTime | number
+  protected override _recordMetrics(
+    durationSec: number,
+    error?: unknown
   ): void {
-    if (this._isEnded) {
-      return;
-    }
-    this._isEnded = true;
-    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
-    const durationSec = calculateDurationSeconds(this._startTime, endHr);
-
-    this._recordMetrics(durationSec, error);
-
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : typeof error === 'string'
-          ? error
-          : 'GenAI agent error';
-
-    const errorType = getErrorType(error);
-    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
-
-    if (error instanceof Error) {
-      this._span.recordException(error);
-    }
-
-    this._span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: errorMessage,
-    });
-    this._span.end(endHr);
-
-    this._runCompletionHook(durationSec, error);
-  }
-
-  private _recordMetrics(durationSec: number, error?: unknown): void {
     if (!this._handler) {
       return;
     }
@@ -497,7 +425,10 @@ export class AgentInvocation {
     }
   }
 
-  private _runCompletionHook(durationSec: number, error?: unknown): void {
+  protected override _runCompletionHook(
+    durationSec: number,
+    error?: unknown
+  ): void {
     if (!this._handler) {
       return;
     }
@@ -519,9 +450,5 @@ export class AgentInvocation {
     void this._handler
       .getCompletionHookManager()
       .execute(result, this._handler.getDiag());
-  }
-
-  public getSpan(): Span {
-    return this._span;
   }
 }

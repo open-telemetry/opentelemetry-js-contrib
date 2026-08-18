@@ -3,12 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  SpanStatusCode,
-  type Attributes,
-  type HrTime,
-  type Span,
-} from '@opentelemetry/api';
+import type { Attributes, HrTime, Span } from '@opentelemetry/api';
 import {
   ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
@@ -35,21 +30,18 @@ import type {
   SystemInstruction,
 } from '../types';
 import {
-  calculateDurationSeconds,
   formatOutputMessages,
   formatSystemInstructions,
   getErrorType,
 } from '../utils';
 import { isSpanContentCaptureEnabled } from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
+import { BaseInvocation } from './base';
 
 /**
  * Manages the lifecycle and telemetry of a Fetch Response operation (fetching previously generated responses).
  */
-export class FetchResponseInvocation {
-  private readonly _span: Span;
-  private readonly _handler: TelemetryHandler;
-  private readonly _startTime: HrTime;
+export class FetchResponseInvocation extends BaseInvocation {
   private readonly _providerName: string;
   private readonly _responseId: string;
   private readonly _serverAddress?: string;
@@ -60,7 +52,6 @@ export class FetchResponseInvocation {
   private _streamCursor?: string;
   private _outputMessages: OutputMessages = [];
   private _systemInstructions?: SystemInstruction;
-  private _isEnded = false;
 
   constructor(
     span: Span,
@@ -68,9 +59,7 @@ export class FetchResponseInvocation {
     options: FetchResponseInvocationOptions,
     startTime: HrTime = process.hrtime()
   ) {
-    this._span = span;
-    this._handler = handler;
-    this._startTime = startTime;
+    super(span, handler, startTime);
     this._providerName = options.providerName;
     this._responseId = options.responseId;
     this._serverAddress = options.serverAddress;
@@ -144,7 +133,10 @@ export class FetchResponseInvocation {
 
   public addOutputMessages(messages: OutputMessages): this {
     this._outputMessages.push(...messages);
-    if (isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())) {
+    if (
+      this._handler &&
+      isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())
+    ) {
       const formatted = formatOutputMessages(this._outputMessages);
       if (formatted) {
         this._span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, formatted);
@@ -155,7 +147,10 @@ export class FetchResponseInvocation {
 
   public setSystemInstructions(instructions: SystemInstruction): this {
     this._systemInstructions = instructions;
-    if (isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())) {
+    if (
+      this._handler &&
+      isSpanContentCaptureEnabled(this._handler.getContentCaptureMode())
+    ) {
       const formatted = formatSystemInstructions(instructions);
       if (formatted) {
         this._span.setAttribute(ATTR_GEN_AI_SYSTEM_INSTRUCTIONS, formatted);
@@ -164,62 +159,13 @@ export class FetchResponseInvocation {
     return this;
   }
 
-  public setAttribute(key: string, value: any): this {
-    this._span.setAttribute(key, value);
-    return this;
-  }
-
-  public setAttributes(attributes: Attributes): this {
-    this._span.setAttributes(attributes);
-    return this;
-  }
-
-  public stop(endTime?: HrTime | number): void {
-    if (this._isEnded) {
-      return;
-    }
-    this._isEnded = true;
-    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
-    const durationSec = calculateDurationSeconds(this._startTime, endHr);
-
-    this._recordMetrics(durationSec);
-
-    this._span.setStatus({ code: SpanStatusCode.OK });
-    this._span.end(endHr);
-
-    this._runCompletionHook(durationSec);
-  }
-
-  public fail(
-    error: Error | string | unknown,
-    endTime?: HrTime | number
+  protected override _recordMetrics(
+    durationSec: number,
+    error?: unknown
   ): void {
-    if (this._isEnded) {
+    if (!this._handler) {
       return;
     }
-    this._isEnded = true;
-    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
-    const durationSec = calculateDurationSeconds(this._startTime, endHr);
-
-    this._recordMetrics(durationSec, error);
-
-    const errorType = getErrorType(error);
-    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
-
-    if (error instanceof Error) {
-      this._span.recordException(error);
-    }
-
-    this._span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: error instanceof Error ? error.message : String(error),
-    });
-    this._span.end(endHr);
-
-    this._runCompletionHook(durationSec, error);
-  }
-
-  private _recordMetrics(durationSec: number, error?: unknown): void {
     const metricAttrs: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
@@ -240,7 +186,13 @@ export class FetchResponseInvocation {
     this._handler.recordOperationDuration(durationSec, metricAttrs);
   }
 
-  private _runCompletionHook(durationSec: number, error?: unknown): void {
+  protected override _runCompletionHook(
+    durationSec: number,
+    error?: unknown
+  ): void {
+    if (!this._handler) {
+      return;
+    }
     const result: CompletionResult = {
       span: this._span,
       providerName: this._providerName,
@@ -254,14 +206,11 @@ export class FetchResponseInvocation {
         this._outputMessages.length > 0 ? this._outputMessages : undefined,
       systemInstructions: this._systemInstructions,
       error,
+      attributes: this._customAttributes,
     };
 
     void this._handler
       .getCompletionHookManager()
       .execute(result, this._handler.getDiag());
-  }
-
-  public getSpan(): Span {
-    return this._span;
   }
 }
