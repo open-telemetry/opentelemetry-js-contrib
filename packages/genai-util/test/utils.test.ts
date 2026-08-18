@@ -17,6 +17,7 @@ import {
   calculateDurationSeconds,
   hrTimeToSeconds,
   getSpanName,
+  getErrorType,
 } from '../src';
 
 describe('GenAI Utils', () => {
@@ -111,6 +112,31 @@ describe('GenAI Utils', () => {
         getSpanName('embeddings', 'text-embedding-3-small'),
         'embeddings text-embedding-3-small'
       );
+    });
+  });
+
+  describe('getErrorType', () => {
+    it('should extract error type from Error, custom error, code, string, or unknown', () => {
+      assert.strictEqual(getErrorType(new Error('test')), 'Error');
+      assert.strictEqual(getErrorType(new TypeError('test')), 'TypeError');
+
+      class CustomAPIError extends Error {
+        constructor() {
+          super('custom error');
+          this.name = 'CustomAPIError';
+        }
+      }
+      assert.strictEqual(getErrorType(new CustomAPIError()), 'CustomAPIError');
+
+      const codedError = new Error('with code');
+      (codedError as any).code = 'ECONNREFUSED';
+      assert.strictEqual(getErrorType(codedError), 'ECONNREFUSED');
+
+      assert.strictEqual(getErrorType('RateLimitError'), 'RateLimitError');
+      assert.strictEqual(getErrorType(''), 'Error');
+      assert.strictEqual(getErrorType(null), 'Error');
+      assert.strictEqual(getErrorType(undefined), 'Error');
+      assert.strictEqual(getErrorType(1234), 'Error');
     });
   });
 });
