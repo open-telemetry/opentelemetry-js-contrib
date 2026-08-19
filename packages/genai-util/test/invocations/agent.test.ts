@@ -35,6 +35,7 @@ import {
   ATTR_GEN_AI_AGENT_ID,
   ATTR_GEN_AI_AGENT_DESCRIPTION,
   ATTR_GEN_AI_AGENT_VERSION,
+  METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
   type CompletionResult,
 } from '../../src';
@@ -337,24 +338,83 @@ describe('Agent Invocations (Local & Remote)', () => {
     assert.strictEqual(spans[1].attributes['another.custom'], 123);
   });
 
-  it('should handle agent errors and custom attributes', () => {
+  it('should record failure metrics and trigger completion hook with local agent metadata on failure', async () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const handler = new TelemetryHandler({ tracer });
+    const meter = ctx.meterProvider.getMeter('test-meter');
+    let hookResult: CompletionResult | undefined;
 
-    const agentInv = handler.startAgent({
+    const handler = new TelemetryHandler({
+      tracer,
+      meter,
+      completionHooks: [
+        {
+          onCompletion: res => {
+            hookResult = res;
+          },
+        },
+      ],
+    });
+
+    const agentInv = handler.startLocalAgent({
       agentId: 'agent_abc',
       agentName: 'researcher',
       agentDescription: 'Research assistant',
+      conversationId: 'conv_local_999',
+      requestModel: 'gpt-4o',
+      inputMessages: [
+        {
+          role: 'user',
+          parts: [{ type: 'text', content: 'Execute research task' }],
+        },
+      ],
       attributes: { 'custom.agent.attr': 'val' },
     });
     agentInv.setAttribute('step', 1);
-    agentInv.fail(new Error('Agent crashed'));
+    const agentError = new Error('Local agent crashed');
+    agentInv.fail(agentError);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[0].status.message, 'Local agent crashed');
     assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
+    assert.strictEqual(
+      spans[0].attributes[ATTR_GEN_AI_AGENT_NAME],
+      'researcher'
+    );
+    assert.strictEqual(spans[0].attributes[ATTR_GEN_AI_AGENT_ID], 'agent_abc');
+    assert.strictEqual(
+      spans[0].attributes[ATTR_GEN_AI_CONVERSATION_ID],
+      'conv_local_999'
+    );
     assert.strictEqual(spans[0].attributes['custom.agent.attr'], 'val');
     assert.strictEqual(spans[0].attributes['step'], 1);
+
+    await new Promise(r => setTimeout(r, 10));
+    assert.ok(hookResult);
+    assert.strictEqual(hookResult.error, agentError);
+    assert.strictEqual(
+      hookResult.operationName,
+      GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
+    );
+    assert.strictEqual(hookResult.requestModel, 'gpt-4o');
+    assert.strictEqual(hookResult.inputMessages?.length, 1);
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    const durationMetric = metrics.find(
+      m => m.descriptor.name === METRIC_GEN_AI_CLIENT_OPERATION_DURATION
+    );
+    assert.ok(durationMetric);
+    const dataPoint = durationMetric.dataPoints[0];
+    assert.strictEqual(
+      dataPoint.attributes[ATTR_GEN_AI_OPERATION_NAME],
+      GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
+    );
+    assert.strictEqual(
+      dataPoint.attributes[ATTR_GEN_AI_REQUEST_MODEL],
+      'gpt-4o'
+    );
+    assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], 'Error');
   });
 });

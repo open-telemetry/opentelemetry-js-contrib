@@ -19,6 +19,8 @@ import {
   ATTR_GEN_AI_DATA_SOURCE_ID,
   ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT,
   ATTR_GEN_AI_RETRIEVAL_DOCUMENTS,
+  METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
+  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
 } from '../../src';
 import {
@@ -103,13 +105,19 @@ describe('RetrievalInvocation', () => {
     assert.strictEqual(spans[0].name, 'retrieval');
   });
 
-  it('should handle retrieval failure', () => {
+  it('should record retrieval duration metrics with error type and capture query text event on failure', async () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const handler = new TelemetryHandler({ tracer });
+    const meter = ctx.meterProvider.getMeter('test-meter');
+    const handler = new TelemetryHandler({
+      tracer,
+      meter,
+      contentCaptureMode: 'event_only',
+    });
 
     const inv = handler.startRetrieval({
       dataSourceId: 'kb_articles',
       providerName: 'qdrant',
+      queryText: 'How to rotate API keys?',
     });
     inv.fail(new Error('Connection timed out'));
 
@@ -120,7 +128,33 @@ describe('RetrievalInvocation', () => {
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
     assert.strictEqual(span.status.message, 'Connection timed out');
     assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
-    assert.strictEqual(span.events.length, 1);
-    assert.strictEqual(span.events[0].name, 'exception');
+
+    // Verify diagnostic query event was emitted despite failure
+    const queryEvent = span.events.find(
+      e => e.name === EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+    );
+    assert.ok(queryEvent);
+    assert.strictEqual(
+      queryEvent.attributes?.[ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT],
+      'How to rotate API keys?'
+    );
+
+    // Verify metric duration was recorded with operation name and error type
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    const durationMetric = metrics.find(
+      m => m.descriptor.name === METRIC_GEN_AI_CLIENT_OPERATION_DURATION
+    );
+    assert.ok(durationMetric);
+    const dataPoint = durationMetric.dataPoints[0];
+    assert.strictEqual(
+      dataPoint.attributes[ATTR_GEN_AI_OPERATION_NAME],
+      GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL
+    );
+    assert.strictEqual(
+      dataPoint.attributes[ATTR_GEN_AI_PROVIDER_NAME],
+      'qdrant'
+    );
+    assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], 'Error');
   });
 });
