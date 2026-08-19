@@ -17,7 +17,10 @@ import {
 } from '../semconv';
 import type { ToolInvocationOptions } from '../types';
 import { serializeContent } from '../utils';
-import { isEventContentCaptureEnabled } from '../environment-variables';
+import {
+  isEventContentCaptureEnabled,
+  isSpanContentCaptureEnabled,
+} from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
@@ -35,6 +38,7 @@ export class ToolInvocation extends BaseInvocation {
   ) {
     super(span, handler);
     this._toolArguments = options.toolArguments;
+    const mode = this._handler?.getContentCaptureMode() ?? 'none';
 
     const attrs: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
@@ -51,10 +55,14 @@ export class ToolInvocation extends BaseInvocation {
     if (options.toolType) {
       attrs[ATTR_GEN_AI_TOOL_TYPE] = options.toolType;
     }
-    if (options.toolArguments !== undefined) {
-      attrs[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] = serializeContent(
-        options.toolArguments
-      );
+    if (
+      options.toolArguments !== undefined &&
+      isSpanContentCaptureEnabled(mode)
+    ) {
+      const formatted = serializeContent(options.toolArguments);
+      if (formatted) {
+        attrs[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] = formatted;
+      }
     }
 
     this._span.setAttributes(attrs);
@@ -62,11 +70,12 @@ export class ToolInvocation extends BaseInvocation {
 
   public setResult(result: unknown): this {
     this._result = result;
-    if (result !== undefined) {
-      this._span.setAttribute(
-        ATTR_GEN_AI_TOOL_CALL_RESULT,
-        serializeContent(result)
-      );
+    const mode = this._handler?.getContentCaptureMode() ?? 'none';
+    if (result !== undefined && isSpanContentCaptureEnabled(mode)) {
+      const formatted = serializeContent(result);
+      if (formatted) {
+        this._span.setAttribute(ATTR_GEN_AI_TOOL_CALL_RESULT, formatted);
+      }
     }
     return this;
   }

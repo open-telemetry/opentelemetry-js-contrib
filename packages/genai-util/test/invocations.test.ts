@@ -405,7 +405,10 @@ describe('GenAI Invocations', () => {
   describe('ToolInvocation', () => {
     it('should handle tool execution spans', () => {
       const tracer = tracerProvider.getTracer('test-tracer');
-      const handler = new TelemetryHandler({ tracer });
+      const handler = new TelemetryHandler({
+        tracer,
+        contentCaptureMode: 'span_only',
+      });
 
       const invocation = handler.startTool({
         toolName: 'get_stock_price',
@@ -454,7 +457,10 @@ describe('GenAI Invocations', () => {
     // This test ensures ToolInvocation safely handles cyclic references without crashing.
     it('should handle non-serializable and circular arguments and results safely', () => {
       const tracer = tracerProvider.getTracer('test-tracer');
-      const handler = new TelemetryHandler({ tracer });
+      const handler = new TelemetryHandler({
+        tracer,
+        contentCaptureMode: 'span_only',
+      });
 
       const circularArgs: any = { a: 1 };
       circularArgs.self = circularArgs;
@@ -483,6 +489,128 @@ describe('GenAI Invocations', () => {
         '[object Object]'
       );
       assert.strictEqual(span.status.code, SpanStatusCode.OK);
+    });
+
+    it('should respect content capture mode (none vs span_only vs event_only vs span_and_event)', () => {
+      const tracer = tracerProvider.getTracer('test-tracer');
+
+      // 1. Mode: none
+      const handlerNone = new TelemetryHandler({
+        tracer,
+        contentCaptureMode: 'none',
+      });
+      const invNone = handlerNone.startTool({
+        toolName: 'calc',
+        toolArguments: { x: 1 },
+      });
+      invNone.setResult({ y: 2 });
+      invNone.stop();
+
+      const spansNone = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spansNone.length, 1);
+      assert.strictEqual(
+        spansNone[0].attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        undefined
+      );
+      assert.strictEqual(
+        spansNone[0].attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        undefined
+      );
+      assert.strictEqual(spansNone[0].events.length, 0);
+
+      memoryExporter.reset();
+
+      // 2. Mode: span_only
+      const handlerSpan = new TelemetryHandler({
+        tracer,
+        contentCaptureMode: 'span_only',
+      });
+      const invSpan = handlerSpan.startTool({
+        toolName: 'calc',
+        toolArguments: { x: 1 },
+      });
+      invSpan.setResult({ y: 2 });
+      invSpan.stop();
+
+      const spansSpan = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spansSpan.length, 1);
+      assert.strictEqual(
+        spansSpan[0].attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        '{"x":1}'
+      );
+      assert.strictEqual(
+        spansSpan[0].attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        '{"y":2}'
+      );
+      assert.strictEqual(spansSpan[0].events.length, 0);
+
+      memoryExporter.reset();
+
+      // 3. Mode: event_only
+      const handlerEvent = new TelemetryHandler({
+        tracer,
+        contentCaptureMode: 'event_only',
+      });
+      const invEvent = handlerEvent.startTool({
+        toolName: 'calc',
+        toolArguments: { x: 1 },
+      });
+      invEvent.setResult({ y: 2 });
+      invEvent.stop();
+
+      const spansEvent = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spansEvent.length, 1);
+      assert.strictEqual(
+        spansEvent[0].attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        undefined
+      );
+      assert.strictEqual(
+        spansEvent[0].attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        undefined
+      );
+      assert.strictEqual(spansEvent[0].events.length, 1);
+      assert.strictEqual(
+        spansEvent[0].events[0].attributes?.[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        '{"x":1}'
+      );
+      assert.strictEqual(
+        spansEvent[0].events[0].attributes?.[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        '{"y":2}'
+      );
+
+      memoryExporter.reset();
+
+      // 4. Mode: span_and_event
+      const handlerBoth = new TelemetryHandler({
+        tracer,
+        contentCaptureMode: 'span_and_event',
+      });
+      const invBoth = handlerBoth.startTool({
+        toolName: 'calc',
+        toolArguments: { x: 1 },
+      });
+      invBoth.setResult({ y: 2 });
+      invBoth.stop();
+
+      const spansBoth = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spansBoth.length, 1);
+      assert.strictEqual(
+        spansBoth[0].attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        '{"x":1}'
+      );
+      assert.strictEqual(
+        spansBoth[0].attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        '{"y":2}'
+      );
+      assert.strictEqual(spansBoth[0].events.length, 1);
+      assert.strictEqual(
+        spansBoth[0].events[0].attributes?.[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        '{"x":1}'
+      );
+      assert.strictEqual(
+        spansBoth[0].events[0].attributes?.[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        '{"y":2}'
+      );
     });
   });
 
