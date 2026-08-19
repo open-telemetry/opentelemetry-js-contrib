@@ -188,13 +188,26 @@ describe('TelemetryHandler', () => {
       'Find info'
     );
 
-    // Tool span: attributes set on span
+    // Tool span: attributes stripped, event emitted
     assert.strictEqual(
       toolSpan.attributes['gen_ai.tool.call.arguments'],
-      '{"expr":"2+2"}'
+      undefined
     );
     assert.strictEqual(
       toolSpan.attributes['gen_ai.tool.call.result'],
+      undefined
+    );
+    assert.strictEqual(toolSpan.events.length, 1);
+    assert.strictEqual(
+      toolSpan.events[0].name,
+      'gen_ai.client.inference.operation.details'
+    );
+    assert.strictEqual(
+      toolSpan.events[0].attributes?.['gen_ai.tool.call.arguments'],
+      '{"expr":"2+2"}'
+    );
+    assert.strictEqual(
+      toolSpan.events[0].attributes?.['gen_ai.tool.call.result'],
       '{"answer":4}'
     );
 
