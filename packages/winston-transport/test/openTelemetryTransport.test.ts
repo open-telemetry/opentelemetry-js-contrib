@@ -120,6 +120,24 @@ describe('OpenTelemetryTransportV3', () => {
     assert.strictEqual(metadata.error, error);
   });
 
+  it('does not emit log-correlation fields as attributes', () => {
+    const transport = new OpenTelemetryTransportV3();
+    transport.log(
+      {
+        message: kMessage,
+        trace_id: 'trace-id',
+        span_id: 'span-id',
+        trace_flags: '01',
+      },
+      () => {}
+    );
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].attributes['trace_id'], undefined);
+    assert.strictEqual(logRecords[0].attributes['span_id'], undefined);
+    assert.strictEqual(logRecords[0].attributes['trace_flags'], undefined);
+  });
+
   it('emit LogRecord with exception from err field', () => {
     const transport = new OpenTelemetryTransportV3();
     transport.log({ message: kMessage, err: new Error('boom') }, () => {});
