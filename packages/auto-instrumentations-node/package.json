@@ -49,6 +49,7 @@
     "@opentelemetry/instrumentation-aws-sdk": "^0.76.0",
     "@opentelemetry/instrumentation-bunyan": "^0.66.0",
     "@opentelemetry/instrumentation-cassandra-driver": "^0.66.0",
+    "@opentelemetry/instrumentation-claude-agent-sdk": "^0.1.0",
     "@opentelemetry/instrumentation-connect": "^0.64.0",
     "@opentelemetry/instrumentation-cucumber": "^0.37.0",
     "@opentelemetry/instrumentation-dataloader": "^0.38.0",

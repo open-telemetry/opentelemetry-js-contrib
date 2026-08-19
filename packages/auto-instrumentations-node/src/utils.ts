@@ -11,6 +11,7 @@ import { AwsLambdaInstrumentation } from '@opentelemetry/instrumentation-aws-lam
 import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
 import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
 import { CassandraDriverInstrumentation } from '@opentelemetry/instrumentation-cassandra-driver';
+import { ClaudeAgentSDKInstrumentation } from '@opentelemetry/instrumentation-claude-agent-sdk';
 import { ConnectInstrumentation } from '@opentelemetry/instrumentation-connect';
 import { CucumberInstrumentation } from '@opentelemetry/instrumentation-cucumber';
 import { DataloaderInstrumentation } from '@opentelemetry/instrumentation-dataloader';
@@ -90,6 +91,8 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-bunyan': BunyanInstrumentation,
   '@opentelemetry/instrumentation-cassandra-driver':
     CassandraDriverInstrumentation,
+  '@opentelemetry/instrumentation-claude-agent-sdk':
+    ClaudeAgentSDKInstrumentation,
   '@opentelemetry/instrumentation-connect': ConnectInstrumentation,
   '@opentelemetry/instrumentation-cucumber': CucumberInstrumentation,
   '@opentelemetry/instrumentation-dataloader': DataloaderInstrumentation,
