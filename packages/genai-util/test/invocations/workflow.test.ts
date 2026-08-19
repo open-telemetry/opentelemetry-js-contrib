@@ -58,28 +58,35 @@ describe('WorkflowInvocation', () => {
     assert.strictEqual(span.status.code, SpanStatusCode.OK);
   });
 
-  it('should handle workflow errors and custom attributes', () => {
+  it('should preserve workflow identity, internal span kind, and custom attributes when workflow fails', () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
     const handler = new TelemetryHandler({ tracer });
 
     const workflowInv = handler.startWorkflow({
       workflowName: 'summarize_docs',
-      attributes: { 'custom.wf.attr': 'val' },
+      attributes: { 'custom.wf.stage': 'extraction' },
     });
-    workflowInv.setAttribute('stage', 'init');
-    workflowInv.fail(new Error('Workflow failed'));
+    workflowInv.setAttribute('stage', 'synthesis');
+    workflowInv.fail(new Error('Workflow pipeline aborted'));
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     const span = spans[0];
 
-    assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
+    assert.strictEqual(span.kind, SpanKind.INTERNAL);
+    assert.strictEqual(span.name, 'invoke_workflow summarize_docs');
     assert.strictEqual(
       span.attributes[ATTR_GEN_AI_WORKFLOW_NAME],
       'summarize_docs'
     );
-    assert.strictEqual(span.attributes['custom.wf.attr'], 'val');
-    assert.strictEqual(span.attributes['stage'], 'init');
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_OPERATION_NAME],
+      GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW
+    );
+    assert.strictEqual(span.attributes['custom.wf.stage'], 'extraction');
+    assert.strictEqual(span.attributes['stage'], 'synthesis');
+    assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(span.status.message, 'Workflow pipeline aborted');
+    assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
   });
 });

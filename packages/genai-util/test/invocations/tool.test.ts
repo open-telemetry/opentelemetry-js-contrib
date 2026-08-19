@@ -15,6 +15,7 @@ import {
   ATTR_GEN_AI_TOOL_TYPE,
   ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
   ATTR_GEN_AI_TOOL_CALL_RESULT,
+  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
 } from '../../src';
 import {
   createTestTelemetryContext,
@@ -242,23 +243,52 @@ describe('ToolInvocation', () => {
     );
   });
 
-  it('should handle tool failure and custom attributes', () => {
+  it('should preserve tool call arguments in span events and attributes when tool execution fails', () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const handler = new TelemetryHandler({ tracer });
+    const handler = new TelemetryHandler({
+      tracer,
+      contentCaptureMode: 'span_and_event',
+    });
 
     const toolInv = handler.startTool({
       toolName: 'calculator',
       toolDescription: 'Performs math',
       toolCallId: 'call_999',
+      toolArguments: { expr: '1/0' },
     });
-    toolInv.setResult(42);
     toolInv.setAttribute('custom', 'val');
-    toolInv.fail(new Error('Tool failed'));
+    toolInv.fail(new Error('Division by zero'));
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
-    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
-    assert.strictEqual(spans[0].attributes['custom'], 'val');
+    const span = spans[0];
+
+    assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(span.status.message, 'Division by zero');
+    assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_TOOL_NAME], 'calculator');
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_TOOL_CALL_ID], 'call_999');
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+      '{"expr":"1/0"}'
+    );
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+      undefined
+    );
+
+    // Event should contain tool arguments but no result
+    const detailsEvent = span.events.find(
+      e => e.name === EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+    );
+    assert.ok(detailsEvent);
+    assert.strictEqual(
+      detailsEvent.attributes?.[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+      '{"expr":"1/0"}'
+    );
+    assert.strictEqual(
+      detailsEvent.attributes?.[ATTR_GEN_AI_TOOL_CALL_RESULT],
+      undefined
+    );
   });
 });

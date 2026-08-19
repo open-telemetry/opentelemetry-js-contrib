@@ -29,7 +29,9 @@ import {
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
   ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
+  METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
+  type CompletionResult,
 } from '../../src';
 import {
   createTestTelemetryContext,
@@ -139,13 +141,35 @@ describe('InferenceInvocation', () => {
     assert.strictEqual(span.status.code, SpanStatusCode.OK);
   });
 
-  it('should handle failure properly', () => {
+  it('should capture diagnostic input events, record error metrics, and trigger completion hook when inference fails', async () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const handler = new TelemetryHandler({ tracer });
+    const meter = ctx.meterProvider.getMeter('test-meter');
+    let hookResult: CompletionResult | undefined;
+
+    const handler = new TelemetryHandler({
+      tracer,
+      meter,
+      contentCaptureMode: 'event_only',
+      completionHooks: [
+        {
+          onCompletion: res => {
+            hookResult = res;
+          },
+        },
+      ],
+    });
 
     const invocation = handler.startInference({
       providerName: 'anthropic',
+      operationName: 'chat',
       requestModel: 'claude-3-5-sonnet',
+      systemInstructions: 'Be precise and concise.',
+      inputMessages: [
+        {
+          role: 'user',
+          parts: [{ type: 'text', content: 'Generate code' }],
+        },
+      ],
     });
 
     const testError = new Error('Rate limit exceeded');
@@ -158,8 +182,44 @@ describe('InferenceInvocation', () => {
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
     assert.strictEqual(span.status.message, 'Rate limit exceeded');
     assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
-    assert.strictEqual(span.events.length, 1);
-    assert.strictEqual(span.events[0].name, 'exception');
+
+    // In event_only mode, ensure the prompt details were captured on failure
+    assert.strictEqual(span.events.length, 2); // 1 exception event + 1 content event
+    const contentEvent = span.events.find(
+      e => e.name === EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
+    );
+    assert.ok(contentEvent);
+    assert.ok(contentEvent.attributes?.[ATTR_GEN_AI_INPUT_MESSAGES]);
+    assert.strictEqual(
+      contentEvent.attributes?.[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS],
+      'Be precise and concise.'
+    );
+
+    // Verify completion hook received the error and prompt context
+    await new Promise(r => setTimeout(r, 10));
+    assert.ok(hookResult);
+    assert.strictEqual(hookResult.error, testError);
+    assert.strictEqual(hookResult.providerName, 'anthropic');
+    assert.strictEqual(hookResult.requestModel, 'claude-3-5-sonnet');
+    assert.strictEqual(
+      hookResult.systemInstructions,
+      'Be precise and concise.'
+    );
+    assert.strictEqual(typeof hookResult.durationSeconds, 'number');
+
+    // Verify metrics recorded error.type
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    const durationMetric = metrics.find(
+      m => m.descriptor.name === METRIC_GEN_AI_CLIENT_OPERATION_DURATION
+    );
+    assert.ok(durationMetric);
+    const dataPoint = durationMetric.dataPoints[0];
+    assert.strictEqual(
+      dataPoint.attributes[ATTR_GEN_AI_PROVIDER_NAME],
+      'anthropic'
+    );
+    assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], 'Error');
   });
 
   it('should respect content capture mode when disabled vs enabled', () => {
