@@ -67,7 +67,6 @@
     "packages/instrumentation-pg": {},
     "packages/instrumentation-pino": {},
     "packages/instrumentation-redis": {},
-    "packages/instrumentation-restify": {},
     "packages/instrumentation-router": {},
     "packages/instrumentation-winston": {},
     "packages/instrumentation-document-load": {},

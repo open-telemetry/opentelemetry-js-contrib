@@ -78,7 +78,6 @@
     "@opentelemetry/instrumentation-pg": "^0.73.0",
     "@opentelemetry/instrumentation-pino": "^0.67.0",
     "@opentelemetry/instrumentation-redis": "^0.69.0",
-    "@opentelemetry/instrumentation-restify": "^0.66.0",
     "@opentelemetry/instrumentation-router": "^0.65.0",
     "@opentelemetry/instrumentation-runtime-node": "^0.34.0",
     "@opentelemetry/instrumentation-socket.io": "^0.68.0",

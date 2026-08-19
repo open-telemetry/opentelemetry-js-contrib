@@ -196,10 +196,6 @@ pkg:instrumentation-redis:
           - packages/instrumentation-redis/**
           - packages/contrib-test-utils/**
           - packages/redis-common/**
-pkg:instrumentation-restify:
-  - changed-files:
-      - any-glob-to-any-file:
-          - packages/instrumentation-restify/**
 pkg:instrumentation-router:
   - changed-files:
       - any-glob-to-any-file:
@@ -329,7 +325,6 @@ pkg-status:unmaintained:
           - packages/instrumentation-memcached/**
           - packages/instrumentation-mysql/**
           - packages/instrumentation-nestjs-core/**
-          - packages/instrumentation-restify/**
           - packages/instrumentation-router/**
           - packages/instrumentation-tedious/**
           - packages/propagator-aws-xray-lambda/**
