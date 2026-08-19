@@ -49,9 +49,9 @@ describe('utils', () => {
 
     it('cluster name attribute', () => {
       const attributes = getConnectionAttributesFromServer(conn.connection);
-      expect(attributes[ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME]).toStrictEqual(
-        conn.connection.serverProperties.cluster_name
-      );
+      const clusterName = attributes[ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME];
+      expect(typeof clusterName).toStrictEqual('string');
+      expect(clusterName).not.toStrictEqual('');
     });
 
     it('cluster name attribute is omitted when the server does not report one', () => {

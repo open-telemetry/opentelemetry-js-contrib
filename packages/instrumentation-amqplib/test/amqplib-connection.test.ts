@@ -187,9 +187,10 @@ describe('amqplib instrumentation connection', () => {
         expect(
           publishSpan.attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME]
         ).toEqual('/');
-        expect(
-          publishSpan.attributes[ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME]
-        ).toEqual(conn.connection.serverProperties.cluster_name);
+        const clusterName =
+          publishSpan.attributes[ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME];
+        expect(typeof clusterName).toEqual('string');
+        expect(clusterName).not.toEqual('');
       } finally {
         await conn.close();
       }

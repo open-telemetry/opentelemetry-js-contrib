@@ -96,14 +96,12 @@ const getProtocol = (protocolFromUrl: string | undefined): string => {
 // amqplib falls back to the '/' vhost when the user did not supply one
 const DEFAULT_VHOST = '/';
 
-const getVhostFromOptions = (vhostFromOptions: string | undefined): string => {
-  return vhostFromOptions || DEFAULT_VHOST;
-};
-
 const getVhostFromUrlPath = (pathFromUrl: string | undefined): string => {
   // this code mimics the behavior of amqplib, which takes the url path
   // without its leading '/' and unescapes it, so that a vhost named '/' can
-  // be expressed as the '%2f' path
+  // be expressed as the '%2f' path. amqplib uses querystring.unescape here,
+  // which returns malformed percent sequences as-is instead of throwing the
+  // way decodeURIComponent does
   const vhost = pathFromUrl ? pathFromUrl.substring(1) : '';
   return vhost ? unescapeUriComponent(vhost) : DEFAULT_VHOST;
 };
@@ -189,9 +187,8 @@ export const getConnectionAttributesFromUrl = (
       extractConnectionAttributeOrLog(url, ATTR_SERVER_PORT, port, 'port')
     );
 
-    attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME] = getVhostFromOptions(
-      connectOptions?.vhost
-    );
+    attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME] =
+      connectOptions?.vhost || DEFAULT_VHOST;
   } else {
     const censoredUrl = censorPassword(url);
     attributes[ATTR_MESSAGING_URL] = censoredUrl;
