@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-typeorm
 
 ## Supported versions
 
-- [`typeorm`](https://www.npmjs.com/package/typeorm) versions `>=0.3.0 <1`
+- [`typeorm`](https://www.npmjs.com/package/typeorm) versions `>=0.3.0 <2`
 
 ## Usage
 
