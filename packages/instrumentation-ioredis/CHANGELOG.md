@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.69.0...instrumentation-ioredis-v0.70.0) (2026-08-19)
+
+
+### Features
+
+* **instrumentation-ioredis:** support ioredis [@v6](https://github.com/v6) ([#3666](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3666)) ([6049350](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/604935075066c2825222afc5cafb7892a047b155))
+
 ## [0.69.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.68.0...instrumentation-ioredis-v0.69.0) (2026-07-23)
 
 

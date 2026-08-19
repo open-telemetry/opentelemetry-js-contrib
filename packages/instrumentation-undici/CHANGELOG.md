@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.31.0...instrumentation-undici-v0.31.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* **instrumentation-undici:** use low-cardinality error.type ([#3659](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3659)) ([3756dfa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3756dfa6b084f90ce81cf6be45d9deb8c72a9db6))
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.30.0...instrumentation-undici-v0.31.0) (2026-07-23)
 
 

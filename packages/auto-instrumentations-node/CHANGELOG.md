@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.79.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.79.0...auto-instrumentations-node-v0.79.1) (2026-08-19)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.69.0 to ^0.70.0
+    * @opentelemetry/instrumentation-kafkajs bumped from ^0.30.0 to ^0.31.0
+    * @opentelemetry/instrumentation-tedious bumped from ^0.40.0 to ^0.41.0
+    * @opentelemetry/instrumentation-undici bumped from ^0.31.0 to ^0.31.1
+    * @opentelemetry/instrumentation-winston bumped from ^0.65.0 to ^0.65.1
+    * @opentelemetry/resource-detector-azure bumped from ^0.29.0 to ^0.29.1
+
 ## [0.79.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.78.0...auto-instrumentations-node-v0.79.0) (2026-07-23)
 
 

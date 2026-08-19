@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.30.0...instrumentation-kafkajs-v0.31.0) (2026-08-19)
+
+
+### Features
+
+* **instrumentation-kafkajs:** add messaging.kafka.cluster.id span attribute ([#3577](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3577)) ([fd4d8ae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fd4d8ae8ffbbb21616baa036948b2fb70d289892))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-kafkajs-v0.29.0...instrumentation-kafkajs-v0.30.0) (2026-07-23)
 
 

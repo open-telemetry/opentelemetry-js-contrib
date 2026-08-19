@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.29.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.29.0...resource-detector-azure-v0.29.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* **resource-detector-azure:** read AKS cluster metadata from a mounted ConfigMap ([#3649](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3649)) ([ab50f97](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab50f97aec410f888640ffc41c70dbf110a44597))
+
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.28.0...resource-detector-azure-v0.29.0) (2026-07-23)
 
 

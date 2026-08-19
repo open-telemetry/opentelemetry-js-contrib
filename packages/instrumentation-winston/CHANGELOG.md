@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.65.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.65.0...instrumentation-winston-v0.65.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* **winston-transport:** serialize Error attributes ([#3672](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3672)) ([82a5bc2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/82a5bc2b90d6c84f93069e928bb0213e5a27e33f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/winston-transport bumped from ^0.31.0 to ^0.31.1
+
 ## [0.65.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.64.0...instrumentation-winston-v0.65.0) (2026-07-23)
 
 
