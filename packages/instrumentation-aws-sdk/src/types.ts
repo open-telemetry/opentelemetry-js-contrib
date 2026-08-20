@@ -86,6 +86,18 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
   suppressInternalInstrumentation?: boolean;
 
   /**
+   * AWS managed services propagate context only through the X-Ray tracing
+   * header, so it is set on every outgoing request by default. That is the only
+   * channel for services with no message attributes, such as S3 object
+   * notifications and EventBridge rules.
+   *
+   * Set to `false` to leave the header alone. The AWS SDK then sets it itself
+   * from the Lambda invoke store, carrying the platform's trace rather than this
+   * one.
+   */
+  injectTraceHeader?: boolean;
+
+  /**
    * In some cases the context propagation headers may be found in the message payload
    * rather than the message attribute.
    * When this field is turned on the instrumentation will parse the payload and extract the
