@@ -492,7 +492,11 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       });
       span.end();
 
-      attributes[ATTR_ERROR_TYPE] = error.message;
+      // error.type must be a low-cardinality class of error per semconv, and an
+      // empty value collapses into a duplicate series on Prometheus-based
+      // exporters. Use the error code/name, never the free-form, possibly empty
+      // message.
+      attributes[ATTR_ERROR_TYPE] = error.code || error.name || 'Error';
     }
 
     this._recordFromReq.delete(request);

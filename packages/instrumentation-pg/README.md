@@ -78,6 +78,12 @@ The `@opentelemetry/instrumentation-pg` versions 0.72.0 and later emit the stabl
 | `server.port`         | Remote port number.                                                                        |
 | `error.type`          | Describes a class of error the operation ended with.                                       |
 
+> [!NOTE]
+> `db.collection.name` is not collected. The `pg` driver does not expose the table
+> name separately, and the OpenTelemetry specification advises against parsing
+> `db.query.text` when the database supports queries touching multiple
+> collections in non-batch operations, which is the case for PostgreSQL.
+
 Metrics Exported:
 
 - [`db.client.operation.duration`](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/database-metrics.md#metric-dbclientoperationduration)

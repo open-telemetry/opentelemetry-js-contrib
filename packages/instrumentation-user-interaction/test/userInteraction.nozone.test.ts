@@ -716,6 +716,52 @@ describe('UserInteractionInstrumentation', () => {
       document.removeEventListener('click', listener, null);
     });
 
+    it('should preserve bare global addEventListener calls', () => {
+      // web-vitals calls the global event-listener function without a receiver.
+      // The native browser implementation accepts that form, so instrumentation
+      // must not use the undefined receiver as a WeakMap key first.
+      const { addEventListener, removeEventListener } = window;
+      let calls = 0;
+      const listener = () => {
+        calls++;
+      };
+
+      addEventListener('open-telemetry-bare-listener', listener);
+      window.dispatchEvent(new Event('open-telemetry-bare-listener'));
+      removeEventListener('open-telemetry-bare-listener', listener);
+
+      assert.strictEqual(calls, 1);
+    });
+
+    it('should preserve valid weak-map symbols and delegate invalid receivers', () => {
+      // Symbols cannot be EventTarget receivers in a browser, so use the real
+      // wrapper with a narrow original-function double to assert its boundary.
+      type OriginalAddEventListener = (
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        useCapture?: boolean | AddEventListenerOptions
+      ) => void;
+      const original = sandbox.stub();
+      const patched = (
+        userInteractionInstrumentation as unknown as {
+          _patchAddEventListener: () => (
+            original: OriginalAddEventListener
+          ) => unknown;
+        }
+      )._patchAddEventListener()(original) as {
+        call(thisArg: unknown, type: string, listener: () => void): unknown;
+      };
+      const listener = () => {};
+
+      assert.doesNotThrow(() => {
+        patched.call(Symbol('unregistered'), 'click', listener);
+      });
+      assert.doesNotThrow(() => {
+        patched.call(Symbol.for('registered'), 'click', listener);
+      });
+      assert.strictEqual(original.callCount, 2);
+    });
+
     it('should handle disable', () => {
       const element = createButton();
       element.addEventListener('click', () => {});
