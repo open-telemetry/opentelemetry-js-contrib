@@ -29,6 +29,12 @@ import {
   ATTR_GEN_AI_REQUEST_TOP_P,
   ATTR_GEN_AI_REQUEST_TOP_K,
   ATTR_GEN_AI_REQUEST_MAX_TOKENS,
+  ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
+  ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
+  ATTR_GEN_AI_REQUEST_CHOICE_COUNT,
+  ATTR_GEN_AI_REQUEST_SEED,
+  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
+  ATTR_GEN_AI_REQUEST_STOP_SEQUENCES,
   ATTR_GEN_AI_DATA_SOURCE_ID,
   ATTR_GEN_AI_OUTPUT_TYPE,
   ATTR_GEN_AI_AGENT_NAME,
@@ -297,18 +303,60 @@ describe('Agent Invocations (Local & Remote)', () => {
     assert.strictEqual(hookResult.error, agentError);
   });
 
-  it('should format default span names and support request options and string error', () => {
+  it('should format span name as invoke_agent <agentName> or fallback to invoke_agent per spec', () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
     const handler = new TelemetryHandler({ tracer });
 
-    // No agent name or id
+    // Case 1: Neither agentName nor agentId provided -> 'invoke_agent'
     const invDefault = handler.startAgent();
     invDefault.stop();
 
-    // Only agent id
-    const invId = handler.startRemoteAgent({
+    // Case 2: Only agentId provided -> span name is 'invoke_agent', agentId set in attributes
+    const invIdOnly = handler.startRemoteAgent({
       providerName: 'cohere',
       agentId: 'agent_id_only',
+    });
+    invIdOnly.stop();
+
+    // Case 3: agentName provided -> 'invoke_agent Math Assistant'
+    const invWithName = handler.startLocalAgent({
+      agentId: 'agent_id_123',
+      agentName: 'Math Assistant',
+    });
+    invWithName.stop();
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 3);
+    assert.strictEqual(spans[0].name, 'invoke_agent');
+    assert.strictEqual(spans[0].kind, SpanKind.INTERNAL);
+
+    assert.strictEqual(spans[1].name, 'invoke_agent');
+    assert.strictEqual(spans[1].kind, SpanKind.CLIENT);
+    assert.strictEqual(
+      spans[1].attributes[ATTR_GEN_AI_AGENT_ID],
+      'agent_id_only'
+    );
+    assert.strictEqual(spans[1].attributes[ATTR_GEN_AI_AGENT_NAME], undefined);
+
+    assert.strictEqual(spans[2].name, 'invoke_agent Math Assistant');
+    assert.strictEqual(spans[2].kind, SpanKind.INTERNAL);
+    assert.strictEqual(
+      spans[2].attributes[ATTR_GEN_AI_AGENT_NAME],
+      'Math Assistant'
+    );
+    assert.strictEqual(
+      spans[2].attributes[ATTR_GEN_AI_AGENT_ID],
+      'agent_id_123'
+    );
+  });
+
+  it('should populate all optional agent requestOptions attributes', () => {
+    const tracer = ctx.tracerProvider.getTracer('test-tracer');
+    const handler = new TelemetryHandler({ tracer });
+
+    const inv = handler.startRemoteAgent({
+      providerName: 'cohere',
+      agentName: 'Tool Router',
       requestOptions: {
         frequencyPenalty: 0.3,
         presencePenalty: 0.4,
@@ -318,24 +366,34 @@ describe('Agent Invocations (Local & Remote)', () => {
         stopSequences: ['STOP_AGENT'],
       },
     });
-    invId.setAttribute('agent.custom', true);
-    invId.setAttributes({ 'another.custom': 123 });
-    invId.fail('Agent string error');
+    inv.setAttribute('agent.custom', true);
+    inv.setAttributes({ 'another.custom': 123 });
+    inv.stop();
 
     const spans = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 2);
-    assert.strictEqual(spans[0].name, 'invoke_agent');
-    assert.strictEqual(spans[0].kind, SpanKind.INTERNAL);
-    assert.strictEqual(spans[1].name, 'invoke_agent agent_id_only');
-    assert.strictEqual(spans[1].kind, SpanKind.CLIENT);
-    assert.strictEqual(spans[1].status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(spans[1].status.message, 'Agent string error');
+    assert.strictEqual(spans.length, 1);
+    const span = spans[0];
+
     assert.strictEqual(
-      spans[1].attributes[ATTR_ERROR_TYPE],
-      'Agent string error'
+      span.attributes[ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY],
+      0.3
     );
-    assert.strictEqual(spans[1].attributes['agent.custom'], true);
-    assert.strictEqual(spans[1].attributes['another.custom'], 123);
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY],
+      0.4
+    );
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_CHOICE_COUNT], 2);
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_SEED], 99);
+    assert.deepStrictEqual(
+      span.attributes[ATTR_GEN_AI_REQUEST_ENCODING_FORMATS],
+      ['text', 'json']
+    );
+    assert.deepStrictEqual(
+      span.attributes[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES],
+      ['STOP_AGENT']
+    );
+    assert.strictEqual(span.attributes['agent.custom'], true);
+    assert.strictEqual(span.attributes['another.custom'], 123);
   });
 
   it('should record failure metrics and trigger completion hook with local agent metadata on failure', async () => {

@@ -238,10 +238,10 @@ export class TelemetryHandler {
    * Start an Agent invocation (defaults to local in-process agent with SpanKind.INTERNAL).
    */
   public startAgent(options: AgentInvocationOptions = {}): AgentInvocation {
-    const name = options.agentName ?? options.agentId;
-    const spanName = name
-      ? `${GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT} ${name}`
-      : GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT;
+    const spanName = getSpanName(
+      GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
+      options.agentName
+    );
 
     const span = this._tracer.startSpan(
       spanName,
@@ -269,10 +269,10 @@ export class TelemetryHandler {
   public startRemoteAgent(
     options: RemoteAgentInvocationOptions
   ): AgentInvocation {
-    const name = options.agentName ?? options.agentId;
-    const spanName = name
-      ? `${GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT} ${name}`
-      : GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT;
+    const spanName = getSpanName(
+      GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
+      options.agentName
+    );
 
     const span = this._tracer.startSpan(
       spanName,
