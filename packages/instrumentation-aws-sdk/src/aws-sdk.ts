@@ -23,6 +23,11 @@ import {
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
+  AWS_TRACE_HEADER,
+  existingTraceHeader,
+  traceHeaderFor,
+} from './trace-header';
+import {
   InstrumentationBase,
   InstrumentationModuleDefinition,
   InstrumentationNodeModuleDefinition,
@@ -58,6 +63,10 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
   static readonly component = 'aws-sdk';
   // need declare since initialized in callbacks from super constructor
   declare private servicesExtensions: ServicesExtensions;
+  /** Stacks the trace header middleware is already on. */
+  private readonly _stacksWithTraceHeader = new WeakSet<
+    MiddlewareStack<any, any>
+  >();
 
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -298,6 +307,8 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     moduleVersion: string | undefined,
     middlewareStackToPatch: MiddlewareStack<any, any>
   ) {
+    this.addTraceHeaderMiddleware(middlewareStackToPatch);
+
     if (!isWrapped(middlewareStackToPatch.resolve)) {
       this._wrap(
         middlewareStackToPatch,
@@ -322,6 +333,56 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
         this._getV3MiddlewareStackClonePatch.bind(this, moduleVersion)
       );
     }
+  }
+
+  /**
+   * Puts the active trace on the request as `X-Amzn-Trace-Id`.
+   *
+   * AWS managed services read only this format, so it is the only way a trace
+   * crosses a hop that carries no message attributes - an S3 object
+   * notification, an EventBridge rule. Message attributes cover SQS, SNS and
+   * Lambda; nothing covered the rest.
+   *
+   * A `build` step middleware because that is the only seam that reaches the
+   * request: `preRequestHook` and the service extensions are handed a
+   * `NormalizedRequest`, and an S3 `PutObject` has no command input field that
+   * becomes a header.
+   */
+  private addTraceHeaderMiddleware(stack: MiddlewareStack<any, any>) {
+    if (this.getConfig().injectTraceHeader === false) return;
+    if (this._stacksWithTraceHeader.has(stack)) return;
+    this._stacksWithTraceHeader.add(stack);
+
+    stack.add(
+      (next: any) =>
+        async (args: any) => {
+          try {
+            const headers = args?.request?.headers;
+            if (headers && typeof headers === 'object') {
+              // The AWS SDK's own recursionDetectionMiddleware sits on this step
+              // at 'low' priority - after this one - and only sets the header
+              // when it is absent. Writing it here means it never runs, so what
+              // it would have forwarded is read from where it reads it and
+              // carried over. Lineage above all: Lambda counts a request chain
+              // in it and stops invoking a function after roughly sixteen hops.
+              const header = traceHeaderFor(
+                context.active(),
+                existingTraceHeader(headers) ??
+                  process.env['_X_AMZN_TRACE_ID']
+              );
+              if (header) headers[AWS_TRACE_HEADER] = header;
+            }
+          } catch (e) {
+            diag.debug(
+              'aws-sdk instrumentation: failed to set the trace header',
+              e
+            );
+          }
+          return next(args);
+        },
+      // Before signing, so the header is covered by the request signature.
+      { step: 'build', name: 'otelAwsTraceHeaderMiddleware', override: true }
+    );
   }
 
   private _getV3MiddlewareStackClonePatch(
